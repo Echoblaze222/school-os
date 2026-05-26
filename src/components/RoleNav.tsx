@@ -238,7 +238,7 @@ export default function RoleNav({ userId, profile, school, role, schoolColor='#7
             <Link key={item.href} href={item.href!}
               className={`${styles.pill} ${active ? styles.pillActive : ''}`}
               style={active ? { color:schoolColor } : undefined}>
-              <item.Icon! size={20} color={active ? schoolColor : undefined}/>
+              <item.Icon size={20} color={active ? schoolColor : undefined}/>
               <span>{item.label}</span>
             </Link>
           )
