@@ -25,14 +25,6 @@ const MODULES = [
   { id: 'settings',  label: 'Settings',        Icon: SettingsIcon,    href: '/dashboard/bursar/settings',   accent: '#6B7280', bg: '#1e2a38' },
 ]
 
-const NAV = [
-  { href: '/dashboard/bursar/fees',     Icon: WalletIcon,      label: 'Fees'     },
-  { href: '/dashboard/bursar/payments', Icon: CheckCircleIcon, label: 'Payments' },
-  { href: '/dashboard/bursar',          home: true                                },
-  { href: '/dashboard/bursar/chat',     Icon: MessageIcon,     label: 'Chat'     },
-  { href: '/dashboard/bursar/reports',  Icon: BarChartIcon,    label: 'Reports'  },
-]
-
 interface Props { profile: any; school: any; userId: string; counts?: any }
 
 export default function BursarDashboardClient({ profile, school, userId, counts = {} }: Props) {
@@ -102,9 +94,12 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
         </div>
         <div className={styles.spacer} />
       </main>
+
       <RoleNav
-        items={NAV}
-        homeHref="/dashboard/bursar"
+        userId={userId}
+        profile={profile}
+        school={school}
+        role="bursar"
         schoolColor={schoolColor}
       />
 
