@@ -1,0 +1,39 @@
+/* teacher dashboard styles - extends globals */
+.page { min-height: 100dvh; background: var(--bg-base); }
+.main { padding: var(--space-6) var(--space-5) 0; max-width: 800px; margin: 0 auto; }
+.greeting { margin-bottom: var(--space-6); }
+.greetingName { font-size: clamp(1.6rem,4vw,2.2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); margin: 0 0 4px; }
+.greetingSub { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+.statsRow { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-3); margin-bottom: var(--space-6); }
+@media(max-width:480px) { .statsRow { grid-template-columns: repeat(2,1fr); } }
+.statCard { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; backdrop-filter: blur(12px); }
+.statVal { font-size: 1.5rem; font-weight: 800; margin: 0 0 2px; }
+.statLbl { font-size: 0.62rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
+.sectionLabel { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-4); }
+.moduleGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-3); margin-bottom: var(--space-6); }
+@media(max-width:400px) { .moduleGrid { grid-template-columns: repeat(3,1fr); } }
+.moduleCard { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-2); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); text-decoration: none; transition: all var(--transition-normal); }
+.moduleCard:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: translateY(-3px); }
+.moduleActive { border-color: var(--brand); background: var(--brand-subtle); }
+.modIcon { width: 46px; height: 46px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; }
+.modLabel { font-size: 0.6rem; font-weight: 600; color: var(--text-secondary); text-align: center; line-height: 1.3; }
+.spacer { height: 110px; }
+.bottomNav { position: fixed; bottom: var(--space-4); left: 50%; transform: translateX(-50%); z-index: var(--z-nav); display: flex; align-items: center; justify-content: space-between; background: var(--nav-bg); border: 1px solid var(--nav-border); backdrop-filter: blur(24px) saturate(180%); border-radius: var(--radius-full); padding: var(--space-2) var(--space-4); width: min(420px,calc(100vw - 32px)); box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+@media(min-width:1024px) { .bottomNav { display: none; } }
+.navItem { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--nav-icon); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); text-decoration: none; transition: color var(--transition-fast), transform var(--transition-fast); }
+.navItem span { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--nav-label); }
+.navActive { color: var(--brand) !important; }
+.navActive span { color: var(--brand) !important; }
+.navItem:hover { transform: translateY(-2px); }
+.homeBtn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: var(--radius-full); box-shadow: 0 4px 20px rgba(124,58,237,0.4); margin: 0 var(--space-1); text-decoration: none; transition: transform var(--transition-fast); }
+.homeBtn:hover { transform: translateY(-3px) scale(1.06); }
+
+/* ── Collection Card ─────────────────────────────────────── */
+.collectionCard{display:flex;align-items:center;gap:var(--space-5);padding:var(--space-5);background:var(--glass-bg);border:1px solid;border-radius:var(--radius-xl);backdrop-filter:blur(12px);margin-bottom:var(--space-6);}
+.colLeft{flex-shrink:0;text-align:center;min-width:80px;}
+.colLabel{font-size:0.62rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin:0 0 4px;}
+.colValue{font-size:2.2rem;font-weight:800;line-height:1;margin:0;}
+.colRight{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--space-3);}
+.colTrack{height:8px;background:var(--glass-border);border-radius:var(--radius-full);overflow:hidden;}
+.colFill{height:100%;border-radius:var(--radius-full);transition:width 1s ease;}
+.colSub{font-size:0.75rem;color:var(--text-muted);margin:0;font-weight:500;}

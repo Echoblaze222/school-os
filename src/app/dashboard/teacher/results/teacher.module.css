@@ -1,0 +1,346 @@
+/* ============================================================
+   SchoolOS — Teacher Portal Shared Styles
+   src/app/dashboard/teacher/results/teacher.module.css
+   ============================================================ */
+
+.page {
+  min-height: 100dvh; background: var(--bg-base);
+  font-family: var(--font-body); padding-bottom: 60px;
+  overflow-x: hidden; position: relative;
+}
+
+.page::before {
+  content: ''; position: fixed; top: -120px; right: -80px;
+  width: 460px; height: 460px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(128,0,32,0.13) 0%, transparent 68%);
+  pointer-events: none; filter: blur(68px); z-index: 0;
+}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.layoutWrap { display: flex; }
+
+.sideNav {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .sideNav {
+    display: flex; flex-direction: column; gap: var(--space-1);
+    width: 220px; flex-shrink: 0;
+    padding: var(--space-6) var(--space-4);
+    border-right: 1px solid var(--glass-border);
+    background: var(--glass-bg); backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    min-height: 100dvh; position: sticky; top: 0; z-index: 10;
+  }
+}
+
+.sideNavLogo {
+  font-family: var(--font-display); font-size: 1.4rem; font-weight: 700;
+  color: var(--text-primary); margin-bottom: var(--space-6);
+  padding: 0 var(--space-2); letter-spacing: -0.01em;
+}
+.sideNavLogo span { color: var(--text-accent); }
+
+.sideNavItem {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3); border-radius: var(--radius-md);
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 0.85rem; font-weight: 500;
+  transition: all var(--transition-fast); border: 1px solid transparent;
+}
+.sideNavItem:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
+.sideNavItem svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sideNavItemActive {
+  background: var(--burgundy-subtle); color: var(--text-accent);
+  border-color: rgba(128,0,32,0.15);
+}
+
+.mainCol { flex: 1; min-width: 0; }
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  padding: var(--space-5) var(--space-6) var(--space-5);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4);
+}
+
+.headerLeft {}
+.greeting {
+  font-size: 0.70rem; font-weight: 700; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;
+}
+.pageTitle {
+  font-family: var(--font-display); font-size: 1.7rem; font-weight: 600;
+  color: var(--text-primary); letter-spacing: -0.02em; line-height: 1;
+}
+.pageTitle span { color: var(--text-accent); }
+
+.headerActions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+
+.themeBtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border); background: var(--glass-bg);
+  color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast);
+}
+.themeBtn:hover { color: var(--text-primary); border-color: var(--glass-border-hover); }
+.themeBtn svg { width: 16px; height: 16px; }
+
+/* ── Content ────────────────────────────────────────────── */
+.content {
+  position: relative; z-index: 1;
+  padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-5);
+  max-width: 900px;
+}
+
+/* ── Step controls ──────────────────────────────────────── */
+.stepBar {
+  display: flex; align-items: center; gap: 0;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl); overflow: hidden;
+  animation: fade-up 0.4s ease forwards;
+}
+
+.step {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: var(--space-4) var(--space-3);
+  border-right: 1px solid var(--glass-border); cursor: pointer;
+  transition: background var(--transition-fast);
+  position: relative;
+}
+.step:last-child { border-right: none; }
+.step:hover { background: var(--glass-bg-hover); }
+
+.stepNum {
+  width: 22px; height: 22px; border-radius: var(--radius-full);
+  background: var(--glass-border); display: flex; align-items: center; justify-content: center;
+  font-size: 0.70rem; font-weight: 800; color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+.stepActive .stepNum {
+  background: var(--burgundy); color: #fff;
+  box-shadow: 0 2px 8px var(--burgundy-glow);
+}
+.stepDone .stepNum {
+  background: var(--success); color: #fff;
+}
+
+.stepLabel {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+.stepActive .stepLabel { color: var(--text-primary); }
+.stepDone .stepLabel   { color: var(--success); }
+
+/* ── Card ───────────────────────────────────────────────── */
+.card {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow); backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: var(--radius-xl); overflow: hidden;
+  animation: fade-up 0.4s ease forwards; opacity: 0;
+}
+
+.cardHeader {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+}
+.cardTitle {
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 600;
+  color: var(--text-primary);
+}
+.cardSubtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+
+.cardBody {
+  padding: var(--space-5) var(--space-6);
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+
+/* ── Class selector grid ────────────────────────────────── */
+.classGrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.classOption {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg); border: 1px solid var(--glass-border);
+  background: var(--glass-bg); cursor: pointer;
+  transition: all var(--transition-fast); text-align: left;
+}
+.classOption:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: translateY(-1px); }
+.classOptionSelected {
+  border-color: rgba(128,0,32,0.45); background: rgba(128,0,32,0.06);
+  box-shadow: 0 0 0 1px rgba(128,0,32,0.2);
+}
+
+.classOptionSubject {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-accent); margin-bottom: 3px;
+}
+.classOptionName {
+  font-size: 0.92rem; font-weight: 700; color: var(--text-primary);
+}
+
+/* ── Term / Type row ────────────────────────────────────── */
+.segRow {
+  display: flex; gap: var(--space-3); flex-wrap: wrap;
+}
+
+.segGroup { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; min-width: 160px; }
+.segLabel {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+.segButtons { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.segBtn {
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border); background: var(--glass-bg);
+  font-family: var(--font-body); font-size: 0.76rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-muted); cursor: pointer; transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.segBtn:hover { color: var(--text-primary); border-color: var(--glass-border-hover); }
+.segBtnActive {
+  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  border-color: transparent; color: #fff;
+  box-shadow: 0 3px 12px var(--burgundy-glow);
+}
+
+/* ── Max score field ────────────────────────────────────── */
+.fieldRow { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
+.fieldGroup { display: flex; flex-direction: column; gap: var(--space-2); }
+.fieldLabel {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.fieldInput {
+  background: var(--input-bg); border: 1px solid var(--input-border);
+  border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body); font-size: 0.9rem; color: var(--input-text);
+  outline: none; width: 120px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.fieldInput:focus { border-color: var(--input-border-focus); box-shadow: 0 0 0 3px var(--burgundy-subtle); }
+.fieldInput::placeholder { color: var(--input-placeholder); }
+
+/* ── Score entry table ──────────────────────────────────── */
+.scoreTableWrap {
+  overflow-x: auto; border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+}
+
+.scoreTable { width: 100%; border-collapse: collapse; min-width: 480px; }
+
+.scoreTable thead th {
+  padding: var(--space-3) var(--space-5); text-align: left;
+  font-size: 0.64rem; font-weight: 700; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--text-muted);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg); white-space: nowrap;
+}
+
+.scoreTable tbody tr { transition: background var(--transition-fast); }
+.scoreTable tbody tr:hover { background: var(--glass-bg-hover); }
+.scoreTable tbody tr:last-child td { border-bottom: none; }
+
+.scoreTable tbody td {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+  vertical-align: middle;
+}
+
+.studentAvatar {
+  width: 32px; height: 32px; border-radius: var(--radius-full);
+  background: var(--burgundy-subtle); border: 1px solid rgba(128,0,32,0.18);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.66rem; font-weight: 700; color: var(--text-accent);
+  margin-right: var(--space-3); flex-shrink: 0;
+}
+.studentName { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+.studentNum  { font-size: 0.68rem; color: var(--text-muted); margin-top: 1px; }
+
+.scoreInput {
+  width: 80px; background: var(--input-bg); border: 1px solid var(--input-border);
+  border-radius: var(--radius-md); padding: var(--space-2) var(--space-3);
+  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+  color: var(--input-text); text-align: center; outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.scoreInput:focus { border-color: var(--input-border-focus); box-shadow: 0 0 0 3px var(--burgundy-subtle); }
+.scoreInput::placeholder { color: var(--input-placeholder); font-size: 0.75rem; font-weight: 400; }
+
+.gradeBadge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: var(--radius-md);
+  font-size: 0.80rem; font-weight: 800;
+}
+.gradeA { background: var(--success-bg); color: var(--success); border: 1px solid rgba(45,139,85,0.25); }
+.gradeB { background: var(--info-bg);    color: var(--info);    border: 1px solid rgba(36,113,163,0.25); }
+.gradeC { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(194,123,42,0.25); }
+.gradeD { background: var(--error-bg);   color: var(--error);   border: 1px solid rgba(192,57,43,0.25); }
+.gradeEmpty { background: var(--glass-bg); color: var(--text-muted); border: 1px solid var(--glass-border); }
+
+/* ── Action buttons ─────────────────────────────────────── */
+.actionRow {
+  display: flex; gap: var(--space-3); align-items: center;
+  padding: var(--space-5) var(--space-6); border-top: 1px solid var(--glass-border);
+}
+
+.primaryBtn {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-6); border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  color: #fff; font-family: var(--font-body); font-size: 0.84rem;
+  font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  border: none; cursor: pointer; transition: all var(--transition-fast);
+  box-shadow: 0 4px 16px var(--burgundy-glow);
+}
+.primaryBtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 24px var(--burgundy-glow); }
+.primaryBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.primaryBtn svg { width: 16px; height: 16px; }
+
+.secondaryBtn {
+  padding: var(--space-3) var(--space-5); border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border); background: var(--glass-bg);
+  color: var(--text-secondary); font-family: var(--font-body);
+  font-size: 0.84rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; cursor: pointer; transition: all var(--transition-fast);
+}
+.secondaryBtn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text-primary); }
+
+.submitCount {
+  font-size: 0.78rem; color: var(--text-muted); margin-left: auto;
+}
+
+/* ── Status messages ────────────────────────────────────── */
+.statusSuccess {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  background: var(--success-bg); border: 1px solid rgba(45,139,85,0.25);
+  color: var(--success); font-size: 0.82rem; font-weight: 600;
+  animation: fade-up 0.3s ease forwards;
+}
+.statusError {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  background: var(--error-bg); border: 1px solid rgba(192,57,43,0.25);
+  color: var(--error); font-size: 0.82rem; font-weight: 600;
+  animation: fade-up 0.3s ease forwards;
+}
+.statusMsg svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ── Empty state ────────────────────────────────────────── */
+.emptyState {
+  text-align: center; padding: var(--space-12) var(--space-6);
+  color: var(--text-muted); font-size: 0.84rem;
+}

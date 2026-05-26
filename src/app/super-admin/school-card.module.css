@@ -1,0 +1,43 @@
+/* school-card.module.css */
+.card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:var(--space-5);transition:all var(--transition-normal);backdrop-filter:blur(12px);}
+.card:hover{border-color:var(--glass-border-hover);box-shadow:var(--glass-shadow-hover);}
+.status_trial{border-left:3px solid #F59E0B;}
+.status_active{border-left:3px solid #10B981;}
+.status_expired{border-left:3px solid #EF4444;}
+.status_suspended{border-left:3px solid #6B7280;}
+.status_locked{border-left:3px solid #EF4444;opacity:0.6;}
+.cardHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);}
+.schoolInfo{display:flex;align-items:center;gap:var(--space-3);}
+.schoolAvatar{width:38px;height:38px;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--brand),var(--brand-dark));display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;}
+.schoolName{font-size:0.9rem;font-weight:700;color:var(--text-primary);margin:0 0 2px;}
+.schoolSlug{font-size:0.65rem;color:var(--text-muted);margin:0;}
+.statusBadge{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-full);font-size:0.68rem;font-weight:700;letter-spacing:0.04em;border:1px solid;}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-3);}
+.metric{text-align:center;}
+.metricVal{display:block;font-size:1.1rem;font-weight:800;color:var(--text-primary);}
+.metricLbl{font-size:0.6rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;}
+.planLabel{font-size:0.72rem;color:var(--text-muted);margin:0 0 var(--space-3);}
+.progressTrack{height:4px;background:var(--glass-border);border-radius:var(--radius-full);overflow:hidden;margin-bottom:var(--space-4);}
+.progressFill{height:100%;background:linear-gradient(90deg,#F59E0B,#EF4444);border-radius:var(--radius-full);transition:width 0.5s ease;}
+.actions{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap;}
+.actionBtn{flex:1;padding:8px 14px;border:none;border-radius:var(--radius-full);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all var(--transition-fast);min-width:120px;text-align:center;}
+.actionBtn:hover{opacity:0.88;transform:translateY(-1px);}
+.extendBtn{padding:7px 12px;background:var(--gold-subtle);border:1px solid var(--gold-border);border-radius:var(--radius-full);color:var(--gold);font-size:0.72rem;font-weight:700;cursor:pointer;transition:all var(--transition-fast);white-space:nowrap;}
+.extendBtn:hover{background:var(--gold);color:#fff;}
+.expandBtn{width:32px;height:32px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-md);cursor:pointer;font-size:0.7rem;color:var(--text-muted);transition:all var(--transition-fast);display:flex;align-items:center;justify-content:center;}
+.expandBtn:hover{background:var(--glass-bg-hover);}
+.expanded{margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--glass-border);}
+.notes{font-size:0.78rem;color:var(--text-secondary);margin:0 0 var(--space-3);line-height:1.5;}
+.expandActions{display:flex;gap:var(--space-3);}
+.lockBtn{font-size:0.78rem;font-weight:600;background:none;border:none;cursor:pointer;padding:0;transition:color var(--transition-fast);}
+.viewBtn{font-size:0.78rem;font-weight:600;color:var(--brand-light);text-decoration:none;transition:color var(--transition-fast);}
+.viewBtn:hover{color:var(--brand);}
+.payOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:var(--z-modal);display:flex;align-items:center;justify-content:center;padding:var(--space-5);}
+.payModal{background:var(--bg-elevated);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:var(--space-7);width:100%;max-width:400px;display:flex;flex-direction:column;gap:var(--space-4);}
+.payModal h4{font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;}
+.label{font-size:0.78rem;font-weight:600;color:var(--text-secondary);}
+.input{width:100%;height:44px;padding:0 var(--space-4);background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.875rem;outline:none;}
+.input:focus{border-color:var(--brand);}
+.confirmBtn{width:100%;height:44px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;border-radius:var(--radius-md);font-size:0.875rem;font-weight:700;cursor:pointer;transition:all var(--transition-fast);}
+.confirmBtn:disabled{opacity:0.5;cursor:not-allowed;}
+.cancelPayBtn{background:none;border:none;color:var(--text-muted);font-size:0.8rem;font-weight:600;cursor:pointer;text-align:center;padding:var(--space-2);}
