@@ -245,6 +245,5 @@ export default function RoleNav({ userId, profile, school, role, schoolColor='#7
         })}
       </nav>
     </>
-  </>
   )
 }

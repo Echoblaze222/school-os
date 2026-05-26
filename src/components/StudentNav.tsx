@@ -181,6 +181,5 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
         })}
       </nav>
     </>
-  </>
   )
 }
