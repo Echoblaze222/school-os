@@ -174,7 +174,7 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
               className={`${styles.navPill} ${active ? styles.navPillActive : ''}`}
               style={active ? { color: schoolColor } as any : undefined}
             >
-              <item.Icon! size={20} color={active ? schoolColor : undefined} />
+              <item.Icon size={20} color={active ? schoolColor : undefined} />
               <span style={active ? { color: schoolColor } : undefined}>{item.label}</span>
             </Link>
           )
