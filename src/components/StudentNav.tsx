@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -89,7 +90,7 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'
 
   return (
-    <>
+    <React.Fragment>
       {/* ── DESKTOP SIDEBAR ──────────────────────────────── */}
       <aside className={styles.sidebar}>
 
@@ -181,5 +182,6 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
         })}
       </nav>
     </>
+  </React.Fragment>
   )
 }

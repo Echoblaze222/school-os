@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
@@ -177,7 +178,7 @@ export default function RoleNav({ userId, profile, school, role, schoolColor='#7
   }
 
   return (
-    <>
+    <React.Fragment>
       {/* Desktop sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.header}>
@@ -245,5 +246,6 @@ export default function RoleNav({ userId, profile, school, role, schoolColor='#7
         })}
       </nav>
     </>
+  </React.Fragment>
   )
 }
