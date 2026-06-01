@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { SchoolIcon, PlusIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons'
+import { SchoolIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './school-setup-modal.module.css'
 
 interface Props {
@@ -17,7 +16,6 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   const [setupType,   setSetupType]   = useState<SetupType>('trial')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
-  const supabase = createClient()
 
   const [form, setForm] = useState({
     schoolName:      '',
@@ -42,82 +40,28 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   async function handleSubmit() {
     setLoading(true); setError('')
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      // 1. Create school
-      const slug = form.schoolName.toLowerCase()
-        .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').trim()
-      const trialStart = new Date()
-      const trialEnd   = new Date(trialStart.getTime() + form.trialDays * 86400000)
-
-      const { data: school, error: schoolErr } = await supabase
-        .from('schools')
-        .insert({
-          name:            form.schoolName,
-          address:         form.address,
-          phone:           form.phone,
-          email:           form.email,
-          primary_color:   form.primaryColor,
-          slug,
-          setup_status:    setupType === 'trial' ? 'trial' : 'active',
-          trial_started_at: setupType === 'trial' ? trialStart.toISOString() : null,
-          trial_ends_at:   setupType === 'trial' ? trialEnd.toISOString() : null,
-          setup_paid_at:   setupType === 'permanent' ? new Date().toISOString() : null,
-          free_month_starts: setupType === 'permanent' ? new Date().toISOString() : null,
-          free_month_ends:   setupType === 'permanent'
-            ? new Date(Date.now() + 30 * 86400000).toISOString() : null,
-          subscription_plan: setupType === 'permanent' ? 'free_month' : null,
-          created_by_admin: user.id,
+      const res = await fetch('/api/super-admin/create-school', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schoolName:       form.schoolName,
+          address:          form.address,
+          phone:            form.phone,
+          email:            form.email,
+          primaryColor:     form.primaryColor,
+          principalName:    form.principalName,
+          principalEmail:   form.principalEmail,
+          principalPhone:   form.principalPhone,
           notes:            form.notes,
-        })
-        .select('id, slug')
-        .single()
-
-      if (schoolErr) throw schoolErr
-
-      // 2. Create principal profile
-      const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-      const defaultCode  = `PRIN-${school.id.slice(0,6).toUpperCase()}`
-
-      const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
-        email:    form.principalEmail,
-        password: tempPassword,
-        email_confirm: true,
-      })
-      if (authErr) throw authErr
-
-      await supabase.from('profiles').insert({
-        id:           authUser.user.id,
-        full_name:    form.principalName,
-        email:        form.principalEmail,
-        phone:        form.principalPhone,
-        role:         'principal',
-        school_id:    school.id,
-        default_code: defaultCode,
-        onboarding_stage: 2,
+          trialDays:        form.trialDays,
+          setupType,
+          paymentAmount:    form.paymentAmount,
+          paymentRef:       form.paymentRef,
+        }),
       })
 
-      // 3. Log payment if permanent
-      if (setupType === 'permanent' && form.paymentAmount > 0) {
-        await supabase.from('school_payments').insert({
-          school_id:    school.id,
-          payment_type: 'setup',
-          amount_ngn:   form.paymentAmount,
-          payment_ref:  form.paymentRef,
-          confirmed_by: user.id,
-        })
-      }
-
-      // 4. Send setup info to principal (store in notifications)
-      await supabase.from('notifications').insert({
-        user_id: authUser.user.id,
-        title:   'Welcome to SchoolOS!',
-        body:    setupType === 'trial'
-          ? `Your school "${form.schoolName}" has been set up with a ${form.trialDays}-day free trial. Login: ${form.principalEmail} | Code: ${defaultCode} | Temp Password: ${tempPassword}`
-          : `Your school "${form.schoolName}" is now active with 1 month free access. Login: ${form.principalEmail} | Code: ${defaultCode} | Temp Password: ${tempPassword}`,
-        type: 'system',
-      })
+      const json = await res.json()
+      if (!json.ok) throw new Error(json.error ?? 'Server error')
 
       onSuccess()
     } catch (err: any) {

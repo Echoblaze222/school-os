@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         phone:            principal.phone,
         school_id:        newSchool.id,
         default_code:     defaultCode,
-        onboarding_stage: 'stage_1_pending',
+        onboarding_stage: 2,
         is_active:        true,
       })
 

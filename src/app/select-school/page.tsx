@@ -57,7 +57,7 @@ const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
         .from('schools')
         .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active')
         .ilike('name', `%${value.trim()}%`)
-        .eq('status', 'active')
+        .or('status.eq.active,setup_status.eq.active,setup_status.eq.trial')
         .limit(8)
 
       setResults(data ?? [])

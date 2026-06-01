@@ -15,5 +15,5 @@ export default async function RootPage() {
     }
     redirect(routes[profile?.role ?? ''] ?? '/login')
   }
-  redirect('/login')
+  redirect('/select-school')
 }
