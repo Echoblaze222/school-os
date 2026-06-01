@@ -13,7 +13,7 @@ export default async function RootPage() {
       secretary: '/dashboard/secretary', parent: '/dashboard/parent',
       admin: '/admin',
     }
-    redirect(routes[profile?.role ?? ''] ?? '/login')
+    redirect('/select-school')
   }
-  redirect('/select-school')
+  redirect(routes[profile?.role ?? ''] ?? '/login')
 }
