@@ -1,0 +1,76 @@
+/* profile.module.css */
+
+.page { min-height: 100vh; background: var(--color-bg); color: var(--color-text-primary); padding-bottom: var(--space-8); transition: background var(--transition-slow), color var(--transition-slow); }
+
+.header { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; height: var(--header-height); padding: 0 var(--space-4); background: var(--color-bg-nav); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--color-border); }
+.headerTitle { font-size: var(--font-size-lg); font-weight: 700; letter-spacing: -0.02em; }
+.backBtn, .themeBtn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-bg-input); border: 1px solid var(--color-border); color: var(--color-text-secondary); font-size: 16px; transition: all var(--transition-fast); }
+.backBtn:hover, .themeBtn:hover { color: var(--color-text-primary); }
+
+.main { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); max-width: 560px; margin: 0 auto; }
+
+/* Profile card */
+.profileCard { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; }
+
+.avatarWrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+
+.avatar { width: 100px; height: 100px; border-radius: var(--radius-full); overflow: hidden; background: var(--color-brand-dim); border: 3px solid var(--color-brand); display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; }
+.avatarImg { width: 100%; height: 100%; object-fit: cover; }
+.avatarInitials { font-size: var(--font-size-2xl); font-weight: 900; color: var(--color-brand); }
+.avatarOverlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-full); }
+
+.changePhotoBtn { height: 32px; padding: 0 var(--space-3); background: var(--color-bg-input); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-secondary); transition: all var(--transition-fast); }
+.changePhotoBtn:hover:not(:disabled) { color: var(--color-brand); border-color: var(--color-brand); }
+.changePhotoBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.profileName { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.02em; }
+.profileBadges { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; }
+.roleBadge { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-brand); background: var(--color-brand-dim); padding: 4px var(--space-3); border-radius: var(--radius-full); }
+.staffBadge { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-muted); background: var(--color-bg-input); border: 1px solid var(--color-border); padding: 4px var(--space-3); border-radius: var(--radius-full); }
+.schoolName { font-size: var(--font-size-sm); color: var(--color-text-secondary); font-weight: 500; }
+
+/* Info cards */
+.infoCard { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-4); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0; }
+.infoRow { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border); }
+.infoRow:last-child { border-bottom: none; }
+.infoLabel { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; padding-top: 2px; }
+.infoValue { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-primary); text-align: right; }
+
+.pillWrap { display: flex; flex-wrap: wrap; gap: var(--space-1); justify-content: flex-end; }
+.subjectPill { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-brand); background: var(--color-brand-dim); padding: 3px var(--space-2); border-radius: var(--radius-full); }
+.classPill   { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-info); background: var(--color-info-bg); padding: 3px var(--space-2); border-radius: var(--radius-full); }
+
+.bioText { font-size: var(--font-size-sm); color: var(--color-text-secondary); line-height: 1.6; margin-top: var(--space-2); }
+
+/* Action buttons */
+.actions { display: flex; flex-direction: column; gap: var(--space-3); }
+.editProfileBtn { width: 100%; height: 48px; background: var(--color-brand); color: #fff; border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 700; transition: opacity var(--transition-fast); }
+.editProfileBtn:hover { opacity: 0.88; }
+.changePasswordBtn { width: 100%; height: 44px; background: var(--color-bg-input); border: 1px solid var(--color-border); color: var(--color-text-secondary); border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 700; transition: all var(--transition-fast); }
+.changePasswordBtn:hover { color: var(--color-text-primary); border-color: var(--color-brand); }
+
+/* Forms */
+.formCard { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: var(--space-4); }
+.formTitle { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-text-primary); }
+.pwNote { font-size: var(--font-size-sm); color: var(--color-text-muted); }
+
+.field { display: flex; flex-direction: column; gap: var(--space-2); }
+.label { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.input { height: 42px; padding: 0 var(--space-3); background: var(--color-bg-input); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--color-text-primary); outline: none; width: 100%; transition: border-color var(--transition-fast); }
+.input:focus { border-color: var(--color-brand); box-shadow: 0 0 0 3px var(--color-brand-dim); }
+.textarea { padding: var(--space-3); background: var(--color-bg-input); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--color-text-primary); outline: none; width: 100%; resize: vertical; font-family: inherit; line-height: 1.5; transition: border-color var(--transition-fast); }
+.textarea:focus { border-color: var(--color-brand); box-shadow: 0 0 0 3px var(--color-brand-dim); }
+
+.errorMsg   { font-size: var(--font-size-sm); color: var(--color-error); background: var(--color-error-bg); border: 1px solid var(--color-error); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-weight: 600; }
+.successMsg { font-size: var(--font-size-sm); color: var(--color-success); background: var(--color-success-bg); border: 1px solid var(--color-success); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-weight: 700; }
+
+.formActions { display: flex; gap: var(--space-3); }
+.cancelBtn { flex: 1; height: 44px; background: var(--color-bg-input); border: 1px solid var(--color-border); border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 700; color: var(--color-text-secondary); transition: all var(--transition-fast); }
+.cancelBtn:hover { color: var(--color-text-primary); }
+.saveBtn   { flex: 2; height: 44px; background: var(--color-brand); color: #fff; border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 700; transition: opacity var(--transition-fast); }
+.saveBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.saveBtn:not(:disabled):hover { opacity: 0.88; }
+
+/* Spinner */
+.spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

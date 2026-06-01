@@ -1,0 +1,145 @@
+/* RoleNav.module.css — identical nav look across ALL roles */
+
+/* ── Desktop Sidebar ─────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100dvh;
+  display: none;          /* hidden on mobile */
+  flex-direction: column;
+  z-index: var(--z-nav);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: var(--space-4);
+}
+@media (min-width: 1024px) { .sidebar { display: flex; } }
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  flex-shrink: 0;
+}
+.badge {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+  font-weight: 800; font-size: 1rem; color: #fff;
+}
+.logo     { width: 100%; height: 100%; object-fit: cover; }
+.schoolName { font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.roleName   { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0; }
+
+.divider { height: 1px; background: var(--glass-border); margin: var(--space-1) var(--space-4); flex-shrink: 0; }
+
+.nav { flex: 1; overflow-y: auto; padding: var(--space-2) var(--space-3); display: flex; flex-direction: column; gap: var(--space-4); }
+
+.section { display: flex; flex-direction: column; gap: 2px; }
+.sectionLabel {
+  font-size: 0.58rem; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+.navItem:hover { background: var(--glass-bg); color: var(--text-primary); }
+
+/* Active state — same pill style for every role */
+.active {
+  background: var(--brand-subtle) !important;
+  border: 1px solid var(--brand-border);
+  font-weight: 600;
+}
+.activePip {
+  position: absolute;
+  left: -1px; top: 22%; height: 56%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+
+.footer { padding: 0 var(--space-3); display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.footerBtn {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem; font-weight: 500;
+  color: var(--text-muted);
+  background: none; border: none; cursor: pointer;
+  width: 100%; text-align: left;
+  transition: all var(--transition-fast);
+}
+.footerBtn:hover { background: var(--glass-bg); color: var(--text-primary); }
+.logoutBtn       { color: var(--danger) !important; }
+.logoutBtn:hover { background: var(--danger-subtle) !important; }
+
+/* ── Mobile Bottom Nav ───────────────────────────────────── */
+.bottomNav {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%; transform: translateX(-50%);
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--nav-bg);
+  border: 1px solid var(--nav-border);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  width: min(420px, calc(100vw - 32px));
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+}
+@media (min-width: 1024px) { .bottomNav { display: none; } }
+
+.pill {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  color: var(--nav-icon);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+.pill span {
+  font-size: 0.52rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--nav-label);
+  transition: color var(--transition-fast);
+}
+.pill:hover { transform: translateY(-2px); }
+.pillActive       { color: var(--brand) !important; }
+.pillActive span  { color: var(--brand) !important; }
+
+.homeBtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  margin: 0 var(--space-1);
+  text-decoration: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.homeBtn:hover {
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 8px 28px rgba(124,58,237,0.5);
+}

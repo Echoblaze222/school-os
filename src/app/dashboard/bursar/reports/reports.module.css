@@ -1,0 +1,712 @@
+/* ============================================================
+   BURSAR PAGES SHARED CSS
+   Copy and rename for each:
+   - payments.module.css
+   - invoices.module.css
+   - reports.module.css
+   ============================================================ */
+
+.page {
+  min-height: 100dvh;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-card);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.headerRight {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.exportBtn {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.exportBtn:hover {
+  background: var(--burgundy-subtle);
+  color: var(--text-accent);
+}
+
+/* Summary bar */
+.summaryBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.summaryEmoji { font-size: 1.3rem; }
+
+.summaryValue {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.summaryLabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.newPaymentBtn {
+  font-size: 0.78rem !important;
+  padding: var(--space-2) var(--space-4) !important;
+  flex-shrink: 0;
+}
+
+/* Filters */
+.filters {
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-full);
+}
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.searchInput::placeholder { color: var(--input-placeholder); }
+
+.filterRow {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-secondary);
+  cursor: pointer;
+  outline: none;
+  flex: 1;
+  min-width: 120px;
+}
+
+.clearBtn {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--error-bg);
+  border: 1px solid rgba(192,57,43,0.2);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  color: var(--error);
+  cursor: pointer;
+}
+
+/* Payments list */
+.paymentsList {
+  flex: 1;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.paymentCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.cardLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex: 1;
+}
+
+.methodIcon { font-size: 1.5rem; flex-shrink: 0; }
+
+.paymentInfo {}
+
+.studentName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admNo, .receiptNo {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.cardRight {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.amount {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.payDate, .reference, .receivedBy {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Invoice list */
+.invoiceList {
+  flex: 1;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.invoiceCard {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.invoiceTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.studentName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.studentMeta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.feeDesc {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.feeTerm {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.invoiceAmounts {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.amountCol { flex: 1; }
+
+.amountLabel {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.amountVal {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+.paidAmt { color: var(--success); }
+.balanceAmt { color: var(--error); }
+
+.recordBtn {
+  width: 100%;
+  font-size: 0.82rem !important;
+}
+
+/* Stats */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+.statCard {
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.statEmoji { font-size: 1.3rem; }
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.balanceCard {
+  margin: var(--space-4) var(--space-5) 0;
+  padding: var(--space-5);
+  text-align: center;
+}
+
+.balanceLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.balanceAmount {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--error);
+}
+
+/* Reports */
+.tabs {
+  display: flex;
+  padding: var(--space-4) var(--space-5) 0;
+  border-bottom: 1px solid var(--glass-border);
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  flex: 1;
+  padding: var(--space-3) var(--space-2);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.tabActive {
+  color: var(--text-accent);
+  border-bottom-color: var(--burgundy);
+}
+
+.content {
+  flex: 1;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Rate card */
+.rateCard { padding: var(--space-6); }
+
+.rateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.rateLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rateValue {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.rateCircle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.rateCircle::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  background: var(--bg-elevated);
+  border-radius: 50%;
+}
+
+.rateCircle span {
+  position: relative;
+  z-index: 1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background: var(--glass-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--burgundy), var(--burgundy-light));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+.rateStats {
+  display: flex;
+  justify-content: space-between;
+}
+
+.statVal {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.green { color: var(--success) !important; }
+.red   { color: var(--error) !important; }
+
+/* Status grid */
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.statusCard {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+  font-size: 1.3rem;
+}
+
+.statusCount {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.statusLabel {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Term cards */
+.termCard {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.termHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.termName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.termAmounts {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Class cards */
+.classCard {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.classHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.classIcon {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.className {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.classAmounts {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Method cards */
+.methodCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.methodEmoji { font-size: 1.5rem; flex-shrink: 0; }
+.methodInfo  { flex: 1; }
+
+.methodName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.methodCount {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.methodTotal {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+/* Trend */
+.trendCard {
+  padding: var(--space-5);
+}
+
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  height: 140px;
+  padding-bottom: var(--space-4);
+}
+
+.barItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--burgundy), var(--burgundy-light));
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  min-height: 4px;
+  transition: height var(--transition-slow);
+}
+
+.barLabel {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.noData {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: var(--space-8);
+}
+
+.trendSummary {
+  padding: var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trendBest, .trendTotal {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+}
+
+.trendBest strong { color: var(--text-primary); }
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  gap: var(--space-3);
+}
+
+.emptyEmoji { font-size: 3rem; }
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.emptyHint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

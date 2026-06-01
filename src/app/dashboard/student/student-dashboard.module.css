@@ -1,0 +1,66 @@
+/* student-dashboard.module.css */
+
+.page  { display: flex; min-height: 100dvh; background: var(--bg-base); }
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+@media (min-width: 1024px) { .content { margin-left: var(--sidebar-width); } }
+
+.main {
+  padding: var(--space-6) var(--space-5) 0;
+  max-width: 720px; margin: 0 auto; width: 100%;
+  animation: fade-up 0.4s ease forwards;
+}
+@media (min-width: 1024px) { .main { padding: var(--space-8) var(--space-8) 0; max-width: 900px; } }
+
+/* Greeting */
+.greeting    { margin-bottom: var(--space-6); }
+.greetLabel  { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 2px; font-weight: 500; }
+.greetName   { font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 800; color: var(--text-primary); letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 8px; }
+.streakBadge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 600; color: #F59E0B; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-full); padding: 4px 12px; }
+
+/* Stats */
+.statsGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-3); margin-bottom: var(--space-4); }
+@media (max-width: 480px) { .statsGrid { grid-template-columns: repeat(2,1fr); } }
+.statCard  { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); backdrop-filter: blur(12px); transition: all var(--transition-normal); }
+.statCard:hover { background: var(--glass-bg-hover); transform: translateY(-2px); }
+.statIcon  { width: 34px; height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.statVal   { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0 0 1px; line-height: 1; }
+.statLbl   { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+
+/* GPA card */
+.gpaCard   { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-5); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); backdrop-filter: blur(16px); margin-bottom: var(--space-6); transition: all var(--transition-normal); }
+.gpaCard:hover { background: var(--glass-bg-hover); }
+.gpaLeft   { flex-shrink: 0; text-align: center; min-width: 64px; }
+.gpaLabel  { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 2px; }
+.gpaValue  { font-size: 2.2rem; font-weight: 800; color: var(--text-primary); line-height: 1; margin: 0; letter-spacing: -0.02em; }
+.gpaSub    { font-size: 0.65rem; color: var(--text-muted); margin: 2px 0 0; }
+.gpaRight  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.gpaTrack  { height: 6px; background: var(--glass-border); border-radius: var(--radius-full); overflow: hidden; }
+.gpaFill   { height: 100%; border-radius: var(--radius-full); transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+.liveRow   { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); }
+.liveDot   { width: 7px; height: 7px; border-radius: 50%; background: #EF4444; flex-shrink: 0; animation: pulse 1.5s ease infinite; }
+.noLiveDot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+/* Section label */
+.sectionLabel { font-size: 0.63rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-3); }
+
+/* Module grid */
+.moduleGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-3); margin-bottom: var(--space-6); }
+@media (max-width: 380px) { .moduleGrid { grid-template-columns: repeat(3,1fr); } }
+@media (min-width: 768px) { .moduleGrid { grid-template-columns: repeat(6,1fr); } }
+
+.moduleCard { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-2); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); text-decoration: none; transition: all var(--transition-normal); position: relative; overflow: hidden; backdrop-filter: blur(10px); }
+.moduleCard:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: translateY(-3px); box-shadow: var(--glass-shadow-hover); }
+.modActive { border-color: var(--brand) !important; background: var(--brand-subtle) !important; }
+.modIcon   { width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.modLabel  { font-size: 0.6rem; font-weight: 600; color: var(--text-secondary); text-align: center; line-height: 1.3; }
+.livePill  { position: absolute; top: 4px; right: 4px; font-size: 0.48rem; font-weight: 800; letter-spacing: 0.05em; background: #EF4444; color: #fff; border-radius: var(--radius-full); padding: 2px 5px; }
+.countPill { position: absolute; top: 4px; right: 4px; font-size: 0.55rem; font-weight: 700; background: #3B82F6; color: #fff; border-radius: var(--radius-full); min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+
+/* Quick links */
+.quickGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-6); }
+.quickCard { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); text-decoration: none; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); transition: all var(--transition-normal); backdrop-filter: blur(10px); }
+.quickCard:hover { background: var(--glass-bg-hover); border-color: var(--brand-border); color: var(--text-primary); transform: translateY(-2px); }
+
+.mobileSpace { height: 110px; }
+@media (min-width: 1024px) { .mobileSpace { height: var(--space-10); } }

@@ -1,0 +1,113 @@
+/* ============================================================
+   SchoolOS — School Settings Page
+   settings.module.css
+   ============================================================ */
+.page { min-height: 100dvh; background: var(--bg-base); font-family: var(--font-body); padding-bottom: 80px; overflow-x: hidden; position: relative; }
+.page::before { content: ''; position: fixed; top: -100px; right: -60px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(128,0,32,0.13) 0%, transparent 70%); pointer-events: none; filter: blur(65px); z-index: 0; }
+
+/* ── Header ─────────────────────────────────────────────── */
+.header { position: sticky; top: 0; z-index: 50; padding: var(--space-5) var(--space-6) var(--space-5); background: var(--bg-overlay); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.headerLeft { display: flex; flex-direction: column; gap: 3px; }
+.backBtn { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: 0.82rem; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--glass-border); background: var(--glass-bg); transition: all var(--transition-fast); margin-bottom: var(--space-2); width: fit-content; }
+.backBtn:hover { color: var(--text-primary); border-color: var(--glass-border-hover); transform: translateX(-2px); }
+.backBtn svg { width: 14px; height: 14px; }
+.pageTitle { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1; }
+.pageTitle span { color: var(--text-accent); }
+.headerRight { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+.themeBtn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-full); border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); }
+.themeBtn:hover { color: var(--text-primary); }
+.themeBtn svg { width: 16px; height: 16px; }
+
+/* ── Layout: 2-col on wide ──────────────────────────────── */
+.body { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: var(--space-5); padding: var(--space-6); max-width: 1100px; }
+@media (min-width: 900px) { .body { grid-template-columns: 1fr 320px; align-items: flex-start; } }
+
+/* ── Settings sections ──────────────────────────────────── */
+.sections { display: flex; flex-direction: column; gap: var(--space-5); }
+
+.section { background: var(--glass-bg); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-radius: var(--radius-xl); overflow: hidden; animation: fade-up 0.4s ease forwards; opacity: 0; }
+.section:nth-child(1) { animation-delay: 0ms; }
+.section:nth-child(2) { animation-delay: 80ms; }
+.section:nth-child(3) { animation-delay: 160ms; }
+.section:nth-child(4) { animation-delay: 240ms; }
+
+.sectionHeader { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: var(--space-3); }
+.sectionIcon { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--burgundy-subtle); display: flex; align-items: center; justify-content: center; color: var(--text-accent); flex-shrink: 0; }
+.sectionIcon svg { width: 17px; height: 17px; }
+.sectionTitle { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
+.sectionSubtitle { font-size: 0.70rem; color: var(--text-muted); margin-top: 2px; }
+.sectionBody { padding: var(--space-5) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* ── Form fields ────────────────────────────────────────── */
+.fieldGroup { display: flex; flex-direction: column; gap: var(--space-2); }
+.fieldRow { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.fieldLabel { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.fieldNote { font-size: 0.68rem; color: var(--text-muted); margin-top: 3px; }
+.fieldInput { width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-family: var(--font-body); font-size: 0.88rem; color: var(--input-text); outline: none; transition: border-color var(--transition-fast), box-shadow var(--transition-fast); }
+.fieldInput:focus { border-color: var(--input-border-focus); box-shadow: 0 0 0 3px var(--burgundy-subtle); }
+.fieldSelect { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6065' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+/* ── Color section ──────────────────────────────────────── */
+.colorRow { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+.colorPickerWrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.colorCircle { width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--glass-border); box-shadow: var(--glass-shadow); transition: all var(--transition-normal); cursor: pointer; position: relative; overflow: hidden; }
+.colorCircle:hover { transform: scale(1.06); }
+.colorInput { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.hexCode { font-family: 'Courier New', monospace; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.06em; }
+
+.presetsLabel { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-2); }
+.presets { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.presetDot { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all var(--transition-fast); flex-shrink: 0; }
+.presetDot:hover { transform: scale(1.15); }
+.presetDotActive { border-color: var(--text-primary); box-shadow: 0 0 0 3px rgba(255,255,255,0.2); }
+
+/* ── Logo / photo upload ────────────────────────────────── */
+.uploadGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.uploadBox { border: 2px dashed var(--glass-border); border-radius: var(--radius-xl); padding: var(--space-5); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); cursor: pointer; transition: all var(--transition-fast); position: relative; overflow: hidden; }
+.uploadBox:hover { border-color: var(--glass-border-hover); background: var(--glass-bg-hover); }
+.uploadPreview { width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-md); }
+.uploadLogo { width: 60px; height: 60px; object-fit: contain; border-radius: var(--radius-md); }
+.uploadIcon { width: 36px; height: 36px; border-radius: var(--radius-lg); background: var(--glass-bg); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+.uploadIcon svg { width: 18px; height: 18px; }
+.uploadLabel { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-align: center; }
+.uploadSub { font-size: 0.65rem; color: var(--text-muted); text-align: center; }
+.uploadInput { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.uploadProgress { font-size: 0.72rem; color: var(--text-accent); font-weight: 600; }
+
+/* ── Font selector ──────────────────────────────────────── */
+.fontOptions { display: flex; flex-direction: column; gap: var(--space-2); }
+.fontOption { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); background: var(--glass-bg); cursor: pointer; transition: all var(--transition-fast); }
+.fontOption:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); }
+.fontOptionSelected { border-color: rgba(128,0,32,0.4); background: rgba(128,0,32,0.05); }
+.fontName { font-size: 0.80rem; font-weight: 600; color: var(--text-primary); }
+.fontPreview { font-size: 1.05rem; color: var(--text-secondary); }
+.fontCheck { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--glass-border); display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); }
+.fontCheckSelected { background: var(--burgundy); border-color: var(--burgundy); color: #fff; }
+.fontCheckSelected svg { width: 10px; height: 10px; }
+
+/* ── Preview panel ──────────────────────────────────────── */
+.previewPanel { position: sticky; top: 88px; background: var(--glass-bg); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: var(--radius-xl); overflow: hidden; animation: fade-up 0.4s ease 120ms forwards; opacity: 0; }
+.previewHeader { padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--glass-border); }
+.previewTitle { font-family: var(--font-display); font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+.previewBody { padding: var(--space-5); }
+
+/* Mini login card preview */
+.miniLoginCard { border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.miniLogo { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: #fff; }
+.miniSchoolName { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.miniTagline { font-size: 0.72rem; color: var(--text-muted); margin-top: -6px; }
+.miniDivider { height: 1px; background: var(--glass-border); }
+.miniLabel { font-size: 0.60rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.miniInput { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; padding: '8px 12px'; height: 32px; width: '100%'; border-radius: 8px; }
+.miniBtn { height: 34px; border-radius: 99999px; display: flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; color: #fff; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ── Save bar ───────────────────────────────────────────── */
+.saveBar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; padding: var(--space-4) var(--space-6); background: var(--bg-overlay); backdrop-filter: blur(20px); border-top: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.saveBarMsg { font-size: 0.78rem; color: var(--text-muted); }
+.saveBarActions { display: flex; align-items: center; gap: var(--space-3); }
+.saveBtn { padding: var(--space-3) var(--space-8); border-radius: var(--radius-full); background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light)); color: #fff; font-family: var(--font-body); font-size: 0.84rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border: none; cursor: pointer; transition: all var(--transition-fast); box-shadow: 0 4px 20px var(--burgundy-glow); }
+.saveBtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px var(--burgundy-glow); }
+.saveBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.savedMsg { display: flex; align-items: center; gap: var(--space-2); font-size: 0.80rem; font-weight: 600; color: var(--success); }
+.savedMsg svg { width: 16px; height: 16px; }
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--bg-elevated); border: 1px solid var(--glass-border); border-radius: var(--radius-full); padding: var(--space-3) var(--space-6); font-size: 0.84rem; font-weight: 600; color: var(--text-primary); z-index: 300; box-shadow: 0 8px 32px rgba(0,0,0,.5); animation: fade-up 0.3s ease forwards; white-space: nowrap; }

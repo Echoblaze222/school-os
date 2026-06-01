@@ -1,0 +1,227 @@
+/* ============================================================
+   SchoolOS — Global Design Tokens  
+   src/app/globals.css
+   IMPORTANT: This file must be imported in layout.tsx
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ── Reset ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Design Tokens: DARK MODE (default) ─────────────── */
+:root {
+  --burgundy:           #800020;
+  --burgundy-light:     #A0002A;
+  --burgundy-glow:      rgba(128, 0, 32, 0.35);
+  --burgundy-subtle:    rgba(128, 0, 32, 0.12);
+  --silver:             #C8C8D0;
+  --silver-light:       #E8E8F0;
+
+  --bg-base:            #0A0609;
+  --bg-surface:         #120B0E;
+  --bg-elevated:        #1A1015;
+  --bg-overlay:         rgba(10, 6, 9, 0.85);
+
+  --glass-bg:           rgba(255, 255, 255, 0.04);
+  --glass-bg-hover:     rgba(255, 255, 255, 0.07);
+  --glass-border:       rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(128, 0, 32, 0.4);
+  --glass-shadow:       0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  --glass-shadow-hover: 0 16px 48px rgba(128, 0, 32, 0.2), 0 0 0 1px rgba(128,0,32,0.3);
+
+  --text-primary:       #F0EBE8;
+  --text-secondary:     #A89FA0;
+  --text-muted:         #6B6065;
+  --text-inverse:       #0A0609;
+  --text-accent:        #C8415A;
+
+  --input-bg:           rgba(255, 255, 255, 0.05);
+  --input-border:       rgba(255, 255, 255, 0.1);
+  --input-border-focus: rgba(128, 0, 32, 0.6);
+  --input-text:         #F0EBE8;
+  --input-placeholder:  #6B6065;
+
+  --nav-bg:             rgba(18, 11, 14, 0.92);
+  --nav-border:         rgba(255, 255, 255, 0.07);
+  --nav-icon:           #6B6065;
+  --nav-icon-active:    #800020;
+  --nav-home-bg:        linear-gradient(135deg, #800020, #A0002A);
+
+  --success:            #2D8B55;
+  --success-bg:         rgba(45, 139, 85, 0.12);
+  --warning:            #C27B2A;
+  --warning-bg:         rgba(194, 123, 42, 0.12);
+  --error:              #C0392B;
+  --error-bg:           rgba(192, 57, 43, 0.12);
+  --info:               #2471A3;
+  --info-bg:            rgba(36, 113, 163, 0.12);
+
+  --font-display:       'Cormorant Garamond', Georgia, serif;
+  --font-body:          'DM Sans', system-ui, sans-serif;
+
+  --space-1:  4px;  --space-2:  8px;  --space-3:  12px; --space-4:  16px;
+  --space-5:  20px; --space-6:  24px; --space-8:  32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  --radius-sm:   8px;  --radius-md:   12px; --radius-lg:   20px;
+  --radius-xl:   28px; --radius-full: 9999px;
+
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --z-base: 1; --z-card: 10; --z-modal: 100; --z-toast: 200; --z-nav: 300;
+}
+
+/* ── Design Tokens: LIGHT MODE ──────────────────────── */
+[data-theme="light"] {
+  --bg-base:            #F7F3F0;
+  --bg-surface:         #F0EBE6;
+  --bg-elevated:        #FFFFFF;
+  --bg-overlay:         rgba(247, 243, 240, 0.92);
+
+  --glass-bg:           rgba(255, 255, 255, 0.65);
+  --glass-bg-hover:     rgba(255, 255, 255, 0.80);
+  --glass-border:       rgba(128, 0, 32, 0.12);
+  --glass-border-hover: rgba(128, 0, 32, 0.35);
+  --glass-shadow:       0 8px 32px rgba(128, 0, 32, 0.08), 0 0 0 1px rgba(128,0,32,0.08);
+  --glass-shadow-hover: 0 16px 48px rgba(128, 0, 32, 0.15), 0 0 0 1px rgba(128,0,32,0.25);
+
+  --text-primary:       #1A1015;
+  --text-secondary:     #5A4850;
+  --text-muted:         #9A8890;
+  --text-inverse:       #F7F3F0;
+  --text-accent:        #800020;
+
+  --input-bg:           rgba(255, 255, 255, 0.8);
+  --input-border:       rgba(128, 0, 32, 0.15);
+  --input-border-focus: rgba(128, 0, 32, 0.5);
+  --input-text:         #1A1015;
+  --input-placeholder:  #9A8890;
+
+  --nav-bg:             rgba(255, 255, 255, 0.9);
+  --nav-border:         rgba(128, 0, 32, 0.1);
+  --nav-icon:           #9A8890;
+  --nav-icon-active:    #800020;
+}
+
+/* ── Base Styles ────────────────────────────────────── */
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+  overflow-x: hidden;
+}
+
+/* Prevent FOUC — read theme from localStorage before paint */
+html:not([data-theme]) {
+  color-scheme: dark;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* ── Glass Card ─────────────────────────────────────── */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: var(--radius-xl);
+  transition: background var(--transition-normal), border-color var(--transition-normal),
+              box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* ── Bottom Navigation ──────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: var(--space-2);
+  background: var(--nav-bg);
+  border: 1px solid var(--nav-border);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-6);
+  width: min(480px, calc(100vw - 32px));
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.7); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-fade-up  { animation: fade-up 0.5s ease forwards; }
+.animate-fade-in  { animation: fade-in 0.4s ease forwards; }
+.animate-scale-in { animation: scale-in 0.35s ease forwards; }
+
+/* Stagger helper */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 80ms; }
+.stagger > *:nth-child(3) { animation-delay: 160ms; }
+.stagger > *:nth-child(4) { animation-delay: 240ms; }
+.stagger > *:nth-child(5) { animation-delay: 320ms; }
+.stagger > *:nth-child(6) { animation-delay: 400ms; }
+
+/* ── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--burgundy-subtle);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--burgundy); }

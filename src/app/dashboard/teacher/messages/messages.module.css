@@ -1,0 +1,48 @@
+/* src/app/dashboard/teacher/messages/messages.module.css */
+.page{min-height:100dvh;background:var(--bg-base);display:flex;flex-direction:column;overflow:hidden;}
+.header{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-6) var(--space-5) var(--space-4);position:sticky;top:0;z-index:var(--z-card);background:var(--bg-overlay);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);flex-shrink:0;}
+.backBtn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-md);background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-primary);cursor:pointer;transition:all var(--transition-fast);flex-shrink:0;}
+.backBtn:hover{transform:translateX(-2px);}
+.headerCenter{flex:1;text-align:center;}
+.title{font-family:var(--font-display);font-size:1.4rem;font-weight:600;color:var(--text-primary);line-height:1.1;}
+.subtitle{font-family:var(--font-body);font-size:0.68rem;color:var(--text-muted);margin-top:2px;}
+/* Room list */
+.main{flex:1;overflow-y:auto;padding:var(--space-4) var(--space-5);padding-bottom:100px;}
+.roomList{display:flex;flex-direction:column;gap:var(--space-2);}
+.roomItem{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-xl);cursor:pointer;transition:all var(--transition-fast);text-align:left;width:100%;animation:fade-up 0.35s ease forwards;}
+.roomItem:hover{background:var(--glass-bg-hover);border-color:var(--glass-border-hover);transform:translateX(3px);}
+.roomAvatar{width:44px;height:44px;border-radius:50%;background:var(--burgundy-subtle);border:1px solid rgba(128,0,32,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--text-accent);flex-shrink:0;}
+.roomInfo{flex:1;min-width:0;}
+.roomNameRow{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);}
+.roomName{font-family:var(--font-body);font-size:0.9rem;font-weight:600;color:var(--text-primary);}
+.roomTime{font-family:var(--font-body);font-size:0.68rem;color:var(--text-muted);flex-shrink:0;}
+.roomPreview{font-family:var(--font-body);font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+.unreadBadge{min-width:20px;height:20px;background:var(--burgundy);color:#fff;border-radius:999px;font-family:var(--font-body);font-size:0.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0;}
+/* Chat view */
+.chatView{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.msgList{flex:1;overflow-y:auto;padding:var(--space-4) var(--space-5);display:flex;flex-direction:column;gap:var(--space-3);padding-bottom:80px;scrollbar-width:thin;}
+.loadingWrap{display:flex;justify-content:center;padding:var(--space-10);}
+.spinner{width:28px;height:28px;border:3px solid var(--glass-border);border-top-color:var(--burgundy);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.noMessages{text-align:center;font-family:var(--font-body);font-size:0.82rem;color:var(--text-muted);padding:var(--space-10) 0;}
+.msgWrap{display:flex;align-items:flex-end;gap:var(--space-2);}
+.msgOwn{flex-direction:row-reverse;}
+.msgOther{}
+.msgAvatar{width:30px;height:30px;border-radius:50%;background:var(--burgundy-subtle);border:1px solid rgba(128,0,32,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:0.7rem;font-weight:600;color:var(--text-accent);flex-shrink:0;}
+.msgBubble{max-width:75%;display:flex;flex-direction:column;gap:2px;}
+.msgOwn .msgBubble{align-items:flex-end;}
+.msgSender{font-family:var(--font-body);font-size:0.65rem;font-weight:600;color:var(--text-muted);padding:0 var(--space-2);}
+.msgContent{padding:var(--space-3) var(--space-4);border-radius:var(--radius-xl);font-family:var(--font-body);font-size:0.88rem;line-height:1.5;word-break:break-word;}
+.msgOwn .msgContent{background:linear-gradient(135deg,var(--burgundy),var(--burgundy-light));color:#fff;border-radius:var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);box-shadow:0 4px 16px var(--burgundy-glow);}
+.msgOther .msgContent{background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-primary);border-radius:var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm);}
+.msgTime{font-family:var(--font-body);font-size:0.6rem;color:var(--text-muted);padding:0 var(--space-2);}
+/* Input */
+.inputBar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 24px));background:var(--nav-bg);border:1px solid var(--glass-border);border-radius:var(--radius-xl);backdrop-filter:blur(24px);padding:var(--space-2) var(--space-2) var(--space-2) var(--space-4);display:flex;align-items:flex-end;gap:var(--space-2);box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:200;}
+.msgInput{flex:1;background:none;border:none;outline:none;resize:none;font-family:var(--font-body);font-size:0.9rem;color:var(--text-primary);line-height:1.5;max-height:100px;overflow-y:auto;scrollbar-width:none;padding:var(--space-2) 0;}
+.msgInput::placeholder{color:var(--text-muted);}
+.sendBtn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--burgundy),var(--burgundy-light));border:none;color:#fff;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px var(--burgundy-glow);}
+.sendBtn:disabled{background:var(--glass-bg);color:var(--text-muted);box-shadow:none;cursor:not-allowed;}
+/* Empty */
+.emptyState{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--space-10) var(--space-8);gap:var(--space-3);margin-top:var(--space-4);}
+.emptyTitle{font-family:var(--font-display);font-size:1.1rem;color:var(--text-secondary);}
+.emptyBody{font-family:var(--font-body);font-size:0.82rem;color:var(--text-muted);line-height:1.5;}

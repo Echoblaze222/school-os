@@ -1,0 +1,28 @@
+/* super-admin-login.module.css */
+.page { min-height:100dvh; display:flex; align-items:center; justify-content:center; background:var(--bg-base); padding:var(--space-5); position:relative; overflow:hidden; }
+.bgOrb1 { position:absolute; top:-100px; left:-80px; width:350px; height:350px; border-radius:50%; background:radial-gradient(circle,rgba(239,68,68,0.15) 0%,transparent 70%); pointer-events:none; }
+.bgOrb2 { position:absolute; bottom:-80px; right:-60px; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(124,58,237,0.12) 0%,transparent 70%); pointer-events:none; }
+.card { width:100%; max-width:400px; background:var(--bg-surface); border:1px solid var(--glass-border); border-radius:var(--radius-2xl); padding:var(--space-8) var(--space-7); position:relative; z-index:1; box-shadow:0 20px 60px rgba(0,0,0,0.35); animation:fade-up 0.45s ease forwards; }
+@keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.header { text-align:center; margin-bottom:var(--space-6); }
+.shieldIcon { width:60px; height:60px; background:linear-gradient(135deg,#EF4444,#B91C1C); border-radius:var(--radius-lg); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4); box-shadow:0 4px 20px rgba(239,68,68,0.35); }
+.title { font-size:1.4rem; font-weight:800; color:var(--text-primary); margin:0 0 4px; letter-spacing:-0.02em; }
+.sub { font-size:0.78rem; color:var(--text-muted); margin:0; }
+.securityNote { font-size:0.72rem; color:var(--text-muted); background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.15); border-radius:var(--radius-md); padding:var(--space-3) var(--space-4); text-align:center; margin-bottom:var(--space-6); line-height:1.5; }
+.form { display:flex; flex-direction:column; gap:var(--space-4); }
+.fieldGroup { display:flex; flex-direction:column; gap:var(--space-2); }
+.label { font-size:0.78rem; font-weight:600; color:var(--text-secondary); }
+.inputWrap { position:relative; }
+.input { width:100%; height:48px; padding:0 var(--space-4); background:var(--input-bg); border:1px solid var(--input-border); border-radius:var(--radius-md); color:var(--text-primary); font-size:0.9rem; outline:none; transition:all var(--transition-fast); }
+.input:focus { border-color:#EF4444; box-shadow:0 0 0 3px rgba(239,68,68,0.12); }
+.pinInput { text-align:center; letter-spacing:0.4em; font-size:1.1rem; font-weight:700; }
+.eyeBtn { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-muted); }
+.error { font-size:0.78rem; color:var(--danger); background:var(--danger-subtle); border:1px solid rgba(239,68,68,0.2); border-radius:var(--radius-md); padding:var(--space-2) var(--space-4); margin:0; }
+.submitBtn { width:100%; height:50px; background:linear-gradient(135deg,#EF4444,#B91C1C); color:#fff; border:none; border-radius:var(--radius-md); font-size:0.9rem; font-weight:700; cursor:pointer; transition:all var(--transition-fast); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(239,68,68,0.3); }
+.submitBtn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 24px rgba(239,68,68,0.4); }
+.submitBtn:disabled { opacity:0.5; cursor:not-allowed; }
+.spinner { width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.pinInstruction { font-size:0.82rem; color:var(--text-muted); text-align:center; margin:0; line-height:1.5; }
+.backBtn { background:none; border:none; color:var(--text-muted); font-size:0.8rem; font-weight:600; cursor:pointer; text-align:center; transition:color var(--transition-fast); padding:var(--space-2); }
+.backBtn:hover { color:var(--text-primary); }

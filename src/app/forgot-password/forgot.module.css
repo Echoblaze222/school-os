@@ -1,0 +1,226 @@
+/* src/app/forgot-password/forgot.module.css */
+/* Also used by src/app/reset-password/forgot.module.css */
+
+.page {
+  min-height: 100dvh;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.glowOrb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--burgundy-glow) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(60px);
+  z-index: 0;
+}
+
+.orb1 { width: 400px; height: 400px; top: -100px; right: -100px; opacity: 0.4; }
+.orb2 { width: 300px; height: 300px; bottom: -80px; left: -80px; opacity: 0.25; }
+
+.themeToggle {
+  position: fixed;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: 999;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-full);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Logo */
+.logoRow {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  justify-content: center;
+}
+
+.logoSchool {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--text-primary);
+}
+
+.logoOS {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--burgundy);
+  padding: 2px 8px;
+  background: var(--burgundy-subtle);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.1em;
+}
+
+/* Heading */
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.lockIcon { font-size: 2.5rem; }
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  max-width: 300px;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.error {
+  font-size: 0.83rem;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.submitBtn { width: 100%; }
+
+/* Strength bar */
+.strengthBar {
+  height: 4px;
+  background: var(--glass-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+/* Success state */
+.successState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.successIcon { font-size: 3rem; }
+
+.successTitle {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.successBody {
+  font-size: 0.87rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.successBody strong { color: var(--text-primary); }
+
+.successNote {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.resendBtn {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+/* Waiting state */
+.waitingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+/* Back to login */
+.backToLogin {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  text-align: center;
+  width: 100%;
+  padding: var(--space-2);
+}
+
+.backToLogin:hover { color: var(--text-primary); }
+
+/* Powered by */
+.poweredBy {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.poweredBy strong { color: var(--text-accent); }
