@@ -3,9 +3,19 @@
 // so activation logic lives in exactly one place.
 
 import { createAdminClient } from '@/lib/supabase/admin'
+// ✅ Good — instantiated only when actually called
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+let _resend: Resend | null = null
+
+export function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY
+    if (!key) throw new Error('RESEND_API_KEY is not set')
+    _resend = new Resend(key)
+  }
+  return _resend
+}
 
 export async function activateSchool(schoolId: string, plan: string, amountKobo: number) {
   const supabase = createAdminClient()
@@ -66,7 +76,7 @@ export async function activateSchool(schoolId: string, plan: string, amountKobo:
   const amountNaira = (amountKobo / 100).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })
   const now         = new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from:    'SchoolOS <onboarding@resend.dev>',
     to:      process.env.SUPER_ADMIN_EMAIL!,
     subject: `💰 New School Payment — ${school?.name ?? schoolId}`,
