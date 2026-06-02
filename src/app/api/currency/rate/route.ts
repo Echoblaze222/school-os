@@ -16,7 +16,6 @@ async function fetchFromPaystack(): Promise<number> {
   if (!res.ok) throw new Error(`Paystack HTTP ${res.status}`)
 
   const json = await res.json()
-  // Shape: { data: [{ currency: 'USD', amount_in_ngn: 1600 }, ...] }
   const usdEntry = json?.data?.find(
     (e: { currency: string }) => e.currency === 'USD'
   )
@@ -37,7 +36,6 @@ async function fetchFromFlutterwave(): Promise<number> {
   if (!res.ok) throw new Error(`Flutterwave HTTP ${res.status}`)
 
   const json = await res.json()
-  // Shape: { status: 'success', data: { rate: 1600 } }
   const rate = json?.data?.rate
   if (!rate || typeof rate !== 'number') throw new Error('Flutterwave: bad response shape')
   return rate
@@ -55,9 +53,9 @@ async function fetchFromExchangeRate(): Promise<number> {
   if (!res.ok) throw new Error(`ExchangeRate-API HTTP ${res.status}`)
 
   const json = await res.json()
-  const rate = key ? json?.conversion_rate : json?.rates?.NGN
+  const rate: number = key ? json?.conversion_rate : json?.rates?.NGN
   if (!rate || typeof rate !== 'number') throw new Error('ExchangeRate-API: bad response shape')
-  return rate  // ← was parseFloat(rate), but rate is already a number after the typeof check
+  return rate
 }
 
 // ── Provider map ──────────────────────────────────────────────
@@ -74,7 +72,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const requested = searchParams.get('provider') as Provider | null
 
-  // Requested provider goes first; others become automatic fallbacks
   const order: Provider[] =
     requested && ALL_PROVIDERS.includes(requested)
       ? [requested, ...ALL_PROVIDERS.filter(p => p !== requested)]
@@ -86,11 +83,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ rate, provider })
     } catch (err) {
       console.warn(`[currency/rate] ${provider} failed:`, (err as Error).message)
-      // fall through to next provider
     }
   }
 
-  // All providers exhausted
   console.error('[currency/rate] All providers failed — returning fallback rate')
   return NextResponse.json({ rate: FALLBACK_RATE, provider: 'fallback' })
 }
