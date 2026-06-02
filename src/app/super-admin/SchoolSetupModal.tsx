@@ -351,7 +351,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               </button>
           }
         </div>
-        )}
+        </>)}
       </div>
     </div>
   )
