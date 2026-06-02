@@ -11,6 +11,7 @@ export default function ResetPasswordPage() {
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
   const [done,     setDone]     = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
   const router   = useRouter()
   const supabase = createClient()
 
@@ -19,8 +20,34 @@ export default function ResetPasswordPage() {
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
+  // Exchange the token from the URL hash for a valid session
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('access_token')) {
+      const params = new URLSearchParams(hash.replace('#', ''))
+      const access_token  = params.get('access_token') ?? ''
+      const refresh_token = params.get('refresh_token') ?? ''
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+        if (error) {
+          setError('Invalid or expired reset link. Please request a new one.')
+        } else {
+          setSessionReady(true)
+          // Clean the hash from the URL
+          window.history.replaceState(null, '', window.location.pathname)
+        }
+      })
+    } else {
+      // Check if there's already an active session (e.g. user navigated back)
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) setSessionReady(true)
+        else setError('Invalid or expired reset link. Please request a new one.')
+      })
+    }
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!sessionReady) { setError('No active session. Please use the reset link from your email.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters'); return }
     if (password !== confirm) { setError('Passwords do not match'); return }
     setLoading(true); setError('')
@@ -30,7 +57,13 @@ export default function ResetPasswordPage() {
     setTimeout(() => router.push('/login'), 2500)
   }
 
-  const card: React.CSSProperties = { width:'100%', maxWidth:400, background:'var(--bg-surface)', border:'1px solid var(--glass-border)', borderRadius:24, padding:'40px 32px', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }
+  const card: React.CSSProperties = {
+    width: '100%', maxWidth: 400,
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 24, padding: '40px 32px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+  }
 
   return (
     <div style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-base)', padding:20 }}>
@@ -53,10 +86,9 @@ export default function ResetPasswordPage() {
                 <div key={label}>
                   <label style={{ fontSize:'0.78rem', fontWeight:600, color:'var(--text-secondary)', display:'block', marginBottom:6 }}>{label}</label>
                   <div style={{ position:'relative' }}>
-                    // ✅ After
-<span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', display:'flex', alignItems:'center' }}>
-  <LockIcon size={15} color="var(--text-muted)" />
-</span>
+                    <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', display:'flex', alignItems:'center' }}>
+                      <LockIcon size={15} color="var(--text-muted)" />
+                    </span>
                     <input type={showPass ? 'text' : 'password'} value={val} onChange={e => set(e.target.value)} required
                       placeholder="••••••••"
                       style={{ width:'100%', height:48, padding:'0 44px 0 44px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:12, color:'var(--text-primary)', fontSize:'0.9rem', outline:'none' }}/>
@@ -68,8 +100,8 @@ export default function ResetPasswordPage() {
                 </div>
               ))}
               {error && <p style={{ fontSize:'0.78rem', color:'var(--danger)', background:'var(--danger-subtle)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:'10px 14px', margin:0 }}>{error}</p>}
-              <button type="submit" disabled={loading}
-                style={{ height:50, background:'linear-gradient(135deg,var(--brand),var(--brand-dark))', color:'#fff', border:'none', borderRadius:12, fontWeight:700, fontSize:'0.9rem', cursor:'pointer', opacity:loading?0.5:1 }}>
+              <button type="submit" disabled={loading || !sessionReady}
+                style={{ height:50, background:'linear-gradient(135deg,var(--brand),var(--brand-dark))', color:'#fff', border:'none', borderRadius:12, fontWeight:700, fontSize:'0.9rem', cursor: (loading || !sessionReady) ? 'not-allowed' : 'pointer', opacity:(loading || !sessionReady) ? 0.5 : 1 }}>
                 {loading ? 'Updating...' : 'Update Password'}
               </button>
             </form>
@@ -78,4 +110,4 @@ export default function ResetPasswordPage() {
       </div>
     </div>
   )
-}
+                       }
