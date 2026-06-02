@@ -16,6 +16,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   const [setupType,   setSetupType]   = useState<SetupType>('trial')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
+  const [credentials, setCredentials] = useState<{ defaultCode: string; tempPassword: string; email: string } | null>(null)
 
   const [form, setForm] = useState({
     schoolName:      '',
@@ -63,7 +64,11 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
       const json = await res.json()
       if (!json.ok) throw new Error(json.error ?? 'Server error')
 
-      onSuccess()
+      setCredentials({
+        defaultCode:  json.principal.defaultCode,
+        tempPassword: json.principal.tempPassword,
+        email:        json.principal.email,
+      })
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong. Try again.')
     }
@@ -81,6 +86,53 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
           </div>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
+
+        {/* ── SUCCESS: show credentials ── */}
+        {credentials && (
+          <div className={styles.body}>
+            <div className={styles.stepContent} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+              <h3 style={{ color: '#10B981', marginBottom: 4 }}>School Activated!</h3>
+              <p className={styles.stepDesc} style={{ marginBottom: 24 }}>
+                A welcome email has been sent to <strong>{credentials.email}</strong>.<br />
+                Save these credentials — share them with the principal if needed.
+              </p>
+
+              <div className={styles.confirmCard} style={{ textAlign: 'left' }}>
+                <div className={styles.confirmRow}>
+                  <span>Principal Email</span>
+                  <strong style={{ fontFamily: 'monospace' }}>{credentials.email}</strong>
+                </div>
+                <div className={styles.confirmRow}>
+                  <span>Access Code</span>
+                  <strong style={{ fontFamily: 'monospace', color: '#a78bfa', fontSize: 18 }}>
+                    {credentials.defaultCode}
+                  </strong>
+                </div>
+                <div className={styles.confirmRow}>
+                  <span>Temp Password</span>
+                  <strong style={{ fontFamily: 'monospace', color: '#f59e0b', fontSize: 18 }}>
+                    {credentials.tempPassword}
+                  </strong>
+                </div>
+              </div>
+
+              <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>
+                The principal will be prompted to set a new PIN and password on first login.
+              </p>
+            </div>
+
+            <div className={styles.footer}>
+              <div style={{ flex: 1 }} />
+              <button className={styles.submitBtn} onClick={onSuccess}>
+                Done ✓
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── NORMAL FLOW ── */}
+        {!credentials && (<>
 
         {/* Step indicator */}
         <div className={styles.stepIndicator}>
@@ -299,6 +351,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               </button>
           }
         </div>
+        )}
       </div>
     </div>
   )
