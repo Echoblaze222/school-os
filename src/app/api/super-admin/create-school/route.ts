@@ -1,15 +1,12 @@
 // src/app/api/super-admin/create-school/route.ts
-// Server-side route — uses service role key to safely call auth.admin.createUser()
-
-import { NextResponse } from 'next/server'
+import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Resend } from 'resend'
+import { getResend }         from '@/lib/activateSchool'  // ✅ lazy singleton
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// ❌ REMOVED: const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
-  // 1. Verify caller is an authenticated super-admin
   const supabase      = await createClient()
   const adminSupabase = createAdminClient()
 
@@ -28,7 +25,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Not a super admin' }, { status: 403 })
   }
 
-  // 2. Parse body
   const body = await req.json()
   const {
     schoolName, address, phone, email, primaryColor,
@@ -41,7 +37,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
   }
 
-  // 3. Generate slug — loop until unique to avoid duplicate key errors
   const baseSlug = schoolName
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '-')
@@ -56,16 +51,15 @@ export async function POST(req: Request) {
       .select('id')
       .eq('slug', slug)
       .maybeSingle()
-    if (!clash) break          // slug is free — use it
+    if (!clash) break
     slug = `${baseSlug}-${suffix}`
     suffix++
   }
 
-  const now        = new Date()
-  const trialEnd   = new Date(now.getTime() + (trialDays ?? 10) * 86400000)
+  const now          = new Date()
+  const trialEnd     = new Date(now.getTime() + (trialDays ?? 10) * 86400000)
   const freeMonthEnd = new Date(now.getTime() + 30 * 86400000)
 
-  // 4. Create school row
   const { data: school, error: schoolErr } = await adminSupabase
     .from('schools')
     .insert({
@@ -92,7 +86,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: schoolErr.message }, { status: 500 })
   }
 
-  // 5. Create principal auth account (service role — safe server-side)
   const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
   const defaultCode  = `PRIN-${school.id.slice(0, 6).toUpperCase()}`
 
@@ -103,12 +96,10 @@ export async function POST(req: Request) {
   })
 
   if (authErr) {
-    // Rollback: delete the school so we don't leave an orphan
     await adminSupabase.from('schools').delete().eq('id', school.id)
     return NextResponse.json({ ok: false, error: `Auth error: ${authErr.message}` }, { status: 500 })
   }
 
-  // 6. Create principal profile
   const { error: profileErr } = await adminSupabase.from('profiles').insert({
     id:               authUser.user.id,
     full_name:        principalName,
@@ -121,13 +112,11 @@ export async function POST(req: Request) {
   })
 
   if (profileErr) {
-    // Rollback both
     await adminSupabase.auth.admin.deleteUser(authUser.user.id)
     await adminSupabase.from('schools').delete().eq('id', school.id)
     return NextResponse.json({ ok: false, error: `Profile error: ${profileErr.message}` }, { status: 500 })
   }
 
-  // 7. Log payment if permanent setup
   if (setupType === 'permanent' && paymentAmount > 0) {
     await adminSupabase.from('school_payments').insert({
       school_id:    school.id,
@@ -138,7 +127,6 @@ export async function POST(req: Request) {
     })
   }
 
-  // 8. Welcome notification for principal
   const welcomeMsg = setupType === 'trial'
     ? `Your school "${schoolName}" has been set up with a ${trialDays}-day free trial.\n\nLogin: ${principalEmail}\nAccess Code: ${defaultCode}\nTemp Password: ${tempPassword}\n\nPlease change your password after first login.`
     : `Your school "${schoolName}" is now active with 1 month of free access.\n\nLogin: ${principalEmail}\nAccess Code: ${defaultCode}\nTemp Password: ${tempPassword}\n\nPlease change your password after first login.`
@@ -150,13 +138,12 @@ export async function POST(req: Request) {
     type:    'system',
   })
 
-  // 9. Send welcome email to principal via Resend
-  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
+  const loginUrl  = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
   const planLabel = setupType === 'trial' ? `${trialDays}-Day Free Trial` : 'Active (1 Month Free)'
 
-  await resend.emails.send({
-    from: 'SchoolOS <onboarding@resend.dev>',
-    to:   principalEmail,
+  await getResend().emails.send({   // ✅ lazy — no top-level instantiation
+    from:    'SchoolOS <onboarding@resend.dev>',
+    to:      principalEmail,
     subject: `🎉 Welcome to SchoolOS — Your School is Ready`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
@@ -172,7 +159,6 @@ export async function POST(req: Request) {
               : `Your school <strong style="color:#fff;">${schoolName}</strong> is now <strong style="color:#a78bfa;">active</strong> with 1 month of free access.`
             }
           </p>
-
           <div style="background:#1a1a2e;border:1px solid #7C3AED;border-radius:10px;padding:24px;margin:24px 0;">
             <h3 style="margin:0 0 16px;color:#a78bfa;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Your Login Credentials</h3>
             <table style="width:100%;border-collapse:collapse;">
@@ -183,17 +169,14 @@ export async function POST(req: Request) {
               <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Temp Password</td><td style="color:#fff;font-weight:600;font-size:14px;font-family:monospace;">${tempPassword}</td></tr>
             </table>
           </div>
-
           <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
             ⚠️ You will be asked to set a new PIN and password on first login. Keep this email safe until then.
           </p>
-
           <div style="text-align:center;margin:28px 0;">
             <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
               Login to SchoolOS →
             </a>
           </div>
-
           <p style="color:#6b7280;font-size:13px;text-align:center;margin-top:24px;">
             Need help? Reply to this email or contact SchoolOS support.
           </p>
@@ -207,12 +190,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     ok: true,
-    school: { id: school.id, slug: school.slug },
-    principal: {
-      id:           authUser.user.id,
-      email:        principalEmail,
-      defaultCode,
-      tempPassword, // return so super admin can share it if needed
-    },
+    school:    { id: school.id, slug: school.slug },
+    principal: { id: authUser.user.id, email: principalEmail, defaultCode, tempPassword },
   })
 }
