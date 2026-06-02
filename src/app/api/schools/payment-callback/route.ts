@@ -1,9 +1,7 @@
 // src/app/api/schools/payment-callback/route.ts
-// Paystack redirects the user's browser here after payment.
-// Verifies the reference then calls the shared activateSchool helper.
-
-import { NextResponse }    from 'next/server'
-import { activateSchool }  from '@/lib/activateSchool'
+import { NextResponse }      from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { activateSchool }    from '@/lib/activateSchool'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -25,15 +23,30 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
     }
 
-    const schoolId    = verifyData.data?.metadata?.school_id
-    const plan        = verifyData.data?.metadata?.plan ?? 'Basic'
-    const amountKobo  = verifyData.data?.amount ?? 0
+    const schoolId   = verifyData.data?.metadata?.school_id
+    const plan       = verifyData.data?.metadata?.plan ?? 'Basic'
+    const amountKobo = verifyData.data?.amount ?? 0
 
     if (!schoolId) {
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
     }
 
-    // 2. Activate school + notify super admin
+    // 2. Check if already activated (webhook may have fired first)
+    const supabase = createAdminClient()
+    const { data: existing } = await supabase
+      .from('schools')
+      .select('status, is_platform_active')
+      .eq('id', schoolId)
+      .single()
+
+    if (existing?.status === 'active' && existing?.is_platform_active === true) {
+      // Webhook already handled it — skip straight to success
+      return NextResponse.redirect(
+        new URL(`/register-school/success?school=${schoolId}`, request.url)
+      )
+    }
+
+    // 3. Activate school + send notification
     await activateSchool(schoolId, plan, amountKobo)
 
     return NextResponse.redirect(
