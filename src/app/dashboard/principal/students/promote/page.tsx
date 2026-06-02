@@ -1,6 +1,8 @@
 'use client'
 // src/app/dashboard/principal/students/promote/page.tsx
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -87,12 +89,11 @@ export default function PromotePage() {
       setError(`${failed.length} student(s) failed to promote.`)
     }
 
-    // Create notifications
     const notifications = selected.map(s => ({
-      user_id:    s.id,
-      type:       'system_alert' as const,
-      title:      'You have been promoted!',
-      body:       `Congratulations! You have been promoted to your new class.`,
+      user_id: s.id,
+      type:    'system_alert' as const,
+      title:   'You have been promoted!',
+      body:    `Congratulations! You have been promoted to your new class.`,
     }))
     await supabase.from('notifications').insert(notifications)
 
