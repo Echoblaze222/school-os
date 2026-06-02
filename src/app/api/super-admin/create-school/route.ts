@@ -4,6 +4,9 @@
 import { NextResponse } from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
   // 1. Verify caller is an authenticated super-admin
@@ -145,6 +148,61 @@ export async function POST(req: Request) {
     title:   '🎉 Welcome to SchoolOS!',
     body:    welcomeMsg,
     type:    'system',
+  })
+
+  // 9. Send welcome email to principal via Resend
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
+  const planLabel = setupType === 'trial' ? `${trialDays}-Day Free Trial` : 'Active (1 Month Free)'
+
+  await resend.emails.send({
+    from: 'SchoolOS <onboarding@resend.dev>',
+    to:   principalEmail,
+    subject: `🎉 Welcome to SchoolOS — Your School is Ready`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
+          <h1 style="margin:0;font-size:28px;color:#fff;">Welcome to SchoolOS</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">Your school has been successfully set up</p>
+        </div>
+        <div style="padding:32px;">
+          <p style="color:#d1d5db;font-size:15px;">Hi <strong style="color:#fff;">${principalName}</strong>,</p>
+          <p style="color:#d1d5db;font-size:15px;">
+            ${setupType === 'trial'
+              ? `Your school <strong style="color:#fff;">${schoolName}</strong> has been set up with a <strong style="color:#a78bfa;">${trialDays}-day free trial</strong>.`
+              : `Your school <strong style="color:#fff;">${schoolName}</strong> is now <strong style="color:#a78bfa;">active</strong> with 1 month of free access.`
+            }
+          </p>
+
+          <div style="background:#1a1a2e;border:1px solid #7C3AED;border-radius:10px;padding:24px;margin:24px 0;">
+            <h3 style="margin:0 0 16px;color:#a78bfa;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Your Login Credentials</h3>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">School</td><td style="color:#fff;font-weight:600;font-size:14px;">${schoolName}</td></tr>
+              <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Plan</td><td style="color:#a78bfa;font-weight:600;font-size:14px;">${planLabel}</td></tr>
+              <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Email</td><td style="color:#fff;font-weight:600;font-size:14px;">${principalEmail}</td></tr>
+              <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Access Code</td><td style="color:#fff;font-weight:600;font-size:14px;font-family:monospace;">${defaultCode}</td></tr>
+              <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Temp Password</td><td style="color:#fff;font-weight:600;font-size:14px;font-family:monospace;">${tempPassword}</td></tr>
+            </table>
+          </div>
+
+          <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
+            ⚠️ You will be asked to set a new PIN and password on first login. Keep this email safe until then.
+          </p>
+
+          <div style="text-align:center;margin:28px 0;">
+            <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
+              Login to SchoolOS →
+            </a>
+          </div>
+
+          <p style="color:#6b7280;font-size:13px;text-align:center;margin-top:24px;">
+            Need help? Reply to this email or contact SchoolOS support.
+          </p>
+        </div>
+        <div style="background:#111;padding:16px;text-align:center;">
+          <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong> — Built for Nigerian Schools</p>
+        </div>
+      </div>
+    `,
   })
 
   return NextResponse.json({
