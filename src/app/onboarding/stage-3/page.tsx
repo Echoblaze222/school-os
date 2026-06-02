@@ -43,12 +43,24 @@ export default function OnboardingStage3() {
     const path = `passports/${user.id}.${ext}`
     const { error: upErr } = await supabase.storage
       .from('passports').upload(path, photo, { upsert: true })
-    if (upErr) { setError('Upload failed. Please try again.'); setLoading(false); return }
+    if (upErr) {
+      console.error('Passport upload error:', upErr)
+      setError(`Upload failed: ${upErr.message}. Please try again.`)
+      setLoading(false)
+      return
+    }
 
     const { data: urlData } = supabase.storage.from('passports').getPublicUrl(path)
-    const { data: profile } = await supabase.from('profiles')
+    const { data: profile, error: profileErr } = await supabase.from('profiles')
       .update({ avatar_url: urlData.publicUrl, nin, onboarding_stage: 0 })
       .eq('id', user.id).select('role').single()
+
+    if (profileErr) {
+      console.error('Profile update error:', profileErr)
+      setError(`Profile update failed: ${profileErr.message}`)
+      setLoading(false)
+      return
+    }
 
     router.push(ROLE_ROUTES[(profile as any)?.role ?? 'student'])
   }
@@ -84,7 +96,7 @@ export default function OnboardingStage3() {
             <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', margin:'0 0 8px' }}>Your National Identity Number</p>
             <input
               type="text" inputMode="numeric" maxLength={11}
-              value={nin} onChange={e => setNin(e.target.value.replace(/\D/,''))}
+              value={nin} onChange={e => setNin(e.target.value.replace(/\D/g,''))}
               placeholder="e.g. 12345678901"
               style={{ width:'100%', height:48, padding:'0 14px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:12, color:'var(--text-primary)', fontSize:'0.9rem', outline:'none', letterSpacing:'0.05em' }}
             />
@@ -106,4 +118,4 @@ export default function OnboardingStage3() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
-}
+                      }
