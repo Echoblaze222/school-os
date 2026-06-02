@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import styles from './promote.module.css'
 
 interface ClassOption { id: string; label: string }
@@ -13,7 +14,7 @@ interface StudentRow  { id: string; full_name: string; admission_number: string;
 
 export default function PromotePage() {
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase] = useState<SupabaseClient>(() => createClient())
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [classes, setClasses] = useState<ClassOption[]>([])
