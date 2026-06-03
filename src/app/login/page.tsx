@@ -16,32 +16,39 @@ const ROLE_ROUTES: Record<string, string> = {
   admin:     '/admin',
 }
 
+type Step = 'code' | 'password' | 'set-password'
+
 export default function LoginPage() {
-  const [code,       setCode]       = useState('')
-  const [password,   setPassword]   = useState('')
-  const [showPass,   setShowPass]   = useState(false)
-  const [loading,    setLoading]    = useState(false)
-  const [error,      setError]      = useState('')
-  const [step,       setStep]       = useState<'code' | 'password'>('code')
-  const [profileInfo, setProfileInfo] = useState<{ full_name: string; role: string; school_name?: string } | null>(null)
-  const router = useRouter()
+  const [code,        setCode]        = useState('')
+  const [password,    setPassword]    = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPass, setConfirmPass] = useState('')
+  const [showPass,    setShowPass]    = useState(false)
+  const [loading,     setLoading]     = useState(false)
+  const [error,       setError]       = useState('')
+  const [step,        setStep]        = useState<Step>('code')
+  const [profileInfo, setProfileInfo] = useState<{
+    full_name: string; role: string; school_name?: string
+    is_first_login: boolean; email: string
+  } | null>(null)
+
+  const router   = useRouter()
   const supabase = createClient()
 
-  // FIX: apply theme on mount — never set empty string
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme') ?? 'dark'
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
+  // ── Step 1: Validate access code ──────────────────────────────────────────
   async function handleCodeSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!code.trim()) return
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
 
     const { data: profile, error: profileErr } = await supabase
       .from('profiles')
-      .select('id, full_name, role, email, schools(name)')
+      .select('id, full_name, role, email, onboarding_stage, schools(name)')
       .eq('default_code', code.trim().toUpperCase())
       .single()
 
@@ -51,22 +58,75 @@ export default function LoginPage() {
       return
     }
 
+    const stage = (profile as any).onboarding_stage
+    // 'start' = first time login (staff/student created by admin)
+    // 'stage_1_pending' = principal first login
+    const isFirstLogin = stage === 'start' || stage === 'stage_1_pending'
+
     setProfileInfo({
-      full_name:   profile.full_name,
-      role:        profile.role,
-      school_name: (profile.schools as any)?.name,
+      full_name:      profile.full_name,
+      role:           profile.role,
+      school_name:    (profile.schools as any)?.name,
+      is_first_login: isFirstLogin,
+      email:          profile.email,
     })
-    setStep('password')
+
+    setStep(isFirstLogin ? 'set-password' : 'password')
     setLoading(false)
   }
 
+  // ── Step 2a: First-time login — set new password then sign in ─────────────
+  async function handleSetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!profileInfo) return
+    if (newPassword.length < 8)          { setError('Password must be at least 8 characters'); return }
+    if (newPassword !== confirmPass)     { setError('Passwords do not match'); return }
+    setLoading(true); setError('')
+
+    // Call server route that signs in via temp password and updates to new one
+    const res = await fetch('/api/auth/first-login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        code:        code.trim().toUpperCase(),
+        newPassword: newPassword,
+      }),
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to set password. Please try again.')
+      setLoading(false)
+      return
+    }
+
+    // Now sign in with the new password
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email:    profileInfo.email,
+      password: newPassword,
+    })
+
+    if (signInErr) {
+      setError('Sign in failed after password set. Please try logging in normally.')
+      setLoading(false)
+      return
+    }
+
+    // Advance onboarding stage
+    const stage = data.onboarding_stage
+    if (stage === 'stage_1_pending') { router.push('/onboarding/stage-1'); return }
+    if (stage === 2 || stage === 'stage_2_pending') { router.push('/onboarding/stage-2'); return }
+    if (stage === 3) { router.push('/onboarding/stage-3'); return }
+    // For staff/students at 'start' → go to stage-2 (PIN setup)
+    router.push('/onboarding/stage-2')
+  }
+
+  // ── Step 2b: Returning user — normal password sign in ────────────────────
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!password) return
-    setLoading(true)
-    setError('')
+    if (!password || !profileInfo) return
+    setLoading(true); setError('')
 
-    // Get email from code
     const { data: profile } = await supabase
       .from('profiles')
       .select('email, role, onboarding_stage')
@@ -90,24 +150,31 @@ export default function LoginPage() {
       return
     }
 
-    // Check onboarding
-    if (profile.onboarding_stage === 2) {
-      router.push('/onboarding/stage-2')
-      return
-    }
-    if (profile.onboarding_stage === 3) {
-      router.push('/onboarding/stage-3')
-      return
-    }
+    const stage = profile.onboarding_stage
+    if (stage === 'stage_1_pending' || stage === 1) { router.push('/onboarding/stage-1'); return }
+    if (stage === 2) { router.push('/onboarding/stage-2'); return }
+    if (stage === 3) { router.push('/onboarding/stage-3'); return }
 
-    const dest = ROLE_ROUTES[profile.role] ?? '/dashboard/student'
-    router.push(dest)
+    router.push(ROLE_ROUTES[profile.role] ?? '/dashboard/student')
     router.refresh()
   }
 
+  // ── Shared profile card ───────────────────────────────────────────────────
+  const ProfileCard = () => profileInfo ? (
+    <div className={styles.profilePreview}>
+      <div className={styles.profileAvatar}>{profileInfo.full_name[0]}</div>
+      <div>
+        <p className={styles.profileName}>{profileInfo.full_name}</p>
+        <p className={styles.profileMeta}>
+          {profileInfo.role.charAt(0).toUpperCase() + profileInfo.role.slice(1)}
+          {profileInfo.school_name ? ` · ${profileInfo.school_name}` : ''}
+        </p>
+      </div>
+    </div>
+  ) : null
+
   return (
     <div className={styles.page}>
-      {/* Background decoration */}
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
 
@@ -123,20 +190,19 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Step indicator */}
+        {/* Step indicators */}
         <div className={styles.steps}>
           <div className={`${styles.step} ${styles.stepDone}`}>
-            <span>1</span>
-            <p>Access Code</p>
+            <span>1</span><p>Access Code</p>
           </div>
           <div className={styles.stepLine} />
-          <div className={`${styles.step} ${step === 'password' ? styles.stepDone : ''}`}>
+          <div className={`${styles.step} ${step !== 'code' ? styles.stepDone : ''}`}>
             <span>2</span>
-            <p>Password</p>
+            <p>{step === 'set-password' ? 'Set Password' : 'Password'}</p>
           </div>
         </div>
 
-        {/* Step 1: Code */}
+        {/* ── Step 1: Enter access code ───────────────────────────────── */}
         {step === 'code' && (
           <form onSubmit={handleCodeSubmit} className={styles.form}>
             <div className={styles.formHeader}>
@@ -153,7 +219,7 @@ export default function LoginPage() {
                   type="text"
                   value={code}
                   onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. STU-2024-001"
+                  placeholder="e.g. SCH-2026-4821"
                   autoComplete="off"
                   autoFocus
                   spellCheck={false}
@@ -163,36 +229,75 @@ export default function LoginPage() {
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={loading || !code.trim()}
-            >
+            <button type="submit" className={styles.submitBtn} disabled={loading || !code.trim()}>
               {loading ? <span className={styles.spinner} /> : 'Continue'}
             </button>
 
-            <p className={styles.hint}>
-              Forgot your code? Contact your school administrator.
-            </p>
+            <p className={styles.hint}>Forgot your code? Contact your school administrator.</p>
           </form>
         )}
 
-        {/* Step 2: Password */}
-        {step === 'password' && profileInfo && (
-          <form onSubmit={handlePasswordSubmit} className={styles.form}>
-            {/* Profile preview */}
-            <div className={styles.profilePreview}>
-              <div className={styles.profileAvatar}>
-                {profileInfo.full_name[0]}
-              </div>
-              <div>
-                <p className={styles.profileName}>{profileInfo.full_name}</p>
-                <p className={styles.profileMeta}>
-                  {profileInfo.role.charAt(0).toUpperCase() + profileInfo.role.slice(1)}
-                  {profileInfo.school_name ? ` · ${profileInfo.school_name}` : ''}
-                </p>
+        {/* ── Step 2a: First login — set a new password ───────────────── */}
+        {step === 'set-password' && profileInfo && (
+          <form onSubmit={handleSetPassword} className={styles.form}>
+            <ProfileCard />
+
+            <div className={styles.formHeader}>
+              <h2>Create your password</h2>
+              <p>First time here? Set a password you'll remember.</p>
+            </div>
+
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>New Password</label>
+              <div className={styles.inputWrap}>
+                <LockIcon size={16} color="var(--text-muted)" className={styles.inputIcon} />
+                <input
+                  className={styles.input}
+                  type={showPass ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  autoFocus
+                />
+                <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)} tabIndex={-1}>
+                  {showPass ? <EyeOffIcon size={16} color="var(--text-muted)" /> : <EyeIcon size={16} color="var(--text-muted)" />}
+                </button>
               </div>
             </div>
+
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Confirm Password</label>
+              <div className={styles.inputWrap}>
+                <LockIcon size={16} color="var(--text-muted)" className={styles.inputIcon} />
+                <input
+                  className={styles.input}
+                  type={showPass ? 'text' : 'password'}
+                  value={confirmPass}
+                  onChange={e => setConfirmPass(e.target.value)}
+                  placeholder="Re-enter your password"
+                />
+              </div>
+            </div>
+
+            {error && <p className={styles.error}>{error}</p>}
+
+            <button type="submit" className={styles.submitBtn} disabled={loading || !newPassword || !confirmPass}>
+              {loading ? <span className={styles.spinner} /> : 'Set Password & Continue'}
+            </button>
+
+            <div className={styles.formFooter}>
+              <button type="button" className={styles.backLink}
+                onClick={() => { setStep('code'); setError(''); setNewPassword(''); setConfirmPass('') }}>
+                ← Use different code
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ── Step 2b: Returning user — normal password ───────────────── */}
+        {step === 'password' && profileInfo && (
+          <form onSubmit={handlePasswordSubmit} className={styles.form}>
+            <ProfileCard />
 
             <div className={styles.formHeader}>
               <h2>Enter your password</h2>
@@ -211,37 +316,24 @@ export default function LoginPage() {
                   placeholder="Enter your password"
                   autoFocus
                 />
-                <button
-                  type="button"
-                  className={styles.eyeBtn}
-                  onClick={() => setShowPass(!showPass)}
-                  tabIndex={-1}
-                >
-                  {showPass
-                    ? <EyeOffIcon size={16} color="var(--text-muted)" />
-                    : <EyeIcon    size={16} color="var(--text-muted)" />
-                  }
+                <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)} tabIndex={-1}>
+                  {showPass ? <EyeOffIcon size={16} color="var(--text-muted)" /> : <EyeIcon size={16} color="var(--text-muted)" />}
                 </button>
               </div>
             </div>
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={loading || !password}
-            >
+            <button type="submit" className={styles.submitBtn} disabled={loading || !password}>
               {loading ? <span className={styles.spinner} /> : 'Sign In'}
             </button>
 
             <div className={styles.formFooter}>
-              <button type="button" className={styles.backLink} onClick={() => { setStep('code'); setError(''); setPassword('') }}>
+              <button type="button" className={styles.backLink}
+                onClick={() => { setStep('code'); setError(''); setPassword('') }}>
                 ← Use different code
               </button>
-              <a href="/forgot-password" className={styles.forgotLink}>
-                Forgot password?
-              </a>
+              <a href="/forgot-password" className={styles.forgotLink}>Forgot password?</a>
             </div>
           </form>
         )}
