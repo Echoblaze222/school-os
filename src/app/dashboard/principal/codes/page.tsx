@@ -36,6 +36,7 @@ export default async function PrincipalCodesPage() {
       classOptions={classOptions}
       schoolId={schoolId}
       secretaryId={user.id}
+      backHref="/dashboard/principal"
     />
   )
 }
