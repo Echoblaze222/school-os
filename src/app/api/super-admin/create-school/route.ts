@@ -2,9 +2,7 @@
 import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getResend }         from '@/lib/activateSchool'  // ✅ lazy singleton
-
-// ❌ REMOVED: const resend = new Resend(process.env.RESEND_API_KEY)
+import { getResend }         from '@/lib/activateSchool'
 
 export async function POST(req: Request) {
   const supabase      = await createClient()
@@ -31,6 +29,7 @@ export async function POST(req: Request) {
     principalName, principalEmail, principalPhone,
     notes, trialDays, setupType,
     paymentAmount, paymentRef,
+    city, state, schoolType, logoUrl, tagline,
   } = body
 
   if (!schoolName || !principalName || !principalEmail) {
@@ -63,20 +62,26 @@ export async function POST(req: Request) {
   const { data: school, error: schoolErr } = await adminSupabase
     .from('schools')
     .insert({
-      name:              schoolName,
+      name:               schoolName,
       address,
       phone,
       email,
-      primary_color:     primaryColor ?? '#7C3AED',
+      city:               city ?? null,
+      state:              state ?? null,
+      school_type:        schoolType ?? 'private',
+      logo_url:           logoUrl ?? null,
+      tagline:            tagline ?? null,
+      is_platform_active: true,
+      primary_color:      primaryColor ?? '#7C3AED',
       slug,
-      setup_status:      setupType === 'trial' ? 'trial' : 'active',
-      trial_started_at:  setupType === 'trial' ? now.toISOString() : null,
-      trial_ends_at:     setupType === 'trial' ? trialEnd.toISOString() : null,
-      setup_paid_at:     setupType === 'permanent' ? now.toISOString() : null,
-      free_month_starts: setupType === 'permanent' ? now.toISOString() : null,
-      free_month_ends:   setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
-      subscription_plan: setupType === 'permanent' ? 'free_month' : null,
-      created_by_admin:  session.user.id,
+      setup_status:       setupType === 'trial' ? 'trial' : 'active',
+      trial_started_at:   setupType === 'trial' ? now.toISOString() : null,
+      trial_ends_at:      setupType === 'trial' ? trialEnd.toISOString() : null,
+      setup_paid_at:      setupType === 'permanent' ? now.toISOString() : null,
+      free_month_starts:  setupType === 'permanent' ? now.toISOString() : null,
+      free_month_ends:    setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
+      subscription_plan:  setupType === 'permanent' ? 'free_month' : null,
+      created_by_admin:   session.user.id,
       notes,
     })
     .select('id, slug')
@@ -141,7 +146,7 @@ export async function POST(req: Request) {
   const loginUrl  = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
   const planLabel = setupType === 'trial' ? `${trialDays}-Day Free Trial` : 'Active (1 Month Free)'
 
-  await getResend().emails.send({   // ✅ lazy — no top-level instantiation
+  await getResend().emails.send({
     from:    'SchoolOS <onboarding@resend.dev>',
     to:      principalEmail,
     subject: `🎉 Welcome to SchoolOS — Your School is Ready`,

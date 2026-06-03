@@ -21,8 +21,13 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   const [form, setForm] = useState({
     schoolName:      '',
     address:         '',
+    city:            '',
+    state:           '',
     phone:           '',
     email:           '',
+    tagline:         '',
+    logoUrl:         '',
+    schoolType:      'private',
     primaryColor:    '#7C3AED',
     principalName:   '',
     principalEmail:  '',
@@ -45,19 +50,24 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          schoolName:       form.schoolName,
-          address:          form.address,
-          phone:            form.phone,
-          email:            form.email,
-          primaryColor:     form.primaryColor,
-          principalName:    form.principalName,
-          principalEmail:   form.principalEmail,
-          principalPhone:   form.principalPhone,
-          notes:            form.notes,
-          trialDays:        form.trialDays,
+          schoolName:      form.schoolName,
+          address:         form.address,
+          city:            form.city,
+          state:           form.state,
+          phone:           form.phone,
+          email:           form.email,
+          tagline:         form.tagline,
+          logoUrl:         form.logoUrl,
+          schoolType:      form.schoolType,
+          primaryColor:    form.primaryColor,
+          principalName:   form.principalName,
+          principalEmail:  form.principalEmail,
+          principalPhone:  form.principalPhone,
+          notes:           form.notes,
+          trialDays:       form.trialDays,
           setupType,
-          paymentAmount:    form.paymentAmount,
-          paymentRef:       form.paymentRef,
+          paymentAmount:   form.paymentAmount,
+          paymentRef:      form.paymentRef,
         }),
       })
 
@@ -87,7 +97,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
-        {/* ── SUCCESS: show credentials ── */}
+        {/* ── SUCCESS ── */}
         {credentials && (
           <div className={styles.body}>
             <div className={styles.stepContent} style={{ textAlign: 'center' }}>
@@ -97,7 +107,6 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 A welcome email has been sent to <strong>{credentials.email}</strong>.<br />
                 Save these credentials — share them with the principal if needed.
               </p>
-
               <div className={styles.confirmCard} style={{ textAlign: 'left' }}>
                 <div className={styles.confirmRow}>
                   <span>Principal Email</span>
@@ -116,17 +125,13 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   </strong>
                 </div>
               </div>
-
               <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>
                 The principal will be prompted to set a new PIN and password on first login.
               </p>
             </div>
-
             <div className={styles.footer}>
               <div style={{ flex: 1 }} />
-              <button className={styles.submitBtn} onClick={onSuccess}>
-                Done ✓
-              </button>
+              <button className={styles.submitBtn} onClick={onSuccess}>Done ✓</button>
             </div>
           </div>
         )}
@@ -145,12 +150,12 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
         </div>
 
         <div className={styles.body}>
-          {/* STEP 1: Choose setup type */}
+
+          {/* STEP 1: Setup type */}
           {step === 1 && (
             <div className={styles.stepContent}>
               <h3>Choose Setup Type</h3>
               <p className={styles.stepDesc}>How are you activating this school?</p>
-
               <div className={styles.typeCards}>
                 <button
                   className={`${styles.typeCard} ${setupType === 'trial' ? styles.typeCardActive : ''}`}
@@ -163,7 +168,6 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                     <p className={styles.typeTitle}>Free Trial</p>
                     <p className={styles.typeSub}>
                       School gets {form.trialDays} days of full access. No payment required.
-                      Converts to permanent if they pay within trial period.
                     </p>
                     <div className={styles.typeBadge} style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B', borderColor: 'rgba(245,158,11,0.2)' }}>
                       FREE · {form.trialDays} days
@@ -182,8 +186,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   <div className={styles.typeInfo}>
                     <p className={styles.typeTitle}>Permanent Setup</p>
                     <p className={styles.typeSub}>
-                      School has paid the setup fee. Gets 1 month FREE access,
-                      then subscription starts.
+                      School has paid the setup fee. Gets 1 month FREE access, then subscription starts.
                     </p>
                     <div className={styles.typeBadge} style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', borderColor: 'rgba(16,185,129,0.2)' }}>
                       PAID · 1 month free
@@ -208,13 +211,15 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   <div>
                     <label className={styles.label}>Setup fee paid (₦)</label>
                     <input type="number" className={styles.input}
-                      value={form.paymentAmount} onChange={e => update('paymentAmount', +e.target.value)}
+                      value={form.paymentAmount}
+                      onChange={e => update('paymentAmount', +e.target.value)}
                       placeholder="e.g. 50000" />
                   </div>
                   <div>
                     <label className={styles.label}>Payment reference</label>
                     <input type="text" className={styles.input}
-                      value={form.paymentRef} onChange={e => update('paymentRef', e.target.value)}
+                      value={form.paymentRef}
+                      onChange={e => update('paymentRef', e.target.value)}
                       placeholder="Paystack/bank ref" />
                   </div>
                 </div>
@@ -234,10 +239,28 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                     placeholder="e.g. Greenfield Academy" autoFocus />
                 </div>
                 <div className={styles.fieldFull}>
+                  <label className={styles.label}>Tagline</label>
+                  <input className={styles.input} value={form.tagline}
+                    onChange={e => update('tagline', e.target.value)}
+                    placeholder="e.g. Nurturing Excellence Since 1998" />
+                </div>
+                <div className={styles.fieldFull}>
                   <label className={styles.label}>Address</label>
                   <input className={styles.input} value={form.address}
                     onChange={e => update('address', e.target.value)}
                     placeholder="School address" />
+                </div>
+                <div>
+                  <label className={styles.label}>City</label>
+                  <input className={styles.input} value={form.city}
+                    onChange={e => update('city', e.target.value)}
+                    placeholder="e.g. Lagos" />
+                </div>
+                <div>
+                  <label className={styles.label}>State</label>
+                  <input className={styles.input} value={form.state}
+                    onChange={e => update('state', e.target.value)}
+                    placeholder="e.g. Lagos State" />
                 </div>
                 <div>
                   <label className={styles.label}>Phone</label>
@@ -252,6 +275,16 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                     placeholder="school@email.com" />
                 </div>
                 <div>
+                  <label className={styles.label}>School Type</label>
+                  <select className={styles.input} value={form.schoolType}
+                    onChange={e => update('schoolType', e.target.value)}>
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                    <option value="international">International</option>
+                    <option value="vocational">Vocational</option>
+                  </select>
+                </div>
+                <div>
                   <label className={styles.label}>Brand Color</label>
                   <div className={styles.colorRow}>
                     <input type="color" className={styles.colorPicker}
@@ -263,9 +296,16 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   </div>
                 </div>
                 <div className={styles.fieldFull}>
+                  <label className={styles.label}>Logo URL (optional)</label>
+                  <input className={styles.input} value={form.logoUrl}
+                    onChange={e => update('logoUrl', e.target.value)}
+                    placeholder="https://..." />
+                </div>
+                <div className={styles.fieldFull}>
                   <label className={styles.label}>Private Notes (only you see this)</label>
                   <textarea className={`${styles.input} ${styles.textarea}`}
-                    value={form.notes} onChange={e => update('notes', e.target.value)}
+                    value={form.notes}
+                    onChange={e => update('notes', e.target.value)}
                     placeholder="e.g. Called on 12 May, contact is Mr. Adeyemi" />
                 </div>
               </div>
@@ -310,6 +350,8 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               <h3>Confirm Setup</h3>
               <div className={styles.confirmCard}>
                 <div className={styles.confirmRow}><span>School</span><strong>{form.schoolName}</strong></div>
+                <div className={styles.confirmRow}><span>Location</span><strong>{[form.city, form.state].filter(Boolean).join(', ') || '—'}</strong></div>
+                <div className={styles.confirmRow}><span>Type</span><strong style={{ textTransform: 'capitalize' }}>{form.schoolType}</strong></div>
                 <div className={styles.confirmRow}><span>Setup Type</span>
                   <strong style={{ color: setupType === 'trial' ? '#F59E0B' : '#10B981' }}>
                     {setupType === 'trial' ? `🔥 Free Trial (${form.trialDays} days)` : '✅ Permanent Setup'}
@@ -329,12 +371,10 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
           )}
         </div>
 
-        {/* Footer buttons */}
+        {/* Footer */}
         <div className={styles.footer}>
           {step > 1 && (
-            <button className={styles.backBtn} onClick={() => setStep(s => s - 1)}>
-              ← Back
-            </button>
+            <button className={styles.backBtn} onClick={() => setStep(s => s - 1)}>← Back</button>
           )}
           <div style={{ flex: 1 }} />
           {step < 4
@@ -355,4 +395,4 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
       </div>
     </div>
   )
-}
+                  }
