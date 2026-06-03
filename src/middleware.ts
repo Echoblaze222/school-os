@@ -100,7 +100,10 @@ export async function middleware(request: NextRequest) {
 
     if (profile) {
       // Check onboarding completion
-      if (profile.onboarding_stage === 2) {
+      if (profile.onboarding_stage === 'stage_1_pending' || profile.onboarding_stage === 1) {
+        return NextResponse.redirect(new URL('/onboarding/stage-1', request.url))
+      }
+      if (profile.onboarding_stage === 2 || profile.onboarding_stage === 'start') {
         return NextResponse.redirect(new URL('/onboarding/stage-2', request.url))
       }
       if (profile.onboarding_stage === 3) {
@@ -116,11 +119,23 @@ export async function middleware(request: NextRequest) {
   if (session && pathname.startsWith('/dashboard')) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, onboarding_stage')
       .eq('id', session.user.id)
       .single()
 
     if (profile) {
+      // Block dashboard access until onboarding is complete
+      const stage = profile.onboarding_stage
+      if (stage === 'stage_1_pending' || stage === 1) {
+        return NextResponse.redirect(new URL('/onboarding/stage-1', request.url))
+      }
+      if (stage === 2 || stage === 'start') {
+        return NextResponse.redirect(new URL('/onboarding/stage-2', request.url))
+      }
+      if (stage === 3) {
+        return NextResponse.redirect(new URL('/onboarding/stage-3', request.url))
+      }
+
       const allowedPrefix = ROLE_DASHBOARDS[profile.role]
       if (allowedPrefix && !pathname.startsWith(allowedPrefix) && !pathname.startsWith('/dashboard/student/profile')) {
         return NextResponse.redirect(new URL(allowedPrefix, request.url))
