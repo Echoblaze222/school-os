@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { ClassOption } from './page'
 import styles from './codes.module.css'
 
-interface Props { classOptions: ClassOption[]; schoolId: string; secretaryId: string }
+interface Props { classOptions: ClassOption[]; schoolId: string; secretaryId: string; backHref?: string }
 
 type UserRole = 'student'|'teacher'|'bursar'|'secretary'|'parent'
 const ROLES: {value:UserRole;label:string}[] = [
@@ -19,7 +19,7 @@ const IconMoon=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const IconChevronLeft=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><path d="M15 18l-6-6 6-6"/></svg>
 const IconCopy=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
 
-export default function CodesClient({ classOptions, schoolId, secretaryId }: Props) {
+export default function CodesClient({ classOptions, schoolId, secretaryId, backHref }: Props) {
   const [isDark,setIsDark]=useState(true); const [mounted,setMounted]=useState(false)
   const [fullName,setFullName]=useState('')
   const [email,setEmail]=useState('')
@@ -68,7 +68,7 @@ export default function CodesClient({ classOptions, schoolId, secretaryId }: Pro
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <Link href="/dashboard/secretary/users" className={styles.backBtn}><IconChevronLeft /> Users</Link>
+          <Link href={backHref ?? '/dashboard/secretary/users'} className={styles.backBtn}><IconChevronLeft /> {backHref ? 'Dashboard' : 'Users'}</Link>
           <h1 className={styles.pageTitle}>Generate <span>Access Codes</span></h1>
         </div>
         <button className={styles.themeBtn} onClick={toggleTheme}>{isDark?<IconSun />:<IconMoon />}</button>
