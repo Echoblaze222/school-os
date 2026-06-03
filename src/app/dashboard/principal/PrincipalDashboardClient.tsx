@@ -8,7 +8,7 @@ import {
   HomeIcon, PeopleIcon, BarChartIcon, SchoolIcon,
   MessageIcon, BellIcon, WalletIcon, ClipboardIcon,
   SettingsIcon, AiIcon, MegaphoneIcon, VideoIcon,
-  FileTextIcon, TrophyIcon,
+  FileTextIcon, TrophyIcon, KeyIcon,
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
 import styles from './principal.module.css'
@@ -16,6 +16,7 @@ import styles from './principal.module.css'
 const MODULES = [
   { id: 'staff',        label: 'Staff',          Icon: PeopleIcon,    href: '/dashboard/principal/staff',        accent: '#3B82F6', bg: '#1e3a5f' },
   { id: 'students',     label: 'Students',       Icon: SchoolIcon,    href: '/dashboard/principal/students',     accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'codes',        label: 'Access Codes',   Icon: KeyIcon,       href: '/dashboard/principal/codes',        accent: '#F59E0B', bg: '#4a3510' },
   { id: 'analytics',   label: 'Analytics',      Icon: BarChartIcon,  href: '/dashboard/principal/analytics',   accent: '#8B5CF6', bg: '#2e1f5e' },
   { id: 'results',     label: 'Results',         Icon: TrophyIcon,    href: '/dashboard/principal/results',     accent: '#F59E0B', bg: '#4a3510' },
   { id: 'fees',        label: 'Fees',            Icon: WalletIcon,    href: '/dashboard/principal/fees',        accent: '#EF4444', bg: '#5f1e1e' },
