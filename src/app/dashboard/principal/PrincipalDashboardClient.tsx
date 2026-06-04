@@ -8,25 +8,36 @@ import {
   HomeIcon, PeopleIcon, BarChartIcon, SchoolIcon,
   MessageIcon, BellIcon, WalletIcon, ClipboardIcon,
   SettingsIcon, AiIcon, MegaphoneIcon, VideoIcon,
-  FileTextIcon, TrophyIcon, KeyIcon,
+  FileTextIcon, TrophyIcon, KeyIcon, UserIcon,
+  LayersIcon, CalendarIcon, GlobeIcon, RefreshIcon,
+  ShieldIcon,
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
 import styles from './principal.module.css'
 
 const MODULES = [
-  { id: 'staff',        label: 'Staff',          Icon: PeopleIcon,    href: '/dashboard/principal/staff',        accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'students',     label: 'Students',       Icon: SchoolIcon,    href: '/dashboard/principal/students',     accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'codes',        label: 'Access Codes',   Icon: KeyIcon,       href: '/dashboard/principal/codes',        accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'analytics',   label: 'Analytics',      Icon: BarChartIcon,  href: '/dashboard/principal/analytics',   accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'results',     label: 'Results',         Icon: TrophyIcon,    href: '/dashboard/principal/results',     accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'fees',        label: 'Fees',            Icon: WalletIcon,    href: '/dashboard/principal/fees',        accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'assignments', label: 'Assignments',     Icon: ClipboardIcon, href: '/dashboard/principal/assignments', accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'live',        label: 'Live Classes',    Icon: VideoIcon,     href: '/dashboard/principal/live',        accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'reports',     label: 'Reports',         Icon: FileTextIcon,  href: '/dashboard/principal/reports',     accent: '#F97316', bg: '#4a2810' },
-  { id: 'notices',     label: 'Notices',         Icon: MegaphoneIcon, href: '/dashboard/principal/notices',     accent: '#14B8A6', bg: '#0f3d38' },
-  { id: 'chat',        label: 'Messages',        Icon: MessageIcon,   href: '/dashboard/principal/chat',        accent: '#7C3AED', bg: '#2d1060' },
-  { id: 'ai',          label: 'AI Insights',     Icon: AiIcon,        href: '/dashboard/principal/ai',          accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'settings',   label: 'Settings',         Icon: SettingsIcon,  href: '/dashboard/principal/settings',   accent: '#6B7280', bg: '#1e2a38' },
+  { id: 'staff',         label: 'Staff',          Icon: PeopleIcon,    href: '/dashboard/principal/staff',              accent: '#3B82F6', bg: '#1e3a5f' },
+  { id: 'students',      label: 'Students',       Icon: SchoolIcon,    href: '/dashboard/principal/students',           accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'teachers',      label: 'Teachers',       Icon: UserIcon,      href: '/dashboard/principal/teachers',           accent: '#06B6D4', bg: '#0a3040' },
+  { id: 'classes',       label: 'Classes',        Icon: LayersIcon,    href: '/dashboard/principal/classes',            accent: '#8B5CF6', bg: '#2e1f5e' },
+  { id: 'codes',         label: 'Access Codes',   Icon: KeyIcon,       href: '/dashboard/principal/codes',              accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'analytics',     label: 'Analytics',      Icon: BarChartIcon,  href: '/dashboard/principal/analytics',          accent: '#8B5CF6', bg: '#2e1f5e' },
+  { id: 'results',       label: 'Results',        Icon: TrophyIcon,    href: '/dashboard/principal/results',            accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'fees',          label: 'Fees',           Icon: WalletIcon,    href: '/dashboard/principal/fees',               accent: '#EF4444', bg: '#5f1e1e' },
+  { id: 'assignments',   label: 'Assignments',    Icon: ClipboardIcon, href: '/dashboard/principal/assignments',        accent: '#06B6D4', bg: '#0a3040' },
+  { id: 'live',          label: 'Live Classes',   Icon: VideoIcon,     href: '/dashboard/principal/live',               accent: '#EC4899', bg: '#5a1a40' },
+  { id: 'meetings',      label: 'Meetings',       Icon: CalendarIcon,  href: '/dashboard/principal/meetings',           accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'announcements', label: 'Announcements',  Icon: MegaphoneIcon, href: '/dashboard/principal/announcements',      accent: '#F97316', bg: '#4a2810' },
+  { id: 'notices',       label: 'Notices',        Icon: BellIcon,      href: '/dashboard/principal/notices',            accent: '#14B8A6', bg: '#0f3d38' },
+  { id: 'notifications', label: 'Notifications',  Icon: BellIcon,      href: '/dashboard/principal/notifications',      accent: '#3B82F6', bg: '#1e3a5f' },
+  { id: 'reports',       label: 'Reports',        Icon: FileTextIcon,  href: '/dashboard/principal/reports',            accent: '#F97316', bg: '#4a2810' },
+  { id: 'subscriptions', label: 'Subscriptions',  Icon: ShieldIcon,    href: '/dashboard/principal/subscriptions',      accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'alumni',        label: 'Alumni',         Icon: GlobeIcon,     href: '/dashboard/principal/alumni',             accent: '#8B5CF6', bg: '#2e1f5e' },
+  { id: 'transfers',     label: 'Transfers',      Icon: RefreshIcon,   href: '/dashboard/principal/transfers/pending',  accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'chat',          label: 'Messages',       Icon: MessageIcon,   href: '/dashboard/principal/chat',               accent: '#7C3AED', bg: '#2d1060' },
+  { id: 'profile',       label: 'Profile',        Icon: UserIcon,      href: '/dashboard/principal/profile',            accent: '#6B7280', bg: '#1e2a38' },
+  { id: 'ai',            label: 'AI Insights',    Icon: AiIcon,        href: '/dashboard/principal/ai',                 accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'settings',      label: 'Settings',       Icon: SettingsIcon,  href: '/dashboard/principal/settings',           accent: '#6B7280', bg: '#1e2a38' },
 ]
 
 
@@ -112,4 +123,4 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
       <ChatWidget userId={userId} role="principal" schoolColor={schoolColor} />
     </div>
   )
-}
+  }
