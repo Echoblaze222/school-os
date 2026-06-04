@@ -41,8 +41,10 @@ function getRoomType(roleA: string, roleB: string): string {
     'student_principal':   'student_to_teacher',
     'bursar_teacher':      'teacher_to_teacher',
     'bursar_principal':    'principal_to_principal',
+    'bursar_student':      'student_to_teacher',
     'secretary_teacher':   'teacher_to_teacher',
     'secretary_principal': 'principal_to_principal',
+    'secretary_student':   'student_to_teacher',
   }
   const key = `${roleA}_${roleB}`
   return map[key] ?? 'student_to_teacher'
@@ -115,10 +117,10 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
 
     const cleaned = code.trim().toUpperCase()
 
-    // Exact match
+    // Exact match — no school_id filter (cross-school support)
     const { data: exactData, error: exactError } = await supabase
       .from('profiles')
-      .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
       .eq('default_code', cleaned)
       .maybeSingle()
 
@@ -133,11 +135,11 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       return
     }
 
-    // Fuzzy fallback
+    // Fuzzy fallback — strip dashes, match last 6 chars
     const stripped = cleaned.replace(/-/g, '')
     const { data: fuzzyData } = await supabase
       .from('profiles')
-      .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
       .ilike('default_code', `%${stripped.slice(-6)}%`)
       .limit(1)
       .maybeSingle()
@@ -153,7 +155,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       return
     }
 
-    // Nothing found — show exact error message from Supabase if available
+    // Nothing found
     setFindError(
       exactError?.message
         ? `Error: ${exactError.message}`
@@ -316,7 +318,6 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                     <p className={styles.foundName}>{foundUser.full_name}</p>
                     <p className={styles.foundMeta}>
                       {foundUser.role} · {foundUser.default_code}
-                      {foundUser.class_level ? ` · ${foundUser.class_level}` : ''}
                     </p>
                   </div>
                   <button
@@ -381,4 +382,5 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       </div>
     </div>
   )
-                    }
+        }
+                      
