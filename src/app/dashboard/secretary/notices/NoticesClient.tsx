@@ -122,7 +122,7 @@ export default function NoticesClient({ notices: init, profile, school, userId }
               <textarea className={styles.formTextarea} value={form.body} onChange={e => setForm(p => ({ ...p, body: e.target.value }))} placeholder="Notice content…" rows={5} />
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: 'var(--space-4)' }}>
-              <input type="checkbox" checked={form.pinned} onChange={e => setForm(p => ({ ...p, pinned: e.target.checked })} />
+              <input type="checkbox" checked={form.pinned} onChange={e => setForm(p => ({ ...p, pinned: e.target.checked }))} />
               📌 Pin to top
             </label>
             {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
