@@ -1,550 +1,468 @@
 'use client'
+// src/app/dashboard/principal/codes/CodesClient.tsx
 
-import { useState, useTransition, useCallback, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import styles from './codes.module.css'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Entry = {
+/* ─── Types ──────────────────────────────────────────────── */
+interface CodeEntry {
   id: string
-  full_name: string | null
-  email: string | null
-  role: string | null
-  default_code: string | null
+  full_name: string
+  email: string
+  role: string
+  default_code: string
   is_active: boolean
   created_at: string
 }
 
-type Props = {
-  entries: Entry[]
+interface Props {
+  entries: CodeEntry[]
   profile: any
   school: any
   userId: string
+  schoolId: string
 }
 
-type GeneratedCode = {
-  userId: string
-  full_name: string
-  email: string
-  role: string
-  code: string
-  generatedAt: string
+/* ─── Constants ──────────────────────────────────────────── */
+const ROLE_META: Record<string, { color: string; icon: string; label: string }> = {
+  student:   { color: '#10B981', icon: '🎓', label: 'Student'   },
+  teacher:   { color: '#3B82F6', icon: '📚', label: 'Teacher'   },
+  bursar:    { color: '#F59E0B', icon: '💰', label: 'Bursar'    },
+  secretary: { color: '#8B5CF6', icon: '🗂️',  label: 'Secretary' },
+  librarian: { color: '#EC4899', icon: '📖', label: 'Librarian' },
+  nurse:     { color: '#EF4444', icon: '🏥', label: 'Nurse'     },
+  principal: { color: '#800020', icon: '🏫', label: 'Principal' },
+  parent:    { color: '#06B6D4', icon: '👨‍👩‍👧', label: 'Parent'    },
+}
+const ROLES_ASSIGNABLE = ['student','teacher','bursar','secretary','librarian','nurse','parent']
+
+function roleMeta(role: string) {
+  return ROLE_META[role] ?? { color: '#6B7280', icon: '👤', label: role }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const ROLE_META: Record<string, { label: string; color: string; dot: string }> = {
-  principal:  { label: 'Principal',  color: 'bg-violet-500/15 text-violet-300 border-violet-500/30',  dot: 'bg-violet-400' },
-  teacher:    { label: 'Teacher',    color: 'bg-blue-500/15 text-blue-300 border-blue-500/30',        dot: 'bg-blue-400'   },
-  secretary:  { label: 'Secretary',  color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot: 'bg-emerald-400' },
-  student:    { label: 'Student',    color: 'bg-amber-500/15 text-amber-300 border-amber-500/30',     dot: 'bg-amber-400'  },
-  parent:     { label: 'Parent',     color: 'bg-rose-500/15 text-rose-300 border-rose-500/30',        dot: 'bg-rose-400'   },
+/* ─── Code generator ─────────────────────────────────────── */
+function makeCode(role: string) {
+  const prefix = role.slice(0, 3).toUpperCase()
+  const year   = new Date().getFullYear()
+  const rand   = Math.floor(1000 + Math.random() * 9000)
+  return `${prefix}-${year}-${rand}`
 }
 
-function getRoleMeta(role: string | null) {
-  return ROLE_META[role ?? ''] ?? { label: role ?? 'Unknown', color: 'bg-zinc-700/50 text-zinc-400 border-zinc-600', dot: 'bg-zinc-500' }
-}
-
-function generateCode(length = 8): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-}
-
-function formatCode(code: string): string {
-  // Format as XXXX-XXXX for 8-char codes
-  if (code.length === 8) return `${code.slice(0, 4)}-${code.slice(4)}`
-  return code
-}
-
-function timestamp(): string {
-  return new Date().toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function RoleBadge({ role }: { role: string | null }) {
-  const meta = getRoleMeta(role)
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border ${meta.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-      {meta.label}
-    </span>
-  )
-}
-
-function CodeBadge({ code, onClick }: { code: string; onClick: () => void }) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+/* ─── Bulk CSV parser ────────────────────────────────────── */
+interface BulkRow { full_name: string; email: string; role: string }
+function parseBulk(raw: string): BulkRow[] {
+  return raw
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [full_name, email, role] = line.split(',').map(s => s.trim())
+      return { full_name: full_name ?? '', email: email ?? '', role: (role ?? '').toLowerCase() }
     })
-    onClick()
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      title="Click to copy"
-      className="group flex items-center gap-2 font-mono text-sm font-bold tracking-widest text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-all duration-150"
-    >
-      {formatCode(code)}
-      <span className="text-[10px] text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">
-        {copied ? '✓' : 'COPY'}
-      </span>
-    </button>
-  )
+    .filter(r => r.full_name && r.email && ROLES_ASSIGNABLE.includes(r.role))
 }
 
-function GeneratedCodeCard({ item }: { item: GeneratedCode }) {
-  const [copied, setCopied] = useState(false)
-  const meta = getRoleMeta(item.role)
+/* ─── Generated preview row ──────────────────────────────── */
+interface GeneratedEntry extends BulkRow { code: string; saved: boolean; error: string | null }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(item.code).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  return (
-    <div className="group relative bg-[#141416] border border-zinc-800 hover:border-zinc-600 rounded-xl p-4 transition-all duration-200">
-      {/* Top: name + role */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{item.full_name}</p>
-          <p className="text-xs text-zinc-500 truncate mt-0.5">{item.email}</p>
-        </div>
-        <RoleBadge role={item.role} />
-      </div>
-
-      {/* Code display */}
-      <div className="flex items-center justify-between bg-zinc-900 border border-zinc-700/50 rounded-lg px-4 py-3">
-        <span className="font-mono text-base font-black tracking-[0.25em] text-white">
-          {formatCode(item.code)}
-        </span>
-        <button
-          onClick={handleCopy}
-          className="text-xs font-medium text-zinc-400 hover:text-white transition-colors ml-3"
-        >
-          {copied ? (
-            <span className="text-emerald-400">✓ Copied</span>
-          ) : (
-            'Copy'
-          )}
-        </button>
-      </div>
-
-      {/* Footer */}
-      <p className="text-[10px] text-zinc-600 mt-2">Generated {item.generatedAt}</p>
-    </div>
-  )
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export default function CodesClient({ entries, profile, school, userId }: Props) {
+/* ═══════════════════════════════════════════════════════════
+   Component
+═══════════════════════════════════════════════════════════ */
+export default function CodesClient({ entries: init, profile, school, userId, schoolId }: Props) {
   const supabase = createClient()
-  const [isPending, startTransition] = useTransition()
+  const sc       = school?.primary_color ?? '#800020'
 
-  // UI state
-  const [search, setSearch]             = useState('')
-  const [roleFilter, setRoleFilter]     = useState<string>('all')
-  const [activeTab, setActiveTab]       = useState<'roster' | 'generated'>('roster')
-  const [generatedCodes, setGeneratedCodes] = useState<GeneratedCode[]>([])
-  const [savingIds, setSavingIds]       = useState<Set<string>>(new Set())
-  const [savedIds, setSavedIds]         = useState<Set<string>>(new Set())
-  const [bulkGenerating, setBulkGenerating] = useState(false)
-  const [toast, setToast]               = useState<string | null>(null)
-  const [localCodes, setLocalCodes]     = useState<Record<string, string>>({}) // userId → new code (not yet saved)
+  /* ── Existing entries state ── */
+  const [entries,  setEntries]  = useState(init)
+  const [search,   setSearch]   = useState('')
+  const [roleTab,  setRoleTab]  = useState('all')
+  const [copied,   setCopied]   = useState<string | null>(null)
+  const [regen,    setRegen]    = useState<string | null>(null)
 
-  // Derived
-  const allRoles = useMemo(() => {
-    const set = new Set(entries.map(e => e.role ?? '').filter(Boolean))
-    return Array.from(set).sort()
-  }, [entries])
+  /* ── Tab ── */
+  const [tab, setTab] = useState<'existing' | 'single' | 'bulk'>('existing')
 
-  const filtered = useMemo(() => {
-    return entries.filter(e => {
-      const matchRole = roleFilter === 'all' || e.role === roleFilter
-      const q = search.toLowerCase()
-      const matchSearch =
-        !q ||
-        (e.full_name ?? '').toLowerCase().includes(q) ||
-        (e.email ?? '').toLowerCase().includes(q) ||
-        (e.role ?? '').toLowerCase().includes(q)
-      return matchRole && matchSearch
+  /* ── Single-generate form ── */
+  const [sName,    setSName]    = useState('')
+  const [sEmail,   setSEmail]   = useState('')
+  const [sRole,    setSRole]    = useState('student')
+  const [sResult,  setSResult]  = useState<GeneratedEntry | null>(null)
+  const [sLoading, setSLoading] = useState(false)
+  const [sError,   setSError]   = useState<string | null>(null)
+
+  /* ── Bulk-generate form ── */
+  const [bRaw,      setBRaw]     = useState('')
+  const [bParsed,   setBParsed]  = useState<BulkRow[]>([])
+  const [bResults,  setBResults] = useState<GeneratedEntry[]>([])
+  const [bLoading,  setBLoading] = useState(false)
+  const [bSaved,    setBSaved]   = useState(false)
+
+  /* ── Copied-all ── */
+  const [copiedAll, setCopiedAll] = useState(false)
+
+  /* ─── Filtered existing list ─── */
+  const roles = useMemo(() => ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()], [entries])
+
+  const filtered = useMemo(() => entries.filter(e => {
+    const q = search.toLowerCase()
+    const matchSearch = (e.full_name ?? '').toLowerCase().includes(q)
+      || (e.default_code ?? '').toLowerCase().includes(q)
+      || (e.email ?? '').toLowerCase().includes(q)
+    const matchRole = roleTab === 'all' || e.role === roleTab
+    return matchSearch && matchRole
+  }), [entries, search, roleTab])
+
+  /* ─── Regen existing ─── */
+  async function regenerateCode(entry: CodeEntry) {
+    setRegen(entry.id)
+    const newCode = makeCode(entry.role)
+    const { error } = await supabase.from('profiles').update({ default_code: newCode }).eq('id', entry.id)
+    if (!error) setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: newCode } : e))
+    setRegen(null)
+  }
+
+  async function copyCode(code: string, id: string) {
+    await navigator.clipboard.writeText(code).catch(() => {})
+    setCopied(id)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  /* ─── Single generate & save ─── */
+  async function handleSingleGenerate() {
+    if (!sName.trim() || !sEmail.trim()) { setSError('Name and email are required.'); return }
+    setSError(null); setSLoading(true); setSResult(null)
+
+    const code = makeCode(sRole)
+    // Upsert a new profile row
+    const { error } = await supabase.from('profiles').insert({
+      full_name:    sName.trim(),
+      email:        sEmail.trim().toLowerCase(),
+      role:         sRole,
+      default_code: code,
+      school_id:    schoolId,
+      is_active:    true,
     })
-  }, [entries, search, roleFilter])
 
-  // Stats
-  const stats = useMemo(() => ({
-    total: entries.length,
-    withCode: entries.filter(e => e.default_code).length,
-    withoutCode: entries.filter(e => !e.default_code).length,
-    roles: allRoles.length,
-  }), [entries, allRoles])
-
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
-
-  // ── Single generate ──────────────────────────────────────────────────────
-  function handleGenerateSingle(entry: Entry) {
-    const code = generateCode()
-    setLocalCodes(prev => ({ ...prev, [entry.id]: code }))
-
-    const newEntry: GeneratedCode = {
-      userId:      entry.id,
-      full_name:   entry.full_name ?? '—',
-      email:       entry.email ?? '',
-      role:        entry.role ?? '',
-      code,
-      generatedAt: timestamp(),
-    }
-
-    setGeneratedCodes(prev => {
-      // Replace if already exists for this user
-      const without = prev.filter(g => g.userId !== entry.id)
-      return [newEntry, ...without]
-    })
-  }
-
-  // ── Save single code to DB ───────────────────────────────────────────────
-  async function handleSaveCode(userId: string) {
-    const code = localCodes[userId]
-    if (!code) return
-
-    setSavingIds(prev => new Set(prev).add(userId))
-    const { error } = await supabase
-      .from('profiles')
-      .update({ default_code: code })
-      .eq('id', userId)
-
-    setSavingIds(prev => { const s = new Set(prev); s.delete(userId); return s })
-
-    if (!error) {
-      setSavedIds(prev => new Set(prev).add(userId))
-      setTimeout(() => setSavedIds(prev => { const s = new Set(prev); s.delete(userId); return s }), 2500)
-      setLocalCodes(prev => { const n = { ...prev }; delete n[userId]; return n })
-      showToast('Code saved to profile')
+    if (error) {
+      setSError(error.message)
+      setSResult({ full_name: sName, email: sEmail, role: sRole, code, saved: false, error: error.message })
     } else {
-      showToast('Failed to save — please retry')
+      setSResult({ full_name: sName, email: sEmail, role: sRole, code, saved: true, error: null })
+      // refresh local list
+      const { data: fresh } = await supabase
+        .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
+        .eq('school_id', schoolId).order('role').order('full_name')
+      if (fresh) setEntries(fresh)
+      setSName(''); setSEmail(''); setSRole('student')
     }
+    setSLoading(false)
   }
 
-  // ── Bulk generate + save ─────────────────────────────────────────────────
-  async function handleBulkGenerate() {
-    if (filtered.length === 0) return
-    setBulkGenerating(true)
+  /* ─── Bulk parse preview ─── */
+  function handleBulkParse() {
+    const rows = parseBulk(bRaw)
+    setBParsed(rows)
+    setBResults(rows.map(r => ({ ...r, code: makeCode(r.role), saved: false, error: null })))
+    setBSaved(false)
+  }
 
-    const batch: GeneratedCode[] = filtered.map(entry => ({
-      userId:      entry.id,
-      full_name:   entry.full_name ?? '—',
-      email:       entry.email ?? '',
-      role:        entry.role ?? '',
-      code:        generateCode(),
-      generatedAt: timestamp(),
+  /* ─── Bulk save all ─── */
+  async function handleBulkSave() {
+    if (!bResults.length) return
+    setBLoading(true)
+    const rows = bResults.map(r => ({
+      full_name:    r.full_name,
+      email:        r.email.toLowerCase(),
+      role:         r.role,
+      default_code: r.code,
+      school_id:    schoolId,
+      is_active:    true,
     }))
-
-    // Upsert all codes
-    const updates = batch.map(b => ({
-      id:           b.userId,
-      default_code: b.code,
-    }))
-
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(updates, { onConflict: 'id' })
-
-    setBulkGenerating(false)
-
-    if (!error) {
-      setGeneratedCodes(prev => {
-        const existingIds = new Set(batch.map(b => b.userId))
-        const without = prev.filter(g => !existingIds.has(g.userId))
-        return [...batch, ...without]
-      })
-      setActiveTab('generated')
-      showToast(`${batch.length} codes generated & saved`)
+    const { error } = await supabase.from('profiles').insert(rows)
+    if (error) {
+      setBResults(p => p.map(r => ({ ...r, error: error.message })))
     } else {
-      showToast('Bulk generation failed — please retry')
+      setBResults(p => p.map(r => ({ ...r, saved: true, error: null })))
+      setBSaved(true)
+      const { data: fresh } = await supabase
+        .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
+        .eq('school_id', schoolId).order('role').order('full_name')
+      if (fresh) setEntries(fresh)
     }
+    setBLoading(false)
   }
 
-  // ── Export CSV ────────────────────────────────────────────────────────────
-  function handleExport() {
-    if (generatedCodes.length === 0) return
-    const header = 'Name,Email,Role,Code,Generated At'
-    const rows = generatedCodes.map(g =>
-      `"${g.full_name}","${g.email}","${g.role}","${g.code}","${g.generatedAt}"`
-    )
-    const csv = [header, ...rows].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `access-codes-${Date.now()}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-    showToast('CSV exported')
+  /* ─── Copy all generated codes ─── */
+  async function copyAllCodes(list: GeneratedEntry[]) {
+    const text = list.map(r => `${r.full_name} | ${roleMeta(r.role).label} | ${r.code}`).join('\n')
+    await navigator.clipboard.writeText(text).catch(() => {})
+    setCopiedAll(true)
+    setTimeout(() => setCopiedAll(false), 2500)
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  /* ═══ RENDER ═══════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#0c0c0e] text-white font-sans">
-      {/* ── Toast ── */}
-      {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-zinc-800 border border-zinc-600 text-sm text-white px-4 py-2.5 rounded-xl shadow-xl animate-fade-in">
-          {toast}
+    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Access Codes">
+
+      {/* ── Tab switcher ── */}
+      <div className={styles.tabRow}>
+        {(['existing','single','bulk'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
+            {t === 'existing' && '🔑 Existing Codes'}
+            {t === 'single'   && '✨ Generate Single'}
+            {t === 'bulk'     && '📦 Bulk Generate'}
+          </button>
+        ))}
+      </div>
+
+      {/* ════════════════════════════════════
+          TAB 1 — EXISTING CODES
+      ════════════════════════════════════ */}
+      {tab === 'existing' && (
+        <>
+          {/* Info banner */}
+          <div className={styles.infoBanner}>
+            <span className={styles.infoBannerIcon}>🔐</span>
+            <div>
+              <p className={styles.infoBannerTitle}>Access Codes</p>
+              <p className={styles.infoBannerSub}>Each user has a unique login code. Share it with them to access SchoolOS. You can regenerate a code if it's been compromised.</p>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className={styles.searchWrap}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input className={styles.searchInput} placeholder="Search by name, email or code…" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+
+          {/* Role tabs */}
+          <div className={styles.roleTabs}>
+            {roles.map(r => {
+              const m = roleMeta(r)
+              const isActive = roleTab === r
+              const count = entries.filter(e => r === 'all' || e.role === r).length
+              return (
+                <button key={r} onClick={() => setRoleTab(r)} className={styles.roleChip}
+                  style={{
+                    background:   isActive ? m.color + '22' : 'var(--glass-bg)',
+                    borderColor:  isActive ? m.color : 'var(--glass-border)',
+                    color:        isActive ? m.color : 'var(--text-muted)',
+                  }}>
+                  {r === 'all' ? 'All' : m.label} ({count})
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Code table */}
+          {filtered.length === 0 ? (
+            <div className={styles.empty}><p className={styles.emptyIcon}>🔑</p><p className={styles.emptyTitle}>No users found</p></div>
+          ) : (
+            <div className={styles.codeList}>
+              {filtered.map(e => {
+                const m = roleMeta(e.role)
+                return (
+                  <div key={e.id} className={styles.codeRow}>
+                    {/* Avatar */}
+                    <div className={styles.avatar} style={{ background: m.color + '22' }}>
+                      <span>{m.icon}</span>
+                    </div>
+
+                    {/* Info */}
+                    <div className={styles.codeRowInfo}>
+                      <p className={styles.codeRowName}>{e.full_name}</p>
+                      <p className={styles.codeRowEmail}>{e.email}</p>
+                    </div>
+
+                    {/* Role badge */}
+                    <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
+                      {m.icon} {m.label}
+                    </span>
+
+                    {/* Code chip */}
+                    <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>
+                      {e.default_code}
+                    </code>
+
+                    {/* Actions */}
+                    <div className={styles.codeRowActions}>
+                      <button onClick={() => copyCode(e.default_code, e.id)} className={styles.actionBtn}
+                        style={copied === e.id ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : {}}>
+                        {copied === e.id ? '✓ Copied' : '📋 Copy'}
+                      </button>
+                      <button onClick={() => regenerateCode(e)} disabled={regen === e.id} className={styles.actionBtn}
+                        style={{ opacity: regen === e.id ? 0.5 : 1 }}>
+                        {regen === e.id ? '⏳' : '🔄 Regen'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ════════════════════════════════════
+          TAB 2 — SINGLE GENERATE
+      ════════════════════════════════════ */}
+      {tab === 'single' && (
+        <div className={styles.twoCol}>
+          {/* Form */}
+          <div className={styles.formCard}>
+            <div className={styles.formHeader}>
+              <p className={styles.formTitle}>Generate Single Code</p>
+              <p className={styles.formSub}>Create a login code for one user and save them to the system.</p>
+            </div>
+            <div className={styles.formBody}>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Full Name</label>
+                <input className={styles.fieldInput} placeholder="e.g. Amara Osei" value={sName} onChange={e => setSName(e.target.value)} />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Email Address</label>
+                <input className={styles.fieldInput} type="email" placeholder="e.g. amara@school.edu" value={sEmail} onChange={e => setSEmail(e.target.value)} />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Role</label>
+                <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={sRole} onChange={e => setSRole(e.target.value)}>
+                  {ROLES_ASSIGNABLE.map(r => (
+                    <option key={r} value={r}>{roleMeta(r).icon} {roleMeta(r).label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {sError && <p className={styles.errorMsg}>{sError}</p>}
+
+              <button onClick={handleSingleGenerate} disabled={sLoading} className={styles.generateBtn}>
+                {sLoading ? '⏳ Generating…' : '✨ Generate & Save Code'}
+              </button>
+            </div>
+          </div>
+
+          {/* Result */}
+          {sResult && (
+            <div className={`${styles.resultCard} ${sResult.saved ? styles.resultSuccess : styles.resultError}`}>
+              <div className={styles.resultHeader}>
+                <span className={styles.resultStatus}>
+                  {sResult.saved ? '✅ Code Generated' : '❌ Failed to Save'}
+                </span>
+              </div>
+
+              {/* Big code display */}
+              <div className={styles.bigCodeWrap}>
+                <p className={styles.bigCodeLabel}>Access Code</p>
+                <div className={styles.bigCode}>
+                  <code className={styles.bigCodeText}>{sResult.code}</code>
+                  <button onClick={() => copyCode(sResult.code, 'single')} className={styles.copyBtn}
+                    style={copied === 'single' ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : {}}>
+                    {copied === 'single' ? '✓ Copied' : '📋 Copy'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Owner info */}
+              <div className={styles.ownerCard}>
+                {(() => { const m = roleMeta(sResult.role); return (
+                  <>
+                    <div className={styles.ownerAvatar} style={{ background: m.color + '22' }}>{m.icon}</div>
+                    <div className={styles.ownerInfo}>
+                      <p className={styles.ownerName}>{sResult.full_name}</p>
+                      <p className={styles.ownerEmail}>{sResult.email}</p>
+                      <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
+                        {m.label}
+                      </span>
+                    </div>
+                  </>
+                )})()}
+              </div>
+
+              <p className={styles.codeNote}>
+                {sResult.saved
+                  ? 'User profile created. Share the code above with them — they'll use it as their initial login password.'
+                  : sResult.error}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
-
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium tracking-widest text-zinc-500 uppercase mb-1">
-              {school?.name ?? 'School'} · Principal
-            </p>
-            <h1 className="text-2xl font-black tracking-tight text-white">Access Codes</h1>
-            <p className="text-sm text-zinc-500 mt-1">Generate and manage login codes for your school</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {generatedCodes.length > 0 && (
-              <button
-                onClick={handleExport}
-                className="text-xs font-semibold text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-2 rounded-lg transition-all"
-              >
-                ↓ Export CSV
-              </button>
-            )}
-            <button
-              onClick={handleBulkGenerate}
-              disabled={bulkGenerating || filtered.length === 0}
-              className="relative text-xs font-bold tracking-wide bg-white text-black px-4 py-2 rounded-lg hover:bg-zinc-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {bulkGenerating ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Generating…
-                </span>
-              ) : (
-                `⚡ Bulk Generate (${filtered.length})`
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* ── Stats ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Total Users',    value: stats.total },
-            { label: 'Have Code',      value: stats.withCode },
-            { label: 'Missing Code',   value: stats.withoutCode },
-            { label: 'Roles',          value: stats.roles },
-          ].map(s => (
-            <div key={s.label} className="bg-[#141416] border border-zinc-800 rounded-xl px-4 py-3">
-              <p className="text-2xl font-black text-white">{s.value}</p>
-              <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+      {/* ════════════════════════════════════
+          TAB 3 — BULK GENERATE
+      ════════════════════════════════════ */}
+      {tab === 'bulk' && (
+        <>
+          <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
+            <div className={styles.formHeader}>
+              <p className={styles.formTitle}>Bulk Generate Codes</p>
+              <p className={styles.formSub}>Paste one user per line in the format: <code className={styles.inlineCode}>Full Name, Email, Role</code></p>
             </div>
-          ))}
-        </div>
+            <div className={styles.formBody}>
 
-        {/* ── Tabs ── */}
-        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 w-fit">
-          {(['roster', 'generated'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === tab
-                  ? 'bg-white text-black'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {tab === 'roster' ? 'User Roster' : `Generated (${generatedCodes.length})`}
-            </button>
-          ))}
-        </div>
-
-        {/* ══════════════════ TAB: ROSTER ══════════════════ */}
-        {activeTab === 'roster' && (
-          <div className="space-y-4">
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Search name, email, role…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-[#141416] border border-zinc-800 focus:border-zinc-600 text-sm text-white placeholder:text-zinc-600 px-4 py-2.5 rounded-xl outline-none transition-colors"
-              />
-              <div className="flex gap-2 flex-wrap">
-                {['all', ...allRoles].map(r => (
-                  <button
-                    key={r}
-                    onClick={() => setRoleFilter(r)}
-                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                      roleFilter === r
-                        ? 'bg-white text-black border-white'
-                        : 'text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white'
-                    }`}
-                  >
-                    {r === 'all' ? 'All Roles' : getRoleMeta(r).label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Count */}
-            <p className="text-xs text-zinc-600">
-              Showing {filtered.length} of {entries.length} users
-            </p>
-
-            {/* Table */}
-            <div className="bg-[#141416] border border-zinc-800 rounded-2xl overflow-hidden">
-              {/* Head */}
-              <div className="grid grid-cols-[1fr_1fr_140px_160px_100px] gap-4 px-5 py-3 border-b border-zinc-800 text-[11px] font-semibold tracking-widest text-zinc-600 uppercase">
-                <span>Name</span>
-                <span>Email</span>
-                <span>Role</span>
-                <span>Current Code</span>
-                <span className="text-right">Action</span>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>User Data (CSV format)</label>
+                <textarea
+                  className={`${styles.fieldInput} ${styles.textarea}`}
+                  rows={8}
+                  placeholder={`Amara Osei, amara@school.edu, student\nKwame Mensah, kwame@school.edu, teacher\nAfia Boateng, afia@school.edu, bursar`}
+                  value={bRaw}
+                  onChange={e => { setBRaw(e.target.value); setBParsed([]); setBResults([]) }}
+                />
               </div>
 
-              {/* Rows */}
-              <div className="divide-y divide-zinc-800/60">
-                {filtered.length === 0 ? (
-                  <div className="py-16 text-center text-zinc-600 text-sm">No users match your filters</div>
-                ) : (
-                  filtered.map(entry => {
-                    const pendingCode = localCodes[entry.id]
-                    const displayCode = pendingCode ?? entry.default_code
-                    const isSaving   = savingIds.has(entry.id)
-                    const isSaved    = savedIds.has(entry.id)
-
+              <div className={styles.bulkRoleHints}>
+                <p className={styles.fieldLabel}>Valid roles:</p>
+                <div className={styles.roleTags}>
+                  {ROLES_ASSIGNABLE.map(r => {
+                    const m = roleMeta(r)
                     return (
-                      <div
-                        key={entry.id}
-                        className="grid grid-cols-[1fr_1fr_140px_160px_100px] gap-4 px-5 py-3.5 items-center hover:bg-zinc-800/20 transition-colors group"
-                      >
-                        {/* Name */}
-                        <div>
-                          <p className="text-sm font-semibold text-white truncate">
-                            {entry.full_name ?? '—'}
-                          </p>
-                        </div>
-
-                        {/* Email */}
-                        <p className="text-xs text-zinc-500 truncate">{entry.email ?? '—'}</p>
-
-                        {/* Role */}
-                        <div>
-                          <RoleBadge role={entry.role} />
-                        </div>
-
-                        {/* Code */}
-                        <div className="flex items-center gap-2">
-                          {displayCode ? (
-                            <>
-                              <CodeBadge code={displayCode} onClick={() => {}} />
-                              {pendingCode && (
-                                <span className="text-[10px] text-amber-400 font-medium">unsaved</span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-xs text-zinc-600 italic">No code</span>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Generate button */}
-                          <button
-                            onClick={() => handleGenerateSingle(entry)}
-                            title="Generate new code"
-                            className="text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-700 border border-zinc-700/50 hover:border-zinc-600 px-2.5 py-1.5 rounded-lg transition-all"
-                          >
-                            ↺ Gen
-                          </button>
-
-                          {/* Save button — only when there's a pending code */}
-                          {pendingCode && (
-                            <button
-                              onClick={() => handleSaveCode(entry.id)}
-                              disabled={isSaving}
-                              className="text-xs font-bold text-black bg-white hover:bg-zinc-200 px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50"
-                            >
-                              {isSaving ? '…' : isSaved ? '✓' : 'Save'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══════════════════ TAB: GENERATED ══════════════════ */}
-        {activeTab === 'generated' && (
-          <div className="space-y-4">
-            {generatedCodes.length === 0 ? (
-              <div className="py-24 text-center space-y-3">
-                <p className="text-4xl">🔑</p>
-                <p className="text-zinc-500 text-sm">No codes generated yet.</p>
-                <p className="text-zinc-600 text-xs">
-                  Use the roster tab to generate individual codes, or use ⚡ Bulk Generate above.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Role breakdown */}
-                <div className="flex flex-wrap gap-2">
-                  {allRoles.map(role => {
-                    const count = generatedCodes.filter(g => g.role === role).length
-                    if (!count) return null
-                    return (
-                      <div key={role} className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border ${getRoleMeta(role).color}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${getRoleMeta(role).dot}`} />
-                        {getRoleMeta(role).label} · {count}
-                      </div>
+                      <span key={r} className={styles.roleTag} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '33' }}>
+                        {m.icon} {m.label}
+                      </span>
                     )
                   })}
                 </div>
+              </div>
 
-                {/* Cards grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {generatedCodes.map(item => (
-                    <GeneratedCodeCard key={item.userId} item={item} />
-                  ))}
-                </div>
-              </>
-            )}
+              <button onClick={handleBulkParse} className={styles.previewBtn} disabled={!bRaw.trim()}>
+                🔍 Preview Generated Codes
+              </button>
+            </div>
           </div>
-        )}
 
-      </div>
+          {/* Preview table */}
+          {bResults.length > 0 && (
+            <div className={styles.bulkPreviewCard}>
+              <div className={styles.bulkPreviewHeader}>
+                <div>
+                  <p className={styles.formTitle}>{bResults.length} Code{bResults.length !== 1 ? 's' : ''} Ready</p>
+                  <p className={styles.formSub}>Review before saving. Each code is unique and tied to the user below.</p>
+                </div>
+                <div className={styles.bulkActions}>
+                  <button onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
+                    style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
+                    {copiedAll ? '✓ All Copied' : '📋 Copy All'}
+                  </button>
+                  {!bSaved && (
+                    <button onClick={handleBulkSave} disabled={bLoading} className={styles.generateBtn} style={{ width: 'auto', padding: '10px 24px' }}>
+                      {bLoading ? '⏳ Saving…' : `💾 Save All ${bResults.length} Users`}
+                    </button>
+                  )}
+                  {bSaved && (
+                    <span className={styles.savedBadge}>✅ All Saved</span>
+                  )}
+                </div>
+              </div>
 
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fade-in 0.2s ease-out; }
-      `}</style>
-    </div>
-  )
-}
+              {/* Column headers */}
+              <div className={styles.bulkTableHead}>
+                <span>USER</span>
+                <span>ROLE</span>
+                <span>ACCESS CODE</span>
+                <span>STATUS</span>
+    
