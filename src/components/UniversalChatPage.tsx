@@ -66,12 +66,12 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
           : null
         const lastMsg = room.messages?.[room.messages.length - 1]
         return {
-          id:          room.id,
-          name:        other?.full_name ?? room.name,
-          type:        room.type,
-          updated_at:  room.updated_at,
+          id:           room.id,
+          name:         other?.full_name ?? room.name,
+          type:         room.type,
+          updated_at:   room.updated_at,
           last_message: lastMsg?.body,
-          other_user:  other,
+          other_user:   other,
         }
       }).filter(Boolean) as Room[]
 
@@ -83,27 +83,27 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
   }
 
   // ── Find user by ID code ────────────────────────────────────
+  // FIX: Removed .eq('school_id', profile?.school_id) from both queries
+  // so principals/teachers can find users across different schools
   async function findUserByCode() {
     if (!code.trim()) return
     setFinding(true); setFindError(''); setFoundUser(null)
 
     const cleaned = code.trim().toUpperCase()
 
-    // Try exact match first
-    let { data, error } = await supabase
+    // Exact match — no school_id filter (cross-school support)
+    let { data } = await supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
       .eq('default_code', cleaned)
-      .eq('school_id', profile?.school_id)
       .single()
 
-    // If no exact match, try searching with ilike (partial / stripped dashes)
+    // Fuzzy fallback — strip dashes, match last 6 chars
     if (!data) {
       const stripped = cleaned.replace(/-/g, '')
       const { data: fuzzy } = await supabase
         .from('profiles')
         .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
-        .eq('school_id', profile?.school_id)
         .ilike('default_code', `%${stripped.slice(-6)}%`)
         .limit(1)
         .single()
@@ -123,6 +123,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
   }
 
   // ── Start or open DM with found user ───────────────────────
+  // FIX: Use null school_id for cross-school DMs
   async function startDM() {
     if (!foundUser) return
     setFinding(true)
@@ -141,14 +142,21 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
     }
 
     // Create new DM room
+    // If cross-school, set school_id to null so both schools can access it
+    const isCrossSchool = foundUser.school_id !== profile?.school_id
     const roomName = [profile?.full_name, foundUser.full_name].sort().join(' & ')
+
     const { data: room } = await supabase
       .from('chat_rooms')
-      .insert({ name: roomName, type: 'direct', school_id: profile?.school_id })
-      .select('id').single()
+      .insert({
+        name:      roomName,
+        type:      'direct',
+        school_id: isCrossSchool ? null : profile?.school_id,
+      })
+      .select('id')
+      .single()
 
     if (room) {
-      // Add both users
       await supabase.from('chat_room_members').insert([
         { room_id: room.id, user_id: userId },
         { room_id: room.id, user_id: foundUser.id },
@@ -161,32 +169,47 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
   function timeAgo(d: string) {
     const diff = Date.now() - new Date(d).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 1)   return 'now'
-    if (mins < 60)  return `${mins}m`
-    if (mins < 1440)return `${Math.floor(mins/60)}h`
-    return `${Math.floor(mins/1440)}d`
+    if (mins < 1)    return 'now'
+    if (mins < 60)   return `${mins}m`
+    if (mins < 1440) return `${Math.floor(mins / 60)}h`
+    return `${Math.floor(mins / 1440)}d`
   }
 
   const ROLE_COLORS: Record<string, string> = {
-    student:   '#3B82F6', teacher: '#10B981', principal: '#8B5CF6',
-    bursar:    '#F59E0B', secretary: '#EC4899', parent: '#F97316',
+    student:   '#3B82F6',
+    teacher:   '#10B981',
+    principal: '#8B5CF6',
+    bursar:    '#F59E0B',
+    secretary: '#EC4899',
+    parent:    '#F97316',
   }
 
   return (
     <div className={styles.page}>
-      <DashboardHeader userId={userId} role={role} profile={profile} school={school}
-        schoolColor={schoolColor} title="Messages" />
+      <DashboardHeader
+        userId={userId} role={role} profile={profile}
+        school={school} schoolColor={schoolColor} title="Messages"
+      />
 
       <div className={styles.chatLayout}>
 
         {/* ── SIDEBAR ─────────────────────────────────────── */}
         <div className={styles.sidebar}>
+
           {/* New chat button */}
           <div className={styles.sidebarTop}>
             <p className={styles.sidebarTitle}>Chats</p>
-            <button className={styles.newChatBtn} style={{ background: schoolColor }}
-              onClick={() => { setShowFind(!showFind); setFoundUser(null); setCode(''); setFindError('') }}>
-              <PlusIcon size={15} color="white"/>
+            <button
+              className={styles.newChatBtn}
+              style={{ background: schoolColor }}
+              onClick={() => {
+                setShowFind(!showFind)
+                setFoundUser(null)
+                setCode('')
+                setFindError('')
+              }}
+            >
+              <PlusIcon size={15} color="white" />
             </button>
           </div>
 
@@ -201,23 +224,30 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                   value={code}
                   onChange={e => setCode(e.target.value.toUpperCase())}
                   onKeyDown={e => e.key === 'Enter' && findUserByCode()}
-                  placeholder="Enter ID code (e.g. TCH-2024-001)"
+                  placeholder="Enter ID code (e.g. SCH-2024-001)"
                   autoFocus
                 />
-                <button className={styles.findBtn} style={{ background: schoolColor }}
-                  onClick={findUserByCode} disabled={finding || !code.trim()}>
-                  {finding ? '...' : <SearchIcon size={15} color="white"/>}
+                <button
+                  className={styles.findBtn}
+                  style={{ background: schoolColor }}
+                  onClick={findUserByCode}
+                  disabled={finding || !code.trim()}
+                >
+                  {finding ? '...' : <SearchIcon size={15} color="white" />}
                 </button>
               </div>
+
               {findError && <p className={styles.findError}>{findError}</p>}
 
               {foundUser && (
                 <div className={styles.foundUser}>
-                  <div className={styles.foundAvatar}
-                    style={{ background: ROLE_COLORS[foundUser.role] ?? schoolColor }}>
+                  <div
+                    className={styles.foundAvatar}
+                    style={{ background: ROLE_COLORS[foundUser.role] ?? schoolColor }}
+                  >
                     {foundUser.avatar_url
-                      ? <img src={foundUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}/>
-                      : <UserIcon size={16} color="white"/>
+                      ? <img src={foundUser.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      : <UserIcon size={16} color="white" />
                     }
                   </div>
                   <div className={styles.foundInfo}>
@@ -227,8 +257,12 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                       {foundUser.class_level ? ` · ${foundUser.class_level}` : ''}
                     </p>
                   </div>
-                  <button className={styles.dmBtn} style={{ background: schoolColor }}
-                    onClick={startDM} disabled={finding}>
+                  <button
+                    className={styles.dmBtn}
+                    style={{ background: schoolColor }}
+                    onClick={startDM}
+                    disabled={finding}
+                  >
                     {finding ? '...' : 'Chat →'}
                   </button>
                 </div>
@@ -239,51 +273,69 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
           {/* Room list */}
           <div className={styles.roomList}>
             {loading
-              ? <div className={styles.listLoading}><span/><span/><span/></div>
+              ? (
+                <div className={styles.listLoading}>
+                  <span /><span /><span />
+                </div>
+              )
               : rooms.length === 0
-                ? <div className={styles.emptyList}>
-                    <MessageIcon size={28} color="var(--text-faint)"/>
+                ? (
+                  <div className={styles.emptyList}>
+                    <MessageIcon size={28} color="var(--text-faint)" />
                     <p>No chats yet</p>
-                    <p style={{ fontSize:'0.72rem' }}>Use the + button to find someone by ID code</p>
+                    <p style={{ fontSize: '0.72rem' }}>
+                      Use the + button to find someone by ID code
+                    </p>
                   </div>
+                )
                 : rooms.map(room => (
-                    <Link key={room.id}
-                      href={`/dashboard/${role}/chat/${room.id}`}
-                      className={styles.roomItem}>
-                      <div className={styles.roomAvatar}
-                        style={{ background: room.other_user ? (ROLE_COLORS[room.other_user.role] ?? schoolColor) : schoolColor }}>
-                        {room.other_user?.avatar_url
-                          ? <img src={room.other_user.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}/>
-                          : room.type === 'group'
-                            ? <PeopleIcon size={15} color="white"/>
-                            : <UserIcon size={15} color="white"/>
-                        }
+                  <Link
+                    key={room.id}
+                    href={`/dashboard/${role}/chat/${room.id}`}
+                    className={styles.roomItem}
+                  >
+                    <div
+                      className={styles.roomAvatar}
+                      style={{
+                        background: room.other_user
+                          ? (ROLE_COLORS[room.other_user.role] ?? schoolColor)
+                          : schoolColor,
+                      }}
+                    >
+                      {room.other_user?.avatar_url
+                        ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        : room.type === 'group'
+                          ? <PeopleIcon size={15} color="white" />
+                          : <UserIcon size={15} color="white" />
+                      }
+                    </div>
+                    <div className={styles.roomInfo}>
+                      <div className={styles.roomTopRow}>
+                        <p className={styles.roomName}>{room.name}</p>
+                        <span className={styles.roomTime}>{timeAgo(room.updated_at)}</span>
                       </div>
-                      <div className={styles.roomInfo}>
-                        <div className={styles.roomTopRow}>
-                          <p className={styles.roomName}>{room.name}</p>
-                          <span className={styles.roomTime}>{timeAgo(room.updated_at)}</span>
-                        </div>
-                        {room.last_message && (
-                          <p className={styles.roomPreview}>{room.last_message}</p>
-                        )}
-                        {room.other_user && (
-                          <p className={styles.roomCode}>{room.other_user.default_code}</p>
-                        )}
-                      </div>
-                    </Link>
-                  ))
+                      {room.last_message && (
+                        <p className={styles.roomPreview}>{room.last_message}</p>
+                      )}
+                      {room.other_user && (
+                        <p className={styles.roomCode}>{room.other_user.default_code}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))
             }
           </div>
         </div>
 
-        {/* ── EMPTY STATE ──────────────────────────────────── */}
+        {/* ── EMPTY STATE (desktop right panel) ───────────── */}
         <div className={styles.emptyChat}>
-          <MessageIcon size={48} color="var(--text-faint)" strokeWidth={1}/>
+          <MessageIcon size={48} color="var(--text-faint)" strokeWidth={1} />
           <h3>Select a chat</h3>
           <p>Choose a conversation from the sidebar or start a new one with an ID code.</p>
         </div>
+
       </div>
     </div>
   )
-}
+             }
+            
