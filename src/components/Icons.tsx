@@ -952,3 +952,15 @@ export function TrendingUpIcon({ size = 24, color = 'currentColor', strokeWidth 
     </svg>
   )
 }
+
+// ── Smile / Emoji picker ──────────────────────────────────────
+export function SmileIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+      <line x1="9" y1="9" x2="9.01" y2="9"/>
+      <line x1="15" y1="9" x2="15.01" y2="9"/>
+    </svg>
+  )
+}
