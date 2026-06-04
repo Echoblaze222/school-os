@@ -11,21 +11,21 @@ import {
 import styles from './chat.module.css'
 
 interface Props {
-  profile:     any
-  school:      any
-  userId:      string
-  role:        string
+  profile:      any
+  school:       any
+  userId:       string
+  role:         string
   schoolColor?: string
 }
 
 interface Room {
-  id:         string
-  name:       string
-  type:       'direct' | 'group'
-  updated_at: string
+  id:            string
+  name:          string
+  room_type:     string
+  updated_at:    string
   last_message?: string
-  unread?:    number
-  other_user?: { full_name: string; role: string; default_code: string; avatar_url?: string }
+  unread?:       number
+  other_user?:   { full_name: string; role: string; default_code: string; avatar_url?: string }
 }
 
 export default function UniversalChatPage({ profile, school, userId, role, schoolColor = '#7C3AED' }: Props) {
@@ -42,36 +42,43 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
   useEffect(() => { loadRooms() }, [])
 
   async function loadRooms() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('chat_room_members')
       .select(`
+        room_id,
         room:chat_rooms(
-          id, name, type, updated_at,
+          id, name, room_type, updated_at,
           members:chat_room_members(
             user:profiles(id, full_name, role, default_code, avatar_url)
           ),
-          messages:messages(body, created_at)
+          messages:chat_messages(content, sent_at)
         )
       `)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
 
     if (data) {
       const processed = data.map((d: any) => {
         const room = d.room
         if (!room) return null
+
         // For direct rooms, find the other person
-        const other = room.type === 'direct'
+        const other = room.room_type !== 'group'
           ? room.members?.find((m: any) => m.user?.id !== userId)?.user
           : null
-        const lastMsg = room.messages?.[room.messages.length - 1]
+
+        // Get last message — sort by sent_at
+        const msgs = (room.messages ?? []).sort(
+          (a: any, b: any) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()
+        )
+        const lastMsg = msgs[msgs.length - 1]
+
         return {
           id:           room.id,
-          name:         other?.full_name ?? room.name,
-          type:         room.type,
+          name:         other?.full_name ?? room.name ?? 'Group Chat',
+          room_type:    room.room_type,
           updated_at:   room.updated_at,
-          last_message: lastMsg?.body,
-          other_user:   other,
+          last_message: lastMsg?.content ?? null,
+          other_user:   other ?? null,
         }
       }).filter(Boolean) as Room[]
 
@@ -82,16 +89,14 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
     setLoading(false)
   }
 
-  // ── Find user by ID code ────────────────────────────────────
-  // FIX: Removed .eq('school_id', profile?.school_id) from both queries
-  // so principals/teachers can find users across different schools
+  // ── Find user by ID code ──────────────────────────────────
   async function findUserByCode() {
     if (!code.trim()) return
     setFinding(true); setFindError(''); setFoundUser(null)
 
     const cleaned = code.trim().toUpperCase()
 
-    // Exact match — no school_id filter (cross-school support)
+    // Exact match — no school_id filter (supports cross-school search)
     let { data } = await supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
@@ -118,51 +123,75 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       setFindError("That's your own code! Enter someone else's.")
       setFinding(false); return
     }
+
     setFoundUser(data)
     setFinding(false)
   }
 
-  // ── Start or open DM with found user ───────────────────────
-  // FIX: Use null school_id for cross-school DMs
+  // ── Start or open DM with found user ─────────────────────
   async function startDM() {
     if (!foundUser) return
     setFinding(true)
 
-    // Check if DM room already exists
-    const { data: existing } = await supabase
-      .from('chat_rooms')
-      .select('id, chat_room_members!inner(user_id)')
-      .eq('type', 'direct')
-      .contains('chat_room_members.user_id', [userId, foundUser.id] as any)
-      .limit(1)
+    // Check if a DM room already exists between these two users
+    const { data: myRooms } = await supabase
+      .from('chat_room_members')
+      .select('room_id')
+      .eq('user_id', userId)
 
-    if (existing && existing.length > 0) {
-      router.push(`/dashboard/${role}/chat/${existing[0].id}`)
-      return
+    if (myRooms && myRooms.length > 0) {
+      const myRoomIds = myRooms.map((r: any) => r.room_id)
+
+      const { data: shared } = await supabase
+        .from('chat_room_members')
+        .select('room_id')
+        .eq('user_id', foundUser.id)
+        .in('room_id', myRoomIds)
+
+      if (shared && shared.length > 0) {
+        // Verify it's a direct (non-group) room
+        const { data: roomCheck } = await supabase
+          .from('chat_rooms')
+          .select('id, room_type')
+          .eq('id', shared[0].room_id)
+          .eq('is_group', false)
+          .single()
+
+        if (roomCheck) {
+          router.push(`/dashboard/${role}/chat/${roomCheck.id}`)
+          setFinding(false)
+          return
+        }
+      }
     }
 
     // Create new DM room
-    // If cross-school, set school_id to null so both schools can access it
     const isCrossSchool = foundUser.school_id !== profile?.school_id
     const roomName = [profile?.full_name, foundUser.full_name].sort().join(' & ')
 
-    const { data: room } = await supabase
+    const { data: room, error: roomError } = await supabase
       .from('chat_rooms')
       .insert({
-        name:      roomName,
-        type:      'direct',
-        school_id: isCrossSchool ? null : profile?.school_id,
+        name:       roomName,
+        room_type:  'direct_message',
+        is_group:   false,
+        created_by: userId,
+        school_id:  isCrossSchool ? null : profile?.school_id,
       })
       .select('id')
       .single()
 
-    if (room) {
-      await supabase.from('chat_room_members').insert([
-        { room_id: room.id, user_id: userId },
-        { room_id: room.id, user_id: foundUser.id },
-      ])
-      router.push(`/dashboard/${role}/chat/${room.id}`)
+    if (roomError || !room) {
+      setFindError('Failed to create chat room. Please try again.')
+      setFinding(false); return
     }
+
+    await supabase.from('chat_room_members').insert([
+      { room_id: room.id, user_id: userId },
+      { room_id: room.id, user_id: foundUser.id },
+    ])
+
+    router.push(`/dashboard/${role}/chat/${room.id}`)
     setFinding(false)
   }
 
@@ -304,7 +333,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                     >
                       {room.other_user?.avatar_url
                         ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                        : room.type === 'group'
+                        : room.room_type === 'group'
                           ? <PeopleIcon size={15} color="white" />
                           : <UserIcon size={15} color="white" />
                       }
@@ -337,5 +366,5 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       </div>
     </div>
   )
-             }
-            
+            }
+      
