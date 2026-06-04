@@ -87,6 +87,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
           ? room.members?.find((m: any) => m.user?.id !== userId)?.user
           : null
 
+        // FIX: Sort messages ascending to reliably get the last one
         const msgs = (room.messages ?? []).sort(
           (a: any, b: any) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()
         )
@@ -117,7 +118,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
 
     const cleaned = code.trim().toUpperCase()
 
-    // Exact match — no school_id filter (cross-school support)
+    // Exact match
     const { data: exactData, error: exactError } = await supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, school_id')
@@ -155,7 +156,6 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       return
     }
 
-    // Nothing found
     setFindError(
       exactError?.message
         ? `Error: ${exactError.message}`
@@ -199,7 +199,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       }
     }
 
-    // Create new DM room with correct enum value
+    // Create new DM room
     const isCrossSchool = foundUser.school_id !== profile?.school_id
     const roomName = [profile?.full_name, foundUser.full_name].sort().join(' & ')
     const roomType = getRoomType(role, foundUser.role)
@@ -382,5 +382,5 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       </div>
     </div>
   )
-        }
-                      
+    }
+          
