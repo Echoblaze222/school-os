@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '../secretary.module.css'
 
-interface Record { id: string; student_name: string; record_type: string; description: string; date: string; created_by?: string }
-interface Props { records: Record[]; profile: any; school: any; userId: string }
+interface StudentRecord { id: string; student_name: string; record_type: string; description: string; date: string; created_by?: string }
+interface Props { records: StudentRecord[]; profile: any; school: any; userId: string }
 
 const TYPES = ['Academic', 'Disciplinary', 'Medical', 'Transfer', 'Achievement', 'Other']
 const TYPE_COLORS: Record<string, string> = {
@@ -20,7 +20,7 @@ export default function RecordsClient({ records: init, profile, school, userId }
   const [search,   setSearch]   = useState('')
   const [typeTab,  setTypeTab]  = useState('all')
   const [modal,    setModal]    = useState(false)
-  const [viewItem, setViewItem] = useState<Record | null>(null)
+  const [viewItem, setViewItem] = useState<StudentRecord | null>(null)
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState('')
   const [form,     setForm]     = useState({ student_name: '', record_type: 'Academic', description: '', date: new Date().toISOString().slice(0, 10) })
