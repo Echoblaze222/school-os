@@ -2,9 +2,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CodesClient from '@/app/dashboard/secretary/codes/CodesClient'
-import type { ClassOption } from '@/app/dashboard/secretary/codes/page'
 
-export const metadata = { title: 'Generate Access Codes — SchoolOS' }
+export const metadata = { title: 'Access Codes — SchoolOS' }
 
 export default async function PrincipalCodesPage() {
   const supabase = await createClient()
@@ -14,29 +13,31 @@ export default async function PrincipalCodesPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('school_id')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
-  const schoolId = (profile as any)?.school_id ?? ''
+  if (!profile || (profile as any).role !== 'principal') redirect('/login')
 
-  const { data: classes } = await supabase
-    .from('classes')
-    .select('id, name')
+  const school   = (profile as any).schools ?? null
+  const schoolId = (profile as any).school_id ?? ''
+
+  // FIX 1: classes table has `level` + `section`, not `name`
+  // FIX 2: CodesClient expects `entries` (profiles rows), not classOptions
+  const { data: entries } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, role, default_code, is_active, created_at')
     .eq('school_id', schoolId)
-    .order('name')
-
-  const classOptions: ClassOption[] = (classes ?? []).map((c: any) => ({
-    id: c.id,
-    name: c.name,
-  }))
+    .eq('is_active', true)
+    .order('role')
+    .order('full_name')
 
   return (
     <CodesClient
-      classOptions={classOptions}
-      schoolId={schoolId}
-      secretaryId={user.id}
-      backHref="/dashboard/principal"
+      entries={entries ?? []}
+      profile={profile}
+      school={school}
+      userId={user.id}
     />
   )
 }
