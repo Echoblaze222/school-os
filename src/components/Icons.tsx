@@ -878,3 +878,33 @@ export function CompassIcon({ size = 24, color = 'currentColor', strokeWidth = 1
     </svg>
   )
 }
+
+// ── Alert Circle / Warning ────────────────────────────────────
+export function AlertCircleIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  )
+}
+
+// ── Credit Card / Payment ─────────────────────────────────────
+export function CreditCardIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+      <line x1="1" y1="10" x2="23" y2="10"/>
+    </svg>
+  )
+}
+
+// ── Folder ────────────────────────────────────────────────────
+export function FolderIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
+  )
+}
