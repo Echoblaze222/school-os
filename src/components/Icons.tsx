@@ -647,3 +647,23 @@ export function ChevronRightIcon({ size = 24, color = 'currentColor', strokeWidt
     </svg>
   )
 }
+
+// ── Folder ────────────────────────────────────────────────────
+export function FolderIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
+  )
+}
+
+// ── Sparkles / AI ─────────────────────────────────────────────
+export function SparklesIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
+      <path d="M5 3L4 6l-3 1 3 1 1 3 1-3 3-1-3-1z"/>
+      <path d="M19 13l-.7 2.3-2.3.7 2.3.7.7 2.3.7-2.3 2.3-.7-2.3-.7z"/>
+    </svg>
+  )
+}
