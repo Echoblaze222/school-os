@@ -453,5 +453,5 @@ export default function PrincipalChatClient({
       </nav>
     </div>
   )
-}
-  
+    }
+      
