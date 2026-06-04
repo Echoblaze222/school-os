@@ -1,12 +1,12 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import {
   MessageIcon, SearchIcon, PlusIcon,
-  UserIcon, PeopleIcon, ArrowLeftIcon,
+  UserIcon, PeopleIcon,
 } from '@/components/Icons'
 import styles from './chat.module.css'
 
@@ -24,8 +24,28 @@ interface Room {
   room_type:     string
   updated_at:    string
   last_message?: string
-  unread?:       number
   other_user?:   { full_name: string; role: string; default_code: string; avatar_url?: string }
+}
+
+// Maps role pairs to valid chat_room_type enum values
+function getRoomType(roleA: string, roleB: string): string {
+  const map: Record<string, string> = {
+    'principal_principal': 'principal_to_principal',
+    'teacher_teacher':     'teacher_to_teacher',
+    'student_student':     'student_to_student',
+    'student_teacher':     'student_to_teacher',
+    'teacher_student':     'student_to_teacher',
+    'principal_teacher':   'teacher_to_teacher',
+    'teacher_principal':   'teacher_to_teacher',
+    'principal_student':   'student_to_teacher',
+    'student_principal':   'student_to_teacher',
+    'bursar_teacher':      'teacher_to_teacher',
+    'bursar_principal':    'principal_to_principal',
+    'secretary_teacher':   'teacher_to_teacher',
+    'secretary_principal': 'principal_to_principal',
+  }
+  const key = `${roleA}_${roleB}`
+  return map[key] ?? 'student_to_teacher'
 }
 
 export default function UniversalChatPage({ profile, school, userId, role, schoolColor = '#7C3AED' }: Props) {
@@ -42,7 +62,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
   useEffect(() => { loadRooms() }, [])
 
   async function loadRooms() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('chat_room_members')
       .select(`
         room_id,
@@ -61,12 +81,10 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
         const room = d.room
         if (!room) return null
 
-        // For direct rooms, find the other person
         const other = room.room_type !== 'group'
           ? room.members?.find((m: any) => m.user?.id !== userId)?.user
           : null
 
-        // Get last message — sort by sent_at
         const msgs = (room.messages ?? []).sort(
           (a: any, b: any) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()
         )
@@ -74,7 +92,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
 
         return {
           id:           room.id,
-          name:         other?.full_name ?? room.name ?? 'Group Chat',
+          name:         other?.full_name ?? room.name ?? 'Chat',
           room_type:    room.room_type,
           updated_at:   room.updated_at,
           last_message: lastMsg?.content ?? null,
@@ -82,7 +100,6 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
         }
       }).filter(Boolean) as Room[]
 
-      // Sort by latest activity
       processed.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       setRooms(processed)
     }
@@ -92,39 +109,56 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
   // ── Find user by ID code ──────────────────────────────────
   async function findUserByCode() {
     if (!code.trim()) return
-    setFinding(true); setFindError(''); setFoundUser(null)
+    setFinding(true)
+    setFindError('')
+    setFoundUser(null)
 
     const cleaned = code.trim().toUpperCase()
 
-    // Exact match — no school_id filter (supports cross-school search)
-    let { data } = await supabase
+    // Exact match
+    const { data: exactData, error: exactError } = await supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
       .eq('default_code', cleaned)
-      .single()
+      .maybeSingle()
 
-    // Fuzzy fallback — strip dashes, match last 6 chars
-    if (!data) {
-      const stripped = cleaned.replace(/-/g, '')
-      const { data: fuzzy } = await supabase
-        .from('profiles')
-        .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
-        .ilike('default_code', `%${stripped.slice(-6)}%`)
-        .limit(1)
-        .single()
-      data = fuzzy ?? null
+    if (exactData) {
+      if (exactData.id === userId) {
+        setFindError("That's your own code! Enter someone else's.")
+        setFinding(false)
+        return
+      }
+      setFoundUser(exactData)
+      setFinding(false)
+      return
     }
 
-    if (!data) {
-      setFindError('No user found with that code. Check and try again.')
-      setFinding(false); return
-    }
-    if (data.id === userId) {
-      setFindError("That's your own code! Enter someone else's.")
-      setFinding(false); return
+    // Fuzzy fallback
+    const stripped = cleaned.replace(/-/g, '')
+    const { data: fuzzyData } = await supabase
+      .from('profiles')
+      .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
+      .ilike('default_code', `%${stripped.slice(-6)}%`)
+      .limit(1)
+      .maybeSingle()
+
+    if (fuzzyData) {
+      if (fuzzyData.id === userId) {
+        setFindError("That's your own code! Enter someone else's.")
+        setFinding(false)
+        return
+      }
+      setFoundUser(fuzzyData)
+      setFinding(false)
+      return
     }
 
-    setFoundUser(data)
+    // Nothing found — show exact error message from Supabase if available
+    setFindError(
+      exactError?.message
+        ? `Error: ${exactError.message}`
+        : 'No user found with that code. Check and try again.'
+    )
     setFinding(false)
   }
 
@@ -133,7 +167,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
     if (!foundUser) return
     setFinding(true)
 
-    // Check if a DM room already exists between these two users
+    // Check if room already exists between these two users
     const { data: myRooms } = await supabase
       .from('chat_room_members')
       .select('room_id')
@@ -141,7 +175,6 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
 
     if (myRooms && myRooms.length > 0) {
       const myRoomIds = myRooms.map((r: any) => r.room_id)
-
       const { data: shared } = await supabase
         .from('chat_room_members')
         .select('room_id')
@@ -149,13 +182,12 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
         .in('room_id', myRoomIds)
 
       if (shared && shared.length > 0) {
-        // Verify it's a direct (non-group) room
         const { data: roomCheck } = await supabase
           .from('chat_rooms')
-          .select('id, room_type')
+          .select('id')
           .eq('id', shared[0].room_id)
           .eq('is_group', false)
-          .single()
+          .maybeSingle()
 
         if (roomCheck) {
           router.push(`/dashboard/${role}/chat/${roomCheck.id}`)
@@ -165,15 +197,16 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       }
     }
 
-    // Create new DM room
+    // Create new DM room with correct enum value
     const isCrossSchool = foundUser.school_id !== profile?.school_id
     const roomName = [profile?.full_name, foundUser.full_name].sort().join(' & ')
+    const roomType = getRoomType(role, foundUser.role)
 
     const { data: room, error: roomError } = await supabase
       .from('chat_rooms')
       .insert({
         name:       roomName,
-        room_type:  'direct_message',
+        room_type:  roomType,
         is_group:   false,
         created_by: userId,
         school_id:  isCrossSchool ? null : profile?.school_id,
@@ -182,8 +215,9 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       .single()
 
     if (roomError || !room) {
-      setFindError('Failed to create chat room. Please try again.')
-      setFinding(false); return
+      setFindError(`Room error: ${roomError?.message ?? 'Unknown error'}`)
+      setFinding(false)
+      return
     }
 
     await supabase.from('chat_room_members').insert([
@@ -225,7 +259,6 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
         {/* ── SIDEBAR ─────────────────────────────────────── */}
         <div className={styles.sidebar}>
 
-          {/* New chat button */}
           <div className={styles.sidebarTop}>
             <p className={styles.sidebarTitle}>Chats</p>
             <button
@@ -302,34 +335,20 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
           {/* Room list */}
           <div className={styles.roomList}>
             {loading
-              ? (
-                <div className={styles.listLoading}>
-                  <span /><span /><span />
-                </div>
-              )
+              ? <div className={styles.listLoading}><span /><span /><span /></div>
               : rooms.length === 0
                 ? (
                   <div className={styles.emptyList}>
                     <MessageIcon size={28} color="var(--text-faint)" />
                     <p>No chats yet</p>
-                    <p style={{ fontSize: '0.72rem' }}>
-                      Use the + button to find someone by ID code
-                    </p>
+                    <p style={{ fontSize: '0.72rem' }}>Use the + button to find someone by ID code</p>
                   </div>
                 )
                 : rooms.map(room => (
-                  <Link
-                    key={room.id}
-                    href={`/dashboard/${role}/chat/${room.id}`}
-                    className={styles.roomItem}
-                  >
+                  <Link key={room.id} href={`/dashboard/${role}/chat/${room.id}`} className={styles.roomItem}>
                     <div
                       className={styles.roomAvatar}
-                      style={{
-                        background: room.other_user
-                          ? (ROLE_COLORS[room.other_user.role] ?? schoolColor)
-                          : schoolColor,
-                      }}
+                      style={{ background: room.other_user ? (ROLE_COLORS[room.other_user.role] ?? schoolColor) : schoolColor }}
                     >
                       {room.other_user?.avatar_url
                         ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
@@ -343,12 +362,8 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                         <p className={styles.roomName}>{room.name}</p>
                         <span className={styles.roomTime}>{timeAgo(room.updated_at)}</span>
                       </div>
-                      {room.last_message && (
-                        <p className={styles.roomPreview}>{room.last_message}</p>
-                      )}
-                      {room.other_user && (
-                        <p className={styles.roomCode}>{room.other_user.default_code}</p>
-                      )}
+                      {room.last_message && <p className={styles.roomPreview}>{room.last_message}</p>}
+                      {room.other_user && <p className={styles.roomCode}>{room.other_user.default_code}</p>}
                     </div>
                   </Link>
                 ))
@@ -356,7 +371,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
           </div>
         </div>
 
-        {/* ── EMPTY STATE (desktop right panel) ───────────── */}
+        {/* ── EMPTY STATE ──────────────────────────────────── */}
         <div className={styles.emptyChat}>
           <MessageIcon size={48} color="var(--text-faint)" strokeWidth={1} />
           <h3>Select a chat</h3>
@@ -366,5 +381,4 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
       </div>
     </div>
   )
-            }
-      
+                    }
