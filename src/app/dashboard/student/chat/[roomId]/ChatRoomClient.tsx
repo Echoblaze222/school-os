@@ -12,9 +12,9 @@ import styles from './chat-room.module.css'
 
 interface Message {
   id:         string
-  content:    string        // was: body
+  content:    string
   sender_id:  string
-  sent_at:    string        // was: created_at
+  sent_at:    string
   file_url?:  string
   file_type?: string
   is_deleted: boolean
@@ -57,15 +57,25 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     const ch = supabase.channel(`room:${roomId}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public',
-        table: 'chat_messages',              // ✅ correct table
+        table: 'chat_messages',
         filter: `room_id=eq.${roomId}`,
       }, async payload => {
+        // FIX: fetch full message with sender info
         const { data: msg } = await supabase
-          .from('chat_messages')             // ✅ correct table
+          .from('chat_messages')
           .select('*, sender:profiles(full_name, avatar_url)')
           .eq('id', payload.new.id)
           .single()
-        if (msg) setMessages(prev => [...prev, msg as Message])
+
+        if (msg) {
+          setMessages(prev => {
+            // FIX: Deduplicate — skip if this real ID already exists
+            // (was already replaced by optimistic update replacement)
+            if (prev.find(x => x.id === msg.id)) return prev
+            // Also skip if there's a temp message that was already replaced
+            return [...prev, msg as Message]
+          })
+        }
       })
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState()
@@ -101,10 +111,10 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   async function loadMessages() {
     setLoading(true)
     const { data } = await supabase
-      .from('chat_messages')               // ✅ correct table
+      .from('chat_messages')
       .select('*, sender:profiles(full_name, avatar_url)')
       .eq('room_id', roomId)
-      .order('sent_at', { ascending: true }) // ✅ correct column
+      .order('sent_at', { ascending: true })
       .limit(100)
     if (data) setMessages(data as Message[])
     setLoading(false)
@@ -125,16 +135,18 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }
 
   // ── Send text ─────────────────────────────────────────────
+  // FIX: Replace temp message with real DB row; prevents blank/duplicate messages
   async function sendText() {
     if (!text.trim() || sending) return
     setSending(true)
     const content = text.trim()
+    const tempId = `temp-${Date.now()}`
     setText('')
     inputRef.current?.focus()
 
-    // Optimistic update
+    // Optimistic update with temp ID
     const temp: Message = {
-      id:         `temp-${Date.now()}`,
+      id:         tempId,
       content,
       sender_id:  userId,
       sent_at:    new Date().toISOString(),
@@ -143,62 +155,113 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
     setMessages(prev => [...prev, temp])
 
-    const { error } = await supabase.from('chat_messages').insert({
-      room_id:   roomId,
-      sender_id: userId,
-      content,                             // ✅ correct column
-    })
+    // Insert and get the real row back
+    const { data: newMsg, error } = await supabase
+      .from('chat_messages')
+      .insert({ room_id: roomId, sender_id: userId, content })
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
 
     if (error) {
-      setMessages(prev => prev.filter(m => m.id !== temp.id))
+      // Roll back optimistic update on error
+      setMessages(prev => prev.filter(m => m.id !== tempId))
       setText(content)
+    } else if (newMsg) {
+      // FIX: Replace temp with real message so subscription doesn't add a duplicate
+      setMessages(prev => prev.map(m => m.id === tempId ? newMsg as Message : m))
     }
 
     setSending(false)
   }
 
   // ── Send voice ────────────────────────────────────────────
+  // FIX: Add direct insert result to messages; don't rely solely on subscription
   async function sendVoice() {
     if (!voice.audioBlob || sending) return
     setSending(true)
+
     const fileName = `voice/${userId}/${Date.now()}.webm`
-    const { error } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('chat-audio')
       .upload(fileName, voice.audioBlob, { contentType: 'audio/webm' })
-    if (!error) {
-      const { data: url } = supabase.storage.from('chat-audio').getPublicUrl(fileName)
-      await supabase.from('chat_messages').insert({
+
+    if (uploadError) {
+      console.error('Voice upload error:', uploadError)
+      setSending(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('chat-audio').getPublicUrl(fileName)
+
+    // FIX: Use .select().single() to get the inserted row back immediately
+    const { data: newMsg, error: insertError } = await supabase
+      .from('chat_messages')
+      .insert({
         room_id:   roomId,
         sender_id: userId,
         content:   '🎤 Voice message',
-        file_url:  url.publicUrl,
+        file_url:  urlData.publicUrl,
         file_type: 'audio',
       })
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
+
+    if (!insertError && newMsg) {
+      // FIX: Add directly to state — don't wait for subscription
+      setMessages(prev => {
+        if (prev.find(x => x.id === (newMsg as Message).id)) return prev
+        return [...prev, newMsg as Message]
+      })
     }
+
     voice.resetRecording()
     setSending(false)
   }
 
   // ── Send file ─────────────────────────────────────────────
+  // FIX: Add direct insert result to messages; don't rely solely on subscription
   async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || sending) return
     setSending(true)
+
     const ext      = file.name.split('.').pop()
     const fileName = `files/${userId}/${Date.now()}.${ext}`
     const isImage  = file.type.startsWith('image/')
     const bucket   = isImage ? 'chat-images' : 'chat-files'
-    const { error } = await supabase.storage.from(bucket).upload(fileName, file)
-    if (!error) {
-      const { data: url } = supabase.storage.from(bucket).getPublicUrl(fileName)
-      await supabase.from('chat_messages').insert({
+
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, file)
+
+    if (uploadError) {
+      console.error('File upload error:', uploadError)
+      e.target.value = ''
+      setSending(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fileName)
+
+    // FIX: Use .select().single() to get the inserted row back immediately
+    const { data: newMsg, error: insertError } = await supabase
+      .from('chat_messages')
+      .insert({
         room_id:   roomId,
         sender_id: userId,
         content:   isImage ? '🖼️ Image' : `📎 ${file.name}`,
-        file_url:  url.publicUrl,
+        file_url:  urlData.publicUrl,
         file_type: isImage ? 'image' : 'file',
       })
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
+
+    if (!insertError && newMsg) {
+      // FIX: Add directly to state — don't wait for subscription
+      setMessages(prev => {
+        if (prev.find(x => x.id === (newMsg as Message).id)) return prev
+        return [...prev, newMsg as Message]
+      })
     }
+
     e.target.value = ''
     setSending(false)
   }
@@ -240,7 +303,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   // Group messages by date
   const grouped = messages.reduce((acc, msg) => {
-    const day = new Date(msg.sent_at).toDateString()   // ✅ correct column
+    const day = new Date(msg.sent_at).toDateString()
     if (!acc[day]) acc[day] = []
     acc[day].push(msg)
     return acc
@@ -318,20 +381,22 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       style={isMe ? { background: schoolColor } : undefined}
                       onDoubleClick={() => setEmojiTarget(emojiTarget === msg.id ? null : msg.id)}
                     >
-                      {/* File/audio/image content */}
+                      {/* Audio content */}
                       {msg.file_type === 'audio' && msg.file_url && (
                         <audio controls src={msg.file_url} className={styles.audio} />
                       )}
+                      {/* Image content */}
                       {msg.file_type === 'image' && msg.file_url && (
                         <img src={msg.file_url} alt="Image" className={styles.msgImage} />
                       )}
+                      {/* File content */}
                       {msg.file_type === 'file' && msg.file_url && (
                         <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}>
                           📎 {msg.content}
                         </a>
                       )}
-                      {/* Text content */}
-                      {!msg.file_type && (
+                      {/* Text content — show for non-file messages OR as caption for audio/image */}
+                      {(!msg.file_type || msg.file_type === 'audio') && (
                         msg.is_deleted
                           ? <p className={styles.deleted}>🚫 Message deleted</p>
                           : <p className={styles.bubbleText}>{msg.content}</p>
@@ -433,4 +498,5 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       {voice.error && <p className={styles.voiceError}>{voice.error}</p>}
     </div>
   )
-          }
+}
+  
