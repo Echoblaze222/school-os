@@ -29,10 +29,12 @@ export default async function StudentDashboardPage() {
     supabase.from('quizzes')
       .select('*', { count: 'exact', head: true })
       .eq('school_id', profile?.school_id)
+      .eq('class_id', profile?.class_id)
       .gte('scheduled_at', new Date().toISOString()),
     supabase.from('live_classes')
       .select('id')
       .eq('school_id', profile?.school_id)
+      .eq('class_id', profile?.class_id)
       .eq('status', 'live')
       .single(),
     supabase.from('notifications')

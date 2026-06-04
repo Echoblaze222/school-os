@@ -143,8 +143,6 @@ export default function InvoicesClient({ invoices, schoolId }: any) {
         ) : (
           filtered.map((inv: any) => {
             const student = inv['profiles!student_id'] as any
-            const sp      = student?.student_profiles as any
-            const cls     = sp?.classes as any
             const fee     = inv.fee_structures as any
 
             return (
@@ -154,7 +152,7 @@ export default function InvoicesClient({ invoices, schoolId }: any) {
                     <p className={styles.studentName}>{student?.full_name ?? 'Unknown'}</p>
                     <p className={styles.studentMeta}>
                       {student?.permanent_student_id ?? '—'}
-                      {cls ? ` · ${cls.level} ${cls.section}` : ''}
+                      {student?.class_level ? ` · ${student.class_level}` : ''}
                     </p>
                   </div>
                   <span className={`badge ${STATUS_COLORS[inv.status] ?? 'badge-info'}`}>
@@ -200,24 +198,6 @@ export default function InvoicesClient({ invoices, schoolId }: any) {
       </div>
 
       <div style={{ height: '100px' }} />
-
-      <nav className="bottom-nav">
-        <a href="/dashboard/bursar/payments/new" className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>💳</span><span>Record</span>
-        </a>
-        <a href="/dashboard/bursar/payments" className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>📄</span><span>Payments</span>
-        </a>
-        <a href="/dashboard/bursar" className="nav-home">
-          <span style={{ fontSize: '1.3rem' }}>🏠</span>
-        </a>
-        <a href="/dashboard/bursar/invoices" className="nav-item active">
-          <span style={{ fontSize: '1.2rem' }}>🧾</span><span>Invoices</span>
-        </a>
-        <a href="/dashboard/bursar/ai" className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>🤖</span><span>AI</span>
-        </a>
-      </nav>
     </div>
   )
 }

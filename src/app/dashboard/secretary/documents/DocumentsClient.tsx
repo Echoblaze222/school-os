@@ -1,129 +1,149 @@
 'use client'
-import { useState, useEffect } from 'react'
+// src/app/dashboard/secretary/documents/DocumentsClient.tsx
+
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { FileTextIcon, PlusIcon } from '@/components/Icons'
-import styles from '@/app/dashboard/student/records/page.module.css'
+import styles from '../secretary.module.css'
 
-interface Props { profile: any; school: any; userId: string }
-
-const CATEGORIES = ['all','policy','circular','form','report','general']
-const CAT_COLOR: Record<string,string> = {
-  policy:'#EF4444', circular:'#3B82F6', form:'#10B981', report:'#F59E0B', general:'#6B7280'
+const DOC_CATS = ['General', 'Admissions', 'Academic', 'Finance', 'Legal', 'HR', 'Other']
+const CAT_COLORS: Record<string, string> = {
+  General: '#6B7280', Admissions: '#3B82F6', Academic: '#10B981',
+  Finance: '#F59E0B', Legal: '#EF4444', HR: '#8B5CF6', Other: '#EC4899',
 }
+const FILE_ICONS: Record<string, string> = { pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', ppt: '📙', pptx: '📙', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', default: '📄' }
 
-export default function DocumentsClient({ profile, school, userId }: Props) {
-  const [docs,    setDocs]    = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
-  const [cat,     setCat]     = useState('all')
-  const [showForm,setShowForm]= useState(false)
-  const [form,    setForm]    = useState({ title:'', content:'', category:'general' })
+interface Doc { id: string; name: string; category: string; file_url: string; file_size: number | null; uploaded_at: string; uploader_name?: string }
+interface Props { docs: Doc[]; profile: any; school: any; userId: string }
+
+export default function DocumentsClient({ docs: init, profile, school, userId }: Props) {
+  const [docs,     setDocs]    = useState(init)
+  const [catTab,   setCatTab]  = useState('all')
+  const [search,   setSearch]  = useState('')
+  const [uploading,setUpload]  = useState(false)
+  const [modal,    setModal]   = useState(false)
+  const [saving,   setSaving]  = useState(false)
+  const [msg,      setMsg]     = useState('')
+  const [form,     setForm]    = useState({ name: '', category: 'General' })
+  const [file,     setFile]    = useState<File | null>(null)
+
+  const fileRef  = useRef<HTMLInputElement>(null)
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { load() }, [cat])
+  const filtered = docs.filter(d => {
+    const matchCat    = catTab === 'all' || d.category === catTab
+    const matchSearch = d.name?.toLowerCase().includes(search.toLowerCase())
+    return matchCat && matchSearch
+  })
 
-  async function load() {
-    setLoading(true)
-    let q = supabase.from('school_documents').select('*').eq('school_id', school?.id)
-      .order('created_at', { ascending:false })
-    if (cat!=='all') q = q.eq('category', cat)
-    const { data } = await q.limit(40)
-    if (data) setDocs(data)
-    setLoading(false)
+  async function upload() {
+    if (!file || !form.name.trim()) { setMsg('Name and file are required.'); return }
+    setSaving(true); setMsg('')
+
+    const ext  = file.name.split('.').pop() ?? 'bin'
+    const path = `school_docs/${school?.id}/${Date.now()}.${ext}`
+
+    const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: false })
+    if (upErr) { setMsg(upErr.message); setSaving(false); return }
+
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
+
+    const { data, error } = await supabase.from('school_documents').insert({
+      name: form.name, category: form.category, file_url: urlData.publicUrl,
+      file_size: file.size, school_id: school?.id, uploaded_by: userId,
+      uploader_name: profile?.full_name, uploaded_at: new Date().toISOString(),
+    }).select().single()
+
+    if (!error && data) { setDocs(p => [data, ...p]); setModal(false); setFile(null) }
+    else setMsg(error?.message ?? 'Failed')
+    setSaving(false)
   }
 
-  async function submit() {
-    if (!form.title.trim()) return
-    setSaving(true)
-    await supabase.from('school_documents').insert({ ...form, school_id:school.id, created_by:userId })
-    setForm({ title:'', content:'', category:'general' }); setShowForm(false); setSaving(false)
-    load()
+  async function deleteDoc(id: string) {
+    await supabase.from('school_documents').delete().eq('id', id)
+    setDocs(p => p.filter(d => d.id !== id))
   }
 
-  function fmtDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })
+  function fileIcon(url: string) {
+    const ext = url?.split('.')?.pop()?.toLowerCase() ?? ''
+    return FILE_ICONS[ext] ?? FILE_ICONS.default
   }
 
-  const inp: React.CSSProperties = { width:'100%', height:42, padding:'0 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }
+  function formatSize(bytes: number | null) {
+    if (!bytes) return '—'
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024*1024) return `${(bytes/1024).toFixed(0)} KB`
+    return `${(bytes/1024/1024).toFixed(1)} MB`
+  }
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Documents">
-      {showForm && (
-        <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
-          borderRadius:'var(--radius-xl)', padding:'var(--space-5)', marginBottom:'var(--space-5)' }}>
-          <p style={{ fontSize:'0.85rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 var(--space-4)' }}>New Document</p>
-          <div style={{ display:'grid', gap:'var(--space-3)' }}>
-            <input placeholder="Document title *" value={form.title}
-              onChange={e => setForm(p => ({...p, title:e.target.value}))} style={inp}/>
-            <select value={form.category} onChange={e => setForm(p => ({...p, category:e.target.value}))} style={inp}>
-              {['policy','circular','form','report','general'].map(c => <option key={c}>{c}</option>)}
-            </select>
-            <textarea placeholder="Content / body (optional)" value={form.content} rows={4}
-              onChange={e => setForm(p => ({...p, content:e.target.value}))}
-              style={{ ...inp, height:'auto', padding:'10px 12px', resize:'none' }}/>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input className={styles.searchInput} placeholder="Search documents…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ name: '', category: 'General' }); setModal(true) }} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>⬆ Upload</button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
+        {['all', ...DOC_CATS].map(c => (
+          <button key={c} onClick={() => setCatTab(c)}
+            style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              background: catTab === c ? (CAT_COLORS[c] ?? sc) + '22' : 'var(--glass-bg)',
+              borderColor: catTab === c ? (CAT_COLORS[c] ?? sc) : 'var(--glass-border)',
+              color: catTab === c ? (CAT_COLORS[c] ?? sc) : 'var(--text-muted)',
+            }}>{c}</button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className={styles.emptyState}><p className={styles.emptyEmoji}>📁</p><p className={styles.emptyTitle}>No documents</p><p className={styles.emptyHint}>Upload school documents, forms, and policies</p></div>
+      ) : (
+        filtered.map(d => (
+          <div key={d.id} className={styles.listItem}>
+            <div className={styles.listIconBox} style={{ background: (CAT_COLORS[d.category] ?? sc) + '22' }}>
+              <span style={{ fontSize: '1.3rem' }}>{fileIcon(d.file_url)}</span>
+            </div>
+            <div className={styles.listContent}>
+              <p className={styles.listTitle}>{d.name}</p>
+              <p className={styles.listSub}>{formatSize(d.file_size)} · {d.uploader_name ?? 'Secretary'} · {new Date(d.uploaded_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+            </div>
+            <span className={styles.listBadge} style={{ background: (CAT_COLORS[d.category] ?? '#6B7280') + '22', color: CAT_COLORS[d.category] ?? '#6B7280' }}>{d.category}</span>
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+              <a href={d.file_url} target="_blank" rel="noopener noreferrer" style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇️</a>
+              <button onClick={() => deleteDoc(d.id)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+            </div>
           </div>
-          <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>
-            <button onClick={submit} disabled={saving || !form.title.trim()}
-              style={{ flex:1, height:42, background:sc, color:'#fff', border:'none', borderRadius:8,
-                fontWeight:700, fontSize:'0.85rem', cursor:'pointer', opacity:saving?0.6:1 }}>
-              {saving ? 'Saving…' : 'Save Document'}
-            </button>
-            <button onClick={() => setShowForm(false)}
-              style={{ padding:'0 20px', height:42, background:'var(--input-bg)', color:'var(--text-muted)',
-                border:'1px solid var(--input-border)', borderRadius:8, fontWeight:700, cursor:'pointer' }}>
-              Cancel
-            </button>
+        ))
+      )}
+
+      {modal && (
+        <div className={styles.modalOverlay} onClick={() => setModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Upload Document</h2>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Document Name *</label><input className={styles.formInput} value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} placeholder="e.g. Admission Policy 2025" /></div>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Category</label>
+              <select className={styles.formSelect} value={form.category} onChange={e => setForm(p => ({...p, category: e.target.value}))}>
+                {DOC_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>File *</label>
+              <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
+              <button onClick={() => fileRef.current?.click()}
+                style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', width: '100%', height: 48, padding: '0 var(--space-4)', background: 'var(--glass-bg)', border: '2px dashed var(--glass-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                📎 {file ? file.name : 'Choose file…'}
+              </button>
+              {file && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>{formatSize(file.size)}</p>}
+            </div>
+            {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button><button className={styles.btnPrimary} onClick={upload} disabled={saving}>{saving ? 'Uploading…' : 'Upload'}</button></div>
           </div>
         </div>
       )}
-
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--space-4)' }}>
-        <div className={styles.subjectScroll} style={{ flex:1 }}>
-          {CATEGORIES.map(c => (
-            <button key={c} onClick={() => setCat(c)}
-              className={`${styles.subjectPill} ${cat===c ? styles.subjectPillActive : ''}`}
-              style={cat===c ? { background:sc, borderColor:sc, color:'#fff' } : { borderColor:sc+'50', color:sc, textTransform:'capitalize' }}>
-              {c}
-            </button>
-          ))}
-        </div>
-        {!showForm && (
-          <button onClick={() => setShowForm(true)}
-            style={{ display:'flex', alignItems:'center', gap:6, height:36, padding:'0 14px',
-              background:sc, color:'#fff', border:'none', borderRadius:8, fontWeight:700, fontSize:'0.8rem',
-              cursor:'pointer', flexShrink:0, marginLeft:'var(--space-3)' }}>
-            <PlusIcon size={14} color="#fff"/> New
-          </button>
-        )}
-      </div>
-
-      {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
-        : docs.length === 0
-          ? <div className={styles.empty}><FileTextIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No documents found</p></div>
-          : <div className={styles.list}>
-              {docs.map((doc:any) => {
-                const color = CAT_COLOR[doc.category] ?? '#6B7280'
-                return (
-                  <div key={doc.id} className={styles.card}>
-                    <div className={styles.cardIcon} style={{ background:color+'20' }}>
-                      <FileTextIcon size={16} color={color}/>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <p className={styles.cardTitle}>{doc.title}</p>
-                      <p className={styles.cardMeta} style={{ textTransform:'capitalize' }}>
-                        {doc.category}{doc.content ? ` · ${doc.content.slice(0,55)}…` : ''}
-                      </p>
-                    </div>
-                    <p style={{ fontSize:'0.7rem', color:'var(--text-muted)', flexShrink:0 }}>{fmtDate(doc.created_at)}</p>
-                  </div>
-                )
-              })}
-            </div>
-      }
-      <div className={styles.spacer}/>
+      <div style={{ height: 110 }} />
     </RolePageWrapper>
   )
 }

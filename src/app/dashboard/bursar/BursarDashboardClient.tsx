@@ -8,21 +8,26 @@ import {
   HomeIcon, WalletIcon, FileTextIcon, BarChartIcon,
   MessageIcon, DownloadIcon, PeopleIcon, ClockIcon,
   CheckCircleIcon, BellIcon, SettingsIcon,
+  CreditCardIcon, AiIcon, ClipboardIcon,
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
 import styles from './bursar.module.css'
 
 const MODULES = [
-  { id: 'fees',       label: 'Fee Records',    Icon: WalletIcon,      href: '/dashboard/bursar/fees',       accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'payments',  label: 'Payments',        Icon: CheckCircleIcon, href: '/dashboard/bursar/payments',   accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'receipts',  label: 'Receipts',        Icon: FileTextIcon,    href: '/dashboard/bursar/receipts',   accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'reports',   label: 'Reports',         Icon: BarChartIcon,    href: '/dashboard/bursar/reports',    accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'debtors',   label: 'Debtors',         Icon: PeopleIcon,      href: '/dashboard/bursar/debtors',    accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'reminders', label: 'Reminders',       Icon: BellIcon,        href: '/dashboard/bursar/reminders',  accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'export',    label: 'Export Data',     Icon: DownloadIcon,    href: '/dashboard/bursar/export',     accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'history',   label: 'History',         Icon: ClockIcon,       href: '/dashboard/bursar/history',    accent: '#F97316', bg: '#4a2810' },
-  { id: 'chat',      label: 'Messages',        Icon: MessageIcon,     href: '/dashboard/bursar/chat',       accent: '#7C3AED', bg: '#2d1060' },
-  { id: 'settings',  label: 'Settings',        Icon: SettingsIcon,    href: '/dashboard/bursar/settings',   accent: '#6B7280', bg: '#1e2a38' },
+  { id: 'fees',           label: 'Fee Records',    Icon: WalletIcon,      href: '/dashboard/bursar/fees',             accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'record-payment', label: 'Record Payment', Icon: CreditCardIcon,  href: '/dashboard/bursar/record-payment',   accent: '#06B6D4', bg: '#0a3040' },
+  { id: 'payments',       label: 'Payments',       Icon: CheckCircleIcon, href: '/dashboard/bursar/payments',         accent: '#3B82F6', bg: '#1e3a5f' },
+  { id: 'invoices',       label: 'Invoices',       Icon: FileTextIcon,    href: '/dashboard/bursar/invoices',         accent: '#A78BFA', bg: '#2d1060' },
+  { id: 'receipts',       label: 'Receipts',       Icon: ClipboardIcon,   href: '/dashboard/bursar/receipts',         accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'reports',        label: 'Reports',        Icon: BarChartIcon,    href: '/dashboard/bursar/reports',          accent: '#8B5CF6', bg: '#2e1f5e' },
+  { id: 'debtors',        label: 'Debtors',        Icon: PeopleIcon,      href: '/dashboard/bursar/debtors',          accent: '#EF4444', bg: '#5f1e1e' },
+  { id: 'reminders',      label: 'Reminders',      Icon: BellIcon,        href: '/dashboard/bursar/reminders',        accent: '#EC4899', bg: '#5a1a40' },
+  { id: 'export',         label: 'Export Data',    Icon: DownloadIcon,    href: '/dashboard/bursar/export',           accent: '#14B8A6', bg: '#0d3535' },
+  { id: 'history',        label: 'History',        Icon: ClockIcon,       href: '/dashboard/bursar/history',          accent: '#F97316', bg: '#4a2810' },
+  { id: 'chat',           label: 'Messages',       Icon: MessageIcon,     href: '/dashboard/bursar/chat',             accent: '#7C3AED', bg: '#2d1060' },
+  { id: 'notifications',  label: 'Notifications',  Icon: BellIcon,        href: '/dashboard/bursar/notifications',    accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'ai',             label: 'AI Assistant',   Icon: AiIcon,          href: '/dashboard/bursar/ai',               accent: '#6EE7B7', bg: '#0d3530' },
+  { id: 'settings',       label: 'Settings',       Icon: SettingsIcon,    href: '/dashboard/bursar/settings',         accent: '#6B7280', bg: '#1e2a38' },
 ]
 
 interface Props { profile: any; school: any; userId: string; counts?: any }

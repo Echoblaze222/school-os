@@ -31,7 +31,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       .from('assignments')
       .select('id, title, subject, description, due_date, status, created_at, class_level')
       .eq('school_id', school?.id)
-      .eq('class_level', profile?.class_level)
+      .eq('class_id', profile?.class_id)
       .order('due_date', { ascending: true })
 
     if (assignments) {

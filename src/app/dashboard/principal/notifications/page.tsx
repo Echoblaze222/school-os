@@ -37,6 +37,7 @@ export default async function NotificationsPage() {
       unreadCount={unreadCount}
       userId={user.id}
       role={profile.role}
+      schoolId={profile.school_id ?? undefined}
     />
   )
 }

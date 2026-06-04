@@ -15,11 +15,12 @@ interface Props {
   school:      any
   title:       string
   showBack?:   boolean
+  fullHeight?: boolean   // removes padding/max-width, stretches to fill — used by AI & Chat
   children:    React.ReactNode
 }
 
 export default function RolePageWrapper({
-  userId, role, profile, school, title, showBack = true, children,
+  userId, role, profile, school, title, showBack = true, fullHeight = false, children,
 }: Props) {
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
@@ -55,7 +56,7 @@ export default function RolePageWrapper({
           />
         )}
 
-        <main className={styles.main}>
+        <main className={fullHeight ? styles.mainFull : styles.main}>
           {children}
         </main>
       </div>

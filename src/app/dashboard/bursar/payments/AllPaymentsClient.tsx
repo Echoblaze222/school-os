@@ -260,29 +260,6 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
       </div>
 
       <div style={{ height: '100px' }} />
-
-      {/* Bottom Nav */}
-      <nav className="bottom-nav">
-        <a href="/dashboard/bursar/payments/new" className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>💳</span>
-          <span>Record</span>
-        </a>
-        <a href="/dashboard/bursar/payments" className="nav-item active">
-          <span style={{ fontSize: '1.2rem' }}>📄</span>
-          <span>Payments</span>
-        </a>
-        <a href="/dashboard/bursar" className="nav-home">
-          <span style={{ fontSize: '1.3rem' }}>🏠</span>
-        </a>
-        <a href="/dashboard/bursar/reminders" className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>📲</span>
-          <span>Reminders</span>
-        </a>
-        <a href="/dashboard/bursar/ai" className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>🤖</span>
-          <span>AI</span>
-        </a>
-      </nav>
     </div>
   )
 }

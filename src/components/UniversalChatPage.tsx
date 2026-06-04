@@ -87,14 +87,30 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
     if (!code.trim()) return
     setFinding(true); setFindError(''); setFoundUser(null)
 
-    const { data, error } = await supabase
+    const cleaned = code.trim().toUpperCase()
+
+    // Try exact match first
+    let { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
-      .eq('default_code', code.trim().toUpperCase())
-      .eq('school_id', profile?.school_id)  // same school only
+      .eq('default_code', cleaned)
+      .eq('school_id', profile?.school_id)
       .single()
 
-    if (error || !data) {
+    // If no exact match, try searching with ilike (partial / stripped dashes)
+    if (!data) {
+      const stripped = cleaned.replace(/-/g, '')
+      const { data: fuzzy } = await supabase
+        .from('profiles')
+        .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
+        .eq('school_id', profile?.school_id)
+        .ilike('default_code', `%${stripped.slice(-6)}%`)
+        .limit(1)
+        .single()
+      data = fuzzy ?? null
+    }
+
+    if (!data) {
       setFindError('No user found with that code. Check and try again.')
       setFinding(false); return
     }
@@ -185,7 +201,7 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                   value={code}
                   onChange={e => setCode(e.target.value.toUpperCase())}
                   onKeyDown={e => e.key === 'Enter' && findUserByCode()}
-                  placeholder="e.g. STU-2024-001"
+                  placeholder="Enter ID code (e.g. TCH-2024-001)"
                   autoFocus
                 />
                 <button className={styles.findBtn} style={{ background: schoolColor }}

@@ -25,9 +25,7 @@ export default async function InvoicesPage() {
       status,
       due_date,
       created_at,
-      profiles!student_id ( full_name, permanent_student_id,
-        student_profiles ( classes ( level, section ) )
-      ),
+      profiles!student_id ( full_name, permanent_student_id, class_level ),
       fee_structures ( description, term, academic_year )
     `)
     .eq('school_id', profile.school_id)

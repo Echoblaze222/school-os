@@ -1,97 +1,190 @@
 'use client'
-import { useState, useEffect } from 'react'
+// src/app/dashboard/secretary/students/StudentsClient.tsx
+
+import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { PeopleIcon } from '@/components/Icons'
-import styles from '@/app/dashboard/student/records/page.module.css'
+import styles from '../secretary.module.css'
 
-interface Props { profile: any; school: any; userId: string }
+interface Student {
+  user_id: string
+  full_name: string
+  student_number: string
+  class_id: string | null
+  class_name?: string
+  onboarding_status: string
+  created_at: string
+  email?: string
+}
 
-export default function StudentsClient({ profile, school, userId }: Props) {
-  const [classes,  setClasses]  = useState<any[]>([])
-  const [students, setStudents] = useState<any[]>([])
-  const [loading,  setLoading]  = useState(true)
+interface Props { students: Student[]; profile: any; school: any; userId: string; classes: any[] }
+
+export default function StudentsClient({ students: init, profile, school, userId, classes }: Props) {
+  const [students, setStudents] = useState(init)
   const [search,   setSearch]   = useState('')
-  const [classId,  setClassId]  = useState<string | null>(null)
-  const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const [modal,    setModal]    = useState(false)
+  const [editItem, setEditItem] = useState<Student | null>(null)
+  const [delItem,  setDelItem]  = useState<Student | null>(null)
+  const [saving,   setSaving]   = useState(false)
+  const [msg,      setMsg]      = useState('')
 
-  useEffect(() => { loadClasses() }, [])
-  useEffect(() => { loadStudents() }, [classId])
+  const [form, setForm] = useState({ full_name: '', email: '', class_id: '' })
 
-  async function loadClasses() {
-    const { data } = await supabase.from('classes')
-      .select('id, name, class_level').eq('school_id', school?.id).order('name')
-    if (data) setClasses(data)
-  }
-
-  async function loadStudents() {
-    setLoading(true)
-    let q = supabase.from('profiles')
-      .select('id, full_name, default_code, class_level, avatar_url')
-      .eq('school_id', school?.id).eq('role', 'student').order('full_name')
-    if (classId) q = q.eq('class_id', classId)
-    const { data } = await q
-    if (data) setStudents(data)
-    setLoading(false)
-  }
+  const supabase  = createClient()
+  const sc        = school?.primary_color ?? '#7C3AED'
+  const schoolId  = school?.id
 
   const filtered = students.filter(s =>
-    !search ||
     s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    s.default_code?.toLowerCase().includes(search.toLowerCase())
+    s.student_number?.toLowerCase().includes(search.toLowerCase())
   )
+
+  function openAdd() { setForm({ full_name: '', email: '', class_id: '' }); setEditItem(null); setModal(true) }
+  function openEdit(s: Student) {
+    setForm({ full_name: s.full_name, email: s.email ?? '', class_id: s.class_id ?? '' })
+    setEditItem(s); setModal(true)
+  }
+
+  async function saveStudent() {
+    if (!form.full_name.trim()) { setMsg('Full name is required.'); return }
+    setSaving(true); setMsg('')
+
+    if (editItem) {
+      // Edit: update student_profiles + profiles
+      const { error } = await supabase
+        .from('student_profiles')
+        .update({ full_name: form.full_name, class_id: form.class_id || null })
+        .eq('user_id', editItem.user_id)
+
+      await supabase.from('profiles').update({ full_name: form.full_name }).eq('id', editItem.user_id)
+
+      if (!error) {
+        setStudents(p => p.map(s => s.user_id === editItem.user_id
+          ? { ...s, full_name: form.full_name, class_id: form.class_id || null }
+          : s))
+        setMsg('Student updated!')
+        setModal(false)
+      } else setMsg(error.message)
+    } else {
+      // Create via API
+      const res = await fetch('/api/secretary/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: form.full_name, email: form.email, role: 'student', classId: form.class_id, schoolId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setMsg(data.error ?? 'Failed to create student'); setSaving(false); return }
+      setMsg(`Student created! Code: ${data.code}`)
+      // Optimistically append
+      setStudents(p => [{ user_id: data.userId, full_name: form.full_name, student_number: data.code, class_id: form.class_id || null, onboarding_status: 'incomplete', created_at: new Date().toISOString(), email: form.email }, ...p])
+      setModal(false)
+    }
+    setSaving(false)
+  }
+
+  async function deleteStudent() {
+    if (!delItem) return
+    setSaving(true)
+    await supabase.from('student_profiles').delete().eq('user_id', delItem.user_id)
+    await supabase.from('profiles').update({ is_active: false }).eq('id', delItem.user_id)
+    setStudents(p => p.filter(s => s.user_id !== delItem.user_id))
+    setDelItem(null); setSaving(false)
+  }
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Students">
-      <input value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="Search by name or student ID…"
-        style={{ width:'100%', height:42, padding:'0 14px', background:'var(--input-bg)',
-          border:'1px solid var(--input-border)', borderRadius:10, color:'var(--text-primary)',
-          fontSize:'0.85rem', outline:'none', marginBottom:'var(--space-4)' }}/>
-
-      <div className={styles.subjectScroll} style={{ marginBottom:'var(--space-4)' }}>
-        <button onClick={() => setClassId(null)}
-          className={`${styles.subjectPill} ${!classId ? styles.subjectPillActive : ''}`}
-          style={!classId ? { background:sc, borderColor:sc, color:'#fff' } : { borderColor:sc+'50', color:sc }}>
-          All Classes
-        </button>
-        {classes.map(c => (
-          <button key={c.id} onClick={() => setClassId(c.id)}
-            className={`${styles.subjectPill} ${classId===c.id ? styles.subjectPillActive : ''}`}
-            style={classId===c.id ? { background:sc, borderColor:sc, color:'#fff' } : { borderColor:sc+'50', color:sc }}>
-            {c.name}
-          </button>
-        ))}
+      {/* Search + Add */}
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+        <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input className={styles.searchInput} placeholder="Search students…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <button className={styles.btnPrimary} onClick={openAdd} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>+ Add</button>
       </div>
 
-      <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)',
-        marginBottom:'var(--space-3)', letterSpacing:'0.05em' }}>
-        {filtered.length} STUDENT{filtered.length !== 1 ? 'S' : ''}
-      </p>
-
-      {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
-        : filtered.length === 0
-          ? <div className={styles.empty}><PeopleIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No students found</p></div>
-          : <div className={styles.list}>
-              {filtered.map((s: any) => (
-                <div key={s.id} className={styles.card}>
-                  <div className={styles.cardIcon}
-                    style={{ background:sc+'20', borderRadius:'50%', overflow:'hidden' }}>
-                    {s.avatar_url
-                      ? <img src={s.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                      : <span style={{ fontWeight:800, fontSize:'0.9rem', color:sc }}>{s.full_name?.[0]}</span>}
-                  </div>
-                  <div className={styles.cardBody}>
-                    <p className={styles.cardTitle}>{s.full_name}</p>
-                    <p className={styles.cardMeta}>{s.default_code}{s.class_level ? ` · ${s.class_level}` : ''}</p>
-                  </div>
-                </div>
-              ))}
+      {filtered.length === 0 ? (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyEmoji}>🎓</p>
+          <p className={styles.emptyTitle}>No students found</p>
+          <p className={styles.emptyHint}>{search ? 'Try a different search' : 'Add your first student to get started'}</p>
+        </div>
+      ) : (
+        <div>
+          {filtered.map(s => (
+            <div key={s.user_id} className={styles.listItem}>
+              <div className={styles.listIconBox} style={{ background: sc + '22' }}>
+                <span style={{ fontSize: '1.2rem' }}>🎓</span>
+              </div>
+              <div className={styles.listContent}>
+                <p className={styles.listTitle}>{s.full_name}</p>
+                <p className={styles.listSub}>{s.student_number} · {s.class_name ?? 'No class'}</p>
+              </div>
+              <span className={`${styles.listBadge} ${s.onboarding_status === 'complete' ? styles.badgeGreen : styles.badgeYellow}`}>
+                {s.onboarding_status === 'complete' ? 'Active' : 'Pending'}
+              </span>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <button onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>✏️</button>
+                <button onClick={() => setDelItem(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+              </div>
             </div>
-      }
-      <div className={styles.spacer}/>
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {modal && (
+        <div className={styles.modalOverlay} onClick={() => setModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>{editItem ? 'Edit Student' : 'Add New Student'}</h2>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Full Name *</label>
+              <input className={styles.formInput} value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. John Doe" />
+            </div>
+
+            {!editItem && (
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Email *</label>
+                <input className={styles.formInput} type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="student@example.com" />
+              </div>
+            )}
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Class</label>
+              <select className={styles.formSelect} value={form.class_id} onChange={e => setForm(p => ({ ...p, class_id: e.target.value }))}>
+                <option value="">— Select class —</option>
+                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
+            {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') || msg.includes('Code') ? '#10B981' : '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
+
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button>
+              <button className={styles.btnPrimary} onClick={saveStudent} disabled={saving}>{saving ? 'Saving…' : editItem ? 'Save Changes' : 'Create Student'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      {delItem && (
+        <div className={styles.modalOverlay} onClick={() => setDelItem(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Remove Student?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>
+              This will deactivate <strong>{delItem.full_name}</strong>'s account. This action cannot easily be undone.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => setDelItem(null)}>Cancel</button>
+              <button className={styles.btnDanger} onClick={deleteStudent} disabled={saving}>{saving ? 'Removing…' : 'Remove Student'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ height: 110 }} />
     </RolePageWrapper>
   )
 }

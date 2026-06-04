@@ -193,7 +193,7 @@ export default function AiClient({ profile, school, userId }: Props) {
 
           {/* Input bar */}
           {voice.state !== 'recording' && (
-            <div className={styles.inputBar}>
+            <div className={`${styles.inputBar} ${styles.inputBarFloating}`}>
               {messages.length > 0 && (
                 <button className={styles.clearBtn} onClick={clearChat} title="Clear chat">
                   <RefreshIcon size={16} color="var(--text-muted)" />

@@ -22,6 +22,8 @@
 
 .main {
   padding: var(--space-6) var(--space-5);
+  /* Bottom padding clears the floating bottom nav pill on mobile (~83px) */
+  padding-bottom: 110px;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
@@ -30,5 +32,16 @@
 @media (min-width: 1024px) {
   .main {
     padding: var(--space-8) var(--space-8);
+    /* Desktop: sidebar nav, no floating pill */
+    padding-bottom: var(--space-10);
   }
+}
+
+/* Full-height variant — used by chat and AI pages */
+.mainFull {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }

@@ -137,7 +137,7 @@ export default function AIPrincipalClient({ principalName, schoolName, systemPro
         </button>
       </header>
 
-      <main style={{ flex:1, overflowY:'auto', padding:'var(--space-4) var(--space-5)', display:'flex', flexDirection:'column', gap:'var(--space-4)', paddingBottom:200 }}>
+      <main style={{ flex:1, overflowY:'auto', padding:'var(--space-4) var(--space-5)', display:'flex', flexDirection:'column', gap:'var(--space-4)', paddingBottom:260 }}>
         {isEmpty && (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'var(--space-5)', paddingTop:'var(--space-8)', animation:'fade-up 0.5s ease' }}>
             <div style={{ width:72, height:72, borderRadius:'50%', background:'var(--burgundy-subtle)', border:'2px solid rgba(128,0,32,0.25)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -179,7 +179,7 @@ export default function AIPrincipalClient({ principalName, schoolName, systemPro
         <div ref={messagesEndRef}/>
       </main>
 
-      <div style={{ position:'fixed', bottom:90, left:'50%', transform:'translateX(-50%)', width:'min(560px, calc(100vw - 32px))', background:'var(--nav-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', backdropFilter:'blur(24px)', padding:'var(--space-3) var(--space-3) var(--space-3) var(--space-4)', display:'flex', alignItems:'flex-end', gap:'var(--space-2)', boxShadow:'0 8px 32px rgba(0,0,0,0.3)', zIndex:200 }}>
+      <div style={{ position:'fixed', bottom:'calc(72px + var(--space-4))', left:'50%', transform:'translateX(-50%)', width:'min(560px, calc(100vw - 32px))', background:'var(--nav-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', backdropFilter:'blur(24px)', padding:'var(--space-3) var(--space-3) var(--space-3) var(--space-4)', display:'flex', alignItems:'flex-end', gap:'var(--space-2)', boxShadow:'0 8px 32px rgba(0,0,0,0.3)', zIndex:200 }}>
         <textarea ref={textareaRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage(input)}}} placeholder="Ask anything… (Shift+Enter for new line)" rows={1} disabled={loading} style={{ flex:1, background:'none', border:'none', outline:'none', resize:'none', fontFamily:'var(--font-body)', fontSize:'0.9rem', color:'var(--text-primary)', lineHeight:1.5, maxHeight:120, overflowY:'auto', scrollbarWidth:'none' }} aria-label="Message"/>
         <button onClick={()=>sendMessage(input)} disabled={!input.trim()||loading} style={{ display:'flex', alignItems:'center', justifyContent:'center', width:38, height:38, borderRadius:'50%', flexShrink:0, background:input.trim()&&!loading?'linear-gradient(135deg, var(--burgundy), var(--burgundy-light))':'var(--glass-bg)', border:'1px solid var(--glass-border)', color:input.trim()&&!loading?'#fff':'var(--text-muted)', cursor:input.trim()&&!loading?'pointer':'not-allowed', transition:'all 0.2s', boxShadow:input.trim()&&!loading?'0 4px 12px var(--burgundy-glow)':'none' }} aria-label="Send">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>

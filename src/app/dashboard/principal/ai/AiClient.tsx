@@ -68,9 +68,9 @@ export default function AiClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="AI School Insights">
-      <div style={{ display:'flex', flexDirection:'column', height:'calc(100dvh - 130px)' }}>
-        <div className={styles.messages} style={{ flex:1 }}>
+    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="AI School Insights" fullHeight>
+      <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0 }}>
+        <div className={styles.messages} style={{ flex:1, minHeight:0, overflowY:'auto', paddingBottom:'calc(64px + 76px + 8px)' }}>
           {messages.length === 0 && (
             <div className={styles.welcome}>
               <div className={styles.aiAvatar} style={{ background:schoolColor }}>
@@ -120,7 +120,7 @@ export default function AiClient({ profile, school, userId }: Props) {
           <div ref={bottomRef}/>
         </div>
 
-        <div className={styles.inputBar}>
+        <div className={`${styles.inputBar} ${styles.inputBarFloating}`}>
           {messages.length > 0 && (
             <button className={styles.clearBtn}
               onClick={() => { setMessages([]); try { localStorage.removeItem('schoolos_ai_principal_'+userId) } catch {} }}>

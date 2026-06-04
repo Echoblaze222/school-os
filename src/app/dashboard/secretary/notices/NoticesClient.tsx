@@ -1,168 +1,180 @@
 'use client'
-import { useState, useEffect } from 'react'
+// src/app/dashboard/secretary/notices/NoticesClient.tsx
+
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { MegaphoneIcon, PlusIcon } from '@/components/Icons'
-import styles from '@/app/dashboard/student/records/page.module.css'
+import styles from '../secretary.module.css'
 
-type Tab = 'published' | 'draft'
-interface Props { profile: any; school: any; userId: string }
-
-const BLANK = { title:'', body:'', audience:'all', status:'published' as 'published' | 'draft' }
-const AUDIENCE_COLORS: Record<string,string> = {
-  all:'#6B7280', students:'#3B82F6', teachers:'#10B981', parents:'#F59E0B', staff:'#8B5CF6'
+const CATEGORIES = ['General', 'Academic', 'Event', 'Holiday', 'Emergency', 'Finance']
+const CAT_COLORS: Record<string, string> = {
+  General: '#6B7280', Academic: '#3B82F6', Event: '#10B981',
+  Holiday: '#F59E0B', Emergency: '#EF4444', Finance: '#8B5CF6',
 }
 
-export default function NoticesClient({ profile, school, userId }: Props) {
-  const [tab,     setTab]     = useState<Tab>('published')
-  const [rows,    setRows]    = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+interface Notice { id: string; title: string; body: string; category: string; pinned: boolean; created_at: string; author_name?: string }
+interface Props { notices: Notice[]; profile: any; school: any; userId: string }
+
+export default function NoticesClient({ notices: init, profile, school, userId }: Props) {
+  const [notices, setNotices] = useState(init)
+  const [modal,   setModal]   = useState(false)
+  const [editItem, setEditItem] = useState<Notice | null>(null)
+  const [delItem, setDelItem] = useState<Notice | null>(null)
   const [saving,  setSaving]  = useState(false)
-  const [showForm,setShowForm]= useState(false)
-  const [form,    setForm]    = useState({ ...BLANK })
+  const [msg,     setMsg]     = useState('')
+  const [form,    setForm]    = useState({ title: '', body: '', category: 'General', pinned: false })
+
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { load() }, [tab])
+  function openAdd()          { setForm({ title: '', body: '', category: 'General', pinned: false }); setEditItem(null); setMsg(''); setModal(true) }
+  function openEdit(n: Notice) { setForm({ title: n.title, body: n.body, category: n.category, pinned: n.pinned }); setEditItem(n); setMsg(''); setModal(true) }
 
-  async function load() {
-    setLoading(true)
-    const { data } = await supabase.from('announcements')
-      .select('*').eq('school_id', school?.id).eq('status', tab)
-      .order('created_at', { ascending:false }).limit(30)
-    if (data) setRows(data)
-    setLoading(false)
+  async function save() {
+    if (!form.title.trim() || !form.body.trim()) { setMsg('Title and body are required.'); return }
+    setSaving(true); setMsg('')
+
+    if (editItem) {
+      const { error } = await supabase.from('notices').update({ title: form.title, body: form.body, category: form.category, pinned: form.pinned }).eq('id', editItem.id)
+      if (!error) {
+        setNotices(p => p.map(n => n.id === editItem.id ? { ...n, ...form } : n))
+        setModal(false)
+      } else setMsg(error.message)
+    } else {
+      const { data, error } = await supabase.from('notices').insert({
+        title: form.title, body: form.body, category: form.category, pinned: form.pinned,
+        school_id: school?.id, author_id: userId, author_name: profile?.full_name,
+        created_at: new Date().toISOString(),
+      }).select().single()
+
+      if (!error && data) {
+        setNotices(p => [data, ...p]); setModal(false)
+      } else setMsg(error?.message ?? 'Failed')
+    }
+    setSaving(false)
   }
 
-  async function submit() {
-    if (!form.title.trim() || !form.body.trim()) return
+  async function deleteNotice() {
+    if (!delItem) return
     setSaving(true)
-    await supabase.from('announcements').insert({ ...form, school_id:school.id, author_id:userId })
-    setForm({ ...BLANK }); setShowForm(false); setSaving(false)
-    if (tab === form.status) load()
+    await supabase.from('notices').delete().eq('id', delItem.id)
+    setNotices(p => p.filter(n => n.id !== delItem.id))
+    setDelItem(null); setSaving(false)
   }
 
-  async function publish(id: string) {
-    await supabase.from('announcements').update({ status:'published' }).eq('id', id)
-    load()
+  async function togglePin(n: Notice) {
+    const next = !n.pinned
+    await supabase.from('notices').update({ pinned: next }).eq('id', n.id)
+    setNotices(p => p.map(x => x.id === n.id ? { ...x, pinned: next } : x))
   }
 
-  function fmtDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })
-  }
+  function formatDate(d: string) { return new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) }
 
-  const inp: React.CSSProperties = {
-    width:'100%', height:42, padding:'0 12px', background:'var(--input-bg)',
-    border:'1px solid var(--input-border)', borderRadius:8,
-    color:'var(--text-primary)', fontSize:'0.85rem', outline:'none'
-  }
+  const pinned   = notices.filter(n => n.pinned)
+  const unpinned = notices.filter(n => !n.pinned)
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Notices">
-      {showForm && (
-        <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
-          borderRadius:'var(--radius-xl)', padding:'var(--space-5)', marginBottom:'var(--space-5)' }}>
-          <p style={{ fontSize:'0.85rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 var(--space-4)' }}>
-            New Notice
-          </p>
-          <div style={{ display:'grid', gap:'var(--space-3)' }}>
-            <input placeholder="Notice title *" value={form.title}
-              onChange={e => setForm(p => ({...p, title:e.target.value}))} style={inp}/>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'var(--space-3)' }}>
-              <select value={form.audience}
-                onChange={e => setForm(p => ({...p, audience:e.target.value}))} style={inp}>
-                {['all','students','teachers','parents','staff'].map(a => (
-                  <option key={a} style={{ textTransform:'capitalize' }}>{a}</option>
-                ))}
-              </select>
-              <select value={form.status}
-                onChange={e => setForm(p => ({...p, status:e.target.value as any}))} style={inp}>
-                <option value="published">Publish now</option>
-                <option value="draft">Save as draft</option>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-5)' }}>
+        <button className={styles.btnPrimary} onClick={openAdd}>📢 Post Notice</button>
+      </div>
+
+      {notices.length === 0 ? (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyEmoji}>📢</p>
+          <p className={styles.emptyTitle}>No notices yet</p>
+          <p className={styles.emptyHint}>Post school-wide announcements and events here</p>
+        </div>
+      ) : (
+        <>
+          {pinned.length > 0 && (
+            <>
+              <p className={styles.sectionLabel}>📌 Pinned</p>
+              {pinned.map(n => <NoticeCard key={n.id} notice={n} onEdit={openEdit} onPin={togglePin} onDelete={setDelItem} />)}
+            </>
+          )}
+          {unpinned.length > 0 && (
+            <>
+              <p className={styles.sectionLabel} style={{ marginTop: pinned.length ? 'var(--space-5)' : 0 }}>All Notices</p>
+              {unpinned.map(n => <NoticeCard key={n.id} notice={n} onEdit={openEdit} onPin={togglePin} onDelete={setDelItem} />)}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Create/Edit Modal */}
+      {modal && (
+        <div className={styles.modalOverlay} onClick={() => setModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>{editItem ? 'Edit Notice' : 'Post New Notice'}</h2>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Title *</label>
+              <input className={styles.formInput} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Notice title" />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Category</label>
+              <select className={styles.formSelect} value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <textarea placeholder="Notice body *" value={form.body} rows={4}
-              onChange={e => setForm(p => ({...p, body:e.target.value}))}
-              style={{ ...inp, height:'auto', padding:'10px 12px', resize:'none' }}/>
-          </div>
-          <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>
-            <button onClick={submit} disabled={saving || !form.title.trim() || !form.body.trim()}
-              style={{ flex:1, height:42, background:sc, color:'#fff', border:'none', borderRadius:8,
-                fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
-                opacity:(saving || !form.title.trim() || !form.body.trim()) ? 0.5 : 1 }}>
-              {saving ? 'Saving…' : form.status === 'published' ? 'Publish Notice' : 'Save Draft'}
-            </button>
-            <button onClick={() => setShowForm(false)}
-              style={{ padding:'0 20px', height:42, background:'var(--input-bg)',
-                color:'var(--text-muted)', border:'1px solid var(--input-border)',
-                borderRadius:8, fontWeight:700, cursor:'pointer' }}>
-              Cancel
-            </button>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Body *</label>
+              <textarea className={styles.formTextarea} value={form.body} onChange={e => setForm(p => ({ ...p, body: e.target.value }))} placeholder="Notice content…" rows={5} />
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: 'var(--space-4)' }}>
+              <input type="checkbox" checked={form.pinned} onChange={e => setForm(p => ({ ...p, pinned: e.target.checked })} />
+              📌 Pin to top
+            </label>
+            {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button>
+              <button className={styles.btnPrimary} onClick={save} disabled={saving}>{saving ? 'Posting…' : editItem ? 'Save' : 'Post'}</button>
+            </div>
           </div>
         </div>
       )}
 
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--space-4)' }}>
-        <div className={styles.tabs}>
-          {(['published','draft'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`${styles.tab} ${tab===t ? styles.tabActive : ''}`}
-              style={tab===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
-              {t.charAt(0).toUpperCase()+t.slice(1)}
-            </button>
-          ))}
+      {/* Delete confirm */}
+      {delItem && (
+        <div className={styles.modalOverlay} onClick={() => setDelItem(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Delete Notice?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>
+              "<strong>{delItem.title}</strong>" will be permanently removed.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => setDelItem(null)}>Cancel</button>
+              <button className={styles.btnDanger} onClick={deleteNotice} disabled={saving}>{saving ? 'Deleting…' : 'Delete'}</button>
+            </div>
+          </div>
         </div>
-        {!showForm && (
-          <button onClick={() => setShowForm(true)}
-            style={{ display:'flex', alignItems:'center', gap:6, height:36, padding:'0 14px',
-              background:sc, color:'#fff', border:'none', borderRadius:8,
-              fontWeight:700, fontSize:'0.8rem', cursor:'pointer' }}>
-            <PlusIcon size={14} color="#fff"/> New
-          </button>
-        )}
-      </div>
+      )}
 
-      {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
-        : rows.length === 0
-          ? <div className={styles.empty}>
-              <MegaphoneIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No {tab} notices</p>
-            </div>
-          : <div className={styles.list}>
-              {rows.map((item:any) => {
-                const ac = AUDIENCE_COLORS[item.audience] ?? '#6B7280'
-                return (
-                  <div key={item.id} className={styles.card}>
-                    <div className={styles.cardIcon} style={{ background:sc+'20' }}>
-                      <MegaphoneIcon size={16} color={sc}/>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <p className={styles.cardTitle}>{item.title}</p>
-                      <p className={styles.cardMeta}>
-                        <span style={{ color:ac, fontWeight:700, textTransform:'capitalize' }}>
-                          {item.audience}
-                        </span>
-                        {item.body ? ` · ${item.body.slice(0,60)}…` : ''}
-                      </p>
-                      <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:'2px 0 0' }}>
-                        {fmtDate(item.created_at)}
-                      </p>
-                    </div>
-                    {tab === 'draft' && (
-                      <button onClick={() => publish(item.id)}
-                        style={{ padding:'5px 12px', background:'#10B98120', color:'#10B981',
-                          border:'none', borderRadius:6, fontWeight:700,
-                          fontSize:'0.7rem', cursor:'pointer', flexShrink:0 }}>
-                        Publish
-                      </button>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-      }
-      <div className={styles.spacer}/>
+      <div style={{ height: 110 }} />
     </RolePageWrapper>
+  )
+}
+
+function NoticeCard({ notice, onEdit, onPin, onDelete }: { notice: Notice; onEdit: (n: Notice) => void; onPin: (n: Notice) => void; onDelete: (n: Notice) => void }) {
+  const color = CAT_COLORS[notice.category] ?? '#6B7280'
+  return (
+    <div style={{ background: 'var(--glass-bg)', border: `1px solid var(--glass-border)`, borderLeft: `3px solid ${color}`, borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)', marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 4 }}>
+            <span style={{ fontSize: '0.6rem', fontWeight: 700, color, background: color + '22', padding: '2px 8px', borderRadius: 'var(--radius-full)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{notice.category}</span>
+            {notice.pinned && <span style={{ fontSize: '0.7rem' }}>📌</span>}
+          </div>
+          <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{notice.title}</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{notice.body}</p>
+          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 6 }}>{notice.author_name ?? 'Secretary'} · {new Date(notice.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
+          <button onClick={() => onPin(notice)} title={notice.pinned ? 'Unpin' : 'Pin'} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem' }}>{notice.pinned ? '📌' : '📍'}</button>
+          <button onClick={() => onEdit(notice)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem' }}>✏️</button>
+          <button onClick={() => onDelete(notice)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+        </div>
+      </div>
+    </div>
   )
 }

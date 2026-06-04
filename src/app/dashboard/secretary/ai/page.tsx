@@ -1,25 +1,32 @@
 // src/app/dashboard/secretary/ai/page.tsx
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import AISecretaryClient from './AISecretaryClient'
 
-export const metadata = { title: 'AI Assistant — Secretary | SchoolOS' }
-
 export default async function SecretaryAIPage() {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c: any[]) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+  if (!profile || profile.role !== 'secretary') redirect('/login')
+  const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) redirect('/login')
+  const systemPrompt = `You are an intelligent school secretary assistant for ${school?.name ?? 'the school'}.
+You help with: drafting official letters and communications, managing admissions queries, student record guidance,
+scheduling and calendar planning, notice writing, and general administrative tasks.
+Be professional, concise, and helpful. When drafting documents, produce ready-to-use text.
+School: ${school?.name ?? 'N/A'}. Secretary: ${profile?.full_name ?? 'N/A'}.`
 
-  const [profileRes, schoolRes] = await Promise.all([
-    supabase.from('staff_profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
-    supabase.from('school_settings').select('school_name').maybeSingle(),
-  ])
-
-  const secretaryName = profileRes.data?.full_name ?? 'Secretary'
-  const schoolName    = schoolRes.data?.school_name ?? 'this school'
-
-  const systemPrompt = `You are an administrative assistant for the Secretary of ${schoolName}. Help draft official letters and documents, provide templates for common admin tasks, assist with data organisation, and answer questions about school administration procedures. Be professional, precise, and well-structured in all communications. When writing letters, follow formal Nigerian school letter formats.`
-
-  return <AISecretaryClient secretaryName={secretaryName} schoolName={schoolName} systemPrompt={systemPrompt} />
+  return (
+    <AISecretaryClient
+      secretaryName={profile?.full_name ?? 'Secretary'}
+      schoolName={school?.name ?? 'School'}
+      systemPrompt={systemPrompt}
+    />
+  )
 }

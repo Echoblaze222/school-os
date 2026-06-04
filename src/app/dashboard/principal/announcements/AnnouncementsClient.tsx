@@ -75,6 +75,10 @@ export default function AnnouncementsClient({ announcements: initialAnnouncement
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formStatus, setFormStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [confirmDel, setConfirmDel] = useState<AnnouncementRow | null>(null)
+  const [deleting,   setDeleting]   = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
 
   const titleRef = useRef<HTMLInputElement>(null)
 
@@ -108,6 +112,21 @@ export default function AnnouncementsClient({ announcements: initialAnnouncement
     setClassId('')
     setFormStatus('idle')
     setErrorMsg('')
+  }
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  async function handleDelete(ann: AnnouncementRow) {
+    setDeleting(ann.id)
+    setDeleteError('')
+    const supabase = createClient()
+    const { error } = await supabase.from('announcements').delete().eq('id', ann.id)
+    setDeleting(null)
+    if (error) { setDeleteError(error.message); return }
+    setAnnouncements(prev => prev.filter(a => a.id !== ann.id))
+    setConfirmDel(null)
+    if (selected?.id === ann.id) setSelected(null)
+    showToast('Announcement deleted')
   }
 
   async function handleSubmit() {
@@ -165,6 +184,31 @@ export default function AnnouncementsClient({ announcements: initialAnnouncement
 
   return (
     <div className={styles.page}>
+      {/* Toast */}
+      {toast && (
+        <div style={{ position:'fixed', bottom:100, left:'50%', transform:'translateX(-50%)', background:'var(--success-bg)', border:'1px solid rgba(45,139,85,0.3)', color:'var(--success)', padding:'10px 20px', borderRadius:999, fontSize:'0.82rem', fontWeight:600, zIndex:999, whiteSpace:'nowrap', animation:'fade-up 0.3s ease' }}>
+          ✓ {toast}
+        </div>
+      )}
+
+      {/* Delete confirm dialog */}
+      {confirmDel && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', padding:'var(--space-6)', maxWidth:400, width:'100%' }}>
+            <h3 style={{ fontSize:'1.1rem', fontWeight:700, color:'var(--text-primary)', margin:'0 0 12px' }}>Delete Announcement?</h3>
+            <p style={{ fontSize:'0.86rem', color:'var(--text-secondary)', lineHeight:1.6, margin:'0 0 20px' }}>
+              "<strong>{confirmDel.title}</strong>" will be permanently deleted.
+            </p>
+            {deleteError && <p style={{ color:'var(--error)', fontSize:'0.8rem', marginBottom:12 }}>{deleteError}</p>}
+            <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
+              <button onClick={() => setConfirmDel(null)} style={{ padding:'8px 20px', borderRadius:999, background:'var(--glass-bg)', border:'1px solid var(--glass-border)', color:'var(--text-secondary)', fontSize:'0.82rem', fontWeight:600, cursor:'pointer' }}>Cancel</button>
+              <button onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id} style={{ padding:'8px 20px', borderRadius:999, background:'var(--error-bg)', border:'1px solid rgba(192,57,43,0.3)', color:'var(--error)', fontSize:'0.82rem', fontWeight:700, cursor:'pointer', opacity: deleting === confirmDel.id ? 0.5 : 1 }}>
+                {deleting === confirmDel.id ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* ── Header ──────────────────────────────────────── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
@@ -232,9 +276,18 @@ export default function AnnouncementsClient({ announcements: initialAnnouncement
                         </span>
                       )}
                     </div>
-                    {a.class_name && (
-                      <span className={styles.classTag}>{a.class_name}</span>
-                    )}
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      {a.class_name && (
+                        <span className={styles.classTag}>{a.class_name}</span>
+                      )}
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmDel(a) }}
+                        title="Delete announcement"
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:26, height:26, borderRadius:'var(--radius-md)', background:'var(--error-bg)', border:'1px solid rgba(192,57,43,0.2)', color:'var(--error)', cursor:'pointer', opacity:0.7, flexShrink:0 }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

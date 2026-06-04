@@ -23,6 +23,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       supabase.from('quizzes')
         .select('id, title, subject, duration_mins, question_count, scheduled_at, status')
         .eq('school_id', school?.id)
+        .eq('class_id', profile?.class_id)
         .order('scheduled_at', { ascending: false })
         .limit(30),
       supabase.from('quiz_attempts')

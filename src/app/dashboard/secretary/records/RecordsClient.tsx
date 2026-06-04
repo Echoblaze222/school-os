@@ -1,158 +1,131 @@
 'use client'
-import { useState, useEffect } from 'react'
+// src/app/dashboard/secretary/records/RecordsClient.tsx
+
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { FileTextIcon, BarChartIcon } from '@/components/Icons'
-import styles from '@/app/dashboard/student/records/page.module.css'
+import styles from '../secretary.module.css'
 
-interface Props { profile: any; school: any; userId: string }
+interface Record { id: string; student_name: string; record_type: string; description: string; date: string; created_by?: string }
+interface Props { records: Record[]; profile: any; school: any; userId: string }
 
-export default function RecordsClient({ profile, school, userId }: Props) {
-  const [students,   setStudents]   = useState<any[]>([])
-  const [selected,   setSelected]   = useState<any>(null)
-  const [results,    setResults]    = useState<any[]>([])
-  const [attendance, setAttendance] = useState({ present:0, absent:0, late:0, total:0 })
-  const [loading,    setLoading]    = useState(true)
-  const [detLoading, setDetLoading] = useState(false)
-  const [search,     setSearch]     = useState('')
+const TYPES = ['Academic', 'Disciplinary', 'Medical', 'Transfer', 'Achievement', 'Other']
+const TYPE_COLORS: Record<string, string> = {
+  Academic: '#3B82F6', Disciplinary: '#EF4444', Medical: '#10B981',
+  Transfer: '#F59E0B', Achievement: '#8B5CF6', Other: '#6B7280',
+}
+
+export default function RecordsClient({ records: init, profile, school, userId }: Props) {
+  const [records,  setRecords]  = useState(init)
+  const [search,   setSearch]   = useState('')
+  const [typeTab,  setTypeTab]  = useState('all')
+  const [modal,    setModal]    = useState(false)
+  const [viewItem, setViewItem] = useState<Record | null>(null)
+  const [saving,   setSaving]   = useState(false)
+  const [msg,      setMsg]      = useState('')
+  const [form,     setForm]     = useState({ student_name: '', record_type: 'Academic', description: '', date: new Date().toISOString().slice(0, 10) })
+
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { loadStudents() }, [])
+  const filtered = records.filter(r => {
+    const matchSearch = r.student_name?.toLowerCase().includes(search.toLowerCase()) || r.description?.toLowerCase().includes(search.toLowerCase())
+    const matchType   = typeTab === 'all' || r.record_type === typeTab
+    return matchSearch && matchType
+  })
 
-  async function loadStudents() {
-    const { data } = await supabase.from('profiles')
-      .select('id, full_name, default_code, class_level, avatar_url')
-      .eq('school_id', school?.id).eq('role', 'student').order('full_name').limit(200)
-    if (data) setStudents(data)
-    setLoading(false)
+  async function createRecord() {
+    if (!form.student_name.trim() || !form.description.trim()) { setMsg('Name and description required.'); return }
+    setSaving(true); setMsg('')
+    const { data, error } = await supabase.from('student_records').insert({
+      student_name: form.student_name, record_type: form.record_type,
+      description: form.description, date: form.date,
+      school_id: school?.id, created_by: profile?.full_name,
+      created_at: new Date().toISOString(),
+    }).select().single()
+
+    if (!error && data) { setRecords(p => [data, ...p]); setModal(false) }
+    else setMsg(error?.message ?? 'Failed to create record')
+    setSaving(false)
   }
 
-  async function openRecord(s: any) {
-    setSelected(s); setDetLoading(true)
-    const [{ data: res }, { data: att }] = await Promise.all([
-      supabase.from('results').select('subject, score, max_score, grade, term')
-        .eq('student_id', s.id).order('created_at', { ascending:false }).limit(20),
-      supabase.from('attendance').select('status').eq('student_id', s.id),
-    ])
-    setResults(res ?? [])
-    const present = (att ?? []).filter((a:any) => a.status==='present').length
-    const absent  = (att ?? []).filter((a:any) => a.status==='absent').length
-    const late    = (att ?? []).filter((a:any) => a.status==='late').length
-    setAttendance({ present, absent, late, total: present+absent+late })
-    setDetLoading(false)
+  async function deleteRecord(id: string) {
+    await supabase.from('student_records').delete().eq('id', id)
+    setRecords(p => p.filter(r => r.id !== id))
+    setViewItem(null)
   }
-
-  const filtered = students.filter(s =>
-    !search ||
-    s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    s.default_code?.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const attRate  = attendance.total > 0 ? Math.round((attendance.present/attendance.total)*100) : 0
-  const avgScore = results.length > 0
-    ? Math.round(results.reduce((sum,r) => sum + ((r.score/(r.max_score||100))*100), 0) / results.length)
-    : 0
-
-  function gradeColor(g:string) {
-    return g==='A'?'#10B981':g==='B'?'#3B82F6':g==='C'?'#F59E0B':g==='D'?'#F97316':'#EF4444'
-  }
-
-  if (selected) return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Student Record">
-      <button onClick={() => setSelected(null)}
-        style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)',
-          fontSize:'0.8rem', fontWeight:700, marginBottom:'var(--space-5)', padding:0 }}>
-        ← Back to records
-      </button>
-
-      <div style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', padding:'var(--space-5)',
-        background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)',
-        marginBottom:'var(--space-5)' }}>
-        <div style={{ width:54, height:54, borderRadius:'50%', background:sc+'20', display:'flex',
-          alignItems:'center', justifyContent:'center', overflow:'hidden', flexShrink:0 }}>
-          {selected.avatar_url
-            ? <img src={selected.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-            : <span style={{ fontWeight:800, fontSize:'1.2rem', color:sc }}>{selected.full_name?.[0]}</span>}
-        </div>
-        <div>
-          <p style={{ fontSize:'1rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 2px' }}>{selected.full_name}</p>
-          <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0 }}>{selected.class_level} · {selected.default_code}</p>
-        </div>
-      </div>
-
-      {detLoading
-        ? <div className={styles.loading}><span/><span/><span/></div>
-        : <>
-            <div className={styles.statsRow} style={{ marginBottom:'var(--space-5)' }}>
-              {[
-                { label:'Avg Score',  value:`${avgScore}%`,       color: avgScore>=60?'#10B981':'#EF4444' },
-                { label:'Attendance', value:`${attRate}%`,        color: attRate>=75?'#10B981':'#EF4444'  },
-                { label:'Present',    value: attendance.present,  color:'#10B981' },
-                { label:'Absent',     value: attendance.absent,   color:'#EF4444' },
-              ].map(s => (
-                <div key={s.label} className={styles.statCard}>
-                  <p className={styles.statVal} style={{ color:s.color }}>{s.value}</p>
-                  <p className={styles.statLbl}>{s.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {results.length === 0
-              ? <div className={styles.empty}><BarChartIcon size={32} color="var(--text-faint)" strokeWidth={1}/><p>No results on record</p></div>
-              : <table className={styles.table}>
-                  <thead><tr>
-                    <th className={styles.th}>Subject</th>
-                    <th className={styles.th}>Score</th>
-                    <th className={styles.th}>Grade</th>
-                    <th className={styles.th}>Term</th>
-                  </tr></thead>
-                  <tbody>{results.map((r:any, i:number) => (
-                    <tr key={i}>
-                      <td className={styles.td}>{r.subject}</td>
-                      <td className={styles.td}>{r.score}/{r.max_score ?? 100}</td>
-                      <td className={styles.td}><span style={{ fontWeight:800, color:gradeColor(r.grade) }}>{r.grade}</span></td>
-                      <td className={styles.td}>{r.term}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-            }
-          </>
-      }
-      <div className={styles.spacer}/>
-    </RolePageWrapper>
-  )
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Records">
-      <input value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="Search student by name or ID…"
-        style={{ width:'100%', height:42, padding:'0 14px', background:'var(--input-bg)',
-          border:'1px solid var(--input-border)', borderRadius:10, color:'var(--text-primary)',
-          fontSize:'0.85rem', outline:'none', marginBottom:'var(--space-4)' }}/>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input className={styles.searchInput} placeholder="Search records…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setModal(true) }} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>+ New</button>
+      </div>
 
-      {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
-        : filtered.length === 0
-          ? <div className={styles.empty}><FileTextIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No records found</p></div>
-          : <div className={styles.list}>
-              {filtered.map((s:any) => (
-                <div key={s.id} className={styles.card} onClick={() => openRecord(s)} style={{ cursor:'pointer' }}>
-                  <div className={styles.cardIcon} style={{ background:sc+'20', borderRadius:'50%', overflow:'hidden' }}>
-                    {s.avatar_url
-                      ? <img src={s.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                      : <span style={{ fontWeight:800, color:sc }}>{s.full_name?.[0]}</span>}
-                  </div>
-                  <div className={styles.cardBody}>
-                    <p className={styles.cardTitle}>{s.full_name}</p>
-                    <p className={styles.cardMeta}>{s.default_code} · {s.class_level}</p>
-                  </div>
-                  <span style={{ fontSize:'0.7rem', color:sc, fontWeight:700, flexShrink:0 }}>View →</span>
-                </div>
-              ))}
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
+        {['all', ...TYPES].map(t => (
+          <button key={t} onClick={() => setTypeTab(t)}
+            style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              background: typeTab === t ? (TYPE_COLORS[t] ?? sc) + '22' : 'var(--glass-bg)',
+              borderColor: typeTab === t ? (TYPE_COLORS[t] ?? sc) : 'var(--glass-border)',
+              color: typeTab === t ? (TYPE_COLORS[t] ?? sc) : 'var(--text-muted)',
+            }}>{t}</button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className={styles.emptyState}><p className={styles.emptyEmoji}>📂</p><p className={styles.emptyTitle}>No records found</p><p className={styles.emptyHint}>Student records appear here</p></div>
+      ) : (
+        filtered.map(r => (
+          <div key={r.id} className={styles.listItem} onClick={() => setViewItem(r)}>
+            <div className={styles.listIconBox} style={{ background: (TYPE_COLORS[r.record_type] ?? sc) + '22' }}>
+              <span style={{ fontSize: '1.1rem' }}>📄</span>
             </div>
-      }
-      <div className={styles.spacer}/>
+            <div className={styles.listContent}>
+              <p className={styles.listTitle}>{r.student_name}</p>
+              <p className={styles.listSub}>{r.description.slice(0, 60)}{r.description.length > 60 ? '…' : ''} · {new Date(r.date).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+            </div>
+            <span className={styles.listBadge} style={{ background: (TYPE_COLORS[r.record_type] ?? '#6B7280') + '22', color: TYPE_COLORS[r.record_type] ?? '#6B7280' }}>{r.record_type}</span>
+          </div>
+        ))
+      )}
+
+      {viewItem && (
+        <div className={styles.modalOverlay} onClick={() => setViewItem(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>{viewItem.student_name}</h2>
+            {[['Type', viewItem.record_type], ['Date', new Date(viewItem.date).toLocaleDateString()], ['Created by', viewItem.created_by ?? '—']].map(([l, v]) => (
+              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>{l}</span><span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{v}</span>
+              </div>
+            ))}
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)', lineHeight: 1.6 }}>{viewItem.description}</p>
+            <button onClick={() => deleteRecord(viewItem.id)} style={{ width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}>🗑️ Delete record</button>
+          </div>
+        </div>
+      )}
+
+      {modal && (
+        <div className={styles.modalOverlay} onClick={() => setModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>New Student Record</h2>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Student Name *</label><input className={styles.formInput} value={form.student_name} onChange={e => setForm(p => ({ ...p, student_name: e.target.value }))} placeholder="Full name" /></div>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Record Type</label>
+              <select className={styles.formSelect} value={form.record_type} onChange={e => setForm(p => ({ ...p, record_type: e.target.value }))}>
+                {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Date</label><input className={styles.formInput} type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} /></div>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Description *</label><textarea className={styles.formTextarea} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Details of this record…" rows={4} /></div>
+            {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button><button className={styles.btnPrimary} onClick={createRecord} disabled={saving}>{saving ? 'Saving…' : 'Create Record'}</button></div>
+          </div>
+        </div>
+      )}
+      <div style={{ height: 110 }} />
     </RolePageWrapper>
   )
 }

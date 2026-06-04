@@ -1,137 +1,113 @@
 'use client'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import type { ClassOption } from './page'
-import styles from './codes.module.css'
+// src/app/dashboard/secretary/codes/CodesClient.tsx
 
-interface Props { classOptions: ClassOption[]; schoolId: string; secretaryId: string; backHref?: string }
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import styles from '../secretary.module.css'
 
-type UserRole = 'student'|'teacher'|'bursar'|'secretary'|'parent'
-const ROLES: {value:UserRole;label:string}[] = [
-  {value:'student',label:'Student'},{value:'teacher',label:'Teacher'},
-  {value:'bursar',label:'Bursar'},{value:'secretary',label:'Secretary'},{value:'parent',label:'Parent'},
-]
+interface CodeEntry { id: string; full_name: string; email: string; role: string; default_code: string; is_active: boolean; created_at: string }
+interface Props { entries: CodeEntry[]; profile: any; school: any; userId: string }
 
-interface GeneratedCode { code: string; name: string; email: string; role: UserRole; created_at: string }
+const ROLE_COLORS: Record<string, string> = {
+  student: '#10B981', teacher: '#3B82F6', bursar: '#F59E0B',
+  secretary: '#8B5CF6', librarian: '#EC4899', nurse: '#EF4444',
+}
 
-const IconSun=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-const IconMoon=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
-const IconChevronLeft=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><path d="M15 18l-6-6 6-6"/></svg>
-const IconCopy=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+export default function CodesClient({ entries: init, profile, school, userId }: Props) {
+  const [entries,  setEntries] = useState(init)
+  const [search,   setSearch]  = useState('')
+  const [roleTab,  setRoleTab] = useState('all')
+  const [copied,   setCopied]  = useState<string | null>(null)
+  const [saving,   setSaving]  = useState<string | null>(null)
 
-export default function CodesClient({ classOptions, schoolId, secretaryId, backHref }: Props) {
-  const [isDark,setIsDark]=useState(true); const [mounted,setMounted]=useState(false)
-  const [fullName,setFullName]=useState('')
-  const [email,setEmail]=useState('')
-  const [role,setRole]=useState<UserRole>('student')
-  const [classId,setClassId]=useState('')
-  const [generating,setGenerating]=useState(false)
-  const [generated,setGenerated]=useState<GeneratedCode|null>(null)
-  const [error,setError]=useState('')
-  const [history,setHistory]=useState<GeneratedCode[]>([])
-  const [copied,setCopied]=useState(false)
+  const supabase = createClient()
+  const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(()=>{ const s=localStorage.getItem('schoolos_theme'); const dark=s!=='light'; setIsDark(dark); document.documentElement.setAttribute('data-theme',dark?'dark':'light'); setMounted(true) },[])
-  const toggleTheme=()=>{ const n=!isDark; setIsDark(n); document.documentElement.setAttribute('data-theme',n?'dark':'light'); localStorage.setItem('schoolos_theme',n?'dark':'light') }
+  const filtered = entries.filter(e => {
+    const matchSearch = e.full_name?.toLowerCase().includes(search.toLowerCase()) || e.default_code?.toLowerCase().includes(search.toLowerCase()) || e.email?.toLowerCase().includes(search.toLowerCase())
+    const matchRole   = roleTab === 'all' || e.role === roleTab
+    return matchSearch && matchRole
+  })
 
-  async function handleGenerate() {
-    if (!fullName.trim()||!email.trim()) return
-    setGenerating(true); setError(''); setGenerated(null)
-
-    try {
-      // Call server action / API route for admin user creation
-      const res = await fetch('/api/secretary/create-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: fullName.trim(), email: email.trim().toLowerCase(), role, classId: classId||null, schoolId }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create user')
-      const entry: GeneratedCode = { code: data.code, name: fullName.trim(), email: email.trim().toLowerCase(), role, created_at: new Date().toISOString() }
-      setGenerated(entry)
-      setHistory(p=>[entry,...p])
-      setFullName(''); setEmail(''); setClassId('')
-    } catch (e: any) {
-      setError(e.message)
-    }
-    setGenerating(false)
+  async function regenerateCode(entry: CodeEntry) {
+    setSaving(entry.id)
+    const year = new Date().getFullYear()
+    const rand = Math.floor(1000 + Math.random() * 9000)
+    const newCode = `SCH-${year}-${rand}`
+    const { error } = await supabase.from('profiles').update({ default_code: newCode }).eq('id', entry.id)
+    if (!error) setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: newCode } : e))
+    setSaving(null)
   }
 
-  function copyCode(code: string) {
-    navigator.clipboard.writeText(code).catch(()=>{})
-    setCopied(true); setTimeout(()=>setCopied(false),2000)
+  async function copyCode(code: string, id: string) {
+    await navigator.clipboard.writeText(code).catch(() => {})
+    setCopied(id)
+    setTimeout(() => setCopied(null), 2000)
   }
 
-  if (!mounted) return null
+  const roles = ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()]
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
+    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Access Codes">
+      <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)', display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+        <span style={{ fontSize: '1.2rem' }}>🔐</span>
         <div>
-          <Link href={backHref ?? '/dashboard/secretary/users'} className={styles.backBtn}><IconChevronLeft /> {backHref ? 'Dashboard' : 'Users'}</Link>
-          <h1 className={styles.pageTitle}>Generate <span>Access Codes</span></h1>
-        </div>
-        <button className={styles.themeBtn} onClick={toggleTheme}>{isDark?<IconSun />:<IconMoon />}</button>
-      </header>
-
-      <div className={styles.body}>
-        {/* Form */}
-        <div className={styles.formCard}>
-          <div className={styles.formHeader}><p className={styles.formTitle}>Create New User</p><p className={styles.formSub}>Code format: SCH-YYYY-XXXX</p></div>
-          <div className={styles.formBody}>
-            {error&&<div className={styles.errorMsg}>{error}</div>}
-            <div className={styles.fieldGroup}><label className={styles.fieldLabel}>Full Name *</label><input className={styles.fieldInput} placeholder="e.g. Amara Osei" value={fullName} onChange={e=>setFullName(e.target.value)} /></div>
-            <div className={styles.fieldGroup}><label className={styles.fieldLabel}>Email Address *</label><input type="email" className={styles.fieldInput} placeholder="user@school.edu.ng" value={email} onChange={e=>setEmail(e.target.value)} /></div>
-            <div className={styles.fieldGroup}><label className={styles.fieldLabel}>Role *</label>
-              <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={role} onChange={e=>setRole(e.target.value as UserRole)}>
-                {ROLES.map(r=><option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
-            {role==='student'&&(
-              <div className={styles.fieldGroup}><label className={styles.fieldLabel}>Assign Class</label>
-                <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={classId} onChange={e=>setClassId(e.target.value)}>
-                  <option value="">Select class…</option>
-                  {classOptions.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-            )}
-            <button className={styles.generateBtn} onClick={handleGenerate} disabled={generating||!fullName.trim()||!email.trim()}>
-              {generating?'Creating…':'Generate Code & Create User'}
-            </button>
-          </div>
-        </div>
-
-        {/* Generated code display */}
-        <div style={{display:'flex',flexDirection:'column',gap:'var(--space-4)'}}>
-          {generated&&(
-            <div className={styles.codeCard}>
-              <p className={styles.codeLabel}>✅ User Created — Share This Code</p>
-              <div className={styles.codeDisplay}>
-                <span className={styles.codeText}>{generated.code}</span>
-                <button className={styles.copyBtn} onClick={()=>copyCode(generated.code)}><IconCopy /> {copied?'Copied!':'Copy'}</button>
-              </div>
-              <div className={styles.codeDetails}>
-                <p><strong>Name:</strong> {generated.name}</p>
-                <p><strong>Email:</strong> {generated.email}</p>
-                <p><strong>Role:</strong> {ROLES.find(r=>r.value===generated.role)?.label}</p>
-              </div>
-              <p className={styles.codeNote}>Give this code to the user. They'll use it on first login to verify their account.</p>
-            </div>
-          )}
-
-          {history.length>0&&(
-            <div className={styles.historyCard}>
-              <p className={styles.historyTitle}>Generated This Session ({history.length})</p>
-              {history.map((h,i)=>(
-                <div key={i} className={styles.historyRow}>
-                  <div style={{flex:1}}><p className={styles.historyName}>{h.name}</p><p className={styles.historyMeta}>{h.email} · {ROLES.find(r=>r.value===h.role)?.label}</p></div>
-                  <button className={styles.copyBtn} onClick={()=>copyCode(h.code)} style={{fontSize:'.68rem'}}>{h.code}</button>
-                </div>
-              ))}
-            </div>
-          )}
+          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>Access Codes</p>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Each user has a unique login code. Share it with them to access SchoolOS. You can regenerate a code if it's been compromised.</p>
         </div>
       </div>
-    </div>
+
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input className={styles.searchInput} placeholder="Search by name or code…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
+        {roles.map(r => (
+          <button key={r} onClick={() => setRoleTab(r)}
+            style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              background: roleTab === r ? (ROLE_COLORS[r] ?? sc) + '22' : 'var(--glass-bg)',
+              borderColor: roleTab === r ? (ROLE_COLORS[r] ?? sc) : 'var(--glass-border)',
+              color: roleTab === r ? (ROLE_COLORS[r] ?? sc) : 'var(--text-muted)',
+            }}>{r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)} ({entries.filter(e => r === 'all' || e.role === r).length})</button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className={styles.emptyState}><p className={styles.emptyEmoji}>🔑</p><p className={styles.emptyTitle}>No users found</p></div>
+      ) : (
+        filtered.map(e => (
+          <div key={e.id} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: (ROLE_COLORS[e.role] ?? sc) + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '1rem' }}>👤</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.full_name}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <code style={{ fontSize: '0.78rem', fontWeight: 700, color: sc, background: sc + '15', padding: '2px 8px', borderRadius: 'var(--radius-md)', letterSpacing: '0.04em', fontFamily: 'monospace' }}>{e.default_code}</code>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{e.role}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+              <button onClick={() => copyCode(e.default_code, e.id)}
+                title="Copy code"
+                style={{ padding: '5px 10px', borderRadius: 'var(--radius-md)', background: copied === e.id ? '#10B98122' : 'var(--glass-bg)', border: `1px solid ${copied === e.id ? '#10B981' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: copied === e.id ? '#10B981' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                {copied === e.id ? '✓ Copied' : '📋 Copy'}
+              </button>
+              <button onClick={() => regenerateCode(e)}
+                disabled={saving === e.id}
+                title="Regenerate code"
+                style={{ padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', opacity: saving === e.id ? 0.5 : 1 }}>
+                {saving === e.id ? '⏳' : '🔄 Regen'}
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+      <div style={{ height: 110 }} />
+    </RolePageWrapper>
   )
 }

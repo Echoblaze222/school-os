@@ -1,55 +1,118 @@
 'use client'
+// src/app/dashboard/teacher/attendance/AttendanceClient.tsx
+// FIX #3: Loads only teacher's assigned classes; passes class_id to upsert
+// FIX #1: Respects subject teacher vs class teacher role
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { CalendarIcon } from '@/components/Icons'
-import styles from '@/app/dashboard/student/records/page.module.css'
+import { CalendarIcon, CheckCircleIcon } from '@/components/Icons'
+import styles from './attendance.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
+interface TeacherClass {
+  class_id:   string
+  class_name: string
+  class_level: string
+  subject:    string | null
+  role_type:  'class_teacher' | 'subject_teacher' | 'both'
+  is_primary: boolean
+}
+
 export default function AttendanceClient({ profile, school, userId }: Props) {
-  const [students,   setStudents]   = useState<any[]>([])
-  const [records,    setRecords]    = useState<Record<string, string>>({})
-  const [loading,    setLoading]    = useState(true)
-  const [saving,     setSaving]     = useState(false)
-  const [saved,      setSaved]      = useState(false)
-  const [date,       setDate]       = useState(() => new Date().toISOString().split('T')[0])
-  const [classLevel, setClassLevel] = useState('')
+  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
+  const [selectedClass,  setSelectedClass]  = useState<TeacherClass | null>(null)
+  const [students,       setStudents]       = useState<any[]>([])
+  const [records,        setRecords]        = useState<Record<string, string>>({})
+  const [loading,        setLoading]        = useState(true)
+  const [saving,         setSaving]         = useState(false)
+  const [saved,          setSaved]          = useState(false)
+  const [date,           setDate]           = useState(() => new Date().toISOString().split('T')[0])
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { loadStudents() }, [classLevel])
-  useEffect(() => { if (students.length) loadExisting() }, [students, date])
+  // Load this teacher's assigned classes
+  useEffect(() => { loadTeacherClasses() }, [])
 
-  async function loadStudents() {
+  // When class selected, load its students
+  useEffect(() => {
+    if (selectedClass) {
+      loadStudents(selectedClass.class_id)
+    }
+  }, [selectedClass])
+
+  // When students or date changes, load existing attendance
+  useEffect(() => {
+    if (students.length && selectedClass) loadExisting()
+  }, [students, date])
+
+  async function loadTeacherClasses() {
     setLoading(true)
-    let q = supabase
+    const { data } = await supabase
+      .from('class_teachers')
+      .select(`
+        class_id,
+        subject,
+        role_type,
+        is_primary,
+        classes(id, name, class_level)
+      `)
+      .eq('teacher_id', userId)
+      .eq('school_id', school?.id)
+
+    if (data && data.length > 0) {
+      const classes: TeacherClass[] = data.map((ct: any) => ({
+        class_id:    ct.class_id,
+        class_name:  ct.classes?.name ?? 'Unknown',
+        class_level: ct.classes?.class_level ?? '',
+        subject:     ct.subject,
+        role_type:   ct.role_type,
+        is_primary:  ct.is_primary,
+      }))
+      // Sort: class teachers first, then by name
+      classes.sort((a, b) => {
+        if (a.is_primary && !b.is_primary) return -1
+        if (!a.is_primary && b.is_primary) return 1
+        return a.class_name.localeCompare(b.class_name)
+      })
+      setTeacherClasses(classes)
+      setSelectedClass(classes[0])
+    }
+    setLoading(false)
+  }
+
+  async function loadStudents(classId: string) {
+    setLoading(true)
+    const { data } = await supabase
       .from('profiles')
-      .select('id, full_name, default_code, class_level')
+      .select('id, full_name, default_code, avatar_url')
+      .eq('class_id', classId)
       .eq('school_id', school?.id)
       .eq('role', 'student')
       .order('full_name')
-    if (classLevel) q = q.eq('class_level', classLevel)
-    const { data } = await q.limit(80)
     if (data) {
       setStudents(data)
+      // Default everyone to present
       const init: Record<string, string> = {}
-      data.forEach(s => { init[s.id] = 'present' })
+      data.forEach((s: any) => { init[s.id] = 'present' })
       setRecords(init)
     }
     setLoading(false)
   }
 
   async function loadExisting() {
+    if (!selectedClass) return
     const { data } = await supabase
       .from('attendance')
       .select('student_id, status')
       .eq('school_id', school?.id)
+      .eq('class_id', selectedClass.class_id)  // FIX: scoped to class
       .eq('date', date)
-      .in('student_id', students.map(s => s.id))
+      .in('student_id', students.map((s: any) => s.id))
     if (data?.length) {
       const map: Record<string, string> = {}
-      data.forEach(r => { map[r.student_id] = r.status })
+      data.forEach((r: any) => { map[r.student_id] = r.status })
       setRecords(prev => ({ ...prev, ...map }))
       setSaved(true)
     } else {
@@ -64,98 +127,222 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   }
 
   async function submit() {
+    if (!selectedClass) return
     setSaving(true)
-    const rows = students.map(s => ({
+    const rows = students.map((s: any) => ({
       school_id:  school?.id,
       student_id: s.id,
       teacher_id: userId,
+      class_id:   selectedClass.class_id,  // FIX: always pass class_id
+      subject:    selectedClass.subject,   // null for class teachers
       date,
       status:     records[s.id] ?? 'present',
     }))
-    await supabase.from('attendance').upsert(rows, { onConflict: 'student_id,date,class_id' })
+    await supabase
+      .from('attendance')
+      .upsert(rows, { onConflict: 'student_id,date,class_id' })
     setSaved(true)
     setSaving(false)
   }
 
-  const STATUS = {
-    present: { label: 'Present', color: '#10B981', bg: '#10B98120' },
-    absent:  { label: 'Absent',  color: '#EF4444', bg: '#EF444420' },
-    late:    { label: 'Late',    color: '#F59E0B', bg: '#F59E0B20' },
+  const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
+    present: { bg: '#10B98115', color: '#10B981', label: 'P' },
+    absent:  { bg: '#EF444415', color: '#EF4444', label: 'A' },
+    late:    { bg: '#F59E0B15', color: '#F59E0B', label: 'L' },
   }
 
-  const counts = students.reduce((acc, s) => {
-    const st = records[s.id] ?? 'present'
-    acc[st] = (acc[st] ?? 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  const presentCount = Object.values(records).filter(v => v === 'present').length
+  const absentCount  = Object.values(records).filter(v => v === 'absent').length
+  const lateCount    = Object.values(records).filter(v => v === 'late').length
+
+  if (loading && teacherClasses.length === 0) {
+    return (
+      <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+          Loading your classes...
+        </div>
+      </RolePageWrapper>
+    )
+  }
+
+  if (teacherClasses.length === 0) {
+    return (
+      <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1} />
+          <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>
+            No classes assigned yet. Contact your admin to assign you to classes.
+          </p>
+        </div>
+      </RolePageWrapper>
+    )
+  }
 
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
 
-      {/* Controls */}
-      <div style={{ display:'flex', gap:'var(--space-3)', marginBottom:'var(--space-5)', flexWrap:'wrap', alignItems:'center' }}>
-        <input type="date" value={date} onChange={e => { setDate(e.target.value); setSaved(false) }}
-          style={{ height:40, padding:'0 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }}/>
-        <input value={classLevel} onChange={e => setClassLevel(e.target.value)}
-          placeholder="Filter by class level (e.g. JSS 2)"
-          style={{ height:40, padding:'0 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none', flex:1, minWidth:160 }}/>
+      {/* Class selector */}
+      <div style={{ overflowX: 'auto', display: 'flex', gap: 8, marginBottom: 'var(--space-4)', paddingBottom: 4 }}>
+        {teacherClasses.map(cls => (
+          <button
+            key={`${cls.class_id}-${cls.subject ?? 'class'}`}
+            onClick={() => { setSelectedClass(cls); setSaved(false) }}
+            style={{
+              flexShrink: 0,
+              padding: '6px 14px',
+              borderRadius: 999,
+              border: `1px solid ${selectedClass?.class_id === cls.class_id && selectedClass?.subject === cls.subject ? sc : sc + '40'}`,
+              background: selectedClass?.class_id === cls.class_id && selectedClass?.subject === cls.subject ? sc : 'transparent',
+              color:  selectedClass?.class_id === cls.class_id && selectedClass?.subject === cls.subject ? '#fff' : sc,
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {cls.class_name}
+            {cls.subject ? ` · ${cls.subject}` : ''}
+            {cls.is_primary ? ' 👑' : ''}
+          </button>
+        ))}
       </div>
 
-      {/* Stats */}
+      {/* Date picker */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 'var(--space-4)' }}>
+        <input
+          type="date"
+          value={date}
+          onChange={e => { setDate(e.target.value); setSaved(false) }}
+          style={{
+            height: 38, padding: '0 12px',
+            background: 'var(--input-bg)',
+            border: '1px solid var(--input-border)',
+            borderRadius: 8,
+            color: 'var(--text-primary)',
+            fontSize: '0.85rem',
+            outline: 'none',
+          }}
+        />
+        {saved && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#10B981', fontSize: '0.8rem', fontWeight: 600 }}>
+            <CheckCircleIcon size={14} color="#10B981" /> Saved
+          </span>
+        )}
+      </div>
+
+      {/* Summary row */}
       {students.length > 0 && (
-        <div className={styles.statsRow} style={{ marginBottom:'var(--space-5)' }}>
-          {Object.entries(STATUS).map(([key, val]) => (
-            <div key={key} className={styles.statCard}>
-              <p className={styles.statVal} style={{ color:val.color }}>{counts[key] ?? 0}</p>
-              <p className={styles.statLbl}>{val.label}</p>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)' }}>
+          {[
+            { label: 'Present', count: presentCount, color: '#10B981' },
+            { label: 'Absent',  count: absentCount,  color: '#EF4444' },
+            { label: 'Late',    count: lateCount,    color: '#F59E0B' },
+          ].map(s => (
+            <div key={s.label} style={{
+              flex: 1, textAlign: 'center', padding: '8px',
+              background: s.color + '12',
+              border: `1px solid ${s.color}30`,
+              borderRadius: 8,
+            }}>
+              <p style={{ fontSize: '1.1rem', fontWeight: 800, color: s.color, margin: '0 0 2px' }}>{s.count}</p>
+              <p style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>{s.label}</p>
             </div>
           ))}
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color:sc }}>{students.length}</p>
-            <p className={styles.statLbl}>Total</p>
-          </div>
         </div>
       )}
 
-      {students.length > 0 && (
-        <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginBottom:'var(--space-3)' }}>
-          Tap to cycle: <span style={{ color:'#10B981', fontWeight:700 }}>Present</span> → <span style={{ color:'#EF4444', fontWeight:700 }}>Absent</span> → <span style={{ color:'#F59E0B', fontWeight:700 }}>Late</span>
-        </p>
+      {/* Student list */}
+      {loading ? (
+        <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>Loading students...</div>
+      ) : students.length === 0 ? (
+        <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No students in this class.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 'var(--space-4)' }}>
+          {students.map((s: any) => {
+            const status = records[s.id] ?? 'present'
+            const st     = STATUS_COLORS[status]
+            return (
+              <button
+                key={s.id}
+                onClick={() => toggle(s.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 14px',
+                  background: st.bg,
+                  border: `1px solid ${st.color}40`,
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: sc + '20',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden', flexShrink: 0,
+                }}>
+                  {s.avatar_url
+                    ? <img src={s.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ fontWeight: 700, color: sc, fontSize: '0.85rem' }}>{s.full_name?.[0]}</span>
+                  }
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.88rem' }}>{s.full_name}</p>
+                  <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.72rem' }}>{s.default_code}</p>
+                </div>
+
+                {/* Status badge */}
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: st.bg,
+                  border: `1px solid ${st.color}60`,
+                  color: st.color,
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
+                }}>
+                  {status.toUpperCase()}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       )}
 
-      {loading ? <div className={styles.loading}><span/><span/><span/></div>
-        : students.length === 0
-          ? <div className={styles.empty}><CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No students found{classLevel ? ` for "${classLevel}"` : ''}</p></div>
-          : <>
-            <div className={styles.list} style={{ marginBottom:'var(--space-5)' }}>
-              {students.map(s => {
-                const st   = records[s.id] ?? 'present'
-                const info = STATUS[st as keyof typeof STATUS]
-                return (
-                  <div key={s.id} className={styles.card}
-                    style={{ cursor:'pointer', borderLeft:`3px solid ${info.color}` }}
-                    onClick={() => toggle(s.id)}>
-                    <div className={styles.cardIcon} style={{ background:info.bg, borderRadius:'50%' }}>
-                      <span style={{ fontWeight:800, color:info.color, fontSize:'0.85rem' }}>{s.full_name?.[0]}</span>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <p className={styles.cardTitle}>{s.full_name}</p>
-                      <p className={styles.cardMeta}>{s.default_code}{s.class_level ? ` · ${s.class_level}` : ''}</p>
-                    </div>
-                    <span style={{ padding:'4px 12px', borderRadius:999, fontSize:'0.72rem', fontWeight:700, background:info.bg, color:info.color, flexShrink:0 }}>
-                      {info.label}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-            <button onClick={submit} disabled={saving}
-              style={{ width:'100%', height:48, background:saved?'#10B981':sc, color:'#fff', border:'none', borderRadius:12, fontWeight:700, fontSize:'0.9rem', cursor:'pointer', opacity:saving?0.7:1, transition:'background 0.3s' }}>
-              {saving ? 'Saving...' : saved ? '✅ Attendance Saved' : 'Submit Attendance'}
-            </button>
-          </>
-      }
-      <div className={styles.spacer}/>
+      {/* Submit button */}
+      {students.length > 0 && (
+        <button
+          onClick={submit}
+          disabled={saving || saved}
+          style={{
+            width: '100%', height: 46,
+            background: saved ? '#10B98120' : sc,
+            border: `1px solid ${saved ? '#10B981' : 'transparent'}`,
+            borderRadius: 10,
+            color: saved ? '#10B981' : '#fff',
+            fontWeight: 700, fontSize: '0.9rem',
+            cursor: saving || saved ? 'default' : 'pointer',
+            opacity: saving ? 0.6 : 1,
+            transition: 'all 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}
+        >
+          {saved
+            ? <><CheckCircleIcon size={16} color="#10B981" /> Attendance Saved</>
+            : saving ? 'Saving...'
+            : `Submit Attendance for ${selectedClass?.class_name}`
+          }
+        </button>
+      )}
+
+      <div style={{ height: 100 }} />
     </RolePageWrapper>
   )
 }

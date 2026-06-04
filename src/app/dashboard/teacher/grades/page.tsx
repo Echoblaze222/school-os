@@ -1,5 +1,5 @@
 // src/app/dashboard/teacher/grades/page.tsx
-// Server Component — loads student assignment submissions for grading
+// FIX #7: Now passes profile + school to GradeSubmissionsClient for RolePageWrapper
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -41,17 +41,20 @@ export default async function GradeSubmissionsPage() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login')
 
+  // FIX #7: Fetch full profile + school (needed by RolePageWrapper)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
-  if (!profile || !['teacher', 'admin'].includes(profile.role)) {
+  const school = (profile as any)?.schools ?? null
+
+  if (!profile || !['teacher', 'admin'].includes((profile as any).role)) {
     redirect('/dashboard/student')
   }
 
-  // Classes this teacher teaches
+  // Assignments scoped to this teacher's class_subjects
   const { data: classSubjects } = await supabase
     .from('class_subjects')
     .select('id, class_id, subject_id, classes(name), subjects(name)')
@@ -60,14 +63,24 @@ export default async function GradeSubmissionsPage() {
   const csIds = (classSubjects ?? []).map((cs: any) => cs.id)
   const csMap: Record<string, { subject: string; class: string }> = {}
   ;(classSubjects ?? []).forEach((cs: any) => {
-    csMap[cs.id] = { subject: cs.subjects?.name ?? 'Unknown', class: cs.classes?.name ?? 'Unknown' }
+    csMap[cs.id] = {
+      subject: cs.subjects?.name ?? 'Unknown',
+      class:   cs.classes?.name ?? 'Unknown',
+    }
   })
 
   if (csIds.length === 0) {
-    return <GradeSubmissionsClient submissions={[]} assignmentGroups={[]} teacherId={user.id} />
+    return (
+      <GradeSubmissionsClient
+        submissions={[]}
+        assignmentGroups={[]}
+        teacherId={user.id}
+        profile={profile}
+        school={school}
+      />
+    )
   }
 
-  // Assignments for these class_subjects
   const { data: assignments } = await supabase
     .from('assignments')
     .select('id, title, class_subject_id, due_date, max_score')
@@ -78,7 +91,6 @@ export default async function GradeSubmissionsPage() {
   const assignmentMap: Record<string, any> = {}
   ;(assignments ?? []).forEach((a: any) => { assignmentMap[a.id] = a })
 
-  // Submissions
   let submissions: Submission[] = []
   if (assignmentIds.length > 0) {
     const { data: subs } = await supabase
@@ -93,60 +105,62 @@ export default async function GradeSubmissionsPage() {
       .order('submitted_at', { ascending: false })
 
     submissions = (subs ?? []).map((s: any) => {
-      const asgn = assignmentMap[s.assignment_id]
+      const asgn   = assignmentMap[s.assignment_id]
       const csInfo = csMap[asgn?.class_subject_id] ?? { subject: 'Unknown', class: 'Unknown' }
       return {
-        id: s.id,
-        student_id: s.student_id,
-        student_name: s.student_profiles?.full_name ?? 'Unknown',
-        student_number: s.student_profiles?.student_number ?? null,
-        assignment_id: s.assignment_id,
+        id:               s.id,
+        student_id:       s.student_id,
+        student_name:     s.student_profiles?.full_name ?? 'Unknown',
+        student_number:   s.student_profiles?.student_number ?? null,
+        assignment_id:    s.assignment_id,
         assignment_title: asgn?.title ?? 'Unknown Assignment',
-        subject_name: csInfo.subject,
-        class_name: csInfo.class,
+        subject_name:     csInfo.subject,
+        class_name:       csInfo.class,
         class_subject_id: asgn?.class_subject_id ?? '',
-        submitted_at: s.submitted_at,
-        file_url: s.file_url ?? null,
-        notes: s.notes ?? null,
-        score: s.score ?? null,
-        max_score: asgn?.max_score ?? 100,
-        feedback: s.feedback ?? null,
-        status: s.status ?? 'pending',
+        submitted_at:     s.submitted_at,
+        file_url:         s.file_url ?? null,
+        notes:            s.notes ?? null,
+        score:            s.score ?? null,
+        max_score:        asgn?.max_score ?? 100,
+        feedback:         s.feedback ?? null,
+        status:           s.status ?? 'pending',
       }
     })
   }
 
-  // Build assignment groups with counts
   const groupMap: Record<string, AssignmentGroup> = {}
   ;(assignments ?? []).forEach((a: any) => {
     const csInfo = csMap[a.class_subject_id] ?? { subject: 'Unknown', class: 'Unknown' }
     groupMap[a.id] = {
-      assignment_id: a.id,
-      title: a.title,
-      subject_name: csInfo.subject,
-      class_name: csInfo.class,
+      assignment_id:    a.id,
+      title:            a.title,
+      subject_name:     csInfo.subject,
+      class_name:       csInfo.class,
       class_subject_id: a.class_subject_id,
-      due_date: a.due_date ?? null,
-      max_score: a.max_score ?? 100,
-      pending_count: 0,
-      graded_count: 0,
+      due_date:         a.due_date ?? null,
+      max_score:        a.max_score ?? 100,
+      pending_count:    0,
+      graded_count:     0,
     }
   })
 
   submissions.forEach(s => {
     if (groupMap[s.assignment_id]) {
       if (s.status === 'pending') groupMap[s.assignment_id].pending_count++
-      else groupMap[s.assignment_id].graded_count++
+      else                        groupMap[s.assignment_id].graded_count++
     }
   })
 
-  const assignmentGroups = Object.values(groupMap).sort((a, b) => b.pending_count - a.pending_count)
+  const assignmentGroups = Object.values(groupMap)
+    .sort((a, b) => b.pending_count - a.pending_count)
 
   return (
     <GradeSubmissionsClient
       submissions={submissions}
       assignmentGroups={assignmentGroups}
       teacherId={user.id}
+      profile={profile}
+      school={school}
     />
   )
 }

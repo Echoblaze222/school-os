@@ -14,7 +14,9 @@ export default function NotesClient({ profile, school, userId }: Props) {
   useEffect(() => { load() }, [])
   async function load() {
     const { data } = await supabase.from('notes').select('id, title, subject, file_url, created_at, author:profiles(full_name)')
-      .eq('school_id', school?.id).order('created_at', { ascending: false })
+      .eq('school_id', school?.id)
+      .or(`visibility.eq.school,and(visibility.eq.class,class_id.eq.${profile?.class_id})`)
+      .order('created_at', { ascending: false })
     if (data) setNotes(data); setLoading(false)
   }
   return (

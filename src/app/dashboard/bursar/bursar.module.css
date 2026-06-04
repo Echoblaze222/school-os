@@ -2,7 +2,8 @@
 .page    { display: flex; min-height: 100dvh; background: var(--bg-base); }
 .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 @media (min-width: 1024px) { .content { margin-left: var(--sidebar-width); } }
-.main { padding: var(--space-6) var(--space-5) 0; max-width: 800px; margin: 0 auto; }
+.main {
+  padding-bottom: 110px; padding: var(--space-6) var(--space-5) 0; max-width: 800px; margin: 0 auto; }
 .greeting { margin-bottom: var(--space-6); }
 .greetingName { font-size: clamp(1.6rem,4vw,2.2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); margin: 0 0 4px; }
 .greetingSub { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
