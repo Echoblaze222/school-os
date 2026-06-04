@@ -65,6 +65,7 @@ export default function PrincipalChatClient({
       }, (payload) => {
         const m = payload.new as Message
         setMessages(prev => {
+          // FIX: Deduplicate — skip if ID already exists (added directly after insert)
           if (prev.find(x => x.id === m.id)) return prev
           return [...prev, m]
         })
@@ -89,6 +90,23 @@ export default function PrincipalChatClient({
 
     setMessages(data ?? [])
     setTimeout(() => inputRef.current?.focus(), 100)
+  }
+
+  // FIX: Resolve the other user from membership data before opening room
+  async function openRoomFromMembership(membership: any) {
+    const roomId = membership.room_id
+
+    // Try to resolve the other participant from the room's members
+    const { data: roomMembers } = await supabase
+      .from('chat_room_members')
+      .select('user:profiles(id, full_name, avatar_url, role, schools(name, primary_color))')
+      .eq('room_id', roomId)
+      .neq('user_id', currentUserId)
+      .limit(1)
+      .maybeSingle()
+
+    const resolvedOther = (roomMembers as any)?.user ?? null
+    await openRoom(roomId, resolvedOther)
   }
 
   async function startNewChat(principal: any) {
@@ -137,12 +155,13 @@ export default function PrincipalChatClient({
     if (!input.trim() || !activeRoom || sending) return
 
     const content = input.trim()
+    const tempId  = `temp-${Date.now()}`
     setInput('')
     setSending(true)
 
-    // Optimistic
+    // Optimistic update with temp ID
     const temp: Message = {
-      id:         `temp-${Date.now()}`,
+      id:         tempId,
       content,
       sender_id:  currentUserId,
       sent_at:    new Date().toISOString(),
@@ -150,13 +169,20 @@ export default function PrincipalChatClient({
     }
     setMessages(prev => [...prev, temp])
 
-    const { error } = await supabase
+    // FIX: Use .select().single() to get real row back and replace temp
+    const { data: newMsg, error } = await supabase
       .from('chat_messages')
       .insert({ room_id: activeRoom, sender_id: currentUserId, content })
+      .select('id, content, sender_id, sent_at, is_deleted')
+      .single()
 
     if (error) {
-      setMessages(prev => prev.filter(m => m.id !== temp.id))
+      // Roll back on error
+      setMessages(prev => prev.filter(m => m.id !== tempId))
       setInput(content)
+    } else if (newMsg) {
+      // FIX: Replace temp with real message to prevent subscription duplicate
+      setMessages(prev => prev.map(m => m.id === tempId ? newMsg as Message : m))
     }
 
     setSending(false)
@@ -196,11 +222,11 @@ export default function PrincipalChatClient({
             <div className={styles.roomAvatar} style={{ background: school?.primary_color ?? '#800020' }}>
               {otherUser?.avatar_url
                 ? <img src={otherUser.avatar_url} alt="" />
-                : <span>{otherUser?.full_name?.[0]?.toUpperCase()}</span>
+                : <span>{otherUser?.full_name?.[0]?.toUpperCase() ?? '?'}</span>
               }
             </div>
             <div>
-              <p className={styles.roomName}>{otherUser?.full_name}</p>
+              <p className={styles.roomName}>{otherUser?.full_name ?? 'Conversation'}</p>
               <p className={styles.roomSub}>🏫 {school?.name ?? 'Principal'}</p>
             </div>
           </div>
@@ -217,7 +243,7 @@ export default function PrincipalChatClient({
           {messages.length === 0 && (
             <div className={styles.emptyChat}>
               <p>💬</p>
-              <p>Start the conversation with {otherUser?.full_name?.split(' ')[0]}</p>
+              <p>Start the conversation with {otherUser?.full_name?.split(' ')[0] ?? 'them'}</p>
             </div>
           )}
 
@@ -337,7 +363,8 @@ export default function PrincipalChatClient({
                   <button
                     key={membership.room_id}
                     className={styles.chatItem}
-                    onClick={() => openRoom(membership.room_id, null)}
+                    // FIX: was passing null for otherUser — now resolves it from DB
+                    onClick={() => openRoomFromMembership(membership)}
                   >
                     <div className={styles.chatAvatar}>
                       <span>{(room?.name ?? 'P')[0]?.toUpperCase()}</span>
@@ -426,4 +453,5 @@ export default function PrincipalChatClient({
       </nav>
     </div>
   )
-}
+    }
+      

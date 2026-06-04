@@ -1,7 +1,7 @@
 // src/app/dashboard/principal/codes/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import CodesClient from '@/app/dashboard/secretary/codes/CodesClient'
+import CodesClient from './CodesClient'
 
 export const metadata = { title: 'Access Codes — SchoolOS' }
 
@@ -22,13 +22,10 @@ export default async function PrincipalCodesPage() {
   const school   = (profile as any).schools ?? null
   const schoolId = (profile as any).school_id ?? ''
 
-  // FIX 1: classes table has `level` + `section`, not `name`
-  // FIX 2: CodesClient expects `entries` (profiles rows), not classOptions
   const { data: entries } = await supabase
     .from('profiles')
     .select('id, full_name, email, role, default_code, is_active, created_at')
     .eq('school_id', schoolId)
-    .eq('is_active', true)
     .order('role')
     .order('full_name')
 
@@ -38,6 +35,7 @@ export default async function PrincipalCodesPage() {
       profile={profile}
       school={school}
       userId={user.id}
+      schoolId={schoolId}
     />
   )
 }

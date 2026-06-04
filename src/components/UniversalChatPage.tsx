@@ -1,31 +1,53 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import {
   MessageIcon, SearchIcon, PlusIcon,
-  UserIcon, PeopleIcon, ArrowLeftIcon,
+  UserIcon, PeopleIcon,
 } from '@/components/Icons'
 import styles from './chat.module.css'
 
 interface Props {
-  profile:     any
-  school:      any
-  userId:      string
-  role:        string
+  profile:      any
+  school:       any
+  userId:       string
+  role:         string
   schoolColor?: string
 }
 
 interface Room {
-  id:         string
-  name:       string
-  type:       'direct' | 'group'
-  updated_at: string
+  id:            string
+  name:          string
+  room_type:     string
+  updated_at:    string
   last_message?: string
-  unread?:    number
-  other_user?: { full_name: string; role: string; default_code: string; avatar_url?: string }
+  other_user?:   { full_name: string; role: string; default_code: string; avatar_url?: string }
+}
+
+// Maps role pairs to valid chat_room_type enum values
+function getRoomType(roleA: string, roleB: string): string {
+  const map: Record<string, string> = {
+    'principal_principal': 'principal_to_principal',
+    'teacher_teacher':     'teacher_to_teacher',
+    'student_student':     'student_to_student',
+    'student_teacher':     'student_to_teacher',
+    'teacher_student':     'student_to_teacher',
+    'principal_teacher':   'teacher_to_teacher',
+    'teacher_principal':   'teacher_to_teacher',
+    'principal_student':   'student_to_teacher',
+    'student_principal':   'student_to_teacher',
+    'bursar_teacher':      'teacher_to_teacher',
+    'bursar_principal':    'principal_to_principal',
+    'bursar_student':      'student_to_teacher',
+    'secretary_teacher':   'teacher_to_teacher',
+    'secretary_principal': 'principal_to_principal',
+    'secretary_student':   'student_to_teacher',
+  }
+  const key = `${roleA}_${roleB}`
+  return map[key] ?? 'student_to_teacher'
 }
 
 export default function UniversalChatPage({ profile, school, userId, role, schoolColor = '#7C3AED' }: Props) {
@@ -45,148 +67,213 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
     const { data } = await supabase
       .from('chat_room_members')
       .select(`
+        room_id,
         room:chat_rooms(
-          id, name, type, updated_at,
+          id, name, room_type, updated_at,
           members:chat_room_members(
             user:profiles(id, full_name, role, default_code, avatar_url)
           ),
-          messages:messages(body, created_at)
+          messages:chat_messages(content, sent_at)
         )
       `)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
 
     if (data) {
       const processed = data.map((d: any) => {
         const room = d.room
         if (!room) return null
-        // For direct rooms, find the other person
-        const other = room.type === 'direct'
+
+        const other = room.room_type !== 'group'
           ? room.members?.find((m: any) => m.user?.id !== userId)?.user
           : null
-        const lastMsg = room.messages?.[room.messages.length - 1]
+
+        // FIX: Sort messages ascending to reliably get the last one
+        const msgs = (room.messages ?? []).sort(
+          (a: any, b: any) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()
+        )
+        const lastMsg = msgs[msgs.length - 1]
+
         return {
-          id:          room.id,
-          name:        other?.full_name ?? room.name,
-          type:        room.type,
-          updated_at:  room.updated_at,
-          last_message: lastMsg?.body,
-          other_user:  other,
+          id:           room.id,
+          name:         other?.full_name ?? room.name ?? 'Chat',
+          room_type:    room.room_type,
+          updated_at:   room.updated_at,
+          last_message: lastMsg?.content ?? null,
+          other_user:   other ?? null,
         }
       }).filter(Boolean) as Room[]
 
-      // Sort by latest activity
       processed.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       setRooms(processed)
     }
     setLoading(false)
   }
 
-  // ── Find user by ID code ────────────────────────────────────
+  // ── Find user by ID code ──────────────────────────────────
   async function findUserByCode() {
     if (!code.trim()) return
-    setFinding(true); setFindError(''); setFoundUser(null)
+    setFinding(true)
+    setFindError('')
+    setFoundUser(null)
 
     const cleaned = code.trim().toUpperCase()
 
-    // Try exact match first
-    let { data, error } = await supabase
+    // Exact match
+    const { data: exactData, error: exactError } = await supabase
       .from('profiles')
-      .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
       .eq('default_code', cleaned)
-      .eq('school_id', profile?.school_id)
-      .single()
+      .maybeSingle()
 
-    // If no exact match, try searching with ilike (partial / stripped dashes)
-    if (!data) {
-      const stripped = cleaned.replace(/-/g, '')
-      const { data: fuzzy } = await supabase
-        .from('profiles')
-        .select('id, full_name, role, default_code, avatar_url, class_level, school_id')
-        .eq('school_id', profile?.school_id)
-        .ilike('default_code', `%${stripped.slice(-6)}%`)
-        .limit(1)
-        .single()
-      data = fuzzy ?? null
+    if (exactData) {
+      if (exactData.id === userId) {
+        setFindError("That's your own code! Enter someone else's.")
+        setFinding(false)
+        return
+      }
+      setFoundUser(exactData)
+      setFinding(false)
+      return
     }
 
-    if (!data) {
-      setFindError('No user found with that code. Check and try again.')
-      setFinding(false); return
+    // Fuzzy fallback — strip dashes, match last 6 chars
+    const stripped = cleaned.replace(/-/g, '')
+    const { data: fuzzyData } = await supabase
+      .from('profiles')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
+      .ilike('default_code', `%${stripped.slice(-6)}%`)
+      .limit(1)
+      .maybeSingle()
+
+    if (fuzzyData) {
+      if (fuzzyData.id === userId) {
+        setFindError("That's your own code! Enter someone else's.")
+        setFinding(false)
+        return
+      }
+      setFoundUser(fuzzyData)
+      setFinding(false)
+      return
     }
-    if (data.id === userId) {
-      setFindError("That's your own code! Enter someone else's.")
-      setFinding(false); return
-    }
-    setFoundUser(data)
+
+    setFindError(
+      exactError?.message
+        ? `Error: ${exactError.message}`
+        : 'No user found with that code. Check and try again.'
+    )
     setFinding(false)
   }
 
-  // ── Start or open DM with found user ───────────────────────
+  // ── Start or open DM with found user ─────────────────────
   async function startDM() {
     if (!foundUser) return
     setFinding(true)
 
-    // Check if DM room already exists
-    const { data: existing } = await supabase
-      .from('chat_rooms')
-      .select('id, chat_room_members!inner(user_id)')
-      .eq('type', 'direct')
-      .contains('chat_room_members.user_id', [userId, foundUser.id] as any)
-      .limit(1)
+    // Check if room already exists between these two users
+    const { data: myRooms } = await supabase
+      .from('chat_room_members')
+      .select('room_id')
+      .eq('user_id', userId)
 
-    if (existing && existing.length > 0) {
-      router.push(`/dashboard/${role}/chat/${existing[0].id}`)
-      return
+    if (myRooms && myRooms.length > 0) {
+      const myRoomIds = myRooms.map((r: any) => r.room_id)
+      const { data: shared } = await supabase
+        .from('chat_room_members')
+        .select('room_id')
+        .eq('user_id', foundUser.id)
+        .in('room_id', myRoomIds)
+
+      if (shared && shared.length > 0) {
+        const { data: roomCheck } = await supabase
+          .from('chat_rooms')
+          .select('id')
+          .eq('id', shared[0].room_id)
+          .eq('is_group', false)
+          .maybeSingle()
+
+        if (roomCheck) {
+          router.push(`/dashboard/${role}/chat/${roomCheck.id}`)
+          setFinding(false)
+          return
+        }
+      }
     }
 
     // Create new DM room
+    const isCrossSchool = foundUser.school_id !== profile?.school_id
     const roomName = [profile?.full_name, foundUser.full_name].sort().join(' & ')
-    const { data: room } = await supabase
-      .from('chat_rooms')
-      .insert({ name: roomName, type: 'direct', school_id: profile?.school_id })
-      .select('id').single()
+    const roomType = getRoomType(role, foundUser.role)
 
-    if (room) {
-      // Add both users
-      await supabase.from('chat_room_members').insert([
-        { room_id: room.id, user_id: userId },
-        { room_id: room.id, user_id: foundUser.id },
-      ])
-      router.push(`/dashboard/${role}/chat/${room.id}`)
+    const { data: room, error: roomError } = await supabase
+      .from('chat_rooms')
+      .insert({
+        name:       roomName,
+        room_type:  roomType,
+        is_group:   false,
+        created_by: userId,
+        school_id:  isCrossSchool ? null : profile?.school_id,
+      })
+      .select('id')
+      .single()
+
+    if (roomError || !room) {
+      setFindError(`Room error: ${roomError?.message ?? 'Unknown error'}`)
+      setFinding(false)
+      return
     }
+
+    await supabase.from('chat_room_members').insert([
+      { room_id: room.id, user_id: userId },
+      { room_id: room.id, user_id: foundUser.id },
+    ])
+
+    router.push(`/dashboard/${role}/chat/${room.id}`)
     setFinding(false)
   }
 
   function timeAgo(d: string) {
     const diff = Date.now() - new Date(d).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 1)   return 'now'
-    if (mins < 60)  return `${mins}m`
-    if (mins < 1440)return `${Math.floor(mins/60)}h`
-    return `${Math.floor(mins/1440)}d`
+    if (mins < 1)    return 'now'
+    if (mins < 60)   return `${mins}m`
+    if (mins < 1440) return `${Math.floor(mins / 60)}h`
+    return `${Math.floor(mins / 1440)}d`
   }
 
   const ROLE_COLORS: Record<string, string> = {
-    student:   '#3B82F6', teacher: '#10B981', principal: '#8B5CF6',
-    bursar:    '#F59E0B', secretary: '#EC4899', parent: '#F97316',
+    student:   '#3B82F6',
+    teacher:   '#10B981',
+    principal: '#8B5CF6',
+    bursar:    '#F59E0B',
+    secretary: '#EC4899',
+    parent:    '#F97316',
   }
 
   return (
     <div className={styles.page}>
-      <DashboardHeader userId={userId} role={role} profile={profile} school={school}
-        schoolColor={schoolColor} title="Messages" />
+      <DashboardHeader
+        userId={userId} role={role} profile={profile}
+        school={school} schoolColor={schoolColor} title="Messages"
+      />
 
       <div className={styles.chatLayout}>
 
         {/* ── SIDEBAR ─────────────────────────────────────── */}
         <div className={styles.sidebar}>
-          {/* New chat button */}
+
           <div className={styles.sidebarTop}>
             <p className={styles.sidebarTitle}>Chats</p>
-            <button className={styles.newChatBtn} style={{ background: schoolColor }}
-              onClick={() => { setShowFind(!showFind); setFoundUser(null); setCode(''); setFindError('') }}>
-              <PlusIcon size={15} color="white"/>
+            <button
+              className={styles.newChatBtn}
+              style={{ background: schoolColor }}
+              onClick={() => {
+                setShowFind(!showFind)
+                setFoundUser(null)
+                setCode('')
+                setFindError('')
+              }}
+            >
+              <PlusIcon size={15} color="white" />
             </button>
           </div>
 
@@ -201,34 +288,44 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
                   value={code}
                   onChange={e => setCode(e.target.value.toUpperCase())}
                   onKeyDown={e => e.key === 'Enter' && findUserByCode()}
-                  placeholder="Enter ID code (e.g. TCH-2024-001)"
+                  placeholder="Enter ID code (e.g. SCH-2024-001)"
                   autoFocus
                 />
-                <button className={styles.findBtn} style={{ background: schoolColor }}
-                  onClick={findUserByCode} disabled={finding || !code.trim()}>
-                  {finding ? '...' : <SearchIcon size={15} color="white"/>}
+                <button
+                  className={styles.findBtn}
+                  style={{ background: schoolColor }}
+                  onClick={findUserByCode}
+                  disabled={finding || !code.trim()}
+                >
+                  {finding ? '...' : <SearchIcon size={15} color="white" />}
                 </button>
               </div>
+
               {findError && <p className={styles.findError}>{findError}</p>}
 
               {foundUser && (
                 <div className={styles.foundUser}>
-                  <div className={styles.foundAvatar}
-                    style={{ background: ROLE_COLORS[foundUser.role] ?? schoolColor }}>
+                  <div
+                    className={styles.foundAvatar}
+                    style={{ background: ROLE_COLORS[foundUser.role] ?? schoolColor }}
+                  >
                     {foundUser.avatar_url
-                      ? <img src={foundUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}/>
-                      : <UserIcon size={16} color="white"/>
+                      ? <img src={foundUser.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      : <UserIcon size={16} color="white" />
                     }
                   </div>
                   <div className={styles.foundInfo}>
                     <p className={styles.foundName}>{foundUser.full_name}</p>
                     <p className={styles.foundMeta}>
                       {foundUser.role} · {foundUser.default_code}
-                      {foundUser.class_level ? ` · ${foundUser.class_level}` : ''}
                     </p>
                   </div>
-                  <button className={styles.dmBtn} style={{ background: schoolColor }}
-                    onClick={startDM} disabled={finding}>
+                  <button
+                    className={styles.dmBtn}
+                    style={{ background: schoolColor }}
+                    onClick={startDM}
+                    disabled={finding}
+                  >
                     {finding ? '...' : 'Chat →'}
                   </button>
                 </div>
@@ -239,51 +336,51 @@ export default function UniversalChatPage({ profile, school, userId, role, schoo
           {/* Room list */}
           <div className={styles.roomList}>
             {loading
-              ? <div className={styles.listLoading}><span/><span/><span/></div>
+              ? <div className={styles.listLoading}><span /><span /><span /></div>
               : rooms.length === 0
-                ? <div className={styles.emptyList}>
-                    <MessageIcon size={28} color="var(--text-faint)"/>
+                ? (
+                  <div className={styles.emptyList}>
+                    <MessageIcon size={28} color="var(--text-faint)" />
                     <p>No chats yet</p>
-                    <p style={{ fontSize:'0.72rem' }}>Use the + button to find someone by ID code</p>
+                    <p style={{ fontSize: '0.72rem' }}>Use the + button to find someone by ID code</p>
                   </div>
+                )
                 : rooms.map(room => (
-                    <Link key={room.id}
-                      href={`/dashboard/${role}/chat/${room.id}`}
-                      className={styles.roomItem}>
-                      <div className={styles.roomAvatar}
-                        style={{ background: room.other_user ? (ROLE_COLORS[room.other_user.role] ?? schoolColor) : schoolColor }}>
-                        {room.other_user?.avatar_url
-                          ? <img src={room.other_user.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}/>
-                          : room.type === 'group'
-                            ? <PeopleIcon size={15} color="white"/>
-                            : <UserIcon size={15} color="white"/>
-                        }
+                  <Link key={room.id} href={`/dashboard/${role}/chat/${room.id}`} className={styles.roomItem}>
+                    <div
+                      className={styles.roomAvatar}
+                      style={{ background: room.other_user ? (ROLE_COLORS[room.other_user.role] ?? schoolColor) : schoolColor }}
+                    >
+                      {room.other_user?.avatar_url
+                        ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        : room.room_type === 'group'
+                          ? <PeopleIcon size={15} color="white" />
+                          : <UserIcon size={15} color="white" />
+                      }
+                    </div>
+                    <div className={styles.roomInfo}>
+                      <div className={styles.roomTopRow}>
+                        <p className={styles.roomName}>{room.name}</p>
+                        <span className={styles.roomTime}>{timeAgo(room.updated_at)}</span>
                       </div>
-                      <div className={styles.roomInfo}>
-                        <div className={styles.roomTopRow}>
-                          <p className={styles.roomName}>{room.name}</p>
-                          <span className={styles.roomTime}>{timeAgo(room.updated_at)}</span>
-                        </div>
-                        {room.last_message && (
-                          <p className={styles.roomPreview}>{room.last_message}</p>
-                        )}
-                        {room.other_user && (
-                          <p className={styles.roomCode}>{room.other_user.default_code}</p>
-                        )}
-                      </div>
-                    </Link>
-                  ))
+                      {room.last_message && <p className={styles.roomPreview}>{room.last_message}</p>}
+                      {room.other_user && <p className={styles.roomCode}>{room.other_user.default_code}</p>}
+                    </div>
+                  </Link>
+                ))
             }
           </div>
         </div>
 
         {/* ── EMPTY STATE ──────────────────────────────────── */}
         <div className={styles.emptyChat}>
-          <MessageIcon size={48} color="var(--text-faint)" strokeWidth={1}/>
+          <MessageIcon size={48} color="var(--text-faint)" strokeWidth={1} />
           <h3>Select a chat</h3>
           <p>Choose a conversation from the sidebar or start a new one with an ID code.</p>
         </div>
+
       </div>
     </div>
   )
-}
+    }
+    
