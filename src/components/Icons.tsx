@@ -942,3 +942,13 @@ export function UsersIcon({ size = 24, color = 'currentColor', strokeWidth = 1.7
     </svg>
   )
 }
+
+// ── Trending Up / Growth ──────────────────────────────────────
+export function TrendingUpIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth)}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+  )
+}
