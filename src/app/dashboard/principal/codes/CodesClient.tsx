@@ -135,7 +135,6 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
     setSError(null); setSLoading(true); setSResult(null)
 
     const code = makeCode(sRole)
-    // Upsert a new profile row
     const { error } = await supabase.from('profiles').insert({
       full_name:    sName.trim(),
       email:        sEmail.trim().toLowerCase(),
@@ -150,7 +149,6 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
       setSResult({ full_name: sName, email: sEmail, role: sRole, code, saved: false, error: error.message })
     } else {
       setSResult({ full_name: sName, email: sEmail, role: sRole, code, saved: true, error: null })
-      // refresh local list
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
         .eq('school_id', schoolId).order('role').order('full_name')
@@ -222,22 +220,19 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
       ════════════════════════════════════ */}
       {tab === 'existing' && (
         <>
-          {/* Info banner */}
           <div className={styles.infoBanner}>
             <span className={styles.infoBannerIcon}>🔐</span>
             <div>
               <p className={styles.infoBannerTitle}>Access Codes</p>
-              <p className={styles.infoBannerSub}>Each user has a unique login code. Share it with them to access SchoolOS. You can regenerate a code if it's been compromised.</p>
+              <p className={styles.infoBannerSub}>Each user has a unique login code. Share it with them to access SchoolOS. You can regenerate a code if it has been compromised.</p>
             </div>
           </div>
 
-          {/* Search */}
           <div className={styles.searchWrap}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input className={styles.searchInput} placeholder="Search by name, email or code…" value={search} onChange={e => setSearch(e.target.value)} />
+            <input className={styles.searchInput} placeholder="Search by name, email or code..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
 
-          {/* Role tabs */}
           <div className={styles.roleTabs}>
             {roles.map(r => {
               const m = roleMeta(r)
@@ -246,9 +241,9 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
               return (
                 <button key={r} onClick={() => setRoleTab(r)} className={styles.roleChip}
                   style={{
-                    background:   isActive ? m.color + '22' : 'var(--glass-bg)',
-                    borderColor:  isActive ? m.color : 'var(--glass-border)',
-                    color:        isActive ? m.color : 'var(--text-muted)',
+                    background:  isActive ? m.color + '22' : 'var(--glass-bg)',
+                    borderColor: isActive ? m.color : 'var(--glass-border)',
+                    color:       isActive ? m.color : 'var(--text-muted)',
                   }}>
                   {r === 'all' ? 'All' : m.label} ({count})
                 </button>
@@ -256,37 +251,30 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
             })}
           </div>
 
-          {/* Code table */}
           {filtered.length === 0 ? (
-            <div className={styles.empty}><p className={styles.emptyIcon}>🔑</p><p className={styles.emptyTitle}>No users found</p></div>
+            <div className={styles.empty}>
+              <p className={styles.emptyIcon}>🔑</p>
+              <p className={styles.emptyTitle}>No users found</p>
+            </div>
           ) : (
             <div className={styles.codeList}>
               {filtered.map(e => {
                 const m = roleMeta(e.role)
                 return (
                   <div key={e.id} className={styles.codeRow}>
-                    {/* Avatar */}
                     <div className={styles.avatar} style={{ background: m.color + '22' }}>
                       <span>{m.icon}</span>
                     </div>
-
-                    {/* Info */}
                     <div className={styles.codeRowInfo}>
                       <p className={styles.codeRowName}>{e.full_name}</p>
                       <p className={styles.codeRowEmail}>{e.email}</p>
                     </div>
-
-                    {/* Role badge */}
                     <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
                       {m.icon} {m.label}
                     </span>
-
-                    {/* Code chip */}
                     <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>
                       {e.default_code}
                     </code>
-
-                    {/* Actions */}
                     <div className={styles.codeRowActions}>
                       <button onClick={() => copyCode(e.default_code, e.id)} className={styles.actionBtn}
                         style={copied === e.id ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : {}}>
@@ -310,7 +298,6 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
       ════════════════════════════════════ */}
       {tab === 'single' && (
         <div className={styles.twoCol}>
-          {/* Form */}
           <div className={styles.formCard}>
             <div className={styles.formHeader}>
               <p className={styles.formTitle}>Generate Single Code</p>
@@ -340,12 +327,11 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
               {sError && <p className={styles.errorMsg}>{sError}</p>}
 
               <button onClick={handleSingleGenerate} disabled={sLoading} className={styles.generateBtn}>
-                {sLoading ? '⏳ Generating…' : '✨ Generate & Save Code'}
+                {sLoading ? '⏳ Generating...' : '✨ Generate & Save Code'}
               </button>
             </div>
           </div>
 
-          {/* Result */}
           {sResult && (
             <div className={`${styles.resultCard} ${sResult.saved ? styles.resultSuccess : styles.resultError}`}>
               <div className={styles.resultHeader}>
@@ -354,7 +340,6 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                 </span>
               </div>
 
-              {/* Big code display */}
               <div className={styles.bigCodeWrap}>
                 <p className={styles.bigCodeLabel}>Access Code</p>
                 <div className={styles.bigCode}>
@@ -366,10 +351,10 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                 </div>
               </div>
 
-              {/* Owner info */}
-              <div className={styles.ownerCard}>
-                {(() => { const m = roleMeta(sResult.role); return (
-                  <>
+              {(() => {
+                const m = roleMeta(sResult.role)
+                return (
+                  <div className={styles.ownerCard}>
                     <div className={styles.ownerAvatar} style={{ background: m.color + '22' }}>{m.icon}</div>
                     <div className={styles.ownerInfo}>
                       <p className={styles.ownerName}>{sResult.full_name}</p>
@@ -378,13 +363,13 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                         {m.label}
                       </span>
                     </div>
-                  </>
-                )})()}
-              </div>
+                  </div>
+                )
+              })()}
 
               <p className={styles.codeNote}>
                 {sResult.saved
-                  ? 'User profile created. Share the code above with them — they'll use it as their initial login password.'
+                  ? 'User profile created. Share the code above with them — they will use it as their initial login password.'
                   : sResult.error}
               </p>
             </div>
@@ -400,7 +385,10 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
           <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
             <div className={styles.formHeader}>
               <p className={styles.formTitle}>Bulk Generate Codes</p>
-              <p className={styles.formSub}>Paste one user per line in the format: <code className={styles.inlineCode}>Full Name, Email, Role</code></p>
+              <p className={styles.formSub}>
+                Paste one user per line in the format:{' '}
+                <code className={styles.inlineCode}>Full Name, Email, Role</code>
+              </p>
             </div>
             <div className={styles.formBody}>
 
@@ -409,7 +397,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                 <textarea
                   className={`${styles.fieldInput} ${styles.textarea}`}
                   rows={8}
-                  placeholder={`Amara Osei, amara@school.edu, student\nKwame Mensah, kwame@school.edu, teacher\nAfia Boateng, afia@school.edu, bursar`}
+                  placeholder={'Amara Osei, amara@school.edu, student\nKwame Mensah, kwame@school.edu, teacher\nAfia Boateng, afia@school.edu, bursar'}
                   value={bRaw}
                   onChange={e => { setBRaw(e.target.value); setBParsed([]); setBResults([]) }}
                 />
@@ -435,7 +423,6 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
             </div>
           </div>
 
-          {/* Preview table */}
           {bResults.length > 0 && (
             <div className={styles.bulkPreviewCard}>
               <div className={styles.bulkPreviewHeader}>
@@ -450,7 +437,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                   </button>
                   {!bSaved && (
                     <button onClick={handleBulkSave} disabled={bLoading} className={styles.generateBtn} style={{ width: 'auto', padding: '10px 24px' }}>
-                      {bLoading ? '⏳ Saving…' : `💾 Save All ${bResults.length} Users`}
+                      {bLoading ? '⏳ Saving...' : `💾 Save All ${bResults.length} Users`}
                     </button>
                   )}
                   {bSaved && (
@@ -459,10 +446,18 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                 </div>
               </div>
 
-              {/* Column headers */}
               <div className={styles.bulkTableHead}>
                 <span>USER</span>
                 <span>ROLE</span>
                 <span>ACCESS CODE</span>
                 <span>STATUS</span>
-    
+              </div>
+
+              <div className={styles.bulkTableBody}>
+                {bResults.map((r, i) => {
+                  const m = roleMeta(r.role)
+                  return (
+                    <div key={i} className={styles.bulkRow}>
+                      <div className={styles.bulkUser}>
+                        <div className={styles.avatarSm} style={{ background: m.color + '22' }}>{m.icon}</div>
+                     
