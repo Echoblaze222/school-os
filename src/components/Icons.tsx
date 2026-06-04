@@ -878,9 +878,3 @@ export function CompassIcon({ size = 24, color = 'currentColor', strokeWidth = 1
     </svg>
   )
 }
-
-
-
-
-
-Claude is AI and can make mistakes. Please double-check resp
