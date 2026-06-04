@@ -498,5 +498,5 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       {voice.error && <p className={styles.voiceError}>{voice.error}</p>}
     </div>
   )
-}
-  
+              }
+      
