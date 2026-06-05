@@ -32,17 +32,22 @@ const drawerPanelStyle: React.CSSProperties = {
 }
 
 const MORE_NAV_ITEMS = [
-  { href: '/dashboard/teacher/results',      Icon: BarChartIcon,  label: 'Results'       },
-  { href: '/dashboard/teacher/quizzes',      Icon: AwardIcon,     label: 'Quizzes'       },
-  { href: '/dashboard/teacher/live',         Icon: VideoIcon,     label: 'Live Class'    },
-  { href: '/dashboard/teacher/notes',        Icon: BookIcon,      label: 'Study Notes'   },
-  { href: '/dashboard/teacher/timetable',    Icon: ClockIcon,     label: 'Timetable'     },
-  { href: '/dashboard/teacher/syllabus',     Icon: BookOpenIcon,  label: 'Syllabus'      },
-  { href: '/dashboard/teacher/announcements',Icon: MegaphoneIcon, label: 'Announcements' },
-  { href: '/dashboard/teacher/notifications',Icon: BellIcon,      label: 'Notifications' },
-  { href: '/dashboard/teacher/meetings',     Icon: CalendarIcon,  label: 'Meetings'      },
-  { href: '/dashboard/teacher/audit',        Icon: ShieldIcon,    label: 'Audit Log'     },
-  { href: '/dashboard/teacher/profile',      Icon: UserIcon,      label: 'My Profile'    },
+  { href: '/dashboard/teacher/assignments',   Icon: ClipboardIcon, label: 'Assignments'   },
+  { href: '/dashboard/teacher/grades',        Icon: BarChartIcon,  label: 'Grades'        },
+  { href: '/dashboard/teacher/results',       Icon: BarChartIcon,  label: 'Results'       },
+  { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
+  { href: '/dashboard/teacher/submissions',   Icon: ClipboardIcon, label: 'Submissions'   },
+  { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Class'    },
+  { href: '/dashboard/teacher/messages',      Icon: MessageIcon,   label: 'Messages'      },
+  { href: '/dashboard/teacher/notes',         Icon: BookIcon,      label: 'Study Notes'   },
+  { href: '/dashboard/teacher/timetable',     Icon: ClockIcon,     label: 'Timetable'     },
+  { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
+  { href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
+  { href: '/dashboard/teacher/notifications', Icon: BellIcon,      label: 'Notifications' },
+  { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
+  { href: '/dashboard/teacher/audit',         Icon: ShieldIcon,    label: 'Audit Log'     },
+  { href: '/dashboard/teacher/ai',            Icon: AiIcon,        label: 'AI Assistant'  },
+  { href: '/dashboard/teacher/profile',       Icon: UserIcon,      label: 'My Profile'    },
 ]
 
 const NAV: Record<string, {
@@ -149,18 +154,23 @@ const NAV: Record<string, {
   secretary: {
     sidebar: [
       { label: 'Main', items: [
-        { href: '/dashboard/secretary',               Icon: HomeIcon,      label: 'Dashboard'    },
-        { href: '/dashboard/secretary/chat',          Icon: MessageIcon,   label: 'Messages'     },
-        { href: '/dashboard/secretary/calendar',      Icon: CalendarIcon,  label: 'Calendar'     },
+        { href: '/dashboard/secretary',               Icon: HomeIcon,      label: 'Dashboard'     },
+        { href: '/dashboard/secretary/chat',          Icon: MessageIcon,   label: 'Messages'      },
+        { href: '/dashboard/secretary/calendar',      Icon: CalendarIcon,  label: 'Calendar'      },
+        { href: '/dashboard/secretary/notifications', Icon: BellIcon,      label: 'Notifications' },
+        { href: '/dashboard/secretary/ai',            Icon: AiIcon,        label: 'AI Assistant'  },
       ]},
       { label: 'Admin', items: [
-        { href: '/dashboard/secretary/admissions',    Icon: SchoolIcon,    label: 'Admissions'   },
-        { href: '/dashboard/secretary/students',      Icon: PeopleIcon,    label: 'Students'     },
-        { href: '/dashboard/secretary/records',       Icon: FileTextIcon,  label: 'Records'      },
-        { href: '/dashboard/secretary/documents',     Icon: FileTextIcon,  label: 'Documents'    },
-        { href: '/dashboard/secretary/applications',  Icon: ClipboardIcon, label: 'Applications' },
-        { href: '/dashboard/secretary/notices',       Icon: MegaphoneIcon, label: 'Notices'      },
-        { href: '/dashboard/secretary/profile',       Icon: UserIcon,      label: 'My Profile'   },
+        { href: '/dashboard/secretary/students',      Icon: PeopleIcon,    label: 'Students'      },
+        { href: '/dashboard/secretary/admissions',    Icon: SchoolIcon,    label: 'Admissions'    },
+        { href: '/dashboard/secretary/applications',  Icon: ClipboardIcon, label: 'Applications'  },
+        { href: '/dashboard/secretary/users',         Icon: UserIcon,      label: 'Users'         },
+        { href: '/dashboard/secretary/records',       Icon: FileTextIcon,  label: 'Records'       },
+        { href: '/dashboard/secretary/documents',     Icon: FileTextIcon,  label: 'Documents'     },
+        { href: '/dashboard/secretary/notices',       Icon: MegaphoneIcon, label: 'Notices'       },
+        { href: '/dashboard/secretary/codes',         Icon: ShieldIcon,    label: 'Access Codes'  },
+        { href: '/dashboard/secretary/settings',      Icon: SettingsIcon,  label: 'Settings'      },
+        { href: '/dashboard/secretary/profile',       Icon: UserIcon,      label: 'My Profile'    },
       ]},
     ],
     bottom: [
