@@ -32,31 +32,33 @@ export default async function PrincipalMeetingsPage() {
 
   if (authError || !user) redirect('/login')
 
-  const [profileRes, meetingsRes, classesRes] = await Promise.all([
-    supabase
-      .from('principal_profiles')
-      .select('full_name, school_id')
-      .eq('user_id', user.id)
-      .maybeSingle(),
+  const profileRes = await supabase
+    .from('principal_profiles')
+    .select('full_name, school_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
 
+  const schoolId = profileRes.data?.school_id ?? ''
+
+  const [meetingsRes, classesRes] = await Promise.all([
     supabase
       .from('meetings')
       .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at')
-      .eq('school_id', profileRes.data?.school_id ?? '')
+      .eq('school_id', schoolId)
       .order('scheduled_at', { ascending: false })
       .limit(50),
 
     supabase
       .from('classes')
       .select('id, name')
-      .eq('school_id', profileRes.data?.school_id ?? '')
+      .eq('school_id', schoolId)
       .order('name'),
   ])
 
   return (
     <PrincipalMeetingsClient
       principalId={user.id}
-      schoolId={profileRes.data?.school_id ?? ''}
+      schoolId={schoolId}
       principalName={profileRes.data?.full_name ?? 'Principal'}
       meetings={(meetingsRes.data ?? []) as MeetingRow[]}
       classes={(classesRes.data ?? []) as ClassOption[]}
