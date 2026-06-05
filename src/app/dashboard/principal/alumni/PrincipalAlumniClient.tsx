@@ -191,7 +191,7 @@ export default function PrincipalAlumniClient({ alumni }: Props) {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="bottom-nav" aria-label="Principal navigation">
+      <nav className="bottom-nav-mobile" aria-label="Principal navigation">
         <Link href="/dashboard/principal" className="nav-item">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <span>Home</span>
@@ -200,7 +200,7 @@ export default function PrincipalAlumniClient({ alumni }: Props) {
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           <span>Students</span>
         </Link>
-        <Link href="/dashboard/principal" className="nav-home" aria-label="Dashboard">
+        <Link href="/dashboard/principal" className="nav-home-btn" aria-label="Dashboard">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
         </Link>
         <Link href="/dashboard/principal/alumni" className="nav-item active">
