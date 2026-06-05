@@ -1,13 +1,9 @@
 'use client'
 
-// src/app/dashboard/principal/settings/SettingsClient.tsx
-// FIXED:
-//   1. School interface: 'build_image_url' → 'login_bg_image'
-//   2. All state variables renamed: buildImageUrl → loginBgImageUrl etc.
-//   3. API payload key changed to 'login_bg_image'
-//   4. SCHOOL_TYPES updated to match DB enum: 'primary' | 'secondary' | 'combined'
+// src/app/principal/settings/SettingsClient.tsx
+// Handles: school info editing, logo upload, build image upload
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import styles from './settings.module.css'
 
@@ -21,20 +17,21 @@ interface Profile {
 }
 
 interface School {
-  id:               string
-  name:             string
-  tagline:          string | null
-  address:          string | null
-  city:             string | null
-  state:            string | null
-  phone:            string | null
-  email:            string | null
-  school_type:      string | null
-  primary_color:    string | null
-  font_family:      string | null
-  logo_url:         string | null
-  login_bg_image:   string | null   // ← correct column
-  status:           string | null
+  id:              string
+  name:            string
+  tagline:         string | null
+  address:         string | null
+  city:            string | null
+  state:           string | null
+  phone:           string | null
+  email:           string | null
+  school_type:     string | null
+  primary_color:   string | null
+  font_family:     string | null
+  logo_url:        string | null
+  build_image_url: string | null
+  login_bg_image:  string | null
+  status:          string | null
   subscription_plan: string | null
 }
 
@@ -50,49 +47,56 @@ export default function SettingsClient({ profile, school }: Props) {
 
   const [tab, setTab] = useState<Tab>('identity')
 
-  // ── Form fields ────────────────────────────────────────────────────────────
-  const [name,         setName]         = useState(school.name          ?? '')
-  const [tagline,      setTagline]      = useState(school.tagline        ?? '')
-  const [address,      setAddress]      = useState(school.address        ?? '')
-  const [city,         setCity]         = useState(school.city           ?? '')
-  const [state,        setState]        = useState(school.state          ?? '')
-  const [phone,        setPhone]        = useState(school.phone          ?? '')
-  const [email,        setEmail]        = useState(school.email          ?? '')
-  const [schoolType,   setSchoolType]   = useState(school.school_type    ?? '')
-  const [primaryColor, setPrimaryColor] = useState(school.primary_color  ?? '#800020')
-  const [fontFamily,   setFontFamily]   = useState(school.font_family    ?? 'Inter')
+  // ── Form fields ─────────────────────────────────────────────────────────────
+  const [name,        setName]        = useState(school.name        ?? '')
+  const [tagline,     setTagline]     = useState(school.tagline     ?? '')
+  const [address,     setAddress]     = useState(school.address     ?? '')
+  const [city,        setCity]        = useState(school.city        ?? '')
+  const [state,       setState]       = useState(school.state       ?? '')
+  const [phone,       setPhone]       = useState(school.phone       ?? '')
+  const [email,       setEmail]       = useState(school.email       ?? '')
+  const [schoolType,  setSchoolType]  = useState(school.school_type ?? '')
+  const [primaryColor,setPrimaryColor]= useState(school.primary_color ?? '#800020')
+  const [fontFamily,  setFontFamily]  = useState(school.font_family ?? 'Inter')
 
-  // ── Image state — uses correct column name 'login_bg_image' ────────────────
-  const [logoUrl,          setLogoUrl]          = useState<string | null>(school.logo_url)
-  const [loginBgImageUrl,  setLoginBgImageUrl]  = useState<string | null>(school.login_bg_image)
+  // ── Image state ──────────────────────────────────────────────────────────────
+  const [logoUrl,       setLogoUrl]       = useState<string | null>(school.logo_url)
+  const [buildImageUrl, setBuildImageUrl] = useState<string | null>(school.build_image_url)
 
-  const [logoPreview,      setLogoPreview]      = useState<string | null>(school.logo_url)
-  const [bgImagePreview,   setBgImagePreview]   = useState<string | null>(school.login_bg_image)
+  const [logoPreview,       setLogoPreview]       = useState<string | null>(school.logo_url)
+  const [buildImagePreview, setBuildImagePreview] = useState<string | null>(school.build_image_url)
 
-  const [logoUploading,    setLogoUploading]    = useState(false)
-  const [bgImageUploading, setBgImageUploading] = useState(false)
-  const [logoError,        setLogoError]        = useState<string | null>(null)
-  const [bgImageError,     setBgImageError]     = useState<string | null>(null)
+  const [logoUploading,       setLogoUploading]       = useState(false)
+  const [buildImageUploading, setBuildImageUploading] = useState(false)
+  const [logoError,           setLogoError]           = useState<string | null>(null)
+  const [buildImageError,     setBuildImageError]     = useState<string | null>(null)
 
-  // ── Save state ─────────────────────────────────────────────────────────────
+  // ── Save state ───────────────────────────────────────────────────────────────
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
   const [saveErr, setSaveErr] = useState<string | null>(null)
 
-  const logoInputRef    = useRef<HTMLInputElement>(null)
-  const bgImageInputRef = useRef<HTMLInputElement>(null)
+  const logoInputRef       = useRef<HTMLInputElement>(null)
+  const buildImageInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Upload helper ──────────────────────────────────────────────────────────
+  // ── Upload helper ────────────────────────────────────────────────────────────
   async function uploadImage(
     file: File,
     bucket: string,
     pathPrefix: string,
-    onProgress: (v: boolean) => void,
+    onProgress: (uploading: boolean) => void,
     onError:    (msg: string | null) => void,
     onSuccess:  (url: string) => void,
   ) {
-    if (file.size > 5 * 1024 * 1024) { onError('File too large. Maximum size is 5 MB.'); return }
-    if (!file.type.startsWith('image/')) { onError('Only image files are accepted.'); return }
+    const MAX_MB = 5
+    if (file.size > MAX_MB * 1024 * 1024) {
+      onError(`File too large. Maximum size is ${MAX_MB} MB.`)
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      onError('Only image files are accepted.')
+      return
+    }
 
     onError(null)
     onProgress(true)
@@ -107,7 +111,10 @@ export default function SettingsClient({ profile, school }: Props) {
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filePath)
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath)
+
       onSuccess(publicUrl)
     } catch (err: any) {
       onError(err?.message ?? 'Upload failed. Please try again.')
@@ -116,42 +123,63 @@ export default function SettingsClient({ profile, school }: Props) {
     }
   }
 
+  // ── Logo file pick ───────────────────────────────────────────────────────────
   async function onLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Local preview immediately
     const reader = new FileReader()
     reader.onload = ev => setLogoPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
-    await uploadImage(file, 'school-assets', 'logos',
-      setLogoUploading, setLogoError,
+
+    await uploadImage(
+      file,
+      'school-assets',
+      'logos',
+      setLogoUploading,
+      setLogoError,
       url => { setLogoUrl(url); setLogoPreview(url) },
     )
   }
 
-  async function onBgImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // ── Build image file pick ────────────────────────────────────────────────────
+  async function onBuildImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
     const reader = new FileReader()
-    reader.onload = ev => setBgImagePreview(ev.target?.result as string)
+    reader.onload = ev => setBuildImagePreview(ev.target?.result as string)
     reader.readAsDataURL(file)
-    await uploadImage(file, 'school-assets', 'build-images',
-      setBgImageUploading, setBgImageError,
-      url => { setLoginBgImageUrl(url); setBgImagePreview(url) },
+
+    await uploadImage(
+      file,
+      'school-assets',
+      'build-images',
+      setBuildImageUploading,
+      setBuildImageError,
+      url => { setBuildImageUrl(url); setBuildImagePreview(url) },
     )
   }
 
+  // ── Remove image ─────────────────────────────────────────────────────────────
   function removeLogo() {
-    setLogoUrl(null); setLogoPreview(null); setLogoError(null)
+    setLogoUrl(null)
+    setLogoPreview(null)
+    setLogoError(null)
     if (logoInputRef.current) logoInputRef.current.value = ''
   }
 
-  function removeBgImage() {
-    setLoginBgImageUrl(null); setBgImagePreview(null); setBgImageError(null)
-    if (bgImageInputRef.current) bgImageInputRef.current.value = ''
+  function removeBuildImage() {
+    setBuildImageUrl(null)
+    setBuildImagePreview(null)
+    setBuildImageError(null)
+    if (buildImageInputRef.current) buildImageInputRef.current.value = ''
   }
 
+  // ── Drag-and-drop ────────────────────────────────────────────────────────────
   const [logoOver,  setLogoOver]  = useState(false)
-  const [bgOver,    setBgOver]    = useState(false)
+  const [buildOver, setBuildOver] = useState(false)
 
   function handleDrop(
     e: React.DragEvent,
@@ -161,15 +189,18 @@ export default function SettingsClient({ profile, school }: Props) {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
     if (!file || !inputRef.current) return
+    // Synthetic change event
     const dt = new DataTransfer()
     dt.items.add(file)
     inputRef.current.files = dt.files
     inputRef.current.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
-  // ── Save — sends correct field names to API ────────────────────────────────
+  // ── Save all settings ────────────────────────────────────────────────────────
   async function saveSettings() {
-    setSaving(true); setSaveErr(null); setSaved(false)
+    setSaving(true)
+    setSaveErr(null)
+    setSaved(false)
 
     try {
       const res = await fetch('/api/principal/settings', {
@@ -183,11 +214,11 @@ export default function SettingsClient({ profile, school }: Props) {
           state,
           phone,
           email,
-          school_type:    schoolType,
-          primary_color:  primaryColor,
-          font_family:    fontFamily,
-          logo_url:       logoUrl,
-          login_bg_image: loginBgImageUrl,   // ← correct key
+          school_type:     schoolType,
+          primary_color:   primaryColor,
+          font_family:     fontFamily,
+          logo_url:        logoUrl,
+          build_image_url: buildImageUrl,
         }),
       })
 
@@ -203,11 +234,15 @@ export default function SettingsClient({ profile, school }: Props) {
     }
   }
 
-  // ── Match DB enum values ───────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   const SCHOOL_TYPES = [
-    { value: 'primary',   label: 'Primary School' },
-    { value: 'secondary', label: 'Secondary School' },
-    { value: 'combined',  label: 'Primary & Secondary' },
+    'Nursery',
+    'Primary',
+    'Secondary',
+    'Nursery & Primary',
+    'Primary & Secondary',
+    'Nursery, Primary & Secondary',
+    'Tertiary',
   ]
 
   const FONTS = ['Inter', 'Poppins', 'Lato', 'Montserrat', 'Nunito', 'Raleway']
@@ -216,7 +251,7 @@ export default function SettingsClient({ profile, school }: Props) {
     active:    'badge-success',
     pending:   'badge-warning',
     suspended: 'badge-error',
-    trial:     'badge-info',
+    Trial:     'badge-info',
   }
 
   return (
@@ -253,9 +288,9 @@ export default function SettingsClient({ profile, school }: Props) {
       {/* ── Tabs ── */}
       <div className={styles.tabs}>
         {([
-          { key: 'identity', label: '🏛 Identity' },
-          { key: 'branding', label: '🎨 Branding' },
-          { key: 'contact',  label: '📞 Contact'  },
+          { key: 'identity', label: '🏛 Identity'  },
+          { key: 'branding', label: '🎨 Branding'  },
+          { key: 'contact',  label: '📞 Contact'   },
         ] as { key: Tab; label: string }[]).map(({ key, label }) => (
           <button
             key={key}
@@ -276,7 +311,7 @@ export default function SettingsClient({ profile, school }: Props) {
           </div>
         )}
 
-        {/* ════ IDENTITY TAB ════ */}
+        {/* ════════════════ IDENTITY TAB ════════════════ */}
         {tab === 'identity' && (
           <>
             <p className={styles.sectionLabel}>School Identity</p>
@@ -311,7 +346,7 @@ export default function SettingsClient({ profile, school }: Props) {
                 >
                   <option value="">— Select type —</option>
                   {SCHOOL_TYPES.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
+                    <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
               </div>
@@ -321,7 +356,7 @@ export default function SettingsClient({ profile, school }: Props) {
             <p className={styles.sectionLabel}>School Logo</p>
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
-                Displayed in the school header, report cards, and the SchoolOS portal.
+                Displayed in the school header, report cards, invoices, and the SchoolOS portal.
                 Recommended: square PNG or SVG, min 200×200 px, max 5 MB.
               </p>
 
@@ -329,10 +364,16 @@ export default function SettingsClient({ profile, school }: Props) {
                 <div className={styles.imagePreviewWrapper}>
                   <img src={logoPreview} alt="Logo preview" className={styles.logoPreview} />
                   <div className={styles.imageActions}>
-                    <button className={styles.changeBtn} onClick={() => logoInputRef.current?.click()} disabled={logoUploading}>
+                    <button
+                      className={styles.changeBtn}
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={logoUploading}
+                    >
                       {logoUploading ? '⏳ Uploading…' : '🔄 Change Logo'}
                     </button>
-                    <button className={styles.removeBtn} onClick={removeLogo}>🗑 Remove</button>
+                    <button className={styles.removeBtn} onClick={removeLogo}>
+                      🗑 Remove
+                    </button>
                   </div>
                   {logoError && <p className={styles.fileError}>{logoError}</p>}
                 </div>
@@ -340,62 +381,109 @@ export default function SettingsClient({ profile, school }: Props) {
                 <div
                   className={`${styles.dropZone} ${logoOver ? styles.dropZoneOver : ''} ${logoUploading ? styles.dropZoneLoading : ''}`}
                   onClick={() => !logoUploading && logoInputRef.current?.click()}
-                  onDragOver={e => { e.preventDefault(); setLogoOver(true) }}
+                  onDragOver={e => { e.preventDefault(); setLogoOver(true)  }}
                   onDragLeave={() => setLogoOver(false)}
-                  onDrop={e => { setLogoOver(false); handleDrop(e, onLogoChange, logoInputRef as React.RefObject<HTMLInputElement>) }}
+                  onDrop={e => {
+                    setLogoOver(false)
+                    handleDrop(e, onLogoChange, logoInputRef as React.RefObject<HTMLInputElement>)
+                  }}
                 >
                   {logoUploading ? (
-                    <><span className={styles.dropIcon}>⏳</span><p className={styles.dropTitle}>Uploading logo…</p></>
+                    <>
+                      <span className={styles.dropIcon}>⏳</span>
+                      <p className={styles.dropTitle}>Uploading logo…</p>
+                    </>
                   ) : (
-                    <><span className={styles.dropIcon}>🏷</span><p className={styles.dropTitle}>Drop your logo here</p><p className={styles.dropSub}>or click to browse — PNG, SVG, JPG · max 5 MB</p></>
+                    <>
+                      <span className={styles.dropIcon}>🏷</span>
+                      <p className={styles.dropTitle}>Drop your logo here</p>
+                      <p className={styles.dropSub}>or click to browse — PNG, SVG, JPG · max 5 MB</p>
+                    </>
                   )}
                 </div>
               )}
-              {logoError && !logoPreview && <p className={styles.fileError}>{logoError}</p>}
-              <input ref={logoInputRef} type="file" accept="image/*" className={styles.hiddenInput} onChange={onLogoChange} />
+
+              {logoError && !logoPreview && (
+                <p className={styles.fileError}>{logoError}</p>
+              )}
+
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.hiddenInput}
+                onChange={onLogoChange}
+              />
             </div>
 
-            {/* ── Login Background Image ── */}
-            <p className={styles.sectionLabel}>School Building / Login Image</p>
+            {/* ── Build Image ── */}
+            <p className={styles.sectionLabel}>School Build Image</p>
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
-                A wide photo of your school shown on the login page and welcome screens.
+                A wide photo of your school building, campus, or classrooms.
+                Shown on the login page, welcome screens, and school profile.
                 Recommended: landscape 16:9, min 1280×720 px, max 5 MB.
               </p>
 
-              {bgImagePreview ? (
+              {buildImagePreview ? (
                 <div className={styles.buildPreviewWrapper}>
-                  <img src={bgImagePreview} alt="Background image preview" className={styles.buildPreview} />
+                  <img src={buildImagePreview} alt="Build image preview" className={styles.buildPreview} />
                   <div className={styles.imageActions}>
-                    <button className={styles.changeBtn} onClick={() => bgImageInputRef.current?.click()} disabled={bgImageUploading}>
-                      {bgImageUploading ? '⏳ Uploading…' : '🔄 Change Image'}
+                    <button
+                      className={styles.changeBtn}
+                      onClick={() => buildImageInputRef.current?.click()}
+                      disabled={buildImageUploading}
+                    >
+                      {buildImageUploading ? '⏳ Uploading…' : '🔄 Change Image'}
                     </button>
-                    <button className={styles.removeBtn} onClick={removeBgImage}>🗑 Remove</button>
+                    <button className={styles.removeBtn} onClick={removeBuildImage}>
+                      🗑 Remove
+                    </button>
                   </div>
-                  {bgImageError && <p className={styles.fileError}>{bgImageError}</p>}
+                  {buildImageError && <p className={styles.fileError}>{buildImageError}</p>}
                 </div>
               ) : (
                 <div
-                  className={`${styles.dropZone} ${styles.dropZoneWide} ${bgOver ? styles.dropZoneOver : ''} ${bgImageUploading ? styles.dropZoneLoading : ''}`}
-                  onClick={() => !bgImageUploading && bgImageInputRef.current?.click()}
-                  onDragOver={e => { e.preventDefault(); setBgOver(true) }}
-                  onDragLeave={() => setBgOver(false)}
-                  onDrop={e => { setBgOver(false); handleDrop(e, onBgImageChange, bgImageInputRef as React.RefObject<HTMLInputElement>) }}
+                  className={`${styles.dropZone} ${styles.dropZoneWide} ${buildOver ? styles.dropZoneOver : ''} ${buildImageUploading ? styles.dropZoneLoading : ''}`}
+                  onClick={() => !buildImageUploading && buildImageInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setBuildOver(true)  }}
+                  onDragLeave={() => setBuildOver(false)}
+                  onDrop={e => {
+                    setBuildOver(false)
+                    handleDrop(e, onBuildImageChange, buildImageInputRef as React.RefObject<HTMLInputElement>)
+                  }}
                 >
-                  {bgImageUploading ? (
-                    <><span className={styles.dropIcon}>⏳</span><p className={styles.dropTitle}>Uploading image…</p></>
+                  {buildImageUploading ? (
+                    <>
+                      <span className={styles.dropIcon}>⏳</span>
+                      <p className={styles.dropTitle}>Uploading image…</p>
+                    </>
                   ) : (
-                    <><span className={styles.dropIcon}>🏛</span><p className={styles.dropTitle}>Drop your school building photo here</p><p className={styles.dropSub}>or click to browse — JPG, PNG, WebP · max 5 MB · landscape preferred</p></>
+                    <>
+                      <span className={styles.dropIcon}>🏛</span>
+                      <p className={styles.dropTitle}>Drop your school building photo here</p>
+                      <p className={styles.dropSub}>or click to browse — JPG, PNG, WebP · max 5 MB · landscape preferred</p>
+                    </>
                   )}
                 </div>
               )}
-              {bgImageError && !bgImagePreview && <p className={styles.fileError}>{bgImageError}</p>}
-              <input ref={bgImageInputRef} type="file" accept="image/*" className={styles.hiddenInput} onChange={onBgImageChange} />
+
+              {buildImageError && !buildImagePreview && (
+                <p className={styles.fileError}>{buildImageError}</p>
+              )}
+
+              <input
+                ref={buildImageInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.hiddenInput}
+                onChange={onBuildImageChange}
+              />
             </div>
           </>
         )}
 
-        {/* ════ BRANDING TAB ════ */}
+        {/* ════════════════ BRANDING TAB ════════════════ */}
         {tab === 'branding' && (
           <>
             <p className={styles.sectionLabel}>Visual Branding</p>
@@ -420,20 +508,34 @@ export default function SettingsClient({ profile, school }: Props) {
                     placeholder="#800020"
                     maxLength={7}
                   />
-                  <div className={styles.colorSwatch} style={{ background: primaryColor }} />
+                  <div
+                    className={styles.colorSwatch}
+                    style={{ background: primaryColor }}
+                  />
                 </div>
-                <p className={styles.fieldHint}>Used for accents, buttons, and highlights across the portal.</p>
+                <p className={styles.fieldHint}>
+                  Used for accents, buttons, and highlights across the portal.
+                </p>
               </div>
 
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Portal Font</label>
-                <select className={styles.select} value={fontFamily} onChange={e => setFontFamily(e.target.value)}>
-                  {FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                <select
+                  className={styles.select}
+                  value={fontFamily}
+                  onChange={e => setFontFamily(e.target.value)}
+                >
+                  {FONTS.map(f => (
+                    <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
+                  ))}
                 </select>
-                <p className={styles.fieldHint}>Applied to headings and key UI text in your school's portal.</p>
+                <p className={styles.fieldHint}>
+                  Applied to headings and key UI text in your school's portal.
+                </p>
               </div>
             </div>
 
+            {/* Live preview */}
             <p className={styles.sectionLabel}>Live Preview</p>
             <div
               className={`glass-card ${styles.brandPreviewCard}`}
@@ -453,7 +555,10 @@ export default function SettingsClient({ profile, school }: Props) {
                 <p className={styles.brandPreviewBodyText} style={{ fontFamily }}>
                   This is how your school branding will appear to staff, students, and parents.
                 </p>
-                <button className={styles.brandPreviewBtn} style={{ background: primaryColor, fontFamily }}>
+                <button
+                  className={styles.brandPreviewBtn}
+                  style={{ background: primaryColor, fontFamily }}
+                >
                   Sample Button
                 </button>
               </div>
@@ -461,7 +566,7 @@ export default function SettingsClient({ profile, school }: Props) {
           </>
         )}
 
-        {/* ════ CONTACT TAB ════ */}
+        {/* ════════════════ CONTACT TAB ════════════════ */}
         {tab === 'contact' && (
           <>
             <p className={styles.sectionLabel}>School Contact Details</p>
@@ -469,24 +574,54 @@ export default function SettingsClient({ profile, school }: Props) {
             <div className={`glass-card ${styles.card}`}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Official Email</label>
-                <input className={styles.input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="info@yourschool.edu.ng" />
+                <input
+                  className={styles.input}
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="info@yourschool.edu.ng"
+                />
               </div>
+
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Phone Number</label>
-                <input className={styles.input} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+234 801 234 5678" />
+                <input
+                  className={styles.input}
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="+234 801 234 5678"
+                />
               </div>
+
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Street Address</label>
-                <input className={styles.input} value={address} onChange={e => setAddress(e.target.value)} placeholder="12 Sunshine Avenue" />
+                <input
+                  className={styles.input}
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="12 Sunshine Avenue"
+                />
               </div>
+
               <div className={styles.twoCol}>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>City</label>
-                  <input className={styles.input} value={city} onChange={e => setCity(e.target.value)} placeholder="Lagos" />
+                  <input
+                    className={styles.input}
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    placeholder="Lagos"
+                  />
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>State</label>
-                  <input className={styles.input} value={state} onChange={e => setState(e.target.value)} placeholder="Lagos State" />
+                  <input
+                    className={styles.input}
+                    value={state}
+                    onChange={e => setState(e.target.value)}
+                    placeholder="Lagos State"
+                  />
                 </div>
               </div>
             </div>
@@ -495,19 +630,29 @@ export default function SettingsClient({ profile, school }: Props) {
             <div className={`glass-card ${styles.card}`}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Your Name</label>
-                <input className={styles.input} value={profile.full_name} disabled />
+                <input
+                  className={styles.input}
+                  value={profile.full_name}
+                  disabled
+                  title="Contact support to change your name"
+                />
                 <p className={styles.fieldHint}>Contact support to update your name.</p>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Your Email</label>
-                <input className={styles.input} value={profile.email} disabled />
+                <input
+                  className={styles.input}
+                  value={profile.email}
+                  disabled
+                  title="Contact support to change your email"
+                />
                 <p className={styles.fieldHint}>Contact support to update your login email.</p>
               </div>
             </div>
           </>
         )}
 
-        {/* ── Floating save bar ── */}
+        {/* ── Floating save row ── */}
         <div className={styles.saveRow}>
           {saveErr && <p className={styles.saveErr}>{saveErr}</p>}
           <button
