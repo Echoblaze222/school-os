@@ -32,14 +32,21 @@ export default async function PrincipalMeetingsPage() {
 
   if (authError || !user) redirect('/login')
 
-  const profileRes = await supabase
-    .from('principal_profiles')
+  // ── Step 1: fetch profile first (need school_id before parallel queries) ──
+  const { data: profile } = await supabase
+    .from('profiles')
     .select('full_name, school_id')
-    .eq('user_id', user.id)
-    .maybeSingle()
+    .eq('id', user.id)
+    .single()
 
-  const schoolId = profileRes.data?.school_id ?? ''
+  const schoolId    = profile?.school_id ?? ''
+  const primaryColor = (() => {
+    // school brand colour is already injected as --brand by the layout;
+    // pass it through for any inline style that still needs a JS value
+    return undefined // clients use var(--brand) via CSS
+  })()
 
+  // ── Step 2: parallel queries scoped to this school ───────────────────────
   const [meetingsRes, classesRes] = await Promise.all([
     supabase
       .from('meetings')
@@ -59,7 +66,7 @@ export default async function PrincipalMeetingsPage() {
     <PrincipalMeetingsClient
       principalId={user.id}
       schoolId={schoolId}
-      principalName={profileRes.data?.full_name ?? 'Principal'}
+      principalName={profile?.full_name ?? 'Principal'}
       meetings={(meetingsRes.data ?? []) as MeetingRow[]}
       classes={(classesRes.data ?? []) as ClassOption[]}
     />
