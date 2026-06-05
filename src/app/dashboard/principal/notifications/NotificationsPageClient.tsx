@@ -410,26 +410,24 @@ export default function NotificationsPageClient({
       </div>
 
       {/* Bottom Nav */}
-      <nav className="bottom-nav">
+      <nav className="bottom-nav-mobile">
         <a href={dashboardPath} className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>🏠</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <span>Home</span>
         </a>
         <a href={`${dashboardPath}/notifications`} className="nav-item active">
-          <span style={{ fontSize: '1.2rem' }}>🔔</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span>Alerts</span>
         </a>
-        <a href={dashboardPath} className="nav-home">
-          <span style={{ fontSize: '1.3rem' }}>
-            {role === 'student' ? '🎓' : role === 'teacher' ? '👨‍🏫' : '👤'}
-          </span>
+        <a href={dashboardPath} className="nav-home-btn" aria-label="Dashboard">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
         </a>
         <a href={`${dashboardPath}/chat`} className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>💬</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           <span>Chat</span>
         </a>
         <a href={`${dashboardPath}/profile`} className="nav-item">
-          <span style={{ fontSize: '1.2rem' }}>👤</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Profile</span>
         </a>
       </nav>
