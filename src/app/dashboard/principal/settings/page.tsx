@@ -20,6 +20,7 @@ interface School {
   font_family:       string | null
   logo_url:          string | null
   build_image_url:   string | null
+  login_bg_image:    string | null
   status:            string | null
   subscription_plan: string | null
 }
@@ -57,7 +58,7 @@ export default async function PrincipalSettingsPage() {
     .select(
       'id, name, tagline, address, city, state, phone, email, ' +
       'school_type, primary_color, font_family, ' +
-      'logo_url, build_image_url, status, subscription_plan'
+      'logo_url, build_image_url, login_bg_image, status, subscription_plan'
     )
     .eq('id', profile.school_id)
     .single()
