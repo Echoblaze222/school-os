@@ -1,25 +1,25 @@
 // src/app/dashboard/principal/settings/page.tsx
-// Principal Settings — school identity, logo & build image management
+// FIXED: 'build_image_url' → 'login_bg_image' (actual column in schools table)
 
-import { createClient }    from '@/lib/supabase/server'
-import { redirect }        from 'next/navigation'
-import SettingsClient      from './SettingsClient'
+import { createClient }   from '@/lib/supabase/server'
+import { redirect }       from 'next/navigation'
+import SettingsClient     from './SettingsClient'
 
 interface School {
-  id:                string
-  name:              string
-  tagline:           string | null
-  address:           string | null
-  city:              string | null
-  state:             string | null
-  phone:             string | null
-  email:             string | null
-  school_type:       string | null
-  primary_color:     string | null
-  font_family:       string | null
-  logo_url:          string | null
-  build_image_url:   string | null
-  status:            string | null
+  id:               string
+  name:             string
+  tagline:          string | null
+  address:          string | null
+  city:             string | null
+  state:            string | null
+  phone:            string | null
+  email:            string | null
+  school_type:      string | null
+  primary_color:    string | null
+  font_family:      string | null
+  logo_url:         string | null
+  login_bg_image:   string | null   // ← correct column name
+  status:           string | null
   subscription_plan: string | null
 }
 
@@ -38,7 +38,6 @@ export default async function PrincipalSettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Verify the caller is a principal
   const { data: profileData } = await supabase
     .from('profiles')
     .select('id, full_name, email, phone, school_id, role')
@@ -48,13 +47,12 @@ export default async function PrincipalSettingsPage() {
   const profile = profileData as Profile | null
   if (!profile || profile.role !== 'principal') redirect('/')
 
-  // Fetch the school record owned by this principal
   const { data: schoolData } = await supabase
     .from('schools')
     .select(
       'id, name, tagline, address, city, state, phone, email, ' +
       'school_type, primary_color, font_family, ' +
-      'logo_url, build_image_url, status, subscription_plan'
+      'logo_url, login_bg_image, status, subscription_plan'  // ← login_bg_image
     )
     .eq('id', profile.school_id)
     .single()
@@ -69,4 +67,3 @@ export default async function PrincipalSettingsPage() {
     />
   )
 }
-
