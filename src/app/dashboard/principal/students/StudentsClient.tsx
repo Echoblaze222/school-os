@@ -62,15 +62,19 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   async function handleCreate() {
     if (!form.full_name.trim()) return
     setSaving(true)
+    const selectedClass = classes.find(c => c.id === form.class_id)
     const { data, error } = await supabase.from('profiles').insert({
       full_name:        form.full_name.trim(),
       email:            form.email.trim() || null,
       phone:            form.phone.trim() || null,
       date_of_birth:    form.date_of_birth || null,
       gender:           form.gender || null,
-      class_level:      form.class_id ? classes.find(c => c.id === form.class_id)?.name : null,
+      class_id:         form.class_id || null,
+      class_level:      selectedClass?.name ?? null,
+      admission_number: form.admission_number.trim() || null,
       role:             'student',
       school_id:        school.id,
+      lifecycle_stage:  'active',
     }).select().single()
     setSaving(false)
     if (error) { showToast(error.message, false); return }
