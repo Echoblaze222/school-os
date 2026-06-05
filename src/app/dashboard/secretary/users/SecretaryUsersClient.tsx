@@ -74,81 +74,167 @@ export default function SecretaryUsersClient({ users: initial, currentUserId }: 
 
   const stats = { total:users.length, active:users.filter(u=>u.is_active).length, students:users.filter(u=>u.role==='student').length, teachers:users.filter(u=>u.role==='teacher').length }
 
+  const ROLE_COLORS: Record<string,{bg:string;color:string;border:string}> = {
+    student:   {bg:'rgba(16,185,129,0.12)',  color:'#10B981', border:'rgba(16,185,129,0.25)'},
+    teacher:   {bg:'rgba(59,130,246,0.12)',  color:'#3B82F6', border:'rgba(59,130,246,0.25)'},
+    bursar:    {bg:'rgba(245,158,11,0.12)',  color:'#F59E0B', border:'rgba(245,158,11,0.25)'},
+    secretary: {bg:'rgba(139,92,246,0.12)', color:'#8B5CF6', border:'rgba(139,92,246,0.25)'},
+    principal: {bg:'rgba(128,0,32,0.12)',   color:'#800020', border:'rgba(128,0,32,0.25)'},
+    admin:     {bg:'rgba(107,114,128,0.12)',color:'#6B7280', border:'rgba(107,114,128,0.25)'},
+    parent:    {bg:'rgba(6,182,212,0.12)',   color:'#06B6D4', border:'rgba(6,182,212,0.25)'},
+  }
+
   return (
     <div className={styles.page}>
+      <div className={styles.orb1}/><div className={styles.orb2}/>
+
+      {/* Header */}
       <header className={styles.header}>
-        <div className={styles.headerTop}>
-          <div><h1 className={styles.pageTitle}>User <span>Management</span></h1><p className={styles.pageSubtitle}>{users.length} users · {stats.active} active</p></div>
-          <div className={styles.headerRight}>
-            <button className={styles.themeBtn} onClick={toggleTheme}>{isDark?<IconSun />:<IconMoon />}</button>
-            <Link href="/dashboard/secretary/codes" className={styles.inviteBtn}>+ Generate Code</Link>
-          </div>
+        <div className={styles.headerCenter}>
+          <h1 className={styles.title}>User Management</h1>
+          <p className={styles.subtitle}>{users.length} users · {stats.active} active</p>
         </div>
-        <div className={styles.filterBar}>
-          <div className={styles.searchWrap}><span className={styles.searchIcon}><IconSearch /></span><input className={styles.searchInput} placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} /></div>
-          <select className={styles.roleFilter} value={roleFilter} onChange={e=>setRoleFilter(e.target.value)}>
-            <option value="">All Roles</option>
-            {ROLES.map(r=><option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
+        <div className={styles.headerActions}>
+          <button className={styles.themeBtn} onClick={toggleTheme}>{isDark?<IconSun />:<IconMoon />}</button>
+          <Link href="/dashboard/secretary/codes" className={`${styles.actionBtn} ${styles.actionBtnSuccess}`} style={{textDecoration:'none',padding:'8px 14px',fontSize:'0.75rem',fontWeight:700}}>+ Generate Code</Link>
         </div>
       </header>
 
-      <main className={styles.content}>
-        <div className={styles.statsRow}>
-          {[['Total',stats.total],['Active',stats.active],['Students',stats.students],['Teachers',stats.teachers]].map(([l,v])=>(
-            <div key={String(l)} className={styles.statCard}><span className={styles.statValue}>{v}</span><span className={styles.statLabel}>{l}</span></div>
-          ))}
+      {/* Stats */}
+      <div className={styles.statsStrip}>
+        {([['Total',stats.total],['Active',stats.active],['Students',stats.students],['Teachers',stats.teachers]] as [string,number][]).map(([l,v],i,arr)=>(
+          <>
+            <div key={l} className={styles.stat}><span className={styles.statVal}>{v}</span><span className={styles.statLbl}>{l}</span></div>
+            {i < arr.length-1 && <div className={styles.statDiv}/>}
+          </>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className={styles.filtersWrap}>
+        <div className={styles.searchWrap}>
+          <span className={styles.searchIcon}><IconSearch /></span>
+          <input className={`${styles.searchInput}`} placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} />
+          {search && <button className={styles.clearSearch} onClick={()=>setSearch('')}><IconX /></button>}
         </div>
-        <p className={styles.resultsMeta}>Showing {filtered.length} of {users.length} users</p>
-        {filtered.length===0?<div className={styles.emptyState}>No users found.</div>:(
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead className={styles.tableHead}><tr><th>User</th><th>Role</th><th>Status</th><th>Onboarding</th><th>Last Seen</th><th></th></tr></thead>
-              <tbody>
-                {filtered.map(u=>(
-                  <tr key={u.id} className={styles.tableRow} onClick={()=>setSelected(u)}>
-                    <td><div className={styles.userCell}><div className={styles.avatar}>{initials(u.full_name)}</div><div><p className={styles.userName}>{u.full_name}{u.id===currentUserId?' (You)':''}</p><p className={styles.userEmail}>{u.email}</p></div></div></td>
-                    <td><span className={`${styles.roleBadge} ${(styles as any)[ROLE_STYLE[u.role]]??''}`}>{ROLE_LABELS[u.role]}</span></td>
-                    <td><div className={styles.activeIndicator}><div className={`${styles.dot} ${u.is_active?styles.dotActive:styles.dotInactive}`}/><span className={u.is_active?styles.activeText:styles.inactiveText}>{u.is_active?'Active':'Inactive'}</span></div></td>
-                    <td><span style={{fontSize:'.72rem',color:'var(--text-muted)'}}>{u.onboarding_stage??'—'}</span></td>
-                    <td><span className={styles.lastSeen}>{relTime(u.last_sign_in)}</span></td>
-                    <td><button className={styles.actionBtn} onClick={e=>{e.stopPropagation();setSelected(u)}}>Manage</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className={styles.roleFilters}>
+          {(['','student','teacher','bursar','secretary','principal','admin','parent'] as const).map(r=>{
+            const isAll = r===''
+            const rc = r ? ROLE_COLORS[r] : null
+            const count = r ? users.filter(u=>u.role===r).length : users.length
+            return (
+              <button key={r||'all'}
+                className={`${styles.filterChip} ${roleFilter===r?styles.filterChipActive:''}`}
+                style={roleFilter===r && rc ? {background:rc.bg,borderColor:rc.border,color:rc.color} : {}}
+                onClick={()=>setRoleFilter(r)}>
+                {isAll?'All':ROLE_LABELS[r as UserRole]}
+                <span className={styles.filterCount}>{count}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className={styles.resultCount}>Showing {filtered.length} of {users.length} users</p>
+      </div>
+
+      {/* List */}
+      <main className={styles.main}>
+        {filtered.length===0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyTitle}>{search||roleFilter?'No users match your filters':'No users yet'}</p>
+            <p className={styles.emptyBody}>{search||roleFilter?'Try adjusting your search or role filter.':'Users will appear here once they join via access codes.'}</p>
+          </div>
+        ) : (
+          <div className={styles.userList}>
+            {filtered.map(u=>{
+              const rc = ROLE_COLORS[u.role] ?? {bg:'rgba(107,114,128,0.12)',color:'#6B7280',border:'rgba(107,114,128,0.25)'}
+              return (
+                <div key={u.id} className={`${styles.userRow} ${!u.is_active?styles.userRowInactive:''}`}>
+                  <div className={styles.userMain}>
+                    <div className={styles.userAvatar}>
+                      {u.avatar_url ? <img className={styles.userAvatarImg} src={u.avatar_url} alt={u.full_name}/> : initials(u.full_name)}
+                      {!u.is_active && <span className={styles.inactiveDot}/>}
+                    </div>
+                    <div className={styles.userInfo}>
+                      <div className={styles.userNameRow}>
+                        <span className={styles.userName}>{u.full_name}{u.id===currentUserId?' (You)':''}</span>
+                        <span className={styles.userRoleBadge} style={{background:rc.bg,color:rc.color,border:`1px solid ${rc.border}`}}>{ROLE_LABELS[u.role as UserRole]}</span>
+                      </div>
+                      <p className={styles.userEmail}>{u.email}</p>
+                      <div className={styles.userMeta}>
+                        <span className={styles.onboardBadge} style={{background:u.is_active?'rgba(16,185,129,0.1)':'rgba(192,57,43,0.1)',color:u.is_active?'#10B981':'#C0392B',border:`1px solid ${u.is_active?'rgba(16,185,129,0.2)':'rgba(192,57,43,0.2)'}`}}>
+                          {u.is_active?'Active':'Inactive'}
+                        </span>
+                        <span className={styles.userDate}>Joined {new Date(u.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'})}</span>
+                        <span className={styles.userDate}>· Seen {relTime(u.last_sign_in)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.userActions}>
+                    <button className={styles.actionBtn} onClick={()=>setSelected(u)}>View Profile</button>
+                    <button className={`${styles.actionBtn}`} onClick={()=>generateCode(u)} disabled={actionLoading}>New Code</button>
+                    <button className={`${styles.actionBtn}`} onClick={()=>resetOnboarding(u)} disabled={actionLoading||u.id===currentUserId}>Reset Onboarding</button>
+                    <button
+                      className={`${styles.actionBtn} ${u.is_active?styles.actionBtnDanger:styles.actionBtnSuccess}`}
+                      onClick={()=>deactivate(u)} disabled={actionLoading||u.id===currentUserId}>
+                      {u.is_active?'Deactivate':'Activate'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </main>
 
+      {/* Profile Drawer */}
       {selected&&(
-        <>
-          <div className={styles.drawerOverlay} onClick={()=>setSelected(null)}/>
-          <aside className={styles.drawer}>
-            <div className={styles.drawerHeader}>
-              <div className={styles.drawerAvatar}>{initials(selected.full_name)}</div>
-              <div><p className={styles.drawerName}>{selected.full_name}</p><p className={styles.drawerEmail}>{selected.email}</p></div>
-              <button className={styles.closeBtn} onClick={()=>setSelected(null)}><IconX /></button>
+        <div className={styles.drawerOverlay} onClick={()=>setSelected(null)}>
+          <aside className={styles.drawer} onClick={e=>e.stopPropagation()}>
+            <div className={styles.drawerHandle}/>
+            <div className={styles.drawerAvatar}>
+              {selected.avatar_url?<img className={styles.drawerAvatarImg} src={selected.avatar_url} alt={selected.full_name}/>:initials(selected.full_name)}
             </div>
-            <div className={styles.drawerBody}>
-              <div className={styles.drawerSection}>
-                <p className={styles.drawerSectionTitle}>Profile</p>
-                {[['Role',<span className={`${styles.roleBadge} ${(styles as any)[ROLE_STYLE[selected.role]]??''}`}>{ROLE_LABELS[selected.role]}</span>],['Phone',selected.phone??'—'],['Class',selected.class_name??'—'],['Admission No.',selected.student_number??'—'],['Onboarding Stage',selected.onboarding_stage??'—'],['Last Seen',relTime(selected.last_sign_in)],['Joined',new Date(selected.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})]].map(([lbl,val])=>(
-                  <div key={String(lbl)} className={styles.drawerField}><span className={styles.drawerFieldLabel}>{lbl}</span><span className={styles.drawerFieldValue}>{val as any}</span></div>
-                ))}
-              </div>
+            <p className={styles.drawerName}>{selected.full_name}</p>
+            <span className={styles.drawerRoleBadge} style={{
+              background:ROLE_COLORS[selected.role]?.bg??'rgba(107,114,128,0.12)',
+              color:ROLE_COLORS[selected.role]?.color??'#6B7280',
+              border:`1px solid ${ROLE_COLORS[selected.role]?.border??'rgba(107,114,128,0.25)'}`
+            }}>{ROLE_LABELS[selected.role as UserRole]}</span>
+            <div className={styles.drawerFields}>
+              {([
+                ['Email', selected.email],
+                ['Phone', selected.phone??'—'],
+                ['Status', selected.is_active?'Active':'Inactive'],
+                ['Onboarding', selected.onboarding_stage??'—'],
+                ['Last Seen', relTime(selected.last_sign_in)],
+                ['Joined', new Date(selected.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})],
+                ...(selected.class_name?[['Class', selected.class_name]]:[] as any),
+                ...(selected.student_number?[['Admission No.', selected.student_number]]:[] as any),
+              ] as [string,string][]).map(([lbl,val])=>(
+                <div key={lbl} className={styles.drawerField}>
+                  <span className={styles.drawerFieldLabel}>{lbl}</span>
+                  <span className={styles.drawerFieldValue}>{val}</span>
+                </div>
+              ))}
             </div>
-            <div className={styles.drawerActions}>
-              <button className={styles.drawerSecondaryBtn} onClick={()=>resetOnboarding(selected)} disabled={actionLoading}>Reset Onboarding</button>
-              <button className={styles.drawerSecondaryBtn} onClick={()=>generateCode(selected)} disabled={actionLoading}>New Code</button>
-              <button className={selected.is_active?styles.drawerDangerBtn:styles.drawerPrimaryBtn} onClick={()=>deactivate(selected)} disabled={actionLoading||selected.id===currentUserId}>
+            <div className={styles.modalFooter} style={{width:'100%',paddingInline:0}}>
+              <button className={styles.actionBtn} onClick={()=>{resetOnboarding(selected)}} disabled={actionLoading||selected.id===currentUserId}>Reset Onboarding</button>
+              <button className={styles.actionBtn} onClick={()=>generateCode(selected)} disabled={actionLoading}>New Code</button>
+              <button
+                className={`${styles.actionBtn} ${selected.is_active?styles.actionBtnDanger:styles.actionBtnSuccess}`}
+                onClick={()=>deactivate(selected)} disabled={actionLoading||selected.id===currentUserId}>
                 {selected.is_active?'Deactivate':'Activate'}
               </button>
             </div>
           </aside>
-        </>
+        </div>
       )}
-      {toast&&<div className={styles.toast}>{toast}</div>}
+
+      {toast&&(
+        <div className={styles.codeReveal} style={{position:'fixed',bottom:90,left:16,right:16,zIndex:9999,animation:'fade-in 0.2s ease'}}>
+          {toast}
+        </div>
+      )}
     </div>
   )
 }
