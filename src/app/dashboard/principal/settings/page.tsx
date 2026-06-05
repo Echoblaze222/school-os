@@ -1,76 +1,63 @@
 // src/app/dashboard/principal/settings/page.tsx
-// Principal Settings — school identity, logo & build image management
 
-import { createClient }      from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { redirect }          from 'next/navigation'
-import SettingsClient        from './SettingsClient'
-
-interface School {
-  id:                string
-  name:              string
-  tagline:           string | null
-  address:           string | null
-  city:              string | null
-  state:             string | null
-  phone:             string | null
-  email:             string | null
-  school_type:       string | null
-  primary_color:     string | null
-  font_family:       string | null
-  logo_url:          string | null
-  build_image_url:   string | null
-  login_bg_image:    string | null
-  status:            string | null
-  subscription_plan: string | null
-}
-
-interface Profile {
-  id:        string
-  full_name: string
-  email:     string
-  phone:     string
-  school_id: string
-  role:      string
-}
+import { createClient } from '@/lib/supabase/server'
+import { redirect }     from 'next/navigation'
+import SettingsClient   from './SettingsClient'
 
 export default async function PrincipalSettingsPage() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
 
-  // Verify the caller is a principal
-  const { data: profileData } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, full_name, email, phone, school_id, role')
-    .eq('id', user.id)
+    .select('*, schools(*)')
+    .eq('id', session.user.id)
     .single()
 
-  const profile = profileData as Profile | null
+  if (profileError) {
+    console.error('[principal/settings] profile fetch error:', profileError)
+    redirect('/login')
+  }
+
   if (!profile || profile.role !== 'principal') redirect('/')
 
-  // Fetch the school record via admin client — bypasses RLS so the query
-  // never returns null due to a missing SELECT policy on schools.
-  const admin = createAdminClient()
-  const { data: schoolData } = await admin
-    .from('schools')
-    .select(
-      'id, name, tagline, address, city, state, phone, email, ' +
-      'school_type, primary_color, font_family, ' +
-      'logo_url, build_image_url, login_bg_image, status, subscription_plan'
-    )
-    .eq('id', profile.school_id)
-    .single()
+  const school = (profile as any).schools ?? null
 
-  const school = schoolData as School | null
-  if (!school) redirect('/')
+  if (!school) {
+    console.error('[principal/settings] no school linked to profile:', session.user.id)
+    redirect('/')
+  }
 
   return (
     <SettingsClient
-      profile={profile}
-      school={school}
+      profile={{
+        id:        profile.id,
+        full_name: profile.full_name,
+        email:     profile.email,
+        phone:     profile.phone ?? '',
+        school_id: profile.school_id,
+        role:      profile.role,
+      }}
+      school={{
+        id:               school.id,
+        name:             school.name,
+        tagline:          school.tagline          ?? null,
+        address:          school.address          ?? null,
+        city:             school.city             ?? null,
+        state:            school.state            ?? null,
+        phone:            school.phone            ?? null,
+        email:            school.email            ?? null,
+        school_type:      school.school_type      ?? null,
+        primary_color:    school.primary_color    ?? '#800020',
+        font_family:      school.font_family      ?? 'Inter',
+        logo_url:         school.logo_url         ?? null,
+        build_image_url:  school.build_image_url  ?? null,
+        login_bg_image:   school.login_bg_image   ?? null,
+        status:           school.status           ?? null,
+        subscription_plan: school.subscription_plan ?? null,
+      }}
     />
   )
 }
-
