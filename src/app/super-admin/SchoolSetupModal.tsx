@@ -17,6 +17,9 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
   const [credentials, setCredentials] = useState<{ defaultCode: string; tempPassword: string; email: string } | null>(null)
+  const [copiedCode,  setCopiedCode]  = useState(false)
+  const [copiedPwd,   setCopiedPwd]   = useState(false)
+  const [copiedBoth,  setCopiedBoth]  = useState(false)
 
   const [form, setForm] = useState({
     schoolName:      '',
@@ -103,30 +106,62 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
             <div className={styles.stepContent} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
               <h3 style={{ color: '#10B981', marginBottom: 4 }}>School Activated!</h3>
-              <p className={styles.stepDesc} style={{ marginBottom: 24 }}>
-                A welcome email has been sent to <strong>{credentials.email}</strong>.<br />
-                Save these credentials — share them with the principal if needed.
+              <p className={styles.stepDesc} style={{ marginBottom: 16 }}>
+                A welcome email was sent to <strong>{credentials.email}</strong>.<br />
+                Copy and save these credentials to share with the principal manually.
               </p>
-              <div className={styles.confirmCard} style={{ textAlign: 'left' }}>
+
+              {/* Email row */}
+              <div className={styles.confirmCard} style={{ textAlign: 'left', marginBottom: 12 }}>
                 <div className={styles.confirmRow}>
                   <span>Principal Email</span>
-                  <strong style={{ fontFamily: 'monospace' }}>{credentials.email}</strong>
-                </div>
-                <div className={styles.confirmRow}>
-                  <span>Access Code</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#a78bfa', fontSize: 18 }}>
-                    {credentials.defaultCode}
-                  </strong>
-                </div>
-                <div className={styles.confirmRow}>
-                  <span>Temp Password</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#f59e0b', fontSize: 18 }}>
-                    {credentials.tempPassword}
-                  </strong>
+                  <strong style={{ fontFamily: 'monospace', fontSize: 13 }}>{credentials.email}</strong>
                 </div>
               </div>
-              <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>
-                The principal will be prompted to set a new PIN and password on first login.
+
+              {/* Access Code block */}
+              <div style={{ background: 'rgba(167,139,250,0.08)', border: '1.5px solid rgba(167,139,250,0.35)', borderRadius: 12, padding: '16px 20px', marginBottom: 12, textAlign: 'left' }}>
+                <p style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Access Code</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <code style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#a78bfa', letterSpacing: '0.12em' }}>
+                    {credentials.defaultCode}
+                  </code>
+                  <button
+                    onClick={async () => { await navigator.clipboard.writeText(credentials!.defaultCode).catch(()=>{}); setCopiedCode(true); setTimeout(()=>setCopiedCode(false), 2000) }}
+                    style={{ padding: '6px 14px', borderRadius: 8, border: copiedCode ? '1px solid #10B981' : '1px solid rgba(167,139,250,0.4)', background: copiedCode ? 'rgba(16,185,129,0.1)' : 'rgba(167,139,250,0.1)', color: copiedCode ? '#10B981' : '#a78bfa', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
+                    {copiedCode ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Temp Password block */}
+              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, textAlign: 'left' }}>
+                <p style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Temp Password</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <code style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.12em' }}>
+                    {credentials.tempPassword}
+                  </code>
+                  <button
+                    onClick={async () => { await navigator.clipboard.writeText(credentials!.tempPassword).catch(()=>{}); setCopiedPwd(true); setTimeout(()=>setCopiedPwd(false), 2000) }}
+                    style={{ padding: '6px 14px', borderRadius: 8, border: copiedPwd ? '1px solid #10B981' : '1px solid rgba(245,158,11,0.4)', background: copiedPwd ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', color: copiedPwd ? '#10B981' : '#f59e0b', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
+                    {copiedPwd ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Copy Both */}
+              <button
+                onClick={async () => {
+                  const text = `School Login Credentials\nEmail: ${credentials!.email}\nAccess Code: ${credentials!.defaultCode}\nTemp Password: ${credentials!.tempPassword}`
+                  await navigator.clipboard.writeText(text).catch(()=>{})
+                  setCopiedBoth(true); setTimeout(()=>setCopiedBoth(false), 2500)
+                }}
+                style={{ width: '100%', padding: '12px', borderRadius: 10, border: copiedBoth ? '1px solid #10B981' : '1px solid var(--glass-border)', background: copiedBoth ? 'rgba(16,185,129,0.1)' : 'var(--glass-bg)', color: copiedBoth ? '#10B981' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', marginBottom: 12 }}>
+                {copiedBoth ? '✓ All credentials copied!' : '📋 Copy All Credentials'}
+              </button>
+
+              <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
+                ⚠️ The principal must change their password on first login. Keep this safe.
               </p>
             </div>
             <div className={styles.footer}>
