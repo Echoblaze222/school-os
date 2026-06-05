@@ -42,12 +42,14 @@ export default async function PrincipalMeetingsPage() {
     supabase
       .from('meetings')
       .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at')
+      .eq('school_id', profileRes.data?.school_id ?? '')
       .order('scheduled_at', { ascending: false })
       .limit(50),
 
     supabase
       .from('classes')
       .select('id, name')
+      .eq('school_id', profileRes.data?.school_id ?? '')
       .order('name'),
   ])
 
