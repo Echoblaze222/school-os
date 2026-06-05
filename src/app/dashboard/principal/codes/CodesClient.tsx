@@ -47,6 +47,14 @@ function makeCode(role: string) {
   return `${prefix}-${year}-${rand}`
 }
 
+function makePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const special = '@#$!'
+  let pass = special[Math.floor(Math.random() * special.length)]
+  for (let i = 0; i < 8; i++) pass += chars[Math.floor(Math.random() * chars.length)]
+  return pass
+}
+
 interface BulkRow { full_name: string; email: string; role: string }
 function parseBulk(raw: string): BulkRow[] {
   return raw
@@ -60,7 +68,7 @@ function parseBulk(raw: string): BulkRow[] {
     .filter(r => r.full_name && r.email && ROLES_ASSIGNABLE.includes(r.role))
 }
 
-interface GeneratedEntry extends BulkRow { code: string; saved: boolean; error: string | null }
+interface GeneratedEntry extends BulkRow { code: string; password: string; saved: boolean; error: string | null }
 
 export default function CodesClient({ entries: init, profile, school, userId, schoolId }: Props) {
   const supabase = createClient()
@@ -73,19 +81,21 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   const [regen,    setRegen]    = useState<string | null>(null)
   const [tab,      setTab]      = useState<'existing' | 'single' | 'bulk'>('existing')
 
-  const [sName,    setSName]    = useState('')
-  const [sEmail,   setSEmail]   = useState('')
-  const [sRole,    setSRole]    = useState('student')
-  const [sResult,  setSResult]  = useState<GeneratedEntry | null>(null)
-  const [sLoading, setSLoading] = useState(false)
-  const [sError,   setSError]   = useState<string | null>(null)
+  const [sName,      setSName]      = useState('')
+  const [sEmail,     setSEmail]     = useState('')
+  const [sRole,      setSRole]      = useState('student')
+  const [sResult,    setSResult]    = useState<GeneratedEntry | null>(null)
+  const [sLoading,   setSLoading]   = useState(false)
+  const [sError,     setSError]     = useState<string | null>(null)
+  const [sCopiedPwd, setSCopiedPwd] = useState(false)
 
-  const [bRaw,      setBRaw]     = useState('')
-  const [bParsed,   setBParsed]  = useState<BulkRow[]>([])
-  const [bResults,  setBResults] = useState<GeneratedEntry[]>([])
-  const [bLoading,  setBLoading] = useState(false)
-  const [bSaved,    setBSaved]   = useState(false)
-  const [copiedAll, setCopiedAll] = useState(false)
+  const [bRaw,       setBRaw]      = useState('')
+  const [bParsed,    setBParsed]   = useState<BulkRow[]>([])
+  const [bResults,   setBResults]  = useState<GeneratedEntry[]>([])
+  const [bLoading,   setBLoading]  = useState(false)
+  const [bSaved,     setBSaved]    = useState(false)
+  const [copiedAll,  setCopiedAll] = useState(false)
+  const [copiedPwds, setCopiedPwds] = useState<Record<number, boolean>>({})
 
   const roles = useMemo(() => ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()], [entries])
 
@@ -115,7 +125,8 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   async function handleSingleGenerate() {
     if (!sName.trim() || !sEmail.trim()) { setSError('Name and email are required.'); return }
     setSError(null); setSLoading(true); setSResult(null)
-    const code = makeCode(sRole)
+    const code     = makeCode(sRole)
+    const password = makePassword()
     const { error } = await supabase.from('profiles').insert({
       full_name:    sName.trim(),
       email:        sEmail.trim().toLowerCase(),
@@ -126,9 +137,9 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
     })
     if (error) {
       setSError(error.message)
-      setSResult({ full_name: sName, email: sEmail, role: sRole, code, saved: false, error: error.message })
+      setSResult({ full_name: sName, email: sEmail, role: sRole, code, password, saved: false, error: error.message })
     } else {
-      setSResult({ full_name: sName, email: sEmail, role: sRole, code, saved: true, error: null })
+      setSResult({ full_name: sName, email: sEmail, role: sRole, code, password, saved: true, error: null })
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
         .eq('school_id', schoolId).order('role').order('full_name')
@@ -141,7 +152,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   function handleBulkParse() {
     const rows = parseBulk(bRaw)
     setBParsed(rows)
-    setBResults(rows.map(r => ({ ...r, code: makeCode(r.role), saved: false, error: null })))
+    setBResults(rows.map(r => ({ ...r, code: makeCode(r.role), password: makePassword(), saved: false, error: null })))
     setBSaved(false)
   }
 
@@ -171,7 +182,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   }
 
   async function copyAllCodes(list: GeneratedEntry[]) {
-    const text = list.map(r => `${r.full_name} | ${roleMeta(r.role).label} | ${r.code}`).join('\n')
+    const text = list.map(r => `${r.full_name} | ${roleMeta(r.role).label} | Code: ${r.code} | Password: ${r.password}`).join('\n')
     await navigator.clipboard.writeText(text).catch(() => {})
     setCopiedAll(true)
     setTimeout(() => setCopiedAll(false), 2500)
@@ -313,6 +324,21 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                   </button>
                 </div>
               </div>
+              <div className={styles.bigCodeWrap} style={{ marginTop: 'var(--space-3)' }}>
+                <p className={styles.bigCodeLabel}>Temporary Password</p>
+                <div className={styles.bigCode} style={{ borderColor: '#F59E0B33', background: '#F59E0B0A' }}>
+                  <code className={styles.bigCodeText} style={{ color: '#F59E0B' }}>{sResult.password}</code>
+                  <button
+                    onClick={async () => { await navigator.clipboard.writeText(sResult!.password).catch(() => {}); setSCopiedPwd(true); setTimeout(() => setSCopiedPwd(false), 2000) }}
+                    className={styles.copyBtn}
+                    style={sCopiedPwd ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
+                    {sCopiedPwd ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.72rem', color: '#F59E0B', marginTop: 6, opacity: 0.85 }}>
+                  ⚠️ Share this with the user. They must change it on first login.
+                </p>
+              </div>
               {(() => {
                 const m = roleMeta(sResult.role)
                 return (
@@ -401,6 +427,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                 <span>USER</span>
                 <span>ROLE</span>
                 <span>ACCESS CODE</span>
+                <span>PASSWORD</span>
                 <span>STATUS</span>
               </div>
               <div className={styles.bulkTableBody}>
@@ -421,6 +448,17 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                       <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>
                         {r.code}
                       </code>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>
+                          {r.password}
+                        </code>
+                        <button
+                          onClick={async () => { await navigator.clipboard.writeText(r.password).catch(() => {}); setCopiedPwds(p => ({ ...p, [i]: true })); setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000) }}
+                          className={styles.actionBtn}
+                          style={copiedPwds[i] ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
+                          {copiedPwds[i] ? '✓' : 'Copy'}
+                        </button>
+                      </div>
                       <span className={styles.statusDot}
                         style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)' }}>
                         {r.error ? 'Error' : r.saved ? 'Saved' : 'Pending'}
