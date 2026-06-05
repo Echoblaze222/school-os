@@ -1,0 +1,149 @@
+/* ============================================================
+   viewer.module.css — Read-only Announcements Feed
+   Used by: student, teacher, parent, bursar dashboards
+   ============================================================ */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-5);
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* ── Card ────────────────────────────────────────────────────  */
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  transition: border-color 0.2s, background 0.2s;
+  animation: fadeUp 0.3s ease both;
+}
+
+.card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+}
+
+/* Urgent card — red accent */
+.cardUrgent {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.04) !important;
+}
+
+/* ── Meta row ────────────────────────────────────────────────  */
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.urgentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.audiencePill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.timeMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.67rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Card title ──────────────────────────────────────────────  */
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0 0 var(--space-2);
+  /* Pointer set dynamically in component */
+}
+
+/* ── Card body ───────────────────────────────────────────────  */
+.cardBody {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+  /* Clamped by default; overridden inline when expanded */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Expand button ───────────────────────────────────────────  */
+.expandBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-accent, #800020);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 5px 0 0;
+  transition: opacity 0.18s;
+}
+
+.expandBtn:hover { opacity: 0.7; }
+
+/* ── Posted by ───────────────────────────────────────────────  */
+.postedBy {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: var(--space-2) 0 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────────  */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* ── Animation ───────────────────────────────────────────────  */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
