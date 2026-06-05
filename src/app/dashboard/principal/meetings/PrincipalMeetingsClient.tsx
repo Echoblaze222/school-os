@@ -118,13 +118,19 @@ export default function PrincipalMeetingsClient({
 
     setSubmitting(true); setFormError(''); setSuccess('')
 
+    if (!schoolId) {
+      setFormError('School ID is missing. Please reload the page and try again.')
+      setSubmitting(false)
+      return
+    }
+
     const scheduledAt = new Date(`${date}T${time}:00`).toISOString()
     const targetClass  = audience === 'specific_class' ? classId : null
 
     const { data: inserted, error } = await supabase
       .from('meetings')
       .insert({
-        school_id:       schoolId || undefined,
+        school_id:       schoolId,
         created_by:      principalId,
         title:           title.trim(),
         meeting_type:    type,
