@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './staff.module.css'
@@ -16,8 +17,15 @@ interface Props { profile: any; school: any; userId: string }
 export default function StaffClient({ profile, school, userId }: Props) {
   const supabase   = createClient()
   const sc         = school?.primary_color ?? '#7C3AED'
-  const [staff,    setStaff]    = useState<any[]>([])
-  const [loading,  setLoading]  = useState(true)
+  // ── Realtime: staff list stays live — new hires appear without refresh ──
+  const [staff, setStaff] = useRealtimeTable<any>({
+    table:   'profiles',
+    filter:  school?.id ? `school_id=eq.${school.id}` : undefined,
+    initial: [],
+    orderBy: (a, b) => a.full_name.localeCompare(b.full_name),
+  })
+
+  const [loading,  setLoading]  = useState(false)
   const [search,   setSearch]   = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -28,20 +36,6 @@ export default function StaffClient({ profile, school, userId }: Props) {
   // Form fields
   const [form, setForm] = useState({ full_name:'', email:'', phone:'', role:'teacher', subject:'', qualification:'' })
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => { load() }, [])
-
-  async function load() {
-    if (!school?.id) { setLoading(false); return }
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, phone, role, subject, qualification, avatar_url, default_code, created_at')
-      .eq('school_id', school.id)
-      .in('role', ROLES)
-      .order('full_name')
-    if (data) setStaff(data)
-    setLoading(false)
-  }
 
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
