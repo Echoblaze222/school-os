@@ -1,11 +1,29 @@
 // src/app/dashboard/principal/announcements/page.tsx
-// Server Component — fetches announcements + passes all required props
+// Server Component — fetches existing announcements + class list
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect }     from 'next/navigation'
-import AnnouncementsClient, { Announcement } from './AnnouncementsClient'
+import { redirect } from 'next/navigation'
+import AnnouncementsClient from './AnnouncementsClient'
 
-export default async function PrincipalAnnouncementsPage() {
+export type AudienceType = 'all' | 'students' | 'teachers' | 'parents' | 'staff'
+
+export interface AnnouncementRow {
+  id: string
+  title: string
+  body: string
+  audience: AudienceType
+  class_id: string | null
+  class_name: string | null
+  created_at: string
+  created_by_name: string | null
+}
+
+export interface ClassOption {
+  id: string
+  name: string
+}
+
+export default async function AnnouncementsPage() {
   const supabase = await createClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -21,39 +39,51 @@ export default async function PrincipalAnnouncementsPage() {
     redirect('/dashboard/student')
   }
 
-  const schoolId = profile.school_id as string
-
-  // ── Fetch latest 60 announcements for this school ─────────
-  const { data: rows } = await supabase
+  // Fetch announcements (most recent first)
+  const { data: announcements } = await supabase
     .from('announcements')
     .select(`
-      id, title, body, audience, priority,
-      school_id, posted_by, created_at,
-      poster:profiles!posted_by ( full_name )
+      id,
+      title,
+      body,
+      audience,
+      class_id,
+      created_at,
+      classes ( name ),
+      profiles:created_by ( full_name )
     `)
-    .eq('school_id', schoolId)
     .order('created_at', { ascending: false })
-    .limit(60)
+    .limit(50)
 
-  const items: Announcement[] = (rows ?? []).map((a: any) => ({
-    id:         a.id,
-    title:      a.title,
-    body:       a.body,
-    audience:   a.audience   ?? 'all',
-    priority:   a.priority   ?? 'normal',
-    school_id:  a.school_id,
-    posted_by:  a.posted_by,
+  // Fetch classes for target selector
+  const { data: classes } = await supabase
+    .from('classes')
+    .select('id, name')
+    .order('name')
+
+  const rows: AnnouncementRow[] = (announcements ?? []).map((a: any) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    audience: a.audience ?? 'all',
+    class_id: a.class_id ?? null,
+    class_name: a.classes?.name ?? null,
     created_at: a.created_at,
-    poster_name: a.poster?.full_name ?? null,
+    created_by_name: a.profiles?.full_name ?? null,
+  }))
+
+  const classOptions: ClassOption[] = (classes ?? []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
   }))
 
   return (
     <AnnouncementsClient
-      initialItems={items}
-      userId={user.id}
-      userName={profile.full_name ?? 'Principal'}
-      schoolId={schoolId}
-      role="principal"
+      announcements={rows}
+      classOptions={classOptions}
+      creatorId={user.id}
+      creatorName={profile.full_name ?? 'Principal'}
+      schoolId={(profile as any).school_id ?? ''}
     />
   )
 }
