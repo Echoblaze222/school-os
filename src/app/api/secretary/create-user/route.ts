@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       // Clean up auth user if profile insert fails
       await adminClient.auth.admin.deleteUser(userId)
       return NextResponse.json(
-        { error: `Profile creation failed: ${profileErr.message}` },
+        { error: `Profile creation failed: ${profileErr.message} (code: ${profileErr.code})` },
         { status: 500 }
       )
     }
