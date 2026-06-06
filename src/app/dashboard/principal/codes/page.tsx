@@ -29,9 +29,18 @@ export default async function PrincipalCodesPage() {
     .order('role')
     .order('full_name')
 
+  // Fetch classes for student enrolment
+  const { data: classes } = await supabase
+    .from('classes')
+    .select('id, name, class_level, section')
+    .eq('school_id', schoolId)
+    .order('class_level')
+    .order('section')
+
   return (
     <CodesClient
       entries={entries ?? []}
+      classes={classes ?? []}
       profile={profile}
       school={school}
       userId={user.id}
