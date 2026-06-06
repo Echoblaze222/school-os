@@ -110,17 +110,14 @@ export async function POST(request: Request) {
     const newUser = createResult.data
     const userId  = newUser.user.id
 
-    // Create profile
+    // Create profile — only columns confirmed in schema
     const { error: profileErr } = await adminClient.from('profiles').insert({
       id:               userId,
       full_name:        fullName,
       email:            email.toLowerCase(),
       role,
       school_id:        schoolId,
-      is_active:        true,
       default_code:     code,
-      onboarding_stage: 'start',
-      created_at:       new Date().toISOString(),
     })
 
     if (profileErr) {
@@ -134,23 +131,22 @@ export async function POST(request: Request) {
     // Student profile row if needed
     if (role === 'student') {
       await adminClient.from('student_profiles').insert({
-        user_id:           userId,
-        full_name:         fullName,
-        school_id:         schoolId,
-        class_id:          classId || null,
-        student_number:    `${year}/${rand}`,
-        onboarding_status: 'incomplete',
+        id:               userId,
+        class_id:         classId || null,
+        admission_number: `STU-${year}-${rand}`,
+        year_of_entry:    year,
       })
     }
 
     // Audit log (non-critical)
     try {
       await adminClient.from('portal_audit_log').insert({
-        action:         'user_created',
-        performed_by:   user.id,
-        target_user_id: userId,
-        details:        { role, code, school_id: schoolId },
-        created_at:     new Date().toISOString(),
+        action:       'user_created',
+        actor_id:     user.id,
+        target_table: 'profiles',
+        target_id:    userId,
+        metadata:     { role, code, school_id: schoolId },
+        logged_at:    new Date().toISOString(),
       })
     } catch { /* non-critical */ }
 
