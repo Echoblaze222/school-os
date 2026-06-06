@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
+import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { ResultRow, ClassOption } from '../types'
 import styles from '../principal.module.css'
 
-interface Props { results: ResultRow[]; classOptions: ClassOption[] }
+interface Props { results: ResultRow[]; classOptions: ClassOption[]; schoolId?: string }
 
 const TERMS = ['first','second','third']
 const TYPES = ['day_test','mid_term','exam']
@@ -25,14 +26,22 @@ const IconChevronLeft=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 const IconCheck=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" width={13} height={13}><polyline points="20 6 9 17 4 12"/></svg>
 const IconDownload=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 
-export default function PrincipalResultsClient({ results, classOptions }: Props) {
+export default function PrincipalResultsClient({ results: initialResults, classOptions, schoolId }: Props) {
   const [isDark, setIsDark] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [termFilter, setTermFilter] = useState('first')
   const [typeFilter, setTypeFilter] = useState('')
   const [classFilter, setClassFilter] = useState('')
   const [approving, setApproving] = useState<Set<string>>(new Set())
-  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set(results.filter(r=>r.approved).map(r=>r.id)))
+  // ── Realtime: approved status updates instantly across all principal sessions ──
+  const [liveResults, setLiveResults] = useRealtimeTable<ResultRow>({
+    table:   'results',
+    filter:  schoolId ? `school_id=eq.${schoolId}` : undefined,
+    initial: initialResults,
+  })
+  const results = liveResults  // alias so the rest of the file stays unchanged
+
+  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set(initialResults.filter(r=>r.approved).map(r=>r.id)))
   const [toast, setToast] = useState<string|null>(null)
 
   useEffect(() => {
