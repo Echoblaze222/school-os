@@ -1,470 +1,405 @@
 'use client'
-// ─────────────────────────────────────────────────────────────
-//  AnnouncementsClient.tsx
-//  Unified component for ALL writer roles:
-//    • Principal  → /dashboard/principal/announcements
-//    • Secretary  → /dashboard/secretary/notices
-//    • Teacher    → /dashboard/teacher/announcements
-//
-//  FIXES:
-//   ✓ Typing works — controlled inputs wired correctly
-//   ✓ Click-to-expand shows full message in-place (no separate modal needed)
-//   ✓ posted_by field populated from userId prop
-//   ✓ priority column included in insert + display
-//   ✓ Real-time insert: new post appears instantly at top
-//   ✓ Compose panel always visible (no hidden toggle)
-//   ✓ Character counter live
-//   ✓ School-scoped queries (school_id)
-// ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+// src/app/dashboard/principal/announcements/AnnouncementsClient.tsx
+
+import { useEffect, useState, useRef } from 'react'
+import { useRealtimeTable } from '@/hooks/useRealtimeTable'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { AnnouncementRow, AudienceType, ClassOption } from './page'
 import styles from './announcements.module.css'
 
-// ── Types ────────────────────────────────────────────────────
-export type Audience  = 'all' | 'students' | 'teachers' | 'parents' | 'staff'
-export type Priority  = 'normal' | 'urgent'
-
-export interface Announcement {
-  id:         string
-  title:      string
-  body:       string
-  audience:   Audience
-  priority:   Priority
-  school_id:  string
-  posted_by:  string
-  created_at: string
-  poster_name?: string | null
-}
-
 interface Props {
-  initialItems: Announcement[]
-  userId:       string
-  userName:     string
-  schoolId:     string
-  schoolColor?: string
-  /** Role drives which audiences/priorities to show */
-  role:         'principal' | 'secretary' | 'teacher'
+  announcements: AnnouncementRow[]
+  classOptions: ClassOption[]
+  creatorId: string
+  creatorName: string
+  schoolId: string
 }
 
-// ── Constants ────────────────────────────────────────────────
-const AUDIENCE_LABELS: Record<Audience, string> = {
-  all: 'Everyone', students: 'Students', teachers: 'Teachers',
-  parents: 'Parents', staff: 'Staff',
+const AUDIENCE_LABELS: Record<AudienceType, string> = {
+  all: 'All',
+  students: 'Students',
+  teachers: 'Teachers',
+  parents: 'Parents',
+  staff: 'Staff',
 }
 
-const AUDIENCE_COLORS: Record<Audience, { bg: string; text: string; border: string }> = {
-  all:      { bg: 'rgba(128,0,32,0.12)',  text: '#cc2244', border: 'rgba(128,0,32,0.25)' },
-  students: { bg: 'rgba(36,113,163,0.12)', text: '#2471a3', border: 'rgba(36,113,163,0.25)' },
-  teachers: { bg: 'rgba(45,139,85,0.12)', text: '#1e8449', border: 'rgba(45,139,85,0.25)' },
-  parents:  { bg: 'rgba(194,123,42,0.12)', text: '#b7770d', border: 'rgba(194,123,42,0.25)' },
-  staff:    { bg: 'rgba(107,70,193,0.12)', text: '#6b46c1', border: 'rgba(107,70,193,0.25)' },
+function audienceClass(a: AudienceType): string {
+  const map: Record<AudienceType, string> = {
+    all: styles.audienceAll,
+    students: styles.audienceStudents,
+    teachers: styles.audienceTeachers,
+    parents: styles.audienceParents,
+    staff: styles.audienceStaff,
+  }
+  return map[a]
 }
-
-const BODY_MAX = 1000
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 1)  return 'just now'
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  const d = Math.floor(h / 24)
-  if (d < 7)  return `${d}d ago`
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 }
 
-// ── Icons ────────────────────────────────────────────────────
-const I = {
-  Check:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><polyline points="20 6 9 17 4 12"/></svg>,
-  Alert:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-  Trash:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>,
-  Clock:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={11} height={11}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  ChevDown: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" width={13} height={13}><polyline points="6 9 12 15 18 9"/></svg>,
-  ChevUp:   () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" width={13} height={13}><polyline points="18 15 12 9 6 15"/></svg>,
-  Zap:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={11} height={11}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-}
+// ── Icons ─────────────────────────────────────────────────
+const IconChevronLeft = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+const IconSun = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+const IconMoon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+const IconPlus = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IconClock = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+const IconUser = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+const IconCheck = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+const IconAlertCircle = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 
-// ── Main Component ───────────────────────────────────────────
-export default function AnnouncementsClient({
-  initialItems, userId, userName, schoolId, schoolColor = '#800020', role,
-}: Props) {
-  const supabase = createClient()
+const BODY_LIMIT = 1000
 
-  // ── List state ─────────────────────────────────────────────
-  const [items,      setItems]      = useState<Announcement[]>(initialItems)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [filterAud,  setFilterAud]  = useState<Audience | 'all'>('all')
-  const [confirmDel, setConfirmDel] = useState<Announcement | null>(null)
+// ── Main Component ────────────────────────────────────────
+export default function AnnouncementsClient({ announcements: initialAnnouncements, classOptions, creatorId, creatorName, schoolId }: Props) {
+  const router = useRouter()
+  const [isDark, setIsDark] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  // ── Realtime: new/deleted announcements appear instantly ─────────────────
+  const [announcements, setAnnouncements] = useRealtimeTable<AnnouncementRow>({
+    table:   'announcements',
+    filter:  schoolId ? `school_id=eq.${schoolId}` : undefined,
+    initial: initialAnnouncements,
+    orderBy: (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  })
+  const [selected, setSelected] = useState<AnnouncementRow | null>(null)
+
+  // Form state
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [audience, setAudience] = useState<AudienceType>('all')
+  const [classId, setClassId] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formStatus, setFormStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [confirmDel, setConfirmDel] = useState<AnnouncementRow | null>(null)
   const [deleting,   setDeleting]   = useState<string | null>(null)
-  const [toast,      setToast]      = useState<{ msg: string; ok: boolean } | null>(null)
-
-  // ── Form state ─────────────────────────────────────────────
-  const [title,       setTitle]       = useState('')
-  const [body,        setBody]        = useState('')
-  const [audience,    setAudience]    = useState<Audience>('all')
-  const [priority,    setPriority]    = useState<Priority>('normal')
-  const [submitting,  setSubmitting]  = useState(false)
-  const [submitState, setSubmitState] = useState<'idle' | 'success' | 'error'>('idle')
-  const [submitError, setSubmitError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
 
   const titleRef = useRef<HTMLInputElement>(null)
 
-  // ── Real-time subscription ──────────────────────────────────
   useEffect(() => {
-    const channel = supabase
-      .channel(`announcements:school:${schoolId}`)
-      .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'announcements',
-        filter: `school_id=eq.${schoolId}`,
-      }, (payload) => {
-        // Don't duplicate items we just inserted ourselves
-        const fresh = payload.new as Announcement
-        setItems(prev => {
-          if (prev.some(p => p.id === fresh.id)) return prev
-          return [{ ...fresh, poster_name: fresh.poster_name ?? userName }, ...prev]
-        })
-      })
-      .subscribe()
+    const saved = localStorage.getItem('schoolos_theme')
+    const dark = saved !== 'light'
+    setIsDark(dark)
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    setMounted(true)
 
-    return () => { supabase.removeChannel(channel) }
-  }, [schoolId, userName])
+    // Auto-open compose if ?new=1 in URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('new') === '1') {
+        setTimeout(() => titleRef.current?.focus(), 300)
+      }
+    }
+  }, [])
 
-  // ── Helpers ────────────────────────────────────────────────
-  function showToast(msg: string, ok = true) {
-    setToast({ msg, ok })
-    setTimeout(() => setToast(null), 3000)
+  const toggleTheme = () => {
+    const next = !isDark
+    setIsDark(next)
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
+    localStorage.setItem('schoolos_theme', next ? 'dark' : 'light')
   }
 
   function resetForm() {
     setTitle('')
     setBody('')
     setAudience('all')
-    setPriority('normal')
-    setSubmitState('idle')
-    setSubmitError('')
+    setClassId('')
+    setFormStatus('idle')
+    setErrorMsg('')
   }
 
-  // ── Submit ─────────────────────────────────────────────────
-  async function handleSubmit() {
-    const trimTitle = title.trim()
-    const trimBody  = body.trim()
-    if (!trimTitle || !trimBody) return
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-    setSubmitting(true)
-    setSubmitState('idle')
-
-    const { data, error } = await supabase
-      .from('announcements')
-      .insert({
-        title:     trimTitle,
-        body:      trimBody,
-        audience,
-        priority,
-        school_id: schoolId,
-        posted_by: userId,   // ← fixes null posted_by error
-      })
-      .select('id, title, body, audience, priority, school_id, posted_by, created_at')
-      .single()
-
-    setSubmitting(false)
-
-    if (error) {
-      setSubmitState('error')
-      setSubmitError(error.message)
-      return
-    }
-
-    // Optimistically prepend (real-time may also fire, dedup handled above)
-    const newItem: Announcement = {
-      ...(data as Announcement),
-      poster_name: userName,
-    }
-    setItems(prev => [newItem, ...prev])
-    setSubmitState('success')
-    showToast('Announcement published!')
-    setTimeout(resetForm, 2000)
-  }
-
-  // ── Delete ─────────────────────────────────────────────────
-  async function handleDelete(item: Announcement) {
-    setDeleting(item.id)
-    const { error } = await supabase.from('announcements').delete().eq('id', item.id)
+  async function handleDelete(ann: AnnouncementRow) {
+    setDeleting(ann.id)
+    setDeleteError('')
+    const supabase = createClient()
+    const { error } = await supabase.from('announcements').delete().eq('id', ann.id)
     setDeleting(null)
-    if (error) { showToast(error.message, false); return }
-    setItems(prev => prev.filter(a => a.id !== item.id))
+    if (error) { setDeleteError(error.message); return }
+    setAnnouncements(prev => prev.filter(a => a.id !== ann.id))
     setConfirmDel(null)
-    if (expandedId === item.id) setExpandedId(null)
+    if (selected?.id === ann.id) setSelected(null)
     showToast('Announcement deleted')
   }
 
-  // ── Derived ────────────────────────────────────────────────
-  const displayed = filterAud === 'all'
-    ? items
-    : items.filter(a => a.audience === filterAud || a.audience === 'all')
+  async function handleSubmit() {
+    if (!title.trim() || !body.trim()) return
+    setIsSubmitting(true)
+    setFormStatus('idle')
 
-  const urgentCount   = items.filter(a => a.priority === 'urgent').length
-  const thisWeekCount = items.filter(a => {
-    return (Date.now() - new Date(a.created_at).getTime()) < 7 * 86400000
-  }).length
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert({
+        title: title.trim(),
+        body: body.trim(),
+        audience,
+        class_id: classId || null,
+        created_by: creatorId,
+      })
+      .select(`
+        id, title, body, audience, class_id, created_at,
+        classes ( name ),
+        profiles:created_by ( full_name )
+      `)
+      .single()
+
+    setIsSubmitting(false)
+
+    if (error) {
+      setFormStatus('error')
+      setErrorMsg(error.message)
+      return
+    }
+
+    // Prepend new announcement to list
+    const newRow: AnnouncementRow = {
+      id: data.id,
+      title: data.title,
+      body: data.body,
+      audience: data.audience,
+      class_id: data.class_id,
+      class_name: data.classes?.[0]?.name ?? null,
+      created_at: data.created_at,
+      created_by_name: data.profiles?.[0]?.full_name ?? creatorName,
+    }
+
+    setAnnouncements((prev) => [newRow, ...prev])
+    setFormStatus('success')
+    setTimeout(() => {
+      resetForm()
+    }, 2000)
+  }
+
+  if (!mounted) return null
 
   const isFormValid = title.trim().length > 0 && body.trim().length > 0
 
-  // ── Render ─────────────────────────────────────────────────
   return (
-    <div className={styles.wrapper}>
-
-      {/* ── Toast ─────────────────────────────────────────── */}
+    <div className={styles.page}>
+      {/* Toast */}
       {toast && (
-        <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
-          {toast.ok ? '✓' : '✕'} {toast.msg}
+        <div style={{ position:'fixed', bottom:100, left:'50%', transform:'translateX(-50%)', background:'var(--success-bg)', border:'1px solid rgba(45,139,85,0.3)', color:'var(--success)', padding:'10px 20px', borderRadius:999, fontSize:'0.82rem', fontWeight:600, zIndex:999, whiteSpace:'nowrap', animation:'fade-up 0.3s ease' }}>
+          ✓ {toast}
         </div>
       )}
 
-      {/* ── Delete Confirm Dialog ─────────────────────────── */}
+      {/* Delete confirm dialog */}
       {confirmDel && (
-        <div className={styles.overlay} onClick={() => setConfirmDel(null)}>
-          <div className={styles.dialog} onClick={e => e.stopPropagation()}>
-            <h3 className={styles.dialogTitle}>Delete Announcement?</h3>
-            <p className={styles.dialogBody}>
-              "<strong>{confirmDel.title}</strong>" will be permanently removed from all feeds.
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', padding:'var(--space-6)', maxWidth:400, width:'100%' }}>
+            <h3 style={{ fontSize:'1.1rem', fontWeight:700, color:'var(--text-primary)', margin:'0 0 12px' }}>Delete Announcement?</h3>
+            <p style={{ fontSize:'0.86rem', color:'var(--text-secondary)', lineHeight:1.6, margin:'0 0 20px' }}>
+              "<strong>{confirmDel.title}</strong>" will be permanently deleted.
             </p>
-            <div className={styles.dialogActions}>
-              <button className={styles.dlgCancel} onClick={() => setConfirmDel(null)}>
-                Cancel
-              </button>
-              <button
-                className={styles.dlgDelete}
-                onClick={() => handleDelete(confirmDel)}
-                disabled={deleting === confirmDel.id}
-              >
+            {deleteError && <p style={{ color:'var(--error)', fontSize:'0.8rem', marginBottom:12 }}>{deleteError}</p>}
+            <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
+              <button onClick={() => setConfirmDel(null)} style={{ padding:'8px 20px', borderRadius:999, background:'var(--glass-bg)', border:'1px solid var(--glass-border)', color:'var(--text-secondary)', fontSize:'0.82rem', fontWeight:600, cursor:'pointer' }}>Cancel</button>
+              <button onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id} style={{ padding:'8px 20px', borderRadius:999, background:'var(--error-bg)', border:'1px solid rgba(192,57,43,0.3)', color:'var(--error)', fontSize:'0.82rem', fontWeight:700, cursor:'pointer', opacity: deleting === confirmDel.id ? 0.5 : 1 }}>
                 {deleting === confirmDel.id ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* ── Stats row ─────────────────────────────────────── */}
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <p className={styles.statNum} style={{ color: schoolColor }}>{items.length}</p>
-          <p className={styles.statLbl}>Total</p>
+      {/* ── Header ──────────────────────────────────────── */}
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <Link href="/dashboard/principal" className={styles.backBtn}>
+            <IconChevronLeft /> Dashboard
+          </Link>
+          <h1 className={styles.pageTitle}>
+            School <span>Announcements</span>
+          </h1>
         </div>
-        <div className={styles.statCard}>
-          <p className={styles.statNum} style={{ color: '#ef4444' }}>{urgentCount}</p>
-          <p className={styles.statLbl}>Urgent</p>
-        </div>
-        <div className={styles.statCard}>
-          <p className={styles.statNum} style={{ color: '#10b981' }}>{thisWeekCount}</p>
-          <p className={styles.statLbl}>This Week</p>
-        </div>
-      </div>
-
-      {/* ── Compose panel (always visible) ───────────────── */}
-      <div className={styles.composeCard}>
-        <p className={styles.composeTitle}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={16} height={16}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-          New Announcement
-        </p>
-
-        {/* Status feedback */}
-        {submitState === 'success' && (
-          <div className={styles.feedback} data-type="success">
-            <I.Check /> Published successfully!
-          </div>
-        )}
-        {submitState === 'error' && (
-          <div className={styles.feedback} data-type="error">
-            <I.Alert /> {submitError || 'Failed to publish. Try again.'}
-          </div>
-        )}
-
-        {/* Title */}
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Title *</label>
-          <input
-            ref={titleRef}
-            className={styles.fieldInput}
-            type="text"
-            placeholder="e.g. School Closing Early Tomorrow"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            maxLength={120}
-            autoComplete="off"
-          />
-        </div>
-
-        {/* Body */}
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Message *</label>
-          <textarea
-            className={styles.fieldInput}
-            style={{ resize: 'vertical', minHeight: 96, lineHeight: 1.65 }}
-            placeholder="Write the full announcement here…"
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            maxLength={BODY_MAX}
-            rows={4}
-          />
-          <span className={`${styles.charCount} ${body.length > BODY_MAX * 0.85 ? styles.charWarn : ''}`}>
-            {body.length} / {BODY_MAX}
-          </span>
-        </div>
-
-        {/* Audience + Priority */}
-        <div className={styles.fieldRow}>
-          <div className={styles.field}>
-            <label className={styles.fieldLabel}>Audience *</label>
-            <select
-              className={styles.fieldInput}
-              value={audience}
-              onChange={e => setAudience(e.target.value as Audience)}
-            >
-              <option value="all">Everyone</option>
-              <option value="students">Students only</option>
-              <option value="teachers">Teachers only</option>
-              <option value="parents">Parents only</option>
-              <option value="staff">Staff only</option>
-            </select>
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.fieldLabel}>Priority</label>
-            <select
-              className={styles.fieldInput}
-              value={priority}
-              onChange={e => setPriority(e.target.value as Priority)}
-            >
-              <option value="normal">Normal</option>
-              <option value="urgent">🔴 Urgent</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className={styles.composeFooter}>
-          <button className={styles.clearBtn} onClick={resetForm} type="button">
-            Clear
+        <div className={styles.headerRight}>
+          <button className={styles.themeBtn} onClick={toggleTheme}>
+            {isDark ? <IconSun /> : <IconMoon />}
           </button>
-          <button
-            className={styles.publishBtn}
-            style={{ background: schoolColor }}
-            onClick={handleSubmit}
-            disabled={!isFormValid || submitting}
-            type="button"
-          >
-            {submitting ? 'Publishing…' : 'Publish Announcement'}
+          <button className={styles.newBtn} onClick={() => titleRef.current?.focus()}>
+            <IconPlus /> New
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* ── Filter tabs ───────────────────────────────────── */}
-      <div className={styles.filterRow}>
-        {(['all', 'students', 'teachers', 'parents', 'staff'] as const).map(aud => (
-          <button
-            key={aud}
-            className={`${styles.filterTab} ${filterAud === aud ? styles.filterTabActive : ''}`}
-            style={filterAud === aud ? { borderColor: aud === 'all' ? schoolColor : AUDIENCE_COLORS[aud as Audience]?.text, color: aud === 'all' ? schoolColor : AUDIENCE_COLORS[aud as Audience]?.text } : {}}
-            onClick={() => setFilterAud(aud)}
-          >
-            {aud === 'all' ? 'All' : AUDIENCE_LABELS[aud as Audience]}
-            {aud === 'all'
-              ? <span className={styles.filterCount}>{items.length}</span>
-              : <span className={styles.filterCount}>{items.filter(a => a.audience === aud).length}</span>
-            }
-          </button>
-        ))}
-      </div>
+      {/* ── Body ────────────────────────────────────────── */}
+      <div className={styles.layoutBody}>
+        {/* Left: announcement list */}
+        <section className={styles.listSection}>
+          <p className={styles.sectionLabel}>
+            {announcements.length} announcement{announcements.length !== 1 ? 's' : ''}
+          </p>
 
-      {/* ── Announcements list ────────────────────────────── */}
-      {displayed.length === 0 ? (
-        <div className={styles.empty}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.2} width={40} height={40}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-          <p>{filterAud === 'all' ? 'No announcements yet — publish one above.' : `No announcements for ${AUDIENCE_LABELS[filterAud]}.`}</p>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {displayed.map(item => {
-            const isExpanded = expandedId === item.id
-            const ac = AUDIENCE_COLORS[item.audience]
-            const isLong = item.body.length > 160
-
-            return (
-              <div
-                key={item.id}
-                className={`${styles.card} ${item.priority === 'urgent' ? styles.cardUrgent : ''}`}
-              >
-                {/* Card top: meta + delete */}
-                <div className={styles.cardTop}>
-                  <div className={styles.cardMeta}>
-                    {item.priority === 'urgent' && (
-                      <span className={styles.urgentDot} title="Urgent">
-                        <I.Zap />
-                      </span>
-                    )}
-                    <span
-                      className={styles.audiencePill}
-                      style={{ background: ac.bg, color: ac.text, borderColor: ac.border }}
-                    >
-                      {AUDIENCE_LABELS[item.audience]}
+          {announcements.length === 0 ? (
+            <div className={styles.emptyState}>
+              No announcements yet. Create your first one using the form.
+            </div>
+          ) : (
+            <div className={styles.announcementList}>
+              {announcements.map((a) => (
+                <div
+                  key={a.id}
+                  className={`${styles.announcementCard} ${selected?.id === a.id ? styles.announcementCardSelected : ''}`}
+                  onClick={() => setSelected(selected?.id === a.id ? null : a)}
+                >
+                  <div className={styles.cardTop}>
+                    <p className={styles.announcementTitle}>{a.title}</p>
+                    <span className={`${styles.audienceBadge} ${audienceClass(a.audience)}`}>
+                      {AUDIENCE_LABELS[a.audience]}
                     </span>
-                    <span className={styles.timeMeta}>
-                      <I.Clock /> {relativeTime(item.created_at)}
-                    </span>
-                    {item.poster_name && (
-                      <span className={styles.timeMeta} style={{ opacity: 0.7 }}>
-                        · {item.poster_name}
-                      </span>
-                    )}
                   </div>
-                  <button
-                    className={styles.deleteIconBtn}
-                    onClick={() => setConfirmDel(item)}
-                    title="Delete announcement"
-                    type="button"
+
+                  {/* Full body if selected, preview if not */}
+                  <p className={`${styles.cardBody} ${selected?.id === a.id ? '' : ''}`}
+                    style={selected?.id === a.id ? { WebkitLineClamp: 'unset', display: 'block' } : {}}
                   >
-                    <I.Trash />
-                  </button>
+                    {a.body}
+                  </p>
+
+                  <div className={styles.cardFooter}>
+                    <div className={styles.cardMeta}>
+                      <span className={styles.cardMetaItem}>
+                        <IconClock />
+                        {relativeTime(a.created_at)}
+                      </span>
+                      {a.created_by_name && (
+                        <span className={styles.cardMetaItem}>
+                          <IconUser />
+                          {a.created_by_name}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      {a.class_name && (
+                        <span className={styles.classTag}>{a.class_name}</span>
+                      )}
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmDel(a) }}
+                        title="Delete announcement"
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:26, height:26, borderRadius:'var(--radius-md)', background:'var(--error-bg)', border:'1px solid rgba(192,57,43,0.2)', color:'var(--error)', cursor:'pointer', opacity:0.7, flexShrink:0 }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-                {/* Title — click to expand */}
-                <h3
-                  className={styles.cardTitle}
-                  onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                  style={{ cursor: isLong ? 'pointer' : 'default' }}
-                >
-                  {item.title}
-                </h3>
+        {/* Right: compose panel */}
+        <section className={styles.composePanel}>
+          <div className={styles.composePanelHeader}>
+            <p className={styles.composePanelTitle}>New Announcement</p>
+          </div>
 
-                {/* Body — clipped or full */}
-                <p
-                  className={styles.cardBody}
-                  style={isExpanded ? { WebkitLineClamp: 'unset', display: 'block' } : {}}
-                >
-                  {item.body}
-                </p>
-
-                {/* Expand toggle */}
-                {isLong && (
-                  <button
-                    className={styles.expandBtn}
-                    onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                    type="button"
-                  >
-                    {isExpanded ? <><I.ChevUp /> Show less</> : <><I.ChevDown /> Read more</>}
-                  </button>
-                )}
+          <div className={styles.composePanelBody}>
+            {/* Success / error feedback */}
+            {formStatus === 'success' && (
+              <div className={styles.successMsg}>
+                <IconCheck />
+                Announcement published successfully!
               </div>
-            )
-          })}
-        </div>
-      )}
+            )}
+            {formStatus === 'error' && (
+              <div className={styles.errorMsg}>
+                <IconAlertCircle />
+                {errorMsg || 'Failed to publish. Please try again.'}
+              </div>
+            )}
 
-      <div style={{ height: 60 }} />
+            {/* Title */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Title *</label>
+              <input
+                ref={titleRef}
+                className={styles.fieldInput}
+                placeholder="e.g. School Closing Tomorrow"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+
+            {/* Body */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Message *</label>
+              <textarea
+                className={`${styles.fieldInput} ${styles.fieldTextarea}`}
+                placeholder="Write the full announcement here…"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                maxLength={BODY_LIMIT}
+                rows={5}
+              />
+              <p className={`${styles.charCount} ${body.length > BODY_LIMIT * 0.85 ? styles.charCountWarning : ''}`}>
+                {body.length} / {BODY_LIMIT}
+              </p>
+            </div>
+
+            {/* Audience */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Target Audience *</label>
+              <select
+                className={`${styles.fieldInput} ${styles.fieldSelect}`}
+                value={audience}
+                onChange={(e) => setAudience(e.target.value as AudienceType)}
+              >
+                <option value="all">All — Everyone</option>
+                <option value="students">Students only</option>
+                <option value="teachers">Teachers only</option>
+                <option value="parents">Parents only</option>
+                <option value="staff">Staff only</option>
+              </select>
+            </div>
+
+            {/* Optional class target */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Specific Class (optional)</label>
+              <select
+                className={`${styles.fieldInput} ${styles.fieldSelect}`}
+                value={classId}
+                onChange={(e) => setClassId(e.target.value)}
+              >
+                <option value="">All classes</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.composePanelFooter}>
+            <button className={styles.clearBtn} onClick={resetForm} type="button">
+              Clear
+            </button>
+            <button
+              className={styles.submitBtn}
+              onClick={handleSubmit}
+              disabled={!isFormValid || isSubmitting}
+              type="button"
+            >
+              {isSubmitting ? 'Publishing…' : 'Publish'}
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
