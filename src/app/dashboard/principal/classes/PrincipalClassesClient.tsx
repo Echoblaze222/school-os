@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import {
   UserIcon, BookOpenIcon, PeopleIcon, ArrowLeftIcon,
@@ -18,9 +19,15 @@ export default function PrincipalClassesClient({
   classes, teachers, subjects, schoolId, userId,
 }: any) {
   const router   = useRouter()
+  // Prefer local state update over router.refresh() for instant feedback
+  // useRealtimeTable keeps classes in sync from any client (useful if multiple
+  // admins are working at the same time).
+  // NOTE: `classes` prop is the initial server-rendered list; realtime takes over from there.
   const supabase = createClient()
 
   const [theme,       setTheme]       = useState<'dark' | 'light'>('dark')
+  // localClasses mirrors the `classes` prop but can be mutated client-side
+  const [localClasses, setLocalClasses] = useState<any[]>(classes ?? [])
   const [search,      setSearch]      = useState('')
   const [activeClass, setActiveClass] = useState<any>(null)
   const [showCreate,  setShowCreate]  = useState(false)
@@ -38,6 +45,8 @@ export default function PrincipalClassesClient({
   const [assignTeacher,   setAssignTeacher]   = useState('')
   const [assignSubject,   setAssignSubject]   = useState('')
   const [assignIsPrimary, setAssignIsPrimary] = useState(false)
+
+  useEffect(() => { setLocalClasses(classes ?? []) }, [classes])
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme') as any
@@ -65,7 +74,16 @@ export default function PrincipalClassesClient({
       capacity:      parseInt(newCapacity) || 40,
       academic_year: newYear,
     })
-    if (err) { setError(err.message) } else { setShowCreate(false); router.refresh() }
+    if (err) {
+      setError(err.message)
+    } else {
+      setShowCreate(false)
+      // Re-fetch classes from Supabase so state is fresh (avoids router.refresh roundtrip)
+      const { data: fresh } = await supabase
+        .from('classes').select('*, class_teachers(teacher_id, subject, is_primary, role_type, profiles:teacher_id(full_name))')
+        .eq('school_id', schoolId).order('name')
+      if (fresh) setLocalClasses(fresh)
+    }
     setSaving(false)
   }
 
@@ -93,7 +111,15 @@ export default function PrincipalClassesClient({
       is_primary: assignIsPrimary,
     }, { onConflict: 'teacher_id,class_id,subject' })
 
-    if (err) { setError(err.message) } else { setShowAssign(false); router.refresh() }
+    if (err) {
+      setError(err.message)
+    } else {
+      setShowAssign(false)
+      const { data: fresh } = await supabase
+        .from('classes').select('*, class_teachers(teacher_id, subject, is_primary, role_type, profiles:teacher_id(full_name))')
+        .eq('school_id', schoolId).order('name')
+      if (fresh) setLocalClasses(fresh)
+    }
     setSaving(false)
   }
 
@@ -105,8 +131,10 @@ export default function PrincipalClassesClient({
       .eq('class_id', classId)
       .eq('teacher_id', teacherId)
       .eq('subject', subject ?? '')
-    router.refresh()
-    // Refresh active class data from updated classes list
+    const { data: fresh } = await supabase
+      .from('classes').select('*, class_teachers(teacher_id, subject, is_primary, role_type, profiles:teacher_id(full_name))')
+      .eq('school_id', schoolId).order('name')
+    if (fresh) setLocalClasses(fresh)
     setActiveClass(null)
   }
 
