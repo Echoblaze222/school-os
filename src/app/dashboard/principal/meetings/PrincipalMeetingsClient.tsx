@@ -3,6 +3,7 @@
 // src/app/dashboard/principal/meetings/PrincipalMeetingsClient.tsx
 
 import { useEffect, useState, useTransition } from 'react'
+import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -79,7 +80,13 @@ export default function PrincipalMeetingsClient({
   const supabase = createClient()
 
   const [mode,     setMode]     = useState<Mode>('list')
-  const [meetings, setMeetings] = useState<MeetingRow[]>(initialMeetings)
+  // ── Realtime: meetings list updates when anyone creates/cancels ──────────
+  const [meetings, setMeetings] = useRealtimeTable<MeetingRow>({
+    table:   'meetings',
+    filter:  schoolId ? `school_id=eq.${schoolId}` : undefined,
+    initial: initialMeetings,
+    orderBy: (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime(),
+  })
 
   // Form state
   const [title,      setTitle]      = useState('')
@@ -118,19 +125,13 @@ export default function PrincipalMeetingsClient({
 
     setSubmitting(true); setFormError(''); setSuccess('')
 
-    if (!schoolId) {
-      setFormError('School ID is missing — please reload and try again.')
-      setSubmitting(false)
-      return
-    }
-
     const scheduledAt = new Date(`${date}T${time}:00`).toISOString()
     const targetClass  = audience === 'specific_class' ? classId : null
 
     const { data: inserted, error } = await supabase
       .from('meetings')
       .insert({
-        school_id:       schoolId,
+        school_id:       schoolId || undefined,
         created_by:      principalId,
         title:           title.trim(),
         meeting_type:    type,
