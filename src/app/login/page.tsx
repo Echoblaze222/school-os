@@ -40,6 +40,40 @@ export default function LoginPage() {
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
+  // ── Auto-redirect if a valid session already exists ───────────────────────
+  // Handles "came back to the tab" case: if the Supabase access token is still
+  // valid (or can be silently refreshed), skip the login form entirely.
+  useEffect(() => {
+    let cancelled = false
+
+    async function checkExistingSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (cancelled || !session) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, onboarding_stage')
+        .eq('id', session.user.id)
+        .single()
+
+      if (cancelled || !profile) return
+
+      const stage = profile.onboarding_stage
+      if (stage === 'stage_1_pending' || stage === 1) { router.replace('/onboarding/stage-1'); return }
+      if (stage === 2 || stage === 'start')            { router.replace('/onboarding/stage-2'); return }
+      if (stage === 3)                                  { router.replace('/onboarding/stage-3'); return }
+
+      // Respect ?redirectTo=... so the user lands back where they were
+      const params     = new URLSearchParams(window.location.search)
+      const redirectTo = params.get('redirectTo')
+      router.replace(redirectTo ?? ROLE_ROUTES[profile.role] ?? '/dashboard/student')
+    }
+
+    checkExistingSession()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ── Step 1: Validate access code ──────────────────────────────────────────
   async function handleCodeSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -151,12 +185,14 @@ export default function LoginPage() {
     }
 
     const stage = profile.onboarding_stage
-    if (stage === 'stage_1_pending' || stage === 1) { router.push('/onboarding/stage-1'); return }
-    if (stage === 2) { router.push('/onboarding/stage-2'); return }
-    if (stage === 3) { router.push('/onboarding/stage-3'); return }
+    if (stage === 'stage_1_pending' || stage === 1) { router.replace('/onboarding/stage-1'); return }
+    if (stage === 2) { router.replace('/onboarding/stage-2'); return }
+    if (stage === 3) { router.replace('/onboarding/stage-3'); return }
 
-    router.push(ROLE_ROUTES[profile.role] ?? '/dashboard/student')
-    router.refresh()
+    // Honour ?redirectTo= so user lands back where they were before the session expired
+    const params     = new URLSearchParams(window.location.search)
+    const redirectTo = params.get('redirectTo')
+    router.replace(redirectTo ?? ROLE_ROUTES[profile.role] ?? '/dashboard/student')
   }
 
   // ── Shared profile card ───────────────────────────────────────────────────
