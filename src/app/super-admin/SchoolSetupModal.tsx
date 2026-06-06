@@ -19,7 +19,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   const [credentials, setCredentials] = useState<{ defaultCode: string; tempPassword: string; email: string } | null>(null)
   const [copiedCode,  setCopiedCode]  = useState(false)
   const [copiedPwd,   setCopiedPwd]   = useState(false)
-  const [copiedBoth,  setCopiedBoth]  = useState(false)
+  const [copiedAll,   setCopiedAll]   = useState(false)
 
   const [form, setForm] = useState({
     schoolName:      '',
@@ -107,11 +107,10 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
               <h3 style={{ color: '#10B981', marginBottom: 4 }}>School Activated!</h3>
               <p className={styles.stepDesc} style={{ marginBottom: 16 }}>
-                A welcome email was sent to <strong>{credentials.email}</strong>.<br />
-                Copy and save these credentials to share with the principal manually.
+                Share these credentials with the principal manually — they must change the password on first login.
               </p>
 
-              {/* Email row */}
+              {/* Email */}
               <div className={styles.confirmCard} style={{ textAlign: 'left', marginBottom: 12 }}>
                 <div className={styles.confirmRow}>
                   <span>Principal Email</span>
@@ -119,7 +118,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 </div>
               </div>
 
-              {/* Access Code block */}
+              {/* Access Code */}
               <div style={{ background: 'rgba(167,139,250,0.08)', border: '1.5px solid rgba(167,139,250,0.35)', borderRadius: 12, padding: '16px 20px', marginBottom: 12, textAlign: 'left' }}>
                 <p style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Access Code</p>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -134,7 +133,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 </div>
               </div>
 
-              {/* Temp Password block */}
+              {/* Temp Password */}
               <div style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, textAlign: 'left' }}>
                 <p style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Temp Password</p>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -149,15 +148,15 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 </div>
               </div>
 
-              {/* Copy Both */}
+              {/* Copy All */}
               <button
                 onClick={async () => {
                   const text = `School Login Credentials\nEmail: ${credentials!.email}\nAccess Code: ${credentials!.defaultCode}\nTemp Password: ${credentials!.tempPassword}`
                   await navigator.clipboard.writeText(text).catch(()=>{})
-                  setCopiedBoth(true); setTimeout(()=>setCopiedBoth(false), 2500)
+                  setCopiedAll(true); setTimeout(()=>setCopiedAll(false), 2500)
                 }}
-                style={{ width: '100%', padding: '12px', borderRadius: 10, border: copiedBoth ? '1px solid #10B981' : '1px solid var(--glass-border)', background: copiedBoth ? 'rgba(16,185,129,0.1)' : 'var(--glass-bg)', color: copiedBoth ? '#10B981' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', marginBottom: 12 }}>
-                {copiedBoth ? '✓ All credentials copied!' : '📋 Copy All Credentials'}
+                style={{ width: '100%', padding: '12px', borderRadius: 10, border: copiedAll ? '1px solid #10B981' : '1px solid var(--glass-border)', background: copiedAll ? 'rgba(16,185,129,0.1)' : 'var(--glass-bg)', color: copiedAll ? '#10B981' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', marginBottom: 12 }}>
+                {copiedAll ? '✓ All credentials copied!' : '📋 Copy All Credentials'}
               </button>
 
               <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
