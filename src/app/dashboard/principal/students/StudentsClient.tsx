@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './students.module.css'
 
@@ -12,7 +13,15 @@ interface Props { profile: any; school: any; userId: string }
 export default function StudentsClient({ profile, school, userId }: Props) {
   const supabase      = createClient()
   const sc            = school?.primary_color ?? '#7C3AED'
-  const [students,    setStudents]    = useState<any[]>([])
+
+  // ── Realtime: students list stays live without any manual refresh ──────────
+  const [students, setStudents] = useRealtimeTable<any>({
+    table:   'profiles',
+    filter:  school?.id ? `school_id=eq.${school.id}` : undefined,
+    initial: [],
+    orderBy: (a, b) => a.full_name.localeCompare(b.full_name),
+  })
+
   const [loading,     setLoading]     = useState(true)
   const [search,      setSearch]      = useState('')
   const [classFilter, setClassFilter] = useState('')
@@ -27,22 +36,19 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     gender: '', class_id: '', admission_number: '',
   })
 
-  useEffect(() => { load() }, [])
-
-  async function load() {
-    if (!school?.id) { setLoading(false); return }
-    const [{ data: studs }, { data: cls }] = await Promise.all([
-      supabase.from('profiles')
-        .select('id, full_name, email, phone, date_of_birth, gender, avatar_url, default_code, class_level, created_at')
-        .eq('school_id', school.id)
-        .eq('role', 'student')
-        .order('full_name'),
-      supabase.from('classes').select('id, name, level, section').eq('school_id', school.id).order('name'),
-    ])
-    if (studs) setStudents(studs)
-    if (cls)   setClasses(cls)
-    setLoading(false)
-  }
+  // Load classes list once (classes don't need realtime on this page)
+  useEffect(() => {
+    async function loadClasses() {
+      if (!school?.id) { setLoading(false); return }
+      const { data: cls } = await supabase
+        .from('classes').select('id, name, level, section')
+        .eq('school_id', school.id).order('name')
+      if (cls) setClasses(cls)
+      setLoading(false)
+    }
+    loadClasses()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [school?.id])
 
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
@@ -62,19 +68,15 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   async function handleCreate() {
     if (!form.full_name.trim()) return
     setSaving(true)
-    const selectedClass = classes.find(c => c.id === form.class_id)
     const { data, error } = await supabase.from('profiles').insert({
       full_name:        form.full_name.trim(),
       email:            form.email.trim() || null,
       phone:            form.phone.trim() || null,
       date_of_birth:    form.date_of_birth || null,
       gender:           form.gender || null,
-      class_id:         form.class_id || null,
-      class_level:      selectedClass?.name ?? null,
-      admission_number: form.admission_number.trim() || null,
+      class_level:      form.class_id ? classes.find(c => c.id === form.class_id)?.name : null,
       role:             'student',
       school_id:        school.id,
-      lifecycle_stage:  'active',
     }).select().single()
     setSaving(false)
     if (error) { showToast(error.message, false); return }
