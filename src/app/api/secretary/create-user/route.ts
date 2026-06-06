@@ -39,6 +39,47 @@ export async function POST(request: Request) {
 
     const { data: callerProfile } = await supabaseAuth
       .from('profiles').select('role').eq('id', user.id).single()
+// src/app/api/secretary/create-user/route.ts
+// Uses service role to create auth users — requires SUPABASE_SERVICE_ROLE_KEY env var
+import { createServerClient } from '@supabase/ssr'
+import { createClient }       from '@supabase/supabase-js'
+import { cookies }            from 'next/headers'
+import { NextResponse }       from 'next/server'
+
+export async function POST(request: Request) {
+  try {
+    const { fullName, email, role, classId, schoolId } = await request.json()
+    if (!fullName || !email || !role) {
+      return NextResponse.json(
+        { error: 'fullName, email, and role are required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify caller is secretary / admin / principal
+    const cookieStore  = await cookies()
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: callerProfile } = await supabaseAuth
+      .from('profiles').select('role').eq('id', user.id).single()
 
     if (
       !callerProfile ||
@@ -111,7 +152,7 @@ export async function POST(request: Request) {
 
     const userId = newUser.user.id
 
-    // Create profile — store temp_password so first-login route can reference it
+    // Create profile
     const { error: profileErr } = await adminClient.from('profiles').insert({
       id:               userId,
       full_name:        fullName,
@@ -120,7 +161,6 @@ export async function POST(request: Request) {
       school_id:        schoolId,
       is_active:        true,
       default_code:     code,
-      temp_password:    tempPass,      // cleared after first login
       onboarding_stage: 'start',
       created_at:       new Date().toISOString(),
     })
@@ -166,3 +206,4 @@ export async function POST(request: Request) {
     )
   }
 }
+    
