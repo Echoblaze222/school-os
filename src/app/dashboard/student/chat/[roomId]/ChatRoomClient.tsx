@@ -1,30 +1,27 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  SendIcon, MicIcon, StopIcon, PaperclipIcon,
+  SendIcon, PaperclipIcon,
   ArrowLeftIcon, SmileIcon, MoreIcon, XIcon,
 } from '@/components/Icons'
-import { useVoiceRecorder, formatDuration } from '@/hooks/useVoiceRecorder'
 import styles from './chat-room.module.css'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface Message {
-  id:          string
-  content:     string
-  sender_id:   string
-  sent_at:     string
-  file_url?:   string | null
-  file_type?:  string | null
-  is_deleted:  boolean
-  is_edited:   boolean
-  reactions?:  Record<string, string[]>
+  id:         string
+  content:    string
+  sender_id:  string
+  sent_at:    string
+  file_url?:  string | null
+  file_type?: string | null
+  is_deleted: boolean
+  is_edited:  boolean
+  reactions?: Record<string, string[]>
   reply_to_id?: string | null
-  reply_to?:   { content: string; sender_name: string } | null
-  sender?:     { full_name: string; avatar_url?: string }
+  reply_to?:  { content: string; sender_name: string } | null
+  sender?:    { full_name: string; avatar_url?: string }
 }
 
 interface Props {
@@ -34,44 +31,36 @@ interface Props {
   school?: any
 }
 
-const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉']
-
-// ── Component ─────────────────────────────────────────────────────────────────
+const EMOJIS = ['👍','❤️','😂','😮','😢','🔥','👏','🎉']
 
 export default function ChatRoomClient({ roomId, userId, role, school }: Props) {
-  const [messages,     setMessages]     = useState<Message[]>([])
-  const [roomInfo,     setRoomInfo]     = useState<any>(null)
-  const [text,         setText]         = useState('')
-  const [sending,      setSending]      = useState(false)
-  const [loading,      setLoading]      = useState(true)
-  const [emojiTarget,  setEmojiTarget]  = useState<string | null>(null)
-  const [online,       setOnline]       = useState<string[]>([])
-  const [replyTo,      setReplyTo]      = useState<Message | null>(null)
-  const [showMenu,     setShowMenu]     = useState<string | null>(null)
-  const [swipeState,   setSwipeState]   = useState<Record<string, number>>({})
-  const [isTyping,     setIsTyping]     = useState(false)
+  const [messages,    setMessages]    = useState<Message[]>([])
+  const [roomInfo,    setRoomInfo]    = useState<any>(null)
+  const [text,        setText]        = useState('')
+  const [sending,     setSending]     = useState(false)
+  const [loading,     setLoading]     = useState(true)
+  const [emojiTarget, setEmojiTarget] = useState<string | null>(null)
+  const [online,      setOnline]      = useState<string[]>([])
+  const [replyTo,     setReplyTo]     = useState<Message | null>(null)
+  const [showMenu,    setShowMenu]    = useState(false)
 
   const router    = useRouter()
   const supabase  = createClient()
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
   const fileRef   = useRef<HTMLInputElement>(null)
-  const voice     = useVoiceRecorder(120)
-  const touchStartX = useRef<Record<string, number>>({})
 
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
-  // ── Load room + messages + realtime ──────────────────────────────────────────
-
+  // ── Load room + messages + realtime ──────────────────────
   useEffect(() => {
     loadRoom()
     loadMessages()
 
     const ch = supabase.channel(`room:${roomId}`)
       .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'chat_messages',
+        event: 'INSERT', schema: 'public',
+        table: 'chat_messages',
         filter: `room_id=eq.${roomId}`,
       }, async payload => {
         const { data: msg } = await supabase
@@ -82,19 +71,19 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
         if (msg) {
           setMessages(prev => {
-            if (prev.find(x => x.id === msg.id)) return prev
-            return [...prev, enrichWithReply(msg as Message, prev)]
+            if (prev.find(x => x.id === (msg as Message).id)) return prev
+            return [...prev, msg as Message]
           })
         }
       })
       .on('postgres_changes', {
-        event:  'UPDATE',
-        schema: 'public',
-        table:  'chat_messages',
+        event: 'UPDATE', schema: 'public',
+        table: 'chat_messages',
         filter: `room_id=eq.${roomId}`,
       }, payload => {
-        const updated = payload.new as Message
-        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m))
+        setMessages(prev => prev.map(m =>
+          m.id === payload.new.id ? { ...m, ...(payload.new as Message) } : m
+        ))
       })
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState()
@@ -113,28 +102,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Close menus on outside click
+  // Close emoji picker on outside click
   useEffect(() => {
-    const handler = () => { setEmojiTarget(null); setShowMenu(null) }
+    const handler = () => { setEmojiTarget(null); setShowMenu(false) }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
   }, [])
 
-  // ── Helpers ───────────────────────────────────────────────────────────────────
-
-  function enrichWithReply(msg: Message, allMsgs: Message[]): Message {
-    if (!msg.reply_to_id) return msg
-    const parent = allMsgs.find(m => m.id === msg.reply_to_id)
-    if (!parent) return msg
-    return {
-      ...msg,
-      reply_to: {
-        content:     parent.is_deleted ? '🚫 Deleted message' : (parent.content ?? ''),
-        sender_name: parent.sender?.full_name ?? 'Unknown',
-      },
-    }
-  }
-
+  // ── Data loading ─────────────────────────────────────────
   async function loadRoom() {
     const { data } = await supabase
       .from('chat_rooms')
@@ -160,13 +135,25 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
     if (data) {
       const msgs = data as Message[]
-      // Enrich all messages with reply context
-      const enriched = msgs.map(m => enrichWithReply(m, msgs))
+      // Enrich with reply context
+      const enriched = msgs.map(m => {
+        if (!m.reply_to_id) return m
+        const parent = msgs.find(p => p.id === m.reply_to_id)
+        if (!parent) return m
+        return {
+          ...m,
+          reply_to: {
+            content:     parent.is_deleted ? '🚫 Deleted' : parent.content,
+            sender_name: parent.sender?.full_name ?? 'Unknown',
+          },
+        }
+      })
       setMessages(enriched)
     }
     setLoading(false)
   }
 
+  // ── Helpers ──────────────────────────────────────────────
   function getOtherUser() {
     if (!roomInfo?.members) return null
     return roomInfo.members.map((m: any) => m.user).find((u: any) => u?.id !== userId) ?? null
@@ -174,58 +161,31 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   function getRoomDisplayName() {
     if (roomInfo?.is_group) return roomInfo.name ?? 'Group Chat'
-    const other = getOtherUser()
-    return other?.full_name ?? roomInfo?.name ?? 'Chat Room'
+    return getOtherUser()?.full_name ?? roomInfo?.name ?? 'Chat'
   }
 
-  function getOnlineStatus() {
+  // ── Send notification to other user ──────────────────────
+  async function pushNotification(content: string) {
     const otherUser = getOtherUser()
-    if (!otherUser) return ''
-    const isOnline = online.some(k => {
-      const state = (supabase.channel(`room:${roomId}`) as any).presenceState?.()
-      return state?.[k]?.[0]?.user_id === otherUser.id
+    if (!otherUser?.id) return
+    // Fire and forget — insert directly, no API route needed
+    await supabase.from('notifications').insert({
+      user_id:    otherUser.id,
+      title:      `New message from ${roomInfo?.members?.find((m: any) => m.user?.id === userId)?.user?.full_name ?? 'Someone'}`,
+      body:       content.length > 100 ? content.slice(0, 100) + '…' : content,
+      type:       'chat',
+      action_url: `/dashboard/${otherUser.role}/chat/${roomId}`,
     })
-    return online.length > 1 ? 'Online' : otherUser.role ?? ''
   }
 
-  // ── Touch/Swipe for reply ─────────────────────────────────────────────────────
-
-  function handleTouchStart(e: React.TouchEvent, msgId: string) {
-    touchStartX.current[msgId] = e.touches[0].clientX
-  }
-
-  function handleTouchMove(e: React.TouchEvent, msgId: string, isMe: boolean) {
-    const startX = touchStartX.current[msgId]
-    if (startX === undefined) return
-    const delta = e.touches[0].clientX - startX
-    // Only allow swiping right (for them) or left (for me) to reply
-    const swipeDelta = isMe ? Math.min(0, delta) : Math.max(0, delta)
-    const clamped = Math.max(-70, Math.min(70, swipeDelta))
-    setSwipeState(prev => ({ ...prev, [msgId]: clamped }))
-  }
-
-  function handleTouchEnd(msgId: string, msg: Message) {
-    const delta = swipeState[msgId] ?? 0
-    if (Math.abs(delta) > 50) {
-      triggerReply(msg)
-    }
-    setSwipeState(prev => ({ ...prev, [msgId]: 0 }))
-    delete touchStartX.current[msgId]
-  }
-
-  function triggerReply(msg: Message) {
-    setReplyTo(msg)
-    setTimeout(() => inputRef.current?.focus(), 50)
-  }
-
-  // ── Send text ─────────────────────────────────────────────────────────────────
-
+  // ── Send text ─────────────────────────────────────────────
   async function sendText() {
     if (!text.trim() || sending) return
     setSending(true)
-    const content  = text.trim()
-    const replyId  = replyTo?.id ?? null
-    const tempId   = `temp-${Date.now()}`
+    const content = text.trim()
+    const replyId = replyTo?.id ?? null
+    const tempId  = `temp-${Date.now()}`
+
     setText('')
     setReplyTo(null)
     inputRef.current?.focus()
@@ -259,99 +219,34 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       setMessages(prev => prev.filter(m => m.id !== tempId))
       setText(content)
     } else if (newMsg) {
-      const enriched = enrichWithReply(newMsg as Message, messages)
-      setMessages(prev => prev.map(m => m.id === tempId ? enriched : m))
-
-      // Push notification to the other user (fire and forget)
-      const otherUser = getOtherUser()
-      if (otherUser?.id) {
-        const senderName = roomInfo?.is_group ? 'Group message' : 'New message'
-        supabase.from('notifications').insert({
-          user_id:    otherUser.id,
-          title:      senderName,
-          body:       content.length > 80 ? content.slice(0, 80) + '…' : content,
-          type:       'chat',
-          action_url: `/dashboard/${otherUser.role}/chat/${roomId}`,
-        }).then(() => {})
-      }
+      setMessages(prev => prev.map(m => m.id === tempId ? newMsg as Message : m))
+      // Notify the other user
+      pushNotification(content)
     }
 
     setSending(false)
   }
 
-  // ── Send voice ────────────────────────────────────────────────────────────────
-
-  async function sendVoice() {
-    if (!voice.audioBlob || sending) return
-    setSending(true)
-
-    const fileName = `voice/${userId}/${Date.now()}.webm`
-    const { error: uploadError } = await supabase.storage
-      .from('chat-audio')
-      .upload(fileName, voice.audioBlob, { contentType: 'audio/webm' })
-
-    if (uploadError) {
-      console.error('Voice upload error:', uploadError)
-      setSending(false)
-      return
-    }
-
-    const { data: urlData } = supabase.storage.from('chat-audio').getPublicUrl(fileName)
-
-    const { data: newMsg, error: insertError } = await supabase
-      .from('chat_messages')
-      .insert({
-        room_id:   roomId,
-        sender_id: userId,
-        content:   '🎤 Voice message',
-        file_url:  urlData.publicUrl,
-        file_type: 'audio',
-      })
-      .select('*, sender:profiles(full_name, avatar_url)')
-      .single()
-
-    if (!insertError && newMsg) {
-      setMessages(prev => {
-        if (prev.find(x => x.id === (newMsg as Message).id)) return prev
-        return [...prev, newMsg as Message]
-      })
-    }
-
-    voice.resetRecording()
-    setSending(false)
-  }
-
-  // ── Send file ─────────────────────────────────────────────────────────────────
-
+  // ── Send file / image ─────────────────────────────────────
   async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || sending) return
     setSending(true)
 
-    const ext      = file.name.split('.').pop()
-    const fileName = `files/${userId}/${Date.now()}.${ext}`
-    const isImage  = file.type.startsWith('image/')
-    const bucket   = isImage ? 'chat-images' : 'chat-files'
+    const ext     = file.name.split('.').pop()
+    const isImage = file.type.startsWith('image/')
+    const bucket  = isImage ? 'chat-images' : 'chat-files'
+    const fname   = `files/${userId}/${Date.now()}.${ext}`
 
-    const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, file)
-    if (uploadError) {
-      console.error('File upload error:', uploadError)
-      e.target.value = ''
-      setSending(false)
-      return
-    }
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(fname, file)
+    if (uploadError) { e.target.value = ''; setSending(false); return }
 
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fileName)
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fname)
+    const content = isImage ? '🖼️ Image' : `📎 ${file.name}`
 
     const { data: newMsg, error: insertError } = await supabase
       .from('chat_messages')
-      .insert({
-        room_id:   roomId,
-        sender_id: userId,
-        content:   isImage ? '🖼️ Image' : `📎 ${file.name}`,
-        file_url:  urlData.publicUrl,
-        file_type: isImage ? 'image' : 'file',
-      })
+      .insert({ room_id: roomId, sender_id: userId, content, file_url: urlData.publicUrl, file_type: isImage ? 'image' : 'file' })
       .select('*, sender:profiles(full_name, avatar_url)')
       .single()
 
@@ -360,14 +255,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         if (prev.find(x => x.id === (newMsg as Message).id)) return prev
         return [...prev, newMsg as Message]
       })
+      pushNotification(content)
     }
 
     e.target.value = ''
     setSending(false)
   }
 
-  // ── Reactions ─────────────────────────────────────────────────────────────────
-
+  // ── Reactions ─────────────────────────────────────────────
   async function addReaction(msgId: string, emoji: string) {
     const msg = messages.find(m => m.id === msgId)
     if (!msg) return
@@ -384,22 +279,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setEmojiTarget(null)
   }
 
-  // ── Delete message ────────────────────────────────────────────────────────────
-
+  // ── Delete ────────────────────────────────────────────────
   async function deleteMessage(msgId: string) {
     await supabase
       .from('chat_messages')
       .update({ is_deleted: true, content: '🚫 This message was deleted' })
       .eq('id', msgId)
       .eq('sender_id', userId)
-
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, is_deleted: true, content: '🚫 This message was deleted' } : m
     ))
-    setShowMenu(null)
   }
-
-  // ── Formatting ────────────────────────────────────────────────────────────────
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText() }
@@ -416,10 +306,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     yesterday.setDate(today.getDate() - 1)
     if (date.toDateString() === today.toDateString())     return 'Today'
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
-    return date.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+    return date.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })
   }
-
-  // ── Group messages by date ────────────────────────────────────────────────────
 
   const grouped = messages.reduce((acc, msg) => {
     const day = new Date(msg.sent_at).toDateString()
@@ -429,8 +317,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }, {} as Record<string, Message[]>)
 
   const otherUser = getOtherUser()
-
-  // ── Render ────────────────────────────────────────────────────────────────────
+  const isOnline  = online.length > 1
 
   return (
     <div className={styles.page}>
@@ -443,25 +330,28 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         <div className={styles.roomInfo}>
           <div className={styles.roomAvatar} style={{ background: schoolColor }}>
             {otherUser?.avatar_url
-              ? <img src={otherUser.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              : <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>
+              ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+              : <span style={{ color:'#fff', fontWeight:700, fontSize:'1rem' }}>
                   {getRoomDisplayName()?.[0]?.toUpperCase() ?? '#'}
                 </span>
             }
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth:0, flex:1 }}>
             <p className={styles.roomName}>{getRoomDisplayName()}</p>
-            <p className={styles.roomMeta} style={{ color: online.length > 1 ? '#22c55e' : undefined }}>
-              {online.length > 1 ? '● Online' : (otherUser?.role ?? '')}
+            <p className={styles.roomMeta} style={{ color: isOnline ? '#22c55e' : undefined }}>
+              {isOnline ? '● Online' : (otherUser?.role ?? '')}
             </p>
           </div>
         </div>
-        <button className={styles.moreBtn} onClick={e => { e.stopPropagation(); setShowMenu(showMenu === 'header' ? null : 'header') }}>
+        <button
+          className={styles.moreBtn}
+          onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
+        >
           <MoreIcon size={20} />
         </button>
-        {showMenu === 'header' && (
+        {showMenu && (
           <div className={styles.headerMenu} onClick={e => e.stopPropagation()}>
-            <button onClick={() => { loadMessages(); setShowMenu(null) }}>🔄 Refresh</button>
+            <button onClick={() => { loadMessages(); setShowMenu(false) }}>🔄 Refresh</button>
             <button onClick={() => router.push(`/dashboard/${role}/chat`)}>📋 All chats</button>
           </div>
         )}
@@ -475,6 +365,12 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           </div>
         )}
 
+        {!loading && messages.length === 0 && (
+          <div className={styles.emptyMessages}>
+            <p>No messages yet. Say hello! 👋</p>
+          </div>
+        )}
+
         {Object.entries(grouped).map(([day, msgs]) => (
           <div key={day}>
             <div className={styles.dateSep}>
@@ -484,24 +380,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
             {msgs.map((msg, i) => {
               const isMe       = msg.sender_id === userId
               const showAvatar = !isMe && (i === 0 || msgs[i-1]?.sender_id !== msg.sender_id)
-              const showName   = showAvatar && !!(roomInfo?.is_group)
-              const swipeX     = swipeState[msg.id] ?? 0
 
               return (
-                <div
-                  key={msg.id}
-                  className={`${styles.msgGroup} ${isMe ? styles.msgGroupMe : ''}`}
-                  onTouchStart={e => handleTouchStart(e, msg.id)}
-                  onTouchMove={e => handleTouchMove(e, msg.id, isMe)}
-                  onTouchEnd={() => handleTouchEnd(msg.id, msg)}
-                >
-                  {/* Avatar for others */}
+                <div key={msg.id} className={`${styles.msgGroup} ${isMe ? styles.msgGroupMe : ''}`}>
+
+                  {/* Avatar */}
                   {!isMe && (
                     <div className={styles.avatarCol}>
                       {showAvatar && (
                         <div className={styles.senderAvatar} style={{ background: schoolColor }}>
                           {msg.sender?.avatar_url
-                            ? <img src={msg.sender.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            ? <img src={msg.sender.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                             : msg.sender?.full_name?.[0] ?? '?'
                           }
                         </div>
@@ -509,19 +398,10 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     </div>
                   )}
 
-                  {/* Reply icon (shows on swipe) */}
-                  <div
-                    className={styles.replyIndicator}
-                    style={{ opacity: Math.abs(swipeX) > 20 ? Math.min(1, Math.abs(swipeX) / 60) : 0 }}
-                  >
-                    ↩
-                  </div>
-
-                  <div
-                    className={styles.bubbleCol}
-                    style={{ transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? 'transform 0.2s ease' : 'none' }}
-                  >
-                    {showName && <p className={styles.senderName}>{msg.sender?.full_name}</p>}
+                  <div className={styles.bubbleCol}>
+                    {showAvatar && !isMe && roomInfo?.is_group && (
+                      <p className={styles.senderName}>{msg.sender?.full_name}</p>
+                    )}
 
                     {/* Reply preview */}
                     {msg.reply_to && (
@@ -539,37 +419,28 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       style={isMe ? { background: schoolColor } : undefined}
                       onDoubleClick={e => { e.stopPropagation(); setEmojiTarget(emojiTarget === msg.id ? null : msg.id) }}
                     >
-                      {/* Audio */}
-                      {msg.file_type === 'audio' && msg.file_url && (
-                        <audio controls src={msg.file_url} className={styles.audio} />
-                      )}
-                      {/* Image */}
                       {msg.file_type === 'image' && msg.file_url && (
-                        <img src={msg.file_url} alt="Image" className={styles.msgImage} onClick={() => window.open(msg.file_url!, '_blank')} />
+                        <img src={msg.file_url} alt="Image" className={styles.msgImage}
+                          onClick={() => window.open(msg.file_url!, '_blank')} />
                       )}
-                      {/* File */}
                       {msg.file_type === 'file' && msg.file_url && (
                         <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}>
                           📎 {msg.content}
                         </a>
                       )}
-                      {/* Text (also shown as caption for audio) */}
-                      {(!msg.file_type || msg.file_type === 'audio') && (
+                      {!msg.file_type && (
                         msg.is_deleted
                           ? <p className={styles.deleted}>🚫 Message deleted</p>
                           : <p className={styles.bubbleText}>{msg.content}</p>
                       )}
-
                       <div className={styles.msgFooter}>
-                        {msg.is_edited && !msg.is_deleted && (
-                          <span className={styles.edited}>edited</span>
-                        )}
+                        {msg.is_edited && !msg.is_deleted && <span className={styles.edited}>edited</span>}
                         <span className={styles.msgTime}>{formatTime(msg.sent_at)}</span>
                         {isMe && <span className={styles.msgCheck}>✓✓</span>}
                       </div>
                     </div>
 
-                    {/* Reactions display */}
+                    {/* Reactions */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
                       <div className={styles.reactions}>
                         {Object.entries(msg.reactions).map(([emoji, users]) =>
@@ -587,26 +458,21 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       </div>
                     )}
 
-                    {/* Message actions (long press / hover) */}
+                    {/* Action buttons */}
                     <div className={`${styles.msgActions} ${isMe ? styles.msgActionsMe : ''}`}>
-                      <button
-                        className={styles.actionBtn}
-                        title="Reply"
-                        onClick={e => { e.stopPropagation(); triggerReply(msg) }}
-                      >↩</button>
-                      <button
-                        className={styles.actionBtn}
-                        title="React"
-                        onClick={e => { e.stopPropagation(); setEmojiTarget(emojiTarget === msg.id ? null : msg.id) }}
-                      >
+                      <button className={styles.actionBtn} title="Reply"
+                        onClick={e => { e.stopPropagation(); setReplyTo(msg); setTimeout(() => inputRef.current?.focus(), 50) }}>
+                        ↩
+                      </button>
+                      <button className={styles.actionBtn} title="React"
+                        onClick={e => { e.stopPropagation(); setEmojiTarget(emojiTarget === msg.id ? null : msg.id) }}>
                         <SmileIcon size={13} />
                       </button>
                       {isMe && !msg.is_deleted && (
-                        <button
-                          className={styles.actionBtn}
-                          title="Delete"
-                          onClick={e => { e.stopPropagation(); deleteMessage(msg.id) }}
-                        >🗑</button>
+                        <button className={styles.actionBtn} title="Delete"
+                          onClick={e => { e.stopPropagation(); deleteMessage(msg.id) }}>
+                          🗑
+                        </button>
                       )}
                     </div>
 
@@ -650,67 +516,30 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
-      {/* ── VOICE RECORDING BAR ────────────────────────────── */}
-      {voice.state === 'recording' && (
-        <div className={styles.recordingBar}>
-          <div className={styles.recDot} />
-          <span className={styles.recTimer}>{formatDuration(voice.duration)}</span>
-          <div className={styles.recWave}>
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className={styles.recWaveBar} style={{ animationDelay: `${i * 80}ms` }} />
-            ))}
-          </div>
-          <button className={styles.recCancelBtn} onClick={voice.cancelRecording}>Cancel</button>
-          <button className={styles.recSendBtn} style={{ background: schoolColor }} onClick={voice.stopRecording}>
-            <StopIcon size={16} color="white" />
-          </button>
-        </div>
-      )}
-
-      {/* ── VOICE PREVIEW BAR ──────────────────────────────── */}
-      {voice.state === 'stopped' && voice.audioUrl && (
-        <div className={styles.previewBar}>
-          <audio controls src={voice.audioUrl} className={styles.previewAudio} />
-          <button className={styles.discardBtn} onClick={voice.resetRecording}>
-            <XIcon size={16} />
-          </button>
-          <button className={styles.sendVoiceBtn} style={{ background: schoolColor }} onClick={sendVoice} disabled={sending}>
-            <SendIcon size={16} color="white" />
-          </button>
-        </div>
-      )}
-
       {/* ── INPUT BAR ──────────────────────────────────────── */}
-      {voice.state === 'idle' && (
-        <div className={styles.inputBar}>
-          <input ref={fileRef} type="file" className={styles.fileInput} onChange={sendFile} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-          <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach file">
-            <PaperclipIcon size={18} color="var(--text-muted)" />
-          </button>
-          <input
-            ref={inputRef}
-            className={styles.textInput}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder={replyTo ? `Replying to ${replyTo.sender?.full_name ?? 'message'}...` : 'Message...'}
-          />
-          {text.trim()
-            ? (
-              <button className={styles.sendBtn} style={{ background: schoolColor }} onClick={sendText} disabled={sending}>
-                <SendIcon size={16} color="white" />
-              </button>
-            )
-            : (
-              <button className={styles.micBtn} onClick={voice.startRecording} title="Voice message">
-                <MicIcon size={18} color={schoolColor} />
-              </button>
-            )
-          }
-        </div>
-      )}
-
-      {voice.error && <p className={styles.voiceError}>{voice.error}</p>}
+      <div className={styles.inputBar}>
+        <input ref={fileRef} type="file" className={styles.fileInput} onChange={sendFile}
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
+        <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach file">
+          <PaperclipIcon size={18} color="var(--text-muted)" />
+        </button>
+        <input
+          ref={inputRef}
+          className={styles.textInput}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKey}
+          placeholder={replyTo ? `Replying to ${replyTo.sender?.full_name ?? 'message'}...` : 'Message...'}
+        />
+        <button
+          className={styles.sendBtn}
+          style={{ background: schoolColor, opacity: (!text.trim() || sending) ? 0.5 : 1 }}
+          onClick={sendText}
+          disabled={!text.trim() || sending}
+        >
+          <SendIcon size={16} color="white" />
+        </button>
+      </div>
     </div>
   )
 }
