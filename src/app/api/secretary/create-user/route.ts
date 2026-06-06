@@ -54,23 +54,60 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Generate access code: SCH-YYYY-XXXX
+    // Generate access code with role prefix: STU-2026-XXXX, TEA-2026-XXXX etc
     const year      = new Date().getFullYear()
     const rand      = Math.floor(1000 + Math.random() * 9000)
-    const code      = `SCH-${year}-${rand}`
-    // Temp password is stored so first-login API can update it without knowing it
-    const tempPass  = `${code}-${Math.random().toString(36).slice(-6)}`
+    const prefix    = role.slice(0, 3).toUpperCase()
+    const code      = `${prefix}-${year}-${rand}`
+    // Temp password: 9 chars, mix of letters/numbers/special char
+    const chars     = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    const special   = '@#$!'
+    let tempPass    = special[Math.floor(Math.random() * special.length)]
+    for (let i = 0; i < 8; i++) tempPass += chars[Math.floor(Math.random() * chars.length)]
 
-    // Create auth user
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+    // Create auth user — if email already exists with no profile (orphaned), delete and retry
+    let createResult = await adminClient.auth.admin.createUser({
       email:          email.toLowerCase(),
       password:       tempPass,
       email_confirm:  true,
       user_metadata:  { full_name: fullName, role },
     })
-    if (createError) {
-      return NextResponse.json({ error: createError.message }, { status: 400 })
+
+    if (createResult.error) {
+      const isAlreadyExists = createResult.error.message.toLowerCase().includes('already') ||
+                              createResult.error.message.toLowerCase().includes('database error')
+      if (isAlreadyExists) {
+        // Check if there's an orphaned auth user with no profile
+        const { data: existingUsers } = await adminClient.auth.admin.listUsers()
+        const orphan = existingUsers?.users?.find(
+          u => u.email?.toLowerCase() === email.toLowerCase()
+        )
+        if (orphan) {
+          const { data: existingProfile } = await adminClient
+            .from('profiles').select('id').eq('id', orphan.id).maybeSingle()
+          if (!existingProfile) {
+            // Truly orphaned — delete and retry
+            await adminClient.auth.admin.deleteUser(orphan.id)
+            createResult = await adminClient.auth.admin.createUser({
+              email:          email.toLowerCase(),
+              password:       tempPass,
+              email_confirm:  true,
+              user_metadata:  { full_name: fullName, role },
+            })
+          } else {
+            return NextResponse.json(
+              { error: 'A user with this email already exists in the system.' },
+              { status: 400 }
+            )
+          }
+        }
+      }
+      if (createResult.error) {
+        return NextResponse.json({ error: createResult.error.message }, { status: 400 })
+      }
     }
+
+    const newUser = createResult.data
 
     const userId = newUser.user.id
 
