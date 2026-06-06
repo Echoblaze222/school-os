@@ -1,5 +1,6 @@
 'use client'
 // src/app/dashboard/principal/codes/CodesClient.tsx
+// UPDATED: Full enrolment form + auto-redirect to code/password screen after saving
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -16,8 +17,16 @@ interface CodeEntry {
   created_at: string
 }
 
+interface ClassOption {
+  id: string
+  name: string
+  class_level: string
+  section: string
+}
+
 interface Props {
   entries: CodeEntry[]
+  classes: ClassOption[]
   profile: any
   school: any
   userId: string
@@ -28,23 +37,35 @@ const ROLE_META: Record<string, { color: string; icon: string; label: string }> 
   student:   { color: '#10B981', icon: 'S', label: 'Student'   },
   teacher:   { color: '#3B82F6', icon: 'T', label: 'Teacher'   },
   bursar:    { color: '#F59E0B', icon: 'B', label: 'Bursar'    },
-  secretary: { color: '#8B5CF6', icon: 'S', label: 'Secretary' },
+  secretary: { color: '#8B5CF6', icon: 'Sc', label: 'Secretary' },
   librarian: { color: '#EC4899', icon: 'L', label: 'Librarian' },
   nurse:     { color: '#EF4444', icon: 'N', label: 'Nurse'     },
   principal: { color: '#800020', icon: 'P', label: 'Principal' },
-  parent:    { color: '#06B6D4', icon: 'P', label: 'Parent'    },
+  parent:    { color: '#06B6D4', icon: 'Pa', label: 'Parent'    },
 }
 const ROLES_ASSIGNABLE = ['student','teacher','bursar','secretary','librarian','nurse','parent']
+const GENDERS = ['Male', 'Female', 'Other']
+const STATES_NG = [
+  'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
+  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo',
+  'Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa',
+  'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba',
+  'Yobe','Zamfara',
+]
 
 function roleMeta(role: string) {
   return ROLE_META[role] ?? { color: '#6B7280', icon: '?', label: role }
 }
 
-function makeCode(role: string) {
-  const prefix = role.slice(0, 3).toUpperCase()
-  const year   = new Date().getFullYear()
-  const rand   = Math.floor(1000 + Math.random() * 9000)
-  return `${prefix}-${year}-${rand}`
+interface BulkRow { full_name: string; email: string; role: string }
+function parseBulk(raw: string): BulkRow[] {
+  return raw
+    .split('\n').map(l => l.trim()).filter(Boolean)
+    .map(line => {
+      const [full_name, email, role] = line.split(',').map(s => s.trim())
+      return { full_name: full_name ?? '', email: email ?? '', role: (role ?? '').toLowerCase() }
+    })
+    .filter(r => r.full_name && r.email && ROLES_ASSIGNABLE.includes(r.role))
 }
 
 function makePassword() {
@@ -55,22 +76,105 @@ function makePassword() {
   return pass
 }
 
-interface BulkRow { full_name: string; email: string; role: string }
-function parseBulk(raw: string): BulkRow[] {
-  return raw
-    .split('\n')
-    .map(l => l.trim())
-    .filter(Boolean)
-    .map(line => {
-      const [full_name, email, role] = line.split(',').map(s => s.trim())
-      return { full_name: full_name ?? '', email: email ?? '', role: (role ?? '').toLowerCase() }
-    })
-    .filter(r => r.full_name && r.email && ROLES_ASSIGNABLE.includes(r.role))
-}
-
 interface GeneratedEntry extends BulkRow { code: string; password: string; saved: boolean; error: string | null }
 
-export default function CodesClient({ entries: init, profile, school, userId, schoolId }: Props) {
+// ─── Success screen shown after enrolment ───────────────────
+function CodeSuccessScreen({
+  result, sc, onEnrolAnother,
+}: {
+  result: { full_name: string; email: string; role: string; code: string; password: string }
+  sc: string
+  onEnrolAnother: () => void
+}) {
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedPwd,  setCopiedPwd]  = useState(false)
+  const m = roleMeta(result.role)
+
+  async function copy(text: string, which: 'code' | 'pwd') {
+    await navigator.clipboard.writeText(text).catch(() => {})
+    if (which === 'code') { setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }
+    else                  { setCopiedPwd(true);  setTimeout(() => setCopiedPwd(false),  2000) }
+  }
+
+  async function copyBoth() {
+    const text = `Name: ${result.full_name}\nRole: ${roleMeta(result.role).label}\nAccess Code: ${result.code}\nPassword: ${result.password}`
+    await navigator.clipboard.writeText(text).catch(() => {})
+    setCopiedCode(true); setCopiedPwd(true)
+    setTimeout(() => { setCopiedCode(false); setCopiedPwd(false) }, 2500)
+  }
+
+  return (
+    <div className={styles.successScreen}>
+      {/* Check icon */}
+      <div className={styles.successIcon}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+
+      <h2 className={styles.successTitle}>Enrolment Complete!</h2>
+      <p className={styles.successSub}>
+        Share the code and password below with <strong>{result.full_name}</strong>. They will use these to log in for the first time.
+      </p>
+
+      {/* User badge */}
+      <div className={styles.successBadge}>
+        <div className={styles.successAvatar} style={{ background: m.color + '22', color: m.color }}>
+          {result.full_name.split(' ').map((w: string) => w[0]).join('').slice(0,2).toUpperCase()}
+        </div>
+        <div>
+          <p className={styles.successName}>{result.full_name}</p>
+          <p className={styles.successEmail}>{result.email}</p>
+          <span className={styles.successRoleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
+            {m.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Access Code */}
+      <div className={styles.credentialBox} style={{ borderColor: sc + '44', background: sc + '0a' }}>
+        <p className={styles.credLabel}>Access Code</p>
+        <div className={styles.credRow}>
+          <code className={styles.credValue} style={{ color: sc }}>{result.code}</code>
+          <button
+            onClick={() => copy(result.code, 'code')}
+            className={styles.credCopy}
+            style={copiedCode ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: sc + '55', color: sc }}
+          >
+            {copiedCode ? '✓ Copied' : 'Copy'}
+          </button>
+        </div>
+      </div>
+
+      {/* Password */}
+      <div className={styles.credentialBox} style={{ borderColor: '#F59E0B44', background: '#F59E0B0a' }}>
+        <p className={styles.credLabel}>Temporary Password</p>
+        <div className={styles.credRow}>
+          <code className={styles.credValue} style={{ color: '#F59E0B' }}>{result.password}</code>
+          <button
+            onClick={() => copy(result.password, 'pwd')}
+            className={styles.credCopy}
+            style={copiedPwd ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}
+          >
+            {copiedPwd ? '✓ Copied' : 'Copy'}
+          </button>
+        </div>
+        <p className={styles.credWarning}>⚠️ User must change this password on first login.</p>
+      </div>
+
+      {/* Copy both button */}
+      <button onClick={copyBoth} className={styles.copyBothBtn}>
+        Copy All Details
+      </button>
+
+      <button onClick={onEnrolAnother} className={styles.enrolAnotherBtn}>
+        + Enrol Another Person
+      </button>
+    </div>
+  )
+}
+
+export default function CodesClient({ entries: init, classes, profile, school, userId, schoolId }: Props) {
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#800020'
 
@@ -79,23 +183,40 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   const [roleTab,  setRoleTab]  = useState('all')
   const [copied,   setCopied]   = useState<string | null>(null)
   const [regen,    setRegen]    = useState<string | null>(null)
-  const [tab,      setTab]      = useState<'existing' | 'single' | 'bulk'>('existing')
+  const [tab,      setTab]      = useState<'existing' | 'enrol' | 'bulk'>('existing')
 
-  const [sName,      setSName]      = useState('')
-  const [sEmail,     setSEmail]     = useState('')
-  const [sRole,      setSRole]      = useState('student')
-  const [sResult,    setSResult]    = useState<GeneratedEntry | null>(null)
-  const [sLoading,   setSLoading]   = useState(false)
-  const [sError,     setSError]     = useState<string | null>(null)
-  const [sCopiedPwd, setSCopiedPwd] = useState(false)
+  // ── Enrol single ──────────────────────────────────────────
+  const [sRole,    setSRole]    = useState('student')
+  const [sLoading, setSLoading] = useState(false)
+  const [sError,   setSError]   = useState<string | null>(null)
+  const [sResult,  setSResult]  = useState<{ full_name: string; email: string; role: string; code: string; password: string } | null>(null)
 
-  const [bRaw,       setBRaw]      = useState('')
-  const [bParsed,    setBParsed]   = useState<BulkRow[]>([])
-  const [bResults,   setBResults]  = useState<GeneratedEntry[]>([])
-  const [bLoading,   setBLoading]  = useState(false)
-  const [bSaved,     setBSaved]    = useState(false)
-  const [copiedAll,  setCopiedAll] = useState(false)
-  const [copiedPwds, setCopiedPwds] = useState<Record<number, boolean>>({})
+  // Common fields
+  const [fName,    setFName]    = useState('')
+  const [fEmail,   setFEmail]   = useState('')
+  const [fPhone,   setFPhone]   = useState('')
+  const [fGender,  setFGender]  = useState('')
+  const [fDOB,     setFDOB]     = useState('')
+  const [fAddress, setFAddress] = useState('')
+  const [fState,   setFState]   = useState('')
+
+  // Student-only fields
+  const [fClass,   setFClass]   = useState('')
+  const [fAdmNo,   setFAdmNo]   = useState('')
+  const [fGuardian,setFGuardian]= useState('')
+  const [fGuardPh, setFGuardPh] = useState('')
+
+  // Staff-only fields
+  const [fQual,    setFQual]    = useState('')
+  const [fSubject, setFSubject] = useState('')
+
+  // ── Bulk ──────────────────────────────────────────────────
+  const [bRaw,      setBRaw]      = useState('')
+  const [bResults,  setBResults]  = useState<GeneratedEntry[]>([])
+  const [bLoading,  setBLoading]  = useState(false)
+  const [bSaved,    setBSaved]    = useState(false)
+  const [copiedAll, setCopiedAll] = useState(false)
+  const [copiedPwds,setCopiedPwds]= useState<Record<number, boolean>>({})
 
   const roles = useMemo(() => ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()], [entries])
 
@@ -108,9 +229,19 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
     return matchSearch && matchRole
   }), [entries, search, roleTab])
 
+  function resetForm() {
+    setFName(''); setFEmail(''); setFPhone(''); setFGender(''); setFDOB('')
+    setFAddress(''); setFState(''); setFClass(''); setFAdmNo('')
+    setFGuardian(''); setFGuardPh(''); setFQual(''); setFSubject('')
+    setSError(null)
+  }
+
   async function regenerateCode(entry: CodeEntry) {
     setRegen(entry.id)
-    const newCode = makeCode(entry.role)
+    const prefix  = entry.role.slice(0, 3).toUpperCase()
+    const year    = new Date().getFullYear()
+    const rand    = Math.floor(1000 + Math.random() * 9000)
+    const newCode = `${prefix}-${year}-${rand}`
     const { error } = await supabase.from('profiles').update({ default_code: newCode }).eq('id', entry.id)
     if (!error) setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: newCode } : e))
     setRegen(null)
@@ -122,62 +253,72 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
     setTimeout(() => setCopied(null), 2000)
   }
 
-  async function handleSingleGenerate() {
-    if (!sName.trim() || !sEmail.trim()) { setSError('Name and email are required.'); return }
-    setSError(null); setSLoading(true); setSResult(null)
+  async function handleEnrol() {
+    if (!fName.trim() || !fEmail.trim()) { setSError('Full name and email are required.'); return }
+    setSError(null); setSLoading(true)
     try {
       const res  = await fetch('/api/secretary/create-user', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          fullName: sName.trim(),
-          email:    sEmail.trim().toLowerCase(),
-          role:     sRole,
+          fullName:        fName.trim(),
+          email:           fEmail.trim().toLowerCase(),
+          role:            sRole,
           schoolId,
+          // extra fields
+          phone:           fPhone.trim() || null,
+          gender:          fGender || null,
+          dateOfBirth:     fDOB || null,
+          address:         fAddress.trim() || null,
+          state:           fState || null,
+          classId:         sRole === 'student' ? (fClass || null) : null,
+          admissionNumber: sRole === 'student' ? (fAdmNo.trim() || null) : null,
+          guardianName:    sRole === 'student' ? (fGuardian.trim() || null) : null,
+          guardianPhone:   sRole === 'student' ? (fGuardPh.trim() || null) : null,
+          qualification:   sRole !== 'student' ? (fQual.trim() || null) : null,
+          subjectSpecialty:sRole !== 'student' ? (fSubject.trim() || null) : null,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to create user')
-      // API returns the real code it generated — use that
-      const code     = json.code     as string
-      const password = json.password as string ?? ''   // returned from updated route
-      setSResult({ full_name: sName, email: sEmail, role: sRole, code, password, saved: true, error: null })
+
+      // Show success/code screen
+      setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code, password: json.password })
+
+      // Refresh entries list in background
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
         .eq('school_id', schoolId).order('role').order('full_name')
       if (fresh) setEntries(fresh)
-      setSName(''); setSEmail(''); setSRole('student')
+
+      resetForm()
     } catch (err: any) {
-      const msg = err.message ?? 'Failed to save'
-      setSError(msg)
-      setSResult({ full_name: sName, email: sEmail, role: sRole, code: '—', password: '—', saved: false, error: msg })
+      setSError(err.message ?? 'Failed to save')
     }
     setSLoading(false)
   }
 
   function handleBulkParse() {
     const rows = parseBulk(bRaw)
-    setBParsed(rows)
-    setBResults(rows.map(r => ({ ...r, code: makeCode(r.role), password: makePassword(), saved: false, error: null })))
+    const year = new Date().getFullYear()
+    setBResults(rows.map(r => {
+      const prefix = r.role.slice(0, 3).toUpperCase()
+      const rand   = Math.floor(1000 + Math.random() * 9000)
+      return { ...r, code: `${prefix}-${year}-${rand}`, password: makePassword(), saved: false, error: null }
+    }))
     setBSaved(false)
   }
 
   async function handleBulkSave() {
     if (!bResults.length) return
     setBLoading(true)
-    // Call API for each row so auth users are created properly
     const updated = await Promise.all(
-      bResults.map(async (r, i) => {
+      bResults.map(async (r) => {
         try {
           const res  = await fetch('/api/secretary/create-user', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-              fullName: r.full_name,
-              email:    r.email.toLowerCase(),
-              role:     r.role,
-              schoolId,
-            }),
+            body:    JSON.stringify({ fullName: r.full_name, email: r.email.toLowerCase(), role: r.role, schoolId }),
           })
           const json = await res.json()
           if (!res.ok) return { ...r, error: json.error ?? 'Failed', saved: false }
@@ -188,8 +329,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
       })
     )
     setBResults(updated)
-    const allSaved = updated.every(r => r.saved)
-    if (allSaved) {
+    if (updated.every(r => r.saved)) {
       setBSaved(true)
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
@@ -222,25 +362,29 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
     )
   }
 
+  const isStudent = sRole === 'student'
+
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Access Codes">
+    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Enrolment & Codes">
 
       <div className={styles.tabRow}>
-        {(['existing','single','bulk'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
-            {t === 'existing' && 'Existing Codes'}
-            {t === 'single'   && 'Generate Single'}
-            {t === 'bulk'     && 'Bulk Generate'}
+        {(['existing','enrol','bulk'] as const).map(t => (
+          <button key={t} onClick={() => { setTab(t); setSResult(null) }}
+            className={`${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
+            {t === 'existing' && 'All Codes'}
+            {t === 'enrol'    && 'Enrol / Add User'}
+            {t === 'bulk'     && 'Bulk Add'}
           </button>
         ))}
       </div>
 
+      {/* ── EXISTING CODES ── */}
       {tab === 'existing' && (
         <>
           <div className={styles.infoBanner}>
             <div>
               <p className={styles.infoBannerTitle}>Access Codes</p>
-              <p className={styles.infoBannerSub}>Each user has a unique login code. Share it with them to access SchoolOS. You can regenerate a code if it has been compromised.</p>
+              <p className={styles.infoBannerSub}>Every user has a unique login code. Share it with them to access SchoolOS. Regenerate a code if it has been compromised.</p>
             </div>
           </div>
 
@@ -254,9 +398,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
           </div>
 
           {filtered.length === 0 ? (
-            <div className={styles.empty}>
-              <p className={styles.emptyIcon}>No users found</p>
-            </div>
+            <div className={styles.empty}><p className={styles.emptyIcon}>No users found</p></div>
           ) : (
             <div className={styles.codeList}>
               {filtered.map(e => {
@@ -294,99 +436,148 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
         </>
       )}
 
-      {tab === 'single' && (
-        <div className={styles.twoCol}>
-          <div className={styles.formCard}>
-            <div className={styles.formHeader}>
-              <p className={styles.formTitle}>Generate Single Code</p>
-              <p className={styles.formSub}>Create a login code for one user and save them to the system.</p>
-            </div>
-            <div className={styles.formBody}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Full Name</label>
-                <input className={styles.fieldInput} placeholder="e.g. Amara Osei" value={sName} onChange={e => setSName(e.target.value)} />
+      {/* ── ENROL / ADD USER ── */}
+      {tab === 'enrol' && (
+        <>
+          {/* If we have a result, show the code screen */}
+          {sResult ? (
+            <CodeSuccessScreen
+              result={sResult}
+              sc={sc}
+              onEnrolAnother={() => { setSResult(null); setSRole('student') }}
+            />
+          ) : (
+            <div className={styles.enrolForm}>
+              <div className={styles.formHeader}>
+                <p className={styles.formTitle}>Enrol / Add User</p>
+                <p className={styles.formSub}>Fill in the details below. After saving, you will get the access code and password to share with them.</p>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Email Address</label>
-                <input className={styles.fieldInput} type="email" placeholder="e.g. amara@school.edu" value={sEmail} onChange={e => setSEmail(e.target.value)} />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Role</label>
-                <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={sRole} onChange={e => setSRole(e.target.value)}>
-                  {ROLES_ASSIGNABLE.map(r => (
-                    <option key={r} value={r}>{roleMeta(r).label}</option>
-                  ))}
-                </select>
-              </div>
-              {sError && <p className={styles.errorMsg}>{sError}</p>}
-              <button onClick={handleSingleGenerate} disabled={sLoading} className={styles.generateBtn}>
-                {sLoading ? 'Generating...' : 'Generate and Save Code'}
-              </button>
-            </div>
-          </div>
 
-          {sResult && (
-            <div className={`${styles.resultCard} ${sResult.saved ? styles.resultSuccess : styles.resultError}`}>
-              <div className={styles.resultHeader}>
-                <span className={styles.resultStatus}>
-                  {sResult.saved ? 'Code Generated' : 'Failed to Save'}
-                </span>
-              </div>
-              <div className={styles.bigCodeWrap}>
-                <p className={styles.bigCodeLabel}>Access Code</p>
-                <div className={styles.bigCode}>
-                  <code className={styles.bigCodeText}>{sResult.code}</code>
-                  <button onClick={() => copyCode(sResult.code, 'single')} className={styles.copyBtn}
-                    style={copied === 'single' ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : {}}>
-                    {copied === 'single' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-              <div className={styles.bigCodeWrap} style={{ marginTop: 'var(--space-3)' }}>
-                <p className={styles.bigCodeLabel}>Temporary Password</p>
-                <div className={styles.bigCode} style={{ borderColor: '#F59E0B33', background: '#F59E0B0A' }}>
-                  <code className={styles.bigCodeText} style={{ color: '#F59E0B' }}>{sResult.password}</code>
-                  <button
-                    onClick={async () => { await navigator.clipboard.writeText(sResult!.password).catch(() => {}); setSCopiedPwd(true); setTimeout(() => setSCopiedPwd(false), 2000) }}
-                    className={styles.copyBtn}
-                    style={sCopiedPwd ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
-                    {sCopiedPwd ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <p style={{ fontSize: '0.72rem', color: '#F59E0B', marginTop: 6, opacity: 0.85 }}>
-                  ⚠️ Share this with the user. They must change it on first login.
-                </p>
-              </div>
-              {(() => {
-                const m = roleMeta(sResult.role)
-                return (
-                  <div className={styles.ownerCard}>
-                    <div className={styles.ownerAvatar} style={{ background: m.color + '22', color: m.color }}>{m.icon}</div>
-                    <div className={styles.ownerInfo}>
-                      <p className={styles.ownerName}>{sResult.full_name}</p>
-                      <p className={styles.ownerEmail}>{sResult.email}</p>
-                      <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
+              {/* Role selector at top */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Role *</label>
+                <div className={styles.roleGrid}>
+                  {ROLES_ASSIGNABLE.map(r => {
+                    const m = roleMeta(r)
+                    return (
+                      <button key={r} onClick={() => setSRole(r)}
+                        className={styles.roleOption}
+                        style={{
+                          background:  sRole === r ? m.color + '22' : 'var(--glass-bg)',
+                          borderColor: sRole === r ? m.color : 'var(--glass-border)',
+                          color:       sRole === r ? m.color : 'var(--text-muted)',
+                        }}>
                         {m.label}
-                      </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className={styles.formDivider}>
+                <span>Personal Information</span>
+              </div>
+
+              <div className={styles.fieldGrid}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Full Name *</label>
+                  <input className={styles.fieldInput} placeholder="e.g. Amara Osei" value={fName} onChange={e => setFName(e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Email Address *</label>
+                  <input className={styles.fieldInput} type="email" placeholder="e.g. amara@gmail.com" value={fEmail} onChange={e => setFEmail(e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Phone Number</label>
+                  <input className={styles.fieldInput} type="tel" placeholder="e.g. 08012345678" value={fPhone} onChange={e => setFPhone(e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Gender</label>
+                  <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fGender} onChange={e => setFGender(e.target.value)}>
+                    <option value="">Select gender...</option>
+                    {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+                  </select>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Date of Birth</label>
+                  <input className={styles.fieldInput} type="date" value={fDOB} onChange={e => setFDOB(e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>State of Origin</label>
+                  <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fState} onChange={e => setFState(e.target.value)}>
+                    <option value="">Select state...</option>
+                    {STATES_NG.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className={`${styles.fieldGroup} ${styles.fieldFull}`}>
+                  <label className={styles.fieldLabel}>Home Address</label>
+                  <input className={styles.fieldInput} placeholder="e.g. 12 Unity Street, Lagos" value={fAddress} onChange={e => setFAddress(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Student-specific fields */}
+              {isStudent && (
+                <>
+                  <div className={styles.formDivider}><span>Student Details</span></div>
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Class</label>
+                      <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fClass} onChange={e => setFClass(e.target.value)}>
+                        <option value="">Select class...</option>
+                        {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Admission Number</label>
+                      <input className={styles.fieldInput} placeholder="e.g. ADM/2025/001" value={fAdmNo} onChange={e => setFAdmNo(e.target.value)} />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Parent / Guardian Name</label>
+                      <input className={styles.fieldInput} placeholder="e.g. Mr. Osei Kofi" value={fGuardian} onChange={e => setFGuardian(e.target.value)} />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Parent / Guardian Phone</label>
+                      <input className={styles.fieldInput} type="tel" placeholder="e.g. 08098765432" value={fGuardPh} onChange={e => setFGuardPh(e.target.value)} />
                     </div>
                   </div>
-                )
-              })()}
-              <p className={styles.codeNote}>
-                {sResult.saved
-                  ? 'User profile created. Share the code above with them to use as their initial login password.'
-                  : sResult.error}
-              </p>
+                </>
+              )}
+
+              {/* Staff-specific fields */}
+              {!isStudent && (
+                <>
+                  <div className={styles.formDivider}><span>Staff Details</span></div>
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Qualification</label>
+                      <input className={styles.fieldInput} placeholder="e.g. B.Ed Mathematics" value={fQual} onChange={e => setFQual(e.target.value)} />
+                    </div>
+                    {sRole === 'teacher' && (
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Subject Specialty</label>
+                        <input className={styles.fieldInput} placeholder="e.g. Mathematics, Physics" value={fSubject} onChange={e => setFSubject(e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {sError && <p className={styles.errorMsg}>{sError}</p>}
+
+              <button onClick={handleEnrol} disabled={sLoading} className={styles.generateBtn}>
+                {sLoading ? 'Saving...' : `Enrol ${roleMeta(sRole).label} & Get Code`}
+              </button>
             </div>
           )}
-        </div>
+        </>
       )}
 
+      {/* ── BULK ADD ── */}
       {tab === 'bulk' && (
         <>
           <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
             <div className={styles.formHeader}>
-              <p className={styles.formTitle}>Bulk Generate Codes</p>
+              <p className={styles.formTitle}>Bulk Add Users</p>
               <p className={styles.formSub}>Paste one user per line: Full Name, Email, Role</p>
             </div>
             <div className={styles.formBody}>
@@ -397,7 +588,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                   rows={8}
                   placeholder={'Amara Osei, amara@school.edu, student\nKwame Mensah, kwame@school.edu, teacher\nAfia Boateng, afia@school.edu, bursar'}
                   value={bRaw}
-                  onChange={e => { setBRaw(e.target.value); setBParsed([]); setBResults([]) }}
+                  onChange={e => { setBRaw(e.target.value); setBResults([]) }}
                 />
               </div>
               <div className={styles.bulkRoleHints}>
@@ -414,7 +605,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                 </div>
               </div>
               <button onClick={handleBulkParse} className={styles.previewBtn} disabled={!bRaw.trim()}>
-                Preview Generated Codes
+                Preview Codes
               </button>
             </div>
           </div>
@@ -423,8 +614,8 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
             <div className={styles.bulkPreviewCard}>
               <div className={styles.bulkPreviewHeader}>
                 <div>
-                  <p className={styles.formTitle}>{bResults.length} Code{bResults.length !== 1 ? 's' : ''} Ready</p>
-                  <p className={styles.formSub}>Review before saving. Each code is unique and tied to the user below.</p>
+                  <p className={styles.formTitle}>{bResults.length} User{bResults.length !== 1 ? 's' : ''} Ready</p>
+                  <p className={styles.formSub}>Review before saving.</p>
                 </div>
                 <div className={styles.bulkActions}>
                   <button onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
@@ -436,17 +627,11 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                       {bLoading ? 'Saving...' : `Save All ${bResults.length} Users`}
                     </button>
                   )}
-                  {bSaved && (
-                    <span className={styles.savedBadge}>All Saved</span>
-                  )}
+                  {bSaved && <span className={styles.savedBadge}>All Saved ✓</span>}
                 </div>
               </div>
               <div className={styles.bulkTableHead}>
-                <span>USER</span>
-                <span>ROLE</span>
-                <span>ACCESS CODE</span>
-                <span>PASSWORD</span>
-                <span>STATUS</span>
+                <span>USER</span><span>ROLE</span><span>CODE</span><span>PASSWORD</span><span>STATUS</span>
               </div>
               <div className={styles.bulkTableBody}>
                 {bResults.map((r, i) => {
@@ -460,16 +645,10 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                           <p className={styles.bulkEmail}>{r.email}</p>
                         </div>
                       </div>
-                      <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
-                        {m.label}
-                      </span>
-                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>
-                        {r.code}
-                      </code>
+                      <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
+                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code}</code>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>
-                          {r.password}
-                        </code>
+                        <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>{r.password}</code>
                         <button
                           onClick={async () => { await navigator.clipboard.writeText(r.password).catch(() => {}); setCopiedPwds(p => ({ ...p, [i]: true })); setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000) }}
                           className={styles.actionBtn}
@@ -477,8 +656,7 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
                           {copiedPwds[i] ? '✓' : 'Copy'}
                         </button>
                       </div>
-                      <span className={styles.statusDot}
-                        style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)' }}>
+                      <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
                         {r.error ? 'Error' : r.saved ? 'Saved' : 'Pending'}
                       </span>
                     </div>
@@ -487,18 +665,10 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
               </div>
             </div>
           )}
-
-          {bResults.length === 0 && bRaw.trim() && bParsed.length === 0 && (
-            <div className={styles.empty}>
-              <p className={styles.emptyIcon}>No valid rows found</p>
-              <p className={styles.emptySub}>Check that roles are spelled correctly and each line has Name, Email, Role.</p>
-            </div>
-          )}
         </>
       )}
 
       <div style={{ height: 110 }} />
     </RolePageWrapper>
   )
-                                                                        }
-        
+}
