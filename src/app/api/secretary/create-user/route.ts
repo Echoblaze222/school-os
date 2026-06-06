@@ -66,59 +66,56 @@ export async function POST(request: Request) {
     let tempPass  = special[Math.floor(Math.random() * special.length)]
     for (let i = 0; i < 8; i++) tempPass += chars[Math.floor(Math.random() * chars.length)]
 
-    // Create auth user — if orphaned auth user exists (no profile), clean up and retry
-    let createResult = await adminClient.auth.admin.createUser({
+    // Try auth.admin.createUser first (needs service role)
+    let userId: string | null = null
+    let authWarning: string | null = null
+
+    const { data: adminCreateData, error: adminCreateErr } = await adminClient.auth.admin.createUser({
       email:          email.toLowerCase(),
       password:       tempPass,
       email_confirm:  true,
       user_metadata:  { full_name: fullName, role },
     })
 
-    if (createResult.error) {
-      const msg = createResult.error.message.toLowerCase()
-      if (msg.includes('already') || msg.includes('database error')) {
-        // Check for orphaned auth user with no profile
-        const { data: existingUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
-        const orphan = existingUsers?.users?.find(
-          u => u.email?.toLowerCase() === email.toLowerCase()
+    if (adminCreateErr) {
+      // Log the real error for debugging
+      console.error('auth.admin.createUser failed:', adminCreateErr.message, adminCreateErr)
+
+      // Fallback: try signUp via anon client
+      const anonClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
+      const { data: signUpData, error: signUpErr } = await anonClient.auth.signUp({
+        email:    email.toLowerCase(),
+        password: tempPass,
+        options:  { data: { full_name: fullName, role } },
+      })
+
+      if (signUpErr || !signUpData.user) {
+        return NextResponse.json(
+          { error: `Auth failed: ${adminCreateErr.message} | Fallback: ${signUpErr?.message ?? 'no user returned'}` },
+          { status: 400 }
         )
-        if (orphan) {
-          const { data: existingProfile } = await adminClient
-            .from('profiles').select('id').eq('id', orphan.id).maybeSingle()
-          if (!existingProfile) {
-            // Orphaned — delete and retry
-            await adminClient.auth.admin.deleteUser(orphan.id)
-            createResult = await adminClient.auth.admin.createUser({
-              email:          email.toLowerCase(),
-              password:       tempPass,
-              email_confirm:  true,
-              user_metadata:  { full_name: fullName, role },
-            })
-          } else {
-            return NextResponse.json(
-              { error: 'A user with this email already exists.' },
-              { status: 400 }
-            )
-          }
-        }
       }
-      if (createResult.error) {
-        return NextResponse.json({ error: createResult.error.message }, { status: 400 })
-      }
+      userId      = signUpData.user.id
+      authWarning = 'Created via signUp — email confirmation may be required'
+    } else {
+      userId = adminCreateData.user.id
     }
 
-    const newUser = createResult.data
-    const userId  = newUser.user.id
+    if (!userId) {
+      return NextResponse.json({ error: 'Failed to create auth user' }, { status: 500 })
+    }
 
-    // Create profile — only columns confirmed in schema
-    const { error: profileErr } = await adminClient.from('profiles').insert({
-      id:               userId,
-      full_name:        fullName,
-      email:            email.toLowerCase(),
+    // Trigger already created the profile row — just update with extra fields
+    const { error: profileErr } = await adminClient.from('profiles').update({
+      full_name:    fullName,
       role,
-      school_id:        schoolId,
-      default_code:     code,
-    })
+      school_id:    schoolId,
+      default_code: code,
+    }).eq('id', userId)
 
     if (profileErr) {
       await adminClient.auth.admin.deleteUser(userId)
@@ -150,7 +147,7 @@ export async function POST(request: Request) {
       })
     } catch { /* non-critical */ }
 
-    return NextResponse.json({ code, password: tempPass, userId, message: 'User created successfully' })
+    return NextResponse.json({ code, password: tempPass, userId, message: 'User created successfully', warning: authWarning })
 
   } catch (e: any) {
     return NextResponse.json(
