@@ -125,26 +125,32 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   async function handleSingleGenerate() {
     if (!sName.trim() || !sEmail.trim()) { setSError('Name and email are required.'); return }
     setSError(null); setSLoading(true); setSResult(null)
-    const code     = makeCode(sRole)
-    const password = makePassword()
-    const { error } = await supabase.from('profiles').insert({
-      full_name:    sName.trim(),
-      email:        sEmail.trim().toLowerCase(),
-      role:         sRole,
-      default_code: code,
-      school_id:    schoolId,
-      is_active:    true,
-    })
-    if (error) {
-      setSError(error.message)
-      setSResult({ full_name: sName, email: sEmail, role: sRole, code, password, saved: false, error: error.message })
-    } else {
+    try {
+      const res  = await fetch('/api/secretary/create-user', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          fullName: sName.trim(),
+          email:    sEmail.trim().toLowerCase(),
+          role:     sRole,
+          schoolId,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to create user')
+      // API returns the real code it generated — use that
+      const code     = json.code     as string
+      const password = json.password as string ?? ''   // returned from updated route
       setSResult({ full_name: sName, email: sEmail, role: sRole, code, password, saved: true, error: null })
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
         .eq('school_id', schoolId).order('role').order('full_name')
       if (fresh) setEntries(fresh)
       setSName(''); setSEmail(''); setSRole('student')
+    } catch (err: any) {
+      const msg = err.message ?? 'Failed to save'
+      setSError(msg)
+      setSResult({ full_name: sName, email: sEmail, role: sRole, code: '—', password: '—', saved: false, error: msg })
     }
     setSLoading(false)
   }
@@ -159,19 +165,31 @@ export default function CodesClient({ entries: init, profile, school, userId, sc
   async function handleBulkSave() {
     if (!bResults.length) return
     setBLoading(true)
-    const rows = bResults.map(r => ({
-      full_name:    r.full_name,
-      email:        r.email.toLowerCase(),
-      role:         r.role,
-      default_code: r.code,
-      school_id:    schoolId,
-      is_active:    true,
-    }))
-    const { error } = await supabase.from('profiles').insert(rows)
-    if (error) {
-      setBResults(p => p.map(r => ({ ...r, error: error.message })))
-    } else {
-      setBResults(p => p.map(r => ({ ...r, saved: true, error: null })))
+    // Call API for each row so auth users are created properly
+    const updated = await Promise.all(
+      bResults.map(async (r, i) => {
+        try {
+          const res  = await fetch('/api/secretary/create-user', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+              fullName: r.full_name,
+              email:    r.email.toLowerCase(),
+              role:     r.role,
+              schoolId,
+            }),
+          })
+          const json = await res.json()
+          if (!res.ok) return { ...r, error: json.error ?? 'Failed', saved: false }
+          return { ...r, code: json.code ?? r.code, password: json.password ?? r.password, saved: true, error: null }
+        } catch (e: any) {
+          return { ...r, error: e.message ?? 'Network error', saved: false }
+        }
+      })
+    )
+    setBResults(updated)
+    const allSaved = updated.every(r => r.saved)
+    if (allSaved) {
       setBSaved(true)
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
