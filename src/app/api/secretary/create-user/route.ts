@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       })
     } catch { /* non-critical */ }
 
-    return NextResponse.json({ code, userId, message: 'User created successfully' })
+    return NextResponse.json({ code, password: tempPass, userId, message: 'User created successfully' })
 
   } catch (e: any) {
     return NextResponse.json(
