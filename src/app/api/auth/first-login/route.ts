@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     // Look up the profile by access code
     const { data: profile, error: profileErr } = await adminClient
       .from('profiles')
-      .select('id, email, role, onboarding_stage, temp_password')
+      .select('id, email, role, onboarding_stage')
       .eq('default_code', code.toUpperCase())
       .single()
 
@@ -75,10 +75,7 @@ export async function POST(request: Request) {
 
     await adminClient
       .from('profiles')
-      .update({
-        onboarding_stage: nextStage,
-        temp_password:    null, // clear temp password once user has set their own
-      })
+      .update({ onboarding_stage: nextStage })
       .eq('id', profile.id)
 
     return NextResponse.json({
@@ -94,4 +91,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}
+       }
