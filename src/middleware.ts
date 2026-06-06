@@ -76,11 +76,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Get session
-  const { data: { session } } = await supabase.auth.getSession()
+  // ── Verify auth with getUser() (validates token server-side + auto-refreshes) ──
+  // NOTE: Never use getSession() in middleware — it only reads cookies and
+  // does NOT refresh an expired access token, causing false logouts.
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Not authenticated → redirect to appropriate login
-  if (!session && PROTECTED_PREFIXES.some(p => pathname.startsWith(p))) {
+  if (!user && PROTECTED_PREFIXES.some(p => pathname.startsWith(p))) {
     // Super-admin routes go to the super-admin login, not the regular one
     if (pathname.startsWith('/super-admin')) {
       return NextResponse.redirect(new URL('/super-admin/login', request.url))
@@ -91,11 +93,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Authenticated on /login → redirect to dashboard
-  if (session && pathname === '/login') {
+  if (user && pathname === '/login') {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, onboarding_stage')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
 
     if (profile) {
@@ -116,11 +118,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Role-based access: prevent accessing another role's dashboard
-  if (session && pathname.startsWith('/dashboard')) {
+  if (user && pathname.startsWith('/dashboard')) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, onboarding_stage')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
 
     if (profile) {
