@@ -1,21 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import {
-  MessageIcon, SendIcon, PaperclipIcon, MicIcon, StopIcon, XIcon,
-} from './Icons'
-import { useVoiceRecorder, formatDuration } from '@/hooks/useVoiceRecorder'
+import { MessageIcon, SendIcon, PaperclipIcon, XIcon } from './Icons'
 import styles from './ChatWidget.module.css'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
+// ── Types ─────────────────────────────────────────────────
 interface Message {
   id:         string
-  content:    string          // correct field name: content (not body)
+  content:    string   // correct field — NOT 'body'
   sender_id:  string
-  sent_at:    string          // correct field name: sent_at (not created_at)
+  sent_at:    string   // correct field — NOT 'created_at'
   file_type?: string | null
   file_url?:  string | null
   is_deleted: boolean
@@ -32,8 +27,7 @@ interface Props {
   schoolColor?: string
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
+// ── Component ──────────────────────────────────────────────
 export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Props) {
   const [open,       setOpen]       = useState(false)
   const [rooms,      setRooms]      = useState<Room[]>([])
@@ -44,28 +38,22 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
   const [unread,     setUnread]     = useState(0)
 
   const supabase  = createClient()
-  const router    = useRouter()
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
   const fileRef   = useRef<HTMLInputElement>(null)
-  const voice     = useVoiceRecorder(60)
 
   // Load rooms on mount
-  useEffect(() => {
-    loadRooms()
-  }, [userId])
+  useEffect(() => { loadRooms() }, [userId])
 
   // Subscribe to new messages in active room
   useEffect(() => {
     if (!activeRoom) return
     loadMessages(activeRoom.id)
 
-    const ch = supabase
-      .channel(`widget:${activeRoom.id}`)
+    const ch = supabase.channel(`widget:${activeRoom.id}`)
       .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'chat_messages',                      // FIX: was 'messages'
+        event: 'INSERT', schema: 'public',
+        table: 'chat_messages',            // ✅ correct table
         filter: `room_id=eq.${activeRoom.id}`,
       }, async payload => {
         const { data: msg } = await supabase
@@ -73,10 +61,9 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
           .select('id, content, sender_id, sent_at, file_type, file_url, is_deleted')
           .eq('id', payload.new.id)
           .single()
-
         if (msg) {
           setMessages(prev => {
-            if (prev.find(x => x.id === msg.id)) return prev
+            if (prev.find(x => x.id === (msg as Message).id)) return prev
             return [...prev, msg as Message]
           })
         }
@@ -86,23 +73,14 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     return () => { supabase.removeChannel(ch) }
   }, [activeRoom])
 
-  // Scroll to bottom on new message
+  // Track unread when widget is closed
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // Track unread across all rooms
-  useEffect(() => {
-    if (open || !userId) return
-    const ch = supabase
-      .channel(`widget-unread:${userId}`)
+    if (open) { setUnread(0); return }
+    const ch = supabase.channel(`widget-unread:${userId}`)
       .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'chat_messages',
+        event: 'INSERT', schema: 'public', table: 'chat_messages',
       }, payload => {
-        const msg = payload.new as any
-        if (msg.sender_id !== userId) {
+        if ((payload.new as any).sender_id !== userId) {
           setUnread(prev => prev + 1)
         }
       })
@@ -110,41 +88,70 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     return () => { supabase.removeChannel(ch) }
   }, [open, userId])
 
-  // Reset unread when opened
+  // Scroll to bottom
   useEffect(() => {
-    if (open) setUnread(0)
-  }, [open])
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
-  // ── Load rooms ────────────────────────────────────────────────────────────────
-
+  // ── Load rooms (flat queries — no nested joins) ──────────
   async function loadRooms() {
-    const { data } = await supabase
+    const { data: memberships } = await supabase
       .from('chat_room_members')
-      .select('room:chat_rooms(id, name)')
+      .select('room_id')
       .eq('user_id', userId)
-      .limit(10)
 
-    if (data) {
-      const r = data.map((d: any) => d.room).filter(Boolean)
-      setRooms(r)
-    }
+    if (!memberships?.length) return
+
+    const roomIds = memberships.map((m: any) => m.room_id)
+
+    const { data: roomsData } = await supabase
+      .from('chat_rooms')
+      .select('id, name, is_group')
+      .in('id', roomIds)
+
+    if (!roomsData?.length) return
+
+    // For DM rooms, get the other user's name
+    const result: Room[] = await Promise.all(
+      roomsData.map(async (room: any) => {
+        if (room.is_group) return { id: room.id, name: room.name ?? 'Group' }
+
+        const { data: other } = await supabase
+          .from('chat_room_members')
+          .select('user:profiles(full_name)')
+          .eq('room_id', room.id)
+          .neq('user_id', userId)
+          .limit(1)
+          .single()
+
+        const otherName = (other as any)?.user?.full_name ?? room.name ?? 'Chat'
+        return { id: room.id, name: otherName }
+      })
+    )
+
+    // Deduplicate by room id — prevents showing duplicates
+    const seen = new Set<string>()
+    const unique = result.filter(r => {
+      if (seen.has(r.id)) return false
+      seen.add(r.id)
+      return true
+    })
+
+    setRooms(unique)
   }
 
-  // ── Load messages ─────────────────────────────────────────────────────────────
-
+  // ── Load messages ────────────────────────────────────────
   async function loadMessages(roomId: string) {
     const { data } = await supabase
-      .from('chat_messages')                          // FIX: was 'messages'
+      .from('chat_messages')                        // ✅ correct table
       .select('id, content, sender_id, sent_at, file_type, file_url, is_deleted')
       .eq('room_id', roomId)
-      .order('sent_at', { ascending: true })          // FIX: was 'created_at'
+      .order('sent_at', { ascending: true })        // ✅ correct field
       .limit(50)
-
     if (data) setMessages(data as Message[])
   }
 
-  // ── Send text ─────────────────────────────────────────────────────────────────
-
+  // ── Send text ────────────────────────────────────────────
   async function sendText() {
     if (!text.trim() || !activeRoom || sending) return
     setSending(true)
@@ -173,74 +180,26 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     setSending(false)
   }
 
-  // ── Send voice ────────────────────────────────────────────────────────────────
-
-  async function sendVoice() {
-    if (!voice.audioBlob || !activeRoom || sending) return
-    setSending(true)
-
-    const fileName = `voice/${userId}/${Date.now()}.webm`
-    const { error: uploadError } = await supabase.storage
-      .from('chat-audio')
-      .upload(fileName, voice.audioBlob, { contentType: 'audio/webm' })
-
-    if (uploadError) {
-      console.error('Voice upload error:', uploadError)
-      setSending(false)
-      return
-    }
-
-    const { data: urlData } = supabase.storage.from('chat-audio').getPublicUrl(fileName)
-
-    const { data: newMsg } = await supabase
-      .from('chat_messages')
-      .insert({
-        room_id:   activeRoom.id,
-        sender_id: userId,
-        content:   '🎤 Voice message',
-        file_url:  urlData.publicUrl,
-        file_type: 'audio',
-      })
-      .select('id, content, sender_id, sent_at, file_type, file_url, is_deleted')
-      .single()
-
-    if (newMsg) {
-      setMessages(prev => {
-        if (prev.find(x => x.id === (newMsg as Message).id)) return prev
-        return [...prev, newMsg as Message]
-      })
-    }
-
-    voice.resetRecording()
-    setSending(false)
-  }
-
-  // ── Send file ─────────────────────────────────────────────────────────────────
-
+  // ── Send file ────────────────────────────────────────────
   async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !activeRoom || sending) return
     setSending(true)
 
-    const ext      = file.name.split('.').pop()
-    const isImage  = file.type.startsWith('image/')
-    const bucket   = isImage ? 'chat-images' : 'chat-files'
-    const fileName = `files/${userId}/${Date.now()}.${ext}`
+    const ext     = file.name.split('.').pop()
+    const isImage = file.type.startsWith('image/')
+    const bucket  = isImage ? 'chat-images' : 'chat-files'
+    const fname   = `files/${userId}/${Date.now()}.${ext}`
 
-    const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, file)
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(fname, file)
     if (uploadError) { e.target.value = ''; setSending(false); return }
 
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fileName)
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fname)
+    const content = isImage ? '🖼️ Image' : `📎 ${file.name}`
 
     const { data: newMsg } = await supabase
       .from('chat_messages')
-      .insert({
-        room_id:   activeRoom.id,
-        sender_id: userId,
-        content:   isImage ? '🖼️ Image' : `📎 ${file.name}`,
-        file_url:  urlData.publicUrl,
-        file_type: isImage ? 'image' : 'file',
-      })
+      .insert({ room_id: activeRoom.id, sender_id: userId, content, file_url: urlData.publicUrl, file_type: isImage ? 'image' : 'file' })
       .select('id, content, sender_id, sent_at, file_type, file_url, is_deleted')
       .single()
 
@@ -250,7 +209,6 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
         return [...prev, newMsg as Message]
       })
     }
-
     e.target.value = ''
     setSending(false)
   }
@@ -263,17 +221,16 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────────
-
+  // ── Render ───────────────────────────────────────────────
   return (
     <div className={styles.container}>
 
-      {/* Floating button */}
+      {/* FAB button */}
       <button
         className={styles.fab}
         style={{ background: schoolColor }}
         onClick={() => setOpen(!open)}
-        aria-label="Open chat"
+        aria-label="Open messages"
       >
         {open
           ? <XIcon size={18} color="white" />
@@ -284,27 +241,29 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
         )}
       </button>
 
-      {/* Widget panel */}
+      {/* Panel */}
       {open && (
         <div className={styles.panel}>
 
           {/* Header */}
           <div className={styles.header} style={{ background: schoolColor }}>
-            {activeRoom
-              ? <>
-                  <button className={styles.backBtn} onClick={() => { setActiveRoom(null); setMessages([]) }}>
-                    ←
-                  </button>
-                  <div>
-                    <p className={styles.headerTitle}>{activeRoom.name}</p>
-                    <p className={styles.headerSub}>Active</p>
-                  </div>
-                </>
-              : <>
-                  <MessageIcon size={16} color="white" />
-                  <p className={styles.headerTitle}>Messages</p>
-                </>
-            }
+            {activeRoom ? (
+              <>
+                <button className={styles.backBtn}
+                  onClick={() => { setActiveRoom(null); setMessages([]) }}>
+                  ←
+                </button>
+                <div>
+                  <p className={styles.headerTitle}>{activeRoom.name}</p>
+                  <p className={styles.headerSub}>Active</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <MessageIcon size={16} color="white" />
+                <p className={styles.headerTitle}>Messages</p>
+              </>
+            )}
           </div>
 
           {/* Room list */}
@@ -328,7 +287,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
                       </span>
                     </div>
                     <span className={styles.roomName}>{room.name}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>→</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>→</span>
                   </button>
                 ))
               )}
@@ -343,8 +302,8 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
             <>
               <div className={styles.messages}>
                 {messages.length === 0 && (
-                  <div className={styles.emptyMessages}>
-                    <p>Say hello! 👋</p>
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '24px' }}>
+                    No messages yet. Say hello! 👋
                   </div>
                 )}
                 {messages.map(msg => {
@@ -355,14 +314,22 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
                         className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}
                         style={isMe ? { background: schoolColor } : undefined}
                       >
-                        {msg.file_type === 'audio' && msg.file_url ? (
-                          <audio controls src={msg.file_url} className={styles.audioPlayer} />
-                        ) : msg.file_type === 'image' && msg.file_url ? (
-                          <img src={msg.file_url} alt="img" className={styles.msgImage} />
+                        {msg.file_type === 'image' && msg.file_url ? (
+                          <img src={msg.file_url} alt="img"
+                            style={{ width: '100%', maxWidth: 180, borderRadius: 8, display: 'block' }}
+                            onClick={() => window.open(msg.file_url!, '_blank')}
+                          />
+                        ) : msg.file_type === 'file' && msg.file_url ? (
+                          <a href={msg.file_url} target="_blank" rel="noreferrer"
+                            style={{ color: 'inherit', fontSize: '0.78rem' }}>
+                            📎 {msg.content}
+                          </a>
                         ) : msg.is_deleted ? (
-                          <p className={styles.deleted}>🚫 Deleted</p>
+                          <p style={{ fontStyle: 'italic', opacity: 0.6, margin: 0, fontSize: '0.78rem' }}>
+                            🚫 Deleted
+                          </p>
                         ) : (
-                          <p>{msg.content}</p>
+                          <p style={{ margin: 0 }}>{msg.content}</p>
                         )}
                         <span className={styles.msgTime}>{formatTime(msg.sent_at)}</span>
                       </div>
@@ -372,69 +339,34 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
                 <div ref={bottomRef} />
               </div>
 
-              {/* Recording UI */}
-              {voice.state === 'recording' && (
-                <div className={styles.recordingBar}>
-                  <div className={styles.recDot} />
-                  <span>{formatDuration(voice.duration)}</span>
-                  <button className={styles.recCancel} onClick={voice.cancelRecording}>Cancel</button>
-                  <button className={styles.recStop} style={{ background: schoolColor }} onClick={voice.stopRecording}>
-                    <StopIcon size={13} color="white" />
-                  </button>
-                </div>
-              )}
-
-              {voice.state === 'stopped' && voice.audioUrl && (
-                <div className={styles.previewBar}>
-                  <audio controls src={voice.audioUrl} className={styles.audioPreview} />
-                  <button className={styles.sendVoiceBtn} style={{ background: schoolColor }} onClick={sendVoice} disabled={sending}>
-                    <SendIcon size={13} color="white" />
-                  </button>
-                  <button className={styles.discardBtn} onClick={voice.resetRecording}>✕</button>
-                </div>
-              )}
-
-              {/* Input bar */}
-              {voice.state === 'idle' && (
-                <div className={styles.inputRow}>
-                  <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={sendFile} accept="image/*,.pdf,.doc,.docx" />
-                  <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
-                    <PaperclipIcon size={15} color="var(--text-muted)" />
-                  </button>
-                  <input
-                    ref={inputRef}
-                    className={styles.input}
-                    value={text}
-                    onChange={e => setText(e.target.value)}
-                    onKeyDown={handleKey}
-                    placeholder="Message..."
-                  />
-                  {text.trim() ? (
-                    <button
-                      className={styles.sendBtn}
-                      style={{ background: schoolColor }}
-                      onClick={sendText}
-                      disabled={!text.trim() || sending}
-                    >
-                      <SendIcon size={13} color="white" />
-                    </button>
-                  ) : (
-                    <button
-                      className={styles.micBtn}
-                      onClick={voice.startRecording}
-                      title="Voice message"
-                    >
-                      <MicIcon size={15} color={schoolColor} />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {voice.error && (
-                <p style={{ fontSize: '0.7rem', color: 'var(--danger)', textAlign: 'center', padding: '4px 8px' }}>
-                  {voice.error}
-                </p>
-              )}
+              {/* Input row — NO mic button */}
+              <div className={styles.inputRow}>
+                <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={sendFile}
+                  accept="image/*,.pdf,.doc,.docx,.txt" />
+                <button
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                  onClick={() => fileRef.current?.click()}
+                  title="Attach file"
+                >
+                  <PaperclipIcon size={16} color="var(--text-muted)" />
+                </button>
+                <input
+                  ref={inputRef}
+                  className={styles.input}
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  onKeyDown={handleKey}
+                  placeholder="Message..."
+                />
+                <button
+                  className={styles.sendBtn}
+                  style={{ background: schoolColor, opacity: (!text.trim() || sending) ? 0.45 : 1 }}
+                  onClick={sendText}
+                  disabled={!text.trim() || sending}
+                >
+                  <SendIcon size={14} color="white" />
+                </button>
+              </div>
             </>
           )}
         </div>
