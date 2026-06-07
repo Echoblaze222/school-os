@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   CreditCardIcon, CalendarIcon, UsersIcon, CheckCircleIcon,
   AlertCircleIcon, RefreshIcon, BarChartIcon, FileTextIcon,
@@ -79,11 +79,36 @@ export default function SubscriptionClient({
   school, subscription, studentCount, paymentHistory, userId, principalName,
 }: Props) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedPlan, setSelectedPlan] = useState(subscription?.plan_type ?? 'Standard')
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState<string | null>(null)
   const [theme,        setTheme]        = useState<'dark' | 'light'>('dark')
   const [tab,          setTab]          = useState<'status' | 'renew' | 'history'>('status')
+  const [toast,        setToast]        = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Read ?status= from Paystack callback redirect
+  useEffect(() => {
+    const status  = searchParams.get('status')
+    const receipt = searchParams.get('receipt')
+    if (status === 'success') {
+      setToast({
+        type:    'success',
+        message: receipt
+          ? `Payment successful! Receipt #${receipt}. Your subscription is now active.`
+          : 'Payment successful! Your subscription is now active.',
+      })
+      setTab('status')
+    } else if (status === 'failed') {
+      setToast({ type: 'error', message: 'Payment was not completed. Please try again.' })
+      setTab('renew')
+    }
+    // Auto-dismiss after 6 seconds
+    if (status) {
+      const t = setTimeout(() => setToast(null), 6000)
+      return () => clearTimeout(t)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme') as any
@@ -181,6 +206,39 @@ export default function SubscriptionClient({
 
   return (
     <div className={styles.page}>
+
+      {/* Payment status toast */}
+      {toast && (
+        <div style={{
+          position:     'fixed',
+          top:          '16px',
+          left:         '50%',
+          transform:    'translateX(-50%)',
+          zIndex:       9999,
+          display:      'flex',
+          alignItems:   'center',
+          gap:          '10px',
+          padding:      '12px 20px',
+          borderRadius: '10px',
+          background:   toast.type === 'success' ? 'var(--success-bg, #052e16)' : 'var(--error-bg, #2d0a0a)',
+          border:       `1px solid ${toast.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(192,57,43,0.3)'}`,
+          color:        toast.type === 'success' ? 'var(--success, #10B981)' : 'var(--error, #ef4444)',
+          fontSize:     '0.85rem',
+          fontWeight:   500,
+          maxWidth:     '90vw',
+          boxShadow:    '0 4px 24px rgba(0,0,0,0.4)',
+        }}>
+          {toast.type === 'success'
+            ? <CheckCircleIcon size={16} color="var(--success, #10B981)" />
+            : <AlertCircleIcon size={16} color="var(--error, #ef4444)" />
+          }
+          {toast.message}
+          <button
+            onClick={() => setToast(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '4px', opacity: 0.7, color: 'inherit' }}
+          >✕</button>
+        </div>
+      )}
 
       {/* Header */}
       <header className={styles.header}>
