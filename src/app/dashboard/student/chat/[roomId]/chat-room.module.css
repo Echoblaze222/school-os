@@ -323,6 +323,16 @@
   transition: opacity 0.2s ease;
 }
 .msgImage:hover { opacity: 0.9; }
+
+.msgVideo {
+  width: 240px;
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+  display: block;
+  background: #000;
+  max-height: 200px;
+}
 .fileLink {
   font-size: 0.8rem; font-weight: 600;
   color: var(--brand-light);
