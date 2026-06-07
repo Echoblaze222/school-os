@@ -240,20 +240,33 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (!file || sending) return
     setSending(true)
 
-    const ext     = file.name.split('.').pop()
-    const isImage = file.type.startsWith('image/')
-    const bucket  = isImage ? 'chat-images' : 'chat-files'
-    const fname   = `files/${userId}/${Date.now()}.${ext}`
+    const ext      = file.name.split('.').pop()
+    const isImage  = file.type.startsWith('image/')
+    const isVideo  = file.type.startsWith('video/')
+    const bucket   = isImage ? 'chat-images' : isVideo ? 'chat-videos' : 'chat-files'
+    const fileType = isImage ? 'image' : isVideo ? 'video' : 'file'
+    const content  = isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`
+    const fname    = `files/${userId}/${Date.now()}.${ext}`
 
     const { error: uploadError } = await supabase.storage.from(bucket).upload(fname, file)
-    if (uploadError) { e.target.value = ''; setSending(false); return }
+    if (uploadError) {
+      // Fallback: try chat-files bucket if specific bucket doesn't exist
+      const { error: fallbackError } = await supabase.storage
+        .from('chat-files')
+        .upload(fname, file)
+      if (fallbackError) { e.target.value = ''; setSending(false); return }
+    }
 
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fname)
-    const content = isImage ? '🖼️ Image' : `📎 ${file.name}`
+    const { data: urlData } = supabase.storage.from(
+      uploadError ? 'chat-files' : bucket
+    ).getPublicUrl(fname)
 
     const { data: newMsg, error: insertError } = await supabase
       .from('chat_messages')
-      .insert({ room_id: roomId, sender_id: userId, content, file_url: urlData.publicUrl, file_type: isImage ? 'image' : 'file' })
+      .insert({
+        room_id: roomId, sender_id: userId,
+        content, file_url: urlData.publicUrl, file_type: fileType,
+      })
       .select('*, sender:profiles(full_name, avatar_url)')
       .single()
 
@@ -264,6 +277,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       })
       pushNotification(content)
     }
+
     e.target.value = ''
     setSending(false)
   }
@@ -425,6 +439,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                         <img src={msg.file_url} alt="Image" className={styles.msgImage}
                           onClick={() => window.open(msg.file_url!, '_blank')} />
                       )}
+                      {msg.file_type === 'video' && msg.file_url && (
+                        <video
+                          src={msg.file_url}
+                          controls
+                          className={styles.msgVideo}
+                          playsInline
+                        />
+                      )}
                       {msg.file_type === 'file' && msg.file_url && (
                         <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}>
                           📎 {msg.content}
@@ -516,7 +538,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       {/* ── INPUT BAR ──────────────────────────────────── */}
       <div className={styles.inputBar}>
         <input ref={fileRef} type="file" className={styles.fileInput} onChange={sendFile}
-          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
+          accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
         <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
           <PaperclipIcon size={18} color="var(--text-muted)" />
         </button>
