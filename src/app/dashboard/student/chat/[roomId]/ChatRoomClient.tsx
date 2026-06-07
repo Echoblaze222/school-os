@@ -178,13 +178,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // ── Notify other user ────────────────────────────────────
   async function pushNotification(content: string) {
     if (!otherUser?.id) return
-    await supabase.from('notifications').insert({
-      user_id:    otherUser.id,
-      title:      `New message`,
-      body:       content.length > 100 ? content.slice(0, 100) + '…' : content,
-      type:       'chat',
-      action_url: `/dashboard/${otherUser.role}/chat/${roomId}`,
-    })
+    try {
+      await supabase.from('notifications').insert({
+        user_id:  otherUser.id,
+        title:    'New message',
+        body:     content.length > 100 ? content.slice(0, 100) + '…' : content,
+        type:     'chat',
+        link_url: `/dashboard/${otherUser.role}/chat/${roomId}`,
+      })
+    } catch (_) {
+      // Notification failure must never break message sending
+    }
   }
 
   // ── Send text ────────────────────────────────────────────
@@ -323,7 +327,10 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
       {/* ── HEADER ─────────────────────────────────────── */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.back()}>
+        <button
+          className={styles.backBtn}
+          onClick={() => router.push(`/dashboard/${role}/chat`)}
+        >
           <ArrowLeftIcon size={20} />
         </button>
         <div className={styles.roomInfo}>
