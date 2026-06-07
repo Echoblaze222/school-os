@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
   if (!reference) {
     return NextResponse.redirect(
-      new URL('/dashboard/principal/subscription?status=failed', request.url)
+      new URL('/dashboard/principal/subscriptions?status=failed', request.url)
     )
   }
 
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
     if (!verifyData.status || verifyData.data?.status !== 'success') {
       return NextResponse.redirect(
-        new URL('/dashboard/principal/subscription?status=failed', request.url)
+        new URL('/dashboard/principal/subscriptions?status=failed', request.url)
       )
     }
 
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 
     if (!schoolId) {
       return NextResponse.redirect(
-        new URL('/dashboard/principal/subscription?status=failed', request.url)
+        new URL('/dashboard/principal/subscriptions?status=failed', request.url)
       )
     }
 
@@ -171,13 +171,13 @@ export async function GET(request: Request) {
 
     // Redirect to success page
     return NextResponse.redirect(
-      new URL(`/dashboard/principal/subscription?status=success&receipt=${receiptNumber}`, request.url)
+      new URL(`/dashboard/principal/subscriptions?status=success&receipt=${receiptNumber}`, request.url)
     )
 
   } catch (error) {
     console.error('Subscription callback error:', error)
     return NextResponse.redirect(
-      new URL('/dashboard/principal/subscription?status=failed', request.url)
+      new URL('/dashboard/principal/subscriptions?status=failed', request.url)
     )
   }
 }
