@@ -1,113 +1,218 @@
 'use client'
+// src/app/reset-password/page.tsx
+// Handles the Supabase password reset link redirect
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LockIcon, EyeIcon, EyeOffIcon } from '@/components/Icons'
+import styles from './reset-password.module.css'
+
+type Stage = 'form' | 'success' | 'invalid'
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('')
-  const [confirm,  setConfirm]  = useState('')
-  const [showPass, setShowPass] = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [done,     setDone]     = useState(false)
-  const [sessionReady, setSessionReady] = useState(false)
-  const router   = useRouter()
+  const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
+  const [stage, setStage] = useState<Stage>('form')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    const saved = localStorage.getItem('schoolos_theme') ?? 'dark'
-    document.documentElement.setAttribute('data-theme', saved)
-  }, [])
-
-  // Exchange the token from the URL hash for a valid session
-  useEffect(() => {
+    setMounted(true)
+    // Supabase injects the session from the magic link on page load
+    // Check the URL hash for access_token
     const hash = window.location.hash
-    if (hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.replace('#', ''))
-      const access_token  = params.get('access_token') ?? ''
-      const refresh_token = params.get('refresh_token') ?? ''
-      supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
-        if (error) {
-          setError('Invalid or expired reset link. Please request a new one.')
-        } else {
-          setSessionReady(true)
-          // Clean the hash from the URL
-          window.history.replaceState(null, '', window.location.pathname)
-        }
-      })
-    } else {
-      // Check if there's already an active session (e.g. user navigated back)
+    if (!hash.includes('access_token') && !hash.includes('type=recovery')) {
+      // Check if session exists (user came via email link)
       supabase.auth.getSession().then(({ data }) => {
-        if (data.session) setSessionReady(true)
-        else setError('Invalid or expired reset link. Please request a new one.')
+        if (!data.session) setStage('invalid')
       })
     }
   }, [])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!sessionReady) { setError('No active session. Please use the reset link from your email.'); return }
-    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
-    if (password !== confirm) { setError('Passwords do not match'); return }
-    setLoading(true); setError('')
-    const { error: err } = await supabase.auth.updateUser({ password })
-    if (err) { setError(err.message); setLoading(false); return }
-    setDone(true)
-    setTimeout(() => router.push('/login'), 2500)
+  function getStrength(pw: string) {
+    let s = 0
+    if (pw.length >= 8) s++
+    if (/[A-Z]/.test(pw)) s++
+    if (/[0-9]/.test(pw)) s++
+    if (/[^A-Za-z0-9]/.test(pw)) s++
+    return s
   }
 
-  const card: React.CSSProperties = {
-    width: '100%', maxWidth: 400,
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 24, padding: '40px 32px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+  const strength = getStrength(password)
+  const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong']
+  const strengthColors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e']
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) {
+        setError(error.message)
+        return
+      }
+      setStage('success')
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-base)', padding:20 }}>
-      <div style={card}>
-        {done ? (
-          <div style={{ textAlign:'center', padding:'20px 0' }}>
-            <div style={{ fontSize:'2.5rem', marginBottom:16 }}>✅</div>
-            <h2 style={{ fontSize:'1.1rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 8px' }}>Password Updated!</h2>
-            <p style={{ fontSize:'0.85rem', color:'var(--text-muted)', margin:0 }}>Redirecting to login...</p>
+    <div className={styles.page}>
+      <div className={styles.bgGlow} />
+
+      <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
+        {/* Logo */}
+        <div className={styles.logoWrap}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
+        </div>
+
+        {stage === 'invalid' && (
+          <div className={styles.invalidState}>
+            <div className={styles.invalidIcon}>⚠️</div>
+            <h2 className={styles.title}>Link Expired</h2>
+            <p className={styles.subtitle}>
+              This reset link is no longer valid. Please request a new one.
+            </p>
+            <button className={styles.submitBtn} onClick={() => router.push('/forgot-password')}>
+              Request New Link
+            </button>
           </div>
-        ) : (
+        )}
+
+        {stage === 'form' && (
           <>
-            <h1 style={{ fontSize:'1.3rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 6px', letterSpacing:'-0.02em' }}>Reset Password</h1>
-            <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', margin:'0 0 28px' }}>Enter your new password below</p>
-            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
-              {[
-                { label:'New Password', val:password, set:setPassword },
-                { label:'Confirm Password', val:confirm, set:setConfirm },
-              ].map(({ label, val, set }) => (
-                <div key={label}>
-                  <label style={{ fontSize:'0.78rem', fontWeight:600, color:'var(--text-secondary)', display:'block', marginBottom:6 }}>{label}</label>
-                  <div style={{ position:'relative' }}>
-                    <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', display:'flex', alignItems:'center' }}>
-                      <LockIcon size={15} color="var(--text-muted)" />
-                    </span>
-                    <input type={showPass ? 'text' : 'password'} value={val} onChange={e => set(e.target.value)} required
-                      placeholder="••••••••"
-                      style={{ width:'100%', height:48, padding:'0 44px 0 44px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:12, color:'var(--text-primary)', fontSize:'0.9rem', outline:'none' }}/>
-                    <button type="button" onClick={() => setShowPass(!showPass)}
-                      style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', display:'flex', alignItems:'center' }}>
-                      {showPass ? <EyeOffIcon size={15}/> : <EyeIcon size={15}/>}
-                    </button>
+            <div className={styles.header}>
+              <div className={styles.iconBox}>🛡️</div>
+              <h1 className={styles.title}>Set New Password</h1>
+              <p className={styles.subtitle}>Choose a strong password for your account</p>
+            </div>
+
+            {error && <div className={styles.errorBanner}>{error}</div>}
+
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <label className={styles.label}>New Password</label>
+              <div className={styles.passWrap}>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className={styles.input}
+                  placeholder="Min. 8 characters"
+                  required
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className={styles.eyeBtn}
+                  onClick={() => setShowPass(!showPass)}
+                  tabIndex={-1}
+                >
+                  {showPass ? '🙈' : '👁️'}
+                </button>
+              </div>
+
+              {/* Strength meter */}
+              {password && (
+                <div className={styles.strengthWrap}>
+                  <div className={styles.strengthBars}>
+                    {[1,2,3,4].map(i => (
+                      <div
+                        key={i}
+                        className={styles.strengthBar}
+                        style={{
+                          background: strength >= i ? strengthColors[strength] : 'rgba(255,255,255,0.1)',
+                          transition: 'background 0.3s',
+                        }}
+                      />
+                    ))}
                   </div>
+                  <span
+                    className={styles.strengthLabel}
+                    style={{ color: strengthColors[strength] }}
+                  >
+                    {strengthLabels[strength]}
+                  </span>
                 </div>
-              ))}
-              {error && <p style={{ fontSize:'0.78rem', color:'var(--danger)', background:'var(--danger-subtle)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:'10px 14px', margin:0 }}>{error}</p>}
-              <button type="submit" disabled={loading || !sessionReady}
-                style={{ height:50, background:'linear-gradient(135deg,var(--brand),var(--brand-dark))', color:'#fff', border:'none', borderRadius:12, fontWeight:700, fontSize:'0.9rem', cursor: (loading || !sessionReady) ? 'not-allowed' : 'pointer', opacity:(loading || !sessionReady) ? 0.5 : 1 }}>
-                {loading ? 'Updating...' : 'Update Password'}
+              )}
+
+              {/* Password requirements */}
+              <div className={styles.requirements}>
+                {[
+                  { label: '8+ characters', met: password.length >= 8 },
+                  { label: 'Uppercase letter', met: /[A-Z]/.test(password) },
+                  { label: 'Number', met: /[0-9]/.test(password) },
+                  { label: 'Special character', met: /[^A-Za-z0-9]/.test(password) },
+                ].map(req => (
+                  <div key={req.label} className={`${styles.req} ${req.met ? styles.reqMet : ''}`}>
+                    {req.met ? '✓' : '○'} {req.label}
+                  </div>
+                ))}
+              </div>
+
+              <label className={styles.label}>Confirm Password</label>
+              <div className={styles.passWrap}>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  className={`${styles.input} ${confirm && confirm !== password ? styles.inputError : ''}`}
+                  placeholder="Re-enter password"
+                  required
+                />
+              </div>
+
+              {confirm && confirm !== password && (
+                <p className={styles.matchError}>Passwords do not match</p>
+              )}
+
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                disabled={loading || strength < 2 || password !== confirm}
+              >
+                {loading
+                  ? <span className={styles.spinner} />
+                  : '🔒 Reset Password'
+                }
               </button>
             </form>
           </>
         )}
+
+        {stage === 'success' && (
+          <div className={styles.successState}>
+            <div className={styles.successRing}>
+              <div className={styles.successCheck}>✓</div>
+            </div>
+            <h2 className={styles.title}>Password Updated!</h2>
+            <p className={styles.subtitle}>
+              Your password has been reset successfully. You can now sign in with your new password.
+            </p>
+            <button className={styles.submitBtn} onClick={() => router.push('/login')}>
+              Sign In Now
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
-                       }
+}
