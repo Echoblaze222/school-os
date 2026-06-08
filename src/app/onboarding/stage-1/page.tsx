@@ -53,7 +53,7 @@ export default function OnboardingStage1() {
       .update({
         full_name:        fullName.trim(),
         phone:            phone.trim() || null,
-        onboarding_stage: 2,
+        onboarding_stage: 'stage_2_pending',
       })
       .eq('id', user.id)
 

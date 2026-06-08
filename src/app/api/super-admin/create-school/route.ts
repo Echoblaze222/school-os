@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       role:             'principal',
       school_id:        school.id,
       default_code:     defaultCode,
-      onboarding_stage: 2,
+      onboarding_stage: 'stage_2_pending',
     }, { onConflict: 'id' })
 
     if (profileErr) {

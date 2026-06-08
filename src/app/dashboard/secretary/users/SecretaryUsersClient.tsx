@@ -53,9 +53,9 @@ export default function SecretaryUsersClient({ users: initial, currentUserId }: 
 
   async function resetOnboarding(u:ManagedUser) {
     setActionLoading(true); const supabase=createClient()
-    const {error}=await supabase.from('profiles').update({onboarding_stage:'start'}).eq('id',u.id)
+    const {error}=await supabase.from('profiles').update({onboarding_stage:'stage_1_pending'}).eq('id',u.id)
     setActionLoading(false)
-    if (!error) { setUsers(p=>p.map(x=>x.id===u.id?{...x,onboarding_stage:'start'}:x)); setSelected(s=>s?.id===u.id?{...s,onboarding_stage:'start'}:s); showToast('Onboarding reset to start') }
+    if (!error) { setUsers(p=>p.map(x=>x.id===u.id?{...x,onboarding_stage:'stage_1_pending'}:x)); setSelected(s=>s?.id===u.id?{...s,onboarding_stage:'stage_1_pending'}:s); showToast('Onboarding reset') }
   }
 
   async function generateCode(u:ManagedUser) {

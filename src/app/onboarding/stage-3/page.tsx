@@ -52,7 +52,7 @@ export default function OnboardingStage3() {
 
     const { data: urlData } = supabase.storage.from('passports').getPublicUrl(path)
     const { data: profile, error: profileErr } = await supabase.from('profiles')
-      .update({ avatar_url: urlData.publicUrl, nin, onboarding_stage: 0 })
+      .update({ avatar_url: urlData.publicUrl, nin_number: nin, onboarding_stage: 'complete' })
       .eq('id', user.id).select('role').single()
 
     if (profileErr) {

@@ -29,9 +29,9 @@ export default function OnboardingStage2() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
     await supabase.from('profiles').update({
-      pin_hash:         pin,  // hash server-side in production
+      pin_hash:          pin,  // hash server-side in production
       secret_identifier: secret.trim().toLowerCase(),
-      onboarding_stage: 3,
+      onboarding_stage:  'stage_3_pending',
     }).eq('id', user.id)
     router.push('/onboarding/stage-3')
   }

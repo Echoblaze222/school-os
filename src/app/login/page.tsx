@@ -1,5 +1,6 @@
 'use client'
 // src/app/login/page.tsx
+// Unified Login + Register tab page with school context from select-school
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -12,10 +13,9 @@ type LoginMode = 'email' | 'access-code'
 interface SelectedSchool {
   id: string
   name: string
+  slug: string
   primaryColor: string | null
 }
-
-const SCHOOL_KEY = 'schoolos_selected_school'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [school, setSchool] = useState<SelectedSchool | null>(null)
   const [loginMode, setLoginMode] = useState<LoginMode>('email')
 
+  // Login state
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [accessCode, setAccessCode] = useState('')
@@ -33,6 +34,7 @@ export default function LoginPage() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
 
+  // Register state
   const [regStep, setRegStep] = useState(1)
   const [regLoading, setRegLoading] = useState(false)
   const [regError, setRegError] = useState('')
@@ -47,11 +49,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true)
+    // Detect auto-logout timeout — show banner, but stay on /login (no redirect)
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'timeout') setIsTimeout(true)
 
-    // Read with the SAME key select-school page writes
-    const stored = localStorage.getItem(SCHOOL_KEY)
+    // School stays in sessionStorage after auto-logout (signOut doesn't clear it)
+    // so the user sees their school context without having to re-select
+    const stored = sessionStorage.getItem('selected_school')
     if (stored) {
       try { setSchool(JSON.parse(stored)) } catch {}
     }
@@ -84,39 +88,17 @@ export default function LoginPage() {
         body: JSON.stringify({ code: accessCode.toUpperCase(), newPassword }),
       })
       const data = await res.json()
-      if (!res.ok) {
-        // Account already activated — sign in directly using their existing password
-        if (data.already_activated && data.email) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: newPassword,
-          })
-          if (signInErr) {
-            setLoginError('Wrong password. Please try again.')
-          } else {
-            router.replace('/dashboard')
-          }
-        } else {
-          setLoginError(data.error || 'Something went wrong.')
-        }
-        return
-      }
-
+      if (!res.ok) { setLoginError(data.error); return }
+      // Sign them in with their email now that the password is set
       if (data.success) {
-        // First time — password just set, sign in with new password
         const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: data.email,
+          email:    data.email,
           password: newPassword,
         })
-        if (signInErr) {
-          setLoginError('Wrong password. Please try again.')
-          return
-        }
-
-        const stage = data.onboarding_stage
+        if (signInErr) { setLoginError('Account activated but sign-in failed. Please use Email login.'); return }
         router.replace(
-          stage === 'stage_1_pending' ? '/onboarding/stage-1' :
-          stage === 2                 ? '/onboarding/pin-setup' : '/dashboard'
+          data.onboarding_stage === 'stage_1_pending' ? '/onboarding/stage-1' :
+          data.onboarding_stage === 'stage_2_pending' ? '/onboarding/stage-2' : '/dashboard'
         )
       }
     } catch {
@@ -147,14 +129,13 @@ export default function LoginPage() {
           },
           plan: reg.plan,
           principal: {
-            name: reg.principalName, full_name: reg.principalName,
-            email: reg.principalEmail,
+            name: reg.principalName, email: reg.principalEmail,
             phone: reg.principalPhone, password: reg.principalPassword,
           },
         }),
       })
       const data = await res.json()
-      if (!res.ok) { setRegError(data.error || 'Registration failed.'); return }
+      if (!res.ok) { setRegError(data.error); return }
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl
       } else {
@@ -185,6 +166,7 @@ export default function LoginPage() {
 
       <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
 
+        {/* Top: logo + school name */}
         <div className={styles.topBar}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
@@ -212,12 +194,14 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Timeout banner — only shown after auto-logout */}
         {isTimeout && (
           <div className={styles.timeoutBanner}>
             🔒 You were logged out due to inactivity. Please sign in again.
           </div>
         )}
 
+        {/* Tab switcher */}
         <div className={styles.tabs}>
           <button
             className={`${styles.tabBtn} ${tab === 'login' ? styles.tabActive : ''}`}
@@ -237,16 +221,17 @@ export default function LoginPage() {
         {/* ── LOGIN TAB ── */}
         {tab === 'login' && (
           <div className={styles.formWrap}>
+            {/* Mode switcher */}
             <div className={styles.modeToggle}>
               <button
                 className={`${styles.modeBtn} ${loginMode === 'email' ? styles.modeBtnActive : ''}`}
-                onClick={() => { setLoginMode('email'); setLoginError('') }}
+                onClick={() => setLoginMode('email')}
               >
                 📧 Email
               </button>
               <button
                 className={`${styles.modeBtn} ${loginMode === 'access-code' ? styles.modeBtnActive : ''}`}
-                onClick={() => { setLoginMode('access-code'); setLoginError('') }}
+                onClick={() => setLoginMode('access-code')}
               >
                 🔑 Access Code
               </button>
@@ -303,8 +288,7 @@ export default function LoginPage() {
             ) : (
               <form onSubmit={handleAccessCodeLogin} className={styles.form}>
                 <div className={styles.accessCodeNote}>
-                  Enter your access code and password to sign in.
-                  First time? Your password will be set on first use.
+                  First-time login? Enter your access code from your administrator and set a new password.
                 </div>
 
                 <label className={styles.label}>Access Code</label>
@@ -313,13 +297,13 @@ export default function LoginPage() {
                   value={accessCode}
                   onChange={e => setAccessCode(e.target.value.toUpperCase())}
                   className={`${styles.input} ${styles.codeInput}`}
-                  placeholder="e.g. TCH-AB12"
+                  placeholder="e.g. PAR-2026-7410"
                   required
                   autoComplete="off"
-                  maxLength={12}
+                  maxLength={14}
                 />
 
-                <label className={styles.label}>Password</label>
+                <label className={styles.label}>Set New Password</label>
                 <div className={styles.passWrap}>
                   <input
                     type={showPass ? 'text' : 'password'}
@@ -341,7 +325,7 @@ export default function LoginPage() {
                 </div>
 
                 <button type="submit" className={styles.submitBtn} disabled={loginLoading}>
-                  {loginLoading ? <span className={styles.btnSpinner} /> : 'Sign In'}
+                  {loginLoading ? <span className={styles.btnSpinner} /> : 'Activate Account'}
                 </button>
               </form>
             )}
@@ -364,6 +348,7 @@ export default function LoginPage() {
               </div>
             ) : (
               <>
+                {/* Step indicator */}
                 <div className={styles.stepBar}>
                   {[1,2].map(s => (
                     <div

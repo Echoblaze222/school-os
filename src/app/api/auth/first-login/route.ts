@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     // Only allow this route for accounts that haven't completed onboarding
     const stage = profile.onboarding_stage
-    const isFirstLogin = stage === 'start' || stage === 'stage_1_pending'
+    const isFirstLogin = stage === 'stage_1_pending' || stage === 'stage_2_pending'
     if (!isFirstLogin) {
       return NextResponse.json(
         { error: 'Account already activated. Please log in normally.' },
@@ -70,8 +70,8 @@ export async function POST(request: Request) {
 
     // Advance onboarding stage:
     // principal (stage_1_pending) → stays, will go through stage-1 page
-    // staff/student (start) → advance to 2 so they go to PIN setup (stage-2)
-    const nextStage = stage === 'stage_1_pending' ? 'stage_1_pending' : 2
+    // staff/student (stage_2_pending) → advance so they go to PIN setup (stage-2)
+    const nextStage = stage === 'stage_1_pending' ? 'stage_1_pending' : 'stage_2_pending'
 
     await adminClient
       .from('profiles')
@@ -80,6 +80,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success:          true,
+      email:            profile.email,
       onboarding_stage: nextStage,
       role:             profile.role,
     })
