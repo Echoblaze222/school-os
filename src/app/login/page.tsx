@@ -1,43 +1,53 @@
 'use client'
 // src/app/login/page.tsx
-// Unified Login + Register tab page with school context from select-school
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './login.module.css'
 
-type Tab = 'login' | 'register'
-type LoginMode = 'email' | 'access-code'
+type Tab       = 'login' | 'register'
+type LoginMode = 'existing' | 'new-user'
+// existing  → Email OR Access Code + password (already activated accounts)
+// new-user  → Access Code + set new password (first-time activation only)
 
 interface SelectedSchool {
   id: string
   name: string
-  slug: string
   primaryColor: string | null
 }
 
+const SCHOOL_KEY = 'schoolos_selected_school'
+
 export default function LoginPage() {
-  const router = useRouter()
+  const router   = useRouter()
   const supabase = createClient()
-  const [tab, setTab] = useState<Tab>('login')
-  const [mounted, setMounted] = useState(false)
-  const [school, setSchool] = useState<SelectedSchool | null>(null)
-  const [loginMode, setLoginMode] = useState<LoginMode>('email')
 
-  // Login state
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [accessCode, setAccessCode] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [showPass, setShowPass] = useState(false)
+  const [tab,       setTab]       = useState<Tab>('login')
+  const [mounted,   setMounted]   = useState(false)
+  const [school,    setSchool]    = useState<SelectedSchool | null>(null)
+  const [loginMode, setLoginMode] = useState<LoginMode>('existing')
+  const [isTimeout, setIsTimeout] = useState(false)
+
+  // Existing user — can type email OR access code in one field
+  const [identifier,   setIdentifier]   = useState('')   // email or access code
+  const [password,     setPassword]     = useState('')
+  const [showPass,     setShowPass]     = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
-  const [loginError, setLoginError] = useState('')
+  const [loginError,   setLoginError]   = useState('')
 
-  // Register state
-  const [regStep, setRegStep] = useState(1)
+  // New user — access code only + set new password
+  const [newCode,        setNewCode]        = useState('')
+  const [newPassword,    setNewPassword]    = useState('')
+  const [confirmPass,    setConfirmPass]    = useState('')
+  const [showNewPass,    setShowNewPass]    = useState(false)
+  const [newUserLoading, setNewUserLoading] = useState(false)
+  const [newUserError,   setNewUserError]   = useState('')
+
+  // Register tab
+  const [regStep,    setRegStep]    = useState(1)
   const [regLoading, setRegLoading] = useState(false)
-  const [regError, setRegError] = useState('')
+  const [regError,   setRegError]   = useState('')
   const [regSuccess, setRegSuccess] = useState(false)
   const [reg, setReg] = useState({
     schoolName: '', schoolType: 'Secondary', address: '', city: '', state: '',
@@ -45,31 +55,56 @@ export default function LoginPage() {
     principalName: '', principalEmail: '', principalPhone: '', principalPassword: '',
   })
 
-  const [isTimeout, setIsTimeout] = useState(false)
-
   useEffect(() => {
     setMounted(true)
-    // Detect auto-logout timeout — show banner, but stay on /login (no redirect)
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'timeout') setIsTimeout(true)
-
-    // School stays in sessionStorage after auto-logout (signOut doesn't clear it)
-    // so the user sees their school context without having to re-select
-    const stored = sessionStorage.getItem('selected_school')
+    const stored = localStorage.getItem(SCHOOL_KEY)
     if (stored) {
       try { setSchool(JSON.parse(stored)) } catch {}
     }
   }, [])
 
-  // ── LOGIN ──────────────────────────────────────────────
-  async function handleEmailLogin(e: React.FormEvent) {
+  // ── EXISTING USER LOGIN (email OR access code + password) ──
+  async function handleExistingLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoginError('')
     setLoginLoading(true)
+
+    const value = identifier.trim()
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { setLoginError(error.message); return }
-      router.replace('/dashboard')
+      // Detect if identifier looks like an access code (contains dash, no @)
+      const isCode = !value.includes('@') && value.includes('-')
+
+      if (isCode) {
+        // Look up their email via the API, then sign in with password
+        const res  = await fetch('/api/auth/code-signin', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ code: value.toUpperCase(), password }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setLoginError(data.error || 'Invalid code or password.')
+          return
+        }
+        // API signed them in server-side and returns email for client sign-in
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email:    data.email,
+          password: password,
+        })
+        if (signInErr) { setLoginError('Wrong password. Please try again.'); return }
+        router.replace('/dashboard')
+      } else {
+        // Normal email + password sign in
+        const { error } = await supabase.auth.signInWithPassword({
+          email:    value,
+          password: password,
+        })
+        if (error) { setLoginError(error.message); return }
+        router.replace('/dashboard')
+      }
     } catch {
       setLoginError('Something went wrong. Please try again.')
     } finally {
@@ -77,38 +112,59 @@ export default function LoginPage() {
     }
   }
 
-  async function handleAccessCodeLogin(e: React.FormEvent) {
+  // ── NEW USER ACTIVATION (access code + set new password) ──
+  async function handleNewUserActivation(e: React.FormEvent) {
     e.preventDefault()
-    setLoginError('')
-    setLoginLoading(true)
+    setNewUserError('')
+
+    if (newPassword !== confirmPass) {
+      setNewUserError('Passwords do not match.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setNewUserError('Password must be at least 8 characters.')
+      return
+    }
+
+    setNewUserLoading(true)
     try {
-      const res = await fetch('/api/auth/first-login', {
-        method: 'POST',
+      const res  = await fetch('/api/auth/first-login', {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: accessCode.toUpperCase(), newPassword }),
+        body:    JSON.stringify({ code: newCode.toUpperCase(), newPassword }),
       })
       const data = await res.json()
-      if (!res.ok) { setLoginError(data.error); return }
-      // Sign them in with their email now that the password is set
+
+      if (!res.ok) {
+        if (data.already_activated) {
+          setNewUserError('This account is already activated. Use the Sign In tab with your access code and password.')
+        } else {
+          setNewUserError(data.error || 'Something went wrong.')
+        }
+        return
+      }
+
       if (data.success) {
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email:    data.email,
           password: newPassword,
         })
-        if (signInErr) { setLoginError('Account activated but sign-in failed. Please use Email login.'); return }
+        if (signInErr) { setNewUserError('Activation done but sign-in failed. Try signing in now.'); return }
+
+        const stage = data.onboarding_stage
         router.replace(
-          data.onboarding_stage === 'stage_1_pending' ? '/onboarding/stage-1' :
-          data.onboarding_stage === 'stage_2_pending' ? '/onboarding/stage-2' : '/dashboard'
+          stage === 'stage_1_pending' ? '/onboarding/stage-1' :
+          stage === 2                 ? '/onboarding/pin-setup' : '/dashboard'
         )
       }
-    } catch (err: any) {
-      setLoginError(err?.message ?? 'Something went wrong.')
+    } catch {
+      setNewUserError('Something went wrong. Please try again.')
     } finally {
-      setLoginLoading(false)
+      setNewUserLoading(false)
     }
   }
 
-  // ── REGISTER ──────────────────────────────────────────
+  // ── REGISTER ──
   function updateReg(field: string, value: string) {
     setReg(prev => ({ ...prev, [field]: value }))
   }
@@ -119,9 +175,9 @@ export default function LoginPage() {
     setRegLoading(true)
     try {
       const res = await fetch('/api/schools/register', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body:    JSON.stringify({
           school: {
             name: reg.schoolName, school_type: reg.schoolType,
             address: reg.address, city: reg.city, state: reg.state,
@@ -129,13 +185,14 @@ export default function LoginPage() {
           },
           plan: reg.plan,
           principal: {
-            name: reg.principalName, email: reg.principalEmail,
+            name: reg.principalName, full_name: reg.principalName,
+            email: reg.principalEmail,
             phone: reg.principalPhone, password: reg.principalPassword,
           },
         }),
       })
       const data = await res.json()
-      if (!res.ok) { setRegError(data.error); return }
+      if (!res.ok) { setRegError(data.error || 'Registration failed.'); return }
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl
       } else {
@@ -166,7 +223,7 @@ export default function LoginPage() {
 
       <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
 
-        {/* Top: logo + school name */}
+        {/* Top bar */}
         <div className={styles.topBar}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
@@ -175,33 +232,25 @@ export default function LoginPage() {
             {school ? (
               <span className={styles.schoolBadge}>
                 {school.name}
-                <button
-                  className={styles.changeSchoolBtn}
-                  onClick={() => router.push('/select-school')}
-                  title="Change school"
-                >
+                <button className={styles.changeSchoolBtn} onClick={() => router.push('/select-school')}>
                   ‹ Change
                 </button>
               </span>
             ) : (
-              <button
-                className={styles.changeSchoolBtn}
-                onClick={() => router.push('/select-school')}
-              >
+              <button className={styles.changeSchoolBtn} onClick={() => router.push('/select-school')}>
                 Select your school →
               </button>
             )}
           </div>
         </div>
 
-        {/* Timeout banner — only shown after auto-logout */}
         {isTimeout && (
           <div className={styles.timeoutBanner}>
             🔒 You were logged out due to inactivity. Please sign in again.
           </div>
         )}
 
-        {/* Tab switcher */}
+        {/* Main tabs: Sign In / Register School */}
         <div className={styles.tabs}>
           <button
             className={`${styles.tabBtn} ${tab === 'login' ? styles.tabActive : ''}`}
@@ -218,38 +267,45 @@ export default function LoginPage() {
           <div className={`${styles.tabIndicator} ${tab === 'register' ? styles.tabRight : ''}`} />
         </div>
 
-        {/* ── LOGIN TAB ── */}
+        {/* ── SIGN IN TAB ── */}
         {tab === 'login' && (
           <div className={styles.formWrap}>
-            {/* Mode switcher */}
+
+            {/* Mode toggle */}
             <div className={styles.modeToggle}>
               <button
-                className={`${styles.modeBtn} ${loginMode === 'email' ? styles.modeBtnActive : ''}`}
-                onClick={() => setLoginMode('email')}
+                className={`${styles.modeBtn} ${loginMode === 'existing' ? styles.modeBtnActive : ''}`}
+                onClick={() => { setLoginMode('existing'); setLoginError(''); setNewUserError('') }}
               >
-                📧 Email
+                📧 Email / Access Code
               </button>
               <button
-                className={`${styles.modeBtn} ${loginMode === 'access-code' ? styles.modeBtnActive : ''}`}
-                onClick={() => setLoginMode('access-code')}
+                className={`${styles.modeBtn} ${loginMode === 'new-user' ? styles.modeBtnActive : ''}`}
+                onClick={() => { setLoginMode('new-user'); setLoginError(''); setNewUserError('') }}
               >
-                🔑 Access Code
+                🆕 New User
               </button>
             </div>
 
-            {loginError && <div className={styles.errorBanner}>{loginError}</div>}
+            {/* ── EXISTING USER FORM ── */}
+            {loginMode === 'existing' && (
+              <form onSubmit={handleExistingLogin} className={styles.form}>
+                <div className={styles.accessCodeNote}>
+                  Sign in with your <strong>email</strong> or <strong>access code</strong> and your password.
+                </div>
 
-            {loginMode === 'email' ? (
-              <form onSubmit={handleEmailLogin} className={styles.form}>
-                <label className={styles.label}>Email Address</label>
+                {loginError && <div className={styles.errorBanner}>{loginError}</div>}
+
+                <label className={styles.label}>Email or Access Code</label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  type="text"
+                  value={identifier}
+                  onChange={e => setIdentifier(e.target.value)}
                   className={styles.input}
-                  placeholder="you@school.edu.ng"
+                  placeholder="you@school.edu.ng or PRIN-528-F0A"
                   required
-                  autoComplete="email"
+                  autoComplete="off"
+                  autoCapitalize="off"
                 />
 
                 <label className={styles.label}>Password</label>
@@ -263,21 +319,12 @@ export default function LoginPage() {
                     required
                     autoComplete="current-password"
                   />
-                  <button
-                    type="button"
-                    className={styles.eyeBtn}
-                    onClick={() => setShowPass(!showPass)}
-                    tabIndex={-1}
-                  >
+                  <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)} tabIndex={-1}>
                     {showPass ? '🙈' : '👁️'}
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  className={styles.forgotLink}
-                  onClick={() => router.push('/forgot-password')}
-                >
+                <button type="button" className={styles.forgotLink} onClick={() => router.push('/forgot-password')}>
                   Forgot password?
                 </button>
 
@@ -285,28 +332,33 @@ export default function LoginPage() {
                   {loginLoading ? <span className={styles.btnSpinner} /> : 'Sign In'}
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleAccessCodeLogin} className={styles.form}>
+            )}
+
+            {/* ── NEW USER FORM ── */}
+            {loginMode === 'new-user' && (
+              <form onSubmit={handleNewUserActivation} className={styles.form}>
                 <div className={styles.accessCodeNote}>
-                  First-time login? Enter your access code from your administrator and set a new password.
+                  First time? Enter your access code from your administrator and create your password.
                 </div>
+
+                {newUserError && <div className={styles.errorBanner}>{newUserError}</div>}
 
                 <label className={styles.label}>Access Code</label>
                 <input
                   type="text"
-                  value={accessCode}
-                  onChange={e => setAccessCode(e.target.value.toUpperCase())}
+                  value={newCode}
+                  onChange={e => setNewCode(e.target.value.toUpperCase())}
                   className={`${styles.input} ${styles.codeInput}`}
-                  placeholder="e.g. PAR-2026-7410"
+                  placeholder="e.g. TCH-AB12-XY"
                   required
                   autoComplete="off"
-                  maxLength={14}
+                  maxLength={16}
                 />
 
                 <label className={styles.label}>Set New Password</label>
                 <div className={styles.passWrap}>
                   <input
-                    type={showPass ? 'text' : 'password'}
+                    type={showNewPass ? 'text' : 'password'}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     className={styles.input}
@@ -314,18 +366,26 @@ export default function LoginPage() {
                     required
                     minLength={8}
                   />
-                  <button
-                    type="button"
-                    className={styles.eyeBtn}
-                    onClick={() => setShowPass(!showPass)}
-                    tabIndex={-1}
-                  >
-                    {showPass ? '🙈' : '👁️'}
+                  <button type="button" className={styles.eyeBtn} onClick={() => setShowNewPass(!showNewPass)} tabIndex={-1}>
+                    {showNewPass ? '🙈' : '👁️'}
                   </button>
                 </div>
 
-                <button type="submit" className={styles.submitBtn} disabled={loginLoading}>
-                  {loginLoading ? <span className={styles.btnSpinner} /> : 'Activate Account'}
+                <label className={styles.label}>Confirm Password</label>
+                <div className={styles.passWrap}>
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    value={confirmPass}
+                    onChange={e => setConfirmPass(e.target.value)}
+                    className={styles.input}
+                    placeholder="Repeat your password"
+                    required
+                    minLength={8}
+                  />
+                </div>
+
+                <button type="submit" className={styles.submitBtn} disabled={newUserLoading}>
+                  {newUserLoading ? <span className={styles.btnSpinner} /> : 'Activate Account'}
                 </button>
               </form>
             )}
@@ -348,7 +408,6 @@ export default function LoginPage() {
               </div>
             ) : (
               <>
-                {/* Step indicator */}
                 <div className={styles.stepBar}>
                   {[1,2].map(s => (
                     <div
@@ -357,9 +416,7 @@ export default function LoginPage() {
                       onClick={() => s < regStep && setRegStep(s)}
                     >
                       <div className={styles.stepDot}>{regStep > s ? '✓' : s}</div>
-                      <span className={styles.stepLabel}>
-                        {s === 1 ? 'School Info' : 'Principal'}
-                      </span>
+                      <span className={styles.stepLabel}>{s === 1 ? 'School Info' : 'Principal'}</span>
                     </div>
                   ))}
                   <div className={`${styles.stepLine} ${regStep > 1 ? styles.stepLineDone : ''}`} />
@@ -367,17 +424,18 @@ export default function LoginPage() {
 
                 {regError && <div className={styles.errorBanner}>{regError}</div>}
 
-                <form onSubmit={regStep === 1 ? (e) => { e.preventDefault(); setRegStep(2) } : handleRegister} className={styles.form}>
+                <form
+                  onSubmit={regStep === 1 ? (e) => { e.preventDefault(); setRegStep(2) } : handleRegister}
+                  className={styles.form}
+                >
                   {regStep === 1 && (
                     <>
                       <label className={styles.label}>School Name *</label>
                       <input className={styles.input} required value={reg.schoolName}
-                        onChange={e => updateReg('schoolName', e.target.value)}
-                        placeholder="e.g. Greenfield Academy" />
+                        onChange={e => updateReg('schoolName', e.target.value)} placeholder="e.g. Greenfield Academy" />
 
                       <label className={styles.label}>School Type</label>
-                      <select className={styles.select} value={reg.schoolType}
-                        onChange={e => updateReg('schoolType', e.target.value)}>
+                      <select className={styles.select} value={reg.schoolType} onChange={e => updateReg('schoolType', e.target.value)}>
                         <option>Primary</option>
                         <option>Secondary</option>
                         <option>Tertiary</option>
@@ -387,8 +445,7 @@ export default function LoginPage() {
 
                       <label className={styles.label}>Address *</label>
                       <input className={styles.input} required value={reg.address}
-                        onChange={e => updateReg('address', e.target.value)}
-                        placeholder="Street address" />
+                        onChange={e => updateReg('address', e.target.value)} placeholder="Street address" />
 
                       <div className={styles.row}>
                         <div className={styles.col}>
@@ -408,13 +465,11 @@ export default function LoginPage() {
 
                       <label className={styles.label}>School Email *</label>
                       <input className={styles.input} type="email" required value={reg.email}
-                        onChange={e => updateReg('email', e.target.value)}
-                        placeholder="school@domain.com" />
+                        onChange={e => updateReg('email', e.target.value)} placeholder="school@domain.com" />
 
                       <label className={styles.label}>Phone *</label>
                       <input className={styles.input} type="tel" required value={reg.phone}
-                        onChange={e => updateReg('phone', e.target.value)}
-                        placeholder="+234 800 0000 000" />
+                        onChange={e => updateReg('phone', e.target.value)} placeholder="+234 800 0000 000" />
 
                       <label className={styles.label}>Subscription Plan</label>
                       <div className={styles.planGrid}>
@@ -429,14 +484,9 @@ export default function LoginPage() {
                           </div>
                         ))}
                       </div>
+                      <div className={styles.registrationFeeNote}>+ ₦25,000 one-time registration fee</div>
 
-                      <div className={styles.registrationFeeNote}>
-                        + ₦25,000 one-time registration fee
-                      </div>
-
-                      <button type="submit" className={styles.submitBtn}>
-                        Next: Principal Details →
-                      </button>
+                      <button type="submit" className={styles.submitBtn}>Next: Principal Details →</button>
                     </>
                   )}
 
@@ -444,26 +494,21 @@ export default function LoginPage() {
                     <>
                       <label className={styles.label}>Principal Full Name *</label>
                       <input className={styles.input} required value={reg.principalName}
-                        onChange={e => updateReg('principalName', e.target.value)}
-                        placeholder="Full name" />
+                        onChange={e => updateReg('principalName', e.target.value)} placeholder="Full name" />
 
                       <label className={styles.label}>Principal Email *</label>
                       <input className={styles.input} type="email" required value={reg.principalEmail}
-                        onChange={e => updateReg('principalEmail', e.target.value)}
-                        placeholder="principal@school.edu" />
+                        onChange={e => updateReg('principalEmail', e.target.value)} placeholder="principal@school.edu" />
 
                       <label className={styles.label}>Principal Phone *</label>
                       <input className={styles.input} type="tel" required value={reg.principalPhone}
-                        onChange={e => updateReg('principalPhone', e.target.value)}
-                        placeholder="+234 800 0000 000" />
+                        onChange={e => updateReg('principalPhone', e.target.value)} placeholder="+234 800 0000 000" />
 
                       <label className={styles.label}>Set Password *</label>
                       <div className={styles.passWrap}>
                         <input
                           type={showPass ? 'text' : 'password'}
-                          className={styles.input}
-                          required
-                          minLength={8}
+                          className={styles.input} required minLength={8}
                           value={reg.principalPassword}
                           onChange={e => updateReg('principalPassword', e.target.value)}
                           placeholder="Min. 8 characters"
@@ -483,9 +528,7 @@ export default function LoginPage() {
                       </div>
 
                       <div className={styles.regBtnRow}>
-                        <button type="button" className={styles.backBtn} onClick={() => setRegStep(1)}>
-                          ← Back
-                        </button>
+                        <button type="button" className={styles.backBtn} onClick={() => setRegStep(1)}>← Back</button>
                         <button type="submit" className={styles.submitBtn} disabled={regLoading}>
                           {regLoading ? <span className={styles.btnSpinner} /> : 'Register & Pay'}
                         </button>
