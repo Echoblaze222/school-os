@@ -84,15 +84,34 @@ export default function LoginPage() {
         body: JSON.stringify({ code: accessCode.toUpperCase(), newPassword }),
       })
       const data = await res.json()
-      if (!res.ok) { setLoginError(data.error || 'Something went wrong.'); return }
+      if (!res.ok) {
+        // Account already activated — sign in directly using their existing password
+        if (data.already_activated && data.email) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: newPassword,
+          })
+          if (signInErr) {
+            setLoginError('Wrong password. Please try again.')
+          } else {
+            router.replace('/dashboard')
+          }
+        } else {
+          setLoginError(data.error || 'Something went wrong.')
+        }
+        return
+      }
 
       if (data.success) {
-        // API returns the email — now sign in with new password
+        // First time — password just set, sign in with new password
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: newPassword,
         })
-        if (signInErr) { setLoginError('Account activated but sign-in failed. Please use Email login.'); return }
+        if (signInErr) {
+          setLoginError('Wrong password. Please try again.')
+          return
+        }
 
         const stage = data.onboarding_stage
         router.replace(
@@ -284,7 +303,8 @@ export default function LoginPage() {
             ) : (
               <form onSubmit={handleAccessCodeLogin} className={styles.form}>
                 <div className={styles.accessCodeNote}>
-                  First-time login? Enter your access code from your administrator and set a new password.
+                  Enter your access code and password to sign in.
+                  First time? Your password will be set on first use.
                 </div>
 
                 <label className={styles.label}>Access Code</label>
@@ -299,7 +319,7 @@ export default function LoginPage() {
                   maxLength={12}
                 />
 
-                <label className={styles.label}>Set New Password</label>
+                <label className={styles.label}>Password</label>
                 <div className={styles.passWrap}>
                   <input
                     type={showPass ? 'text' : 'password'}
@@ -321,7 +341,7 @@ export default function LoginPage() {
                 </div>
 
                 <button type="submit" className={styles.submitBtn} disabled={loginLoading}>
-                  {loginLoading ? <span className={styles.btnSpinner} /> : 'Activate Account'}
+                  {loginLoading ? <span className={styles.btnSpinner} /> : 'Sign In'}
                 </button>
               </form>
             )}
