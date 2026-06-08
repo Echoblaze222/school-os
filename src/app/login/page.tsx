@@ -101,8 +101,8 @@ export default function LoginPage() {
           data.onboarding_stage === 'stage_2_pending' ? '/onboarding/stage-2' : '/dashboard'
         )
       }
-    } catch {
-      setLoginError('Something went wrong.')
+    } catch (err: any) {
+      setLoginError(err?.message ?? 'Something went wrong.')
     } finally {
       setLoginLoading(false)
     }
