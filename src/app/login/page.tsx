@@ -154,7 +154,7 @@ export default function LoginPage() {
         const stage = data.onboarding_stage
         router.replace(
           stage === 'stage_1_pending' ? '/onboarding/stage-1' :
-          stage === 2                 ? '/onboarding/pin-setup' : '/dashboard'
+          stage === 'stage_2_pending'  ? '/onboarding/stage-2'  : '/dashboard'
         )
       }
     } catch {
