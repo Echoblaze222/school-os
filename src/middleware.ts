@@ -1,148 +1,136 @@
-// middleware.ts — Route protection for SchoolOS
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+// src/middleware.ts
+// ─────────────────────────────────────────────────────────────
+// 1. Protects all dashboard/private routes — redirects to /login if no session
+// 2. Redirects authenticated users away from auth pages
+// 3. Sets session timeout: user is logged out after INACTIVITY_MINUTES of no activity
+// ─────────────────────────────────────────────────────────────
 
-// Routes that require authentication
-const PROTECTED_PREFIXES = [
-  '/dashboard',
-  '/admin',
-  '/onboarding',
-  '/super-admin',
-]
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-// Routes that are public
-const PUBLIC_ROUTES = [
+// ── Config ──────────────────────────────────────────────────
+const INACTIVITY_MINUTES = 30          // Auto-logout after 30 min idle
+const INACTIVITY_MS = INACTIVITY_MINUTES * 60 * 1000
+
+// Routes that do NOT require authentication
+const PUBLIC_PATHS = [
+  '/splash',
+  '/select-school',
   '/login',
+  '/register',
   '/forgot-password',
   '/reset-password',
-  '/register-school',
-  '/select-school',
   '/offline',
-  '/api',
-  '/super-admin/login',   // super-admin login page must stay public
+  '/api/schools/register',
+  '/api/schools/payment-callback',
+  '/api/schools/paystack-webhook',
 ]
 
-// Role → allowed dashboard prefix
-const ROLE_DASHBOARDS: Record<string, string> = {
-  student:   '/dashboard/student',
-  teacher:   '/dashboard/teacher',
-  principal: '/dashboard/principal',
-  bursar:    '/dashboard/bursar',
-  secretary: '/dashboard/secretary',
-  parent:    '/dashboard/parent',
-  admin:     '/admin',
-}
+// Routes that authenticated users should be bounced away from
+const AUTH_ONLY_PATHS = [
+  '/splash',
+  '/select-school',
+  '/login',
+  '/register',
+  '/forgot-password',
+]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Always allow public routes + static assets
+  // Skip Next.js internals and static files
   if (
-    PUBLIC_ROUTES.some(r => pathname.startsWith(r)) ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon') ||
-    pathname.startsWith('/icons') ||
-    pathname.startsWith('/manifest') ||
-    pathname === '/'
+    pathname.startsWith('/icons/') ||
+    pathname.startsWith('/fonts/') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js'
   ) {
     return NextResponse.next()
   }
 
-  // Create response to mutate cookies
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  })
+  // Build Supabase SSR client that reads/writes cookies
+  const response = NextResponse.next()
 
-  // Create Supabase server client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value: '', ...options })
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
         },
       },
     }
   )
 
-  // ── Verify auth with getUser() (validates token server-side + auto-refreshes) ──
-  // NOTE: Never use getSession() in middleware — it only reads cookies and
-  // does NOT refresh an expired access token, causing false logouts.
-  const { data: { user } } = await supabase.auth.getUser()
+  // ── Get session ─────────────────────────────────────────
+  const { data: { session } } = await supabase.auth.getSession()
 
-  // Not authenticated → redirect to appropriate login
-  if (!user && PROTECTED_PREFIXES.some(p => pathname.startsWith(p))) {
-    // Super-admin routes go to the super-admin login, not the regular one
-    if (pathname.startsWith('/super-admin')) {
-      return NextResponse.redirect(new URL('/super-admin/login', request.url))
+  const isPublicPath = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+  const isAuthOnlyPath = AUTH_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+
+  // ── Inactivity check ────────────────────────────────────
+  if (session) {
+    const lastActivity = request.cookies.get('schoolos_last_activity')?.value
+    const now = Date.now()
+
+    if (lastActivity) {
+      const elapsed = now - parseInt(lastActivity, 10)
+      if (elapsed > INACTIVITY_MS) {
+        // Session has been idle too long — sign out and redirect to login
+        await supabase.auth.signOut()
+
+        const loginUrl = new URL('/login', request.url)
+        loginUrl.searchParams.set('reason', 'timeout')
+
+        const redirectResponse = NextResponse.redirect(loginUrl)
+        // Clear the activity cookie
+        redirectResponse.cookies.delete('schoolos_last_activity')
+        return redirectResponse
+      }
     }
+
+    // Update last activity timestamp on every request
+    response.cookies.set('schoolos_last_activity', String(now), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: INACTIVITY_MS / 1000,  // expire if not refreshed
+    })
+  }
+
+  // ── Route protection ────────────────────────────────────
+  if (!session && !isPublicPath) {
+    // Not logged in and trying to access a private page
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('redirectTo', pathname)
+    loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Authenticated on /login → redirect to dashboard
-  if (user && pathname === '/login') {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, onboarding_stage')
-      .eq('id', user.id)
-      .single()
-
-    if (profile) {
-      // Check onboarding completion
-      if (profile.onboarding_stage === 'stage_1_pending' || profile.onboarding_stage === 1) {
-        return NextResponse.redirect(new URL('/onboarding/stage-1', request.url))
-      }
-      if (profile.onboarding_stage === 2 || profile.onboarding_stage === 'start') {
-        return NextResponse.redirect(new URL('/onboarding/stage-2', request.url))
-      }
-      if (profile.onboarding_stage === 3) {
-        return NextResponse.redirect(new URL('/onboarding/stage-3', request.url))
-      }
-
-      const dest = ROLE_DASHBOARDS[profile.role] ?? '/dashboard/student'
-      return NextResponse.redirect(new URL(dest, request.url))
-    }
+  if (session && isAuthOnlyPath) {
+    // Already logged in but hitting auth pages — send to dashboard
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Role-based access: prevent accessing another role's dashboard
-  if (user && pathname.startsWith('/dashboard')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, onboarding_stage')
-      .eq('id', user.id)
-      .single()
-
-    if (profile) {
-      // Block dashboard access until onboarding is complete
-      const stage = profile.onboarding_stage
-      if (stage === 'stage_1_pending' || stage === 1) {
-        return NextResponse.redirect(new URL('/onboarding/stage-1', request.url))
-      }
-      if (stage === 2 || stage === 'start') {
-        return NextResponse.redirect(new URL('/onboarding/stage-2', request.url))
-      }
-      if (stage === 3) {
-        return NextResponse.redirect(new URL('/onboarding/stage-3', request.url))
-      }
-
-      const allowedPrefix = ROLE_DASHBOARDS[profile.role]
-      if (allowedPrefix && !pathname.startsWith(allowedPrefix) && !pathname.startsWith('/dashboard/student/profile')) {
-        return NextResponse.redirect(new URL(allowedPrefix, request.url))
-      }
+  // ── Root redirect ────────────────────────────────────────
+  if (pathname === '/') {
+    if (session) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+    // First-time visitors go through the splash → select-school flow.
+    // Auto-logout redirects already land on /login directly (see above),
+    // so this only runs when someone opens the root URL fresh.
+    return NextResponse.redirect(new URL('/splash', request.url))
   }
 
   return response
@@ -150,6 +138,12 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|manifest|sw.js|workbox).*)',
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
