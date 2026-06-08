@@ -46,7 +46,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
     </div>
   )
 
-  if (!child) return <LinkChildPrompt userId={userId} schoolColor={sc}/>
+  if (!child) return <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''}/>
 
   return (
     <div className={styles.page}>
