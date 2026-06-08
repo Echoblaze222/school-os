@@ -4,9 +4,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { SchoolIcon, UserIcon, KeyIcon } from '@/components/Icons'
 
-interface Props { userId: string; schoolColor: string }
+interface Props { userId: string; schoolColor: string; schoolId: string }
 
-export default function LinkChildPrompt({ userId, schoolColor }: Props) {
+export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props) {
   const [code,    setCode]    = useState('')
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -22,6 +22,7 @@ export default function LinkChildPrompt({ userId, schoolColor }: Props) {
       .select('id, full_name, class_level, avatar_url')
       .eq('default_code', code.trim().toUpperCase())
       .eq('role', 'student')
+      .eq('school_id', schoolId)
       .single()
     if (!data) { setError("No student found with that code. Check with the school admin."); setLoading(false); return }
     setFound(data); setLoading(false)
