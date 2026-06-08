@@ -17,21 +17,26 @@ interface School {
   is_platform_active: boolean
 }
 
+const SCHOOL_KEY = 'schoolos_selected_school'
+
 export default function SelectSchoolPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [query, setQuery]           = useState('')
-  const [results, setResults]       = useState<School[]>([])
-  const [searching, setSearching]   = useState(false)
-  const [selected, setSelected]     = useState<School | null>(null)
-  const [theme, setTheme]           = useState<'dark' | 'light'>('dark')
-  const searchRef                   = useRef<HTMLInputElement>(null)
-  const debounceRef                 = useRef<NodeJS.Timeout | undefined>(undefined)
+  const [query, setQuery]         = useState('')
+  const [results, setResults]     = useState<School[]>([])
+  const [searching, setSearching] = useState(false)
+  const [selected, setSelected]   = useState<School | null>(null)
+  const [theme, setTheme]         = useState<'dark' | 'light'>('dark')
+  const [visible, setVisible]     = useState(false)
+  const searchRef                 = useRef<HTMLInputElement>(null)
+  const debounceRef               = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     setTheme(prefersDark ? 'dark' : 'light')
+    // Trigger entrance animation
+    requestAnimationFrame(() => setVisible(true))
     searchRef.current?.focus()
   }, [])
 
@@ -39,7 +44,6 @@ export default function SelectSchoolPage() {
     document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '')
   }, [theme])
 
-  // Debounced search
   function handleSearch(value: string) {
     setQuery(value)
     setSelected(null)
@@ -52,12 +56,6 @@ export default function SelectSchoolPage() {
 
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
-
-      // Use is_platform_active as the single source of truth for whether a school
-      // is live and searchable. This flag is set to true by:
-      //   - The super-admin create-school flow (trial + active)
-      //   - The Paystack payment callback (self-registered schools after payment)
-      // It stays false for pending/unpaid self-registered schools.
       const { data } = await supabase
         .from('schools')
         .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active')
@@ -74,10 +72,14 @@ export default function SelectSchoolPage() {
     setSelected(school)
     setQuery(school.name)
     setResults([])
-    // Store selected school ID for the login page to load branding
-    localStorage.setItem('schoolos_school_id', school.id)
-    localStorage.setItem('schoolos_school_name', school.name)
-    localStorage.setItem('schoolos_school_color', school.primary_color)
+    // Store with a SINGLE consistent key used by login page
+    localStorage.setItem(SCHOOL_KEY, JSON.stringify({
+      id: school.id,
+      name: school.name,
+      primaryColor: school.primary_color,
+      city: school.city,
+      state: school.state,
+    }))
   }
 
   function proceedToLogin() {
@@ -89,26 +91,25 @@ export default function SelectSchoolPage() {
     setSelected(null)
     setQuery('')
     setResults([])
+    localStorage.removeItem(SCHOOL_KEY)
     searchRef.current?.focus()
   }
 
   return (
     <div className={styles.page}>
-      {/* Background glow orbs */}
       <div className={`${styles.glowOrb} ${styles.orb1}`} />
       <div className={`${styles.glowOrb} ${styles.orb2}`} />
 
-      {/* Theme toggle */}
       <button
         className={styles.themeToggle}
         onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+        aria-label="Toggle theme"
       >
         {theme === 'dark' ? '☀️' : '🌙'}
       </button>
 
-      <div className={styles.container}>
+      <div className={`${styles.container} ${visible ? styles.visible : ''}`}>
 
-        {/* Platform wordmark */}
         <div className={styles.wordmark}>
           <span className={styles.wordmarkSchool}>School</span>
           <span className={styles.wordmarkOS}>OS</span>
@@ -119,8 +120,7 @@ export default function SelectSchoolPage() {
           Search for your school to access your personalised portal
         </p>
 
-        {/* Search box */}
-        <div className={`glass-card ${styles.searchCard}`}>
+        <div className={styles.searchCard}>
           <div className={`${styles.searchBox} ${selected ? styles.searchBoxSelected : ''}`}>
             <span className={styles.searchIcon}>
               {searching ? '⏳' : selected ? '✅' : '🔍'}
@@ -135,11 +135,10 @@ export default function SelectSchoolPage() {
               autoComplete="off"
             />
             {query && (
-              <button className={styles.clearBtn} onClick={clearSelection}>✕</button>
+              <button className={styles.clearBtn} onClick={clearSelection} aria-label="Clear">✕</button>
             )}
           </div>
 
-          {/* Search results dropdown */}
           {results.length > 0 && (
             <div className={styles.dropdown}>
               {results.map(school => (
@@ -148,7 +147,6 @@ export default function SelectSchoolPage() {
                   className={styles.schoolResult}
                   onClick={() => selectSchool(school)}
                 >
-                  {/* School logo or colored circle */}
                   <div
                     className={styles.schoolIcon}
                     style={{ background: school.primary_color }}
@@ -171,7 +169,6 @@ export default function SelectSchoolPage() {
             </div>
           )}
 
-          {/* No results */}
           {query.length >= 2 && !searching && results.length === 0 && !selected && (
             <div className={styles.noResults}>
               <p>No school found for &quot;<strong>{query}</strong>&quot;</p>
@@ -182,10 +179,9 @@ export default function SelectSchoolPage() {
           )}
         </div>
 
-        {/* Selected school preview */}
         {selected && (
           <div
-            className={`glass-card ${styles.selectedCard} animate-scale-in`}
+            className={styles.selectedCard}
             style={{ '--school-color': selected.primary_color } as React.CSSProperties}
           >
             <div
@@ -210,7 +206,7 @@ export default function SelectSchoolPage() {
             </div>
 
             <button
-              className={`btn btn-primary ${styles.proceedBtn}`}
+              className={styles.proceedBtn}
               onClick={proceedToLogin}
               style={{
                 background: `linear-gradient(135deg, ${selected.primary_color}, ${selected.primary_color}CC)`
@@ -221,7 +217,6 @@ export default function SelectSchoolPage() {
           </div>
         )}
 
-        {/* Register school link */}
         <div className={styles.footer}>
           <p>Are you a school administrator?</p>
           <a href="/register-school" className={styles.registerLink}>
@@ -231,7 +226,6 @@ export default function SelectSchoolPage() {
 
       </div>
 
-      {/* Powered by */}
       <div className={styles.poweredBy}>
         Powered by <strong>SchoolOS</strong> — Premium School Management
       </div>
