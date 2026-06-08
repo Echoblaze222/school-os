@@ -108,8 +108,7 @@ export async function POST(req: Request) {
 
     // Supabase fires a trigger (handle_new_user) the moment auth.admin.createUser
     // succeeds, which auto-inserts a bare row into profiles with the new user's id.
-    // Doing .insert() after that hits the primary-key constraint.
-    // Fix: .upsert() so we write our full data whether or not the trigger beat us here.
+    // .upsert() ensures we write our full data whether or not the trigger beat us.
     const { error: profileErr } = await adminSupabase.from('profiles').upsert({
       id:               authUser.user.id,
       full_name:        principalName,
@@ -118,7 +117,7 @@ export async function POST(req: Request) {
       role:             'principal',
       school_id:        school.id,
       default_code:     defaultCode,
-      onboarding_stage: 'stage_2_pending',
+      onboarding_stage: 'stage_1_pending',  // ✅ was integer 2 — now canonical string enum
     }, { onConflict: 'id' })
 
     if (profileErr) {
