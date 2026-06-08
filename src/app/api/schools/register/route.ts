@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         phone:            principal.phone,
         school_id:        newSchool.id,
         default_code:     defaultCode,
-        onboarding_stage: 'stage_2_pending',
+        onboarding_stage: 'stage_1_pending',  // FIX: was integer 2 — now canonical string enum
         is_active:        true,
       })
 
