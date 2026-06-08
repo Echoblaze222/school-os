@@ -1,0 +1,193 @@
+/* src/app/splash/splash.module.css */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  background: #060608;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* ── Ambient background glows ── */
+.ambientGlow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.ambientGlow2 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(0, 180, 216, 0.07) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: glowPulse 3s ease-in-out 0.5s infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* ── Circuit grid ── */
+.circuitGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 180, 216, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 180, 216, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 40%, transparent 100%);
+  animation: gridFade 2.8s ease forwards;
+}
+
+@keyframes gridFade {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Main content ── */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  animation: contentIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes contentIn {
+  0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Logo ── */
+.logoWrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoRing {
+  position: absolute;
+  inset: -12px;
+  border-radius: 36px;
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  animation: ringPulse 2s ease-in-out 0.4s infinite;
+}
+
+.logoRing2 {
+  position: absolute;
+  inset: -24px;
+  border-radius: 44px;
+  border: 1px solid rgba(128, 0, 32, 0.2);
+  animation: ringPulse 2s ease-in-out 0.8s infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+.logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 28px;
+  animation: logoReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both,
+             logoGlow 2s ease-in-out 1s infinite;
+  filter: drop-shadow(0 0 20px rgba(0, 180, 216, 0.4));
+}
+
+@keyframes logoReveal {
+  0% { opacity: 0; transform: scale(0.7) rotate(-8deg); filter: blur(10px); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+}
+
+@keyframes logoGlow {
+  0%, 100% { filter: drop-shadow(0 0 16px rgba(0, 180, 216, 0.35)); }
+  50% { filter: drop-shadow(0 0 32px rgba(0, 180, 216, 0.65)); }
+}
+
+/* ── Brand text ── */
+.brandWrap {
+  text-align: center;
+  animation: textIn 0.7s ease 0.5s both;
+}
+
+@keyframes textIn {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.brandName {
+  font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 0 30px rgba(0, 180, 216, 0.5);
+}
+
+.brandTagline {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 6px 0 0;
+}
+
+/* ── Loading bar ── */
+.loadBar {
+  width: 180px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  animation: barAppear 0.4s ease 0.8s both;
+}
+
+@keyframes barAppear {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.loadBarFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #800020, #00b4d8, #800020);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation:
+    loadProgress 2s cubic-bezier(0.4, 0, 0.2, 1) 0.8s forwards,
+    shimmer 1.5s linear 0.8s infinite;
+}
+
+@keyframes loadProgress {
+  0% { width: 0%; }
+  60% { width: 80%; }
+  100% { width: 100%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
