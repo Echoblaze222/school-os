@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const isFirstLogin = stage === 'start' || stage === 'stage_1_pending'
     if (!isFirstLogin) {
       return NextResponse.json(
-        { error: 'Account already activated. Please use Email login.' },
+        { error: 'Account already activated. Please sign in with your email and password.', already_activated: true, email: profile.email },
         { status: 400 }
       )
     }
