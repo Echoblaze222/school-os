@@ -62,6 +62,7 @@ export interface Profile {
   avatar_url: string | null
   is_active: boolean
   school_id: string | null
+  parent_id: string | null  
   permanent_student_id: string | null
   lifecycle_status: string | null
   created_at: string
