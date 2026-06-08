@@ -1,5 +1,5 @@
 // src/app/api/schools/register/route.ts
-// Creates the school, principal account, and initiates Paystack payment
+// Creates the school, principal account, and initiates Paystack payment.
 
 import { NextResponse }      from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -16,6 +16,14 @@ export async function POST(request: Request) {
   try {
     const { school, plan, principal } = await request.json()
 
+    // Validate required fields early
+    if (!school?.name || !school?.email || !principal?.email || !principal?.password) {
+      return NextResponse.json(
+        { error: 'Missing required fields. Please complete all steps.' },
+        { status: 400 }
+      )
+    }
+
     const supabase    = createAdminClient()
     const planPrice   = PLAN_PRICES[plan] ?? 120000
     const totalAmount = REGISTRATION_FEE + planPrice
@@ -31,16 +39,16 @@ export async function POST(request: Request) {
       .insert({
         name:               school.name,
         slug:               `${slug}-${Date.now()}`,
-        school_type:        school.school_type,
+        school_type:        school.school_type ?? 'Secondary',
         address:            school.address,
         city:               school.city,
         state:              school.state,
         country:            'Nigeria',
         phone:              school.phone,
         email:              school.email,
-        tagline:            school.tagline,
-        primary_color:      school.primary_color,
-        font_family:        school.font_family,
+        tagline:            school.tagline ?? null,
+        primary_color:      school.primary_color ?? '#800020',
+        font_family:        school.font_family ?? 'Inter',
         status:             'pending',
         is_platform_active: false,
       })
@@ -71,19 +79,20 @@ export async function POST(request: Request) {
     }
 
     // ── 3. Create principal profile ───────────────────────
-    const defaultCode = `SCH-${Date.now().toString().slice(-6)}`
+    const principalName = principal.full_name || principal.name || 'Principal'
+    const defaultCode   = `PRIN-${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`
 
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id:               authUser.user.id,
         role:             'principal',
-        full_name:        principal.full_name,
+        full_name:        principalName,
         email:            principal.email,
-        phone:            principal.phone,
+        phone:            principal.phone ?? null,
         school_id:        newSchool.id,
         default_code:     defaultCode,
-        onboarding_stage: 2,
+        onboarding_stage: 'stage_1_pending',
         is_active:        true,
       })
 
@@ -120,10 +129,14 @@ export async function POST(request: Request) {
 
     // ── 6. Initiate Paystack payment ──────────────────────
     const paystackKey = process.env.PAYSTACK_SECRET_KEY
+    // Strip trailing slash from APP_URL to avoid double-slash in callback
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '')
 
-    let paymentUrl = null
+    let paymentUrl: string | null = null
 
-    if (paystackKey) {
+    if (paystackKey && appUrl) {
+      const reference = `SCH-REG-${newSchool.id.slice(0, 8)}-${Date.now()}`
+
       const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
         method:  'POST',
         headers: {
@@ -132,13 +145,13 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           email:        principal.email,
-          amount:       totalAmount * 100,
+          amount:       totalAmount * 100,   // Paystack expects kobo
           currency:     'NGN',
-          reference:    `SCH-REG-${newSchool.id.slice(0, 8)}-${Date.now()}`,
-          callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/schools/payment-callback`,
+          reference,
+          callback_url: `${appUrl}/api/schools/payment-callback`,
           metadata: {
             school_id:   newSchool.id,
-            plan:        plan,
+            plan,
             school_name: school.name,
             custom_fields: [
               { display_name: 'School Name', variable_name: 'school_name', value: school.name },
@@ -151,14 +164,18 @@ export async function POST(request: Request) {
       const paystackData = await paystackRes.json()
       if (paystackData.status && paystackData.data?.authorization_url) {
         paymentUrl = paystackData.data.authorization_url
+      } else {
+        console.error('Paystack init failed:', paystackData)
       }
+    } else {
+      console.warn('PAYSTACK_SECRET_KEY or NEXT_PUBLIC_APP_URL not set — skipping payment init')
     }
 
     return NextResponse.json({
       success:     true,
       schoolId:    newSchool.id,
-      defaultCode: defaultCode,
-      paymentUrl:  paymentUrl,
+      defaultCode,
+      paymentUrl,
     })
 
   } catch (error) {
