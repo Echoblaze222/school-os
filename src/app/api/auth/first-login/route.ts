@@ -3,8 +3,8 @@
 // Uses the service role to retrieve the temp password, then updates it
 // to the user's chosen password and advances onboarding_stage.
 
-import { NextResponse }  from 'next/server'
-import { createClient }  from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
   try {
@@ -44,9 +44,16 @@ export async function POST(request: Request) {
       )
     }
 
-    // Only allow this route for accounts that haven't completed onboarding
+    // Only allow this route for accounts that haven't completed onboarding.
+    // Accepts both string stages (canonical) and legacy integer 2 (old data).
     const stage = profile.onboarding_stage
-    const isFirstLogin = stage === 'stage_1_pending' || stage === 'stage_2_pending'
+    const isFirstLogin =
+      stage === 'stage_1_pending' ||
+      stage === 'stage_2_pending' ||
+      stage === 'start' ||        // secretary reset value
+      stage === 2 ||              // legacy integer from old create-school
+      stage === null              // newly created users before stage was set
+
     if (!isFirstLogin) {
       return NextResponse.json(
         { error: 'Account already activated. Please log in normally.' },
@@ -68,21 +75,23 @@ export async function POST(request: Request) {
       )
     }
 
-    // Advance onboarding stage:
-    // principal (stage_1_pending) → stays, will go through stage-1 page
-    // staff/student (stage_2_pending) → advance so they go to PIN setup (stage-2)
-    const nextStage = stage === 'stage_1_pending' ? 'stage_1_pending' : 'stage_2_pending'
+    // Advance onboarding stage (always use string enum — canonical):
+    // principal (stage_1_pending) → stays at stage_1_pending (goes to /onboarding/stage-1)
+    // everyone else              → stage_2_pending (goes to /onboarding/stage-2 for PIN setup)
+    const nextStage: string =
+      stage === 'stage_1_pending' ? 'stage_1_pending' : 'stage_2_pending'
 
     await adminClient
       .from('profiles')
       .update({ onboarding_stage: nextStage })
       .eq('id', profile.id)
 
+    // ✅ email is included so login page can sign the user in immediately
     return NextResponse.json({
       success:          true,
       email:            profile.email,
-      onboarding_stage: nextStage,
       role:             profile.role,
+      onboarding_stage: nextStage,
     })
 
   } catch (e: any) {
@@ -92,5 +101,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-        }
-  
+}
