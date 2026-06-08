@@ -1,0 +1,21 @@
+/* src/components/auth/TimeoutBanner.module.css */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fef08a;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin: 12px 20px 0;
+  animation: fadeIn 0.4s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
