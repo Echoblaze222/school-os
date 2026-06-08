@@ -1,4 +1,6 @@
 'use client'
+// src/app/select-school/page.tsx
+// Step 1: User picks their school, then proceeds to login
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -8,230 +10,162 @@ import styles from './select-school.module.css'
 interface School {
   id: string
   name: string
-  city: string | null
-  state: string | null
-  primary_color: string
-  logo_url: string | null
-  tagline: string | null
+  city: string
+  state: string
   school_type: string
-  is_platform_active: boolean
+  primary_color: string | null
+  slug: string
 }
 
 export default function SelectSchoolPage() {
   const router = useRouter()
   const supabase = createClient()
-
-  const [query, setQuery]           = useState('')
-  const [results, setResults]       = useState<School[]>([])
-  const [searching, setSearching]   = useState(false)
-  const [selected, setSelected]     = useState<School | null>(null)
-  const [theme, setTheme]           = useState<'dark' | 'light'>('dark')
-  const searchRef                   = useRef<HTMLInputElement>(null)
-  // ✅ After
-const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const [query, setQuery] = useState('')
+  const [schools, setSchools] = useState<School[]>([])
+  const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    setTheme(prefersDark ? 'dark' : 'light')
-    searchRef.current?.focus()
+    setMounted(true)
+    // Load initial schools
+    fetchSchools('')
+    setTimeout(() => inputRef.current?.focus(), 600)
   }, [])
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '')
-  }, [theme])
+  async function fetchSchools(search: string) {
+    setLoading(true)
+    let q = supabase
+      .from('schools')
+      .select('id, name, city, state, school_type, primary_color, slug')
+      .eq('status', 'active')
+      .eq('is_platform_active', true)
+      .order('name')
+      .limit(20)
 
-  // Debounced search
-  function handleSearch(value: string) {
-    setQuery(value)
-    setSelected(null)
-    clearTimeout(debounceRef.current)
-
-    if (value.trim().length < 2) {
-      setResults([])
-      return
+    if (search.trim()) {
+      q = q.ilike('name', `%${search}%`)
     }
 
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true)
-      const { data } = await supabase
-        .from('schools')
-        .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active')
-        .ilike('name', `%${value.trim()}%`)
-        .or('status.eq.active,setup_status.eq.active,setup_status.eq.trial')
-        .limit(8)
-
-      setResults(data ?? [])
-      setSearching(false)
-    }, 350)
+    const { data } = await q
+    setSchools(data ?? [])
+    setLoading(false)
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchSchools(query), 300)
+    return () => clearTimeout(timer)
+  }, [query])
 
   function selectSchool(school: School) {
-    setSelected(school)
-    setQuery(school.name)
-    setResults([])
-    // Store selected school ID for the login page to load branding
-    localStorage.setItem('schoolos_school_id', school.id)
-    localStorage.setItem('schoolos_school_name', school.name)
-    localStorage.setItem('schoolos_school_color', school.primary_color)
-  }
-
-  function proceedToLogin() {
-    if (!selected) return
+    // Store selected school in sessionStorage for login page
+    sessionStorage.setItem('selected_school', JSON.stringify({
+      id: school.id,
+      name: school.name,
+      slug: school.slug,
+      primaryColor: school.primary_color,
+    }))
     router.push('/login')
   }
 
-  function clearSelection() {
-    setSelected(null)
-    setQuery('')
-    setResults([])
-    searchRef.current?.focus()
+  function getInitials(name: string) {
+    return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  }
+
+  function getTypeIcon(type: string) {
+    if (type?.toLowerCase().includes('primary')) return '🏫'
+    if (type?.toLowerCase().includes('secondary')) return '🎓'
+    if (type?.toLowerCase().includes('tertiary')) return '🏛️'
+    return '📚'
   }
 
   return (
     <div className={styles.page}>
-      {/* Background glow orbs */}
-      <div className={`${styles.glowOrb} ${styles.orb1}`} />
-      <div className={`${styles.glowOrb} ${styles.orb2}`} />
+      {/* Background */}
+      <div className={styles.bgGlow} />
+      <div className={styles.bgGrid} />
 
-      {/* Theme toggle */}
-      <button
-        className={styles.themeToggle}
-        onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-      >
-        {theme === 'dark' ? '☀️' : '🌙'}
-      </button>
-
-      <div className={styles.container}>
-
-        {/* Platform wordmark */}
-        <div className={styles.wordmark}>
-          <span className={styles.wordmarkSchool}>School</span>
-          <span className={styles.wordmarkOS}>OS</span>
+      <div className={`${styles.container} ${mounted ? styles.visible : ''}`}>
+        {/* Header */}
+        <div className={styles.header}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
+          <div className={styles.headerText}>
+            <h1 className={styles.title}>Select Your School</h1>
+            <p className={styles.subtitle}>Find your school to continue</p>
+          </div>
         </div>
 
-        <h1 className={styles.headline}>Find Your School</h1>
-        <p className={styles.subheadline}>
-          Search for your school to access your personalised portal
-        </p>
+        {/* Search */}
+        <div className={styles.searchWrap}>
+          <span className={styles.searchIcon}>🔍</span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search school name..."
+            className={styles.searchInput}
+            autoComplete="off"
+          />
+          {query && (
+            <button className={styles.clearBtn} onClick={() => setQuery('')}>✕</button>
+          )}
+        </div>
 
-        {/* Search box */}
-        <div className={`glass-card ${styles.searchCard}`}>
-          <div className={`${styles.searchBox} ${selected ? styles.searchBoxSelected : ''}`}>
-            <span className={styles.searchIcon}>
-              {searching ? '⏳' : selected ? '✅' : '🔍'}
-            </span>
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Type your school name..."
-              value={query}
-              onChange={e => handleSearch(e.target.value)}
-              className={styles.searchInput}
-              autoComplete="off"
-            />
-            {query && (
-              <button className={styles.clearBtn} onClick={clearSelection}>✕</button>
-            )}
-          </div>
-
-          {/* Search results dropdown */}
-          {results.length > 0 && (
-            <div className={styles.dropdown}>
-              {results.map(school => (
-                <button
+        {/* School list */}
+        <div className={styles.listWrap}>
+          {loading ? (
+            <div className={styles.loadingState}>
+              <div className={styles.spinner} />
+              <p>Finding schools...</p>
+            </div>
+          ) : schools.length === 0 ? (
+            <div className={styles.emptyState}>
+              <span className={styles.emptyIcon}>🏫</span>
+              <p className={styles.emptyTitle}>No schools found</p>
+              <p className={styles.emptyMsg}>
+                {query ? `No results for "${query}"` : 'No active schools yet'}
+              </p>
+            </div>
+          ) : (
+            <ul className={styles.list}>
+              {schools.map((school, i) => (
+                <li
                   key={school.id}
-                  className={styles.schoolResult}
+                  className={styles.schoolItem}
+                  style={{ animationDelay: `${i * 40}ms` }}
                   onClick={() => selectSchool(school)}
                 >
-                  {/* School logo or colored circle */}
                   <div
-                    className={styles.schoolIcon}
-                    style={{ background: school.primary_color }}
+                    className={styles.schoolAvatar}
+                    style={{ background: school.primary_color || '#800020' }}
                   >
-                    {school.logo_url
-                      ? <img src={school.logo_url} alt={school.name} />
-                      : <span>{school.name[0]?.toUpperCase()}</span>
-                    }
+                    {getInitials(school.name)}
                   </div>
                   <div className={styles.schoolInfo}>
                     <p className={styles.schoolName}>{school.name}</p>
-                    <p className={styles.schoolLocation}>
-                      {[school.city, school.state].filter(Boolean).join(', ') || 'Nigeria'}
-                      {' · '}
-                      <span style={{ textTransform: 'capitalize' }}>{school.school_type}</span>
+                    <p className={styles.schoolMeta}>
+                      {getTypeIcon(school.school_type)} {school.school_type} &nbsp;·&nbsp;
+                      📍 {[school.city, school.state].filter(Boolean).join(', ') || 'Nigeria'}
                     </p>
                   </div>
-                  {!school.is_platform_active && (
-                    <span className={styles.inactiveBadge}>Inactive</span>
-                  )}
-                </button>
+                  <span className={styles.chevron}>›</span>
+                </li>
               ))}
-            </div>
-          )}
-
-          {/* No results */}
-          {query.length >= 2 && !searching && results.length === 0 && !selected && (
-            <div className={styles.noResults}>
-              <p>No school found for "<strong>{query}</strong>"</p>
-              <p className={styles.noResultsHint}>
-                Contact your school administrator if your school is not listed.
-              </p>
-            </div>
+            </ul>
           )}
         </div>
 
-        {/* Selected school preview */}
-        {selected && (
-          <div
-            className={`glass-card ${styles.selectedCard} animate-scale-in`}
-            style={{ '--school-color': selected.primary_color } as React.CSSProperties}
-          >
-            <div
-              className={styles.selectedBanner}
-              style={{ background: `linear-gradient(135deg, ${selected.primary_color}CC, ${selected.primary_color}88)` }}
-            >
-              <div className={styles.selectedLogo}>
-                {selected.logo_url
-                  ? <img src={selected.logo_url} alt={selected.name} />
-                  : <span>{selected.name[0]?.toUpperCase()}</span>
-                }
-              </div>
-            </div>
-            <div className={styles.selectedInfo}>
-              <h2 className={styles.selectedName}>{selected.name}</h2>
-              {selected.tagline && (
-                <p className={styles.selectedTagline}>{selected.tagline}</p>
-              )}
-              <p className={styles.selectedLocation}>
-                📍 {[selected.city, selected.state].filter(Boolean).join(', ') || 'Nigeria'}
-              </p>
-            </div>
-
-            <button
-              className={`btn btn-primary ${styles.proceedBtn}`}
-              onClick={proceedToLogin}
-              style={{
-                background: `linear-gradient(135deg, ${selected.primary_color}, ${selected.primary_color}CC)`
-              }}
-            >
-              Enter Portal →
-            </button>
-          </div>
-        )}
-
-        {/* Register school link */}
+        {/* Register link */}
         <div className={styles.footer}>
-          <p>Are you a school administrator?</p>
-          <a href="/register-school" className={styles.registerLink}>
-            Register your school on SchoolOS →
-          </a>
+          <p className={styles.footerText}>
+            School not listed?{' '}
+            <button className={styles.registerLink} onClick={() => router.push('/register')}>
+              Register your school
+            </button>
+          </p>
         </div>
-
-      </div>
-
-      {/* Powered by */}
-      <div className={styles.poweredBy}>
-        Powered by <strong>SchoolOS</strong> — Premium School Management
       </div>
     </div>
   )
