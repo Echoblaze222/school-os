@@ -38,12 +38,31 @@
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--glass-border);
   flex-shrink: 0;
+  gap: var(--space-3);
+}
+
+/* ── Back to dashboard button ────────────────────────────── */
+.backToDashBtn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+.backToDashBtn:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
 }
 .sidebarTitle {
   font-size: 1rem;
   font-weight: 800;
   color: var(--text-primary);
   margin: 0;
+  flex: 1;
 }
 .newChatBtn {
   width: 34px; height: 34px;
