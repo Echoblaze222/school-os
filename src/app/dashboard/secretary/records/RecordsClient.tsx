@@ -37,7 +37,7 @@ export default function RecordsClient({ records: init, profile, school, userId }
   async function createRecord() {
     if (!form.student_name.trim() || !form.description.trim()) { setMsg('Name and description required.'); return }
     setSaving(true); setMsg('')
-    const { data, error } = await supabase.from('student_records').insert({
+    const { data, error } = await supabase.from('behaviour_records').insert({
       student_name: form.student_name, record_type: form.record_type,
       description: form.description, date: form.date,
       school_id: school?.id, created_by: profile?.full_name,
@@ -50,7 +50,7 @@ export default function RecordsClient({ records: init, profile, school, userId }
   }
 
   async function deleteRecord(id: string) {
-    await supabase.from('student_records').delete().eq('id', id)
+    await supabase.from('behaviour_records').delete().eq('id', id)
     setRecords(p => p.filter(r => r.id !== id))
     setViewItem(null)
   }
