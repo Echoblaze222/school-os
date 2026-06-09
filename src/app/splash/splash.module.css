@@ -1,9 +1,10 @@
 /* src/app/splash/splash.module.css */
+/* ── Design tokens (matches SchoolOS CSS vars) ── */
 
 .splash {
   position: fixed;
   inset: 0;
-  background: #060608;
+  background: #080C14;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,34 +12,40 @@
   z-index: 9999;
 }
 
-/* ── Ambient background glows ── */
-.ambientGlow {
+/* ── Particle canvas ── */
+.particles {
   position: absolute;
-  width: 600px;
-  height: 600px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.18) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: glowPulse 3s ease-in-out infinite;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.ambientGlow2 {
+/* ── Ambient glows ── */
+.glowViolet {
   position: absolute;
-  width: 400px;
-  height: 400px;
-  top: 50%;
-  left: 50%;
+  width: 520px; height: 520px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(124, 58, 237, 0.13) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: glowBreath 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.glowCyan {
+  position: absolute;
+  width: 340px; height: 340px;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   background: radial-gradient(ellipse, rgba(0, 180, 216, 0.07) 0%, transparent 70%);
   border-radius: 50%;
-  animation: glowPulse 3s ease-in-out 0.5s infinite;
+  animation: glowBreath 4s ease-in-out 1.2s infinite;
+  pointer-events: none;
 }
 
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+@keyframes glowBreath {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.18); }
 }
 
 /* ── Circuit grid ── */
@@ -46,148 +53,337 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0, 180, 216, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 180, 216, 0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 40%, transparent 100%);
-  animation: gridFade 2.8s ease forwards;
+    linear-gradient(rgba(124, 58, 237, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 68% 68% at 50% 50%, black 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 68% 68% at 50% 50%, black 30%, transparent 100%);
+  animation: gridFade 5s ease forwards;
+  pointer-events: none;
 }
 
 @keyframes gridFade {
-  0% { opacity: 0; }
-  30% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { opacity: 0; }
+  0%  { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100%{ opacity: 0.3; }
 }
 
-/* ── Main content ── */
+/* ── Scan line ── */
+.scanLine {
+  position: absolute;
+  left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.15), transparent);
+  animation: scanMove 6s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes scanMove {
+  from { top: -2px; }
+  to   { top: 100%; }
+}
+
+/* ── HUD corners ── */
+.corner {
+  position: fixed;
+  width: 32px; height: 32px;
+  opacity: 0;
+  animation: cornerFadeIn 0.5s ease 0.7s forwards;
+}
+
+@keyframes cornerFadeIn { to { opacity: 0.22; } }
+
+.tl { top: 20px; left: 20px;  border-top:    1.5px solid #7C3AED; border-left:  1.5px solid #7C3AED; }
+.tr { top: 20px; right: 20px; border-top:    1.5px solid #7C3AED; border-right: 1.5px solid #7C3AED; }
+.bl { bottom: 20px; left: 20px;  border-bottom: 1.5px solid #7C3AED; border-left:  1.5px solid #7C3AED; }
+.br { bottom: 20px; right: 20px; border-bottom: 1.5px solid #7C3AED; border-right: 1.5px solid #7C3AED; }
+
+/* ── Main content column ── */
 .content {
+  position: relative;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
-  animation: contentIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  gap: 0;
 }
 
-@keyframes contentIn {
-  0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ── Logo ── */
-.logoWrap {
+/* ── Logo area ── */
+.logoArea {
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 152px; height: 152px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: logoEntry 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+}
+
+@keyframes logoEntry {
+  0%   { opacity: 0; transform: scale(0.55) translateY(24px); filter: blur(10px); }
+  100% { opacity: 1; transform: scale(1)    translateY(0);    filter: blur(0); }
+}
+
+/* Spinning colour-gradient orbit ring */
+.orbitRing {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(124, 58, 237, 0.65) 25%,
+    rgba(0, 180, 216, 0.55)  50%,
+    rgba(245, 158, 11, 0.45) 75%,
+    transparent 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  animation: orbitSpin 4s linear infinite;
+}
+
+@keyframes orbitSpin { to { transform: rotate(360deg); } }
+
+/* Outer pulse ring */
+.ringOuter {
+  position: absolute;
+  inset: -30px;
+  border-radius: 50px;
+  border: 1px solid rgba(0, 180, 216, 0.1);
+  animation: ringPulse 2.8s ease-in-out 1.1s infinite;
+}
+
+/* Middle pulse ring */
+.ringMid {
+  position: absolute;
+  inset: -8px;
+  border-radius: 36px;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  animation: ringPulse 2.8s ease-in-out 0.5s infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.04); }
+}
+
+/* Logo image — 3D float + glow */
+.logo {
+  width: 128px; height: 128px;
+  border-radius: 28px;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+  animation:
+    logoFloat 3.8s ease-in-out 1s infinite,
+    logoGlow  3.8s ease-in-out 1s infinite;
+}
+
+@keyframes logoFloat {
+  0%,  100% { transform: translateY(0px) rotateX(0deg)  rotateY(0deg); }
+  25%        { transform: translateY(-6px) rotateX(4deg)  rotateY(-4deg); }
+  50%        { transform: translateY(-10px) rotateX(0deg)  rotateY(0deg); }
+  75%        { transform: translateY(-6px) rotateX(-4deg) rotateY(4deg); }
+}
+
+@keyframes logoGlow {
+  0%, 100% { filter: drop-shadow(0 0 16px rgba(0, 180, 216, 0.45)); }
+  50%       { filter: drop-shadow(0 0 34px rgba(0, 180, 216, 0.8))
+                       drop-shadow(0 0 10px rgba(124, 58, 237, 0.5)); }
+}
+
+/* ── Brand name ── */
+.brandWrap {
+  margin-top: 30px;
+  text-align: center;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.95s forwards;
+}
+
+@keyframes fadeUp {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.brandName {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #F0F4FF;
+  margin: 0;
+  line-height: 1;
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+/* Shimmer sweep across brand name */
+.brandName::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.13), transparent);
+  animation: nameShimmer 4.5s ease-in-out 1.8s infinite;
+}
+
+@keyframes nameShimmer {
+  0%   { left: -100%; }
+  35%  { left: 160%; }
+  100% { left: 160%; }
+}
+
+.brandAccent { color: #9F67FF; }
+
+/* ── Typewriter tagline ── */
+.tagline {
+  margin: 6px 0 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.33);
+  min-height: 1.1em;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.logoRing {
-  position: absolute;
-  inset: -12px;
-  border-radius: 36px;
-  border: 1px solid rgba(0, 180, 216, 0.3);
-  animation: ringPulse 2s ease-in-out 0.4s infinite;
+.cursor {
+  display: inline-block;
+  width: 2px; height: 0.72em;
+  background: #9F67FF;
+  margin-left: 3px;
+  vertical-align: middle;
+  animation: blink 0.75s step-end infinite;
 }
 
-.logoRing2 {
-  position: absolute;
-  inset: -24px;
-  border-radius: 44px;
-  border: 1px solid rgba(128, 0, 32, 0.2);
-  animation: ringPulse 2s ease-in-out 0.8s infinite;
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
-@keyframes ringPulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.03); }
+/* ── Stats row ── */
+.stats {
+  margin-top: 34px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  animation: fadeUp 0.55s ease 1.55s forwards;
 }
 
-.logo {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  border-radius: 28px;
-  animation: logoReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both,
-             logoGlow 2s ease-in-out 1s infinite;
-  filter: drop-shadow(0 0 20px rgba(0, 180, 216, 0.4));
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 22px;
 }
 
-@keyframes logoReveal {
-  0% { opacity: 0; transform: scale(0.7) rotate(-8deg); filter: blur(10px); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+.statVal {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #9F67FF;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 18px rgba(124, 58, 237, 0.55);
 }
 
-@keyframes logoGlow {
-  0%, 100% { filter: drop-shadow(0 0 16px rgba(0, 180, 216, 0.35)); }
-  50% { filter: drop-shadow(0 0 32px rgba(0, 180, 216, 0.65)); }
-}
-
-/* ── Brand text ── */
-.brandWrap {
-  text-align: center;
-  animation: textIn 0.7s ease 0.5s both;
-}
-
-@keyframes textIn {
-  0% { opacity: 0; transform: translateY(12px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.brandName {
-  font-family: 'Orbitron', 'Space Grotesk', sans-serif;
-  font-size: 2.4rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #ffffff;
-  margin: 0;
-  text-shadow: 0 0 30px rgba(0, 180, 216, 0.5);
-}
-
-.brandTagline {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
-  letter-spacing: 0.25em;
+.statLabel {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.27);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  margin: 6px 0 0;
 }
 
-/* ── Loading bar ── */
-.loadBar {
-  width: 180px;
+.statDivider {
+  width: 1px; height: 28px;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.09), transparent);
+}
+
+/* ── Loader ── */
+.loaderWrap {
+  margin-top: 40px;
+  width: 192px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  opacity: 0;
+  animation: fadeUp 0.45s ease 2s forwards;
+}
+
+.loaderTrack {
+  width: 100%;
   height: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 2px;
-  overflow: hidden;
-  animation: barAppear 0.4s ease 0.8s both;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  overflow: visible;
+  position: relative;
 }
 
-@keyframes barAppear {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-.loadBarFill {
+.loaderFill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #800020, #00b4d8, #800020);
-  background-size: 200% 100%;
-  border-radius: 2px;
-  animation:
-    loadProgress 2s cubic-bezier(0.4, 0, 0.2, 1) 0.8s forwards,
-    shimmer 1.5s linear 0.8s infinite;
+  background: linear-gradient(90deg, #800020, #7C3AED, #00b4d8);
+  border-radius: 9999px;
+  position: relative;
+  animation: loadProgress 4.2s cubic-bezier(0.4, 0, 0.2, 1) 2.1s forwards;
+}
+
+/* Glowing dot at the tip */
+.loaderFill::after {
+  content: '';
+  position: absolute;
+  right: -1px; top: -4px;
+  width: 6px; height: 10px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 4px rgba(124, 58, 237, 0.7);
+  opacity: 0.9;
 }
 
 @keyframes loadProgress {
-  0% { width: 0%; }
-  60% { width: 80%; }
+  0%   { width: 0%; }
+  30%  { width: 42%; }
+  60%  { width: 75%; }
+  85%  { width: 91%; }
   100% { width: 100%; }
 }
 
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.loaderLabel {
+  font-size: 0.56rem;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  transition: opacity 0.4s;
+}
+
+/* ── Version footer ── */
+.version {
+  position: fixed;
+  bottom: 26px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeUp 0.4s ease 2.3s forwards;
+}
+
+/* ── Mobile tweaks (≤ 390px) ── */
+@media (max-width: 390px) {
+  .brandName  { font-size: 2.1rem; }
+  .statVal    { font-size: 1.05rem; }
+  .stat       { padding: 0 14px; }
+  .logoArea   { width: 130px; height: 130px; }
+  .logo       { width: 110px; height: 110px; }
+  .loaderWrap { width: 168px; }
 }
