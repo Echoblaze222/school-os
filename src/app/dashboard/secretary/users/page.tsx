@@ -34,11 +34,13 @@ export default async function UsersPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, school_id')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'secretary') redirect('/login')
+
+  const school = (profile as any).schools ?? null
 
   const { data: users, error } = await supabase
     .from('profiles')
@@ -64,6 +66,8 @@ export default async function UsersPage() {
     <SecretaryUsersClient
       users={(users ?? []) as ManagedUser[]}
       currentUserId={user.id}
+      profile={profile}
+      school={school}
     />
   )
 }
