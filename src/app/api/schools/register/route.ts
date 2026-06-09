@@ -4,21 +4,21 @@
 import { NextResponse }      from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const REGISTRATION_FEE = 25000
-
-const PLAN_PRICES: Record<string, number> = {
-  Basic:   50000,
-  Premium: 120000,
-  Elite:   250000,
-}
+// One-time platform setup fee
+const REGISTRATION_FEE             = 150000  // ₦150,000 full upfront
+const REGISTRATION_FEE_INSTALLMENT = 50000   // ₦50,000 × 3 months
 
 export async function POST(request: Request) {
   try {
-    const { school, plan, principal } = await request.json()
+    const { school, principal, paymentMode } = await request.json()
+    // paymentMode: 'full' | 'installment'
+    // Subscription billing is per-student-per-term (handled separately after onboarding)
 
     const supabase    = createAdminClient()
-    const planPrice   = PLAN_PRICES[plan] ?? 120000
-    const totalAmount = REGISTRATION_FEE + planPrice
+    // Amount due now depends on chosen payment mode
+    const amountDue   = paymentMode === 'installment'
+      ? REGISTRATION_FEE_INSTALLMENT  // first instalment ₦50,000
+      : REGISTRATION_FEE              // full payment ₦150,000
 
     // ── 1. Create the school record ──────────────────────
     const slug = school.name
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         phone:            principal.phone,
         school_id:        newSchool.id,
         default_code:     defaultCode,
-        onboarding_stage: 'stage_1_pending',  // FIX: was integer 2 — now canonical string enum
+        onboarding_stage: 'stage_1_pending',
         is_active:        true,
       })
 
@@ -103,19 +103,20 @@ export async function POST(request: Request) {
       .update({ principal_id: authUser.user.id })
       .eq('id', newSchool.id)
 
-    // ── 5. Create pending subscription ───────────────────
+    // ── 5. Create pending subscription (Trial until paid) ─
     const expiryDate = new Date()
     expiryDate.setMonth(expiryDate.getMonth() + 4)
 
     await supabase.from('subscriptions').insert({
       school_id:     newSchool.id,
-      plan_type:     plan,
+      plan_type:     'Basic',           // default; principal upgrades after onboarding
       status:        'Trial',
       billing_cycle: 'Termly',
       started_at:    new Date().toISOString().split('T')[0],
       expiry_date:   expiryDate.toISOString().split('T')[0],
-      amount_paid:   totalAmount,
+      amount_paid:   0,
       currency_used: 'NGN',
+      notes:         `Setup fee: ${paymentMode === 'installment' ? '3-month installment' : 'full payment'}`,
     })
 
     // ── 6. Initiate Paystack payment ──────────────────────
@@ -132,17 +133,18 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           email:        principal.email,
-          amount:       totalAmount * 100,
+          amount:       amountDue * 100,  // kobo
           currency:     'NGN',
           reference:    `SCH-REG-${newSchool.id.slice(0, 8)}-${Date.now()}`,
           callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/schools/payment-callback`,
           metadata: {
-            school_id:   newSchool.id,
-            plan:        plan,
-            school_name: school.name,
+            school_id:    newSchool.id,
+            payment_mode: paymentMode,  // 'full' | 'installment'
+            school_name:  school.name,
             custom_fields: [
-              { display_name: 'School Name', variable_name: 'school_name', value: school.name },
-              { display_name: 'Plan',        variable_name: 'plan',        value: plan },
+              { display_name: 'School Name',    variable_name: 'school_name',   value: school.name },
+              { display_name: 'Payment Mode',   variable_name: 'payment_mode',  value: paymentMode },
+              { display_name: 'Amount',         variable_name: 'amount',        value: `₦${amountDue.toLocaleString()}` },
             ],
           },
         }),
