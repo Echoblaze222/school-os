@@ -17,7 +17,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   // ── Realtime: students list stays live without any manual refresh ──────────
   const [students, setStudents] = useRealtimeTable<any>({
     table:   'profiles',
-    filter:  school?.id ? `school_id=eq.${school.id}` : undefined,
+    filter:  school?.id ? `school_id=eq.${school.id}&role=eq.student` : undefined,
     initial: [],
     orderBy: (a, b) => a.full_name.localeCompare(b.full_name),
   })
@@ -36,17 +36,19 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     gender: '', class_id: '', admission_number: '',
   })
 
-  // Load classes list once (classes don't need realtime on this page)
+  // Load students + classes on mount
   useEffect(() => {
-    async function loadClasses() {
+    async function loadData() {
       if (!school?.id) { setLoading(false); return }
-      const { data: cls } = await supabase
-        .from('classes').select('id, name, level, section')
-        .eq('school_id', school.id).order('name')
-      if (cls) setClasses(cls)
+      const [clsRes, stuRes] = await Promise.all([
+        supabase.from('classes').select('id, name, level, section').eq('school_id', school.id).order('name'),
+        supabase.from('profiles').select('*').eq('school_id', school.id).eq('role', 'student').order('full_name'),
+      ])
+      if (clsRes.data) setClasses(clsRes.data)
+      if (stuRes.data) setStudents(stuRes.data)
       setLoading(false)
     }
-    loadClasses()
+    loadData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [school?.id])
 
