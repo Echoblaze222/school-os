@@ -1,6 +1,4 @@
 // src/app/dashboard/secretary/notices/page.tsx
-// Server Component — secretary uses same AnnouncementsClient as principal
-
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AnnouncementsClient from '@/app/dashboard/principal/announcements/AnnouncementsClient'
@@ -14,41 +12,35 @@ export default async function SecretaryNoticesPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, school_id')
+    .select('role, full_name, school_id, schools(*)')
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'secretary') {
-    redirect('/login')
-  }
+  if (!profile || profile.role !== 'secretary') redirect('/login')
 
+  const school   = (profile as any)?.schools ?? null
   const schoolId = profile.school_id as string
 
-  // Fetch announcements scoped to this school
-  const { data: announcements } = await supabase
-    .from('announcements')
-    .select(`
-      id,
-      title,
-      body,
-      audience,
-      class_id,
-      created_at,
-      classes ( name ),
-      profiles:created_by ( full_name )
-    `)
-    .eq('school_id', schoolId)
-    .order('created_at', { ascending: false })
-    .limit(60)
+  const [announcementsRes, classesRes] = await Promise.all([
+    supabase
+      .from('announcements')
+      .select(`
+        id, title, body, audience, class_id, created_at,
+        classes ( name ),
+        profiles:created_by ( full_name )
+      `)
+      .eq('school_id', schoolId)
+      .order('created_at', { ascending: false })
+      .limit(60),
 
-  // Fetch classes for the target-class selector
-  const { data: classes } = await supabase
-    .from('classes')
-    .select('id, name')
-    .eq('school_id', schoolId)
-    .order('name')
+    supabase
+      .from('classes')
+      .select('id, name')
+      .eq('school_id', schoolId)
+      .order('name'),
+  ])
 
-  const rows: AnnouncementRow[] = (announcements ?? []).map((a: any) => ({
+  const rows: AnnouncementRow[] = (announcementsRes.data ?? []).map((a: any) => ({
     id: a.id,
     title: a.title,
     body: a.body,
@@ -59,7 +51,7 @@ export default async function SecretaryNoticesPage() {
     created_by_name: a.profiles?.full_name ?? null,
   }))
 
-  const classOptions: ClassOption[] = (classes ?? []).map((c: any) => ({
+  const classOptions: ClassOption[] = (classesRes.data ?? []).map((c: any) => ({
     id: c.id,
     name: c.name,
   }))
@@ -71,6 +63,9 @@ export default async function SecretaryNoticesPage() {
       creatorId={user.id}
       creatorName={profile.full_name ?? 'Secretary'}
       schoolId={schoolId}
+      profile={profile}
+      school={school}
+      userId={user.id}
     />
   )
 }
