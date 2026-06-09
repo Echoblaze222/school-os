@@ -22,7 +22,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
     table:   'profiles',
     filter:  school?.id ? `school_id=eq.${school.id}` : undefined,
     initial: [],
-    orderBy: (a, b) => a.full_name.localeCompare(b.full_name),
+    orderBy: (a, b) => (a.full_name ?? '').localeCompare(b.full_name ?? ''),
   })
 
   const [loading,  setLoading]  = useState(false)
@@ -36,6 +36,22 @@ export default function StaffClient({ profile, school, userId }: Props) {
   // Form fields
   const [form, setForm] = useState({ full_name:'', email:'', phone:'', role:'teacher', subject:'', qualification:'' })
   const [saving, setSaving] = useState(false)
+
+  // Load staff on mount (roles that are staff, not students/parents)
+  useEffect(() => {
+    async function loadStaff() {
+      if (!school?.id) return
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('school_id', school.id)
+        .not('role', 'in', '(student,parent)')
+        .order('full_name')
+      if (data) setStaff(data)
+    }
+    loadStaff()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [school?.id])
 
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
