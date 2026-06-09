@@ -12,8 +12,8 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const INACTIVITY_MS = 30 * 60 * 1000  // 30 minutes — keep in sync with middleware.ts
-const WARNING_MS    = 25 * 60 * 1000  // Warn the user at 25 minutes
+const INACTIVITY_MS = 5 * 60 * 1000  // 5 minutes of inactivity
+const WARNING_MS    = 4 * 60 * 1000  // Warn the user at 4 minutes
 
 interface Options {
   onWarning?: () => void   // called at WARNING_MS to show a "You'll be logged out soon" toast
@@ -85,3 +85,4 @@ export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
     }
   }, [resetTimers, clearTimers])
 }
+
