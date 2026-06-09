@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import {
   MessageIcon, SearchIcon, PlusIcon,
-  UserIcon, XIcon,
+  UserIcon, XIcon, ArrowLeftIcon,
 } from '@/components/Icons'
 import styles from './chat.module.css'
 
@@ -319,6 +319,13 @@ export default function UniversalChatPage({
 
           {/* Top bar */}
           <div className={styles.sidebarTop}>
+            <button
+              className={styles.backToDashBtn}
+              onClick={() => router.push(`/dashboard/${role}`)}
+              title="Back to dashboard"
+            >
+              <ArrowLeftIcon size={16} />
+            </button>
             <p className={styles.sidebarTitle}>Chats</p>
             <button
               className={styles.newChatBtn}
