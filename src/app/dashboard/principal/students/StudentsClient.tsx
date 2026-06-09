@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
@@ -9,6 +10,150 @@ import styles from './students.module.css'
 const GENDER_OPTS = ['Male', 'Female', 'Other']
 
 interface Props { profile: any; school: any; userId: string }
+
+// ── Success modal shown after enrolment ─────────────────────
+function EnrolSuccessModal({
+  result, sc, onClose,
+}: {
+  result: { full_name: string; email: string; code: string; password: string }
+  sc: string
+  onClose: () => void
+}) {
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedPwd,  setCopiedPwd]  = useState(false)
+  const [copiedAll,  setCopiedAll]  = useState(false)
+  const initials = result.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+
+  async function copy(text: string, which: 'code' | 'pwd' | 'all') {
+    await navigator.clipboard.writeText(text).catch(() => {})
+    if (which === 'code') { setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }
+    else if (which === 'pwd') { setCopiedPwd(true); setTimeout(() => setCopiedPwd(false), 2000) }
+    else { setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2500) }
+  }
+
+  function copyAllDetails() {
+    const text = `Name: ${result.full_name}\nEmail: ${result.email}\nAccess Code: ${result.code}\nTemp Password: ${result.password}`
+    copy(text, 'all')
+  }
+
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.dialog} style={{ maxWidth: 440, width: '100%' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%', background: '#10B98118',
+            border: '2px solid #10B981', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', margin: '0 auto 12px',
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3 className={styles.dialogTitle} style={{ marginBottom: 4 }}>Enrolment Complete!</h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+            Share these login details with <strong style={{ color: 'var(--text-base)' }}>{result.full_name}</strong>
+          </p>
+        </div>
+
+        {/* User badge */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+          background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+          borderRadius: 10, marginBottom: 16,
+        }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: '50%', background: sc + '22',
+            color: sc, fontWeight: 700, fontSize: '0.85rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>{initials}</div>
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-base)' }}>{result.full_name}</p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{result.email}</p>
+          </div>
+        </div>
+
+        {/* Access Code */}
+        <div style={{
+          border: `1px solid ${sc}44`, background: sc + '0a',
+          borderRadius: 10, padding: '12px 14px', marginBottom: 10,
+        }}>
+          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Access Code
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <code style={{
+              flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
+              color: sc, fontFamily: 'monospace',
+            }}>{result.code}</code>
+            <button
+              onClick={() => copy(result.code, 'code')}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                background: copiedCode ? '#10B98122' : 'transparent',
+                border: `1px solid ${copiedCode ? '#10B981' : sc + '55'}`,
+                color: copiedCode ? '#10B981' : sc,
+              }}
+            >
+              {copiedCode ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
+
+        {/* Temp Password */}
+        <div style={{
+          border: '1px solid #F59E0B44', background: '#F59E0B0a',
+          borderRadius: 10, padding: '12px 14px', marginBottom: 16,
+        }}>
+          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Temporary Password
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <code style={{
+              flex: 1, fontSize: '1rem', fontWeight: 700,
+              color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
+            }}>{result.password}</code>
+            <button
+              onClick={() => copy(result.password, 'pwd')}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                background: copiedPwd ? '#10B98122' : 'transparent',
+                border: `1px solid ${copiedPwd ? '#10B981' : '#F59E0B55'}`,
+                color: copiedPwd ? '#10B981' : '#F59E0B',
+              }}
+            >
+              {copiedPwd ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85 }}>
+            ⚠️ Student must change this password on first login.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <button
+          onClick={copyAllDetails}
+          style={{
+            width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
+            fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+            background: copiedAll ? '#10B98122' : 'var(--glass-bg)',
+            border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
+            color: copiedAll ? '#10B981' : 'var(--text-base)',
+          }}
+        >
+          {copiedAll ? '✓ All Details Copied' : 'Copy All Details'}
+        </button>
+        <button
+          onClick={onClose}
+          className={styles.saveBtn}
+          style={{ width: '100%', background: sc }}
+        >
+          Done — Enrol Another
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function StudentsClient({ profile, school, userId }: Props) {
   const supabase      = createClient()
@@ -31,9 +176,10 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   const [deleting,    setDeleting]    = useState<string | null>(null)
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
   const [saving,      setSaving]      = useState(false)
+  const [enrollResult, setEnrollResult] = useState<{ full_name: string; email: string; code: string; password: string } | null>(null)
   const [form, setForm] = useState({
     full_name: '', email: '', phone: '', date_of_birth: '',
-    gender: '', class_id: '', admission_number: '',
+    gender: '', class_id: '', admission_number: '', guardian_name: '', guardian_phone: '',
   })
 
   // Load students + classes on mount
@@ -68,24 +214,46 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   }
 
   async function handleCreate() {
-    if (!form.full_name.trim()) return
+    if (!form.full_name.trim() || !form.email.trim()) {
+      showToast('Full name and email are required.', false)
+      return
+    }
     setSaving(true)
-    const { data, error } = await supabase.from('profiles').insert({
-      full_name:        form.full_name.trim(),
-      email:            form.email.trim() || null,
-      phone:            form.phone.trim() || null,
-      date_of_birth:    form.date_of_birth || null,
-      gender:           form.gender || null,
-      class_level:      form.class_id ? classes.find(c => c.id === form.class_id)?.name : null,
-      role:             'student',
-      school_id:        school.id,
-    }).select().single()
+    try {
+      const res  = await fetch('/api/secretary/create-user', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          fullName:        form.full_name.trim(),
+          email:           form.email.trim().toLowerCase(),
+          role:            'student',
+          schoolId:        school.id,
+          phone:           form.phone.trim()           || null,
+          gender:          form.gender                 || null,
+          dateOfBirth:     form.date_of_birth          || null,
+          classId:         form.class_id               || null,
+          admissionNumber: form.admission_number.trim() || null,
+          guardianName:    form.guardian_name.trim()   || null,
+          guardianPhone:   form.guardian_phone.trim()  || null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to enrol student')
+
+      // Refresh list
+      const { data: fresh } = await supabase
+        .from('profiles').select('*')
+        .eq('school_id', school.id).eq('role', 'student').order('full_name')
+      if (fresh) setStudents(fresh)
+
+      // Reset form and show code/password modal
+      setForm({ full_name:'', email:'', phone:'', date_of_birth:'', gender:'', class_id:'', admission_number:'', guardian_name:'', guardian_phone:'' })
+      setShowForm(false)
+      setEnrollResult({ full_name: form.full_name.trim(), email: form.email.trim(), code: json.code, password: json.password })
+    } catch (err: any) {
+      showToast(err.message ?? 'Failed to enrol student', false)
+    }
     setSaving(false)
-    if (error) { showToast(error.message, false); return }
-    setStudents(prev => [data, ...prev])
-    setForm({ full_name:'', email:'', phone:'', date_of_birth:'', gender:'', class_id:'', admission_number:'' })
-    setShowForm(false)
-    showToast(`${data.full_name} enrolled`)
   }
 
   const classMap: Record<string, string> = {}
@@ -116,6 +284,15 @@ export default function StudentsClient({ profile, school, userId }: Props) {
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
           {toast.ok ? '✓' : '✕'} {toast.msg}
         </div>
+      )}
+
+      {/* Code + password modal after enrolment */}
+      {enrollResult && (
+        <EnrolSuccessModal
+          result={enrollResult}
+          sc={sc}
+          onClose={() => setEnrollResult(null)}
+        />
       )}
 
       {confirmDel && (
@@ -169,6 +346,9 @@ export default function StudentsClient({ profile, school, userId }: Props) {
           <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? '✕ Close' : '+ Enrol Student'}
           </button>
+          <Link href="/dashboard/principal/students/transfer" className={styles.addBtn} style={{ background: '#F59E0B', textDecoration: 'none' }}>
+            ⇄ Transfer Student
+          </Link>
         </div>
 
         {/* Enrol form */}
@@ -181,8 +361,8 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                 <input className={styles.fieldInput} placeholder="e.g. Chioma Okonkwo" value={form.full_name} onChange={e => setForm(f=>({...f,full_name:e.target.value}))}/>
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Email</label>
-                <input className={styles.fieldInput} type="email" placeholder="optional" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}/>
+                <label className={styles.fieldLabel}>Email *</label>
+                <input className={styles.fieldInput} type="email" placeholder="e.g. chioma@gmail.com" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}/>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Phone</label>
@@ -206,11 +386,23 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                   {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Admission Number</label>
+                <input className={styles.fieldInput} placeholder="e.g. ADM/2025/001" value={form.admission_number} onChange={e => setForm(f=>({...f,admission_number:e.target.value}))}/>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Parent / Guardian Name</label>
+                <input className={styles.fieldInput} placeholder="e.g. Mr. Okonkwo Emeka" value={form.guardian_name} onChange={e => setForm(f=>({...f,guardian_name:e.target.value}))}/>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Parent / Guardian Phone</label>
+                <input className={styles.fieldInput} type="tel" placeholder="e.g. 08012345678" value={form.guardian_phone} onChange={e => setForm(f=>({...f,guardian_phone:e.target.value}))}/>
+              </div>
             </div>
             <div className={styles.formActions}>
               <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim()}>
-                {saving ? 'Enrolling…' : 'Enrol Student'}
+              <button className={styles.saveBtn} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim() || !form.email.trim()}>
+                {saving ? 'Enrolling…' : 'Enrol & Get Code'}
               </button>
             </div>
           </div>
