@@ -99,7 +99,7 @@ export default function TrialBanner({ trialEndsAt, schoolId, setupStatus, school
 
         <div className={styles.actions}>
           <a
-            href="https://wa.me/2348000000000?text=I%20want%20to%20pay%20for%20SchoolOS%20setup"
+            href="https://wa.me/2347063523130?text=I%20want%20to%20pay%20for%20SchoolOS%20setup"
             target="_blank"
             rel="noreferrer"
             className={styles.payBtn}
