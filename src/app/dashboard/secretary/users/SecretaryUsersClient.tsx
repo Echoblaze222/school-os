@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import RolePageWrapper from '@/components/RolePageWrapper'
 import type { ManagedUser, UserRole } from './page'
 import styles from './users.module.css'
 
-interface Props { users: ManagedUser[]; currentUserId: string }
+interface Props { users: ManagedUser[]; currentUserId: string; profile: any; school: any }
 
 const ROLES: UserRole[] = ['student','teacher','bursar','secretary','principal','admin','parent']
 const ROLE_LABELS: Record<UserRole,string> = { student:'Student',teacher:'Teacher',bursar:'Bursar',secretary:'Secretary',principal:'Principal',admin:'Admin',parent:'Parent' }
@@ -25,16 +26,12 @@ const IconMoon=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const IconSearch=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={15} height={15}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IconX=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 
-export default function SecretaryUsersClient({ users: initial, currentUserId }: Props) {
-  const [isDark,setIsDark]=useState(true); const [mounted,setMounted]=useState(false)
+export default function SecretaryUsersClient({ users: initial, currentUserId, profile, school }: Props) {
   const [users,setUsers]=useState<ManagedUser[]>(initial)
   const [search,setSearch]=useState(''); const [roleFilter,setRoleFilter]=useState('')
   const [selected,setSelected]=useState<ManagedUser|null>(null)
   const [actionLoading,setActionLoading]=useState(false)
   const [toast,setToast]=useState<string|null>(null)
-
-  useEffect(()=>{ const s=localStorage.getItem('schoolos_theme'); const dark=s!=='light'; setIsDark(dark); document.documentElement.setAttribute('data-theme',dark?'dark':'light'); setMounted(true) },[])
-  const toggleTheme=()=>{ const n=!isDark; setIsDark(n); document.documentElement.setAttribute('data-theme',n?'dark':'light'); localStorage.setItem('schoolos_theme',n?'dark':'light') }
 
   const filtered = useMemo(()=>users.filter(u=>{
     const q=search.toLowerCase()
@@ -70,7 +67,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId }: 
     showToast(`New code: ${code}`)
   }
 
-  if (!mounted) return null
+  if (false) return null // removed mounted guard — RolePageWrapper handles hydration
 
   const stats = { total:users.length, active:users.filter(u=>u.is_active).length, students:users.filter(u=>u.role==='student').length, teachers:users.filter(u=>u.role==='teacher').length }
 
@@ -85,21 +82,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId }: 
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.orb1}/><div className={styles.orb2}/>
-
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerCenter}>
-          <h1 className={styles.title}>User Management</h1>
-          <p className={styles.subtitle}>{users.length} users · {stats.active} active</p>
-        </div>
-        <div className={styles.headerActions}>
-          <button className={styles.themeBtn} onClick={toggleTheme}>{isDark?<IconSun />:<IconMoon />}</button>
-          <Link href="/dashboard/secretary/codes" className={`${styles.actionBtn} ${styles.actionBtnSuccess}`} style={{textDecoration:'none',padding:'8px 14px',fontSize:'0.75rem',fontWeight:700}}>+ Generate Code</Link>
-        </div>
-      </header>
-
+    <RolePageWrapper userId={currentUserId} role="secretary" profile={profile} school={school} title="User Management">
       {/* Stats */}
       <div className={styles.statsStrip}>
         {([['Total',stats.total],['Active',stats.active],['Students',stats.students],['Teachers',stats.teachers]] as [string,number][]).map(([l,v],i,arr)=>(
@@ -235,6 +218,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId }: 
           {toast}
         </div>
       )}
-    </div>
+      <div style={{ height: 110 }} />
+    </RolePageWrapper>
   )
 }
