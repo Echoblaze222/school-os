@@ -1,80 +1,105 @@
-// public/sw.js
-// Service Worker for SchoolOS PWA
-// This runs in the background and caches pages so the app
-// loads fast even on slow Nigerian networks.
+// sw.js — SchoolOS Service Worker
+// Strategy: Network-first for navigation (HTML pages), cache-first for assets
 
-const CACHE_NAME = 'schoolos-v1'
+const CACHE_NAME = 'schoolos-v2'
+const OFFLINE_URL = '/offline'
 
-// Pages to cache immediately when app is first installed
-const PRECACHE_URLS = [
-  '/login',
-  '/offline',
+// Assets to pre-cache on install
+const PRECACHE_ASSETS = [
+  OFFLINE_URL,
+  '/icons/logo.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ]
 
-// ── Install: cache core pages ──────────────────────────
-self.addEventListener('install', (event) => {
+// ── Install: pre-cache offline page and core assets ──────────
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS).catch(() => {
-        // If precaching fails (e.g. offline during install), continue anyway
-        console.log('Precache partial failure — continuing')
-      })
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_ASSETS))
   )
+  // Take over immediately — don't wait for old SW to be discarded
   self.skipWaiting()
 })
 
-// ── Activate: clean up old caches ─────────────────────
-self.addEventListener('activate', (event) => {
+// ── Activate: delete old caches ──────────────────────────────
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
+    caches.keys().then(keys =>
       Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
       )
     )
   )
+  // Claim all clients immediately
   self.clients.claim()
 })
 
-// ── Fetch: serve from cache when possible ─────────────
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') return
+// ── Fetch: smart strategy per request type ───────────────────
+self.addEventListener('fetch', event => {
+  const { request } = event
+  const url = new URL(request.url)
 
-  // Don't intercept API calls or Supabase requests
-  const url = new URL(event.request.url)
+  // Skip non-GET, cross-origin, and API/Supabase requests entirely
+  // Let these go straight to network — never intercept them
   if (
+    request.method !== 'GET' ||
+    url.origin !== self.location.origin ||
     url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/') ||
     url.hostname.includes('supabase') ||
-    url.hostname.includes('googleapis')
+    url.hostname.includes('paystack') ||
+    url.hostname.includes('fonts.googleapis') ||
+    url.hostname.includes('fonts.gstatic')
   ) {
+    return // Let browser handle normally — no SW intervention
+  }
+
+  // For HTML navigation requests (page loads): NETWORK FIRST
+  // Only fall back to offline page if truly no connection
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Cache a fresh copy of successfully fetched pages
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
+          }
+          return response
+        })
+        .catch(() => {
+          // Network failed — check cache first, then show offline page
+          return caches.match(request).then(cached => {
+            if (cached) return cached
+            return caches.match(OFFLINE_URL)
+          })
+        })
+    )
     return
   }
 
-  event.respondWith(
-    // Try network first, fall back to cache
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses
-        if (response && response.status === 200) {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, clone)
-          })
-        }
-        return response
-      })
-      .catch(() => {
-        // Network failed — try cache
-        return caches.match(event.request).then((cached) => {
-          if (cached) return cached
-          // If nothing cached, show offline page
-          if (event.request.destination === 'document') {
-            return caches.match('/offline')
+  // For static assets (images, icons): CACHE FIRST, network fallback
+  if (
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.startsWith('/fonts/') ||
+    url.pathname.match(/\.(png|jpg|jpeg|webp|svg|ico|woff2?)$/)
+  ) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached
+        return fetch(request).then(response => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
           }
+          return response
         })
       })
-  )
+    )
+    return
+  }
+
+  // Everything else: network only (no SW caching)
 })
