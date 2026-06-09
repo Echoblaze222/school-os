@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   '/forgot-password',
   '/reset-password',
   '/offline',
+  '/api/auth',                          // code-signin, first-login — must be public
   '/api/schools/register',
   '/api/schools/payment-callback',
   '/api/schools/paystack-webhook',
