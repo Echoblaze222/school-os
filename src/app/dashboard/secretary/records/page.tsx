@@ -12,6 +12,10 @@ export default async function RecordsPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile || profile.role !== 'secretary') redirect('/login')
   const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
-  const { data: records } = await supabase.from('student_records').select('*').eq('school_id', profile.school_id).order('date', { ascending: false })
+  const { data: records } = await supabase
+    .from('behaviour_records')
+    .select('*')
+    .eq('school_id', profile.school_id)
+    .order('date', { ascending: false })
   return <RecordsClient records={records ?? []} profile={profile} school={school} userId={user.id} />
 }
