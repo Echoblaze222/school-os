@@ -1,6 +1,5 @@
 'use client'
 // src/app/dashboard/secretary/applications/ApplicationsClient.tsx
-// Mirrors AdmissionsClient but for formal applications (enrollment, transfer, etc.)
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -10,7 +9,7 @@ import styles from '../secretary.module.css'
 const APP_TYPES  = ['Enrollment', 'Transfer In', 'Transfer Out', 'Re-enrollment', 'Special Needs', 'Other']
 const STATUS_MAP = { pending: styles.badgeYellow, approved: styles.badgeGreen, rejected: styles.badgeRed, reviewing: styles.badgeBlue }
 
-interface Application { id: string; applicant_name: string; app_type: string; status: string; submitted_at: string; notes: string | null }
+interface Application { id: string; applicant_name: string; class_applying_for: string; status: string; created_at: string; notes: string | null }
 interface Props { applications: Application[]; profile: any; school: any; userId: string }
 
 export default function ApplicationsClient({ applications: init, profile, school, userId }: Props) {
@@ -20,7 +19,7 @@ export default function ApplicationsClient({ applications: init, profile, school
   const [viewItem, setViewItem] = useState<Application | null>(null)
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState('')
-  const [form,     setForm]     = useState({ applicant_name: '', app_type: 'Enrollment', notes: '' })
+  const [form,     setForm]     = useState({ applicant_name: '', class_applying_for: 'Enrollment', notes: '' })
 
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
@@ -31,8 +30,11 @@ export default function ApplicationsClient({ applications: init, profile, school
     if (!form.applicant_name.trim()) { setMsg('Name required.'); return }
     setSaving(true); setMsg('')
     const { data, error } = await supabase.from('applications').insert({
-      applicant_name: form.applicant_name, app_type: form.app_type, notes: form.notes || null,
-      school_id: school?.id, status: 'pending', submitted_at: new Date().toISOString(),
+      applicant_name: form.applicant_name,
+      class_applying_for: form.class_applying_for,
+      notes: form.notes || null,
+      school_id: school?.id,
+      status: 'pending',
     }).select().single()
     if (!error && data) { setApps(p => [data, ...p]); setModal(false) }
     else setMsg(error?.message ?? 'Failed')
@@ -72,7 +74,7 @@ export default function ApplicationsClient({ applications: init, profile, school
             <div className={styles.listIconBox} style={{ background: sc + '22' }}><span style={{ fontSize: '1.1rem' }}>📝</span></div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{a.applicant_name}</p>
-              <p className={styles.listSub}>{a.app_type} · {new Date(a.submitted_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+              <p className={styles.listSub}>{a.class_applying_for} · {new Date(a.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
             </div>
             <span className={`${styles.listBadge} ${(STATUS_MAP as any)[a.status] ?? styles.badgeBlue}`} style={{ textTransform: 'capitalize' }}>{a.status}</span>
           </div>
@@ -83,7 +85,7 @@ export default function ApplicationsClient({ applications: init, profile, school
         <div className={styles.modalOverlay} onClick={() => setViewItem(null)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>{viewItem.applicant_name}</h2>
-            {[['Type', viewItem.app_type], ['Status', viewItem.status], ['Submitted', new Date(viewItem.submitted_at).toLocaleDateString()], ['Notes', viewItem.notes ?? '—']].map(([l, v]) => (
+            {[['Type', viewItem.class_applying_for], ['Status', viewItem.status], ['Submitted', new Date(viewItem.created_at).toLocaleDateString()], ['Notes', viewItem.notes ?? '—']].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>{l}</span><span style={{ fontWeight: 600, color: 'var(--text-primary)', textTransform: l === 'Status' ? 'capitalize' : 'none' }}>{v}</span>
               </div>
@@ -104,7 +106,7 @@ export default function ApplicationsClient({ applications: init, profile, school
             <h2 className={styles.modalTitle}>New Application</h2>
             <div className={styles.formGroup}><label className={styles.formLabel}>Applicant Name *</label><input className={styles.formInput} value={form.applicant_name} onChange={e => setForm(p => ({ ...p, applicant_name: e.target.value }))} placeholder="Full name" /></div>
             <div className={styles.formGroup}><label className={styles.formLabel}>Application Type</label>
-              <select className={styles.formSelect} value={form.app_type} onChange={e => setForm(p => ({ ...p, app_type: e.target.value }))}>
+              <select className={styles.formSelect} value={form.class_applying_for} onChange={e => setForm(p => ({ ...p, class_applying_for: e.target.value }))}>
                 {APP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
