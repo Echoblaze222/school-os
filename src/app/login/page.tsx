@@ -45,13 +45,14 @@ export default function LoginPage() {
   const [newUserError,   setNewUserError]   = useState('')
 
   // Register tab
-  const [regStep,    setRegStep]    = useState(1)
-  const [regLoading, setRegLoading] = useState(false)
-  const [regError,   setRegError]   = useState('')
-  const [regSuccess, setRegSuccess] = useState(false)
+  const [regStep,       setRegStep]       = useState(1)
+  const [regLoading,    setRegLoading]    = useState(false)
+  const [regError,      setRegError]      = useState('')
+  const [regSuccess,    setRegSuccess]    = useState(false)
+  const [paymentMode,   setPaymentMode]   = useState<'full' | 'installment'>('full')
   const [reg, setReg] = useState({
     schoolName: '', schoolType: 'Secondary', address: '', city: '', state: '',
-    phone: '', email: '', tagline: '', plan: 'Premium',
+    phone: '', email: '', tagline: '',
     principalName: '', principalEmail: '', principalPhone: '', principalPassword: '',
   })
 
@@ -183,7 +184,7 @@ export default function LoginPage() {
             address: reg.address, city: reg.city, state: reg.state,
             phone: reg.phone, email: reg.email, tagline: reg.tagline,
           },
-          plan: reg.plan,
+          paymentMode,
           principal: {
             name: reg.principalName, full_name: reg.principalName,
             email: reg.principalEmail,
@@ -205,8 +206,14 @@ export default function LoginPage() {
     }
   }
 
-  const PLAN_PRICES: Record<string, string> = {
-    Basic: '₦50,000/term', Premium: '₦120,000/term', Elite: '₦250,000/term'
+  const SETUP_FEE         = 150000
+  const SETUP_INSTALLMENT = 50000
+  const amountDueNow      = paymentMode === 'installment' ? SETUP_INSTALLMENT : SETUP_FEE
+
+  const PLAN_RATES: Record<string, string> = {
+    Basic:    '₦500/student/term',
+    Standard: '₦1,000/student/term',
+    Premium:  '₦2,000/student/term',
   }
   const STATES = [
     'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
@@ -471,20 +478,58 @@ export default function LoginPage() {
                       <input className={styles.input} type="tel" required value={reg.phone}
                         onChange={e => updateReg('phone', e.target.value)} placeholder="+234 800 0000 000" />
 
-                      <label className={styles.label}>Subscription Plan</label>
-                      <div className={styles.planGrid}>
-                        {(['Basic','Premium','Elite'] as const).map(p => (
-                          <div
-                            key={p}
-                            className={`${styles.planCard} ${reg.plan === p ? styles.planActive : ''}`}
-                            onClick={() => updateReg('plan', p)}
-                          >
-                            <span className={styles.planName}>{p}</span>
-                            <span className={styles.planPrice}>{PLAN_PRICES[p]}</span>
-                          </div>
-                        ))}
+                      {/* ── Setup fee & payment mode ── */}
+                      <label className={styles.label}>Platform Setup Fee</label>
+                      <div className={styles.setupFeeNote}>
+                        One-time fee to onboard your school: <strong>₦150,000</strong>.
+                        Recurring billing is <strong>per-student per term</strong> (₦500–₦2,000 depending on plan).
                       </div>
-                      <div className={styles.registrationFeeNote}>+ ₦25,000 one-time registration fee</div>
+
+                      <label className={styles.label}>Payment Option</label>
+                      <div className={styles.planGrid}>
+                        <div
+                          className={`${styles.planCard} ${paymentMode === 'full' ? styles.planActive : ''}`}
+                          onClick={() => setPaymentMode('full')}
+                        >
+                          <span className={styles.planName}>Pay in Full</span>
+                          <span className={styles.planPrice}>₦150,000</span>
+                          <span className={styles.planSub}>Pay once now</span>
+                        </div>
+                        <div
+                          className={`${styles.planCard} ${paymentMode === 'installment' ? styles.planActive : ''}`}
+                          onClick={() => setPaymentMode('installment')}
+                        >
+                          <span className={styles.planName}>Installmental</span>
+                          <span className={styles.planPrice}>₦50,000 × 3</span>
+                          <span className={styles.planSub}>Monthly, 3 months</span>
+                        </div>
+                      </div>
+
+                      {paymentMode === 'installment' && (
+                        <div className={styles.installmentTimeline}>
+                          <div className={styles.installmentStep}>
+                            <span className={styles.installDot} style={{ background: '#800020' }}>1</span>
+                            <div>
+                              <p className={styles.installLabel}>Today — ₦50,000</p>
+                              <p className={styles.installDesc}>Pay now to activate your portal</p>
+                            </div>
+                          </div>
+                          <div className={styles.installmentStep}>
+                            <span className={styles.installDot}>2</span>
+                            <div>
+                              <p className={styles.installLabel}>Month 2 — ₦50,000</p>
+                              <p className={styles.installDesc}>Auto-reminder will be sent</p>
+                            </div>
+                          </div>
+                          <div className={styles.installmentStep}>
+                            <span className={styles.installDot}>3</span>
+                            <div>
+                              <p className={styles.installLabel}>Month 3 — ₦50,000</p>
+                              <p className={styles.installDesc}>Setup fee fully cleared</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <button type="submit" className={styles.submitBtn}>Next: Principal Details →</button>
                     </>
@@ -522,15 +567,20 @@ export default function LoginPage() {
                       <div className={styles.summaryBox}>
                         <p className={styles.summaryTitle}>Registration Summary</p>
                         <p className={styles.summaryLine}><span>School:</span> {reg.schoolName}</p>
-                        <p className={styles.summaryLine}><span>Plan:</span> {reg.plan}</p>
-                        <p className={styles.summaryLine}><span>Plan fee:</span> {PLAN_PRICES[reg.plan]}</p>
-                        <p className={styles.summaryLine}><span>Reg fee:</span> ₦25,000</p>
+                        <p className={styles.summaryLine}><span>Payment:</span> {paymentMode === 'full' ? 'Full payment' : '3-month installment'}</p>
+                        <p className={styles.summaryLine}><span>Due today:</span> ₦{amountDueNow.toLocaleString()}</p>
+                        {paymentMode === 'installment' && (
+                          <p className={styles.summaryLine}><span>Remaining:</span> ₦{(150000 - amountDueNow).toLocaleString()} over 2 months</p>
+                        )}
+                        <p className={styles.summaryLine} style={{ fontSize: '0.7rem', marginTop: 4 }}>
+                          <span style={{ fontStyle: 'italic' }}>Term billing (per-student) configured after onboarding</span>
+                        </p>
                       </div>
 
                       <div className={styles.regBtnRow}>
                         <button type="button" className={styles.backBtn} onClick={() => setRegStep(1)}>← Back</button>
                         <button type="submit" className={styles.submitBtn} disabled={regLoading}>
-                          {regLoading ? <span className={styles.btnSpinner} /> : 'Register & Pay'}
+                          {regLoading ? <span className={styles.btnSpinner} /> : `Pay ₦${amountDueNow.toLocaleString()} →`}
                         </button>
                       </div>
                     </>
