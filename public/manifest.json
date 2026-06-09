@@ -1,13 +1,13 @@
 {
-  "name": "SchoolOS — School Management Portal",
+  "name": "SchoolOS",
   "short_name": "SchoolOS",
   "description": "The premium school management portal for Nigerian schools",
-  "start_url": "/login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0a0a",
-  "theme_color": "#800020",
+  "background_color": "#080C14",
+  "theme_color": "#080C14",
   "categories": ["education", "productivity"],
   "icons": [
     {
