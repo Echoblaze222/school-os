@@ -12,6 +12,6 @@ export default async function ApplicationsPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile || profile.role !== 'secretary') redirect('/login')
   const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
-  const { data: applications } = await supabase.from('applications').select('*').eq('school_id', profile.school_id).order('submitted_at', { ascending: false })
+  const { data: applications } = await supabase.from('applications').select('*').eq('school_id', profile.school_id).order('created_at', { ascending: false })
   return <ApplicationsClient applications={applications ?? []} profile={profile} school={school} userId={user.id} />
 }
