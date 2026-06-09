@@ -18,9 +18,10 @@ export default async function StudentsPage() {
   const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
 
   const [{ data: students }, { data: classes }] = await Promise.all([
-    supabase.from('student_profiles')
-      .select('user_id, full_name, student_number, class_id, onboarding_status, created_at')
+    supabase.from('profiles')
+      .select('id, full_name, admission_number, class_id, onboarding_stage, created_at, email')
       .eq('school_id', profile.school_id)
+      .eq('role', 'student')
       .order('created_at', { ascending: false }),
     supabase.from('classes').select('id, name').eq('school_id', profile.school_id).order('name'),
   ])
