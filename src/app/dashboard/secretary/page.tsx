@@ -34,14 +34,17 @@ export default async function SecretaryPage() {
     .eq('id', profile.school_id)
     .single()
 
-  // Aggregate counts
   const schoolId = profile.school_id
   const [students, apps, weekly, users] = await Promise.all([
-    supabase.from('student_profiles').select('id', { count: 'exact', head: true }).eq('school_id', schoolId),
-    supabase.from('admissions').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).eq('status', 'pending'),
-    supabase.from('student_profiles').select('id', { count: 'exact', head: true }).eq('school_id', schoolId)
+    supabase.from('profiles').select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId).eq('role', 'student'),
+    supabase.from('admissions').select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId).eq('status', 'pending'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId).eq('role', 'student')
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).eq('is_active', true),
+    supabase.from('profiles').select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId).eq('is_active', true),
   ])
 
   const counts = {
