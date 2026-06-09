@@ -1,6 +1,7 @@
 'use client'
 // src/app/dashboard/principal/codes/CodesClient.tsx
-// UPDATED: Full enrolment form + auto-redirect to code/password screen after saving
+// FIXED: Added missing thStyle/tdStyle/cellInputStyle table style constants
+//        Fixed bSaved not resetting when bulk rows are edited after a save
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -34,13 +35,13 @@ interface Props {
 }
 
 const ROLE_META: Record<string, { color: string; icon: string; label: string }> = {
-  student:   { color: '#10B981', icon: 'S', label: 'Student'   },
-  teacher:   { color: '#3B82F6', icon: 'T', label: 'Teacher'   },
-  bursar:    { color: '#F59E0B', icon: 'B', label: 'Bursar'    },
+  student:   { color: '#10B981', icon: 'S',  label: 'Student'   },
+  teacher:   { color: '#3B82F6', icon: 'T',  label: 'Teacher'   },
+  bursar:    { color: '#F59E0B', icon: 'B',  label: 'Bursar'    },
   secretary: { color: '#8B5CF6', icon: 'Sc', label: 'Secretary' },
-  librarian: { color: '#EC4899', icon: 'L', label: 'Librarian' },
-  nurse:     { color: '#EF4444', icon: 'N', label: 'Nurse'     },
-  principal: { color: '#800020', icon: 'P', label: 'Principal' },
+  librarian: { color: '#EC4899', icon: 'L',  label: 'Librarian' },
+  nurse:     { color: '#EF4444', icon: 'N',  label: 'Nurse'     },
+  principal: { color: '#800020', icon: 'P',  label: 'Principal' },
   parent:    { color: '#06B6D4', icon: 'Pa', label: 'Parent'    },
 }
 const ROLES_ASSIGNABLE = ['student','teacher','bursar','secretary','librarian','nurse','parent']
@@ -53,23 +54,47 @@ const STATES_NG = [
   'Yobe','Zamfara',
 ]
 
+// ── FIX 1: Table style objects that were missing in the new bulk grid UI ──────
+const thStyle: React.CSSProperties = {
+  padding: '8px 10px',
+  textAlign: 'left',
+  fontSize: '0.7rem',
+  fontWeight: 700,
+  color: 'var(--text-muted)',
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  borderBottom: '1px solid var(--glass-border)',
+  whiteSpace: 'nowrap',
+}
+
+const tdStyle: React.CSSProperties = {
+  padding: '4px 6px',
+  verticalAlign: 'middle',
+}
+
+const cellInputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'transparent',
+  border: 'none',
+  outline: 'none',
+  color: 'var(--text-primary)',
+  fontSize: '0.82rem',
+  padding: '6px 4px',
+  borderRadius: 'var(--radius-sm)',
+  fontFamily: 'inherit',
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function roleMeta(role: string) {
   return ROLE_META[role] ?? { color: '#6B7280', icon: '?', label: role }
 }
 
 interface BulkRow { full_name: string; email: string; role: string }
-function parseBulk(raw: string): BulkRow[] {
-  return raw
-    .split('\n').map(l => l.trim()).filter(Boolean)
-    .map(line => {
-      const [full_name, email, role] = line.split(',').map(s => s.trim())
-      return { full_name: full_name ?? '', email: email ?? '', role: (role ?? '').toLowerCase() }
-    })
-    .filter(r => r.full_name && r.email && ROLES_ASSIGNABLE.includes(r.role))
-}
+const EMPTY_ROW = (): BulkRow => ({ full_name: '', email: '', role: 'student' })
+const DEFAULT_ROWS = 5
 
 function makePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const chars   = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   const special = '@#$!'
   let pass = special[Math.floor(Math.random() * special.length)]
   for (let i = 0; i < 8; i++) pass += chars[Math.floor(Math.random() * chars.length)]
@@ -78,7 +103,7 @@ function makePassword() {
 
 interface GeneratedEntry extends BulkRow { code: string; password: string; saved: boolean; error: string | null }
 
-// ─── Success screen shown after enrolment ───────────────────
+// ─── Success screen shown after single enrolment ─────────────────────────────
 function CodeSuccessScreen({
   result, sc, onEnrolAnother,
 }: {
@@ -105,7 +130,6 @@ function CodeSuccessScreen({
 
   return (
     <div className={styles.successScreen}>
-      {/* Check icon */}
       <div className={styles.successIcon}>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12"/>
@@ -117,7 +141,6 @@ function CodeSuccessScreen({
         Share the code and password below with <strong>{result.full_name}</strong>. They will use these to log in for the first time.
       </p>
 
-      {/* User badge */}
       <div className={styles.successBadge}>
         <div className={styles.successAvatar} style={{ background: m.color + '22', color: m.color }}>
           {result.full_name.split(' ').map((w: string) => w[0]).join('').slice(0,2).toUpperCase()}
@@ -131,7 +154,6 @@ function CodeSuccessScreen({
         </div>
       </div>
 
-      {/* Access Code */}
       <div className={styles.credentialBox} style={{ borderColor: sc + '44', background: sc + '0a' }}>
         <p className={styles.credLabel}>Access Code</p>
         <div className={styles.credRow}>
@@ -146,7 +168,6 @@ function CodeSuccessScreen({
         </div>
       </div>
 
-      {/* Password */}
       <div className={styles.credentialBox} style={{ borderColor: '#F59E0B44', background: '#F59E0B0a' }}>
         <p className={styles.credLabel}>Temporary Password</p>
         <div className={styles.credRow}>
@@ -162,7 +183,6 @@ function CodeSuccessScreen({
         <p className={styles.credWarning}>⚠️ User must change this password on first login.</p>
       </div>
 
-      {/* Copy both button */}
       <button onClick={copyBoth} className={styles.copyBothBtn}>
         Copy All Details
       </button>
@@ -201,22 +221,22 @@ export default function CodesClient({ entries: init, classes, profile, school, u
   const [fState,   setFState]   = useState('')
 
   // Student-only fields
-  const [fClass,   setFClass]   = useState('')
-  const [fAdmNo,   setFAdmNo]   = useState('')
-  const [fGuardian,setFGuardian]= useState('')
-  const [fGuardPh, setFGuardPh] = useState('')
+  const [fClass,    setFClass]    = useState('')
+  const [fAdmNo,    setFAdmNo]    = useState('')
+  const [fGuardian, setFGuardian] = useState('')
+  const [fGuardPh,  setFGuardPh]  = useState('')
 
   // Staff-only fields
   const [fQual,    setFQual]    = useState('')
   const [fSubject, setFSubject] = useState('')
 
   // ── Bulk ──────────────────────────────────────────────────
-  const [bRaw,      setBRaw]      = useState('')
-  const [bResults,  setBResults]  = useState<GeneratedEntry[]>([])
-  const [bLoading,  setBLoading]  = useState(false)
-  const [bSaved,    setBSaved]    = useState(false)
-  const [copiedAll, setCopiedAll] = useState(false)
-  const [copiedPwds,setCopiedPwds]= useState<Record<number, boolean>>({})
+  const [bRows,      setBRows]      = useState<BulkRow[]>(() => Array.from({ length: DEFAULT_ROWS }, EMPTY_ROW))
+  const [bResults,   setBResults]   = useState<GeneratedEntry[]>([])
+  const [bLoading,   setBLoading]   = useState(false)
+  const [bSaved,     setBSaved]     = useState(false)
+  const [copiedAll,  setCopiedAll]  = useState(false)
+  const [copiedPwds, setCopiedPwds] = useState<Record<number, boolean>>({})
 
   const roles = useMemo(() => ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()], [entries])
 
@@ -261,31 +281,28 @@ export default function CodesClient({ entries: init, classes, profile, school, u
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          fullName:        fName.trim(),
-          email:           fEmail.trim().toLowerCase(),
-          role:            sRole,
+          fullName:         fName.trim(),
+          email:            fEmail.trim().toLowerCase(),
+          role:             sRole,
           schoolId,
-          // extra fields
-          phone:           fPhone.trim() || null,
-          gender:          fGender || null,
-          dateOfBirth:     fDOB || null,
-          address:         fAddress.trim() || null,
-          state:           fState || null,
-          classId:         sRole === 'student' ? (fClass || null) : null,
-          admissionNumber: sRole === 'student' ? (fAdmNo.trim() || null) : null,
-          guardianName:    sRole === 'student' ? (fGuardian.trim() || null) : null,
-          guardianPhone:   sRole === 'student' ? (fGuardPh.trim() || null) : null,
-          qualification:   sRole !== 'student' ? (fQual.trim() || null) : null,
-          subjectSpecialty:sRole !== 'student' ? (fSubject.trim() || null) : null,
+          phone:            fPhone.trim() || null,
+          gender:           fGender || null,
+          dateOfBirth:      fDOB || null,
+          address:          fAddress.trim() || null,
+          state:            fState || null,
+          classId:          sRole === 'student' ? (fClass || null) : null,
+          admissionNumber:  sRole === 'student' ? (fAdmNo.trim() || null) : null,
+          guardianName:     sRole === 'student' ? (fGuardian.trim() || null) : null,
+          guardianPhone:    sRole === 'student' ? (fGuardPh.trim() || null) : null,
+          qualification:    sRole !== 'student' ? (fQual.trim() || null) : null,
+          subjectSpecialty: sRole !== 'student' ? (fSubject.trim() || null) : null,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to create user')
 
-      // Show success/code screen
       setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code, password: json.password })
 
-      // Refresh entries list in background
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
         .eq('school_id', schoolId).order('role').order('full_name')
@@ -299,12 +316,12 @@ export default function CodesClient({ entries: init, classes, profile, school, u
   }
 
   function handleBulkParse() {
-    const rows = parseBulk(bRaw)
+    const validRows = bRows.filter(r => r.full_name.trim() && r.email.trim() && ROLES_ASSIGNABLE.includes(r.role))
     const year = new Date().getFullYear()
-    setBResults(rows.map(r => {
+    setBResults(validRows.map(r => {
       const prefix = r.role.slice(0, 3).toUpperCase()
       const rand   = Math.floor(1000 + Math.random() * 9000)
-      return { ...r, code: `${prefix}-${year}-${rand}`, password: makePassword(), saved: false, error: null }
+      return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: `${prefix}-${year}-${rand}`, password: makePassword(), saved: false, error: null }
     }))
     setBSaved(false)
   }
@@ -346,10 +363,21 @@ export default function CodesClient({ entries: init, classes, profile, school, u
     setTimeout(() => setCopiedAll(false), 2500)
   }
 
+  // ── FIX 2: Helper to update a bulk row and reset both results + saved flag ──
+  function updateBulkRow(index: number, patch: Partial<BulkRow>) {
+    setBRows(prev => {
+      const next = [...prev]
+      next[index] = { ...next[index], ...patch }
+      return next
+    })
+    setBResults([])
+    setBSaved(false) // FIX: was missing — stale "All Saved ✓" badge no longer shown after re-editing
+  }
+
   const RoleChip = ({ r }: { r: string }) => {
-    const m = roleMeta(r)
+    const m        = roleMeta(r)
     const isActive = roleTab === r
-    const count = entries.filter(e => r === 'all' || e.role === r).length
+    const count    = r === 'all' ? entries.length : entries.filter(e => e.role === r).length
     return (
       <button onClick={() => setRoleTab(r)} className={styles.roleChip}
         style={{
@@ -439,7 +467,6 @@ export default function CodesClient({ entries: init, classes, profile, school, u
       {/* ── ENROL / ADD USER ── */}
       {tab === 'enrol' && (
         <>
-          {/* If we have a result, show the code screen */}
           {sResult ? (
             <CodeSuccessScreen
               result={sResult}
@@ -453,7 +480,6 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 <p className={styles.formSub}>Fill in the details below. After saving, you will get the access code and password to share with them.</p>
               </div>
 
-              {/* Role selector at top */}
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Role *</label>
                 <div className={styles.roleGrid}>
@@ -515,7 +541,6 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 </div>
               </div>
 
-              {/* Student-specific fields */}
               {isStudent && (
                 <>
                   <div className={styles.formDivider}><span>Student Details</span></div>
@@ -543,7 +568,6 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 </>
               )}
 
-              {/* Staff-specific fields */}
               {!isStudent && (
                 <>
                   <div className={styles.formDivider}><span>Staff Details</span></div>
@@ -578,33 +602,146 @@ export default function CodesClient({ entries: init, classes, profile, school, u
           <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
             <div className={styles.formHeader}>
               <p className={styles.formTitle}>Bulk Add Users</p>
-              <p className={styles.formSub}>Paste one user per line: Full Name, Email, Role</p>
+              <p className={styles.formSub}>Fill in each row directly. Leave blank rows empty — they'll be ignored.</p>
             </div>
             <div className={styles.formBody}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>User Data (CSV format)</label>
-                <textarea
-                  className={`${styles.fieldInput} ${styles.textarea}`}
-                  rows={8}
-                  placeholder={'Amara Osei, amara@school.edu, student\nKwame Mensah, kwame@school.edu, teacher\nAfia Boateng, afia@school.edu, bursar'}
-                  value={bRaw}
-                  onChange={e => { setBRaw(e.target.value); setBResults([]) }}
-                />
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: 32 }} />
+                    <col style={{ width: '35%' }} />
+                    <col style={{ width: '35%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: 36 }} />
+                  </colgroup>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-elevated)' }}>
+                      <th style={thStyle}>#</th>
+                      <th style={thStyle}>Full Name *</th>
+                      <th style={thStyle}>Email *</th>
+                      <th style={thStyle}>Role *</th>
+                      <th style={thStyle} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bRows.map((row, i) => {
+                      const isEmpty = !row.full_name && !row.email
+                      const m       = roleMeta(row.role)
+                      return (
+                        <tr
+                          key={i}
+                          style={{
+                            borderBottom: '1px solid var(--glass-border)',
+                            background: isEmpty ? 'transparent' : m.color + '06',
+                          }}
+                        >
+                          <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700 }}>
+                            {i + 1}
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              value={row.full_name}
+                              placeholder="e.g. Amara Osei"
+                              onChange={e => updateBulkRow(i, { full_name: e.target.value })}
+                              onKeyDown={e => {
+                                if (e.key === 'Tab' && !e.shiftKey && i === bRows.length - 1) {
+                                  e.preventDefault()
+                                  setBRows(r => [...r, EMPTY_ROW()])
+                                }
+                              }}
+                              style={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              type="email"
+                              value={row.email}
+                              placeholder="e.g. amara@gmail.com"
+                              onChange={e => updateBulkRow(i, { email: e.target.value })}
+                              style={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.role}
+                              onChange={e => updateBulkRow(i, { role: e.target.value })}
+                              style={{
+                                ...cellInputStyle,
+                                color: m.color,
+                                fontWeight: 700,
+                                paddingRight: 4,
+                              }}
+                            >
+                              {ROLES_ASSIGNABLE.map(r => (
+                                <option key={r} value={r}>{roleMeta(r).label}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            <button
+                              onClick={() => {
+                                const next = bRows.length === 1 ? [EMPTY_ROW()] : bRows.filter((_, idx) => idx !== i)
+                                setBRows(next)
+                                setBResults([])
+                                setBSaved(false)
+                              }}
+                              title="Remove row"
+                              style={{
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: 'var(--text-muted)', padding: 4, lineHeight: 1,
+                                opacity: isEmpty ? 0.3 : 0.7,
+                              }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div className={styles.bulkRoleHints}>
-                <p className={styles.fieldLabel}>Valid roles:</p>
-                <div className={styles.roleTags}>
-                  {ROLES_ASSIGNABLE.map(r => {
-                    const m = roleMeta(r)
-                    return (
-                      <span key={r} className={styles.roleTag} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '33' }}>
-                        {m.label}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-              <button onClick={handleBulkParse} className={styles.previewBtn} disabled={!bRaw.trim()}>
+
+              <button
+                onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'none', border: '1px dashed var(--glass-border)',
+                  borderRadius: 'var(--radius-md)', padding: '8px 16px',
+                  color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700,
+                  cursor: 'pointer', width: '100%', justifyContent: 'center',
+                  transition: 'all var(--transition-fast)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--glass-border-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--glass-border)')}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Row
+              </button>
+
+              {(() => {
+                const filled = bRows.filter(r => r.full_name.trim() && r.email.trim()).length
+                return filled > 0 ? (
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+                    {filled} user{filled !== 1 ? 's' : ''} ready to preview
+                  </p>
+                ) : null
+              })()}
+
+              <button
+                onClick={handleBulkParse}
+                className={styles.previewBtn}
+                disabled={!bRows.some(r => r.full_name.trim() && r.email.trim())}
+              >
                 Preview Codes
               </button>
             </div>
@@ -650,14 +787,18 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>{r.password}</code>
                         <button
-                          onClick={async () => { await navigator.clipboard.writeText(r.password).catch(() => {}); setCopiedPwds(p => ({ ...p, [i]: true })); setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000) }}
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(r.password).catch(() => {})
+                            setCopiedPwds(p => ({ ...p, [i]: true }))
+                            setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000)
+                          }}
                           className={styles.actionBtn}
                           style={copiedPwds[i] ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
                           {copiedPwds[i] ? '✓' : 'Copy'}
                         </button>
                       </div>
                       <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
-                        {r.error ? 'Error' : r.saved ? 'Saved' : 'Pending'}
+                        {r.error ? (r.error.length > 20 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : 'Pending'}
                       </span>
                     </div>
                   )
