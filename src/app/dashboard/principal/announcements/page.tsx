@@ -48,10 +48,10 @@ export default async function AnnouncementsPage() {
         title,
         body,
         audience,
-        class_id,
+        target_class_id,
         created_at,
-        classes ( name ),
-        profiles:created_by ( full_name )
+        classes:target_class_id ( name ),
+        profiles:author_id ( full_name )
       `)
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
@@ -69,7 +69,7 @@ export default async function AnnouncementsPage() {
     title: a.title,
     body: a.body,
     audience: a.audience ?? 'all',
-    class_id: a.class_id ?? null,
+    class_id: a.target_class_id ?? null,
     class_name: a.classes?.name ?? null,
     created_at: a.created_at,
     created_by_name: a.profiles?.full_name ?? null,
