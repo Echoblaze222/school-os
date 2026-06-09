@@ -415,7 +415,7 @@
 /* ── Register: plan grid ── */
 .planGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-top: 4px;
 }
@@ -423,7 +423,7 @@
 .planCard {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
-  padding: 12px 8px;
+  padding: 14px 10px;
   cursor: pointer;
   text-align: center;
   transition: all 0.2s;
@@ -443,14 +443,83 @@
 }
 
 .planName {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #fff;
 }
 
 .planPrice {
-  font-size: 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+}
+
+.planSub {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── Setup fee note ─────────────────────────────────────────── */
+.setupFeeNote {
+  background: rgba(0, 180, 216, 0.07);
+  border: 1px solid rgba(0, 180, 216, 0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.77rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.setupFeeNote strong {
+  color: rgba(255,255,255,0.85);
+}
+
+/* ── Installment timeline ───────────────────────────────────── */
+.installmentTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 4px;
+  padding: 12px 14px;
+  background: rgba(128, 0, 32, 0.06);
+  border: 1px solid rgba(128, 0, 32, 0.2);
+  border-radius: 12px;
+  animation: fadeSlideIn 0.25s ease both;
+}
+
+.installmentStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.installDot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.installLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 1px;
+}
+
+.installDesc {
+  font-size: 0.68rem;
   color: rgba(255,255,255,0.4);
+  margin: 0;
 }
 
 .registrationFeeNote {
