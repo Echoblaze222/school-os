@@ -1,6 +1,4 @@
 // src/app/dashboard/principal/announcements/page.tsx
-// Server Component — fetches existing announcements + class list
-
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AnnouncementsClient from './AnnouncementsClient'
@@ -31,7 +29,7 @@ export default async function AnnouncementsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, school_id')
+    .select('role, full_name, school_id, schools(*)')
     .eq('id', user.id)
     .single()
 
@@ -39,29 +37,34 @@ export default async function AnnouncementsPage() {
     redirect('/dashboard/student')
   }
 
-  // Fetch announcements (most recent first)
-  const { data: announcements } = await supabase
-    .from('announcements')
-    .select(`
-      id,
-      title,
-      body,
-      audience,
-      class_id,
-      created_at,
-      classes ( name ),
-      profiles:created_by ( full_name )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const school = (profile as any)?.schools ?? null
+  const schoolId = profile.school_id ?? ''
 
-  // Fetch classes for target selector
-  const { data: classes } = await supabase
-    .from('classes')
-    .select('id, name')
-    .order('name')
+  const [announcementsRes, classesRes] = await Promise.all([
+    supabase
+      .from('announcements')
+      .select(`
+        id,
+        title,
+        body,
+        audience,
+        class_id,
+        created_at,
+        classes ( name ),
+        profiles:created_by ( full_name )
+      `)
+      .eq('school_id', schoolId)
+      .order('created_at', { ascending: false })
+      .limit(50),
 
-  const rows: AnnouncementRow[] = (announcements ?? []).map((a: any) => ({
+    supabase
+      .from('classes')
+      .select('id, name')
+      .eq('school_id', schoolId)
+      .order('name'),
+  ])
+
+  const rows: AnnouncementRow[] = (announcementsRes.data ?? []).map((a: any) => ({
     id: a.id,
     title: a.title,
     body: a.body,
@@ -72,7 +75,7 @@ export default async function AnnouncementsPage() {
     created_by_name: a.profiles?.full_name ?? null,
   }))
 
-  const classOptions: ClassOption[] = (classes ?? []).map((c: any) => ({
+  const classOptions: ClassOption[] = (classesRes.data ?? []).map((c: any) => ({
     id: c.id,
     name: c.name,
   }))
@@ -83,7 +86,10 @@ export default async function AnnouncementsPage() {
       classOptions={classOptions}
       creatorId={user.id}
       creatorName={profile.full_name ?? 'Principal'}
-      schoolId={(profile as any).school_id ?? ''}
+      schoolId={schoolId}
+      profile={profile}
+      school={school}
+      userId={user.id}
     />
   )
 }
