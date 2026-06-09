@@ -117,7 +117,7 @@ export default function AnnouncementsClient({
         author_id: creatorId,
         status: 'published',
       })
-      .select(`id, title, body, audience, target_class_id, created_at, classes:target_class_id ( name ), profiles:created_by ( full_name )`)
+      .select(`id, title, body, audience, target_class_id, created_at, classes:target_class_id ( name ), profiles:author_id ( full_name )`)
       .single()
     setIsSubmitting(false)
     if (error) { setFormStatus('error'); setErrorMsg(error.message); return }
