@@ -10,6 +10,6 @@ export default async function CalendarPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile || profile.role !== 'secretary') redirect('/login')
   const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
-  const { data: events } = await supabase.from('school_events').select('*').eq('school_id', profile.school_id).order('start_date', { ascending: true })
+  const { data: events } = await supabase.from('events').select('*').eq('school_id', profile.school_id).order('start_date', { ascending: true })
   return <CalendarClient events={events ?? []} profile={profile} school={school} userId={user.id} />
 }
