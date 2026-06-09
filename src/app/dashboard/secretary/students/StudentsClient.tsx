@@ -2,18 +2,17 @@
 // src/app/dashboard/secretary/students/StudentsClient.tsx
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '../secretary.module.css'
 
 interface Student {
-  user_id: string
+  id: string
   full_name: string
-  student_number: string
+  admission_number: string | null
   class_id: string | null
   class_name?: string
-  onboarding_status: string
+  onboarding_stage: string
   created_at: string
   email?: string
 }
@@ -37,7 +36,7 @@ export default function StudentsClient({ students: init, profile, school, userId
 
   const filtered = students.filter(s =>
     s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    s.student_number?.toLowerCase().includes(search.toLowerCase())
+    s.admission_number?.toLowerCase().includes(search.toLowerCase())
   )
 
   function openAdd() { setForm({ full_name: '', email: '', class_id: '' }); setEditItem(null); setModal(true) }
@@ -51,16 +50,14 @@ export default function StudentsClient({ students: init, profile, school, userId
     setSaving(true); setMsg('')
 
     if (editItem) {
-      // Edit: update student_profiles + profiles
+      // Edit: update profiles table using correct PK (id)
       const { error } = await supabase
-        .from('student_profiles')
+        .from('profiles')
         .update({ full_name: form.full_name, class_id: form.class_id || null })
-        .eq('user_id', editItem.user_id)
-
-      await supabase.from('profiles').update({ full_name: form.full_name }).eq('id', editItem.user_id)
+        .eq('id', editItem.id)
 
       if (!error) {
-        setStudents(p => p.map(s => s.user_id === editItem.user_id
+        setStudents(p => p.map(s => s.id === editItem.id
           ? { ...s, full_name: form.full_name, class_id: form.class_id || null }
           : s))
         setMsg('Student updated!')
@@ -76,8 +73,7 @@ export default function StudentsClient({ students: init, profile, school, userId
       const data = await res.json()
       if (!res.ok) { setMsg(data.error ?? 'Failed to create student'); setSaving(false); return }
       setMsg(`Student created! Code: ${data.code}`)
-      // Optimistically append
-      setStudents(p => [{ user_id: data.userId, full_name: form.full_name, student_number: data.code, class_id: form.class_id || null, onboarding_status: 'incomplete', created_at: new Date().toISOString(), email: form.email }, ...p])
+      setStudents(p => [{ id: data.userId, full_name: form.full_name, admission_number: data.code, class_id: form.class_id || null, onboarding_stage: 'stage_1_pending', created_at: new Date().toISOString(), email: form.email }, ...p])
       setModal(false)
     }
     setSaving(false)
@@ -86,9 +82,8 @@ export default function StudentsClient({ students: init, profile, school, userId
   async function deleteStudent() {
     if (!delItem) return
     setSaving(true)
-    await supabase.from('student_profiles').delete().eq('user_id', delItem.user_id)
-    await supabase.from('profiles').update({ is_active: false }).eq('id', delItem.user_id)
-    setStudents(p => p.filter(s => s.user_id !== delItem.user_id))
+    await supabase.from('profiles').update({ is_active: false }).eq('id', delItem.id)
+    setStudents(p => p.filter(s => s.id !== delItem.id))
     setDelItem(null); setSaving(false)
   }
 
@@ -112,16 +107,16 @@ export default function StudentsClient({ students: init, profile, school, userId
       ) : (
         <div>
           {filtered.map(s => (
-            <div key={s.user_id} className={styles.listItem}>
+            <div key={s.id} className={styles.listItem}>
               <div className={styles.listIconBox} style={{ background: sc + '22' }}>
                 <span style={{ fontSize: '1.2rem' }}>🎓</span>
               </div>
               <div className={styles.listContent}>
                 <p className={styles.listTitle}>{s.full_name}</p>
-                <p className={styles.listSub}>{s.student_number} · {s.class_name ?? 'No class'}</p>
+                <p className={styles.listSub}>{s.admission_number ?? '—'} · {s.class_name ?? 'No class'}</p>
               </div>
-              <span className={`${styles.listBadge} ${s.onboarding_status === 'complete' ? styles.badgeGreen : styles.badgeYellow}`}>
-                {s.onboarding_status === 'complete' ? 'Active' : 'Pending'}
+              <span className={`${styles.listBadge} ${s.onboarding_stage === 'complete' ? styles.badgeGreen : styles.badgeYellow}`}>
+                {s.onboarding_stage === 'complete' ? 'Active' : 'Pending'}
               </span>
               <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                 <button onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>✏️</button>
