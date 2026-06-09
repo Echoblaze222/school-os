@@ -1,140 +1,123 @@
 /* src/app/select-school/select-school.module.css */
 
-/* ── Page shell ─────────────────────────────────────────────── */
+/* ── Page shell — identical to login ───────────────────────── */
 .page {
   min-height: 100dvh;
   background: #060608;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 60px 16px 40px;
-  overflow-x: hidden;
-  position: relative;
-}
-
-/* ── Background glow orbs ───────────────────────────────────── */
-.glowOrb {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(80px);
-  z-index: 0;
-}
-
-.orb1 {
-  width: 400px;
-  height: 400px;
-  top: -120px;
-  left: -80px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, transparent 70%);
-}
-
-.orb2 {
-  width: 350px;
-  height: 350px;
-  bottom: -100px;
-  right: -60px;
-  background: radial-gradient(circle, rgba(0, 180, 216, 0.12) 0%, transparent 70%);
-}
-
-/* ── Theme toggle ───────────────────────────────────────────── */
-.themeToggle {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  transition: background 0.2s;
+  padding: 16px 16px 48px;
+  position: relative;
+  overflow-x: hidden;
 }
 
-.themeToggle:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-/* ── Powered by footer ──────────────────────────────────────── */
-.poweredBy {
+.bgGlow {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.25);
-  z-index: 10;
+  width: 600px;
+  height: 600px;
+  top: -160px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.14) 0%, transparent 70%);
   pointer-events: none;
 }
 
-.poweredBy strong {
-  color: rgba(255, 255, 255, 0.45);
+.bgGrid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 180, 216, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 180, 216, 0.025) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
 }
 
-/* ── Main container ─────────────────────────────────────────── */
-.container {
+/* ── Card — identical to login ──────────────────────────────── */
+.card {
   width: 100%;
-  max-width: 480px;
-  position: relative;
-  z-index: 1;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.34, 1.2, 0.64, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-/* ── Wordmark ───────────────────────────────────────────────── */
-.wordmark {
+.card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Top bar — identical to login ───────────────────────────── */
+.topBar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 20px 0;
+}
+
+.logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(0, 180, 216, 0.3));
+}
+
+.topBarText {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
-  margin-bottom: 20px;
+  min-width: 0;
 }
 
-.wordmarkSchool {
-  font-size: 2rem;
-  font-weight: 800;
+.appName {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #fff;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.05em;
 }
 
-.wordmarkOS {
-  font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #7C3AED, #00b4d8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.03em;
+.tagline {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-/* ── Headline ───────────────────────────────────────────────── */
-.headline {
-  font-size: 1.6rem;
-  font-weight: 800;
+/* ── Form wrap ──────────────────────────────────────────────── */
+.formWrap {
+  padding: 20px 20px 24px;
+}
+
+.heading {
+  font-size: 1.25rem;
+  font-weight: 700;
   color: #fff;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   letter-spacing: -0.02em;
-  line-height: 1.2;
 }
 
-.subheadline {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.45);
-  margin: 0 0 28px;
+.subheading {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 20px;
   line-height: 1.5;
 }
 
-/* ── Search card ────────────────────────────────────────────── */
-.searchCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 16px;
-  margin-bottom: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* ── Label — same as login ──────────────────────────────────── */
+.label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
 }
 
 /* ── Search box ─────────────────────────────────────────────── */
@@ -142,18 +125,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  height: 48px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 0 14px;
-  height: 52px;
+  box-sizing: border-box;
   transition: border-color 0.2s, background 0.2s;
 }
 
 .searchBox:focus-within,
 .searchBoxSelected {
-  border-color: rgba(124, 58, 237, 0.5);
-  background: rgba(124, 58, 237, 0.06);
+  border-color: rgba(0, 180, 216, 0.5);
+  background: rgba(0, 180, 216, 0.05);
 }
 
 .searchIcon {
@@ -168,13 +153,13 @@
   border: none;
   outline: none;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-family: 'Inter', sans-serif;
   min-width: 0;
 }
 
 .searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .clearBtn {
@@ -199,46 +184,46 @@
 
 /* ── Dropdown results ───────────────────────────────────────── */
 .dropdown {
-  margin-top: 10px;
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .schoolResult {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
   width: 100%;
   transition: background 0.15s, border-color 0.15s;
-  animation: fadeSlide 0.25s ease both;
+  animation: fadeSlide 0.2s ease both;
 }
 
 .schoolResult:hover {
-  background: rgba(124, 58, 237, 0.1);
-  border-color: rgba(124, 58, 237, 0.3);
+  background: rgba(0, 180, 216, 0.08);
+  border-color: rgba(0, 180, 216, 0.25);
 }
 
 @keyframes fadeSlide {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .schoolIcon {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #fff;
   flex-shrink: 0;
   overflow: hidden;
@@ -256,7 +241,7 @@
 }
 
 .schoolName {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #fff;
   margin: 0;
@@ -266,7 +251,7 @@
 }
 
 .schoolLocation {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.4);
   margin: 2px 0 0;
 }
@@ -274,58 +259,57 @@
 /* ── No results ─────────────────────────────────────────────── */
 .noResults {
   margin-top: 10px;
-  padding: 20px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
   text-align: center;
 }
 
 .noResults p {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.5);
   margin: 0 0 4px;
 }
 
 .noResultsHint {
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   color: rgba(255, 255, 255, 0.3) !important;
 }
 
-/* ── Selected school card ───────────────────────────────────── */
-.selectedCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+/* ── Selected school preview ────────────────────────────────── */
+.selectedPreview {
+  margin-top: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 16px;
-  animation: scaleIn 0.3s cubic-bezier(0.34, 1.3, 0.64, 1) both;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  animation: scaleIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) both;
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.94); }
+  from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
 
 .selectedBanner {
-  height: 72px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  gap: 14px;
+  padding: 14px 16px;
 }
 
 .selectedLogo {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.15);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
   overflow: hidden;
 }
 
@@ -335,140 +319,97 @@
   object-fit: cover;
 }
 
-.selectedInfo {
-  padding: 16px 16px 0;
-  text-align: center;
+.selectedMeta {
+  flex: 1;
+  min-width: 0;
 }
 
 .selectedName {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #fff;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
   letter-spacing: -0.01em;
 }
 
 .selectedTagline {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 6px;
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 2px;
   font-style: italic;
 }
 
 .selectedLocation {
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0 0 16px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
 }
 
-.proceedBtn {
-  display: block;
-  width: calc(100% - 32px);
-  margin: 0 16px 16px;
-  padding: 14px;
+/* ── Submit button — identical to login ─────────────────────── */
+.submitBtn {
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(135deg, #800020, #a00028);
   border: none;
   border-radius: 14px;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  letter-spacing: 0.01em;
+  margin-top: 16px;
   transition: opacity 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.3);
 }
 
-.proceedBtn:hover {
+.submitBtn:hover:not(:disabled) {
   opacity: 0.9;
   transform: translateY(-1px);
 }
 
-.proceedBtn:active {
-  transform: translateY(0);
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* ── Footer ─────────────────────────────────────────────────── */
-.footer {
-  text-align: center;
-  margin-top: 24px;
-  padding-bottom: 48px;
-}
-
-.footer p {
-  font-size: 0.8rem;
+/* ── Register row ───────────────────────────────────────────── */
+.registerRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.35);
-  margin: 0 0 6px;
 }
 
 .registerLink {
-  font-size: 0.82rem;
-  color: #7C3AED;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: #00b4d8;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.78rem;
   transition: color 0.15s;
 }
 
 .registerLink:hover {
-  color: #9F67FF;
+  color: #fff;
 }
 
-/* ── Light mode overrides ───────────────────────────────────── */
-[data-theme="light"] .page {
-  background: #f4f4f8;
+/* ── Powered by ─────────────────────────────────────────────── */
+.poweredBy {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
 }
 
-[data-theme="light"] .headline,
-[data-theme="light"] .wordmarkSchool {
-  color: #0f0f14;
-}
-
-[data-theme="light"] .subheadline {
-  color: rgba(0, 0, 0, 0.5);
-}
-
-[data-theme="light"] .searchCard {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .searchBox {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="light"] .searchInput {
-  color: #0f0f14;
-}
-
-[data-theme="light"] .searchInput::placeholder {
-  color: rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="light"] .schoolResult {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .schoolName,
-[data-theme="light"] .selectedName {
-  color: #0f0f14;
-}
-
-[data-theme="light"] .schoolLocation,
-[data-theme="light"] .selectedLocation,
-[data-theme="light"] .noResults p {
-  color: rgba(0, 0, 0, 0.45);
-}
-
-[data-theme="light"] .selectedCard {
-  background: #fff;
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .poweredBy {
-  color: rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="light"] .themeToggle {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: #0f0f14;
+.poweredBy strong {
+  color: rgba(255, 255, 255, 0.35);
 }
