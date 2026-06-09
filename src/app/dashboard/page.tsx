@@ -13,7 +13,7 @@ const ROLE_ROUTES: Record<string, string> = {
   bursar:    '/dashboard/bursar',
   secretary: '/dashboard/secretary',
   parent:    '/dashboard/parent',
-  admin:     '/admin',
+  super_admin: '/admin',
 }
 
 export default async function DashboardPage() {
@@ -39,3 +39,4 @@ export default async function DashboardPage() {
 
   redirect(destination)
 }
+
