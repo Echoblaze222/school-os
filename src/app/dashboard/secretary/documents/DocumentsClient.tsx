@@ -13,19 +13,19 @@ const CAT_COLORS: Record<string, string> = {
 }
 const FILE_ICONS: Record<string, string> = { pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', ppt: '📙', pptx: '📙', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', default: '📄' }
 
-interface Doc { id: string; name: string; category: string; file_url: string; file_size: number | null; uploaded_at: string; uploader_name?: string }
+// schema: id, school_id, title, content, category, created_by, created_at, file_url, file_size
+interface Doc { id: string; title: string; category: string; file_url: string | null; file_size: number | null; created_at: string; created_by?: string }
 interface Props { docs: Doc[]; profile: any; school: any; userId: string }
 
 export default function DocumentsClient({ docs: init, profile, school, userId }: Props) {
-  const [docs,     setDocs]    = useState(init)
-  const [catTab,   setCatTab]  = useState('all')
-  const [search,   setSearch]  = useState('')
-  const [uploading,setUpload]  = useState(false)
-  const [modal,    setModal]   = useState(false)
-  const [saving,   setSaving]  = useState(false)
-  const [msg,      setMsg]     = useState('')
-  const [form,     setForm]    = useState({ name: '', category: 'General' })
-  const [file,     setFile]    = useState<File | null>(null)
+  const [docs,    setDocs]   = useState(init)
+  const [catTab,  setCatTab] = useState('all')
+  const [search,  setSearch] = useState('')
+  const [modal,   setModal]  = useState(false)
+  const [saving,  setSaving] = useState(false)
+  const [msg,     setMsg]    = useState('')
+  const [form,    setForm]   = useState({ title: '', category: 'General' })
+  const [file,    setFile]   = useState<File | null>(null)
 
   const fileRef  = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -33,12 +33,12 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
 
   const filtered = docs.filter(d => {
     const matchCat    = catTab === 'all' || d.category === catTab
-    const matchSearch = d.name?.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = d.title?.toLowerCase().includes(search.toLowerCase())
     return matchCat && matchSearch
   })
 
   async function upload() {
-    if (!file || !form.name.trim()) { setMsg('Name and file are required.'); return }
+    if (!file || !form.title.trim()) { setMsg('Name and file are required.'); return }
     setSaving(true); setMsg('')
 
     const ext  = file.name.split('.').pop() ?? 'bin'
@@ -50,9 +50,12 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
     const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
 
     const { data, error } = await supabase.from('school_documents').insert({
-      name: form.name, category: form.category, file_url: urlData.publicUrl,
-      file_size: file.size, school_id: school?.id, uploaded_by: userId,
-      uploader_name: profile?.full_name, uploaded_at: new Date().toISOString(),
+      title: form.title,
+      category: form.category,
+      file_url: urlData.publicUrl,
+      file_size: file.size,
+      school_id: school?.id,
+      created_by: userId,
     }).select().single()
 
     if (!error && data) { setDocs(p => [data, ...p]); setModal(false); setFile(null) }
@@ -65,7 +68,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
     setDocs(p => p.filter(d => d.id !== id))
   }
 
-  function fileIcon(url: string) {
+  function fileIcon(url: string | null) {
     const ext = url?.split('.')?.pop()?.toLowerCase() ?? ''
     return FILE_ICONS[ext] ?? FILE_ICONS.default
   }
@@ -84,7 +87,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input className={styles.searchInput} placeholder="Search documents…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ name: '', category: 'General' }); setModal(true) }} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>⬆ Upload</button>
+        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ title: '', category: 'General' }); setModal(true) }} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>⬆ Upload</button>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
@@ -107,12 +110,14 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
               <span style={{ fontSize: '1.3rem' }}>{fileIcon(d.file_url)}</span>
             </div>
             <div className={styles.listContent}>
-              <p className={styles.listTitle}>{d.name}</p>
-              <p className={styles.listSub}>{formatSize(d.file_size)} · {d.uploader_name ?? 'Secretary'} · {new Date(d.uploaded_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+              <p className={styles.listTitle}>{d.title}</p>
+              <p className={styles.listSub}>{formatSize(d.file_size)} · {new Date(d.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
             </div>
             <span className={styles.listBadge} style={{ background: (CAT_COLORS[d.category] ?? '#6B7280') + '22', color: CAT_COLORS[d.category] ?? '#6B7280' }}>{d.category}</span>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <a href={d.file_url} target="_blank" rel="noopener noreferrer" style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇️</a>
+              {d.file_url && (
+                <a href={d.file_url} target="_blank" rel="noopener noreferrer" style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇️</a>
+              )}
               <button onClick={() => deleteDoc(d.id)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
             </div>
           </div>
@@ -123,7 +128,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
         <div className={styles.modalOverlay} onClick={() => setModal(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Upload Document</h2>
-            <div className={styles.formGroup}><label className={styles.formLabel}>Document Name *</label><input className={styles.formInput} value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} placeholder="e.g. Admission Policy 2025" /></div>
+            <div className={styles.formGroup}><label className={styles.formLabel}>Document Name *</label><input className={styles.formInput} value={form.title} onChange={e => setForm(p => ({...p, title: e.target.value}))} placeholder="e.g. Admission Policy 2025" /></div>
             <div className={styles.formGroup}><label className={styles.formLabel}>Category</label>
               <select className={styles.formSelect} value={form.category} onChange={e => setForm(p => ({...p, category: e.target.value}))}>
                 {DOC_CATS.map(c => <option key={c} value={c}>{c}</option>)}
