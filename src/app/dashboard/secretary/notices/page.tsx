@@ -25,7 +25,7 @@ export default async function SecretaryNoticesPage() {
     supabase
       .from('announcements')
       .select(`
-        id, title, body, audience, class_id, created_at,
+        id, title, body, audience, target_class_id, created_at,
         classes ( name ),
         profiles:created_by ( full_name )
       `)
@@ -45,7 +45,7 @@ export default async function SecretaryNoticesPage() {
     title: a.title,
     body: a.body,
     audience: a.audience ?? 'all',
-    class_id: a.class_id ?? null,
+    class_id: a.target_class_id ?? null,
     class_name: a.classes?.name ?? null,
     created_at: a.created_at,
     created_by_name: a.profiles?.full_name ?? null,
