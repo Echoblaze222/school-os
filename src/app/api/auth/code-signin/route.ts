@@ -35,9 +35,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const stage = profile.onboarding_stage
-    const isNew = stage === 'start' || stage === 'stage_1_pending'
-    if (isNew) {
+    // Only block truly un-activated accounts (stage = 'start' means password was
+    // never set). stage_1_pending means password IS set but onboarding not complete —
+    // those users must be able to sign in so they can finish onboarding.
+    if (profile.onboarding_stage === 'start') {
       return NextResponse.json(
         { error: 'This is a new account. Use the New User tab to set your password first.' },
         { status: 400 }
