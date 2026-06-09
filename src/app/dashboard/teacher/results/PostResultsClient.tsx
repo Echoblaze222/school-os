@@ -1,6 +1,12 @@
 'use client'
 // src/app/dashboard/teacher/results/PostResultsClient.tsx
 // Step-by-step: 1) Pick class+subject  2) Pick term+type  3) Enter scores  4) Review+submit
+//
+// FIXED: term internal state ('first'/'second'/'third') now mapped to DB values
+//        ('First Term'/'Second Term'/'Third Term') before every upsert and pre-fill comparison.
+// FIXED: upsert payload now includes school_id, academic_year, and posted_by.
+// FIXED: pre-fill comparison now matches against DB term value (not internal key).
+// ADDED: schoolId prop (pass from page.tsx: schoolId={school?.id}).
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
@@ -9,18 +15,38 @@ import type { TeacherClass, StudentForResult, ExistingResult } from './types'
 import styles from './teacher.module.css'
 
 interface Props {
-  teacherClasses: TeacherClass[]
-  allStudents: (StudentForResult & { class_id: string })[]
+  teacherClasses:  TeacherClass[]
+  allStudents:     (StudentForResult & { class_id: string })[]
   existingResults: ExistingResult[]
-  teacherId: string
-  teacherName: string
+  teacherId:       string
+  teacherName:     string
+  schoolId:        string   // ← NEW: pass school?.id from page.tsx
 }
 
 type ResultType = 'day_test' | 'mid_term' | 'exam'
-type Term = 'first' | 'second' | 'third'
+type Term       = 'first' | 'second' | 'third'
 
-const RESULT_TYPE_LABELS: Record<ResultType, string> = { day_test: 'Day Test', mid_term: 'Mid-Term', exam: 'Exam' }
-const TERM_LABELS: Record<Term, string> = { first: '1st Term', second: '2nd Term', third: '3rd Term' }
+const RESULT_TYPE_LABELS: Record<ResultType, string> = {
+  day_test: 'Day Test',
+  mid_term: 'Mid-Term',
+  exam:     'Exam',
+}
+
+// Display labels (shown to the teacher)
+const TERM_LABELS: Record<Term, string> = {
+  first:  '1st Term',
+  second: '2nd Term',
+  third:  '3rd Term',
+}
+
+// DB values — what actually gets written to / read from results.term
+const TERM_TO_DB: Record<Term, string> = {
+  first:  'First Term',
+  second: 'Second Term',
+  third:  'Third Term',
+}
+
+const currentAcademicYear = `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
 
 function computeGrade(score: number, maxScore: number): string {
   if (maxScore === 0) return '—'
@@ -43,37 +69,39 @@ function initials(n: string) { return n.split(' ').map(w => w[0]).join('').slice
 function getTimeOfDay() { const h = new Date().getHours(); return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening' }
 
 // Icons
-const IconSun = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-const IconMoon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
-const IconHome = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-const IconClipboard = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-const IconEdit = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-const IconBarChart = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-const IconCheck = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+const IconSun         = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+const IconMoon        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+const IconHome        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+const IconClipboard   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+const IconEdit        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+const IconBarChart    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+const IconCheck       = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 const IconAlertCircle = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-const IconSave = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+const IconSave        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
 
-export default function PostResultsClient({ teacherClasses, allStudents, existingResults, teacherId, teacherName }: Props) {
-  const [isDark, setIsDark] = useState(true)
-  const [mounted, setMounted] = useState(false)
-  const [step, setStep] = useState(1)
-
-  // Step 1 — class selection
-  const [selectedCS, setSelectedCS] = useState<TeacherClass | null>(null)
-  // Step 2 — term / type / max score
-  const [term, setTerm] = useState<Term>('first')
-  const [resultType, setResultType] = useState<ResultType>('day_test')
-  const [maxScore, setMaxScore] = useState('100')
-  // Step 3 — scores map: student_id → score string
-  const [scores, setScores] = useState<Record<string, string>>({})
-  // Submission
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
+export default function PostResultsClient({
+  teacherClasses,
+  allStudents,
+  existingResults,
+  teacherId,
+  teacherName,
+  schoolId,
+}: Props) {
+  const [isDark,        setIsDark]        = useState(true)
+  const [mounted,       setMounted]       = useState(false)
+  const [step,          setStep]          = useState(1)
+  const [selectedCS,    setSelectedCS]    = useState<TeacherClass | null>(null)
+  const [term,          setTerm]          = useState<Term>('first')
+  const [resultType,    setResultType]    = useState<ResultType>('day_test')
+  const [maxScore,      setMaxScore]      = useState('100')
+  const [scores,        setScores]        = useState<Record<string, string>>({})
+  const [isSubmitting,  setIsSubmitting]  = useState(false)
+  const [submitStatus,  setSubmitStatus]  = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMsg,      setErrorMsg]      = useState('')
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme')
-    const dark = saved !== 'light'
+    const dark  = saved !== 'light'
     setIsDark(dark)
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
     setMounted(true)
@@ -86,18 +114,23 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
     localStorage.setItem('schoolos_theme', next ? 'dark' : 'light')
   }
 
-  // Students for the selected class
   const classStudents = useMemo(() => {
     if (!selectedCS) return []
     return allStudents.filter(s => s.class_id === selectedCS.class_id)
   }, [selectedCS, allStudents])
 
-  // Pre-fill scores from existing results when step 3 loads
+  // Pre-fill scores from existing results when step 3 loads.
+  // FIXED: compare r.term against TERM_TO_DB[term] (the DB value), not the internal key.
   useEffect(() => {
     if (step !== 3 || !selectedCS) return
+    const dbTerm = TERM_TO_DB[term]
     const pre: Record<string, string> = {}
     existingResults.forEach(r => {
-      if (r.class_subject_id === selectedCS.class_subject_id && r.term === term && r.result_type === resultType) {
+      if (
+        r.class_subject_id === selectedCS.class_subject_id &&
+        r.term             === dbTerm &&          // ← FIXED
+        r.result_type      === resultType
+      ) {
         pre[r.student_id] = String(r.score)
       }
     })
@@ -105,7 +138,7 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
   }, [step, selectedCS, term, resultType, existingResults])
 
   const filledCount = Object.values(scores).filter(v => v !== '' && !isNaN(Number(v))).length
-  const maxNum = Number(maxScore) || 100
+  const maxNum      = Number(maxScore) || 100
 
   async function handleSubmit() {
     if (!selectedCS) return
@@ -113,18 +146,23 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
     setSubmitStatus('idle')
 
     const supabase = createClient()
+    const dbTerm   = TERM_TO_DB[term]   // ← FIXED: map to DB value before writing
+
     const upsertRows = classStudents
       .filter(s => scores[s.student_id] !== '' && scores[s.student_id] !== undefined)
       .map(s => {
         const scoreNum = Math.min(Math.max(Number(scores[s.student_id]) || 0, 0), maxNum)
         return {
-          student_id: s.student_id,
+          student_id:       s.student_id,
           class_subject_id: selectedCS.class_subject_id,
-          result_type: resultType,
-          term,
-          score: scoreNum,
-          max_score: maxNum,
-          grade: computeGrade(scoreNum, maxNum),
+          result_type:      resultType,
+          term:             dbTerm,             // ← FIXED: 'First Term' not 'first'
+          score:            scoreNum,
+          max_score:        maxNum,
+          grade:            computeGrade(scoreNum, maxNum),
+          school_id:        schoolId,           // ← ADDED
+          academic_year:    currentAcademicYear, // ← ADDED
+          posted_by:        teacherId,           // ← ADDED (principal view needs this)
         }
       })
 
@@ -138,7 +176,7 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
     const { error } = await supabase
       .from('results')
       .upsert(upsertRows, {
-        onConflict: 'student_id,class_subject_id,result_type,term',
+        onConflict:       'student_id,class_subject_id,result_type,term',
         ignoreDuplicates: false,
       })
 
@@ -159,10 +197,10 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
         {/* Side Nav */}
         <nav className={styles.sideNav}>
           <div className={styles.sideNavLogo}>School<span>OS</span></div>
-          <Link href="/dashboard/teacher" className={styles.sideNavItem}><IconHome /> Overview</Link>
+          <Link href="/dashboard/teacher"         className={styles.sideNavItem}><IconHome />      Overview</Link>
           <Link href="/dashboard/teacher/results" className={`${styles.sideNavItem} ${styles.sideNavItemActive}`}><IconClipboard /> Post Results</Link>
-          <Link href="/dashboard/teacher/grades" className={styles.sideNavItem}><IconEdit /> Grade Submissions</Link>
-          <Link href="/dashboard/teacher/classes" className={styles.sideNavItem}><IconBarChart /> My Classes</Link>
+          <Link href="/dashboard/teacher/grades"  className={styles.sideNavItem}><IconEdit />      Grade Submissions</Link>
+          <Link href="/dashboard/teacher/classes" className={styles.sideNavItem}><IconBarChart />  My Classes</Link>
         </nav>
 
         <div className={styles.mainCol}>
@@ -181,8 +219,8 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
             <div className={styles.stepBar}>
               {[
                 { n: 1, label: 'Class & Subject' },
-                { n: 2, label: 'Term & Type' },
-                { n: 3, label: 'Enter Scores' },
+                { n: 2, label: 'Term & Type'     },
+                { n: 3, label: 'Enter Scores'    },
               ].map(s => (
                 <div
                   key={s.n}
@@ -223,11 +261,7 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
                   )}
                 </div>
                 <div className={styles.actionRow}>
-                  <button
-                    className={styles.primaryBtn}
-                    disabled={!selectedCS}
-                    onClick={() => setStep(2)}
-                  >
+                  <button className={styles.primaryBtn} disabled={!selectedCS} onClick={() => setStep(2)}>
                     Continue →
                   </button>
                 </div>
@@ -249,7 +283,11 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
                       <span className={styles.segLabel}>Term</span>
                       <div className={styles.segButtons}>
                         {(['first', 'second', 'third'] as Term[]).map(t => (
-                          <button key={t} className={`${styles.segBtn} ${term === t ? styles.segBtnActive : ''}`} onClick={() => setTerm(t)}>
+                          <button
+                            key={t}
+                            className={`${styles.segBtn} ${term === t ? styles.segBtnActive : ''}`}
+                            onClick={() => setTerm(t)}
+                          >
                             {TERM_LABELS[t]}
                           </button>
                         ))}
@@ -259,7 +297,11 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
                       <span className={styles.segLabel}>Assessment Type</span>
                       <div className={styles.segButtons}>
                         {(['day_test', 'mid_term', 'exam'] as ResultType[]).map(rt => (
-                          <button key={rt} className={`${styles.segBtn} ${resultType === rt ? styles.segBtnActive : ''}`} onClick={() => setResultType(rt)}>
+                          <button
+                            key={rt}
+                            className={`${styles.segBtn} ${resultType === rt ? styles.segBtnActive : ''}`}
+                            onClick={() => setResultType(rt)}
+                          >
                             {RESULT_TYPE_LABELS[rt]}
                           </button>
                         ))}
@@ -305,7 +347,7 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
                 {submitStatus === 'success' && (
                   <div style={{ margin: 'var(--space-4) var(--space-6) 0' }}>
                     <div className={styles.statusSuccess}>
-                      <IconCheck /> Results saved successfully for {filledCount} student{filledCount !== 1 ? 's' : ''}!
+                      <IconCheck /> Results saved for {filledCount} student{filledCount !== 1 ? 's' : ''}!
                     </div>
                   </div>
                 )}
@@ -332,8 +374,8 @@ export default function PostResultsClient({ teacherClasses, allStudents, existin
                         </thead>
                         <tbody>
                           {classStudents.map(s => {
-                            const raw = scores[s.student_id] ?? ''
-                            const num = raw !== '' ? Number(raw) : NaN
+                            const raw   = scores[s.student_id] ?? ''
+                            const num   = raw !== '' ? Number(raw) : NaN
                             const grade = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : '—'
                             const isOver = !isNaN(num) && num > maxNum
                             return (
