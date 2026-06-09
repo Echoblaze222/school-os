@@ -32,13 +32,17 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const path = 'avatars/' + userId + '.' + file.name.split('.').pop()
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert:true })
-    if (!error) {
-      const { data:url } = supabase.storage.from('avatars').getPublicUrl(path)
-      await supabase.from('profiles').update({ avatar_url:url.publicUrl }).eq('id', userId)
-      setAvatar(url.publicUrl)
-    }
+    setMsg('Uploading...')
+    const ext  = file.name.split('.').pop()
+    const path = `avatars/${userId}_${Date.now()}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+    if (uploadErr) { setMsg('Upload failed: ' + uploadErr.message); return }
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+    const freshUrl = data.publicUrl + '?t=' + Date.now()
+    const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', userId)
+    if (dbErr) { setMsg('Photo saved but profile update failed.'); return }
+    setAvatar(freshUrl)
+    setMsg('Photo updated!')
   }
 
   async function logout() {
