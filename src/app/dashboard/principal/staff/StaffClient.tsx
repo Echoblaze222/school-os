@@ -1,23 +1,172 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './staff.module.css'
 
 const ROLES = ['teacher', 'bursar', 'secretary', 'librarian', 'counselor', 'nurse', 'admin']
-const ROLE_COLORS: Record<string,string> = {
-  teacher:'#10B981', bursar:'#F59E0B', secretary:'#EC4899',
-  librarian:'#3B82F6', counselor:'#8B5CF6', nurse:'#EF4444', admin:'#6B7280',
+const ROLE_COLORS: Record<string, string> = {
+  teacher: '#10B981', bursar: '#F59E0B', secretary: '#EC4899',
+  librarian: '#3B82F6', counselor: '#8B5CF6', nurse: '#EF4444', admin: '#6B7280',
 }
 
 interface Props { profile: any; school: any; userId: string }
 
+// ── Success modal shown after staff is added ─────────────────
+function StaffSuccessModal({
+  result, sc, onClose,
+}: {
+  result: { full_name: string; email: string; role: string; code: string; password: string }
+  sc: string
+  onClose: () => void
+}) {
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedPwd,  setCopiedPwd]  = useState(false)
+  const [copiedAll,  setCopiedAll]  = useState(false)
+  const roleColor  = ROLE_COLORS[result.role] ?? sc
+  const initials   = result.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const roleLabel  = result.role.charAt(0).toUpperCase() + result.role.slice(1)
+
+  async function copy(text: string, which: 'code' | 'pwd' | 'all') {
+    await navigator.clipboard.writeText(text).catch(() => {})
+    if (which === 'code') { setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }
+    else if (which === 'pwd') { setCopiedPwd(true); setTimeout(() => setCopiedPwd(false), 2000) }
+    else { setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2500) }
+  }
+
+  function copyAllDetails() {
+    const text = `Name: ${result.full_name}\nRole: ${roleLabel}\nEmail: ${result.email}\nAccess Code: ${result.code}\nTemp Password: ${result.password}`
+    copy(text, 'all')
+  }
+
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.dialog} style={{ maxWidth: 440, width: '100%' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%', background: '#10B98118',
+            border: '2px solid #10B981', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', margin: '0 auto 12px',
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3 className={styles.dialogTitle} style={{ marginBottom: 4 }}>Staff Added!</h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+            Share these login details with <strong style={{ color: 'var(--text-base)' }}>{result.full_name}</strong>
+          </p>
+        </div>
+
+        {/* User badge */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+          background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+          borderRadius: 10, marginBottom: 16,
+        }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: '50%',
+            background: roleColor + '22', color: roleColor,
+            fontWeight: 700, fontSize: '0.85rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>{initials}</div>
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-base)' }}>{result.full_name}</p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {result.email} · <span style={{ color: roleColor, fontWeight: 600 }}>{roleLabel}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Access Code */}
+        <div style={{
+          border: `1px solid ${roleColor}44`, background: roleColor + '0a',
+          borderRadius: 10, padding: '12px 14px', marginBottom: 10,
+        }}>
+          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Access Code
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <code style={{
+              flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
+              color: roleColor, fontFamily: 'monospace',
+            }}>{result.code}</code>
+            <button
+              onClick={() => copy(result.code, 'code')}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                background: copiedCode ? '#10B98122' : 'transparent',
+                border: `1px solid ${copiedCode ? '#10B981' : roleColor + '55'}`,
+                color: copiedCode ? '#10B981' : roleColor,
+              }}
+            >
+              {copiedCode ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
+
+        {/* Temp Password */}
+        <div style={{
+          border: '1px solid #F59E0B44', background: '#F59E0B0a',
+          borderRadius: 10, padding: '12px 14px', marginBottom: 16,
+        }}>
+          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Temporary Password
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <code style={{
+              flex: 1, fontSize: '1rem', fontWeight: 700,
+              color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
+            }}>{result.password}</code>
+            <button
+              onClick={() => copy(result.password, 'pwd')}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                background: copiedPwd ? '#10B98122' : 'transparent',
+                border: `1px solid ${copiedPwd ? '#10B981' : '#F59E0B55'}`,
+                color: copiedPwd ? '#10B981' : '#F59E0B',
+              }}
+            >
+              {copiedPwd ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85 }}>
+            ⚠️ Staff must change this password on first login.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <button
+          onClick={copyAllDetails}
+          style={{
+            width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
+            fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+            background: copiedAll ? '#10B98122' : 'var(--glass-bg)',
+            border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
+            color: copiedAll ? '#10B981' : 'var(--text-base)',
+          }}
+        >
+          {copiedAll ? '✓ All Details Copied' : 'Copy All Details'}
+        </button>
+        <button
+          onClick={onClose}
+          className={styles.saveBtn}
+          style={{ width: '100%', background: sc }}
+        >
+          Done — Add Another
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function StaffClient({ profile, school, userId }: Props) {
-  const supabase   = createClient()
-  const sc         = school?.primary_color ?? '#7C3AED'
-  // ── Realtime: staff list stays live — new hires appear without refresh ──
+  const supabase = createClient()
+  const sc       = school?.primary_color ?? '#7C3AED'
+
   const [staff, setStaff] = useRealtimeTable<any>({
     table:   'profiles',
     filter:  school?.id ? `school_id=eq.${school.id}` : undefined,
@@ -25,19 +174,21 @@ export default function StaffClient({ profile, school, userId }: Props) {
     orderBy: (a, b) => (a.full_name ?? '').localeCompare(b.full_name ?? ''),
   })
 
-  const [loading,  setLoading]  = useState(false)
-  const [search,   setSearch]   = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [search,     setSearch]     = useState('')
   const [roleFilter, setRoleFilter] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [toast,    setToast]    = useState<{ msg: string; ok: boolean } | null>(null)
+  const [showForm,   setShowForm]   = useState(false)
+  const [deleting,   setDeleting]   = useState<string | null>(null)
+  const [toast,      setToast]      = useState<{ msg: string; ok: boolean } | null>(null)
   const [confirmDel, setConfirmDel] = useState<any | null>(null)
+  const [saving,     setSaving]     = useState(false)
+  const [addResult,  setAddResult]  = useState<{ full_name: string; email: string; role: string; code: string; password: string } | null>(null)
 
-  // Form fields
-  const [form, setForm] = useState({ full_name:'', email:'', phone:'', role:'teacher', subject:'', qualification:'' })
-  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    full_name: '', email: '', phone: '', role: 'teacher',
+    subject: '', qualification: '', gender: '', date_of_birth: '',
+  })
 
-  // Load staff on mount (roles that are staff, not students/parents)
   useEffect(() => {
     async function loadStaff() {
       if (!school?.id) return
@@ -69,26 +220,52 @@ export default function StaffClient({ profile, school, userId }: Props) {
   }
 
   async function handleCreate() {
-    if (!form.full_name.trim() || !form.email.trim()) return
+    if (!form.full_name.trim() || !form.email.trim()) {
+      showToast('Full name and email are required.', false)
+      return
+    }
     setSaving(true)
-    // Create auth user + profile via admin API isn't possible client-side,
-    // so we insert a profile record with a placeholder (requires RLS to allow principal inserts)
-    const { data, error } = await supabase.from('profiles').insert({
-      full_name:     form.full_name.trim(),
-      email:         form.email.trim(),
-      phone:         form.phone.trim() || null,
-      role:          form.role,
-      subject:       form.subject.trim() || null,
-      qualification: form.qualification.trim() || null,
-      school_id:     school.id,
-    }).select().single()
+    try {
+      const res  = await fetch('/api/secretary/create-user', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          fullName:         form.full_name.trim(),
+          email:            form.email.trim().toLowerCase(),
+          role:             form.role,
+          schoolId:         school.id,
+          phone:            form.phone.trim()         || null,
+          gender:           form.gender               || null,
+          dateOfBirth:      form.date_of_birth        || null,
+          qualification:    form.qualification.trim() || null,
+          subjectSpecialty: form.role === 'teacher' ? (form.subject.trim() || null) : null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to add staff member')
 
+      // Refresh list
+      const { data: fresh } = await supabase
+        .from('profiles').select('*')
+        .eq('school_id', school.id)
+        .not('role', 'in', '(student,parent)')
+        .order('full_name')
+      if (fresh) setStaff(fresh)
+
+      const captured = { ...form }
+      setForm({ full_name: '', email: '', phone: '', role: 'teacher', subject: '', qualification: '', gender: '', date_of_birth: '' })
+      setShowForm(false)
+      setAddResult({
+        full_name: captured.full_name.trim(),
+        email:     captured.email.trim(),
+        role:      captured.role,
+        code:      json.code,
+        password:  json.password,
+      })
+    } catch (err: any) {
+      showToast(err.message ?? 'Failed to add staff member', false)
+    }
     setSaving(false)
-    if (error) { showToast(error.message, false); return }
-    setStaff(prev => [data, ...prev])
-    setForm({ full_name:'', email:'', phone:'', role:'teacher', subject:'', qualification:'' })
-    setShowForm(false)
-    showToast(`${data.full_name} added to staff`)
   }
 
   const filtered = staff.filter(s => {
@@ -104,18 +281,25 @@ export default function StaffClient({ profile, school, userId }: Props) {
   const roleCounts = ROLES.reduce((acc, r) => {
     acc[r] = staff.filter(s => s.role === r).length
     return acc
-  }, {} as Record<string,number>)
+  }, {} as Record<string, number>)
 
   return (
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Staff">
-      {/* Toast */}
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
           {toast.ok ? '✓' : '✕'} {toast.msg}
         </div>
       )}
 
-      {/* Delete confirmation */}
+      {/* Code + password modal after adding staff */}
+      {addResult && (
+        <StaffSuccessModal
+          result={addResult}
+          sc={sc}
+          onClose={() => setAddResult(null)}
+        />
+      )}
+
       {confirmDel && (
         <div className={styles.overlay}>
           <div className={styles.dialog}>
@@ -145,10 +329,10 @@ export default function StaffClient({ profile, school, userId }: Props) {
             <p className={styles.statVal} style={{ color: sc }}>{staff.length}</p>
             <p className={styles.statLbl}>Total Staff</p>
           </div>
-          {Object.entries(roleCounts).filter(([,c]) => c > 0).map(([r, c]) => (
+          {Object.entries(roleCounts).filter(([, c]) => c > 0).map(([r, c]) => (
             <div key={r} className={styles.statCard}>
               <p className={styles.statVal} style={{ color: ROLE_COLORS[r] ?? sc }}>{c}</p>
-              <p className={styles.statLbl} style={{ textTransform:'capitalize' }}>{r}s</p>
+              <p className={styles.statLbl} style={{ textTransform: 'capitalize' }}>{r}s</p>
             </div>
           ))}
         </div>
@@ -170,7 +354,11 @@ export default function StaffClient({ profile, school, userId }: Props) {
             onChange={e => setRoleFilter(e.target.value)}
           >
             <option value="">All Roles</option>
-            {ROLES.map(r => <option key={r} value={r} style={{ textTransform:'capitalize' }}>{r}</option>)}
+            {ROLES.map(r => (
+              <option key={r} value={r} style={{ textTransform: 'capitalize' }}>
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+              </option>
+            ))}
           </select>
           <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? '✕ Close' : '+ Add Staff'}
@@ -184,30 +372,49 @@ export default function StaffClient({ profile, school, userId }: Props) {
             <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Full Name *</label>
-                <input className={styles.fieldInput} placeholder="e.g. John Adeyemi" value={form.full_name} onChange={e => setForm(f=>({...f,full_name:e.target.value}))}/>
+                <input className={styles.fieldInput} placeholder="e.g. John Adeyemi" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}/>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Email *</label>
-                <input className={styles.fieldInput} type="email" placeholder="john@school.edu.ng" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}/>
+                <input className={styles.fieldInput} type="email" placeholder="john@school.edu.ng" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}/>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Phone</label>
-                <input className={styles.fieldInput} placeholder="080xxxxxxxx" value={form.phone} onChange={e => setForm(f=>({...f,phone:e.target.value}))}/>
+                <input className={styles.fieldInput} placeholder="080xxxxxxxx" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}/>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Role *</label>
-                <select className={styles.fieldInput} value={form.role} onChange={e => setForm(f=>({...f,role:e.target.value}))}>
-                  {ROLES.map(r => <option key={r} value={r} style={{ textTransform:'capitalize' }}>{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}
+                <select className={styles.fieldInput} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+                  {ROLES.map(r => (
+                    <option key={r} value={r} style={{ textTransform: 'capitalize' }}>
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Subject (Teachers)</label>
-                <input className={styles.fieldInput} placeholder="e.g. Mathematics" value={form.subject} onChange={e => setForm(f=>({...f,subject:e.target.value}))}/>
+                <label className={styles.fieldLabel}>Gender</label>
+                <select className={styles.fieldInput} value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Date of Birth</label>
+                <input className={styles.fieldInput} type="date" value={form.date_of_birth} onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))}/>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Qualification</label>
-                <input className={styles.fieldInput} placeholder="e.g. B.Sc Education" value={form.qualification} onChange={e => setForm(f=>({...f,qualification:e.target.value}))}/>
+                <input className={styles.fieldInput} placeholder="e.g. B.Sc Education" value={form.qualification} onChange={e => setForm(f => ({ ...f, qualification: e.target.value }))}/>
               </div>
+              {form.role === 'teacher' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Subject Specialty</label>
+                  <input className={styles.fieldInput} placeholder="e.g. Mathematics, Physics" value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}/>
+                </div>
+              )}
             </div>
             <div className={styles.formActions}>
               <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
@@ -217,7 +424,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                 onClick={handleCreate}
                 disabled={saving || !form.full_name.trim() || !form.email.trim()}
               >
-                {saving ? 'Adding…' : 'Add Staff Member'}
+                {saving ? 'Adding…' : 'Add & Get Code'}
               </button>
             </div>
           </div>
@@ -226,25 +433,29 @@ export default function StaffClient({ profile, school, userId }: Props) {
         {/* Staff list */}
         {loading ? (
           <div className={styles.loadingGrid}>
-            {[1,2,3].map(i => <div key={i} className={styles.skeleton}/>)}
+            {[1, 2, 3].map(i => <div key={i} className={styles.skeleton}/>)}
           </div>
         ) : filtered.length === 0 ? (
           <div className={styles.empty}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             <p>{search || roleFilter ? 'No staff match your filters' : 'No staff added yet'}</p>
-            {!showForm && <button className={styles.addBtn} style={{ background: sc, marginTop: 12 }} onClick={() => setShowForm(true)}>+ Add First Staff Member</button>}
+            {!showForm && (
+              <button className={styles.addBtn} style={{ background: sc, marginTop: 12 }} onClick={() => setShowForm(true)}>
+                + Add First Staff Member
+              </button>
+            )}
           </div>
         ) : (
           <div className={styles.staffGrid}>
             {filtered.map(member => {
-              const initials = member.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() ?? '?'
+              const initials  = member.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
               const roleColor = ROLE_COLORS[member.role] ?? sc
               return (
                 <div key={member.id} className={styles.staffCard}>
                   <div className={styles.cardHeader}>
                     <div className={styles.avatar} style={{ background: roleColor + '30', color: roleColor }}>
                       {member.avatar_url
-                        ? <img src={member.avatar_url} alt="" style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}/>
+                        ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}/>
                         : <span>{initials}</span>
                       }
                     </div>
@@ -289,7 +500,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                   </div>
                   <div className={styles.cardFooter}>
                     <span className={styles.joinDate}>
-                      Joined {new Date(member.created_at).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})}
+                      Joined {new Date(member.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                 </div>
