@@ -25,28 +25,18 @@ export interface ClassOption {
 export default async function PrincipalMeetingsPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
-  // ── Step 1: fetch profile first (need school_id before parallel queries) ──
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, school_id')
+    .select('full_name, school_id, schools(*)')
     .eq('id', user.id)
     .single()
 
-  const schoolId    = profile?.school_id ?? ''
-  const primaryColor = (() => {
-    // school brand colour is already injected as --brand by the layout;
-    // pass it through for any inline style that still needs a JS value
-    return undefined // clients use var(--brand) via CSS
-  })()
+  const schoolId = profile?.school_id ?? ''
+  const school   = (profile as any)?.schools ?? null
 
-  // ── Step 2: parallel queries scoped to this school ───────────────────────
   const [meetingsRes, classesRes] = await Promise.all([
     supabase
       .from('meetings')
@@ -69,6 +59,9 @@ export default async function PrincipalMeetingsPage() {
       principalName={profile?.full_name ?? 'Principal'}
       meetings={(meetingsRes.data ?? []) as MeetingRow[]}
       classes={(classesRes.data ?? []) as ClassOption[]}
+      profile={profile}
+      school={school}
+      userId={user.id}
     />
   )
 }
