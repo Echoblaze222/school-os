@@ -1,5 +1,7 @@
 // src/app/dashboard/secretary/users/page.tsx
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import SecretaryUsersClient from './SecretaryUsersClient'
 
@@ -27,22 +29,50 @@ export interface ManagedUser {
 }
 
 export default async function UsersPage() {
-  const supabase = await createClient()
+  // ── 1. Auth check with anon client (cookie-based session) ──────────────
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(c: any[]) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) },
+      },
+    }
+  )
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, schools(*)')
+    .select('role, school_id')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'secretary') redirect('/login')
+  if (!profile.school_id) {
+    console.error('[users] secretary profile has no school_id — cannot load users')
+    return (
+      <SecretaryUsersClient
+        users={[]}
+        currentUserId={user.id}
+      />
+    )
+  }
 
-  const school = (profile as any).schools ?? null
+  // ── 2. Fetch all school users with service-role client ─────────────────
+  // The anon client + RLS only allows a user to read their own profile row.
+  // The secretary needs to see all profiles in their school, so we use the
+  // service-role key here (same pattern as create-user route).
+  const adminClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 
-  const { data: users, error } = await supabase
+  const { data: users, error } = await adminClient
     .from('profiles')
     .select(`
       id,
@@ -66,8 +96,6 @@ export default async function UsersPage() {
     <SecretaryUsersClient
       users={(users ?? []) as ManagedUser[]}
       currentUserId={user.id}
-      profile={profile}
-      school={school}
     />
   )
 }
