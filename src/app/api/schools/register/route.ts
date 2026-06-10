@@ -73,9 +73,12 @@ export async function POST(request: Request) {
     // ── 3. Create principal profile ───────────────────────
     const defaultCode = `SCH-${Date.now().toString().slice(-6)}`
 
+    // The DB trigger handle_new_user may have already created a blank profile row
+    // on auth user creation. Use upsert (INSERT ... ON CONFLICT DO UPDATE) so we
+    // don't get a duplicate-key error regardless of trigger timing.
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
+      .upsert({
         id:               authUser.user.id,
         role:             'principal',
         full_name:        principal.full_name,
@@ -85,7 +88,7 @@ export async function POST(request: Request) {
         default_code:     defaultCode,
         onboarding_stage: 'stage_1_pending',
         is_active:        true,
-      })
+      }, { onConflict: 'id' })
 
     if (profileError) {
       console.error('Profile creation error:', profileError)
