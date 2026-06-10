@@ -1,23 +1,20 @@
 'use client'
 // src/lib/useAutoLogout.ts
-// Tracks inactivity AND tab/window visibility to sign out the user.
-//
-// Logout triggers:
-//   1. No activity for INACTIVITY_MS (mouse, keyboard, touch, scroll)
-//   2. Tab hidden for longer than AWAY_MS (switched tab / minimised)
-//   3. Page unloaded (closed tab, closed browser, navigated away externally)
-//      → stores a timestamp in sessionStorage; on next load the middleware
-//        or the layout can check it and redirect to /login?reason=timeout
+// Bulletproof auto-logout using an interval-based last-activity check.
+// Avoids timer drift issues and works correctly across tab switches,
+// minimisation, and browser backgrounding on mobile.
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const INACTIVITY_MS = 5 * 60 * 1000   // 5 min of no activity  → logout
-const WARNING_MS    = 4 * 60 * 1000   // 4 min                 → warn
-const AWAY_MS       = 2 * 60 * 1000   // 2 min hidden tab      → logout
+const INACTIVITY_LIMIT_MS = 5 * 60 * 1000   // 5 min no activity  → logout
+const WARNING_MS          = 4 * 60 * 1000   // 4 min              → warn
+const AWAY_LIMIT_MS       = 2 * 60 * 1000   // 2 min hidden tab   → logout
+const CHECK_INTERVAL_MS   = 10 * 1000       // check every 10 sec
 
-const AWAY_KEY = 'schoolos_away_since'
+const LAST_ACTIVITY_KEY = 'scos_last_activity'
+const HIDDEN_SINCE_KEY  = 'scos_hidden_since'
 
 interface Options {
   onWarning?: () => void
@@ -25,98 +22,85 @@ interface Options {
 }
 
 export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
-  const router   = useRouter()
-  const supabase = createClient()
-
-  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const warningTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const awayTimer       = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const router          = useRef(useRouter())
+  const supabase        = useRef(createClient())
   const warningFired    = useRef(false)
+  const logoutInFlight  = useRef(false)
 
-  // ── helpers ────────────────────────────────────────────────────────────────
+  // ── stamp activity ───────────────────────────────────────────────
+  const stamp = () => sessionStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString())
 
-  const clearTimers = useCallback(() => {
-    if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
-    if (warningTimer.current)    clearTimeout(warningTimer.current)
-    if (awayTimer.current)       clearTimeout(awayTimer.current)
-  }, [])
-
-  const logout = useCallback(async () => {
-    clearTimers()
-    sessionStorage.removeItem(AWAY_KEY)
+  // ── perform logout ───────────────────────────────────────────────
+  const doLogout = async () => {
+    if (logoutInFlight.current) return
+    logoutInFlight.current = true
     onLogout?.()
-    await supabase.auth.signOut()
-    router.replace('/login?reason=timeout')
-  }, [clearTimers, onLogout, router, supabase.auth])
-
-  const resetTimers = useCallback(() => {
-    clearTimers()
-    warningFired.current = false
-
-    warningTimer.current    = setTimeout(() => {
-      if (!warningFired.current) { warningFired.current = true; onWarning?.() }
-    }, WARNING_MS)
-
-    inactivityTimer.current = setTimeout(logout, INACTIVITY_MS)
-  }, [clearTimers, logout, onWarning])
-
-  // ── main effect ────────────────────────────────────────────────────────────
+    sessionStorage.removeItem(LAST_ACTIVITY_KEY)
+    sessionStorage.removeItem(HIDDEN_SINCE_KEY)
+    try { await supabase.current.auth.signOut() } catch (_) {}
+    router.current.replace('/login?reason=timeout')
+  }
 
   useEffect(() => {
-    // 1. Activity events reset the inactivity clock
-    const EVENTS = [
-      'mousemove', 'mousedown', 'keydown',
-      'touchstart', 'touchmove', 'scroll', 'wheel', 'click',
-    ]
-    const handleActivity = () => resetTimers()
-    EVENTS.forEach(evt => window.addEventListener(evt, handleActivity, { passive: true }))
+    // Stamp on mount
+    stamp()
 
-    // 2. Tab hidden → start an "away" countdown; tab visible → check how long they were gone
-    const handleVisibility = () => {
+    // ── activity listeners ───────────────────────────────────────
+    const EVENTS = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click']
+    const onActivity = () => { stamp(); warningFired.current = false }
+    EVENTS.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
+
+    // ── tab visibility ───────────────────────────────────────────
+    const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
-        // Record when they left
-        sessionStorage.setItem(AWAY_KEY, Date.now().toString())
-
-        // Start a timer — if they don't come back within AWAY_MS, sign out
-        // (This fires even if the tab is just backgrounded on mobile)
-        awayTimer.current = setTimeout(logout, AWAY_MS)
+        sessionStorage.setItem(HIDDEN_SINCE_KEY, Date.now().toString())
       } else {
-        // They came back — check if they were gone too long
-        clearTimeout(awayTimer.current!)
-        const wentAway = sessionStorage.getItem(AWAY_KEY)
-        if (wentAway) {
-          const elapsed = Date.now() - parseInt(wentAway, 10)
-          sessionStorage.removeItem(AWAY_KEY)
-          if (elapsed >= AWAY_MS) {
-            logout()
-            return
-          }
+        // came back — check if away too long
+        const hiddenSince = sessionStorage.getItem(HIDDEN_SINCE_KEY)
+        sessionStorage.removeItem(HIDDEN_SINCE_KEY)
+        if (hiddenSince) {
+          const awayMs = Date.now() - parseInt(hiddenSince, 10)
+          if (awayMs >= AWAY_LIMIT_MS) { doLogout(); return }
         }
-        // Not gone too long — just reset the inactivity clock
-        resetTimers()
+        // not too long — re-stamp so inactivity clock resets
+        stamp()
+        warningFired.current = false
       }
     }
-    document.addEventListener('visibilitychange', handleVisibility)
+    document.addEventListener('visibilitychange', onVisibility)
 
-    // 3. Page unload (closed tab, browser closed, navigated away)
-    //    We can't reliably async-sign-out here, so store a timestamp.
-    //    On next load, if the session is still alive but the stamp is old, force logout.
-    const handleUnload = () => {
-      sessionStorage.setItem(AWAY_KEY, Date.now().toString())
-    }
-    // pagehide is more reliable than beforeunload on mobile/Safari
-    window.addEventListener('pagehide',     handleUnload)
-    window.addEventListener('beforeunload', handleUnload)
+    // ── page close/navigate away ─────────────────────────────────
+    const onUnload = () => sessionStorage.setItem(HIDDEN_SINCE_KEY, Date.now().toString())
+    window.addEventListener('pagehide',     onUnload)
+    window.addEventListener('beforeunload', onUnload)
 
-    // Start the inactivity clock
-    resetTimers()
+    // ── interval check (the core mechanism) ─────────────────────
+    // Instead of relying on setTimeout (which drifts when tab is backgrounded),
+    // we poll every 10s and compare against the stored timestamp.
+    const interval = setInterval(() => {
+      // Skip check if tab is hidden — visibilitychange handles that
+      if (document.visibilityState === 'hidden') return
+
+      const raw = sessionStorage.getItem(LAST_ACTIVITY_KEY)
+      if (!raw) { doLogout(); return }
+
+      const idleMs = Date.now() - parseInt(raw, 10)
+
+      if (idleMs >= INACTIVITY_LIMIT_MS) {
+        doLogout()
+      } else if (idleMs >= WARNING_MS && !warningFired.current) {
+        warningFired.current = true
+        onWarning?.()
+      }
+    }, CHECK_INTERVAL_MS)
 
     return () => {
-      clearTimers()
-      EVENTS.forEach(evt => window.removeEventListener(evt, handleActivity))
-      document.removeEventListener('visibilitychange', handleVisibility)
-      window.removeEventListener('pagehide',     handleUnload)
-      window.removeEventListener('beforeunload', handleUnload)
+      clearInterval(interval)
+      EVENTS.forEach(e => window.removeEventListener(e, onActivity))
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide',     onUnload)
+      window.removeEventListener('beforeunload', onUnload)
     }
-  }, [resetTimers, clearTimers, logout])
-}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])   // empty deps — refs keep values stable, no re-registration needed
+      }
