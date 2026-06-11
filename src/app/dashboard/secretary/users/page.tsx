@@ -1,4 +1,5 @@
 // src/app/dashboard/secretary/users/page.tsx
+// src/app/dashboard/secretary/users/page.tsx
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
@@ -29,7 +30,6 @@ export interface ManagedUser {
 }
 
 export default async function UsersPage() {
-  // ── 1. Cookie-based auth (anon client) ─────────────────────────────────
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,16 +47,16 @@ export default async function UsersPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
-  // Read the secretary's own profile (RLS allows own row)
+  // Own profile — RLS allows this
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, school_id, role')
+    .select('*')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'secretary') redirect('/login')
 
-  // Fetch school branding (needed by RolePageWrapper)
+  // School data for RolePageWrapper
   const { data: school } = await supabase
     .from('schools')
     .select('*')
@@ -75,10 +75,7 @@ export default async function UsersPage() {
     )
   }
 
-  // ── 2. Service-role client — reads ALL profiles in the school ──────────
-  // RLS only lets a user read their own profile row. The secretary needs all
-  // school users, so we bypass RLS with the service key (same pattern as
-  // /api/secretary/create-user).
+  // Service-role client bypasses RLS to read all school profiles
   const admin = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -87,27 +84,34 @@ export default async function UsersPage() {
 
   const { data: users, error } = await admin
     .from('profiles')
-    .select(`
-      id,
-      full_name,
-      email,
-      phone,
-      role,
-      onboarding_stage,
-      is_active,
-      default_code,
-      created_at,
-      avatar_url,
-      last_sign_in
-    `)
+    .select('id, full_name, email, phone, role, onboarding_stage, is_active, default_code, created_at, avatar_url, last_sign_in')
     .eq('school_id', profile.school_id)
     .order('created_at', { ascending: false })
 
-  if (error) console.error('[users] fetch error:', error.message)
+  if (error) {
+    console.error('[users] fetch error:', error.message)
+  } else {
+    console.log('[users] fetched', users?.length, 'users for school', profile.school_id)
+  }
+
+  // Serialize explicitly to avoid Next.js serialization issues
+  const safeUsers: ManagedUser[] = (users ?? []).map(u => ({
+    id: u.id,
+    full_name: u.full_name ?? '',
+    email: u.email ?? '',
+    phone: u.phone ?? null,
+    role: u.role as UserRole,
+    onboarding_stage: u.onboarding_stage ?? '',
+    is_active: u.is_active ?? false,
+    default_code: u.default_code ?? null,
+    created_at: u.created_at ?? '',
+    avatar_url: u.avatar_url ?? null,
+    last_sign_in: u.last_sign_in ?? null,
+  }))
 
   return (
     <SecretaryUsersClient
-      users={(users ?? []) as ManagedUser[]}
+      users={safeUsers}
       currentUserId={user.id}
       profile={profile}
       school={school}
