@@ -58,7 +58,7 @@ export default async function UsersPage() {
 
   // Fetch school branding (needed by RolePageWrapper)
   const { data: school } = await supabase
-    .from('school_branding')
+    .from('schools')
     .select('*')
     .eq('id', profile.school_id)
     .single()
