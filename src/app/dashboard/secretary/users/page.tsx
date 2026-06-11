@@ -47,25 +47,38 @@ export default async function UsersPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
-  // Read the secretary's own profile (RLS allows this — own row only)
+  // Read the secretary's own profile (RLS allows own row)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, school_id')
+    .select('*, school_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'secretary') redirect('/login')
 
-  // Bail out early with empty list if school_id is somehow missing
+  // Fetch school branding (needed by RolePageWrapper)
+  const { data: school } = await supabase
+    .from('school_branding')
+    .select('*')
+    .eq('id', profile.school_id)
+    .single()
+
   if (!profile.school_id) {
     console.error('[users] secretary has no school_id')
-    return <SecretaryUsersClient users={[] as ManagedUser[]} currentUserId={user.id} />
+    return (
+      <SecretaryUsersClient
+        users={[] as ManagedUser[]}
+        currentUserId={user.id}
+        profile={profile}
+        school={school}
+      />
+    )
   }
 
   // ── 2. Service-role client — reads ALL profiles in the school ──────────
-  // RLS on `profiles` only allows a user to read their own row.
-  // The secretary needs all school users, so we bypass RLS with the service key
-  // (same pattern already used in /api/secretary/create-user).
+  // RLS only lets a user read their own profile row. The secretary needs all
+  // school users, so we bypass RLS with the service key (same pattern as
+  // /api/secretary/create-user).
   const admin = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -96,6 +109,8 @@ export default async function UsersPage() {
     <SecretaryUsersClient
       users={(users ?? []) as ManagedUser[]}
       currentUserId={user.id}
+      profile={profile}
+      school={school}
     />
   )
 }
