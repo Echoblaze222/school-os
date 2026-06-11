@@ -1,23 +1,32 @@
 // sw.js — SchoolOS Service Worker
 // Strategy: Network-first for navigation (HTML pages), cache-first for assets
 
-const CACHE_NAME = 'schoolos-v2'
+const CACHE_NAME = 'schoolos-v3'
 const OFFLINE_URL = '/offline'
 
 // Assets to pre-cache on install
+// Only include files that actually exist in /public
+// A single 404 in cache.addAll() breaks the entire SW install
 const PRECACHE_ASSETS = [
   OFFLINE_URL,
   '/icons/logo.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  '/icons/icon-144x144.png',
 ]
 
 // ── Install: pre-cache offline page and core assets ──────────
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_ASSETS))
+    caches.open(CACHE_NAME).then(cache =>
+      // Promise.allSettled so one missing file never breaks the whole install
+      Promise.allSettled(
+        PRECACHE_ASSETS.map(url =>
+          cache.add(url).catch(err =>
+            console.warn(`[SW] Precache skipped: ${url}`, err)
+          )
+        )
+      )
+    )
   )
-  // Take over immediately — don't wait for old SW to be discarded
   self.skipWaiting()
 })
 
@@ -32,7 +41,6 @@ self.addEventListener('activate', event => {
       )
     )
   )
-  // Claim all clients immediately
   self.clients.claim()
 })
 
@@ -42,7 +50,6 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url)
 
   // Skip non-GET, cross-origin, and API/Supabase requests entirely
-  // Let these go straight to network — never intercept them
   if (
     request.method !== 'GET' ||
     url.origin !== self.location.origin ||
@@ -53,29 +60,30 @@ self.addEventListener('fetch', event => {
     url.hostname.includes('fonts.googleapis') ||
     url.hostname.includes('fonts.gstatic')
   ) {
-    return // Let browser handle normally — no SW intervention
+    return // Let browser handle normally
   }
 
   // For HTML navigation requests (page loads): NETWORK FIRST
-  // Only fall back to offline page if truly no connection
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then(response => {
-          // Cache a fresh copy of successfully fetched pages
           if (response.ok) {
             const clone = response.clone()
             caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
           }
           return response
         })
-        .catch(() => {
-          // Network failed — check cache first, then show offline page
-          return caches.match(request).then(cached => {
-            if (cached) return cached
-            return caches.match(OFFLINE_URL)
-          })
-        })
+        .catch(() =>
+          caches.match(request).then(cached =>
+            cached || caches.match(OFFLINE_URL).then(offlinePage =>
+              offlinePage || new Response('You are offline', {
+                status: 503,
+                headers: { 'Content-Type': 'text/plain' }
+              })
+            )
+          )
+        )
     )
     return
   }
@@ -95,11 +103,11 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
           }
           return response
-        })
+        }).catch(() => new Response('', { status: 404 }))
       })
     )
     return
   }
 
-  // Everything else: network only (no SW caching)
+  // Everything else: network only
 })
