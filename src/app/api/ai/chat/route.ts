@@ -31,11 +31,13 @@ function isClaudeQuotaOrOverloadError(err: any): boolean {
   if (type === 'quota_exceeded')       return true
 
   // Fallback: message-based detection
-  if (msg.includes('overload'))         return true
-  if (msg.includes('rate limit'))       return true
-  if (msg.includes('quota'))            return true
-  if (msg.includes('529'))              return true
-  if (msg.includes('too many requests')) return true
+  if (msg.includes('overload'))              return true
+  if (msg.includes('rate limit'))            return true
+  if (msg.includes('quota'))                 return true
+  if (msg.includes('529'))                   return true
+  if (msg.includes('too many requests'))     return true
+  if (msg.includes('credit balance is too low')) return true  // 400 billing error
+  if (msg.includes('plans & billing'))           return true  // same error variant
 
   return false
 }
