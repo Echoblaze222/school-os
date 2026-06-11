@@ -129,7 +129,7 @@ export default function PrincipalMeetingsClient({
 
   const upcoming = meetings.filter(m => !isPast(m.scheduled_at))
   const past     = meetings.filter(m =>  isPast(m.scheduled_at))
-  const sc       = school?.primary_color ?? '#800020'
+  const sc       = school?.primary_color ?? '#7C3AED'
 
   return (
     <RolePageWrapper
@@ -404,4 +404,5 @@ function MeetingListCard({
       </div>
     </div>
   )
-}
+      }
+              
