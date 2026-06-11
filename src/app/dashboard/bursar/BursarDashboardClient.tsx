@@ -28,7 +28,9 @@ const MODULES = [
   { id: 'notifications',  label: 'Notifications',  Icon: BellIcon,        href: '/dashboard/bursar/notifications',    accent: '#F59E0B', bg: '#4a3510' },
   { id: 'ai',             label: 'AI Assistant',   Icon: AiIcon,          href: '/dashboard/bursar/ai',               accent: '#6EE7B7', bg: '#0d3530' },
   { id: 'settings',       label: 'Settings',       Icon: SettingsIcon,    href: '/dashboard/bursar/settings',         accent: '#6B7280', bg: '#1e2a38' },
+  { id: 'expenses',       label: 'Expenses',       Icon: WalletIcon,      href: '/dashboard/bursar/expenses',         accent: '#EF4444', bg: '#5f1e1e' },
 ]
+
 
 interface Props { profile: any; school: any; userId: string; counts?: any }
 
