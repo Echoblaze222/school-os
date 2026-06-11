@@ -40,7 +40,7 @@ interface Props {
   school:  School
 }
 
-type Tab = 'identity' | 'branding' | 'contact'
+type Tab = 'identity' | 'branding' | 'contact' | 'banking'
 
 export default function SettingsClient({ profile, school }: Props) {
   const supabase = createClient()
@@ -58,6 +58,11 @@ export default function SettingsClient({ profile, school }: Props) {
   const [schoolType,  setSchoolType]  = useState(school.school_type ?? '')
   const [primaryColor,setPrimaryColor]= useState(school.primary_color ?? '#800020')
   const [fontFamily,  setFontFamily]  = useState(school.font_family ?? 'Inter')
+
+  // ── Banking fields ───────────────────────────────────────────────────────────
+  const [bankName,      setBankName]      = useState((school as any).bank_name      ?? '')
+  const [accountNumber, setAccountNumber] = useState((school as any).account_number ?? '')
+  const [accountName,   setAccountName]   = useState((school as any).account_name   ?? '')
 
   // ── Image state ──────────────────────────────────────────────────────────────
   const [logoUrl,       setLogoUrl]       = useState<string | null>(school.logo_url)
@@ -203,27 +208,41 @@ export default function SettingsClient({ profile, school }: Props) {
     setSaved(false)
 
     try {
-      const res = await fetch('/api/principal/settings', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          tagline,
-          address,
-          city,
-          state,
-          phone,
-          email,
-          school_type:     schoolType,
-          primary_color:   primaryColor,
-          font_family:     fontFamily,
-          logo_url:        logoUrl,
-          build_image_url: buildImageUrl,
-        }),
-      })
+      if (tab === 'banking') {
+        // Banking details save directly via Supabase client
+        const { error } = await supabase
+          .from('schools')
+          .update({
+            bank_name:      bankName,
+            account_number: accountNumber,
+            account_name:   accountName,
+          })
+          .eq('id', school.id)
 
-      const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error ?? 'Save failed')
+        if (error) throw error
+      } else {
+        const res = await fetch('/api/principal/settings', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            tagline,
+            address,
+            city,
+            state,
+            phone,
+            email,
+            school_type:     schoolType,
+            primary_color:   primaryColor,
+            font_family:     fontFamily,
+            logo_url:        logoUrl,
+            build_image_url: buildImageUrl,
+          }),
+        })
+
+        const json = await res.json()
+        if (!res.ok || json.error) throw new Error(json.error ?? 'Save failed')
+      }
 
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -246,6 +265,33 @@ export default function SettingsClient({ profile, school }: Props) {
   ]
 
   const FONTS = ['Inter', 'Poppins', 'Lato', 'Montserrat', 'Nunito', 'Raleway']
+
+  const NIGERIAN_BANKS = [
+    'Access Bank',
+    'Citibank Nigeria',
+    'Ecobank Nigeria',
+    'Fidelity Bank',
+    'First Bank of Nigeria',
+    'First City Monument Bank (FCMB)',
+    'Guaranty Trust Bank (GTBank)',
+    'Heritage Bank',
+    'Keystone Bank',
+    'Polaris Bank',
+    'Providus Bank',
+    'Stanbic IBTC Bank',
+    'Standard Chartered Bank',
+    'Sterling Bank',
+    'SunTrust Bank',
+    'Union Bank of Nigeria',
+    'United Bank for Africa (UBA)',
+    'Unity Bank',
+    'Wema Bank',
+    'Zenith Bank',
+    'Opay',
+    'Moniepoint',
+    'Kuda Bank',
+    'PalmPay',
+  ]
 
   const statusColor: Record<string, string> = {
     active:    'badge-success',
@@ -291,6 +337,7 @@ export default function SettingsClient({ profile, school }: Props) {
           { key: 'identity', label: '🏛 Identity'  },
           { key: 'branding', label: '🎨 Branding'  },
           { key: 'contact',  label: '📞 Contact'   },
+          { key: 'banking',  label: '🏦 Banking'   },
         ] as { key: Tab; label: string }[]).map(({ key, label }) => (
           <button
             key={key}
@@ -649,6 +696,88 @@ export default function SettingsClient({ profile, school }: Props) {
                 <p className={styles.fieldHint}>Contact support to update your login email.</p>
               </div>
             </div>
+          </>
+        )}
+
+        {/* ════════════════ BANKING TAB ════════════════ */}
+        {tab === 'banking' && (
+          <>
+            <p className={styles.sectionLabel}>School Bank Account</p>
+
+            <div className={`glass-card ${styles.card}`}>
+              <p className={styles.imageHint}>
+                These details appear on invoices and payment receipts sent to parents.
+                Make sure they match your school's official bank account exactly.
+              </p>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Bank Name</label>
+                <select
+                  className={styles.select}
+                  value={bankName}
+                  onChange={e => setBankName(e.target.value)}
+                >
+                  <option value="">— Select bank —</option>
+                  {NIGERIAN_BANKS.map(b => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Account Number</label>
+                <input
+                  className={styles.input}
+                  value={accountNumber}
+                  onChange={e => {
+                    // digits only, max 10
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 10)
+                    setAccountNumber(v)
+                  }}
+                  placeholder="0123456789"
+                  inputMode="numeric"
+                  maxLength={10}
+                />
+                <p className={styles.fieldHint}>10-digit NUBAN account number.</p>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Account Name</label>
+                <input
+                  className={styles.input}
+                  value={accountName}
+                  onChange={e => setAccountName(e.target.value)}
+                  placeholder="e.g. Sunshine Academy Schools Ltd"
+                />
+                <p className={styles.fieldHint}>Must match the name on the bank account exactly.</p>
+              </div>
+            </div>
+
+            {/* Preview card */}
+            {(bankName || accountNumber || accountName) && (
+              <>
+                <p className={styles.sectionLabel}>Preview</p>
+                <div className={`glass-card ${styles.card}`}>
+                  <p className={styles.imageHint}>
+                    This is how your bank details will appear on invoices and receipts.
+                  </p>
+                  <div className={styles.bankPreview}>
+                    <div className={styles.bankPreviewRow}>
+                      <span className={styles.bankPreviewKey}>Bank</span>
+                      <span className={styles.bankPreviewVal}>{bankName || '—'}</span>
+                    </div>
+                    <div className={styles.bankPreviewRow}>
+                      <span className={styles.bankPreviewKey}>Account No.</span>
+                      <span className={styles.bankPreviewVal}>{accountNumber || '—'}</span>
+                    </div>
+                    <div className={styles.bankPreviewRow}>
+                      <span className={styles.bankPreviewKey}>Account Name</span>
+                      <span className={styles.bankPreviewVal}>{accountName || '—'}</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
