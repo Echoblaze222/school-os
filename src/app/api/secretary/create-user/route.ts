@@ -104,19 +104,29 @@ export async function POST(request: Request) {
     // all other roles → stage_2_pending (PIN setup on stage-2 page)
     const onboardingStage = role === 'principal' ? 'stage_1_pending' : 'stage_2_pending'
 
+    // If a classId was given, resolve the class name so we can write class_level to profiles
+    let resolvedClassName: string | null = null
+    if (classId) {
+      const { data: classRow } = await adminClient
+        .from('classes').select('name').eq('id', classId).single()
+      resolvedClassName = classRow?.name ?? null
+    }
+
     // Build profile update payload — only include fields with values
     const profileUpdate: Record<string, any> = {
       full_name:        fullName,
       role,
       school_id:        schoolId ?? (callerProfile as any).school_id,
       default_code:     code,
-      onboarding_stage: onboardingStage,  // ✅ was missing — caused "Account already activated" error
+      onboarding_stage: onboardingStage,
     }
-    if (phone)       profileUpdate.phone         = phone
-    if (gender)      profileUpdate.gender        = gender
-    if (dateOfBirth) profileUpdate.date_of_birth = dateOfBirth
-    if (address)     profileUpdate.address       = address
-    if (state)       profileUpdate.state         = state
+    if (phone)             profileUpdate.phone         = phone
+    if (gender)            profileUpdate.gender        = gender
+    if (dateOfBirth)       profileUpdate.date_of_birth = dateOfBirth
+    if (address)           profileUpdate.address       = address
+    if (state)             profileUpdate.state         = state
+    // ✅ Write class_level (text name) to profiles so Students page groups correctly
+    if (resolvedClassName) profileUpdate.class_level   = resolvedClassName
 
     const { error: profileErr } = await adminClient.from('profiles').update(profileUpdate).eq('id', userId)
 
