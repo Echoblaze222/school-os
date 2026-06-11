@@ -139,6 +139,13 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
     setReceipt({ receiptNumber, paymentId: pmtRow.id, pdfUrl })
     setSubmitting(false)
     setStep(4)
+
+    // Fire-and-forget: notify principal + bursar that a payment was recorded
+    fetch('/api/payments/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: pmtRow.id }),
+    }).catch(() => { /* non-blocking — ignore notify failures */ })
   }
 
   function handleNew() {
