@@ -29,7 +29,7 @@ export interface ManagedUser {
 }
 
 export default async function UsersPage() {
-  // ── 1. Auth check with anon client (cookie-based session) ──────────────
+  // ── 1. Cookie-based auth (anon client — only reads the current user's own row) ──
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,7 +37,9 @@ export default async function UsersPage() {
     {
       cookies: {
         getAll() { return cookieStore.getAll() },
-        setAll(c: any[]) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) },
+        setAll(list: { name: string; value: string; options: any }[]) {
+          list.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        },
       },
     }
   )
@@ -45,6 +47,7 @@ export default async function UsersPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
+  // Read the secretary's own profile (RLS allows this — it's their own row)
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, school_id')
@@ -52,27 +55,23 @@ export default async function UsersPage() {
     .single()
 
   if (!profile || profile.role !== 'secretary') redirect('/login')
+
   if (!profile.school_id) {
-    console.error('[users] secretary profile has no school_id — cannot load users')
-    return (
-      <SecretaryUsersClient
-        users={[]}
-        currentUserId={user.id}
-      />
-    )
+    console.error('[users] secretary has no school_id')
+    return <SecretaryUsersClient users={[]} currentUserId={user.id} />
   }
 
-  // ── 2. Fetch all school users with service-role client ─────────────────
-  // The anon client + RLS only allows a user to read their own profile row.
-  // The secretary needs to see all profiles in their school, so we use the
-  // service-role key here (same pattern as create-user route).
-  const adminClient = createServiceClient(
+  // ── 2. Service-role client to read ALL profiles in the school ──
+  // The anon client + RLS only lets a user read their own profile row.
+  // The secretary legitimately needs to see all school users, so we use
+  // the service-role key here — same pattern used in /api/secretary/create-user.
+  const admin = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  const { data: users, error } = await adminClient
+  const { data: users, error } = await admin
     .from('profiles')
     .select(`
       id,
