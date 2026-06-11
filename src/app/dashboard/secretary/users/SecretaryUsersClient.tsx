@@ -1,16 +1,19 @@
 'use client'
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import type { ManagedUser, UserRole } from './page'
 import styles from './users.module.css'
 
-interface Props { users: ManagedUser[]; currentUserId: string; profile: any; school: any }
+interface Props {
+  users: ManagedUser[]
+  currentUserId: string
+  profile: any
+  school: any
+}
 
 const ROLES: UserRole[] = ['student','teacher','bursar','secretary','principal','admin','parent']
 const ROLE_LABELS: Record<UserRole,string> = { student:'Student',teacher:'Teacher',bursar:'Bursar',secretary:'Secretary',principal:'Principal',admin:'Admin',parent:'Parent' }
-const ROLE_STYLE: Record<UserRole,string> = { student:'roleStudent',teacher:'roleTeacher',bursar:'roleBursar',secretary:'roleSecretary',principal:'rolePrincipal',admin:'roleAdmin',parent:'roleParent' }
 
 function initials(n: string) { return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() }
 function relTime(iso: string|null) {
@@ -21,10 +24,18 @@ function relTime(iso: string|null) {
   return new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'})
 }
 
-const IconSun=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-const IconMoon=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
 const IconSearch=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={15} height={15}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IconX=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+const ROLE_COLORS: Record<string,{bg:string;color:string;border:string}> = {
+  student:   {bg:'rgba(16,185,129,0.12)',  color:'#10B981', border:'rgba(16,185,129,0.25)'},
+  teacher:   {bg:'rgba(59,130,246,0.12)',  color:'#3B82F6', border:'rgba(59,130,246,0.25)'},
+  bursar:    {bg:'rgba(245,158,11,0.12)',  color:'#F59E0B', border:'rgba(245,158,11,0.25)'},
+  secretary: {bg:'rgba(139,92,246,0.12)', color:'#8B5CF6', border:'rgba(139,92,246,0.25)'},
+  principal: {bg:'rgba(128,0,32,0.12)',   color:'#800020', border:'rgba(128,0,32,0.25)'},
+  admin:     {bg:'rgba(107,114,128,0.12)',color:'#6B7280', border:'rgba(107,114,128,0.25)'},
+  parent:    {bg:'rgba(6,182,212,0.12)',   color:'#06B6D4', border:'rgba(6,182,212,0.25)'},
+}
 
 export default function SecretaryUsersClient({ users: initial, currentUserId, profile, school }: Props) {
   const [users,setUsers]=useState<ManagedUser[]>(initial)
@@ -56,7 +67,6 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
   }
 
   async function generateCode(u:ManagedUser) {
-    // Generate and store a new default code
     const year = new Date().getFullYear()
     const rand = Math.floor(1000+Math.random()*9000)
     const code = `SCH-${year}-${rand}`
@@ -67,29 +77,17 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
     showToast(`New code: ${code}`)
   }
 
-  if (false) return null // removed mounted guard — RolePageWrapper handles hydration
-
   const stats = { total:users.length, active:users.filter(u=>u.is_active).length, students:users.filter(u=>u.role==='student').length, teachers:users.filter(u=>u.role==='teacher').length }
-
-  const ROLE_COLORS: Record<string,{bg:string;color:string;border:string}> = {
-    student:   {bg:'rgba(16,185,129,0.12)',  color:'#10B981', border:'rgba(16,185,129,0.25)'},
-    teacher:   {bg:'rgba(59,130,246,0.12)',  color:'#3B82F6', border:'rgba(59,130,246,0.25)'},
-    bursar:    {bg:'rgba(245,158,11,0.12)',  color:'#F59E0B', border:'rgba(245,158,11,0.25)'},
-    secretary: {bg:'rgba(139,92,246,0.12)', color:'#8B5CF6', border:'rgba(139,92,246,0.25)'},
-    principal: {bg:'rgba(128,0,32,0.12)',   color:'#800020', border:'rgba(128,0,32,0.25)'},
-    admin:     {bg:'rgba(107,114,128,0.12)',color:'#6B7280', border:'rgba(107,114,128,0.25)'},
-    parent:    {bg:'rgba(6,182,212,0.12)',   color:'#06B6D4', border:'rgba(6,182,212,0.25)'},
-  }
 
   return (
     <RolePageWrapper userId={currentUserId} role="secretary" profile={profile} school={school} title="User Management">
       {/* Stats */}
       <div className={styles.statsStrip}>
         {([['Total',stats.total],['Active',stats.active],['Students',stats.students],['Teachers',stats.teachers]] as [string,number][]).map(([l,v],i,arr)=>(
-          <>
-            <div key={l} className={styles.stat}><span className={styles.statVal}>{v}</span><span className={styles.statLbl}>{l}</span></div>
+          <div key={l} style={{display:'contents'}}>
+            <div className={styles.stat}><span className={styles.statVal}>{v}</span><span className={styles.statLbl}>{l}</span></div>
             {i < arr.length-1 && <div className={styles.statDiv}/>}
-          </>
+          </div>
         ))}
       </div>
 
@@ -97,12 +95,11 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
       <div className={styles.filtersWrap}>
         <div className={styles.searchWrap}>
           <span className={styles.searchIcon}><IconSearch /></span>
-          <input className={`${styles.searchInput}`} placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} />
+          <input className={styles.searchInput} placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} />
           {search && <button className={styles.clearSearch} onClick={()=>setSearch('')}><IconX /></button>}
         </div>
         <div className={styles.roleFilters}>
           {(['','student','teacher','bursar','secretary','principal','admin','parent'] as const).map(r=>{
-            const isAll = r===''
             const rc = r ? ROLE_COLORS[r] : null
             const count = r ? users.filter(u=>u.role===r).length : users.length
             return (
@@ -110,7 +107,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
                 className={`${styles.filterChip} ${roleFilter===r?styles.filterChipActive:''}`}
                 style={roleFilter===r && rc ? {background:rc.bg,borderColor:rc.border,color:rc.color} : {}}
                 onClick={()=>setRoleFilter(r)}>
-                {isAll?'All':ROLE_LABELS[r as UserRole]}
+                {r===''?'All':ROLE_LABELS[r as UserRole]}
                 <span className={styles.filterCount}>{count}</span>
               </button>
             )
@@ -154,8 +151,8 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
                   </div>
                   <div className={styles.userActions}>
                     <button className={styles.actionBtn} onClick={()=>setSelected(u)}>View Profile</button>
-                    <button className={`${styles.actionBtn}`} onClick={()=>generateCode(u)} disabled={actionLoading}>New Code</button>
-                    <button className={`${styles.actionBtn}`} onClick={()=>resetOnboarding(u)} disabled={actionLoading||u.id===currentUserId}>Reset Onboarding</button>
+                    <button className={styles.actionBtn} onClick={()=>generateCode(u)} disabled={actionLoading}>New Code</button>
+                    <button className={styles.actionBtn} onClick={()=>resetOnboarding(u)} disabled={actionLoading||u.id===currentUserId}>Reset Onboarding</button>
                     <button
                       className={`${styles.actionBtn} ${u.is_active?styles.actionBtnDanger:styles.actionBtnSuccess}`}
                       onClick={()=>deactivate(u)} disabled={actionLoading||u.id===currentUserId}>
@@ -201,7 +198,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
               ))}
             </div>
             <div className={styles.modalFooter} style={{width:'100%',paddingInline:0}}>
-              <button className={styles.actionBtn} onClick={()=>{resetOnboarding(selected)}} disabled={actionLoading||selected.id===currentUserId}>Reset Onboarding</button>
+              <button className={styles.actionBtn} onClick={()=>resetOnboarding(selected)} disabled={actionLoading||selected.id===currentUserId}>Reset Onboarding</button>
               <button className={styles.actionBtn} onClick={()=>generateCode(selected)} disabled={actionLoading}>New Code</button>
               <button
                 className={`${styles.actionBtn} ${selected.is_active?styles.actionBtnDanger:styles.actionBtnSuccess}`}
@@ -214,7 +211,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
       )}
 
       {toast&&(
-        <div className={styles.codeReveal} style={{position:'fixed',bottom:90,left:16,right:16,zIndex:9999,animation:'fade-in 0.2s ease'}}>
+        <div className={styles.codeReveal} style={{position:'fixed',bottom:90,left:16,right:16,zIndex:9999}}>
           {toast}
         </div>
       )}
