@@ -35,13 +35,19 @@ export default async function UsersPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, school_id')
+    .select('*')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'secretary') redirect('/login')
 
-  // Use service role to bypass anon key restrictions on reading other profiles
+  const { data: school } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('id', profile.school_id)
+    .single()
+
+  // Use service role to bypass anon key restrictions
   const admin = createAdmin(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -71,6 +77,8 @@ export default async function UsersPage() {
     <SecretaryUsersClient
       users={(users ?? []) as ManagedUser[]}
       currentUserId={user.id}
+      profile={profile}
+      school={school}
     />
   )
 }
