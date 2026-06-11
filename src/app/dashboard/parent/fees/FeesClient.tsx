@@ -57,6 +57,30 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
   return (
     <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Fee Status">
+    {/* School payment account details */}
+{(school?.bank_name || school?.account_number) && (
+  <div style={{
+    background: 'var(--glass-bg)',
+    border: `1px solid ${sc}40`,
+    borderRadius: 12,
+    padding: '14px 16px',
+    marginBottom: 'var(--space-5)',
+  }}>
+    <p style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)',
+      letterSpacing: '0.06em', margin: '0 0 8px' }}>
+      SCHOOL PAYMENT ACCOUNT
+    </p>
+    <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+      {school.account_name ?? school.name}
+    </p>
+    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
+      {school.bank_name} · <strong style={{ color: sc }}>{school.account_number}</strong>
+    </p>
+    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+      Use your child's name as payment reference
+    </p>
+  </div>
+)}
       {loading
         ? <div className={styles.loading}><span/><span/><span/></div>
         : !child
