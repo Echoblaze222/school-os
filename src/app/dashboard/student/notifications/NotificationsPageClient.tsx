@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './notifications.module.css'
@@ -66,6 +67,7 @@ export default function NotificationsPageClient({
   const [theme,         setTheme]         = useState<'dark' | 'light'>('dark')
   const [localUnread,   setLocalUnread]   = useState(unreadCount)
 
+  const push = usePushNotifications()
   const dashboardPath = ROLE_DASHBOARDS[role] ?? '/dashboard/student'
 
   useEffect(() => {
@@ -205,6 +207,22 @@ export default function NotificationsPageClient({
           }}>
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
+
+          {/* ── Push toggle ── */}
+          {push.supported && !push.loading && push.permission !== 'denied' && (
+            <button
+              className={styles.markAllBtn}
+              style={{
+                background:  push.subscribed ? 'rgba(34,197,94,0.15)' : 'var(--card-bg)',
+                color:       push.subscribed ? '#4ade80' : 'var(--text)',
+                borderColor: push.subscribed ? 'rgba(34,197,94,0.4)' : 'var(--border)',
+              }}
+              onClick={push.subscribed ? push.unsubscribe : push.subscribe}
+              title={push.subscribed ? 'Disable push alerts' : 'Enable push alerts on this device'}
+            >
+              {push.subscribed ? '🔔 On' : '🔕 Alerts'}
+            </button>
+          )}
           {localUnread > 0 && (
             <button className={styles.markAllBtn} onClick={markAllRead}>
               ✓ All read
