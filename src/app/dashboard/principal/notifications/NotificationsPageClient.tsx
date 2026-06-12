@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import styles from './notifications.module.css'
 
 interface Notification {
@@ -55,7 +56,7 @@ const ROLE_DASHBOARDS: Record<string, string> = {
   secretary: '/dashboard/secretary',
 }
 
-const NOTIF_TYPES = ['announcement','result','assignment','payment','meeting','reminder','system']
+const NOTIF_TYPES  = ['announcement','result','assignment','payment','meeting','reminder','system']
 const TARGET_ROLES = ['all','students','teachers','parents','bursar','secretary']
 
 export default function NotificationsPageClient({
@@ -71,14 +72,17 @@ export default function NotificationsPageClient({
   const [localUnread,   setLocalUnread]   = useState(unreadCount)
 
   // Principal broadcast state
-  const [showSend,    setShowSend]    = useState(false)
-  const [sendTitle,   setSendTitle]   = useState('')
-  const [sendBody,    setSendBody]    = useState('')
-  const [sendType,    setSendType]    = useState('announcement')
-  const [sendTarget,  setSendTarget]  = useState('all')
-  const [sending,     setSending]     = useState(false)
-  const [sendResult,  setSendResult]  = useState<'success' | 'error' | null>(null)
-  const [sendError,   setSendError]   = useState('')
+  const [showSend,   setShowSend]   = useState(false)
+  const [sendTitle,  setSendTitle]  = useState('')
+  const [sendBody,   setSendBody]   = useState('')
+  const [sendType,   setSendType]   = useState('announcement')
+  const [sendTarget, setSendTarget] = useState('all')
+  const [sending,    setSending]    = useState(false)
+  const [sendResult, setSendResult] = useState<'success' | 'error' | null>(null)
+  const [sendError,  setSendError]  = useState('')
+
+  // ── Web Push hook ─────────────────────────────────────
+  const push = usePushNotifications()
 
   const dashboardPath = ROLE_DASHBOARDS[role] ?? '/dashboard/student'
   const isPrincipal   = role === 'principal'
@@ -113,20 +117,13 @@ export default function NotificationsPageClient({
       .update({ is_read: true })
       .eq('user_id', userId)
       .eq('is_read', false)
-
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
     setLocalUnread(0)
   }
 
   async function markOneRead(id: string) {
-    await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', id)
-
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-    )
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
     setLocalUnread(prev => Math.max(prev - 1, 0))
   }
 
@@ -144,7 +141,6 @@ export default function NotificationsPageClient({
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(notifications.length, notifications.length + 49)
-
     if (data) setNotifications(prev => [...prev, ...data])
     setLoading(false)
   }
@@ -153,15 +149,14 @@ export default function NotificationsPageClient({
     if (!sendTitle.trim() || !sendBody.trim()) return
     setSending(true); setSendResult(null); setSendError('')
 
-    // Fetch target user IDs from this school
+    // 1. Fetch target user IDs
     let query = supabase
       .from('profiles')
       .select('id')
       .eq('school_id', schoolId ?? '')
 
     if (sendTarget !== 'all') {
-      // 'students' → role=student, 'teachers' → role=teacher, etc.
-      const roleMap: Record<string,string> = { students:'student', teachers:'teacher', parents:'parent' }
+      const roleMap: Record<string, string> = { students: 'student', teachers: 'teacher', parents: 'parent' }
       query = query.eq('role', roleMap[sendTarget] ?? sendTarget)
     }
 
@@ -170,6 +165,7 @@ export default function NotificationsPageClient({
       setSending(false); setSendResult('error'); setSendError(fetchErr?.message ?? 'No users found'); return
     }
 
+    // 2. Insert in-app notifications
     const rows = targets.map(t => ({
       user_id:  t.id,
       title:    sendTitle.trim(),
@@ -179,10 +175,24 @@ export default function NotificationsPageClient({
       link_url: null,
     }))
 
-    const { error } = await supabase.from('notifications').insert(rows)
-    setSending(false)
-    if (error) { setSendResult('error'); setSendError(error.message); return }
+    const { error: insertErr } = await supabase.from('notifications').insert(rows)
+    if (insertErr) {
+      setSending(false); setSendResult('error'); setSendError(insertErr.message); return
+    }
 
+    // 3. 🔔 Fire Web Push to all targets (non-blocking)
+    fetch('/api/push/send', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        targetRole: sendTarget,
+        title:      sendTitle.trim(),
+        body:       sendBody.trim(),
+        url:        dashboardPath + '/notifications',
+      }),
+    }).catch(() => {}) // ignore push errors — notifications already saved
+
+    setSending(false)
     setSendResult('success')
     setSendTitle(''); setSendBody(''); setSendType('announcement'); setSendTarget('all')
     setTimeout(() => { setSendResult(null); setShowSend(false) }, 2500)
@@ -194,13 +204,12 @@ export default function NotificationsPageClient({
   }
 
   function formatTime(dateStr: string) {
-    const date = new Date(dateStr)
+    const date  = new Date(dateStr)
     const now   = new Date()
     const diff  = now.getTime() - date.getTime()
     const mins  = Math.floor(diff / 60000)
     const hours = Math.floor(diff / 3600000)
     const days  = Math.floor(diff / 86400000)
-
     if (mins < 1)   return 'Just now'
     if (mins < 60)  return `${mins}m ago`
     if (hours < 24) return `${hours}h ago`
@@ -221,18 +230,40 @@ export default function NotificationsPageClient({
     const diff = Math.floor((now.getTime() - date.getTime()) / 86400000)
     if (diff === 0) return 'Today'
     if (diff === 1) return 'Yesterday'
-    if (diff < 7)  return 'This Week'
-    if (diff < 30) return 'This Month'
-    return 'Older'
+    if (diff < 7)   return date.toLocaleDateString([], { weekday: 'long' })
+    return date.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' })
   }
 
   const groups: Record<string, Notification[]> = {}
-  filtered.forEach(n => {
+  const groupOrder: string[] = []
+  for (const n of filtered) {
     const g = getDateGroup(n.created_at)
-    if (!groups[g]) groups[g] = []
+    if (!groups[g]) { groups[g] = []; groupOrder.push(g) }
     groups[g].push(n)
-  })
-  const groupOrder = ['Today', 'Yesterday', 'This Week', 'This Month', 'Older']
+  }
+
+  // ── Push toggle button (inline, no external component needed) ─────────────
+  function PushBtn() {
+    if (!push.supported) return null
+    if (push.loading) return <span style={{ fontSize:'0.75rem', opacity:0.5 }}>🔔…</span>
+    if (push.permission === 'denied') return (
+      <span style={{ fontSize:'0.75rem', opacity:0.5 }} title="Notifications blocked in browser settings">🔕 Blocked</span>
+    )
+    return (
+      <button
+        className={styles.markAllBtn}
+        style={{
+          background:  push.subscribed ? 'rgba(34,197,94,0.15)' : 'var(--card-bg)',
+          color:       push.subscribed ? '#4ade80' : 'var(--text)',
+          borderColor: push.subscribed ? 'rgba(34,197,94,0.4)' : 'var(--border)',
+        }}
+        onClick={push.subscribed ? push.unsubscribe : push.subscribe}
+        title={push.subscribed ? 'Tap to disable push alerts' : 'Tap to enable push alerts on this device'}
+      >
+        {push.subscribed ? '🔔 Alerts On' : '🔕 Enable Alerts'}
+      </button>
+    )
+  }
 
   return (
     <div className={styles.page}>
@@ -242,11 +273,10 @@ export default function NotificationsPageClient({
         <button className={styles.backBtn} onClick={() => router.push(dashboardPath)}>←</button>
         <div className={styles.headerCenter}>
           <h1 className={styles.headerTitle}>Notifications</h1>
-          {localUnread > 0 && (
-            <span className={styles.unreadBadge}>{localUnread}</span>
-          )}
+          {localUnread > 0 && <span className={styles.unreadBadge}>{localUnread}</span>}
         </div>
         <div className={styles.headerRight}>
+          {/* Theme toggle */}
           <button className={styles.iconBtn} onClick={() => {
             const next = theme === 'dark' ? 'light' : 'dark'
             setTheme(next)
@@ -255,18 +285,41 @@ export default function NotificationsPageClient({
           }}>
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
+
+          {/* Push toggle */}
+          <PushBtn />
+
           {localUnread > 0 && (
             <button className={styles.markAllBtn} onClick={markAllRead}>
               ✓ All read
             </button>
           )}
           {isPrincipal && (
-            <button className={styles.markAllBtn} style={{ background:'var(--burgundy)', color:'#fff', borderColor:'transparent' }} onClick={() => setShowSend(v => !v)}>
+            <button
+              className={styles.markAllBtn}
+              style={{ background: 'var(--burgundy)', color: '#fff', borderColor: 'transparent' }}
+              onClick={() => setShowSend(v => !v)}
+            >
               📤 Send
             </button>
           )}
         </div>
       </header>
+
+      {/* Push error banner */}
+      {push.error && (
+        <div style={{
+          margin: '8px 16px',
+          padding: '10px 14px',
+          borderRadius: 10,
+          background: 'rgba(239,68,68,0.1)',
+          border: '1px solid rgba(239,68,68,0.3)',
+          color: '#f87171',
+          fontSize: '0.8rem',
+        }}>
+          ⚠️ {push.error}
+        </div>
+      )}
 
       {/* Principal broadcast panel */}
       {isPrincipal && showSend && (
@@ -283,22 +336,22 @@ export default function NotificationsPageClient({
           <div className={styles.broadcastGrid}>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Title *</label>
-              <input className={styles.bFieldInput} placeholder="e.g. Important Reminder" value={sendTitle} onChange={e => setSendTitle(e.target.value)} maxLength={120}/>
+              <input className={styles.bFieldInput} placeholder="e.g. Important Reminder" value={sendTitle} onChange={e => setSendTitle(e.target.value)} maxLength={120} />
             </div>
-            <div className={styles.bFieldGroup} style={{ gridColumn:'1/-1' }}>
+            <div className={styles.bFieldGroup} style={{ gridColumn: '1/-1' }}>
               <label className={styles.bFieldLabel}>Message *</label>
-              <textarea className={styles.bFieldInput} style={{ resize:'vertical', minHeight:80, lineHeight:1.6 }} rows={3} placeholder="Write the notification body…" value={sendBody} onChange={e => setSendBody(e.target.value)} maxLength={500}/>
+              <textarea className={styles.bFieldInput} style={{ resize: 'vertical', minHeight: 80, lineHeight: 1.6 }} rows={3} placeholder="Write the notification body…" value={sendBody} onChange={e => setSendBody(e.target.value)} maxLength={500} />
             </div>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Type</label>
               <select className={styles.bFieldInput} value={sendType} onChange={e => setSendType(e.target.value)}>
-                {NOTIF_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
+                {NOTIF_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
               </select>
             </div>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Send To</label>
               <select className={styles.bFieldInput} value={sendTarget} onChange={e => setSendTarget(e.target.value)}>
-                {TARGET_ROLES.map(r => <option key={r} value={r}>{r === 'all' ? 'Everyone' : r.charAt(0).toUpperCase()+r.slice(1)}</option>)}
+                {TARGET_ROLES.map(r => <option key={r} value={r}>{r === 'all' ? 'Everyone' : r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
               </select>
             </div>
           </div>
@@ -332,15 +385,13 @@ export default function NotificationsPageClient({
             >
               <span>{f.emoji}</span>
               <span>{f.label}</span>
-              {count > 0 && (
-                <span className={styles.filterCount}>{count}</span>
-              )}
+              {count > 0 && <span className={styles.filterCount}>{count}</span>}
             </button>
           )
         })}
       </div>
 
-      {/* Notifications */}
+      {/* Notifications list */}
       <div className={styles.list}>
         {filtered.length === 0 ? (
           <div className={styles.empty}>
@@ -351,15 +402,13 @@ export default function NotificationsPageClient({
             <p className={styles.emptyHint}>
               {filter === 'all'
                 ? 'Results, payments, and announcements will appear here'
-                : `Switch to "All" to see everything`
-              }
+                : 'Switch to "All" to see everything'}
             </p>
           </div>
         ) : (
           groupOrder.map(group => {
             const items = groups[group]
-            if (!items || items.length === 0) return null
-
+            if (!items?.length) return null
             return (
               <div key={group}>
                 <p className={styles.dateGroup}>{group}</p>
@@ -372,13 +421,11 @@ export default function NotificationsPageClient({
                     <div className={`${styles.notifIcon} ${!notif.is_read ? styles.notifIconUnread : ''}`}>
                       {TYPE_EMOJIS[notif.type] ?? '🔔'}
                     </div>
-
                     <div className={styles.notifContent}>
                       <p className={styles.notifTitle}>{notif.title}</p>
                       <p className={styles.notifBody}>{notif.body}</p>
                       <p className={styles.notifTime}>{formatTime(notif.created_at)}</p>
                     </div>
-
                     <div className={styles.notifRight}>
                       {!notif.is_read && <div className={styles.unreadDot} />}
                       <button
@@ -397,11 +444,7 @@ export default function NotificationsPageClient({
         )}
 
         {filtered.length >= 50 && (
-          <button
-            className={styles.loadMoreBtn}
-            onClick={loadMore}
-            disabled={loading}
-          >
+          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading}>
             {loading ? '⏳ Loading...' : 'Load more notifications'}
           </button>
         )}
