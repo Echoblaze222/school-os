@@ -37,16 +37,48 @@ export default async function BursarDashboardPage() {
   const schoolId = school?.id
   const { term, academicYear } = getCurrentTermAndYear()
 
-  // TODO: fetch these from supabase — payments, allStudents, pendingClaimsCount
-  const payList  = payments    ?? []
-  const studList = allStudents ?? []
+  // Payments received this term
+  const { data: payments } = await supabase
+    .from('payments')
+    .select('amount_paid_ngn, student_id')
+    .eq('school_id', schoolId)
 
-  const totalCollected = payList.reduce((s, p) => s + ((p as any).amount ?? 0), 0)
+  // All students in the school
+  const { data: allStudents } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('school_id', schoolId)
+    .eq('role', 'student')
+
+  // Expected fees for this term/year (sum of fee_structures across all classes)
+  const { data: feeStructures } = await supabase
+    .from('fee_structures')
+    .select('amount_ngn, class_id')
+    .eq('school_id', schoolId)
+    .eq('term', term)
+    .eq('academic_year', academicYear)
+
+  // Pending invoices count (as "pending claims" proxy)
+  const { count: pendingClaimsCount } = await supabase
+    .from('payment_invoices')
+    .select('*', { count: 'exact', head: true })
+    .eq('school_id', schoolId)
+    .eq('status', 'pending')
+
+  const payList   = payments      ?? []
+  const studList  = allStudents   ?? []
+  const feeList   = feeStructures ?? []
+
+  const totalCollected = payList.reduce((s, p) => s + ((p as any).amount_paid_ngn ?? 0), 0)
+  const feePerStudent  = feeList.reduce((s, f) => s + ((f as any).amount_ngn ?? 0), 0)
+  const totalExpected  = feePerStudent * studList.length
+  const outstanding    = Math.max(0, totalExpected - totalCollected)
+
   const paidStudentIds = new Set(payList.map((p: any) => p.student_id).filter(Boolean))
   const paidCount      = paidStudentIds.size
   const pendingCount   = Math.max(0, studList.length - paidCount)
-  const collectionRate = studList.length > 0
-    ? Math.round((paidCount / studList.length) * 100)
+  const collectionRate = totalExpected > 0
+    ? Math.round((totalCollected / totalExpected) * 100)
     : 0
 
   return (
@@ -56,7 +88,7 @@ export default async function BursarDashboardPage() {
       userId={user.id}
       counts={{
         totalCollected,
-        outstanding:   pendingCount,
+        outstanding,
         paidCount,
         pendingCount,
         collectionRate,
