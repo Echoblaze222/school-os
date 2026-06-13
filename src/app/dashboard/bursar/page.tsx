@@ -37,28 +37,21 @@ export default async function BursarDashboardPage() {
   const schoolId   = school?.id
   const { term, academicYear } = getCurrentTermAndYear()
 
-  const [
-    { data: payments },
-    { data: allStudents },
-    { count: pendingClaimsCount },
-  ] = await Promise.all([
-    supabase.from('fee_payments')
-      .select('student_id, amount')
-      .eq('school_id', schoolId)
-      .eq('term', term)
-      .eq('academic_year', academicYear),
+const payList   = payments      ?? []
+const studList  = allStudents   ?? []
+const feeList   = feeStructures ?? []
 
-    supabase.from('profiles')
-      .select('id')
-      .eq('school_id', schoolId)
-      .eq('role', 'student'),
+const totalCollected  = payList.reduce((s, p) => s + ((p as any).amount_paid_ngn ?? 0), 0)  // ← was .amount
+const feePerStudent   = feeList.reduce((s, f) => s + ((f as any).amount ?? 0), 0)
+const totalExpected   = feePerStudent * studList.length
+const outstanding     = Math.max(0, totalExpected - totalCollected)  // ← now naira not student count
 
-    // Pre-fetch pending claims count for SSR (realtime takes over client-side)
-    supabase.from('payment_claims')
-      .select('id', { count: 'exact', head: true })
-      .eq('school_id', schoolId)
-      .eq('status', 'pending'),
-  ])
+const paidStudentIds  = new Set(payList.map((p: any) => p.student_id).filter(Boolean))
+const paidCount       = paidStudentIds.size
+const pendingCount    = pendingClaimsCount ?? 0  // ← this should be claims, not unpaid students
+const collectionRate  = totalExpected > 0
+  ? Math.round((totalCollected / totalExpected) * 100)
+  : 0
 
   const payList   = payments    ?? []
   const studList  = allStudents ?? []
@@ -70,6 +63,7 @@ export default async function BursarDashboardPage() {
   const collectionRate = studList.length > 0
     ? Math.round((paidCount / studList.length) * 100)
     : 0
+  counts={{ totalCollected, outstanding, paidCount, pendingCount, collectionRate, currentTerm: term }}
 
   return (
     <BursarDashboardClient
