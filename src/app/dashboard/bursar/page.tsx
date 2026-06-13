@@ -63,7 +63,6 @@ const collectionRate  = totalExpected > 0
   const collectionRate = studList.length > 0
     ? Math.round((paidCount / studList.length) * 100)
     : 0
-  counts={{ totalCollected, outstanding, paidCount, pendingCount, collectionRate, currentTerm: term }}
 
   return (
     <BursarDashboardClient
