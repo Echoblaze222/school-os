@@ -79,46 +79,37 @@ export default async function PrincipalDashboardPage() {
       )
     : 0
 
-  // ── Attendance Rate (last 30 days) ──
+  // ── Attendance Rate (last 30 days, status column) ──
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   const sinceDate = thirtyDaysAgo.toISOString().split('T')[0]
 
   const { data: attendanceRecords } = await supabase
     .from('attendance')
-    .select('is_present')
+    .select('status, is_present')
     .eq('school_id', schoolId)
     .gte('date', sinceDate)
 
   const attendanceList = attendanceRecords ?? []
   const attendanceRate = attendanceList.length > 0
     ? Math.round(
-        (attendanceList.filter((a: any) => a.is_present).length / attendanceList.length) * 100
+        (attendanceList.filter((a: any) => (a.status ?? (a.is_present ? 'present' : 'absent')) === 'present').length
+          / attendanceList.length) * 100
       )
     : 0
 
-  // ── Fee Collection Rate ──
-  const { data: payments } = await supabase
-    .from('payments')
-    .select('amount_paid_ngn')
+  // ── Fee Collection Rate (from payment_invoices, accurate per-student) ──
+  const { data: invoices } = await supabase
+    .from('payment_invoices')
+    .select('amount_due_ngn, amount_paid_ngn')
     .eq('school_id', schoolId)
 
-  const { data: feeStructures } = await supabase
-    .from('fee_structures')
-    .select('amount_ngn')
-    .eq('school_id', schoolId)
-    .eq('term', term)
-    .eq('academic_year', academicYear)
+  const invoiceList = invoices ?? []
+  const totalDue  = invoiceList.reduce((s, i) => s + ((i as any).amount_due_ngn ?? 0), 0)
+  const totalPaid = invoiceList.reduce((s, i) => s + ((i as any).amount_paid_ngn ?? 0), 0)
 
-  const payList = payments ?? []
-  const feeList = feeStructures ?? []
-
-  const totalCollected = payList.reduce((s, p) => s + ((p as any).amount_paid_ngn ?? 0), 0)
-  const feePerStudent  = feeList.reduce((s, f) => s + ((f as any).amount_ngn ?? 0), 0)
-  const totalExpected  = feePerStudent * (studentCount ?? 0)
-
-  const collectionRate = totalExpected > 0
-    ? Math.round((totalCollected / totalExpected) * 100)
+  const collectionRate = totalDue > 0
+    ? Math.round((totalPaid / totalDue) * 100)
     : 0
 
   // ── School Health Score (average of the three, capped at 100) ──
@@ -127,7 +118,7 @@ export default async function PrincipalDashboardPage() {
     Math.round((avgScore + attendanceRate + collectionRate) / 3)
   )
 
-  // ── Pending actions: unapproved results ──
+  // ── Pending actions: unapproved results + pending transfers ──
   const { count: pendingResultsCount } = await supabase
     .from('results')
     .select('*', { count: 'exact', head: true })
@@ -136,7 +127,13 @@ export default async function PrincipalDashboardPage() {
     .eq('academic_year', academicYear)
     .eq('approved', false)
 
-  const pendingActions = pendingResultsCount ?? 0
+  const { count: pendingTransfersCount } = await supabase
+    .from('student_transfers')
+    .select('*', { count: 'exact', head: true })
+    .eq('school_id', schoolId)
+    .eq('status', 'requested')
+
+  const pendingActions = (pendingResultsCount ?? 0) + (pendingTransfersCount ?? 0)
 
   return (
     <PrincipalDashboardClient
