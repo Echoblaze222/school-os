@@ -33,28 +33,13 @@ export default async function BursarDashboardPage() {
   const { data: profile } = await supabase
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
 
-  const school     = (profile as any)?.schools ?? null
-  const schoolId   = school?.id
+  const school   = (profile as any)?.schools ?? null
+  const schoolId = school?.id
   const { term, academicYear } = getCurrentTermAndYear()
 
-const payList   = payments      ?? []
-const studList  = allStudents   ?? []
-const feeList   = feeStructures ?? []
-
-const totalCollected  = payList.reduce((s, p) => s + ((p as any).amount_paid_ngn ?? 0), 0)  // ← was .amount
-const feePerStudent   = feeList.reduce((s, f) => s + ((f as any).amount ?? 0), 0)
-const totalExpected   = feePerStudent * studList.length
-const outstanding     = Math.max(0, totalExpected - totalCollected)  // ← now naira not student count
-
-const paidStudentIds  = new Set(payList.map((p: any) => p.student_id).filter(Boolean))
-const paidCount       = paidStudentIds.size
-const pendingCount    = pendingClaimsCount ?? 0  // ← this should be claims, not unpaid students
-const collectionRate  = totalExpected > 0
-  ? Math.round((totalCollected / totalExpected) * 100)
-  : 0
-
-  const payList   = payments    ?? []
-  const studList  = allStudents ?? []
+  // TODO: fetch these from supabase — payments, allStudents, pendingClaimsCount
+  const payList  = payments    ?? []
+  const studList = allStudents ?? []
 
   const totalCollected = payList.reduce((s, p) => s + ((p as any).amount ?? 0), 0)
   const paidStudentIds = new Set(payList.map((p: any) => p.student_id).filter(Boolean))
