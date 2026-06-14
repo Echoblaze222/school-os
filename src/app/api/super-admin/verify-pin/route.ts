@@ -8,17 +8,17 @@ export async function POST(req: Request) {
   const supabase      = await createClient()
   const adminSupabase = createAdminClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
 
   const { pin } = await req.json()
   if (!pin || pin.length !== 6) return NextResponse.json({ ok: false, error: 'Invalid PIN' }, { status: 400 })
 
-  // Get pin_hash for this admin
+  // Get pin_hash for this admin (platform_admins is the real table; super_admins is a view over it)
   const { data: sa } = await adminSupabase
-    .from('super_admins')
+    .from('platform_admins')
     .select('pin_hash')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   if (!sa) return NextResponse.json({ ok: false, error: 'Not a super admin' }, { status: 403 })
@@ -27,9 +27,9 @@ export async function POST(req: Request) {
   if (!valid) return NextResponse.json({ ok: false, error: 'Incorrect PIN' }, { status: 401 })
 
   // Update last login
-  await adminSupabase.from('super_admins')
+  await adminSupabase.from('platform_admins')
     .update({ last_login: new Date().toISOString() })
-    .eq('id', session.user.id)
+    .eq('id', user.id)
 
   return NextResponse.json({ ok: true })
 }

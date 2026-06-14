@@ -24,7 +24,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   async function load() {
     setLoading(true)
     const { data } = await supabase
-      .from('live_classes')
+      .from('online_classes')
       .select('*')
       .eq('school_id', school?.id)
       .eq('teacher_id', userId)
@@ -38,7 +38,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   async function create() {
     if (!form.title || !form.subject) return
     setSaving(true)
-    await supabase.from('live_classes').insert({
+    await supabase.from('online_classes').insert({
       ...form, school_id: school?.id, teacher_id: userId, status: 'scheduled',
     })
     setForm({ title: '', subject: '', meeting_link: '', scheduled_at: '', class_level: '' })
@@ -49,19 +49,19 @@ export default function LiveClient({ profile, school, userId }: Props) {
   }
 
   async function startClass(id: string) {
-    await supabase.from('live_classes')
+    await supabase.from('online_classes')
       .update({ status: 'live', started_at: new Date().toISOString() }).eq('id', id)
     load()
   }
 
   async function endClass(id: string) {
-    await supabase.from('live_classes')
+    await supabase.from('online_classes')
       .update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', id)
     load()
   }
 
   async function deleteSession(id: string) {
-    await supabase.from('live_classes').delete().eq('id', id)
+    await supabase.from('online_classes').delete().eq('id', id)
     setSessions(prev => prev.filter(s => s.id !== id))
   }
 

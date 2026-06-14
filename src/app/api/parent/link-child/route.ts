@@ -5,13 +5,13 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify caller is a parent
   const { data: parent } = await supabase
     .from('profiles').select('id, role, school_id')
-    .eq('id', session.user.id).single()
+    .eq('id', user.id).single()
 
   if (!parent || parent.role !== 'parent') {
     return NextResponse.json({ error: 'Only parents can link children' }, { status: 403 })
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   // Link parent to child
   const { error } = await supabase
     .from('profiles')
-    .update({ parent_id: session.user.id })
+    .update({ parent_id: user.id })
     .eq('id', child.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

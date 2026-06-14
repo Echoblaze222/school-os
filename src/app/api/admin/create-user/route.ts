@@ -8,15 +8,15 @@ export async function POST(req: Request) {
   const supabase      = await createClient()
   const adminSupabase = createAdminClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
     return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
   }
 
   const { data: sa } = await adminSupabase
-    .from('super_admins')
+    .from('platform_admins')
     .select('id')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   if (!sa) {
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       free_month_starts:  setupType === 'permanent' ? now.toISOString() : null,
       free_month_ends:    setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
       subscription_plan:  setupType === 'permanent' ? 'free_month' : null,
-      created_by_admin:   session.user.id,
+      created_by_admin:   user.id,
       notes,
     })
     .select('id, slug')
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
       payment_type: 'setup',
       amount_ngn:   paymentAmount,
       payment_ref:  paymentRef ?? '',
-      confirmed_by: session.user.id,
+      confirmed_by: user.id,
     })
   }
 

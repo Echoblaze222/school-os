@@ -6,11 +6,11 @@ export const metadata = { title: 'All Schools — SchoolOS Admin' }
 
 export default async function SchoolsPage() {
   const supabase =await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/super-admin/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/super-admin/login')
 
   const { data: sa } = await supabase
-    .from('super_admins').select('id').eq('id', session.user.id).single()
+    .from('platform_admins').select('id').eq('id', user.id).single()
   if (!sa) redirect('/login')
 
   const { data: schools } = await supabase

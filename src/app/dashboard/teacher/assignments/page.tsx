@@ -5,13 +5,13 @@ import AssignmentsClient from './AssignmentsClient'
 
 export default async function AssignmentsPage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
   const school = (profile as any)?.schools ?? null
-  return <AssignmentsClient profile={profile} school={school} userId={session.user.id} />
+  return <AssignmentsClient profile={profile} school={school} userId={user.id} />
 }

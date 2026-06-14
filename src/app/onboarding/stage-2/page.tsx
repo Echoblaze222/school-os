@@ -22,17 +22,32 @@ export default function OnboardingStage2() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (pin.length !== 6)        { setError('PIN must be exactly 6 digits'); return }
-    if (pin !== confirm)         { setError('PINs do not match'); return }
-    if (secret.trim().length < 3){ setError('Secret identifier must be at least 3 characters'); return }
+    if (pin.length !== 6)         { setError('PIN must be exactly 6 digits'); return }
+    if (pin !== confirm)          { setError('PINs do not match'); return }
+    if (secret.trim().length < 3) { setError('Secret identifier must be at least 3 characters'); return }
     setLoading(true); setError('')
+
+    // Verify the user is still authenticated before making the server call
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
-    await supabase.from('profiles').update({
-      pin_hash:          pin,  // hash server-side in production
-      secret_identifier: secret.trim().toLowerCase(),
-      onboarding_stage:  'stage_3_pending',
-    }).eq('id', user.id)
+
+    // ✅ SECURITY FIX: PIN is hashed server-side via a dedicated API route.
+    // Never write raw PINs from the client — the anon key could expose them
+    // to anyone with read access to the profiles table.
+    const res = await fetch('/api/auth/set-pin', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ pin, secretIdentifier: secret.trim() }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to save PIN. Please try again.')
+      setLoading(false)
+      return
+    }
+
     router.push('/onboarding/stage-3')
   }
 
@@ -82,7 +97,7 @@ export default function OnboardingStage2() {
 
           <div className={styles.field}>
             <label className={styles.label}>Secret Identifier</label>
-            <p className={styles.hint}>A word only you know — used for password recovery (e.g. your mother's maiden name)</p>
+            <p className={styles.hint}>A word only you know — used for password recovery (e.g. your mother&apos;s maiden name)</p>
             <input className={styles.input} type="text" value={secret}
               onChange={e => setSecret(e.target.value)}
               placeholder="e.g. Sunshine, Mango, etc." autoComplete="off"/>

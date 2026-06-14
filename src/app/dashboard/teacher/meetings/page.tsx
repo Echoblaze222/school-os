@@ -28,7 +28,7 @@ export default async function TeacherMeetingsPage() {
 
   // Fetch meetings that target teachers or all staff
   const { data: meetings, error } = await supabase
-    .from('meetings')
+    .from('online_meetings')
     .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience')
     .in('target_audience', ['all_teachers', 'all_staff'])
     .order('scheduled_at', { ascending: false })

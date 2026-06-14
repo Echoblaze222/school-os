@@ -13,16 +13,16 @@ export default async function MessagesPage() {
   if (authError || !user) redirect('/login')
 
   const [profileRes, roomsRes] = await Promise.all([
-    supabase.from('teacher_profiles').select('full_name, avatar_url').eq('user_id', user.id).maybeSingle(),
+    supabase.from('teacher_profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle(),
     supabase.from('chat_room_members')
-      .select('chat_rooms(id, name, type, last_message, last_message_at)')
-      .eq('user_id', user.id)
+      .select('chat_rooms(id, name, room_type, last_message, last_message_at)')
+      .eq('id', user.id)
       .order('chat_rooms(last_message_at)', { ascending: false }),
   ])
 
   const rooms: ChatRoom[] = (roomsRes.data ?? []).map((r: any) => ({
     id: r.chat_rooms?.id, name: r.chat_rooms?.name ?? 'Chat',
-    type: r.chat_rooms?.type ?? 'direct',
+    type: r.chat_rooms?.room_type ?? 'direct',
     last_message: r.chat_rooms?.last_message ?? null,
     last_message_at: r.chat_rooms?.last_message_at ?? null,
     unread_count: 0, participant_names: [],

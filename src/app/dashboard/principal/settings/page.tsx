@@ -7,13 +7,13 @@ import SettingsClient   from './SettingsClient'
 export default async function PrincipalSettingsPage() {
   const supabase = await createClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*, schools(*)')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   if (profileError) {
@@ -26,7 +26,7 @@ export default async function PrincipalSettingsPage() {
   const school = (profile as any).schools ?? null
 
   if (!school) {
-    console.error('[principal/settings] no school linked to profile:', session.user.id)
+    console.error('[principal/settings] no school linked to profile:', user.id)
     redirect('/')
   }
 

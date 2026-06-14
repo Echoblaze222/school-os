@@ -15,14 +15,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 async function verifySuperAdmin() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
 
   const admin = createAdminClient()
   const { data: sa } = await admin
-    .from('super_admins')
+    .from('platform_admins')
     .select('id')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   if (!sa) return null

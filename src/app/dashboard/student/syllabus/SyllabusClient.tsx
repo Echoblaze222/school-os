@@ -12,7 +12,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   const [topics,   setTopics]   = useState<any[]>([])
   const [subjects, setSubjects] = useState<string[]>([])
   const [selected, setSelected] = useState<string>('all')
-  const [term,     setTerm]     = useState('1st Term')
+  const [term,     setTerm]     = useState('First Term')
   const [loading,  setLoading]  = useState(true)
   const supabase    = createClient()
   const schoolColor = school?.primary_color ?? '#7C3AED'
@@ -22,8 +22,8 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   async function load() {
     setLoading(true)
     const { data } = await supabase
-      .from('syllabus')
-      .select('id, title, subject, description, week_number, is_covered, covered_at, teacher:profiles(full_name)')
+      .from('syllabus_topics')
+      .select('id, title, description, week_number, is_covered, covered_at, class_subject_id, profiles!created_by(full_name)')
       .eq('school_id', school?.id)
       .eq('term', term)
       .order('subject')
@@ -52,7 +52,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
 
           {/* Term tabs */}
           <div className={styles.tabs} style={{ marginBottom:'var(--space-3)' }}>
-            {['1st Term','2nd Term','3rd Term'].map(t => (
+            {['First Term','Second Term','Third Term'].map(t => (
               <button key={t} onClick={() => setTerm(t)}
                 className={`${styles.tab} ${term===t ? styles.tabActive : ''}`}
                 style={term===t ? { background:schoolColor, color:'#fff', borderColor:schoolColor } : {}}>

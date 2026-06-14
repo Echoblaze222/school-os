@@ -29,7 +29,7 @@ export default async function SecretaryPage() {
   if (!profile || profile.role !== 'secretary') redirect('/login')
 
   const { data: school } = await supabase
-    .from('schools')
+    .from('school_branding')
     .select('*')
     .eq('id', profile.school_id)
     .single()

@@ -58,7 +58,7 @@ export default function PrincipalMeetingsClient({
 
   const [mode,     setMode]     = useState<Mode>('list')
   const [meetings, setMeetings] = useRealtimeTable<MeetingRow>({
-    table:   'meetings',
+    table:   'online_meetings',
     filter:  schoolId ? `school_id=eq.${schoolId}` : undefined,
     initial: initialMeetings,
     orderBy: (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime(),
@@ -102,7 +102,7 @@ export default function PrincipalMeetingsClient({
     const targetClass  = audience === 'specific_class' ? classId : null
 
     const { data: inserted, error } = await supabase
-      .from('meetings')
+      .from('online_meetings')
       .insert({
         school_id:       schoolId || undefined,
         created_by:      principalId,

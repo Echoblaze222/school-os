@@ -6,9 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 export default function OnboardingStage1() {
   const [fullName,   setFullName]   = useState('')
   const [phone,      setPhone]      = useState('')
-  const [password,   setPassword]   = useState('')
-  const [confirm,    setConfirm]    = useState('')
-  const [showPass,   setShowPass]   = useState(false)
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
   const [prefilling, setPrefilling] = useState(true)
@@ -32,23 +29,14 @@ export default function OnboardingStage1() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!fullName.trim())        { setError('Full name is required'); return }
-    if (password.length < 8)     { setError('Password must be at least 8 characters'); return }
-    if (password !== confirm)    { setError('Passwords do not match'); return }
+    if (!fullName.trim()) { setError('Full name is required'); return }
     setLoading(true); setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    // Update password via Supabase auth
-    const { error: passErr } = await supabase.auth.updateUser({ password })
-    if (passErr) {
-      setError(`Password update failed: ${passErr.message}`)
-      setLoading(false)
-      return
-    }
-
-    // Update profile
+    // Update profile — password was already set during the first-login flow
+    // (access code → /api/auth/first-login). Stage 1 only collects profile info.
     const { error: profileErr } = await supabase.from('profiles')
       .update({
         full_name:        fullName.trim(),
@@ -80,7 +68,7 @@ export default function OnboardingStage1() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}>🎓</div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3 — Set up your profile &amp; password</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3 — Set up your profile</p>
         </div>
 
         {/* Progress dots */}
@@ -113,40 +101,6 @@ export default function OnboardingStage1() {
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="e.g. 08012345678"
-              style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Create Password *</label>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>At least 8 characters</p>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPass ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Create a strong password"
-                style={{ width: '100%', height: 48, padding: '0 44px 0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', padding: 4 }}
-              >
-                {showPass ? '🙈' : '👁️'}
-              </button>
-            </div>
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Confirm Password *</label>
-            <input
-              type={showPass ? 'text' : 'password'}
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              placeholder="Re-enter your password"
               style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
             />
           </div>

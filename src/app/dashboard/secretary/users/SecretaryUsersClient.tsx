@@ -189,7 +189,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
                 ['Last Seen', relTime(selected.last_sign_in)],
                 ['Joined', new Date(selected.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})],
                 ...(selected.class_name?[['Class', selected.class_name]]:[] as any),
-                ...(selected.student_number?[['Admission No.', selected.student_number]]:[] as any),
+                ...(selected.admission_number?[['Admission No.', selected.admission_number]]:[] as any),
               ] as [string,string][]).map(([lbl,val])=>(
                 <div key={lbl} className={styles.drawerField}>
                   <span className={styles.drawerFieldLabel}>{lbl}</span>

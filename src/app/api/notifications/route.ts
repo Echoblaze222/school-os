@@ -72,6 +72,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'user_id, title and body are required' }, { status: 400 })
   }
 
+  // Audit #116: previously any authenticated user could create a notification
+  // for ANY user_id. Only allow self-targeted notifications, or staff with
+  // elevated roles (principal/admin/super-admin) notifying others.
+  if (user_id !== user.id) {
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const allowedRoles = ['principal', 'admin', 'super-admin']
+    if (!callerProfile || !allowedRoles.includes(callerProfile.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
   const { data, error } = await supabase.from('notifications').insert({
     user_id, title, body, type: type ?? 'system', action_url,
   }).select().single()

@@ -5,14 +5,14 @@ import ChatRoomClient from '@/app/dashboard/student/chat/[roomId]/ChatRoomClient
 export default async function Page({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
   const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', session.user.id).single()
+    .from('profiles').select('*, schools(*)').eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
   return (
     <ChatRoomClient
-      roomId={roomId} userId={session.user.id}
+      roomId={roomId} userId={user.id}
       role="bursar" school={school}
     />
   )

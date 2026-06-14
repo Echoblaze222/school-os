@@ -13,7 +13,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   const supabase = createClient(); const schoolColor = school?.primary_color ?? '#7C3AED'
   useEffect(() => { load() }, [])
   async function load() {
-    const { data } = await supabase.from('notes').select('id, title, subject, file_url, created_at, author:profiles(full_name)')
+    const { data } = await supabase.from('school_notes').select('id, title, file_url, content, created_at, profiles!uploaded_by(full_name)')
       .eq('school_id', school?.id)
       .or(`visibility.eq.school,and(visibility.eq.class,class_id.eq.${profile?.class_id})`)
       .order('created_at', { ascending: false })
@@ -32,7 +32,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                 <div className={styles.cardIcon} style={{ background: schoolColor+'20' }}><BookIcon size={16} color={schoolColor}/></div>
                 <div className={styles.cardBody}>
                   <p className={styles.cardTitle}>{n.title}</p>
-                  <p className={styles.cardMeta}>{n.subject} · {(n.author as any)?.full_name}</p>
+                  <p className={styles.cardMeta}>{n.title} · {(n.author as any)?.full_name}</p>
                 </div>
                 {n.file_url && <a href={n.file_url} target="_blank" rel="noreferrer"
                   style={{ width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-md)', flexShrink:0 }}>

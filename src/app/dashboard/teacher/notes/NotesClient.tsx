@@ -17,7 +17,7 @@ interface TeacherClass {
   class_subject_id: string | null
 }
 
-const TERMS = ['1st Term', '2nd Term', '3rd Term']
+const TERMS = ['First Term', 'Second Term', 'Third Term']
 const CURRENT_YEAR = new Date().getFullYear()
 const ACADEMIC_YEAR = `${CURRENT_YEAR}/${CURRENT_YEAR + 1}`
 
@@ -34,7 +34,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
     title: '',
     class_id: '',
     class_subject_id: '',
-    term: '1st Term',
+    term: 'First Term',
     academic_year: ACADEMIC_YEAR,
     content: '',
   })

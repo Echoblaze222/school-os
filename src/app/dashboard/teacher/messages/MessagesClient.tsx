@@ -68,7 +68,7 @@ export default function MessagesClient({ userId, userName, userAvatar, initialRo
         // Fetch sender name if not our own message
         let sender_name = userName
         if (m.sender_id !== userId) {
-          const { data } = await supabase.from('user_profiles').select('full_name').eq('id', m.sender_id).maybeSingle()
+          const { data } = await supabase.from('profiles').select('full_name').eq('id', m.sender_id).maybeSingle()
           sender_name = data?.full_name ?? 'User'
         }
         setMessages(prev => {

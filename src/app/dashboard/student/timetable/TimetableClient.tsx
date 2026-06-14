@@ -27,7 +27,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
     // We filter by school only, then filter by class_level text match on the joined class_groups
     const { data } = await supabase
       .from('timetable')
-      .select('id, day_of_week, subject, start_time, end_time, room, teacher:profiles(full_name), class:class_groups(name, level)')
+      .select('id, day_of_week, subject, start_time, end_time, room, teacher:profiles(full_name), class:classes(name, class_level)')
       .eq('school_id', school?.id)
       .order('start_time', { ascending: true })
     // Filter client-side by matching class level
@@ -41,7 +41,8 @@ export default function TimetableClient({ profile, school, userId }: Props) {
     setLoading(false)
   }
 
-  const todaySlots = timetable.filter(t => t.day_of_week === day)
+  const dayMap: Record<string, number> = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 }
+  const todaySlots = timetable.filter(t => t.day_of_week === (dayMap[day] ?? 0))
 
   const PERIOD_COLORS = ['#7C3AED','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#06B6D4','#8B5CF6']
 

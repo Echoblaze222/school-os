@@ -59,15 +59,15 @@ async function notifyPrincipal(
 export async function POST(req: Request) {
   // 1. Verify session
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // 2. Verify super-admin on EVERY call (not just page-load)
   const admin = createAdminClient()
   const { data: sa } = await admin
-    .from('super_admins').select('id').eq('id', session.user.id).single()
+    .from('platform_admins').select('id').eq('id', user.id).single()
   if (!sa) {
     return NextResponse.json({ error: 'Forbidden: not a super-admin' }, { status: 403 })
   }
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
         payment_type: 'setup',
         amount_ngn:   body.amount_ngn,
         payment_ref:  body.payment_ref ?? null,
-        confirmed_by: session.user.id,
+        confirmed_by: user.id,
       })
     }
 
@@ -181,7 +181,7 @@ export async function POST(req: Request) {
         amount_ngn:   body.amount_ngn,
         payment_ref:  body.payment_ref ?? null,
         plan,
-        confirmed_by: session.user.id,
+        confirmed_by: user.id,
       })
     }
 

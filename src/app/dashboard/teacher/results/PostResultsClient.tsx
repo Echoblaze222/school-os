@@ -34,9 +34,9 @@ const RESULT_TYPE_LABELS: Record<ResultType, string> = {
 
 // Display labels (shown to the teacher)
 const TERM_LABELS: Record<Term, string> = {
-  first:  '1st Term',
-  second: '2nd Term',
-  third:  '3rd Term',
+  first:  'First Term',
+  second: 'Second Term',
+  third:  'Third Term',
 }
 
 // DB values — what actually gets written to / read from results.term

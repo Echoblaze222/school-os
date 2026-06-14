@@ -53,7 +53,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     title: '',
     class_id: '',
     class_subject_id: '',
-    term: '1st Term',
+    term: 'First Term',
     total_marks: 10,
     starts_at: '',
     ends_at: '',

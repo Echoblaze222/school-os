@@ -73,14 +73,17 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ── Get session ─────────────────────────────────────────
-  const { data: { session } } = await supabase.auth.getSession()
+  // ── Get user (validated server-side — never trusts a stale/forged cookie) ──
+  // getUser() contacts Supabase Auth on every call, making it the only
+  // correct choice for route protection. getSession() is client-side only
+  // and must never be used for access control decisions.
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const isPublicPath = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+  const isPublicPath   = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthOnlyPath = AUTH_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 
-  // ── Inactivity check ────────────────────────────────────
-  if (session) {
+  // ── Inactivity check ────────────────────────────────────────
+  if (user) {
     const lastActivity = request.cookies.get('schoolos_last_activity')?.value
     const now = Date.now()
 
@@ -110,22 +113,22 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  // ── Route protection ────────────────────────────────────
-  if (!session && !isPublicPath) {
+  // ── Route protection ────────────────────────────────────────
+  if (!user && !isPublicPath) {
     // Not logged in and trying to access a private page
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  if (session && isAuthOnlyPath) {
+  if (user && isAuthOnlyPath) {
     // Already logged in but hitting auth pages — send to dashboard
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // ── Root redirect ────────────────────────────────────────
+  // ── Root redirect ────────────────────────────────────────────
   if (pathname === '/') {
-    if (session) {
+    if (user) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     // First-time visitors go through the splash → select-school flow.

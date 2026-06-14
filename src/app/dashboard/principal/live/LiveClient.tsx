@@ -26,7 +26,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
     const todayStart = new Date(); todayStart.setHours(0,0,0,0)
 
     let query = supabase
-      .from('live_classes')
+      .from('online_classes')
       .select('id, title, subject, class_level, teacher_name, status, scheduled_at, started_at, ended_at, duration_mins, student_count')
       .eq('school_id', school.id)
 
@@ -44,11 +44,11 @@ export default function LiveClient({ profile, school, userId }: Props) {
     if (!school?.id) return
     const todayStart = new Date(); todayStart.setHours(0,0,0,0)
     const [liveRes, todayRes, totalRes] = await Promise.all([
-      supabase.from('live_classes').select('id', { count: 'exact', head: true })
+      supabase.from('online_classes').select('id', { count: 'exact', head: true })
         .eq('school_id', school.id).eq('status', 'live'),
-      supabase.from('live_classes').select('id', { count: 'exact', head: true })
+      supabase.from('online_classes').select('id', { count: 'exact', head: true })
         .eq('school_id', school.id).gte('started_at', todayStart.toISOString()),
-      supabase.from('live_classes').select('id', { count: 'exact', head: true })
+      supabase.from('online_classes').select('id', { count: 'exact', head: true })
         .eq('school_id', school.id),
     ])
     setCounts({

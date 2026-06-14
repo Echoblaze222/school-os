@@ -51,7 +51,7 @@ export default function MeetingsClient({ meetings: initial, principalId, schoolI
     const supabase = createClient()
     const now = new Date().toISOString()
 
-    const { data: meeting, error } = await supabase.from('meetings').insert({
+    const { data: meeting, error } = await supabase.from('online_meetings').insert({
       title: title.trim(), agenda: desc.trim()||null, meeting_url: url.trim(),
       target_audience: audience, scheduled_at: scheduledAt,
       meeting_type: 'online', location: null,

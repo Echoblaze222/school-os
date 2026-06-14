@@ -23,7 +23,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
 
   async function loadPlan() {
     const { data } = await supabase
-      .from('study_plans')
+      .from('study_schedules')
       .select('id, day, subject, time, duration_mins, color')
       .eq('student_id', userId)
       .order('time', { ascending: true })
@@ -35,7 +35,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
     if (!newItem.subject.trim()) return
     const COLORS = ['#7C3AED','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899']
     const color = COLORS[Math.floor(Math.random() * COLORS.length)]
-    const { data } = await supabase.from('study_plans').insert({
+    const { data } = await supabase.from('study_schedules').insert({
       student_id: userId, school_id: school?.id,
       ...newItem, color,
     }).select().single()
@@ -45,7 +45,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
   }
 
   async function deleteSession(id: string) {
-    await supabase.from('study_plans').delete().eq('id', id)
+    await supabase.from('study_schedules').delete().eq('id', id)
     setPlan(prev => prev.filter(p => p.id !== id))
   }
 
@@ -63,7 +63,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
         const inserts = data.plan.map((p: any) => ({
           student_id: userId, school_id: school?.id, ...p,
         }))
-        const { data: inserted } = await supabase.from('study_plans').insert(inserts).select()
+        const { data: inserted } = await supabase.from('study_schedules').insert(inserts).select()
         if (inserted) setPlan(prev => [...prev, ...inserted])
       }
     } catch {}

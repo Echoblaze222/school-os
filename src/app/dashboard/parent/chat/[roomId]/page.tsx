@@ -11,15 +11,15 @@ export default async function ParentChatRoomPage({
 
   const supabase =await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!session) redirect('/login')
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   const school = (profile as any)?.schools ?? null
@@ -27,7 +27,7 @@ export default async function ParentChatRoomPage({
   return (
     <ChatRoomClient
       roomId={roomId}
-      userId={session.user.id}
+      userId={user.id}
       role="parent"
       school={school}
     />

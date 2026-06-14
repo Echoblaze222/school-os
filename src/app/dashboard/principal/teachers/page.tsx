@@ -72,7 +72,7 @@ export default async function TeachersPage() {
       .eq('school_id', schoolId),
 
     supabase
-      .from('notes')
+      .from('school_notes')
       .select('teacher_id')
       .in('teacher_id', teacherIds),
 

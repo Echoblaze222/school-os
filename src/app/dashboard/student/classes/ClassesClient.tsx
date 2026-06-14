@@ -21,8 +21,8 @@ export default function ClassesClient({ profile, school, userId }: Props) {
     setLoading(true)
     const statusMap = { live: 'live', upcoming: 'scheduled', recorded: 'ended' }
     const { data } = await supabase
-      .from('live_classes')
-      .select('id, title, subject, status, meeting_link, recording_url, scheduled_at, teacher:profiles(full_name)')
+      .from('online_classes')
+      .select('id, title, subject, status, meeting_url, recording_url, scheduled_at, teacher:profiles(full_name)')
       .eq('school_id', school?.id)
       .eq('status', statusMap[tab])
       .order('scheduled_at', { ascending: false })
@@ -61,7 +61,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
             ? <div className={styles.empty}><VideoIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No {tab} classes right now</p></div>
             : <div className={styles.list}>
               {classes.map(cls => {
-                const actionUrl  = tab === 'recorded' ? cls.recording_url : cls.meeting_link
+                const actionUrl  = tab === 'recorded' ? cls.recording_url : cls.meeting_url
                 const actionLabel = tab === 'live' ? 'Join Now' : tab === 'upcoming' ? 'View Link' : 'Watch'
                 const iconColor   = tab === 'live' ? '#EF4444' : schoolColor
                 return (

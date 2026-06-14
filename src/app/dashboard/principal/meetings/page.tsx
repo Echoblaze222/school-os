@@ -39,7 +39,7 @@ export default async function PrincipalMeetingsPage() {
 
   const [meetingsRes, classesRes] = await Promise.all([
     supabase
-      .from('meetings')
+      .from('online_meetings')
       .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at')
       .eq('school_id', schoolId)
       .order('scheduled_at', { ascending: false })

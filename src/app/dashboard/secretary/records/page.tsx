@@ -11,7 +11,7 @@ export default async function RecordsPage() {
   if (!user) redirect('/login')
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile || profile.role !== 'secretary') redirect('/login')
-  const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
+  const { data: school } = await supabase.from('school_branding').select('*').eq('id', profile.school_id).single()
   const { data: records } = await supabase
     .from('behaviour_records')
     .select('*')

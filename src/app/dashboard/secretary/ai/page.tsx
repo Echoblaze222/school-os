@@ -14,7 +14,7 @@ export default async function SecretaryAIPage() {
   if (!user) redirect('/login')
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile || profile.role !== 'secretary') redirect('/login')
-  const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
+  const { data: school } = await supabase.from('school_branding').select('*').eq('id', profile.school_id).single()
 
   const systemPrompt = `You are an intelligent school secretary assistant for ${school?.name ?? 'the school'}.
 You help with: drafting official letters and communications, managing admissions queries, student record guidance,

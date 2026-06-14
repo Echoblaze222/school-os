@@ -9,7 +9,7 @@ export default async function CodesPage() {
   if (!user) redirect('/login')
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile || profile.role !== 'secretary') redirect('/login')
-  const { data: school } = await supabase.from('schools').select('*').eq('id', profile.school_id).single()
+  const { data: school } = await supabase.from('school_branding').select('*').eq('id', profile.school_id).single()
   const { data: entries } = await supabase.from('profiles').select('id, full_name, email, role, default_code, is_active, created_at').eq('school_id', profile.school_id).eq('is_active', true).order('role').order('full_name')
   return <CodesClient entries={entries ?? []} profile={profile} school={school} userId={user.id} />
 }

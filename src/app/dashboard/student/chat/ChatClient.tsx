@@ -20,7 +20,7 @@ export default function ChatClient({ profile, school, userId }: Props) {
   async function load() {
     const { data } = await supabase
       .from('chat_room_members')
-      .select('room:chat_rooms(id, name, description, type, updated_at)')
+      .select('room:chat_rooms(id, name, description, room_type, updated_at)')
       .eq('user_id', userId)
     if (data) setRooms(data.map((d:any) => d.room).filter(Boolean))
     setLoading(false)
@@ -58,7 +58,7 @@ export default function ChatClient({ profile, school, userId }: Props) {
                       </div>
                       <div className={styles.cardBody}>
                         <p className={styles.cardTitle}>{room.name}</p>
-                        <p className={styles.cardMeta}>{room.description ?? room.type}</p>
+                        <p className={styles.cardMeta}>{room.description ?? room.room_type}</p>
                       </div>
                       <span style={{ fontSize:'0.65rem', color:'var(--text-muted)', flexShrink:0 }}>
                         {timeAgo(room.updated_at)}

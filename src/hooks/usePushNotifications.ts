@@ -16,8 +16,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-// The VAPID public key must be available on the client
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+// The VAPID public key must be available on the client.
+// Do NOT use `!` here — if the env var is missing, urlBase64ToUint8Array()
+// would throw immediately on subscribe(). Guard it instead (see audit #106).
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
 
 // Convert a URL-safe base64 string to a Uint8Array (required by PushManager)
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -86,6 +88,13 @@ export function usePushNotifications(): PushNotificationHook {
   const subscribe = useCallback(async () => {
     setLoading(true)
     setError(null)
+
+    if (!VAPID_PUBLIC_KEY) {
+      setError('Push notifications are not configured for this site.')
+      setLoading(false)
+      return
+    }
+
     try {
       // 1. Request permission
       const result = await Notification.requestPermission()

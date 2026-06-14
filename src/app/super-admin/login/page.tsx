@@ -29,7 +29,7 @@ export default function SuperAdminLoginPage() {
     if (err) { setError('Invalid credentials.'); setLoading(false); return }
 
     // Check if super admin
-    const { data: sa } = await supabase.from('super_admins')
+    const { data: sa } = await supabase.from('platform_admins')
       .select('id').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single()
     if (!sa) {
       await supabase.auth.signOut()

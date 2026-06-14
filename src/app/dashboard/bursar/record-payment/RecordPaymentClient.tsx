@@ -1,47 +1,46 @@
 'use client'
 // src/app/dashboard/bursar/record-payment/RecordPaymentClient.tsx
-// FIXED: payments insert uses correct schema column names:
-//   amount_paid_ngn (was amount_ngn)
-//   received_by     (was bursar_id)
-//   paid_at         (was payment_date)
-//   currency_used   (was currency)
-//   payment_reference (was reference)
-// FIXED: student search reads from profiles (has class_id FK → classes)
-//        with fallback to student_profiles.admission_number via join
-// FIXED: invoice balance field is balance_ngn (matches payment_invoices schema)
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
+import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './record-payment.module.css'
 import type { SchoolInfo } from './page'
 
-interface Props { bursarId: string; schoolInfo: SchoolInfo; usdRate: number; rateUpdatedAt: string | null }
+interface Props {
+  userId:       string
+  profile:      any
+  school:       any
+  bursarId:     string
+  schoolInfo:   SchoolInfo
+  usdRate:      number
+  rateUpdatedAt: string | null
+}
 
 interface StudentResult {
-  id: string
-  full_name: string
+  id:               string
+  full_name:        string
   admission_number: string
-  class_name: string
-  avatar_url: string | null
+  class_name:       string
+  avatar_url:       string | null
 }
 
 interface PendingInvoice {
-  id: string
-  description: string
-  term: string
-  academic_year: string
-  amount_due_ngn: number
+  id:              string
+  description:     string
+  term:            string
+  academic_year:   string
+  amount_due_ngn:  number
   amount_paid_ngn: number
-  balance_ngn: number
-  status: string
+  balance_ngn:     number
+  status:          string
 }
 
 interface Receipt { receiptNumber: string; paymentId: string; pdfUrl?: string }
 
-type Step   = 1|2|3|4
-type Method = 'Cash'|'Bank Transfer'|'Card'|'Online'
+type Step     = 1|2|3|4
+type Method   = 'Cash'|'Bank Transfer'|'Card'|'Online'
 type Currency = 'NGN'|'USD'
 
 const METHOD_ICONS: Record<Method, string> = {
@@ -71,7 +70,7 @@ function StepDots({ step, total = 4 }: { step: Step; total?: number }) {
   )
 }
 
-export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rateUpdatedAt }: Props) {
+export default function RecordPaymentClient({ userId, profile, school, bursarId, schoolInfo, usdRate, rateUpdatedAt }: Props) {
   const router   = useRouter()
   const supabase = createClient()
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -104,37 +103,26 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
   })()
 
   // ── Student search ────────────────────────────────────────
-  // Search profiles (has class_level, class_id) and join student_profiles for admission_number
   const search = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setResults([]); return }
     setSearching(true)
 
     const { data } = await supabase
       .from('profiles')
-      .select(`
-        id, full_name, avatar_url, admission_number,
-        class_level,
-        student_profiles ( admission_number )
-      `)
+      .select(`id, full_name, avatar_url, admission_number, class_level, student_profiles ( admission_number )`)
       .eq('role', 'student')
       .eq('school_id', schoolInfo.school_id || '')
       .or(`full_name.ilike.%${q}%,admission_number.ilike.%${q}%`)
       .limit(8)
 
     setResults(
-      (data ?? []).map((r: any) => {
-        // admission_number may be on profiles directly (after migration) or via student_profiles
-        const admNo = r.admission_number
-          ?? (r.student_profiles as any)?.admission_number
-          ?? '—'
-        return {
-          id:               r.id,
-          full_name:        r.full_name ?? 'Unknown',
-          admission_number: admNo,
-          class_name:       r.class_level ?? '—',
-          avatar_url:       r.avatar_url ?? null,
-        }
-      })
+      (data ?? []).map((r: any) => ({
+        id:               r.id,
+        full_name:        r.full_name ?? 'Unknown',
+        admission_number: r.admission_number ?? (r.student_profiles as any)?.admission_number ?? '—',
+        class_name:       r.class_level ?? '—',
+        avatar_url:       r.avatar_url ?? null,
+      }))
     )
     setSearching(false)
   }, [supabase, schoolInfo.school_id])
@@ -146,7 +134,6 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
   }
 
   // ── Pick student → load invoices ──────────────────────────
-  // payment_invoices schema: amount_due_ngn, amount_paid_ngn, balance_ngn
   async function pickStudent(s: StudentResult) {
     setStudent(s); setResults([]); setQuery(''); setLoadInv(true); setStep(2)
 
@@ -157,18 +144,18 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
       .in('status', ['unpaid', 'partial', 'overdue'])
       .order('due_date', { ascending: true })
 
-    const rows: PendingInvoice[] = (data ?? []).map((inv: any) => ({
-      id:             inv.id,
-      description:    (inv.fee_structures as any)?.description ?? 'School Fees',
-      term:           (inv.fee_structures as any)?.term ?? '',
-      academic_year:  (inv.fee_structures as any)?.academic_year ?? '',
-      amount_due_ngn: inv.amount_due_ngn ?? 0,
-      amount_paid_ngn:inv.amount_paid_ngn ?? 0,
-      balance_ngn:    inv.balance_ngn ?? 0,
-      status:         inv.status ?? 'unpaid',
-    }))
-
-    setInvoices(rows)
+    setInvoices(
+      (data ?? []).map((inv: any) => ({
+        id:              inv.id,
+        description:     (inv.fee_structures as any)?.description ?? 'School Fees',
+        term:            (inv.fee_structures as any)?.term ?? '',
+        academic_year:   (inv.fee_structures as any)?.academic_year ?? '',
+        amount_due_ngn:  inv.amount_due_ngn  ?? 0,
+        amount_paid_ngn: inv.amount_paid_ngn ?? 0,
+        balance_ngn:     inv.balance_ngn     ?? 0,
+        status:          inv.status          ?? 'unpaid',
+      }))
+    )
     setLoadInv(false)
   }
 
@@ -180,7 +167,6 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
   }
 
   // ── Submit payment ────────────────────────────────────────
-  // Uses correct payments schema columns
   async function handleSubmit() {
     if (!student || !invoice || amountNGN <= 0) { setSubmitErr('Please fill all fields.'); return }
     if (amountNGN > invoice.balance_ngn) {
@@ -190,24 +176,22 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
     setSubmitting(true); setSubmitErr('')
     const receiptNumber = genReceipt()
 
-    // ✅ FIXED: correct column names matching payments schema
     const { data: pmtRow, error: pmtErr } = await supabase.from('payments').insert({
       student_id:        student.id,
       invoice_id:        invoice.id,
-      received_by:       bursarId,         // was: bursar_id
+      received_by:       bursarId,
       school_id:         schoolInfo.school_id || null,
-      amount_paid_ngn:   amountNGN,        // was: amount_ngn
-      currency_used:     currency,         // was: currency
+      amount_paid_ngn:   amountNGN,
+      currency_used:     currency,
       payment_method:    method,
-      payment_reference: reference.trim() || null,  // was: reference
+      payment_reference: reference.trim() || null,
       notes:             notes.trim() || null,
       receipt_number:    receiptNumber,
-      paid_at:           new Date().toISOString(),  // was: payment_date
+      paid_at:           new Date().toISOString(),
     }).select('id').single()
 
     if (pmtErr) { setSubmitErr(pmtErr.message); setSubmitting(false); return }
 
-    // Also record in fee_payments for bursar reports/history (denormalised)
     await supabase.from('fee_payments').insert({
       school_id:      schoolInfo.school_id || null,
       student_id:     student.id,
@@ -227,7 +211,6 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
       recorded_by:    bursarId,
     })
 
-    // Update invoice balance in payment_invoices
     const newPaid   = invoice.amount_paid_ngn + amountNGN
     const newBal    = Math.max(0, invoice.balance_ngn - amountNGN)
     const newStatus = newBal <= 0 ? 'paid' : 'partial'
@@ -237,13 +220,11 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
       status:          newStatus,
     }).eq('id', invoice.id)
 
-    // Non-blocking receipt PDF
     let pdfUrl: string | undefined
     try {
       const res = await fetch('/api/receipts/generate', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ payment_id: pmtRow.id }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: pmtRow.id }),
       })
       if (res.ok) { const d = await res.json(); pdfUrl = d.url }
     } catch { /* non-fatal */ }
@@ -283,24 +264,12 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
     w.document.close(); w.print()
   }
 
-  return (
-    <div className={styles.page}>
-      <div className="burgundy-glow-orb" style={{ position: 'absolute', width: 300, height: 300, top: -60, right: -60, opacity: 0.4, borderRadius: '50%', background: 'radial-gradient(circle,var(--burgundy-glow) 0%,transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
-
-      <header className={styles.header}>
-        <button onClick={() => step === 1 ? router.push('/dashboard/bursar') : setStep(s => (Math.max(1, s - 1) as Step))} className={styles.backBtn} aria-label="Back">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-        </button>
-        <div className={styles.headerCenter}>
-          <h1 className={styles.title}>Record Payment</h1>
-          <p className={styles.subtitle}>{schoolInfo.school_name}</p>
-        </div>
-        <div style={{ width: 38 }} />
-      </header>
-
+  // ── The step dots go above the wizard content, below the shared header ──
+  const wizardContent = (
+    <>
       <StepDots step={step} />
 
-      <main className={styles.main}>
+      <div className={styles.main}>
 
         {/* STEP 1 — Find Student */}
         {step === 1 && (
@@ -385,7 +354,6 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
             </div>
             <h2 className={styles.stepTitle}>Payment Details</h2>
 
-            {/* Amount */}
             <div className={styles.field}>
               <div className={styles.labelRow}>
                 <label className={styles.label}>Amount</label>
@@ -428,7 +396,6 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
               )}
             </div>
 
-            {/* Method */}
             <div className={styles.field}>
               <label className={styles.label}>Payment Method</label>
               <div className={styles.methodGrid}>
@@ -509,29 +476,20 @@ export default function RecordPaymentClient({ bursarId, schoolInfo, usdRate, rat
             </div>
           </div>
         )}
-      </main>
+      </div>
+    </>
+  )
 
-      <nav className="bottom-nav">
-        <Link href="/dashboard/bursar" className="nav-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-          <span>Home</span>
-        </Link>
-        <Link href="/dashboard/bursar/invoices" className="nav-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-          <span>Invoices</span>
-        </Link>
-        <Link href="/dashboard/bursar" className="nav-home">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14" /></svg>
-        </Link>
-        <Link href="/dashboard/bursar/record-payment" className="nav-item active">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
-          <span>Pay</span>
-        </Link>
-        <Link href="/dashboard/bursar/ai" className="nav-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
-          <span>AI</span>
-        </Link>
-      </nav>
-    </div>
+  return (
+    <RolePageWrapper
+      userId={userId}
+      role="bursar"
+      profile={profile}
+      school={school}
+      title="Record Payment"
+      showBack={step > 1}
+    >
+      {wizardContent}
+    </RolePageWrapper>
   )
 }

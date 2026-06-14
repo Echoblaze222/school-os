@@ -24,7 +24,7 @@ export default async function StudentLayout({
 
     if (profile?.school_id) {
       const { data: school } = await supabase
-        .from('schools')
+        .from('school_branding')
         .select('primary_color, font_family')
         .eq('id', profile.school_id)
         .single()

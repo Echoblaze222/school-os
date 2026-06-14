@@ -21,7 +21,7 @@ export default async function SubmissionsPage() {
     .from('assignment_submissions')
     .select(`
       id, student_id, submitted_at, file_url, file_name, score, feedback, graded_at, status,
-      student_profiles(full_name, avatar_url),
+      profiles!student_id(full_name, avatar_url),
       assignments!inner(title, max_score, teacher_id, subject, classes(name))
     `)
     .eq('assignments.teacher_id', user.id)
@@ -31,8 +31,8 @@ export default async function SubmissionsPage() {
 
   const submissions: Submission[] = (data ?? []).map((r: any) => ({
     id: r.id, student_id: r.student_id,
-    student_name: r.student_profiles?.full_name ?? 'Student',
-    student_avatar: r.student_profiles?.avatar_url ?? null,
+    student_name: r.profiles?.full_name ?? 'Student',
+    student_avatar: r.profiles?.avatar_url ?? null,
     assignment_id: r.assignment_id,
     assignment_title: r.assignments?.title ?? '—',
     class_name: r.assignments?.classes?.name ?? '—',

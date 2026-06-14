@@ -7,10 +7,10 @@ import TeacherDashboardClient from './TeacherDashboardClient'
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  const userId = session.user.id
+  const userId = user.id
 
   const { data: profile } = await supabase
     .from('profiles')

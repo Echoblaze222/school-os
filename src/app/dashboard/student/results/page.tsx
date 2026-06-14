@@ -5,13 +5,13 @@ import ResultsClient from './ResultsClient'
 
 export default async function ResultsPage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   if (!profile) redirect('/login')
@@ -36,7 +36,7 @@ export default async function ResultsPage() {
         classes  ( id, name, class_level )
       )
     `)
-    .eq('student_id', session.user.id)
+    .eq('student_id', user.id)
     .order('academic_year', { ascending: false })
     .order('posted_at',     { ascending: false })
 
@@ -44,7 +44,7 @@ export default async function ResultsPage() {
     <ResultsClient
       profile={profile}
       school={school}
-      userId={session.user.id}
+      userId={user.id}
       results={results ?? []}
     />
   )

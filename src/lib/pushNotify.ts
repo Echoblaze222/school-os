@@ -8,17 +8,12 @@
 //   await pushNotify(userId, { title: 'Fee received', body: '₦5,000 confirmed', url: '/dashboard/parent' })
 //
 // This is a fire-and-forget: it doesn't throw if push fails (e.g. user
-// has no push subscription — that's normal).
+// has no push subscription, or VAPID isn't configured — that's normal).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { sendPushToUsers } from '@/app/api/push/send/route'
+import { sendPushToUsers, type PushPayload } from '@/lib/webpush'
 
-interface PushPayload {
-  title: string
-  body:  string
-  url?:  string
-  tag?:  string
-}
+export type { PushPayload }
 
 /**
  * Send a push notification to a single user.

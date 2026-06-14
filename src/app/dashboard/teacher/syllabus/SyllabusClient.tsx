@@ -17,14 +17,14 @@ interface TeacherClass {
   class_subject_id: string | null
 }
 
-const TERMS = ['1st Term', '2nd Term', '3rd Term']
+const TERMS = ['First Term', 'Second Term', 'Third Term']
 const CURRENT_YEAR = new Date().getFullYear()
 const ACADEMIC_YEAR = `${CURRENT_YEAR}/${CURRENT_YEAR + 1}`
 
 export default function SyllabusClient({ profile, school, userId }: Props) {
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
   const [selectedClass, setSelectedClass] = useState<TeacherClass | null>(null)
-  const [term, setTerm] = useState('1st Term')
+  const [term, setTerm] = useState('First Term')
   const [topics, setTopics] = useState<any[]>([])
   const [syllabusPdf, setSyllabusPdf] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)

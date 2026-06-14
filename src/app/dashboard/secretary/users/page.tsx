@@ -20,7 +20,7 @@ export interface ManagedUser {
   created_at: string
   avatar_url: string | null
   last_sign_in: string | null
-  student_number?: string | null
+  admission_number?: string | null
   class_name?: string | null
   subject?: string | null
   subjects?: string[]
