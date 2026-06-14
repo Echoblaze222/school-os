@@ -11,7 +11,7 @@ import {
   BellIcon, UserIcon, LogOutIcon, WalletIcon, FileTextIcon,
   MegaphoneIcon, ClockIcon, BookOpenIcon, AwardIcon, SchoolIcon,
   CheckCircleIcon, DownloadIcon, TrophyIcon, SunIcon, MoonIcon,
-  SettingsIcon, CreditCardIcon, ShieldIcon,
+  SettingsIcon, CreditCardIcon, ShieldIcon, UploadIcon,
 } from './Icons'
 import styles from './RoleNav.module.css'
 
@@ -126,16 +126,18 @@ const NAV: Record<string, {
         { href: '/dashboard/bursar/notifications', Icon: BellIcon,        label: 'Notifications' },
       ]},
       { label: 'Finance', items: [
-        { href: '/dashboard/bursar/fees',          Icon: WalletIcon,      label: 'Fee Records'   },
-        { href: '/dashboard/bursar/record-payment',Icon: CreditCardIcon,  label: 'Record Payment'},
-        { href: '/dashboard/bursar/payments',      Icon: CheckCircleIcon, label: 'Payments'      },
-        { href: '/dashboard/bursar/invoices',      Icon: FileTextIcon,    label: 'Invoices'      },
-        { href: '/dashboard/bursar/receipts',      Icon: ClipboardIcon,   label: 'Receipts'      },
-        { href: '/dashboard/bursar/debtors',       Icon: PeopleIcon,      label: 'Debtors'       },
-        { href: '/dashboard/bursar/reminders',     Icon: BellIcon,        label: 'Reminders'     },
-        { href: '/dashboard/bursar/reports',       Icon: BarChartIcon,    label: 'Reports'       },
-        { href: '/dashboard/bursar/history',       Icon: ClockIcon,       label: 'History'       },
-        { href: '/dashboard/bursar/export',        Icon: DownloadIcon,    label: 'Export Data'   },
+        { href: '/dashboard/bursar/fees',          Icon: WalletIcon,      label: 'Fee Records'    },
+        { href: '/dashboard/bursar/record-payment',Icon: CreditCardIcon,  label: 'Record Payment' },
+        { href: '/dashboard/bursar/claims',        Icon: UploadIcon,      label: 'Payment Claims' },
+        { href: '/dashboard/bursar/expenses',      Icon: WalletIcon,      label: 'Expenses'       },
+        { href: '/dashboard/bursar/payments',      Icon: CheckCircleIcon, label: 'Payments'       },
+        { href: '/dashboard/bursar/invoices',      Icon: FileTextIcon,    label: 'Invoices'       },
+        { href: '/dashboard/bursar/receipts',      Icon: ClipboardIcon,   label: 'Receipts'       },
+        { href: '/dashboard/bursar/debtors',       Icon: PeopleIcon,      label: 'Debtors'        },
+        { href: '/dashboard/bursar/reminders',     Icon: BellIcon,        label: 'Reminders'      },
+        { href: '/dashboard/bursar/reports',       Icon: BarChartIcon,    label: 'Reports'        },
+        { href: '/dashboard/bursar/history',       Icon: ClockIcon,       label: 'History'        },
+        { href: '/dashboard/bursar/export',        Icon: DownloadIcon,    label: 'Export Data'    },
       ]},
       { label: 'Account', items: [
         { href: '/dashboard/bursar/profile',       Icon: UserIcon,        label: 'My Profile'    },
