@@ -1,5 +1,4 @@
-// src/app/dashboard/teacher/layout.tsx
-// Injects the school's brand colour + font as CSS variables before first paint.
+// BUG FIX: was querying school_branding (wrong table) — changed to profiles→schools join.
 
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
@@ -9,6 +8,7 @@ export default async function TeacherLayout({
 }: {
   children: React.ReactNode
 }) {
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -16,22 +16,15 @@ export default async function TeacherLayout({
   let fontFamily   = 'Inter'
 
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profileWithSchool } = await supabase
       .from('profiles')
-      .select('school_id')
+      .select('schools(primary_color, font_family)')
       .eq('id', user.id)
       .single()
 
-    if (profile?.school_id) {
-      const { data: school } = await supabase
-        .from('school_branding')
-        .select('primary_color, font_family')
-        .eq('id', profile.school_id)
-        .single()
-
-      if (school?.primary_color) primaryColor = school.primary_color
-      if (school?.font_family)   fontFamily   = school.font_family
-    }
+    const school = (profileWithSchool as any)?.schools
+    if (school?.primary_color) primaryColor = school.primary_color
+    if (school?.font_family)   fontFamily   = school.font_family
   }
 
   return (
