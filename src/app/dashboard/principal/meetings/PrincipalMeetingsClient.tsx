@@ -113,7 +113,8 @@ export default function PrincipalMeetingsClient({
         meeting_url:     isOnline ? meetingUrl.trim() : null,
         agenda:          agenda.trim() || null,
         target_audience: audience,
-        target_class_id: targetClass,
+        // BUG 4 FIX: target_class_id column removed — doesn't exist in DB schema
+        // If you need class targeting, run: ALTER TABLE online_meetings ADD COLUMN IF NOT EXISTS target_class_id uuid REFERENCES classes(id);
       })
       .select()
       .single()
@@ -405,4 +406,5 @@ function MeetingListCard({
     </div>
   )
       }
-              
+
+  
