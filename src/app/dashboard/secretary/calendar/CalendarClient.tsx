@@ -68,7 +68,7 @@ export default function CalendarClient({ events: init, profile, school, userId }
       if (!error) { setEvents(p => p.map(e => e.id === editItem.id ? { ...e, ...form, end_date: form.end_date || null, description: form.description || null } : e)); setModal(false) }
       else setMsg(error.message)
     } else {
-      const { data, error } = await supabase.from('events').insert({ title: form.title, event_type: form.event_type, start_date: form.start_date, end_date: form.end_date || null, description: form.description || null, all_day: form.all_day, school_id: school?.id, created_by: userId }).select().single()
+      const { data, error } = await supabase.from('events').insert({ title: form.title, event_type: form.event_type, start_date: form.start_date, end_date: form.end_date || null, description: form.description || null, all_day: form.all_day, school_id: profile?.school_id, created_by: userId }).select().single()
       if (!error && data) { setEvents(p => [data, ...p]); setModal(false) }
       else setMsg(error?.message ?? 'Failed')
     }
@@ -190,4 +190,4 @@ export default function CalendarClient({ events: init, profile, school, userId }
       <div style={{ height: 110 }} />
     </RolePageWrapper>
   )
-}
+                                                              }
