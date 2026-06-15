@@ -1,14 +1,21 @@
 'use client'
 // src/app/dashboard/principal/teachers/TeachersClient.tsx
-// FIXED: Consistent header/nav design matching Alumni & Meetings pages
+// FIX: replaced custom hardcoded bottom-nav with RolePageWrapper so the nav
+// pill matches every other principal sub-page (Staff, Stats, Home, Chat, AI).
 
 import { useEffect, useState, useMemo } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import type { TeacherRow } from './page'
-import styles from './teachers.module.css'
+import { useRouter }                    from 'next/navigation'
+import RolePageWrapper                  from '@/components/RolePageWrapper'
+import type { TeacherRow }              from './page'
+import styles                           from './teachers.module.css'
 
-interface Props { teachers: TeacherRow[] }
+interface Props {
+  teachers: TeacherRow[]
+  // RolePageWrapper props — page.tsx must forward these
+  profile?: any
+  school?:  any
+  userId?:  string
+}
 
 function initials(n: string) {
   return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -32,8 +39,9 @@ function getRoleLabel(teacher: TeacherRow): { label: string; color: string; bg: 
   return                               { label: 'Unassigned',      color: '#6B7280', bg: '#6B728020' }
 }
 
-export default function TeachersClient({ teachers }: Props) {
+export default function TeachersClient({ teachers, profile, school, userId }: Props) {
   const router = useRouter()
+
   const [search,     setSearch]     = useState('')
   const [selected,   setSelected]   = useState<TeacherRow | null>(null)
   const [roleFilter, setRoleFilter] = useState<'all' | 'class' | 'subject' | 'unassigned'>('all')
@@ -45,16 +53,20 @@ export default function TeachersClient({ teachers }: Props) {
 
   const filtered = useMemo(() => {
     return teachers.filter(t => {
-      const matchSearch = !search
-        || t.full_name.toLowerCase().includes(search.toLowerCase())
-        || t.email.toLowerCase().includes(search.toLowerCase())
+      const matchSearch =
+        !search ||
+        t.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        t.email.toLowerCase().includes(search.toLowerCase())
+
       const hasPrimary = t.class_assignments.some(a => a.is_primary)
       const hasSubject = t.class_assignments.some(a => !a.is_primary || a.subject)
+
       const matchRole =
         roleFilter === 'all'        ? true :
         roleFilter === 'class'      ? hasPrimary :
         roleFilter === 'subject'    ? (!hasPrimary && hasSubject) :
         /* unassigned */              t.class_assignments.length === 0
+
       return matchSearch && matchRole
     })
   }, [teachers, search, roleFilter])
@@ -63,62 +75,72 @@ export default function TeachersClient({ teachers }: Props) {
   const subjectTeacherCount = teachers.filter(t => !t.class_assignments.some(a => a.is_primary) && t.class_assignments.length > 0).length
   const unassignedCount     = teachers.filter(t => t.class_assignments.length === 0).length
 
-  return (
-    <div className={styles.page}>
-      <div className={styles.bgOrb} aria-hidden />
+  const sc = school?.primary_color ?? '#7C3AED'
 
-      {/* ── Header — same pattern as Alumni & Meetings ── */}
-      <header className={styles.header}>
-        <button
-          className={styles.backBtn}
-          onClick={() => router.push('/dashboard/principal')}
-          aria-label="Back"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <div className={styles.headerText}>
-          <h1 className={styles.headerTitle}>All Teachers</h1>
-          <p className={styles.headerSub}>{teachers.length} staff member{teachers.length !== 1 ? 's' : ''}</p>
-        </div>
-        <div style={{ width: 40 }} />
-      </header>
+  const pills: { key: typeof roleFilter; label: string; count: number }[] = [
+    { key: 'all',        label: 'All',              count: teachers.length        },
+    { key: 'class',      label: 'Class Teachers',   count: classTeacherCount      },
+    { key: 'subject',    label: 'Subject Teachers', count: subjectTeacherCount    },
+    { key: 'unassigned', label: 'Unassigned',       count: unassignedCount        },
+  ]
+
+  return (
+    <RolePageWrapper
+      userId={userId ?? ''}
+      role="principal"
+      profile={profile ?? null}
+      school={school  ?? null}
+      title="All Teachers"
+      showBack={false}
+    >
+      {/* Decorative orb */}
+      <div className={styles.bgOrb} aria-hidden/>
+
+      {/* ── Subtitle ── */}
+      <p style={{
+        fontFamily: 'var(--font-body)', fontSize: '0.72rem',
+        color: 'var(--text-muted)', padding: '0 var(--space-5)',
+        marginBottom: 'var(--space-2)',
+      }}>
+        {teachers.length} staff member{teachers.length !== 1 ? 's' : ''}
+      </p>
 
       {/* ── Role filter pills ── */}
       <div className={styles.filterBar}>
-        {[
-          { key: 'all',        label: `All (${teachers.length})`,                    color: 'var(--text-muted)' },
-          { key: 'class',      label: `Class Teachers (${classTeacherCount})`,        color: '#F59E0B' },
-          { key: 'subject',    label: `Subject Teachers (${subjectTeacherCount})`,    color: '#3B82F6' },
-          { key: 'unassigned', label: `Unassigned (${unassignedCount})`,              color: '#EF4444' },
-        ].map(f => (
+        {pills.map(p => (
           <button
-            key={f.key}
-            onClick={() => setRoleFilter(f.key as any)}
-            className={`${styles.pill} ${roleFilter === f.key ? styles.pillActive : ''}`}
-            style={roleFilter === f.key ? {
-              borderColor: f.color,
-              background: f.color + '20',
-              color: f.color,
-            } : {}}
+            key={p.key}
+            className={`${styles.pill} ${roleFilter === p.key ? styles.pillActive : ''}`}
+            style={roleFilter === p.key
+              ? { background: sc, color: '#fff', borderColor: sc }
+              : {}}
+            onClick={() => setRoleFilter(p.key)}
           >
-            {f.label}
+            {p.label} ({p.count})
           </button>
         ))}
       </div>
 
       {/* ── Search ── */}
       <div className={styles.searchRow}>
-        <div className={styles.searchWrap}>
-          <svg className={styles.searchIco} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{
+          flex: 1, position: 'relative',
+          display: 'flex', alignItems: 'center',
+        }}>
+          <svg
+            style={{ position: 'absolute', left: 12, color: 'var(--text-muted)', pointerEvents: 'none' }}
+            width="15" height="15" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round"
+          >
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
-            className={`input ${styles.searchInput}`}
+            className={styles.searchInput}
             placeholder="Search by name or email…"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            style={{ paddingLeft: 36 }}
           />
         </div>
         <span className={styles.countLabel}>
@@ -131,9 +153,13 @@ export default function TeachersClient({ teachers }: Props) {
         {filtered.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.5"
+                strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
               </svg>
             </div>
             <h3 className={styles.emptyTitle}>No teachers found</h3>
@@ -167,14 +193,22 @@ export default function TeachersClient({ teachers }: Props) {
                     <p className={styles.cardEmail}>{t.email}</p>
                     <div className={styles.cardMeta}>
                       <span className={styles.metaItem}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2"
+                          strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                         </svg>
-                        {t.classes.length === 0 ? 'No classes' : t.classes.slice(0, 2).join(', ') + (t.classes.length > 2 ? ` +${t.classes.length - 2}` : '')}
+                        {t.classes.length === 0
+                          ? 'No classes'
+                          : t.classes.slice(0, 2).join(', ') + (t.classes.length > 2 ? ` +${t.classes.length - 2}` : '')}
                       </span>
                       <span className={styles.metaItem}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2"
+                          strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12 6 12 12 16 14"/>
                         </svg>
                         {relTime(t.last_activity)}
                       </span>
@@ -187,7 +221,11 @@ export default function TeachersClient({ teachers }: Props) {
                   </span>
 
                   {/* Chevron */}
-                  <svg className={styles.chevron} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    className={styles.chevron} width="14" height="14"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                  >
                     <polyline points="9 18 15 12 9 6"/>
                   </svg>
                 </button>
@@ -200,7 +238,7 @@ export default function TeachersClient({ teachers }: Props) {
       {/* ── Detail drawer ── */}
       {selected && (
         <>
-          <div className={styles.drawerOverlay} onClick={() => setSelected(null)} />
+          <div className={styles.drawerOverlay} onClick={() => setSelected(null)}/>
           <aside className={styles.drawer}>
             <div className={styles.drawerHeader}>
               <div className={styles.drawerAvatar}>{initials(selected.full_name)}</div>
@@ -208,9 +246,16 @@ export default function TeachersClient({ teachers }: Props) {
                 <p className={styles.drawerName}>{selected.full_name}</p>
                 <p className={styles.drawerEmail}>{selected.email}</p>
               </div>
-              <button className={styles.drawerClose} onClick={() => setSelected(null)} aria-label="Close">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              <button
+                className={styles.drawerClose}
+                onClick={() => setSelected(null)}
+                aria-label="Close"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.2"
+                  strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
             </div>
@@ -230,10 +275,10 @@ export default function TeachersClient({ teachers }: Props) {
               <section className={styles.drawerSection}>
                 <p className={styles.drawerSectionTitle}>Personal Info</p>
                 {[
-                  { label: 'Phone',        value: selected.phone ?? '—' },
-                  { label: 'Employee ID',  value: selected.employee_id ?? '—' },
-                  { label: 'Qualification',value: selected.qualification ?? '—' },
-                  { label: 'Status',       value: selected.is_active ? 'Active' : 'Inactive' },
+                  { label: 'Phone',         value: selected.phone          ?? '—' },
+                  { label: 'Employee ID',   value: selected.employee_id    ?? '—' },
+                  { label: 'Qualification', value: selected.qualification  ?? '—' },
+                  { label: 'Status',        value: selected.is_active ? 'Active' : 'Inactive' },
                 ].map(row => (
                   <div key={row.label} className={styles.drawerField}>
                     <span className={styles.drawerFieldLabel}>{row.label}</span>
@@ -277,9 +322,9 @@ export default function TeachersClient({ teachers }: Props) {
                 <p className={styles.drawerSectionTitle}>Activity</p>
                 {[
                   { label: 'Last Active',    value: relTime(selected.last_activity) },
-                  { label: 'Last Action',    value: selected.last_action ?? '—' },
-                  { label: 'Notes Uploaded', value: String(selected.notes_uploaded) },
-                  { label: 'Results Posted', value: String(selected.results_posted) },
+                  { label: 'Last Action',    value: selected.last_action       ?? '—' },
+                  { label: 'Notes Uploaded', value: String(selected.notes_uploaded)  },
+                  { label: 'Results Posted', value: String(selected.results_posted)  },
                 ].map(row => (
                   <div key={row.label} className={styles.drawerField}>
                     <span className={styles.drawerFieldLabel}>{row.label}</span>
@@ -291,29 +336,7 @@ export default function TeachersClient({ teachers }: Props) {
           </aside>
         </>
       )}
-
-      {/* ── Bottom Nav — matches Alumni & Meetings ── */}
-      <nav className="bottom-nav-mobile" aria-label="Principal navigation">
-        <Link href="/dashboard/principal" className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>Home</span>
-        </Link>
-        <Link href="/dashboard/principal/staff" className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-          <span>Staff</span>
-        </Link>
-        <Link href="/dashboard/principal" className="nav-home-btn" aria-label="Dashboard">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-        </Link>
-        <Link href="/dashboard/principal/teachers" className="nav-item active">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Teachers</span>
-        </Link>
-        <Link href="/dashboard/principal/ai" className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span>AI</span>
-        </Link>
-      </nav>
-    </div>
+    </RolePageWrapper>
   )
-}
+          }
+                      
