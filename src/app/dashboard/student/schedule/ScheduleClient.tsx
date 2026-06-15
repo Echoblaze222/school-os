@@ -22,10 +22,13 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
   useEffect(() => { loadPlan() }, [])
 
   async function loadPlan() {
+    // BUG 10 FIX: add school_id filter — RLS policy requires it and without it
+    // inserted rows (which include school_id) won't be returned on read
     const { data } = await supabase
       .from('study_schedules')
       .select('id, day, subject, time, duration_mins, color')
       .eq('student_id', userId)
+      .eq('school_id', school?.id)
       .order('time', { ascending: true })
     if (data) setPlan(data)
     setLoading(false)
