@@ -35,6 +35,8 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open,          setOpen]          = useState(false)
   const [loading,       setLoading]       = useState(false)
+  // FIX: track button position so fixed panel renders in the right spot
+  const [panelPos,      setPanelPos]      = useState({ top: 0, right: 0 })
   const supabase = createClient()
   const panelRef = useRef<HTMLDivElement>(null)
   const btnRef   = useRef<HTMLButtonElement>(null)
@@ -128,7 +130,14 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
       <button
         ref={btnRef}
         className={styles.bellBtn}
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          // FIX: calculate viewport position so the fixed panel appears below the button
+          if (!open && btnRef.current) {
+            const rect = btnRef.current.getBoundingClientRect()
+            setPanelPos({ top: rect.bottom + 10, right: window.innerWidth - rect.right })
+          }
+          setOpen(!open)
+        }}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ''}`}
       >
         <BellIcon size={18} />
@@ -139,9 +148,16 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
         )}
       </button>
 
-      {/* Panel — FIX: z-index above everything */}
+      {/* Panel — FIX: position:fixed to escape the sticky header's backdrop-filter
+           stacking context. backdrop-filter creates a new stacking context that traps
+           any absolutely-positioned children regardless of their z-index.
+           Fixed positioning breaks out of it and renders at viewport level. */}
       {open && (
-        <div ref={panelRef} className={styles.panel}>
+        <div
+          ref={panelRef}
+          className={styles.panel}
+          style={{ top: panelPos.top, right: panelPos.right }}
+        >
           {/* Header */}
           <div className={styles.panelHeader}>
             <div>

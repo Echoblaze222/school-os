@@ -52,18 +52,21 @@
   100% { transform: scale(1); }
 }
 
-/* ── Panel — FIX: z-index 400 so it always appears on top ─── */
+/* ── Panel — FIX: position:fixed to escape backdrop-filter stacking context ── *
+ * backdrop-filter on the sticky header creates a new stacking context.         *
+ * Any position:absolute child is trapped inside it regardless of z-index.      *
+ * position:fixed renders at the viewport level, breaking free of it.           *
+ * Top/right coords are injected as inline style from getBoundingClientRect().  */
 .panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
+  position: fixed;  /* was: absolute — changed to escape stacking context */
+  /* top and right are set by inline style from JS */
   width: 340px;
   max-height: 480px;
   background: var(--bg-elevated);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-  z-index: 400; /* FIX: above nav (300) and everything else */
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -72,8 +75,9 @@
 
 @media (max-width: 400px) {
   .panel {
-    right: -60px;
-    width: calc(100vw - 32px);
+    /* On very small screens, cap width and let JS handle horizontal position */
+    width: calc(100vw - 16px);
+    max-width: 340px;
   }
 }
 
