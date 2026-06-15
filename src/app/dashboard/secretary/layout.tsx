@@ -16,22 +16,16 @@ export default async function SecretaryLayout({
   let fontFamily   = 'Inter'
 
   if (user) {
+    // profiles.school_id references schools.id — use schools(*) join, not school_branding
     const { data: profile } = await supabase
       .from('profiles')
-      .select('school_id')
+      .select('school_id, schools(primary_color, font_family)')
       .eq('id', user.id)
       .single()
 
-    if (profile?.school_id) {
-      const { data: school } = await supabase
-        .from('school_branding')
-        .select('primary_color, font_family')
-        .eq('id', profile.school_id)
-        .single()
-
-      if (school?.primary_color) primaryColor = school.primary_color
-      if (school?.font_family)   fontFamily   = school.font_family
-    }
+    const school = (profile as any)?.schools ?? null
+    if (school?.primary_color) primaryColor = school.primary_color
+    if (school?.font_family)   fontFamily   = school.font_family
   }
 
   return (
@@ -40,4 +34,5 @@ export default async function SecretaryLayout({
       {children}
     </>
   )
-}
+  }
+      
