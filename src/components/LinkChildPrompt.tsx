@@ -37,7 +37,8 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error ?? 'Failed to link'); setLoading(false); return }
-    router.refresh()
+    // PARENT FIX: hard reload so the parent dashboard re-fetches all children
+    window.location.reload()
   }
 
   return (
