@@ -12,6 +12,9 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const [items,   setItems]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab,     setTab]     = useState<'pending'|'submitted'|'all'>('pending')
+  // BUG 9 FIX: track per-assignment answer text and which card is expanded
+  const [answers,  setAnswers]  = useState<Record<string, string>>({})
+  const [expanded, setExpanded] = useState<string | null>(null)
   const supabase    = createClient()
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
@@ -44,10 +47,13 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   }
 
   async function submitAssignment(assignmentId: string) {
+    // BUG 9 FIX: collect and send answer_text
+    const answerText = answers[assignmentId] ?? ''
     await supabase.from('assignment_submissions').upsert({
       assignment_id: assignmentId,
       student_id:    userId,
       school_id:     school?.id,
+      answer_text:   answerText,
       status:        'submitted',
       submitted_at:  new Date().toISOString(),
     }, { onConflict: 'assignment_id,student_id' })
@@ -56,6 +62,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
         ? { ...i, submission: { status: 'submitted', submitted_at: new Date().toISOString() } }
         : i
     ))
+    setExpanded(null)
   }
 
   const filtered = tab === 'all' ? items
@@ -115,10 +122,35 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                       </div>
                       {!submitted && (
                         <div style={{ paddingLeft:56 }}>
-                          <button onClick={() => submitAssignment(item.id)}
-                            style={{ padding:'6px 16px', background:schoolColor, color:'#fff', border:'none', borderRadius:999, fontWeight:700, fontSize:'0.75rem', cursor:'pointer' }}>
-                            Mark as Submitted
-                          </button>
+                          {/* BUG 9 FIX: expand to show answer textarea before submitting */}
+                          {expanded === item.id && (
+                            <textarea
+                              value={answers[item.id] ?? ''}
+                              onChange={e => setAnswers(a => ({ ...a, [item.id]: e.target.value }))}
+                              placeholder="Type your answer here..."
+                              rows={4}
+                              style={{
+                                width: '100%', padding: '10px 12px', marginBottom: 8,
+                                background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+                                borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem',
+                                resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+                              }}
+                            />
+                          )}
+                          <div style={{ display:'flex', gap:8 }}>
+                            <button
+                              onClick={() => expanded === item.id ? submitAssignment(item.id) : setExpanded(item.id)}
+                              style={{ padding:'6px 16px', background:schoolColor, color:'#fff', border:'none', borderRadius:999, fontWeight:700, fontSize:'0.75rem', cursor:'pointer' }}>
+                              {expanded === item.id ? 'Submit Answer' : 'Write Answer'}
+                            </button>
+                            {expanded === item.id && (
+                              <button
+                                onClick={() => setExpanded(null)}
+                                style={{ padding:'6px 12px', background:'var(--glass-bg)', color:'var(--text-muted)', border:'1px solid var(--glass-border)', borderRadius:999, fontWeight:700, fontSize:'0.75rem', cursor:'pointer' }}>
+                                Cancel
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                       {item.submission?.feedback && (
