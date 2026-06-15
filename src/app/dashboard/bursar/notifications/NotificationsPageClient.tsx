@@ -325,6 +325,30 @@ export default function NotificationsPageClient({
 
         <div style={{ height: '100px' }} />
       </div>
+
+      {/* Bottom Nav - BUG 5 FIX: was missing for bursar */}
+      <nav className="bottom-nav">
+        <a href={dashboardPath} className="nav-item">
+          <span style={{ fontSize: '1.2rem' }}>🏠</span>
+          <span>Home</span>
+        </a>
+        <a href={`${dashboardPath}/notifications`} className="nav-item active">
+          <span style={{ fontSize: '1.2rem' }}>🔔</span>
+          <span>Alerts</span>
+        </a>
+        <a href={dashboardPath} className="nav-home">
+          <span style={{ fontSize: '1.3rem' }}>👤</span>
+        </a>
+        <a href={`${dashboardPath}/chat`} className="nav-item">
+          <span style={{ fontSize: '1.2rem' }}>💬</span>
+          <span>Chat</span>
+        </a>
+        <a href={`${dashboardPath}/profile`} className="nav-item">
+          <span style={{ fontSize: '1.2rem' }}>👤</span>
+          <span>Profile</span>
+        </a>
+      </nav>
     </div>
   )
-}
+  }
+  
