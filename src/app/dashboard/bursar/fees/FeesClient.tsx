@@ -13,11 +13,13 @@ const CUR_YEAR  = new Date().getMonth() >= 8
   ? `${new Date().getFullYear()}/${new Date().getFullYear()+1}`
   : `${new Date().getFullYear()-1}/${new Date().getFullYear()}`
 
-const BLANK = { class_level:'', fee_type:'school_fees', amount:'', description:'' }
+// BUG 3 FIX: use class_id (uuid) not class_level string
+const BLANK = { class_id: '', fee_type: 'school_fees', amount: '', description: '' }
 
 export default function FeesClient({ profile, school, userId }: Props) {
   const [rows,     setRows]     = useState<any[]>([])
-  const [classes,  setClasses]  = useState<string[]>([])
+  // BUG 3 FIX: store full class objects {id, name, class_level}
+  const [classes,  setClasses]  = useState<any[]>([])
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -32,37 +34,76 @@ export default function FeesClient({ profile, school, userId }: Props) {
   useEffect(() => { load() }, [term, year])
 
   async function loadClasses() {
+    // BUG 3 FIX: select id, name, class_level so we can store uuid as class_id
     const { data } = await supabase.from('classes')
-      .select('class_level').eq('school_id', school?.id)
-    if (data) {
-      const unique = [...new Set(data.map((c: any) => c.class_level).filter(Boolean))] as string[]
-      setClasses(unique)
-    }
+      .select('id, name, class_level').eq('school_id', school?.id)
+    if (data) setClasses(data)
   }
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('school_fees').select('*')
+    // BUG 3 FIX: query fee_structures instead of school_fees
+    const { data } = await supabase.from('fee_structures').select('*')
       .eq('school_id', school?.id).eq('term', term).eq('academic_year', year)
-      .order('class_level')
+      .order('class_id')
     if (data) setRows(data)
     setLoading(false)
   }
 
   async function submit() {
-    if (!form.class_level || !form.amount) return
+    if (!form.class_id || !form.amount) return
     setSaving(true)
-    await supabase.from('school_fees').upsert(
-      { ...form, amount: parseFloat(form.amount), school_id: school.id, term, academic_year: year },
-      { onConflict: 'school_id,class_level,term,academic_year,fee_type' }
+
+    // BUG 3 FIX: upsert to fee_structures with correct columns
+    await supabase.from('fee_structures').upsert(
+      {
+        class_id:      form.class_id,
+        description:   form.description || form.fee_type.replace(/_/g, ' '),
+        amount_ngn:    parseFloat(form.amount),
+        school_id:     school.id,
+        term,
+        academic_year: year,
+      },
+      { onConflict: 'school_id,class_id,term,academic_year' }
     )
+
+    // BUG 3 FIX Part D: Auto-generate invoices for all students in this class
+    const { data: feeRow } = await supabase
+      .from('fee_structures').select('id, amount_ngn')
+      .eq('school_id', school.id).eq('class_id', form.class_id)
+      .eq('term', term).eq('academic_year', year)
+      .single()
+
+    if (feeRow) {
+      const { data: students } = await supabase
+        .from('profiles').select('id')
+        .eq('school_id', school.id).eq('role', 'student').eq('class_id', form.class_id)
+
+      if (students?.length) {
+        const invoices = students.map((s: any) => ({
+          student_id:       s.id,
+          school_id:        school.id,
+          fee_structure_id: feeRow.id,
+          amount_due_ngn:   feeRow.amount_ngn,
+          amount_paid_ngn:  0,
+          balance_ngn:      feeRow.amount_ngn,
+          status:           'pending',
+          due_date:         new Date(Date.now() + 30 * 86400000).toISOString(),
+        }))
+        await supabase.from('payment_invoices').upsert(invoices, {
+          onConflict: 'student_id,fee_structure_id'
+        })
+      }
+    }
+
     setForm({ ...BLANK }); setShowForm(false); setSaving(false)
     load()
   }
 
   async function del(id: string) {
     setDeleting(id)
-    await supabase.from('school_fees').delete().eq('id', id)
+    // BUG 3 FIX: delete from fee_structures
+    await supabase.from('fee_structures').delete().eq('id', id)
     setDeleting(null); load()
   }
 
@@ -70,7 +111,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
     return new Intl.NumberFormat('en-NG', { style:'currency', currency:'NGN', minimumFractionDigits:0 }).format(n)
   }
 
-  const totalExpected = rows.reduce((s, r) => s + (r.amount ?? 0), 0)
+  // Helper: get class display name from id
+  function className(classId: string) {
+    const c = classes.find(c => c.id === classId)
+    return c ? (c.name ?? c.class_level) : classId
+  }
+
+  const totalExpected = rows.reduce((s, r) => s + (r.amount_ngn ?? 0), 0)
   const inp: React.CSSProperties = { width:'100%', height:42, padding:'0 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }
 
   return (
@@ -107,10 +154,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
           </p>
           <div style={{ display:'grid', gap:'var(--space-3)' }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'var(--space-3)' }}>
-              <select value={form.class_level}
-                onChange={e => setForm(p => ({...p, class_level:e.target.value}))} style={inp}>
+              {/* BUG 3 FIX: select uses c.id as value, displays c.name */}
+              <select value={form.class_id}
+                onChange={e => setForm(p => ({...p, class_id:e.target.value}))} style={inp}>
                 <option value="">Select class *</option>
-                {classes.map(c => <option key={c}>{c}</option>)}
+                {classes.map(c => (
+                  <option key={c.id} value={c.id}>{c.name ?? c.class_level}</option>
+                ))}
               </select>
               <select value={form.fee_type}
                 onChange={e => setForm(p => ({...p, fee_type:e.target.value}))} style={inp}>
@@ -127,10 +177,10 @@ export default function FeesClient({ profile, school, userId }: Props) {
               onChange={e => setForm(p => ({...p, description:e.target.value}))} style={inp}/>
           </div>
           <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>
-            <button onClick={submit} disabled={saving || !form.class_level || !form.amount}
+            <button onClick={submit} disabled={saving || !form.class_id || !form.amount}
               style={{ flex:1, height:42, background:sc, color:'#fff', border:'none', borderRadius:8,
                 fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
-                opacity:(saving || !form.class_level || !form.amount) ? 0.5 : 1 }}>
+                opacity:(saving || !form.class_id || !form.amount) ? 0.5 : 1 }}>
               {saving ? 'Saving…' : 'Save Fee'}
             </button>
             <button onClick={() => setShowForm(false)}
@@ -171,15 +221,15 @@ export default function FeesClient({ profile, school, userId }: Props) {
                     <WalletIcon size={16} color={sc}/>
                   </div>
                   <div className={styles.cardBody}>
-                    <p className={styles.cardTitle}>{item.class_level}</p>
+                    {/* BUG 3 FIX: display class name from uuid */}
+                    <p className={styles.cardTitle}>{className(item.class_id)}</p>
                     <p className={styles.cardMeta} style={{ textTransform:'capitalize' }}>
-                      {item.fee_type?.replace(/_/g,' ')}
-                      {item.description ? ` · ${item.description}` : ''}
+                      {item.description || 'School Fees'}
                     </p>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
                     <span style={{ fontSize:'0.9rem', fontWeight:800, color:sc }}>
-                      {fmtAmt(item.amount)}
+                      {fmtAmt(item.amount_ngn)}
                     </span>
                     <button onClick={() => del(item.id)} disabled={deleting === item.id}
                       style={{ background:'#EF444420', border:'none', borderRadius:6,
@@ -195,4 +245,5 @@ export default function FeesClient({ profile, school, userId }: Props) {
       <div className={styles.spacer}/>
     </RolePageWrapper>
   )
-}
+        }
+  
