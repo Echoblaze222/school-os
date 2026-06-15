@@ -125,11 +125,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   }
 
   async function createNote() {
-    const cls = teacherClasses.find(c => c.class_id === form.class_id)
-    if (!cls?.class_subject_id && !form.class_subject_id) {
-      alert('Could not resolve class subject. Please contact admin to set up class subjects.')
-      return
-    }
+    // BUG 8 FIX: removed hard block on class_subject_id — it's optional
     if (!form.title) return
     if (uploadMode === 'upload' && !uploadedFile) return
 
@@ -144,13 +140,17 @@ export default function NotesClient({ profile, school, userId }: Props) {
       }
     }
 
-    const csId = cls?.class_subject_id ?? form.class_subject_id
+    const cls  = teacherClasses.find(c => c.class_id === form.class_id)
+    const csId = cls?.class_subject_id ?? form.class_subject_id ?? null
 
+    // BUG 8 FIX: added class_id and visibility so notes are actually visible to students
     await supabase.from('school_notes').insert({
-      class_subject_id: csId,
+      class_subject_id: csId,           // nullable — no longer blocks save
+      class_id:         form.class_id || null,  // needed for student visibility filter
+      visibility:       'class',                 // required for student loadNotes() query
       title: form.title,
       description: uploadMode === 'type' ? form.content : null,
-      file_url: fileUrl ?? (uploadMode === 'upload' ? '' : ''),
+      file_url: fileUrl ?? null,
       term: form.term,
       academic_year: form.academic_year,
       uploaded_by: userId,
