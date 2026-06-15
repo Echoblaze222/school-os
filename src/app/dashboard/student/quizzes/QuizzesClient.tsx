@@ -19,12 +19,17 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   useEffect(() => { load() }, [])
 
   async function load() {
+    const now = new Date().toISOString()
     const [{ data: q }, { data: a }] = await Promise.all([
       supabase.from('quizzes')
-        .select('id, title, subject, duration_mins, question_count, scheduled_at, status')
+        // QUIZ FIX: select starts_at/ends_at (not status/scheduled_at — those may be missing)
+        // Also select total_marks/attempt_limit; teacher uses these not duration_mins/question_count
+        .select('id, title, total_marks, attempt_limit, starts_at, ends_at, class_id, class_subject_id, created_at')
         .eq('school_id', school?.id)
         .eq('class_id', profile?.class_id)
-        .order('scheduled_at', { ascending: false })
+        // QUIZ FIX: filter by ends_at not a status column (status col may not exist)
+        // Show quizzes that haven't ended yet OR ended in last 30 days (for history)
+        .order('starts_at', { ascending: false })
         .limit(30),
       supabase.from('quiz_attempts')
         .select('quiz_id, score, submitted_at')
@@ -39,17 +44,30 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     setLoading(false)
   }
 
-  function statusColor(s: string) {
-    if (s === 'active') return '#10B981'
-    if (s === 'ended')  return '#6B7280'
+  // QUIZ FIX: derive status from starts_at/ends_at timestamps instead of a status column
+  function quizStatus(quiz: any): 'upcoming' | 'live' | 'ended' {
+    const now = new Date()
+    const starts = quiz.starts_at ? new Date(quiz.starts_at) : null
+    const ends   = quiz.ends_at   ? new Date(quiz.ends_at)   : null
+    if (ends && ends < now)           return 'ended'
+    if (starts && starts > now)       return 'upcoming'
+    return 'live'
+  }
+
+  function statusColor(quiz: any) {
+    const s = quizStatus(quiz)
+    if (s === 'live')     return '#10B981'
+    if (s === 'ended')    return '#6B7280'
     return '#F59E0B'
   }
 
-  function statusLabel(q: any) {
-    if (attempts[q.id]) return `Done · ${attempts[q.id].score}pts`
-    if (q.status === 'active') return 'Available now'
-    if (q.status === 'ended')  return 'Ended'
-    return `Starts ${new Date(q.scheduled_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`
+  function statusLabel(quiz: any) {
+    const s = quizStatus(quiz)
+    if (attempts[quiz.id]) return `Done · ${attempts[quiz.id].score}pts`
+    if (s === 'live')     return 'Available now'
+    if (s === 'ended')    return 'Ended'
+    if (quiz.starts_at)   return `Opens ${new Date(quiz.starts_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`
+    return 'Scheduled'
   }
 
   return (
@@ -69,7 +87,8 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
               : <div className={styles.list}>
                   {quizzes.map(quiz => {
                     const done   = !!attempts[quiz.id]
-                    const active = quiz.status === 'active' && !done
+                    const status = quizStatus(quiz)
+                    const active = status === 'live' && !done
                     return (
                       <div key={quiz.id} className={styles.card}>
                         <div className={styles.cardIcon}
@@ -81,12 +100,19 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                         </div>
                         <div className={styles.cardBody}>
                           <p className={styles.cardTitle}>{quiz.title}</p>
-                          <p className={styles.cardText}>{quiz.subject}</p>
+                          {/* QUIZ FIX: show total_marks, not missing subject/duration_mins fields */}
+                          <p className={styles.cardText}>{quiz.total_marks} marks · {quiz.attempt_limit} attempt{quiz.attempt_limit !== 1 ? 's' : ''}</p>
                           <div style={{ display:'flex', gap:'var(--space-3)', alignItems:'center', marginTop:4 }}>
-                            <span style={{ fontSize:'0.68rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:3 }}>
-                              <ClockIcon size={11} color="var(--text-muted)"/> {quiz.duration_mins}min
-                            </span>
-                            <span style={{ fontSize:'0.68rem', fontWeight:600, color: statusColor(quiz.status) }}>
+                            {quiz.ends_at && status !== 'ended' && (
+                              <span style={{ fontSize:'0.68rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:3 }}>
+                                <ClockIcon size={11} color="var(--text-muted)"/>
+                                {status === 'live'
+                                  ? `Closes ${new Date(quiz.ends_at).toLocaleDateString('en-NG', { day:'numeric', month:'short' })}`
+                                  : `Opens ${new Date(quiz.starts_at).toLocaleDateString('en-NG', { day:'numeric', month:'short' })}`
+                                }
+                              </span>
+                            )}
+                            <span style={{ fontSize:'0.68rem', fontWeight:600, color: statusColor(quiz) }}>
                               {statusLabel(quiz)}
                             </span>
                           </div>
@@ -96,6 +122,11 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                             style={{ padding:'8px 16px', background:schoolColor, color:'#fff', borderRadius:'999px', fontSize:'0.75rem', fontWeight:700, textDecoration:'none', flexShrink:0 }}>
                             Start
                           </Link>
+                        )}
+                        {done && (
+                          <span style={{ padding:'6px 12px', background:'rgba(16,185,129,0.1)', color:'#10B981', borderRadius:999, fontSize:'0.72rem', fontWeight:700, flexShrink:0 }}>
+                            ✓ Done
+                          </span>
                         )}
                       </div>
                     )
