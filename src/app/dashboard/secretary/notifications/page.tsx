@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import NotificationsPageClient from '@/app/dashboard/bursar/notifications/NotificationsPageClient'
+import NotificationsPageClient from './NotificationsPageClient'
 
 export default async function SecretaryNotificationsPage() {
   const cookieStore = await cookies()
