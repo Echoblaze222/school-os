@@ -22,10 +22,13 @@ export default async function StudentDashboardPage() {
     { data: liveClass },
     { count: notifications },
   ] = await Promise.all([
+    // BUG 11 FIX: assignments are tied to classes, not directly to student_id
+    // The old query (.eq('student_id', user.id)) always returned 0
     supabase.from('assignments')
       .select('*', { count: 'exact', head: true })
-      .eq('student_id', user.id)
-      .eq('status', 'pending'),
+      .eq('school_id', profile?.school_id)
+      .eq('class_id', profile?.class_id)
+      .eq('status', 'active'),
     supabase.from('quizzes')
       .select('*', { count: 'exact', head: true })
       .eq('school_id', profile?.school_id)
