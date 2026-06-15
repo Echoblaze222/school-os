@@ -6,7 +6,14 @@ import { useRouter }           from 'next/navigation'
 import { createClient }        from '@/lib/supabase/client'
 import RolePageWrapper         from '@/components/RolePageWrapper'
 import styles                  from './submissions.module.css'
-import type { Submission }     from './page'
+
+export interface Submission {
+  id: string; student_id: string; student_name: string; student_avatar: string | null
+  assignment_id: string; assignment_title: string; class_name: string; subject: string
+  max_score: number; submitted_at: string; file_url: string | null; file_name: string | null
+  answer_text: string | null
+  score: number | null; feedback: string | null; graded_at: string | null; status: string
+}
 
 interface Props {
   submissions: Submission[]
