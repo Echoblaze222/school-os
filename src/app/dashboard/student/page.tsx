@@ -29,11 +29,14 @@ export default async function StudentDashboardPage() {
       .eq('school_id', profile?.school_id)
       .eq('class_id', profile?.class_id)
       .eq('status', 'active'),
+    // QUIZ FIX: count quizzes that are currently live (started but not ended)
+    // Teacher saves starts_at/ends_at — there is no separate status column
     supabase.from('quizzes')
       .select('*', { count: 'exact', head: true })
       .eq('school_id', profile?.school_id)
       .eq('class_id', profile?.class_id)
-      .gte('scheduled_at', new Date().toISOString()),
+      .lte('starts_at', new Date().toISOString())
+      .gte('ends_at',   new Date().toISOString()),
     supabase.from('online_classes')
       .select('id')
       .eq('school_id', profile?.school_id)
