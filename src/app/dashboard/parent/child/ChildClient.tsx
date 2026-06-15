@@ -5,37 +5,44 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { UserIcon, BarChartIcon, CalendarIcon, TrophyIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
-interface Props { profile: any; school: any; userId: string }
+// PARENT FIX: accept childId prop so parent can view any linked child via ?id=
+interface Props { profile: any; school: any; userId: string; childId?: string | null }
 
-export default function ChildClient({ profile, school, userId }: Props) {
-  const [child,     setChild]     = useState<any>(null)
-  const [results,   setResults]   = useState<any[]>([])
-  const [attendance,setAttendance]= useState({ present:0, absent:0, late:0 })
-  const [loading,   setLoading]   = useState(true)
+export default function ChildClient({ profile, school, userId, childId }: Props) {
+  const [child,      setChild]      = useState<any>(null)
+  const [children,   setChildren]   = useState<any[]>([])
+  const [results,    setResults]    = useState<any[]>([])
+  const [attendance, setAttendance] = useState({ present:0, absent:0, late:0 })
+  const [loading,    setLoading]    = useState(true)
   const supabase    = createClient()
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [childId])
 
   async function load() {
-    // Parent is linked to child via parent_id field on student profile
-    const { data: childData } = await supabase
+    // PARENT FIX: fetch ALL children first so we can show a switcher
+    const { data: allChildren } = await supabase
       .from('profiles')
       .select('id, full_name, default_code, class_level, avatar_url, email')
       .eq('parent_id', userId)
-      .single()
 
-    if (!childData) { setLoading(false); return }
-    setChild(childData)
+    if (!allChildren?.length) { setLoading(false); return }
+    setChildren(allChildren)
 
-    const [{ data:res }, { data:att }] = await Promise.all([
+    // PARENT FIX: use the ?id= param to pick which child, fall back to first
+    const target = childId
+      ? allChildren.find(c => c.id === childId) ?? allChildren[0]
+      : allChildren[0]
+    setChild(target)
+
+    const [{ data: res }, { data: att }] = await Promise.all([
       supabase.from('results')
         .select('subject, score, max_score, grade, term')
-        .eq('student_id', childData.id)
+        .eq('student_id', target.id)
         .order('created_at', { ascending:false }).limit(10),
       supabase.from('attendance')
         .select('status')
-        .eq('student_id', childData.id),
+        .eq('student_id', target.id),
     ])
 
     if (res) setResults(res)
@@ -62,6 +69,27 @@ export default function ChildClient({ profile, school, userId }: Props) {
         : !child
           ? <div className={styles.empty}><UserIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No child linked to your account. Contact the school admin.</p></div>
           : <>
+              {/* PARENT FIX: child switcher if more than one child linked */}
+              {children.length > 1 && (
+                <div style={{ display:'flex', gap:8, marginBottom:16, overflowX:'auto', paddingBottom:4 }}>
+                  {children.map(c => (
+                    <a
+                      key={c.id}
+                      href={`/dashboard/parent/child?id=${c.id}`}
+                      style={{
+                        padding:'5px 14px', borderRadius:999, fontSize:'0.73rem', fontWeight:700,
+                        textDecoration:'none',
+                        background: c.id === child.id ? schoolColor : 'var(--glass-bg)',
+                        color:      c.id === child.id ? '#fff' : 'var(--text-muted)',
+                        border:`1px solid ${c.id === child.id ? schoolColor : 'var(--glass-border)'}`,
+                        flexShrink:0,
+                      }}>
+                      {c.full_name?.split(' ')[0]}
+                    </a>
+                  ))}
+                </div>
+              )}
+
               {/* Child card */}
               <div style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', padding:'var(--space-5)', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', marginBottom:'var(--space-5)' }}>
                 <div style={{ width:60, height:60, borderRadius:'50%', background:schoolColor, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', flexShrink:0 }}>
