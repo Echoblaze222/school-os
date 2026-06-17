@@ -1,17 +1,32 @@
 'use client'
 
 // src/app/dashboard/bursar/record-payment/RecordPaymentClient.tsx
-// Fixed: queries profiles + payment_invoices (correct tables)
-// Fixed: inserts correct columns into fee_payments
+//
+// Matches the prop contract of the REAL page.tsx:
+//   userId, profile, school, bursarId, schoolInfo, usdRate, rateUpdatedAt
+//
+// Fixed vs the old broken version:
+//   - Searches `profiles` (not the nonexistent `student_profiles`)
+//   - Loads `payment_invoices` (not the nonexistent `fee_invoices`)
+//   - Writes to `payments` table — the one actually wired to payment_invoices
+//     via invoice_id FK and to digital_receipts. (`fee_payments` has no link
+//     to invoices at all and was the wrong target.)
+//   - Supports NGN + USD using the real exchange_rates-driven usdRate prop,
+//     matching payments.amount_paid_ngn / amount_paid_usd / currency_used / exchange_rate
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { SchoolInfo } from './page'
 
 interface Props {
-  bursarId:   string
-  bursarName: string
-  schoolId:   string
+  userId:        string
+  profile:       any
+  school:        any
+  bursarId:      string
+  schoolInfo:    SchoolInfo
+  usdRate:       number
+  rateUpdatedAt: string | null
 }
 
 interface StudentResult {
@@ -23,13 +38,14 @@ interface StudentResult {
 }
 
 interface Invoice {
-  id:          string
-  description: string
-  term:        string
-  amount_due:  number
-  amount_paid: number
-  balance:     number
-  status:      string
+  id:            string
+  description:   string
+  term:          string
+  academic_year: string
+  amount_due:    number
+  amount_paid:   number
+  balance:       number
+  status:        string
 }
 
 interface ReceiptData {
@@ -38,6 +54,7 @@ interface ReceiptData {
   className:        string | null
   admissionNumber:  string | null
   amount:           number
+  currency:         'NGN' | 'USD'
   paymentMethod:    string
   paymentDate:      string
   feesDescription:  string[]
@@ -46,13 +63,16 @@ interface ReceiptData {
 }
 
 function generateReceiptNumber(): string {
-  const d    = new Date()
+  const d     = new Date()
   const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
   const rand  = Math.floor(1000 + Math.random() * 9000)
   return `RCP-${stamp}-${rand}`
 }
 
-function fmt(amount: number) {
+function fmtCurrency(amount: number, currency: 'NGN' | 'USD'): string {
+  if (currency === 'USD') {
+    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
   return `₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
@@ -62,13 +82,19 @@ const PAYMENT_METHODS = [
   { value: 'pos',           label: '💳 POS / Card' },
 ]
 
-export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: Props) {
+const TERM_LABELS: Record<string, string> = {
+  first: 'First Term', second: 'Second Term', third: 'Third Term',
+}
+
+export default function RecordPaymentClient({
+  userId, profile, school, bursarId, schoolInfo, usdRate, rateUpdatedAt,
+}: Props) {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const supabase     = createClient()
 
-  const [mounted,         setMounted]         = useState(false)
-  const [isDark,          setIsDark]           = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const [isDark,  setIsDark]  = useState(true)
 
   // Student search
   const [searchQuery,     setSearchQuery]      = useState(searchParams.get('student') ?? '')
@@ -78,17 +104,17 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
   const [showDropdown,    setShowDropdown]     = useState(false)
 
   // Invoices
-  const [invoices,         setInvoices]        = useState<Invoice[]>([])
-  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
-  const [loadingInvoices,  setLoadingInvoices] = useState(false)
+  const [invoices,         setInvoices]         = useState<Invoice[]>([])
+  const [selectedInvoices, setSelectedInvoices]  = useState<Set<string>>(new Set())
+  const [loadingInvoices,  setLoadingInvoices]  = useState(false)
 
   // Payment form
-  const [amountStr,    setAmountStr]    = useState('')
+  const [currency,      setCurrency]      = useState<'NGN' | 'USD'>('NGN')
+  const [amountStr,     setAmountStr]     = useState('')
   const [paymentMethod, setPaymentMethod] = useState('cash')
-  const [paymentDate,  setPaymentDate]  = useState(() => new Date().toISOString().split('T')[0])
-  const [reference,    setReference]    = useState('')
-  const [notes,        setNotes]        = useState('')
-  const [term,         setTerm]         = useState('First Term')
+  const [paymentDate,   setPaymentDate]   = useState(() => new Date().toISOString().split('T')[0])
+  const [reference,     setReference]     = useState('')
+  const [notes,         setNotes]         = useState('')
 
   // Submit
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -96,6 +122,9 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
   const [receipt,      setReceipt]      = useState<ReceiptData | null>(null)
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const schoolId   = schoolInfo.school_id || school?.id || ''
+  const schoolName = schoolInfo.school_name || school?.name || 'School'
+  const bursarName = profile?.full_name ?? 'Bursar'
 
   useEffect(() => {
     setMounted(true)
@@ -104,7 +133,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
       setIsDark(false)
       document.documentElement.setAttribute('data-theme', 'light')
     }
-    // If came from invoice link, pre-load
     const invoiceId = searchParams.get('invoice')
     if (invoiceId) loadSingleInvoice(invoiceId)
   }, [])
@@ -125,30 +153,31 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
       const student = (data as any)['profiles!student_id']
       if (student) {
         setSelectedStudent({
-          id:                  student.id,
-          full_name:           student.full_name,
-          class_level:         student.class_level,
-          admission_number:    student.admission_number,
+          id:                   student.id,
+          full_name:            student.full_name,
+          class_level:          student.class_level,
+          admission_number:     student.admission_number,
           permanent_student_id: student.permanent_student_id,
         })
         setSearchQuery(student.full_name)
       }
       const fs = (data as any).fee_structures
       setInvoices([{
-        id:          data.id,
-        description: fs?.description ?? 'School Fees',
-        term:        fs?.term ?? '',
-        amount_due:  (data as any).amount_due_ngn,
-        amount_paid: (data as any).amount_paid_ngn,
-        balance:     (data as any).balance_ngn,
-        status:      (data as any).status,
+        id:            data.id,
+        description:   fs?.description ?? 'School Fees',
+        term:          fs?.term ?? '',
+        academic_year: fs?.academic_year ?? '',
+        amount_due:    (data as any).amount_due_ngn,
+        amount_paid:   (data as any).amount_paid_ngn,
+        balance:       (data as any).balance_ngn,
+        status:        (data as any).status,
       }])
       setSelectedInvoices(new Set([data.id]))
     }
     setLoadingInvoices(false)
   }
 
-  // Debounced search — queries `profiles` table (correct)
+  // Debounced search — queries `profiles` (correct table; was `student_profiles`)
   useEffect(() => {
     if (selectedStudent) return
     if (searchQuery.length < 2) { setSearchResults([]); setShowDropdown(false); return }
@@ -171,9 +200,9 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
     }, 350)
 
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current) }
-  }, [searchQuery, selectedStudent])
+  }, [searchQuery, selectedStudent, schoolId])
 
-  // Load invoices when student selected — queries `payment_invoices` (correct)
+  // Load invoices when student selected — queries `payment_invoices` (correct table; was `fee_invoices`)
   const loadInvoices = useCallback(async (studentId: string) => {
     setLoadingInvoices(true)
     const { data } = await supabase
@@ -188,13 +217,14 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
       .order('created_at', { ascending: false })
 
     setInvoices((data ?? []).map((inv: any) => ({
-      id:          inv.id,
-      description: inv.fee_structures?.description ?? 'School Fees',
-      term:        inv.fee_structures?.term ?? '',
-      amount_due:  inv.amount_due_ngn,
-      amount_paid: inv.amount_paid_ngn,
-      balance:     inv.balance_ngn,
-      status:      inv.status,
+      id:            inv.id,
+      description:   inv.fee_structures?.description ?? 'School Fees',
+      term:          inv.fee_structures?.term ?? '',
+      academic_year: inv.fee_structures?.academic_year ?? '',
+      amount_due:    inv.amount_due_ngn,
+      amount_paid:   inv.amount_paid_ngn,
+      balance:       inv.balance_ngn,
+      status:        inv.status,
     })))
     setSelectedInvoices(new Set())
     setLoadingInvoices(false)
@@ -226,47 +256,54 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
     })
   }
 
-  const amount        = parseFloat(amountStr) || 0
-  const totalBalance  = invoices
+  const amount          = parseFloat(amountStr) || 0
+  // Balance is always stored in NGN on the invoice; convert for display/limit-check if USD selected
+  const totalBalanceNgn = invoices
     .filter(i => selectedInvoices.has(i.id))
     .reduce((s, i) => s + i.balance, 0)
-  const canSubmit = selectedStudent && amount > 0 && amount <= totalBalance + 0.01
+  const totalBalanceDisplay = currency === 'USD' ? totalBalanceNgn / usdRate : totalBalanceNgn
+  const amountInNgn     = currency === 'USD' ? amount * usdRate : amount
+  const canSubmit       = !!selectedStudent && amount > 0 && amountInNgn <= totalBalanceNgn + 0.5
 
   async function handleSubmit() {
     if (!canSubmit || !selectedStudent) return
     setIsSubmitting(true)
     setErrorMsg('')
 
-    const receiptNum  = generateReceiptNumber()
+    const receiptNum      = generateReceiptNumber()
     const selectedInvList = invoices.filter(i => selectedInvoices.has(i.id))
 
-    // Determine term from first selected invoice
-    const invTerm = selectedInvList[0]?.term ?? 'First Term'
-    const termLabel = invTerm === 'first' ? 'First Term'
-      : invTerm === 'second' ? 'Second Term'
-      : invTerm === 'third'  ? 'Third Term'
-      : invTerm
+    // payments table links directly to ONE invoice via invoice_id FK.
+    // If multiple invoices are selected, record one payments row per invoice,
+    // splitting the amount across each invoice's balance in order.
+    let remainingNgn = amountInNgn
+    const paymentRows: any[] = []
 
-    // 1. Insert into fee_payments with correct columns
-    const { error: payErr } = await supabase
-      .from('fee_payments')
-      .insert({
-        school_id:      schoolId,
-        student_id:     selectedStudent.id,
-        student_name:   selectedStudent.full_name,
-        class_level:    selectedStudent.class_level ?? '',
-        amount:         amount,
-        term:           termLabel,
-        academic_year:  selectedInvList[0]
-          ? (selectedInvList[0] as any)?.academic_year ?? ''
-          : '',
-        fee_type:       'school_fees',
-        payment_method: paymentMethod,
-        reference:      reference || null,
-        receipt_number: receiptNum,
-        notes:          notes || null,
-        recorded_by:    bursarId,
+    for (const inv of selectedInvList) {
+      if (remainingNgn <= 0) break
+      const applyNgn = Math.min(remainingNgn, inv.balance)
+      const applyUsd = currency === 'USD' ? applyNgn / usdRate : null
+
+      paymentRows.push({
+        invoice_id:         inv.id,
+        student_id:         selectedStudent.id,
+        received_by:        bursarId,
+        amount_paid_ngn:    applyNgn,
+        amount_paid_usd:    applyUsd,
+        currency_used:      currency,
+        exchange_rate:      currency === 'USD' ? usdRate : null,
+        receipt_number:     selectedInvList.length > 1 ? `${receiptNum}-${inv.id.slice(0, 4)}` : receiptNum,
+        payment_method:     paymentMethod,
+        payment_reference:  reference || null,
+        notes:              notes || null,
+        paid_at:            new Date(paymentDate).toISOString(),
+        school_id:          schoolId,
       })
+
+      remainingNgn -= applyNgn
+    }
+
+    const { error: payErr } = await supabase.from('payments').insert(paymentRows)
 
     if (payErr) {
       setErrorMsg(payErr.message)
@@ -274,13 +311,13 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
       return
     }
 
-    // 2. Update each selected payment_invoice
-    let remaining = amount
+    // Update each selected payment_invoice with new paid/balance/status
+    let remaining2 = amountInNgn
     for (const inv of selectedInvList) {
-      if (remaining <= 0) break
-      const apply    = Math.min(remaining, inv.balance)
-      const newPaid  = inv.amount_paid + apply
-      const newBal   = inv.amount_due - newPaid
+      if (remaining2 <= 0) break
+      const apply     = Math.min(remaining2, inv.balance)
+      const newPaid   = inv.amount_paid + apply
+      const newBal    = inv.amount_due - newPaid
       const newStatus = newPaid >= inv.amount_due ? 'completed' : 'partial'
 
       await supabase
@@ -293,25 +330,24 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
         })
         .eq('id', inv.id)
 
-      remaining -= apply
+      remaining2 -= apply
     }
 
-    // Build receipt
     setReceipt({
       receiptNumber:   receiptNum,
       studentName:     selectedStudent.full_name,
       className:       selectedStudent.class_level,
       admissionNumber: selectedStudent.permanent_student_id ?? selectedStudent.admission_number,
       amount,
+      currency,
       paymentMethod,
       paymentDate,
       feesDescription: selectedInvList.map(i => i.description),
       bursarName,
-      schoolName:      '',
+      schoolName,
     })
 
     setIsSubmitting(false)
-    // Reload invoices to show updated balances
     loadInvoices(selectedStudent.id)
   }
 
@@ -325,7 +361,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
           maxWidth: 480, margin: '0 auto', background: 'var(--glass-bg)',
           border: '1px solid var(--glass-border)', borderRadius: 16, overflow: 'hidden',
         }}>
-          {/* Receipt header */}
           <div style={{ background: '#7C3AED', padding: '20px 24px', textAlign: 'center' }}>
             <p style={{ color: '#ffffff99', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', margin: 0 }}>
               PAYMENT RECEIPT
@@ -336,25 +371,24 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
           </div>
 
           <div style={{ padding: '20px 24px' }}>
-            {/* Amount */}
             <div style={{ textAlign: 'center', margin: '0 0 20px' }}>
               <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: 0 }}>
                 AMOUNT PAID
               </p>
               <p style={{ fontSize: '2rem', fontWeight: 900, color: '#10B981', margin: '4px 0 0' }}>
-                {fmt(receipt.amount)}
+                {fmtCurrency(receipt.amount, receipt.currency)}
               </p>
             </div>
 
-            {/* Details */}
             {[
-              ['Student',    receipt.studentName],
-              ['Class',      receipt.className ?? '—'],
-              ['Adm. No.',   receipt.admissionNumber ?? '—'],
-              ['Date',       receipt.paymentDate],
-              ['Method',     receipt.paymentMethod.replace('_', ' ').toUpperCase()],
+              ['School',      receipt.schoolName],
+              ['Student',     receipt.studentName],
+              ['Class',       receipt.className ?? '—'],
+              ['Adm. No.',    receipt.admissionNumber ?? '—'],
+              ['Date',        receipt.paymentDate],
+              ['Method',      receipt.paymentMethod.replace('_', ' ').toUpperCase()],
               ['Recorded by', receipt.bursarName],
-              ['Fees',       receipt.feesDescription.join(', ')],
+              ['Fees',        receipt.feesDescription.join(', ')],
             ].map(([label, value]) => (
               <div key={label} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -367,7 +401,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
               </div>
             ))}
 
-            {/* Actions */}
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               <button
                 onClick={() => window.print()}
@@ -404,7 +437,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', padding: '0 0 80px' }}>
-      {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '16px', borderBottom: '1px solid var(--glass-border)',
@@ -491,7 +523,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
                       style={{
                         padding: '10px 14px', cursor: 'pointer',
                         borderBottom: '1px solid var(--glass-border)',
-                        transition: 'background 0.15s',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#7C3AED15')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
@@ -543,11 +574,8 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {invoices.map(inv => {
-                  const selected = selectedInvoices.has(inv.id)
-                  const termLabel = inv.term === 'first' ? 'First Term'
-                    : inv.term === 'second' ? 'Second Term'
-                    : inv.term === 'third'  ? 'Third Term'
-                    : inv.term
+                  const selected  = selectedInvoices.has(inv.id)
+                  const termLabel = TERM_LABELS[inv.term] ?? inv.term
                   return (
                     <div
                       key={inv.id}
@@ -557,7 +585,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
                         padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
                         border: `1px solid ${selected ? '#7C3AED60' : 'var(--glass-border)'}`,
                         background: selected ? '#7C3AED10' : 'var(--input-bg)',
-                        transition: 'all 0.15s',
                       }}>
                       <div style={{
                         width: 20, height: 20, borderRadius: 5, flexShrink: 0,
@@ -572,14 +599,14 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
                           {inv.description}
                         </p>
                         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                          {termLabel} · Balance: {fmt(inv.balance)}
+                          {termLabel}{inv.academic_year ? ` · ${inv.academic_year}` : ''}
                         </p>
                       </div>
                       <span style={{
                         fontSize: '0.82rem', fontWeight: 800,
                         color: inv.status === 'partial' ? '#F59E0B' : '#EF4444',
                       }}>
-                        {fmt(inv.balance)}
+                        ₦{inv.balance.toLocaleString()}
                       </span>
                     </div>
                   )
@@ -599,7 +626,6 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
               STEP 3 — PAYMENT DETAILS
             </p>
 
-            {/* Total balance selected */}
             <div style={{
               padding: '10px 14px', background: '#7C3AED10',
               border: '1px solid #7C3AED30', borderRadius: 10, marginBottom: 14, textAlign: 'center',
@@ -608,23 +634,38 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
                 TOTAL SELECTED BALANCE
               </p>
               <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#7C3AED', margin: '4px 0 0' }}>
-                {fmt(totalBalance)}
+                {fmtCurrency(totalBalanceDisplay, currency)}
               </p>
+              {currency === 'USD' && (
+                <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                  ≈ ₦{totalBalanceNgn.toLocaleString()} at ₦{usdRate.toLocaleString()}/$
+                  {rateUpdatedAt ? ` · updated ${new Date(rateUpdatedAt).toLocaleDateString()}` : ''}
+                </p>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
-                  AMOUNT PAID (₦) *
+                  AMOUNT + CURRENCY *
                 </label>
-                <input
-                  type="number" placeholder={`Max: ${totalBalance}`}
-                  value={amountStr} onChange={e => setAmountStr(e.target.value)}
-                  style={inp}
-                />
-                {amount > totalBalance + 0.01 && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="number" placeholder={`Max: ${totalBalanceDisplay.toFixed(currency === 'USD' ? 2 : 0)}`}
+                    value={amountStr} onChange={e => setAmountStr(e.target.value)}
+                    style={{ ...inp, flex: 1 }}
+                  />
+                  <select
+                    value={currency}
+                    onChange={e => setCurrency(e.target.value as 'NGN' | 'USD')}
+                    style={{ ...inp, width: 110, flexShrink: 0 }}>
+                    <option value="NGN">NGN — Naira</option>
+                    <option value="USD">USD — Dollar</option>
+                  </select>
+                </div>
+                {amountInNgn > totalBalanceNgn + 0.5 && (
                   <p style={{ fontSize: '0.72rem', color: '#EF4444', margin: '4px 0 0', padding: '0 4px' }}>
-                    Amount cannot exceed outstanding balance of {fmt(totalBalance)}
+                    ⚠ Amount exceeds selected balance of {fmtCurrency(totalBalanceDisplay, currency)}
                   </p>
                 )}
               </div>
@@ -640,7 +681,7 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
                       onClick={() => setPaymentMethod(m.value)}
                       style={{
                         padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontWeight: 700,
-                        fontSize: '0.75rem', textAlign: 'center', transition: 'all 0.15s',
+                        fontSize: '0.75rem', textAlign: 'center',
                         border: `1.5px solid ${paymentMethod === m.value ? '#7C3AED' : 'var(--input-border)'}`,
                         background: paymentMethod === m.value ? '#7C3AED15' : 'var(--input-bg)',
                         color: paymentMethod === m.value ? '#7C3AED' : 'var(--text-muted)',
@@ -701,9 +742,13 @@ export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: 
                 border: canSubmit ? 'none' : '1px solid var(--input-border)',
                 borderRadius: 12, fontWeight: 800, fontSize: '0.95rem',
                 cursor: canSubmit ? 'pointer' : 'not-allowed',
-                opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s',
+                opacity: isSubmitting ? 0.7 : 1,
               }}>
-              {isSubmitting ? 'Recording…' : canSubmit ? `Record ${fmt(amount)} Payment` : 'Enter amount to continue'}
+              {isSubmitting
+                ? 'Recording…'
+                : canSubmit
+                  ? `Record ${fmtCurrency(amount, currency)} Payment`
+                  : 'Enter amount to continue'}
             </button>
           </div>
         )}
