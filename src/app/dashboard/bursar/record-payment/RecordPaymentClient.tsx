@@ -1,712 +1,713 @@
 'use client'
-// src/app/dashboard/bursar/record-payment/RecordPaymentClient.tsx
 
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { useRouter }        from 'next/navigation'
-import { createClient }     from '@/lib/supabase/client'
-import RolePageWrapper      from '@/components/RolePageWrapper'
-import styles               from './record-payment.module.css'
-import type { SchoolInfo }  from './page'
+// src/app/dashboard/bursar/record-payment/RecordPaymentClient.tsx
+// Fixed: queries profiles + payment_invoices (correct tables)
+// Fixed: inserts correct columns into fee_payments
+
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
-  userId:        string
-  profile:       any
-  school:        any
-  bursarId:      string
-  schoolInfo:    SchoolInfo
-  usdRate:       number
-  rateUpdatedAt: string | null
+  bursarId:   string
+  bursarName: string
+  schoolId:   string
 }
 
 interface StudentResult {
-  id:               string
-  full_name:        string
-  admission_number: string
-  class_name:       string
-  avatar_url:       string | null
+  id:          string
+  full_name:   string
+  class_level: string | null
+  admission_number: string | null
+  permanent_student_id: string | null
 }
 
-interface PendingInvoice {
-  id:              string
-  description:     string
-  term:            string
-  academic_year:   string
-  amount_due_ngn:  number
-  amount_paid_ngn: number
-  balance_ngn:     number
-  status:          string
+interface Invoice {
+  id:          string
+  description: string
+  term:        string
+  amount_due:  number
+  amount_paid: number
+  balance:     number
+  status:      string
 }
 
-interface Receipt { receiptNumber: string; paymentId: string; pdfUrl?: string }
-
-type Step     = 1 | 2 | 3 | 4
-type Method   = 'Cash' | 'Bank Transfer' | 'Card' | 'Online'
-type Currency = 'NGN' | 'USD'
-
-const METHOD_ICONS: Record<Method, string> = {
-  Cash: '💵', 'Bank Transfer': '🏦', Card: '💳', Online: '🌐',
+interface ReceiptData {
+  receiptNumber:    string
+  studentName:      string
+  className:        string | null
+  admissionNumber:  string | null
+  amount:           number
+  paymentMethod:    string
+  paymentDate:      string
+  feesDescription:  string[]
+  bursarName:       string
+  schoolName:       string
 }
 
-function fmtNGN(n: number) {
-  return new Intl.NumberFormat('en-NG', {
-    style: 'currency', currency: 'NGN', maximumFractionDigits: 0,
-  }).format(n)
-}
-function fmtUSD(n: number, rate: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD', minimumFractionDigits: 2,
-  }).format(n / rate)
-}
-function initials(n: string) {
-  return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-}
-function genReceipt() {
-  return `RCP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+function generateReceiptNumber(): string {
+  const d    = new Date()
+  const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+  const rand  = Math.floor(1000 + Math.random() * 9000)
+  return `RCP-${stamp}-${rand}`
 }
 
-function StepDots({ step, total = 4 }: { step: Step; total?: number }) {
-  return (
-    <div className={styles.stepDots}>
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={`${styles.dot} ${step > i + 1 ? styles.dotDone : ''} ${step === i + 1 ? styles.dotActive : ''}`}
-        >
-          {step > i + 1 ? '✓' : i + 1}
-        </div>
-      ))}
-    </div>
-  )
+function fmt(amount: number) {
+  return `₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
-export default function RecordPaymentClient({
-  userId, profile, school, bursarId, schoolInfo, usdRate, rateUpdatedAt,
-}: Props) {
-  const router   = useRouter()
-  const supabase = createClient()
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+const PAYMENT_METHODS = [
+  { value: 'cash',          label: '💵 Cash' },
+  { value: 'bank_transfer', label: '🏦 Bank Transfer' },
+  { value: 'pos',           label: '💳 POS / Card' },
+]
 
-  const [step,       setStep]       = useState<Step>(1)
-  const [query,      setQuery]      = useState('')
-  const [results,    setResults]    = useState<StudentResult[]>([])
-  const [searching,  setSearching]  = useState(false)
-  const [student,    setStudent]    = useState<StudentResult | null>(null)
-  const [invoices,   setInvoices]   = useState<PendingInvoice[]>([])
-  const [loadInv,    setLoadInv]    = useState(false)
-  const [invoice,    setInvoice]    = useState<PendingInvoice | null>(null)
-  const [amount,     setAmount]     = useState('')
-  const [currency,   setCurrency]   = useState<Currency>('NGN')
-  const [method,     setMethod]     = useState<Method>('Cash')
-  const [reference,  setReference]  = useState('')
-  const [notes,      setNotes]      = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [submitErr,  setSubmitErr]  = useState('')
-  const [receipt,    setReceipt]    = useState<Receipt | null>(null)
+export default function RecordPaymentClient({ bursarId, bursarName, schoolId }: Props) {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const supabase     = createClient()
+
+  const [mounted,         setMounted]         = useState(false)
+  const [isDark,          setIsDark]           = useState(true)
+
+  // Student search
+  const [searchQuery,     setSearchQuery]      = useState(searchParams.get('student') ?? '')
+  const [searchResults,   setSearchResults]    = useState<StudentResult[]>([])
+  const [isSearching,     setIsSearching]      = useState(false)
+  const [selectedStudent, setSelectedStudent]  = useState<StudentResult | null>(null)
+  const [showDropdown,    setShowDropdown]     = useState(false)
+
+  // Invoices
+  const [invoices,         setInvoices]        = useState<Invoice[]>([])
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
+  const [loadingInvoices,  setLoadingInvoices] = useState(false)
+
+  // Payment form
+  const [amountStr,    setAmountStr]    = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [paymentDate,  setPaymentDate]  = useState(() => new Date().toISOString().split('T')[0])
+  const [reference,    setReference]    = useState('')
+  const [notes,        setNotes]        = useState('')
+  const [term,         setTerm]         = useState('First Term')
+
+  // Submit
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMsg,     setErrorMsg]     = useState('')
+  const [receipt,      setReceipt]      = useState<ReceiptData | null>(null)
+
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    document.documentElement.setAttribute(
-      'data-theme',
-      localStorage.getItem('schoolos_theme') ?? 'dark',
-    )
+    setMounted(true)
+    const saved = localStorage.getItem('schoolos_theme')
+    if (saved === 'light') {
+      setIsDark(false)
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+    // If came from invoice link, pre-load
+    const invoiceId = searchParams.get('invoice')
+    if (invoiceId) loadSingleInvoice(invoiceId)
   }, [])
 
-  const amountNGN = (() => {
-    const v = parseFloat(amount)
-    if (isNaN(v) || v <= 0) return 0
-    return currency === 'NGN' ? v : Math.round(v * usdRate)
-  })()
-
-  // ── Student search ────────────────────────────────────────────────────────
-  // FIX: `admission_number` does NOT exist on `profiles` — it lives in
-  // `student_profiles`. Searching with .or('admission_number.ilike…') on
-  // `profiles` returns nothing. We search only by full_name here and also
-  // do a separate lookup by admission number via student_profiles when the
-  // query looks like an admission number (starts with a letter + digits).
-  const search = useCallback(async (q: string) => {
-    const trimmed = q.trim()
-    if (trimmed.length < 2) { setResults([]); return }
-    setSearching(true)
-
-    const schoolId = schoolInfo.school_id || ''
-
-    // Primary: search by name on profiles
-    const namePromise = supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, class_level, default_code')
-      .eq('role', 'student')
-      .eq('school_id', schoolId)
-      .ilike('full_name', `%${trimmed}%`)
-      .limit(8)
-
-    // Secondary: search by admission_number in student_profiles, then join profile
-    const admissionPromise = supabase
-      .from('student_profiles')
-      .select('user_id, admission_number')
-      .ilike('admission_number', `%${trimmed}%`)
-      .limit(8)
-
-    const [{ data: byName }, { data: byAdm }] = await Promise.all([
-      namePromise,
-      admissionPromise,
-    ])
-
-    // Collect all user IDs from admission search
-    const admUserIds = (byAdm ?? []).map((r: any) => r.user_id as string)
-
-    // If there are admission matches, fetch their profiles (filter to same school)
-    let byAdmProfiles: any[] = []
-    if (admUserIds.length > 0) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, class_level, default_code')
-        .eq('role', 'student')
-        .eq('school_id', schoolId)
-        .in('id', admUserIds)
-      byAdmProfiles = data ?? []
-    }
-
-    // Merge, de-duplicate by id
-    const seen = new Set<string>()
-    const merged: any[] = []
-    for (const r of [...(byName ?? []), ...byAdmProfiles]) {
-      if (!seen.has(r.id)) { seen.add(r.id); merged.push(r) }
-    }
-
-    // Build admission_number map from the student_profiles result
-    const admMap: Record<string, string> = {}
-    for (const r of byAdm ?? []) admMap[r.user_id] = r.admission_number
-
-    setResults(
-      merged.map(r => ({
-        id:               r.id,
-        full_name:        r.full_name   ?? 'Unknown',
-        admission_number: admMap[r.id]  ?? r.default_code ?? '—',
-        class_name:       r.class_level ?? '—',
-        avatar_url:       r.avatar_url  ?? null,
-      })),
-    )
-    setSearching(false)
-  }, [supabase, schoolInfo.school_id])
-
-  function onQuery(q: string) {
-    setQuery(q)
-    if (debounce.current) clearTimeout(debounce.current)
-    debounce.current = setTimeout(() => search(q), 280)
-  }
-
-  // ── Pick student → load invoices ──────────────────────────────────────────
-  async function pickStudent(s: StudentResult) {
-    setStudent(s); setResults([]); setQuery(''); setLoadInv(true); setStep(2)
-
+  async function loadSingleInvoice(invoiceId: string) {
+    setLoadingInvoices(true)
     const { data } = await supabase
       .from('payment_invoices')
       .select(`
-        id, amount_due_ngn, amount_paid_ngn, balance_ngn, status, due_date,
-        fee_structures ( description, term, academic_year )
+        id, amount_due_ngn, amount_paid_ngn, balance_ngn, status,
+        fee_structures ( description, term, academic_year ),
+        profiles!student_id ( id, full_name, class_level, admission_number, permanent_student_id )
       `)
-      .eq('student_id', s.id)
-      .in('status', ['unpaid', 'pending', 'partial', 'overdue'])
-      .order('due_date', { ascending: true })
-
-    setInvoices(
-      (data ?? []).map((inv: any) => ({
-        id:              inv.id,
-        description:     (inv.fee_structures as any)?.description ?? 'School Fees',
-        term:            (inv.fee_structures as any)?.term        ?? '',
-        academic_year:   (inv.fee_structures as any)?.academic_year ?? '',
-        amount_due_ngn:  inv.amount_due_ngn  ?? 0,
-        amount_paid_ngn: inv.amount_paid_ngn ?? 0,
-        balance_ngn:     inv.balance_ngn     ?? 0,
-        status:          inv.status          ?? 'unpaid',
-      })),
-    )
-    setLoadInv(false)
-  }
-
-  function pickInvoice(inv: PendingInvoice) {
-    setInvoice(inv)
-    setAmount(String(inv.balance_ngn))
-    setCurrency('NGN')
-    setStep(3)
-  }
-
-  // ── Submit payment ────────────────────────────────────────────────────────
-  async function handleSubmit() {
-    if (!student || !invoice || amountNGN <= 0) {
-      setSubmitErr('Please fill all fields.')
-      return
-    }
-    if (amountNGN > invoice.balance_ngn) {
-      setSubmitErr(`Exceeds balance of ${fmtNGN(invoice.balance_ngn)}`)
-      return
-    }
-    setSubmitting(true); setSubmitErr('')
-    const receiptNumber = genReceipt()
-
-    const { data: pmtRow, error: pmtErr } = await supabase
-      .from('payments')
-      .insert({
-        student_id:        student.id,
-        invoice_id:        invoice.id,
-        received_by:       bursarId,
-        school_id:         schoolInfo.school_id || null,
-        amount_paid_ngn:   amountNGN,
-        currency_used:     currency,
-        payment_method:    method,
-        payment_reference: reference.trim() || null,
-        notes:             notes.trim()     || null,
-        receipt_number:    receiptNumber,
-        paid_at:           new Date().toISOString(),
-      })
-      .select('id')
+      .eq('id', invoiceId)
       .single()
 
-    if (pmtErr) { setSubmitErr(pmtErr.message); setSubmitting(false); return }
+    if (data) {
+      const student = (data as any)['profiles!student_id']
+      if (student) {
+        setSelectedStudent({
+          id:                  student.id,
+          full_name:           student.full_name,
+          class_level:         student.class_level,
+          admission_number:    student.admission_number,
+          permanent_student_id: student.permanent_student_id,
+        })
+        setSearchQuery(student.full_name)
+      }
+      const fs = (data as any).fee_structures
+      setInvoices([{
+        id:          data.id,
+        description: fs?.description ?? 'School Fees',
+        term:        fs?.term ?? '',
+        amount_due:  (data as any).amount_due_ngn,
+        amount_paid: (data as any).amount_paid_ngn,
+        balance:     (data as any).balance_ngn,
+        status:      (data as any).status,
+      }])
+      setSelectedInvoices(new Set([data.id]))
+    }
+    setLoadingInvoices(false)
+  }
 
-    // Also record in fee_payments ledger
-    await supabase.from('fee_payments').insert({
-      school_id:      schoolInfo.school_id || null,
-      student_id:     student.id,
-      invoice_id:     invoice.id,
-      student_name:   student.full_name,
-      class_level:    student.class_name,
-      description:    invoice.description,
-      term:           invoice.term,
-      academic_year:  invoice.academic_year,
-      amount:         amountNGN,
-      currency:       currency,
-      payment_method: method,
-      reference:      reference.trim() || null,
-      receipt_number: receiptNumber,
-      notes:          notes.trim()     || null,
-      status:         'paid',
-      recorded_by:    bursarId,
+  // Debounced search — queries `profiles` table (correct)
+  useEffect(() => {
+    if (selectedStudent) return
+    if (searchQuery.length < 2) { setSearchResults([]); setShowDropdown(false); return }
+
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(async () => {
+      setIsSearching(true)
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_level, admission_number, permanent_student_id')
+        .eq('school_id', schoolId)
+        .eq('role', 'student')
+        .eq('is_active', true)
+        .or(`full_name.ilike.%${searchQuery}%,admission_number.ilike.%${searchQuery}%,permanent_student_id.ilike.%${searchQuery}%`)
+        .limit(10)
+
+      setSearchResults(data ?? [])
+      setShowDropdown(true)
+      setIsSearching(false)
+    }, 350)
+
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current) }
+  }, [searchQuery, selectedStudent])
+
+  // Load invoices when student selected — queries `payment_invoices` (correct)
+  const loadInvoices = useCallback(async (studentId: string) => {
+    setLoadingInvoices(true)
+    const { data } = await supabase
+      .from('payment_invoices')
+      .select(`
+        id, amount_due_ngn, amount_paid_ngn, balance_ngn, status,
+        fee_structures ( description, term, academic_year )
+      `)
+      .eq('student_id', studentId)
+      .eq('school_id', schoolId)
+      .neq('status', 'completed')
+      .order('created_at', { ascending: false })
+
+    setInvoices((data ?? []).map((inv: any) => ({
+      id:          inv.id,
+      description: inv.fee_structures?.description ?? 'School Fees',
+      term:        inv.fee_structures?.term ?? '',
+      amount_due:  inv.amount_due_ngn,
+      amount_paid: inv.amount_paid_ngn,
+      balance:     inv.balance_ngn,
+      status:      inv.status,
+    })))
+    setSelectedInvoices(new Set())
+    setLoadingInvoices(false)
+  }, [schoolId])
+
+  function selectStudent(s: StudentResult) {
+    setSelectedStudent(s)
+    setSearchQuery(s.full_name)
+    setShowDropdown(false)
+    setInvoices([])
+    setSelectedInvoices(new Set())
+    loadInvoices(s.id)
+  }
+
+  function clearStudent() {
+    setSelectedStudent(null)
+    setSearchQuery('')
+    setInvoices([])
+    setSelectedInvoices(new Set())
+    setReceipt(null)
+    setErrorMsg('')
+  }
+
+  function toggleInvoice(id: string) {
+    setSelectedInvoices(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const amount        = parseFloat(amountStr) || 0
+  const totalBalance  = invoices
+    .filter(i => selectedInvoices.has(i.id))
+    .reduce((s, i) => s + i.balance, 0)
+  const canSubmit = selectedStudent && amount > 0 && amount <= totalBalance + 0.01
+
+  async function handleSubmit() {
+    if (!canSubmit || !selectedStudent) return
+    setIsSubmitting(true)
+    setErrorMsg('')
+
+    const receiptNum  = generateReceiptNumber()
+    const selectedInvList = invoices.filter(i => selectedInvoices.has(i.id))
+
+    // Determine term from first selected invoice
+    const invTerm = selectedInvList[0]?.term ?? 'First Term'
+    const termLabel = invTerm === 'first' ? 'First Term'
+      : invTerm === 'second' ? 'Second Term'
+      : invTerm === 'third'  ? 'Third Term'
+      : invTerm
+
+    // 1. Insert into fee_payments with correct columns
+    const { error: payErr } = await supabase
+      .from('fee_payments')
+      .insert({
+        school_id:      schoolId,
+        student_id:     selectedStudent.id,
+        student_name:   selectedStudent.full_name,
+        class_level:    selectedStudent.class_level ?? '',
+        amount:         amount,
+        term:           termLabel,
+        academic_year:  selectedInvList[0]
+          ? (selectedInvList[0] as any)?.academic_year ?? ''
+          : '',
+        fee_type:       'school_fees',
+        payment_method: paymentMethod,
+        reference:      reference || null,
+        receipt_number: receiptNum,
+        notes:          notes || null,
+        recorded_by:    bursarId,
+      })
+
+    if (payErr) {
+      setErrorMsg(payErr.message)
+      setIsSubmitting(false)
+      return
+    }
+
+    // 2. Update each selected payment_invoice
+    let remaining = amount
+    for (const inv of selectedInvList) {
+      if (remaining <= 0) break
+      const apply    = Math.min(remaining, inv.balance)
+      const newPaid  = inv.amount_paid + apply
+      const newBal   = inv.amount_due - newPaid
+      const newStatus = newPaid >= inv.amount_due ? 'completed' : 'partial'
+
+      await supabase
+        .from('payment_invoices')
+        .update({
+          amount_paid_ngn: newPaid,
+          balance_ngn:     Math.max(0, newBal),
+          status:          newStatus,
+          updated_at:      new Date().toISOString(),
+        })
+        .eq('id', inv.id)
+
+      remaining -= apply
+    }
+
+    // Build receipt
+    setReceipt({
+      receiptNumber:   receiptNum,
+      studentName:     selectedStudent.full_name,
+      className:       selectedStudent.class_level,
+      admissionNumber: selectedStudent.permanent_student_id ?? selectedStudent.admission_number,
+      amount,
+      paymentMethod,
+      paymentDate,
+      feesDescription: selectedInvList.map(i => i.description),
+      bursarName,
+      schoolName:      '',
     })
 
-    // Update invoice balance
-    const newPaid   = invoice.amount_paid_ngn + amountNGN
-    const newBal    = Math.max(0, invoice.balance_ngn - amountNGN)
-    const newStatus = newBal <= 0 ? 'paid' : 'partial'
-    await supabase
-      .from('payment_invoices')
-      .update({ amount_paid_ngn: newPaid, balance_ngn: newBal, status: newStatus })
-      .eq('id', invoice.id)
-
-    // Generate PDF receipt (non-fatal if it fails)
-    let pdfUrl: string | undefined
-    try {
-      const res = await fetch('/api/receipts/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_id: pmtRow.id }),
-      })
-      if (res.ok) { const d = await res.json(); pdfUrl = d.url }
-    } catch { /* non-fatal */ }
-
-    setReceipt({ receiptNumber, paymentId: pmtRow.id, pdfUrl })
-    setSubmitting(false)
-    setStep(4)
+    setIsSubmitting(false)
+    // Reload invoices to show updated balances
+    loadInvoices(selectedStudent.id)
   }
 
-  function handleNew() {
-    setStep(1); setStudent(null); setInvoice(null); setInvoices([])
-    setAmount(''); setReference(''); setNotes(''); setSubmitErr(''); setReceipt(null)
-    setMethod('Cash'); setCurrency('NGN')
-  }
+  if (!mounted) return null
 
-  function handlePrint() {
-    if (!student || !invoice || !receipt) return
-    const w = window.open('', '_blank')
-    if (!w) return
-    w.document.write(`<!DOCTYPE html><html><head><title>${receipt.receiptNumber}</title>
-    <style>
-      body{font-family:Georgia,serif;max-width:400px;margin:40px auto;color:#1a1015}
-      h1{font-size:1.3rem;margin-bottom:4px}
-      .school{font-size:.82rem;color:#5a4850;margin-bottom:20px}
-      .no{background:#f7f3f0;border:1px solid #e0d8d0;border-radius:8px;padding:8px 14px;font-size:.85rem;font-weight:700;letter-spacing:.06em;margin-bottom:18px}
-      table{width:100%;border-collapse:collapse}
-      td{padding:9px 0;border-bottom:1px solid #e8e0e0;font-size:.85rem}
-      td:first-child{color:#7a6070;width:40%}td:last-child{font-weight:600;text-align:right}
-      .amt{font-size:1.2rem;color:#800020;font-weight:700}
-      .foot{margin-top:24px;font-size:.72rem;color:#9a8890;text-align:center}
-      @media print{body{margin:16px}}
-    </style>
-    </head><body>
-    <h1>${schoolInfo.school_name}</h1>
-    <p class="school">Official Payment Receipt</p>
-    <div class="no">Receipt: ${receipt.receiptNumber}</div>
-    <table>
-      <tr><td>Student</td><td>${student.full_name}</td></tr>
-      <tr><td>Admission No.</td><td>${student.admission_number}</td></tr>
-      <tr><td>Class</td><td>${student.class_name}</td></tr>
-      <tr><td>Invoice</td><td>${invoice.description}</td></tr>
-      <tr><td>Amount Paid</td><td class="amt">${fmtNGN(amountNGN)}</td></tr>
-      <tr><td>USD Equiv</td><td>${fmtUSD(amountNGN, usdRate)}</td></tr>
-      <tr><td>Method</td><td>${method}</td></tr>
-      <tr><td>Reference</td><td>${reference || '—'}</td></tr>
-      <tr><td>Date</td><td>${new Date().toLocaleString('en-NG')}</td></tr>
-      <tr><td>New Balance</td><td>${fmtNGN(Math.max(0, invoice.balance_ngn - amountNGN))}</td></tr>
-    </table>
-    <p class="foot">Computer-generated receipt — ${schoolInfo.school_name}</p>
-    </body></html>`)
-    w.document.close(); w.print()
-  }
-
-  // ── Wizard content ────────────────────────────────────────────────────────
-  const wizardContent = (
-    <>
-      <StepDots step={step}/>
-
-      <div className={styles.main}>
-
-        {/* STEP 1 — Find Student */}
-        {step === 1 && (
-          <div className={`animate-fade-up ${styles.stepWrap}`}>
-            <h2 className={styles.stepTitle}>Find Student</h2>
-            <div className={styles.searchBox}>
-              <svg
-                className={styles.searchIco} width="16" height="16"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                className={`input ${styles.searchInput}`}
-                value={query}
-                onChange={e => onQuery(e.target.value)}
-                placeholder="Student name or admission number…"
-                autoFocus
-              />
-              {searching && <span className={styles.searchSpinner}/>}
-            </div>
-
-            {results.length > 0 && (
-              <div className={styles.dropdown}>
-                {results.map(s => (
-                  <button key={s.id} className={styles.dropItem} onClick={() => pickStudent(s)}>
-                    <div className={styles.dropAvatar}>
-                      {s.avatar_url
-                        ? <img src={s.avatar_url} alt={s.full_name} className={styles.dropAvatarImg}/>
-                        : <span>{initials(s.full_name)}</span>}
-                    </div>
-                    <div className={styles.dropInfo}>
-                      <span className={styles.dropName}>{s.full_name}</span>
-                      <span className={styles.dropMeta}>{s.class_name} · {s.admission_number}</span>
-                    </div>
-                    <svg
-                      width="14" height="14" viewBox="0 0 24 24"
-                      fill="none" stroke="currentColor" strokeWidth="2"
-                      strokeLinecap="round" strokeLinejoin="round"
-                      style={{ color: 'var(--text-muted)', flexShrink: 0 }}
-                    >
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {query.length >= 2 && !searching && results.length === 0 && (
-              <div className={styles.noResults}>
-                <p>No student found for &ldquo;{query}&rdquo;</p>
-              </div>
-            )}
+  // ── Receipt View ──────────────────────────────────────
+  if (receipt) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', padding: '16px' }}>
+        <div style={{
+          maxWidth: 480, margin: '0 auto', background: 'var(--glass-bg)',
+          border: '1px solid var(--glass-border)', borderRadius: 16, overflow: 'hidden',
+        }}>
+          {/* Receipt header */}
+          <div style={{ background: '#7C3AED', padding: '20px 24px', textAlign: 'center' }}>
+            <p style={{ color: '#ffffff99', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', margin: 0 }}>
+              PAYMENT RECEIPT
+            </p>
+            <p style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 900, margin: '4px 0 0' }}>
+              {receipt.receiptNumber}
+            </p>
           </div>
-        )}
 
-        {/* STEP 2 — Select Invoice */}
-        {step === 2 && student && (
-          <div className={`animate-fade-up ${styles.stepWrap}`}>
-            <div className={styles.studentChip}>
-              <div className={styles.chipAvatar}>
-                {student.avatar_url
-                  ? <img src={student.avatar_url} alt={student.full_name} className={styles.dropAvatarImg}/>
-                  : <span>{initials(student.full_name)}</span>}
-              </div>
-              <div>
-                <span className={styles.chipName}>{student.full_name}</span>
-                <span className={styles.chipMeta}>{student.class_name} · {student.admission_number}</span>
-              </div>
-              <button
-                className={styles.chipChange}
-                onClick={() => { setStep(1); setStudent(null); setInvoices([]) }}
-              >
-                Change
-              </button>
-            </div>
-
-            <h2 className={styles.stepTitle}>Select Invoice</h2>
-
-            {loadInv ? (
-              <div className={styles.loadWrap}>
-                <div className={styles.spinner}/>
-                <p>Loading invoices…</p>
-              </div>
-            ) : invoices.length === 0 ? (
-              <div className={`glass-card ${styles.emptyInv}`}>
-                <p>No outstanding invoices for this student.</p>
-              </div>
-            ) : (
-              <div className={styles.invList}>
-                {invoices.map((inv, i) => (
-                  <button
-                    key={inv.id}
-                    className={`glass-card ${styles.invBtn} animate-fade-up`}
-                    style={{ animationDelay: `${i * 50}ms`, opacity: 0 }}
-                    onClick={() => pickInvoice(inv)}
-                  >
-                    <div className={styles.invBtnBody}>
-                      <span className={styles.invTerm}>{inv.term} · {inv.academic_year}</span>
-                      <span className={styles.invDesc}>{inv.description}</span>
-                      <div className={styles.invAmts}>
-                        <span>Due: <strong>{fmtNGN(inv.amount_due_ngn)}</strong></span>
-                        <span style={{ color: 'var(--success)' }}>
-                          Paid: {fmtNGN(inv.amount_paid_ngn)}
-                        </span>
-                        <span style={{ color: 'var(--error)', fontWeight: 700 }}>
-                          Bal: {fmtNGN(inv.balance_ngn)}
-                        </span>
-                      </div>
-                    </div>
-                    <svg
-                      width="15" height="15" viewBox="0 0 24 24"
-                      fill="none" stroke="currentColor" strokeWidth="2"
-                      strokeLinecap="round" strokeLinejoin="round"
-                      style={{ color: 'var(--text-muted)', flexShrink: 0 }}
-                    >
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* STEP 3 — Payment Details */}
-        {step === 3 && student && invoice && (
-          <div className={`animate-fade-up ${styles.stepWrap}`}>
-            <div className={styles.invSummary}>
-              <p className={styles.invSumName}>{student.full_name} — {invoice.description}</p>
-              <p className={styles.invSumBal}>
-                Balance: <strong style={{ color: 'var(--error)' }}>{fmtNGN(invoice.balance_ngn)}</strong>
+          <div style={{ padding: '20px 24px' }}>
+            {/* Amount */}
+            <div style={{ textAlign: 'center', margin: '0 0 20px' }}>
+              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: 0 }}>
+                AMOUNT PAID
+              </p>
+              <p style={{ fontSize: '2rem', fontWeight: 900, color: '#10B981', margin: '4px 0 0' }}>
+                {fmt(receipt.amount)}
               </p>
             </div>
 
-            <h2 className={styles.stepTitle}>Payment Details</h2>
-
-            {/* Amount */}
-            <div className={styles.field}>
-              <div className={styles.labelRow}>
-                <label className={styles.label}>Amount</label>
-                <div className={styles.currToggle}>
-                  {(['NGN', 'USD'] as Currency[]).map(c => (
-                    <button
-                      key={c}
-                      className={`${styles.currBtn} ${currency === c ? styles.currBtnActive : ''}`}
-                      onClick={() => {
-                        if (c === currency) return
-                        const v = parseFloat(amount)
-                        if (!isNaN(v) && v > 0) {
-                          setAmount(
-                            c === 'USD'
-                              ? (v / usdRate).toFixed(2)
-                              : Math.round(v * usdRate).toString(),
-                          )
-                        }
-                        setCurrency(c)
-                      }}
-                    >
-                      {c === 'NGN' ? '₦ NGN' : '$ USD'}
-                    </button>
-                  ))}
-                </div>
+            {/* Details */}
+            {[
+              ['Student',    receipt.studentName],
+              ['Class',      receipt.className ?? '—'],
+              ['Adm. No.',   receipt.admissionNumber ?? '—'],
+              ['Date',       receipt.paymentDate],
+              ['Method',     receipt.paymentMethod.replace('_', ' ').toUpperCase()],
+              ['Recorded by', receipt.bursarName],
+              ['Fees',       receipt.feesDescription.join(', ')],
+            ].map(([label, value]) => (
+              <div key={label} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                padding: '10px 0', borderBottom: '1px solid var(--glass-border)',
+              }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{label}</span>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'right', maxWidth: '60%' }}>
+                  {value}
+                </span>
               </div>
-              <div className={styles.amtWrap}>
-                <span className={styles.amtPfx}>{currency === 'NGN' ? '₦' : '$'}</span>
-                <input
-                  className={`input ${styles.amtInput}`}
-                  type="number" min={0}
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  placeholder={currency === 'NGN' ? '0' : '0.00'}
-                />
-              </div>
-              {amountNGN > 0 && (
-                <div className={styles.convRow}>
-                  ≈ {currency === 'NGN' ? fmtUSD(amountNGN, usdRate) : fmtNGN(amountNGN)}
-                  &nbsp;· Rate: ₦{usdRate.toLocaleString()}/$
-                  {rateUpdatedAt && (
-                    <span style={{ opacity: 0.6 }}>
-                      &nbsp;(updated {new Date(rateUpdatedAt).toLocaleDateString('en-NG')})
-                    </span>
-                  )}
-                </div>
-              )}
-              <div className={styles.quickFill}>
-                {([[0.25, '25%'], [0.5, '50%'], [1, 'Full']] as [number, string][]).map(([p, l]) => (
-                  <button
-                    key={l}
-                    className={styles.quickBtn}
-                    onClick={() => {
-                      const n = Math.round(invoice.balance_ngn * p)
-                      setAmount(currency === 'NGN' ? String(n) : (n / usdRate).toFixed(2))
-                    }}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-              {amountNGN > invoice.balance_ngn && (
-                <p className={styles.fieldErr}>Exceeds balance ({fmtNGN(invoice.balance_ngn)})</p>
-              )}
-            </div>
+            ))}
 
-            {/* Method */}
-            <div className={styles.field}>
-              <label className={styles.label}>Payment Method</label>
-              <div className={styles.methodGrid}>
-                {(['Cash', 'Bank Transfer', 'Card', 'Online'] as Method[]).map(m => (
-                  <button
-                    key={m}
-                    className={`${styles.methodBtn} ${method === m ? styles.methodBtnActive : ''}`}
-                    onClick={() => setMethod(m)}
-                  >
-                    <span>{METHOD_ICONS[m]}</span><span>{m}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Reference */}
-            <div className={styles.field}>
-              <label className={styles.label}>
-                Reference <span className={styles.opt}>(optional)</span>
-              </label>
-              <input
-                className="input"
-                value={reference}
-                onChange={e => setReference(e.target.value)}
-                placeholder={method === 'Bank Transfer' ? 'e.g. TXN12345' : '—'}
-              />
-            </div>
-
-            {/* Notes */}
-            <div className={styles.field}>
-              <label className={styles.label}>
-                Notes <span className={styles.opt}>(optional)</span>
-              </label>
-              <textarea
-                className={`input ${styles.textarea}`}
-                rows={2}
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Additional notes…"
-              />
-            </div>
-
-            {submitErr && <div className={styles.formErr}>{submitErr}</div>}
-
-            <button
-              className={`btn btn-primary ${styles.submitBtn}`}
-              onClick={handleSubmit}
-              disabled={submitting || amountNGN <= 0 || amountNGN > invoice.balance_ngn}
-            >
-              {submitting
-                ? <><span className={styles.spinnerSm}/>Recording…</>
-                : <>Record · {fmtNGN(amountNGN)}</>}
-            </button>
-          </div>
-        )}
-
-        {/* STEP 4 — Receipt */}
-        {step === 4 && receipt && student && invoice && (
-          <div className={`animate-scale-in ${styles.stepWrap}`}>
-            <div className={styles.rcpSuccess}>
-              <div className={styles.rcpSuccessIcon}>
-                <svg
-                  width="30" height="30" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <h2 className={styles.rcpTitle}>Payment Recorded</h2>
-              <p className={styles.rcpSub}>Receipt generated</p>
-            </div>
-
-            <div className={`glass-card ${styles.rcpCard}`}>
-              <div className={styles.rcpHeader}>
-                <p className={styles.rcpSchool}>{schoolInfo.school_name}</p>
-                <p className={styles.rcpNo}>{receipt.receiptNumber}</p>
-              </div>
-              <div className={styles.rcpRows}>
-                {[
-                  ['Student',      student.full_name],
-                  ['Admission No.', student.admission_number],
-                  ['Invoice',      invoice.description],
-                  ['Term',         invoice.term],
-                  ['Amount Paid',  fmtNGN(amountNGN)],
-                  ['USD Equiv',    fmtUSD(amountNGN, usdRate)],
-                  ['Method',       method],
-                  ['Reference',    reference || '—'],
-                  ['Date',         new Date().toLocaleString('en-NG')],
-                  ['New Balance',  fmtNGN(Math.max(0, invoice.balance_ngn - amountNGN))],
-                ].map(([l, v]) => (
-                  <div key={l} className={styles.rcpRow}>
-                    <span className={styles.rcpLbl}>{l}</span>
-                    <span className={styles.rcpVal}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.rcpActions}>
-              <button className="btn btn-primary" onClick={handlePrint} style={{ flex: 1 }}>
-                <svg
-                  width="14" height="14" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <polyline points="6 9 6 2 18 2 18 9"/>
-                  <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-                  <rect x="6" y="14" width="12" height="8"/>
-                </svg>
-                Print Receipt
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button
+                onClick={() => window.print()}
+                style={{
+                  flex: 1, height: 44, background: '#7C3AED', color: '#fff',
+                  border: 'none', borderRadius: 10, fontWeight: 700,
+                  fontSize: '0.85rem', cursor: 'pointer',
+                }}>
+                🖨️ Print Receipt
               </button>
-              {receipt.pdfUrl && (
-                <a
-                  href={receipt.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ghost"
-                  style={{ flex: 1 }}
-                >
-                  Download PDF
-                </a>
-              )}
-              <button className="btn btn-ghost" onClick={handleNew} style={{ flex: 1 }}>
+              <button
+                onClick={() => { setReceipt(null); clearStudent() }}
+                style={{
+                  flex: 1, height: 44, background: 'var(--input-bg)',
+                  color: 'var(--text-primary)', border: '1px solid var(--input-border)',
+                  borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                }}>
                 New Payment
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
-    </>
-  )
+    )
+  }
+
+  // ── Main Form ─────────────────────────────────────────
+  const inp: React.CSSProperties = {
+    width: '100%', height: 44, padding: '0 14px',
+    background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+    borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.85rem',
+    outline: 'none', boxSizing: 'border-box',
+  }
 
   return (
-    <RolePageWrapper
-      userId={userId}
-      role="bursar"
-      profile={profile}
-      school={school}
-      title="Record Payment"
-      showBack={step > 1}
-    >
-      {wizardContent}
-    </RolePageWrapper>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', padding: '0 0 80px' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '16px', borderBottom: '1px solid var(--glass-border)',
+      }}>
+        <button onClick={() => router.back()} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--text-primary)', fontSize: '1.4rem', lineHeight: 1, padding: 0,
+        }}>←</button>
+        <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, flex: 1 }}>
+          Record Payment
+        </h1>
+        <button onClick={() => {
+          const next = isDark ? 'light' : 'dark'
+          setIsDark(!isDark)
+          localStorage.setItem('schoolos_theme', next)
+          document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '')
+        }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
+          {isDark ? '☀️' : '🌙'}
+        </button>
+      </div>
+
+      <div style={{ padding: '16px', maxWidth: 560, margin: '0 auto' }}>
+
+        {/* ── Step 1: Student search ── */}
+        <div style={{
+          background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+          borderRadius: 14, padding: 16, marginBottom: 14,
+        }}>
+          <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+            STEP 1 — SELECT STUDENT
+          </p>
+
+          {selectedStudent ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 14px', background: '#7C3AED15',
+              border: '1px solid #7C3AED40', borderRadius: 10,
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: '50%',
+                background: '#7C3AED', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.9rem', flexShrink: 0,
+              }}>
+                {selectedStudent.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  {selectedStudent.full_name}
+                </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                  {selectedStudent.class_level ?? '—'}
+                  {selectedStudent.permanent_student_id ? ` · ${selectedStudent.permanent_student_id}` : ''}
+                </p>
+              </div>
+              <button onClick={clearStudent} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-muted)', fontSize: '1.1rem',
+              }}>✕</button>
+            </div>
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Search by name or admission number…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={inp}
+              />
+              {isSearching && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '0 4px' }}>
+                  Searching…
+                </p>
+              )}
+              {showDropdown && searchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                  background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+                  borderRadius: 10, marginTop: 4, overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                }}>
+                  {searchResults.map(s => (
+                    <div
+                      key={s.id}
+                      onClick={() => selectStudent(s)}
+                      style={{
+                        padding: '10px 14px', cursor: 'pointer',
+                        borderBottom: '1px solid var(--glass-border)',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#7C3AED15')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                        {s.full_name}
+                      </p>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                        {s.class_level ?? '—'} · {s.permanent_student_id ?? s.admission_number ?? '—'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {showDropdown && !isSearching && searchResults.length === 0 && searchQuery.length >= 2 && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '0 4px' }}>
+                  No students found.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 2: Select invoices ── */}
+        {selectedStudent && (
+          <div style={{
+            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+            borderRadius: 14, padding: 16, marginBottom: 14,
+          }}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+              STEP 2 — SELECT OUTSTANDING INVOICES
+            </p>
+
+            {loadingInvoices ? (
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>
+                Loading invoices…
+              </p>
+            ) : invoices.length === 0 ? (
+              <div style={{
+                padding: '16px', background: '#10B98110', border: '1px solid #10B98130',
+                borderRadius: 10, textAlign: 'center',
+              }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981', margin: 0 }}>
+                  ✓ No outstanding invoices
+                </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                  This student has no pending fees.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {invoices.map(inv => {
+                  const selected = selectedInvoices.has(inv.id)
+                  const termLabel = inv.term === 'first' ? 'First Term'
+                    : inv.term === 'second' ? 'Second Term'
+                    : inv.term === 'third'  ? 'Third Term'
+                    : inv.term
+                  return (
+                    <div
+                      key={inv.id}
+                      onClick={() => toggleInvoice(inv.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                        border: `1px solid ${selected ? '#7C3AED60' : 'var(--glass-border)'}`,
+                        background: selected ? '#7C3AED10' : 'var(--input-bg)',
+                        transition: 'all 0.15s',
+                      }}>
+                      <div style={{
+                        width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                        border: `2px solid ${selected ? '#7C3AED' : 'var(--input-border)'}`,
+                        background: selected ? '#7C3AED' : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {selected && <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: 900 }}>✓</span>}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                          {inv.description}
+                        </p>
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                          {termLabel} · Balance: {fmt(inv.balance)}
+                        </p>
+                      </div>
+                      <span style={{
+                        fontSize: '0.82rem', fontWeight: 800,
+                        color: inv.status === 'partial' ? '#F59E0B' : '#EF4444',
+                      }}>
+                        {fmt(inv.balance)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 3: Payment details ── */}
+        {selectedStudent && selectedInvoices.size > 0 && (
+          <div style={{
+            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+            borderRadius: 14, padding: 16, marginBottom: 14,
+          }}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 14px' }}>
+              STEP 3 — PAYMENT DETAILS
+            </p>
+
+            {/* Total balance selected */}
+            <div style={{
+              padding: '10px 14px', background: '#7C3AED10',
+              border: '1px solid #7C3AED30', borderRadius: 10, marginBottom: 14, textAlign: 'center',
+            }}>
+              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: 0 }}>
+                TOTAL SELECTED BALANCE
+              </p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#7C3AED', margin: '4px 0 0' }}>
+                {fmt(totalBalance)}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  AMOUNT PAID (₦) *
+                </label>
+                <input
+                  type="number" placeholder={`Max: ${totalBalance}`}
+                  value={amountStr} onChange={e => setAmountStr(e.target.value)}
+                  style={inp}
+                />
+                {amount > totalBalance + 0.01 && (
+                  <p style={{ fontSize: '0.72rem', color: '#EF4444', margin: '4px 0 0', padding: '0 4px' }}>
+                    Amount cannot exceed outstanding balance of {fmt(totalBalance)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  PAYMENT METHOD *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  {PAYMENT_METHODS.map(m => (
+                    <button
+                      key={m.value}
+                      onClick={() => setPaymentMethod(m.value)}
+                      style={{
+                        padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontWeight: 700,
+                        fontSize: '0.75rem', textAlign: 'center', transition: 'all 0.15s',
+                        border: `1.5px solid ${paymentMethod === m.value ? '#7C3AED' : 'var(--input-border)'}`,
+                        background: paymentMethod === m.value ? '#7C3AED15' : 'var(--input-bg)',
+                        color: paymentMethod === m.value ? '#7C3AED' : 'var(--text-muted)',
+                      }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  PAYMENT DATE *
+                </label>
+                <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} style={inp} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  REFERENCE / TELLER NO. (optional)
+                </label>
+                <input
+                  placeholder="Bank teller number or transaction ref"
+                  value={reference} onChange={e => setReference(e.target.value)}
+                  style={inp}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  NOTES (optional)
+                </label>
+                <textarea
+                  rows={2} placeholder="Any additional notes…"
+                  value={notes} onChange={e => setNotes(e.target.value)}
+                  style={{ ...inp, height: 'auto', resize: 'none', padding: '10px 14px' }}
+                />
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div style={{
+                marginTop: 12, padding: '10px 14px',
+                background: '#EF444415', border: '1px solid #EF444440',
+                borderRadius: 8, fontSize: '0.8rem', color: '#EF4444', fontWeight: 600,
+              }}>
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={!canSubmit || isSubmitting}
+              style={{
+                width: '100%', height: 48, marginTop: 16,
+                background: canSubmit ? '#7C3AED' : 'var(--input-bg)',
+                color: canSubmit ? '#fff' : 'var(--text-muted)',
+                border: canSubmit ? 'none' : '1px solid var(--input-border)',
+                borderRadius: 12, fontWeight: 800, fontSize: '0.95rem',
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s',
+              }}>
+              {isSubmitting ? 'Recording…' : canSubmit ? `Record ${fmt(amount)} Payment` : 'Enter amount to continue'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
