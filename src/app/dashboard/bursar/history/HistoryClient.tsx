@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { ClockIcon } from '@/components/Icons'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -23,9 +24,12 @@ const TERM_KEY_MAP: Record<string, string> = {
 }
 
 function flatten(row: any) {
-  const inv     = row.payment_invoices
-  const fs      = inv?.fee_structures
-  const student = row['profiles!student_id']
+  // Embedded relations from Supabase can come back as either an object
+  // or a 1-element array depending on inferred cardinality — unwrap both
+  // shapes safely instead of assuming one or the other.
+  const inv     = unwrapEmbed(row.payment_invoices)
+  const fs      = unwrapEmbed(inv?.fee_structures)
+  const student = unwrapEmbed(row['profiles!student_id'])
   return {
     id:             row.id,
     receipt_number: row.receipt_number,
@@ -84,7 +88,8 @@ export default function HistoryClient({ profile, school, userId }: Props) {
 
     const flattened = (data ?? [])
       .filter((row: any) => {
-        const fs = row.payment_invoices?.fee_structures
+        const inv = unwrapEmbed(row.payment_invoices)
+        const fs  = unwrapEmbed(inv?.fee_structures)
         if (!fs || fs.academic_year !== year) return false
         if (term && fs.term !== (TERM_KEY_MAP[term] ?? 'first')) return false
         return true
