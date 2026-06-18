@@ -17,6 +17,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import type { SchoolInfo } from './page'
 
 interface Props {
@@ -121,6 +122,13 @@ export default function RecordPaymentClient({
   const [errorMsg,     setErrorMsg]     = useState('')
   const [receipt,      setReceipt]      = useState<ReceiptData | null>(null)
 
+  // Invoice preview expand
+  const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null)
+  function toggleExpand(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setExpandedInvoice(prev => prev === id ? null : id)
+  }
+
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const schoolId   = schoolInfo.school_id || school?.id || ''
   const schoolName = schoolInfo.school_name || school?.name || 'School'
@@ -150,7 +158,7 @@ export default function RecordPaymentClient({
       .single()
 
     if (data) {
-      const student = (data as any)['profiles!student_id']
+      const student = unwrapEmbed((data as any)['profiles!student_id'])
       if (student) {
         setSelectedStudent({
           id:                   student.id,
@@ -161,7 +169,7 @@ export default function RecordPaymentClient({
         })
         setSearchQuery(student.full_name)
       }
-      const fs = (data as any).fee_structures
+      const fs = unwrapEmbed((data as any).fee_structures)
       setInvoices([{
         id:            data.id,
         description:   fs?.description ?? 'School Fees',
@@ -216,16 +224,19 @@ export default function RecordPaymentClient({
       .neq('status', 'completed')
       .order('created_at', { ascending: false })
 
-    setInvoices((data ?? []).map((inv: any) => ({
-      id:            inv.id,
-      description:   inv.fee_structures?.description ?? 'School Fees',
-      term:          inv.fee_structures?.term ?? '',
-      academic_year: inv.fee_structures?.academic_year ?? '',
-      amount_due:    inv.amount_due_ngn,
-      amount_paid:   inv.amount_paid_ngn,
-      balance:       inv.balance_ngn,
-      status:        inv.status,
-    })))
+    setInvoices((data ?? []).map((inv: any) => {
+      const fs = unwrapEmbed(inv.fee_structures)
+      return {
+        id:            inv.id,
+        description:   fs?.description ?? 'School Fees',
+        term:          fs?.term ?? '',
+        academic_year: fs?.academic_year ?? '',
+        amount_due:    inv.amount_due_ngn,
+        amount_paid:   inv.amount_paid_ngn,
+        balance:       inv.balance_ngn,
+        status:        inv.status,
+      }
+    }))
     setSelectedInvoices(new Set())
     setLoadingInvoices(false)
   }, [schoolId])
@@ -581,33 +592,65 @@ export default function RecordPaymentClient({
                       key={inv.id}
                       onClick={() => toggleInvoice(inv.id)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 12,
+                        display: 'flex', flexDirection: 'column', gap: 0,
                         padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
                         border: `1px solid ${selected ? '#7C3AED60' : 'var(--glass-border)'}`,
                         background: selected ? '#7C3AED10' : 'var(--input-bg)',
                       }}>
-                      <div style={{
-                        width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                        border: `2px solid ${selected ? '#7C3AED' : 'var(--input-border)'}`,
-                        background: selected ? '#7C3AED' : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {selected && <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: 900 }}>✓</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                          border: `2px solid ${selected ? '#7C3AED' : 'var(--input-border)'}`,
+                          background: selected ? '#7C3AED' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {selected && <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: 900 }}>✓</span>}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                            {inv.description}
+                          </p>
+                          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                            {termLabel}{inv.academic_year ? ` · ${inv.academic_year}` : ''}
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                          <span style={{
+                            fontSize: '0.82rem', fontWeight: 800,
+                            color: inv.status === 'partial' ? '#F59E0B' : '#EF4444',
+                          }}>
+                            ₦{inv.balance.toLocaleString()}
+                          </span>
+                          <button
+                            onClick={e => toggleExpand(inv.id, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', padding: 0, lineHeight: 1 }}>
+                            {expandedInvoice === inv.id ? '▲ less' : '▼ more'}
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                          {inv.description}
-                        </p>
-                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                          {termLabel}{inv.academic_year ? ` · ${inv.academic_year}` : ''}
-                        </p>
-                      </div>
-                      <span style={{
-                        fontSize: '0.82rem', fontWeight: 800,
-                        color: inv.status === 'partial' ? '#F59E0B' : '#EF4444',
-                      }}>
-                        ₦{inv.balance.toLocaleString()}
-                      </span>
+
+                      {/* Expanded detail */}
+                      {expandedInvoice === inv.id && (
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--glass-border)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                          {[
+                            { label: 'Due',     val: `₦${inv.amount_due.toLocaleString()}`,  color: 'var(--text-primary)' },
+                            { label: 'Paid',    val: `₦${inv.amount_paid.toLocaleString()}`, color: 'var(--success)' },
+                            { label: 'Balance', val: `₦${inv.balance.toLocaleString()}`,     color: inv.balance > 0 ? 'var(--error)' : 'var(--success)' },
+                          ].map(({ label, val, color }) => (
+                            <div key={label} style={{ background: 'var(--glass-bg)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                              <p style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 3px' }}>{label.toUpperCase()}</p>
+                              <p style={{ fontSize: '0.82rem', fontWeight: 800, color, margin: 0 }}>{val}</p>
+                            </div>
+                          ))}
+                          <div style={{ gridColumn: '1/-1' }}>
+                            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0 }}>
+                              Status: <span style={{ fontWeight: 700, color: inv.status === 'partial' ? '#F59E0B' : inv.status === 'completed' ? 'var(--success)' : '#EF4444' }}>
+                                {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
