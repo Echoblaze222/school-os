@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { DownloadIcon } from '@/components/Icons'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -36,6 +37,8 @@ export default function ExportClient({ profile, school, userId }: Props) {
   const [exporting, setExporting] = useState(false)
   const [result,    setResult]    = useState<{ count:number } | null>(null)
   const [error,     setError]     = useState('')
+  const [preview,   setPreview]   = useState<{ cols: string[]; rows: any[] } | null>(null)
+  const [previewing, setPreviewing] = useState(false)
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
@@ -49,6 +52,109 @@ export default function ExportClient({ profile, school, userId }: Props) {
     const url  = URL.createObjectURL(blob)
     const a    = Object.assign(document.createElement('a'), { href:url, download:filename })
     a.click(); URL.revokeObjectURL(url)
+  }
+
+  async function previewData() {
+    setPreviewing(true); setPreview(null); setError('')
+
+    try {
+      if (dataSet === 'payments') {
+        let q = supabase
+          .from('payments')
+          .select(`
+            receipt_number, payment_method, paid_at, amount_paid_ngn, currency_used,
+            payment_invoices ( fee_structures ( description, term, academic_year ) ),
+            profiles!student_id ( full_name, class_level )
+          `)
+          .eq('school_id', school?.id)
+          .order('paid_at', { ascending: false })
+          .limit(10)
+
+        const { data, error: err } = await q
+        if (err) throw err
+
+        const wantedTermKey = term === 'All Terms' ? null : (TERM_KEY_MAP[term] ?? 'first')
+        const rows = (data ?? []).filter((row: any) => {
+          const inv = unwrapEmbed(row.payment_invoices)
+          const fs  = unwrapEmbed(inv?.fee_structures)
+          if (!fs || fs.academic_year !== year) return false
+          if (wantedTermKey && fs.term !== wantedTermKey) return false
+          return true
+        }).map((row: any) => {
+          const inv     = unwrapEmbed(row.payment_invoices)
+          const fs      = unwrapEmbed(inv?.fee_structures)
+          const student = unwrapEmbed(row['profiles!student_id'])
+          return {
+            receipt_number: row.receipt_number,
+            student_name:   student?.full_name ?? '',
+            class_level:    student?.class_level ?? '',
+            amount:         row.currency_used === 'USD' ? row.amount_paid_usd : row.amount_paid_ngn,
+            currency:       row.currency_used,
+            term:           TERM_LABELS[fs?.term] ?? fs?.term ?? '',
+            fee_type:       fs?.description ?? '',
+            payment_method: row.payment_method,
+          }
+        })
+        setPreview({ cols: ['receipt_number','student_name','class_level','amount','currency','term','fee_type','payment_method'], rows })
+      }
+
+      if (dataSet === 'fee_structures') {
+        let q = supabase
+          .from('fee_structures')
+          .select('description, amount_ngn, term, academic_year, classes(class_level)')
+          .eq('school_id', school?.id)
+          .eq('academic_year', year)
+          .limit(10)
+
+        if (term !== 'All Terms') q = q.eq('term', TERM_KEY_MAP[term] ?? 'first')
+        const { data, error: err } = await q
+        if (err) throw err
+
+        const rows = (data ?? []).map((f: any) => ({
+          class_level:   f.classes?.class_level ?? '',
+          fee_type:      f.description,
+          amount:        f.amount_ngn,
+          term:          TERM_LABELS[f.term] ?? f.term,
+          academic_year: f.academic_year,
+        }))
+        setPreview({ cols: ['class_level','fee_type','amount','term','academic_year'], rows })
+      }
+
+      if (dataSet === 'debtors') {
+        const termFilter = term === 'All Terms' ? 'First Term' : term
+        const termKey     = TERM_KEY_MAP[termFilter] ?? 'first'
+        const { data: invoices, error: err } = await supabase
+          .from('payment_invoices')
+          .select(`
+            balance_ngn, amount_due_ngn, amount_paid_ngn,
+            fee_structures ( term, academic_year ),
+            profiles!student_id ( full_name, class_level )
+          `)
+          .eq('school_id', school?.id)
+          .eq('fee_structures.term', termKey)
+          .eq('fee_structures.academic_year', year)
+          .gt('balance_ngn', 0)
+          .limit(30)
+
+        if (err) throw err
+
+        const byStudent = new Map<string, any>()
+        for (const inv of (invoices ?? [])) {
+          const fs = unwrapEmbed((inv as any).fee_structures)
+          if (!fs) continue
+          const student = unwrapEmbed((inv as any)['profiles!student_id'])
+          if (!student) continue
+          const key = student.full_name
+          if (!byStudent.has(key)) byStudent.set(key, { full_name: student.full_name, class_level: student.class_level ?? '', outstanding: 0 })
+          byStudent.get(key).outstanding += inv.balance_ngn ?? 0
+        }
+        const rows = Array.from(byStudent.values()).sort((a,b) => b.outstanding - a.outstanding)
+        setPreview({ cols: ['full_name','class_level','outstanding'], rows })
+      }
+    } catch (e: any) {
+      setError(e.message ?? 'Preview failed.')
+    }
+    setPreviewing(false)
   }
 
   async function exportData() {
@@ -77,14 +183,16 @@ export default function ExportClient({ profile, school, userId }: Props) {
 
         const rows = (data ?? [])
           .filter((row: any) => {
-            const fs = row.payment_invoices?.fee_structures
+            const inv = unwrapEmbed(row.payment_invoices)
+            const fs  = unwrapEmbed(inv?.fee_structures)
             if (!fs || fs.academic_year !== year) return false
             if (wantedTermKey && fs.term !== wantedTermKey) return false
             return true
           })
           .map((row: any) => {
-            const fs      = row.payment_invoices.fee_structures
-            const student = row['profiles!student_id']
+            const inv      = unwrapEmbed(row.payment_invoices)
+            const fs       = unwrapEmbed(inv?.fee_structures)
+            const student  = unwrapEmbed(row['profiles!student_id'])
             return {
               receipt_number: row.receipt_number,
               student_name:   student?.full_name ?? '',
@@ -159,8 +267,9 @@ export default function ExportClient({ profile, school, userId }: Props) {
         // Aggregate per student (one student may have multiple unpaid invoices)
         const byStudent = new Map<string, any>()
         for (const inv of (invoices ?? [])) {
-          if (!inv.fee_structures) continue
-          const student = (inv as any)['profiles!student_id']
+          const fs = unwrapEmbed((inv as any).fee_structures)
+          if (!fs) continue
+          const student = unwrapEmbed((inv as any)['profiles!student_id'])
           if (!student) continue
           const key = student.full_name + '|' + (student.default_code ?? '')
           if (!byStudent.has(key)) {
@@ -217,7 +326,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
           <label style={lbl}>WHAT TO EXPORT</label>
           <div style={{ display:'grid', gap:'var(--space-3)' }}>
             {DATASETS.map(ds => (
-              <button key={ds.key} onClick={() => setDataSet(ds.key)}
+              <button key={ds.key} onClick={() => { setDataSet(ds.key); setPreview(null); setResult(null) }}
                 style={{ padding:'var(--space-4)',
                   background: dataSet===ds.key ? sc+'18' : 'var(--input-bg)',
                   border: `1px solid ${dataSet===ds.key ? sc : 'var(--input-border)'}`,
@@ -269,15 +378,62 @@ export default function ExportClient({ profile, school, userId }: Props) {
         </div>
       )}
 
-      <button onClick={exportData} disabled={exporting}
-        style={{ width:'100%', height:50, background:sc, color:'#fff',
-          border:'none', borderRadius:10, fontWeight:700, fontSize:'0.9rem',
-          cursor:'pointer', marginTop:'var(--space-5)',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          gap:10, opacity:exporting ? 0.7 : 1 }}>
-        <DownloadIcon size={18} color="#fff"/>
-        {exporting ? 'Preparing download…' : 'Download CSV'}
-      </button>
+      {/* ── Preview Table ── */}
+      {preview && (
+        <div style={{ marginTop:'var(--space-5)' }}>
+          <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 8px' }}>
+            PREVIEW — FIRST {preview.rows.length} ROWS
+          </p>
+          {preview.rows.length === 0 ? (
+            <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', padding:'12px 0' }}>No records found for this selection.</p>
+          ) : (
+            <div style={{ overflowX:'auto', borderRadius:10, border:'1px solid var(--glass-border)' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.72rem', minWidth: preview.cols.length * 100 }}>
+                <thead>
+                  <tr style={{ background:'var(--input-bg)' }}>
+                    {preview.cols.map(col => (
+                      <th key={col} style={{ padding:'8px 10px', textAlign:'left', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.04em', borderBottom:'1px solid var(--glass-border)', whiteSpace:'nowrap' }}>
+                        {col.replace(/_/g,' ').toUpperCase()}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.rows.map((row, i) => (
+                    <tr key={i} style={{ borderBottom:'1px solid var(--glass-border)' }}>
+                      {preview.cols.map(col => (
+                        <td key={col} style={{ padding:'8px 10px', color:'var(--text-primary)', maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {typeof row[col] === 'number' ? row[col].toLocaleString() : (row[col] ?? '—')}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display:'flex', gap:10, marginTop:'var(--space-5)' }}>
+        <button onClick={previewData} disabled={previewing}
+          style={{ flex:1, height:50, background:'var(--input-bg)',
+            color:'var(--text-primary)', border:'1px solid var(--input-border)',
+            borderRadius:10, fontWeight:700, fontSize:'0.88rem',
+            cursor:'pointer', opacity:previewing ? 0.7 : 1 }}>
+          {previewing ? 'Loading…' : '👁 Preview'}
+        </button>
+
+        <button onClick={exportData} disabled={exporting}
+          style={{ flex:2, height:50, background:sc, color:'#fff',
+            border:'none', borderRadius:10, fontWeight:700, fontSize:'0.9rem',
+            cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            gap:10, opacity:exporting ? 0.7 : 1 }}>
+          <DownloadIcon size={18} color="#fff"/>
+          {exporting ? 'Preparing download…' : 'Download CSV'}
+        </button>
+      </div>
 
       <div className={styles.spacer}/>
     </RolePageWrapper>
