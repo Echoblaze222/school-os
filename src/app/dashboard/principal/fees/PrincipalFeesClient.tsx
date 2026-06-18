@@ -9,6 +9,18 @@ import {
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from './fees.module.css'
 
+const OVERLAY: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 200,
+  background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+  display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+}
+const SHEET: React.CSSProperties = {
+  width: '100%', maxWidth: 520,
+  background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+  borderRadius: '18px 18px 0 0', padding: '20px 20px 36px',
+  maxHeight: '80vh', overflowY: 'auto',
+}
+
 export default function PrincipalFeesClient({
   stats, classFees, recentPayments, overdueInvoices, schoolId,
 }: any) {
@@ -37,17 +49,7 @@ export default function PrincipalFeesClient({
   function openRecentPreview(p: any)   { setPreviewItem(p);   setPreviewType('recent') }
   function closeItemPreview()          { setPreviewItem(null); setPreviewType(null) }
 
-  const OVERLAY: React.CSSProperties = {
-    position: 'fixed', inset: 0, zIndex: 200,
-    background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
-    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-  }
-  const SHEET: React.CSSProperties = {
-    width: '100%', maxWidth: 520,
-    background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-    borderRadius: '18px 18px 0 0', padding: '20px 20px 36px',
-    maxHeight: '80vh', overflowY: 'auto',
-  }
+  const collectionRate = stats.totalExpected > 0
     ? Math.round((stats.totalCollected / stats.totalExpected) * 100)
     : 0
 
