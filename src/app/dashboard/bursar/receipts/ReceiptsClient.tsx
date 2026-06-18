@@ -1,4 +1,11 @@
 'use client'
+// src/app/dashboard/bursar/receipts/ReceiptsClient.tsx
+//
+// Fixed: was reading from `fee_payments`, a table nothing writes to anymore.
+// RecordPaymentClient now writes to `payments` (linked via invoice_id to
+// payment_invoices -> fee_structures, and to profiles via student_id).
+// This rewrite joins through that real chain so receipts actually appear.
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
@@ -11,12 +18,42 @@ interface Props { profile: any; school: any; userId: string }
 const TERMS    = ['First Term', 'Second Term', 'Third Term']
 const CUR_YEAR = getCurrentAcademicYear()
 
+const TERM_KEY_MAP: Record<string, string> = {
+  'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
+}
+const TERM_LABELS: Record<string, string> = {
+  first: 'First Term', second: 'Second Term', third: 'Third Term',
+}
+
+/** Flattens a payments row + its nested joins into the flat shape the UI expects */
+function flatten(row: any) {
+  const inv     = row.payment_invoices
+  const fs      = inv?.fee_structures
+  const student = row['profiles!student_id']
+  return {
+    id:             row.id,
+    receipt_number: row.receipt_number,
+    student_name:   student?.full_name ?? 'Unknown',
+    class_level:    student?.class_level ?? '',
+    fee_type:       fs?.description ?? 'School Fees',
+    term:           TERM_LABELS[fs?.term] ?? fs?.term ?? '',
+    academic_year:  fs?.academic_year ?? '',
+    payment_method: row.payment_method,
+    reference:      row.payment_reference,
+    notes:          row.notes,
+    created_at:      row.paid_at ?? row.created_at,
+    amount:         row.currency_used === 'USD' ? row.amount_paid_usd : row.amount_paid_ngn,
+    currency:       row.currency_used,
+  }
+}
+
 export default function ReceiptsClient({ profile, school, userId }: Props) {
   const [payments, setPayments] = useState<any[]>([])
   const [selected, setSelected] = useState<any>(null)
   const [loading,  setLoading]  = useState(true)
   const [term,     setTerm]     = useState(getCurrentTerm())
   const [year,     setYear]     = useState(CUR_YEAR)
+  const [error,    setError]    = useState('')
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
@@ -24,21 +61,58 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('fee_payments').select('*')
-      .eq('school_id', school?.id).eq('term', term).eq('academic_year', year)
+    setError('')
+    const termKey = TERM_KEY_MAP[term] ?? 'first'
+
+    const { data, error: err } = await supabase
+      .from('payments')
+      .select(`
+        id, receipt_number, payment_method, payment_reference, notes,
+        paid_at, created_at, amount_paid_ngn, amount_paid_usd, currency_used,
+        payment_invoices (
+          fee_structures ( description, term, academic_year )
+        ),
+        profiles!student_id ( full_name, class_level )
+      `)
+      .eq('school_id', school?.id)
+      .eq('payment_invoices.fee_structures.term', termKey)
+      .eq('payment_invoices.fee_structures.academic_year', year)
       .order('created_at', { ascending: false })
-    if (data) setPayments(data)
+      .limit(200)
+
+    if (err) {
+      setError(err.message)
+      setPayments([])
+      setLoading(false)
+      return
+    }
+
+    // The .eq() filters above target a 2nd-level nested embed
+    // (payments -> payment_invoices -> fee_structures). PostgREST does not
+    // reliably apply filters at that depth in all versions, so we ALSO
+    // verify the match client-side rather than trusting the server filter alone.
+    const flattened = (data ?? [])
+      .filter((row: any) => {
+        const fs = row.payment_invoices?.fee_structures
+        return fs && fs.term === termKey && fs.academic_year === year
+      })
+      .map(flatten)
+
+    setPayments(flattened)
     setLoading(false)
   }
 
-  function fmtAmt(n: number) {
-    return new Intl.NumberFormat('en-NG', { style:'currency', currency:'NGN', minimumFractionDigits:0 }).format(n)
+  function fmtAmt(n: number, currency: string = 'NGN') {
+    if (currency === 'USD') {
+      return `$${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    }
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n ?? 0)
   }
   function fmtDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-NG', { day:'numeric', month:'long', year:'numeric' })
+    return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
   }
   function fmtShort(iso: string) {
-    return new Date(iso).toLocaleDateString('en-NG', { day:'numeric', month:'short' })
+    return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })
   }
 
   // ── PDF download ──────────────────────────────────────────
@@ -79,7 +153,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
     ${r.reference ? `<tr><td>Reference / Teller</td><td>${r.reference}</td></tr>` : ''}
     ${r.notes     ? `<tr><td>Notes</td><td>${r.notes}</td></tr>` : ''}
     <tr><td>Date</td><td>${fmtDate(r.created_at)}</td></tr>
-    <tr class="amount-row"><td>AMOUNT PAID</td><td>${fmtAmt(r.amount)}</td></tr>
+    <tr class="amount-row"><td>AMOUNT PAID</td><td>${fmtAmt(r.amount, r.currency)}</td></tr>
   </table>
   ${school?.account_number ? `
   <div class="bank">
@@ -112,7 +186,6 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       <div style={{ background:'var(--glass-bg)', border:`2px solid ${sc}40`,
         borderRadius:'var(--radius-xl)', padding:'var(--space-5)' }}>
 
-        {/* Header */}
         <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)',
           paddingBottom:'var(--space-4)', marginBottom:'var(--space-4)' }}>
           <p style={{ fontSize:'1rem', fontWeight:800, color:sc, margin:'0 0 2px' }}>
@@ -130,7 +203,6 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
           </p>
         </div>
 
-        {/* Rows */}
         {([
           ['Student',        selected.student_name],
           ['Class',          selected.class_level],
@@ -155,18 +227,16 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
           </div>
         ))}
 
-        {/* Amount */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
           paddingTop:'var(--space-4)', marginTop:'var(--space-2)' }}>
           <p style={{ fontSize:'0.88rem', fontWeight:800, color:'var(--text-primary)', margin:0 }}>
             AMOUNT PAID
           </p>
           <p style={{ fontSize:'1.3rem', fontWeight:800, color:'#10B981', margin:0 }}>
-            {fmtAmt(selected.amount)}
+            {fmtAmt(selected.amount, selected.currency)}
           </p>
         </div>
 
-        {/* Bank info */}
         {school?.account_number && (
           <div style={{ marginTop:'var(--space-4)', padding:'var(--space-3)',
             background:sc+'12', borderRadius:8 }}>
@@ -181,7 +251,6 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
         )}
       </div>
 
-      {/* Download / Print button */}
       <button onClick={() => downloadReceipt(selected)}
         style={{ width:'100%', height:46, marginTop:'var(--space-5)',
           background:sc, color:'#fff', border:'none', borderRadius:10,
@@ -213,6 +282,13 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
         </div>
       </div>
 
+      {error && (
+        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
       {!loading && payments.length > 0 && (
         <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)',
           letterSpacing:'0.05em', marginBottom:'var(--space-3)' }}>
@@ -231,7 +307,6 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
               {payments.map((p: any) => (
                 <div key={p.id} className={styles.card}
                   style={{ cursor:'pointer' }}>
-                  {/* Tap card body → view detail */}
                   <div style={{ display:'contents' }} onClick={() => setSelected(p)}>
                     <div className={styles.cardIcon} style={{ background:sc+'20' }}>
                       <FileTextIcon size={16} color={sc}/>
@@ -248,13 +323,12 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
                     gap:4, flexShrink:0 }}>
                     <p style={{ fontSize:'0.88rem', fontWeight:800, color:'#10B981', margin:0 }}
                       onClick={() => setSelected(p)}>
-                      {fmtAmt(p.amount)}
+                      {fmtAmt(p.amount, p.currency)}
                     </p>
                     <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}
                       onClick={() => setSelected(p)}>
                       {fmtShort(p.created_at)}
                     </p>
-                    {/* Quick download without opening detail */}
                     <button onClick={e => { e.stopPropagation(); downloadReceipt(p) }}
                       style={{ fontSize:'0.65rem', fontWeight:700, color:sc,
                         background:sc+'15', border:`1px solid ${sc}40`,
