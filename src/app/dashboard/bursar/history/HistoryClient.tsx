@@ -46,12 +46,25 @@ function flatten(row: any) {
   }
 }
 
+const OVERLAY: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 200,
+  background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+  display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+}
+const SHEET: React.CSSProperties = {
+  width: '100%', maxWidth: 520,
+  background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+  borderRadius: '18px 18px 0 0', padding: '20px 20px 36px',
+  maxHeight: '80vh', overflowY: 'auto',
+}
+
 export default function HistoryClient({ profile, school, userId }: Props) {
   const [payments, setPayments] = useState<any[]>([])
   const [loading,  setLoading]  = useState(true)
   const [year,     setYear]     = useState(CUR_YEAR)
   const [term,     setTerm]     = useState<string | null>(null)
   const [error,    setError]    = useState('')
+  const [preview,  setPreview]  = useState<any | null>(null)
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
@@ -117,6 +130,54 @@ export default function HistoryClient({ profile, school, userId }: Props) {
 
   return (
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="History">
+
+      {/* ── Payment Preview Modal ── */}
+      {preview && (
+        <div style={OVERLAY} onClick={() => setPreview(null)}>
+          <div style={SHEET} onClick={e => e.stopPropagation()}>
+            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
+
+            <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 12px' }}>
+              💳 PAYMENT RECORD
+            </p>
+
+            {/* Amount hero */}
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <p style={{ fontSize:'2rem', fontWeight:900, color:'#10B981', margin:0 }}>
+                {fmtAmt(preview.amount, preview.currency)}
+              </p>
+              {preview.receipt_number && (
+                <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', margin:'4px 0 0' }}>
+                  #{preview.receipt_number}
+                </p>
+              )}
+            </div>
+
+            {/* Detail rows */}
+            {([
+              ['Student',    preview.student_name],
+              ['Class',      preview.class_level  || '—'],
+              ['Fee Type',   preview.fee_type?.replace(/_/g,' ')],
+              ['Term',       preview.term         || '—'],
+              ['Currency',   preview.currency     || 'NGN'],
+              ['Date',       fmtDate(preview.created_at)],
+            ] as [string, string][]).map(([label, value]) => (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid var(--glass-border)' }}>
+                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>{label}</span>
+                <span style={{ fontSize:'0.82rem', color:'var(--text-primary)', fontWeight:700, textAlign:'right', maxWidth:'60%' }}>{value}</span>
+              </div>
+            ))}
+
+            <button onClick={() => setPreview(null)}
+              style={{ width:'100%', height:42, marginTop:16,
+                background:'var(--input-bg)', color:'var(--text-primary)',
+                border:'1px solid var(--input-border)', borderRadius:10,
+                fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{ display:'flex', gap:'var(--space-3)', marginBottom:'var(--space-4)', alignItems:'center' }}>
         <input value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
           style={{ height:40, padding:'0 12px', background:'var(--input-bg)',
@@ -170,7 +231,9 @@ export default function HistoryClient({ profile, school, userId }: Props) {
             </div>
           : <div className={styles.list}>
               {payments.map((p: any) => (
-                <div key={p.id} className={styles.card}>
+                <div key={p.id} className={styles.card}
+                  style={{ cursor:'pointer' }}
+                  onClick={() => setPreview(p)}>
                   <div className={styles.cardIcon} style={{ background:sc+'20' }}>
                     <ClockIcon size={16} color={sc}/>
                   </div>
