@@ -33,16 +33,18 @@ export default function PrincipalFeesClient({
     ? Math.round((stats.totalCollected / stats.totalExpected) * 100)
     : 0
 
-  // Group class fees
+  // Group class fees — uses profiles.class_level directly (the column every
+  // other page in this app already relies on). The original version tried
+  // to go through student.student_profiles.classes, but student_profiles.id
+  // has no foreign key to profiles.id in the schema, so that nested embed
+  // would have failed with a "could not find relationship" error.
   const classBreakdown = useMemo(() => {
     const map: Record<string, { due: number; paid: number; count: number; label: string }> = {}
 
     classFees.forEach((inv: any) => {
       const student = inv['profiles!student_id'] as any
-      const sp      = student?.student_profiles as any
-      const cls     = sp?.classes as any
-      const key     = cls?.id ?? 'unknown'
-      const label   = cls ? `${cls.level} ${cls.section}` : 'Unknown Class'
+      const label   = student?.class_level || 'Unassigned'
+      const key     = label
 
       if (!map[key]) map[key] = { due: 0, paid: 0, count: 0, label }
       map[key].due   += inv.amount_due_ngn   || 0
@@ -247,8 +249,6 @@ export default function PrincipalFeesClient({
             ) : (
               overdueInvoices.map((inv: any, i: number) => {
                 const student = (inv['profiles!student_id'] as any)
-                const sp      = student?.student_profiles as any
-                const cls     = sp?.classes as any
 
                 return (
                   <div key={i} className={styles.overdueCard}>
@@ -259,7 +259,7 @@ export default function PrincipalFeesClient({
                       <div>
                         <p className={styles.overdueName}>{student?.full_name ?? 'Unknown'}</p>
                         <p className={styles.overdueClass}>
-                          {cls ? `${cls.level} ${cls.section}` : '—'}
+                          {student?.class_level || '—'}
                         </p>
                         {inv.due_date && (
                           <p className={styles.overdueDate}>
@@ -271,7 +271,7 @@ export default function PrincipalFeesClient({
                     <div>
                       <p className={styles.overdueBalance}>{fmt(inv.balance_ngn)}</p>
                       <a
-                        href={`/dashboard/bursar/payments/new?student=${student?.id}`}
+                        href={`/dashboard/bursar/record-payment?invoice=${inv.id}&student=${encodeURIComponent(student?.full_name ?? '')}`}
                         className={styles.overdueBtn}
                       >
                         Pay
@@ -289,6 +289,10 @@ export default function PrincipalFeesClient({
           <>
             {recentPayments.map((p: any) => {
               const student = (p['profiles!student_id'] as any)
+              const amount  = p.currency_used === 'USD' ? p.amount_paid_usd : p.amount_paid_ngn
+              const display = p.currency_used === 'USD'
+                ? `$${(amount ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                : fmt(amount ?? 0)
               return (
                 <div key={p.id} className={styles.recentCard}>
                   <div className={styles.recentIcon}>
@@ -298,7 +302,7 @@ export default function PrincipalFeesClient({
                     <p className={styles.recentName}>{student?.full_name ?? 'Student'}</p>
                     <p className={styles.recentReceipt}>#{p.receipt_number} · {fmtDate(p.paid_at)}</p>
                   </div>
-                  <p className={styles.recentAmount}>{fmt(p.amount_paid_ngn)}</p>
+                  <p className={styles.recentAmount}>{display}</p>
                 </div>
               )
             })}
