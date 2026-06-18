@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from './invoices.module.css'
 
 const TERMS = ['First Term', 'Second Term', 'Third Term']
@@ -22,13 +24,68 @@ const STATUS_EMOJIS: Record<string, string> = {
   overdue:   '⚠️',
 }
 
+const OVERLAY: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 200,
+  background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+  display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+  padding: '0 0 0 0',
+}
+const SHEET: React.CSSProperties = {
+  width: '100%', maxWidth: 520,
+  background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+  borderRadius: '18px 18px 0 0', padding: '20px 20px 36px',
+  maxHeight: '88vh', overflowY: 'auto',
+}
+
 export default function InvoicesClient({ invoices: initialInvoices, schoolId }: any) {
   const router = useRouter()
+  const supabase = createClient()
   const [invoices,      setInvoices]      = useState<any[]>(initialInvoices)
   const [statusFilter,  setStatusFilter]  = useState('all')
   const [termFilter,    setTermFilter]    = useState('all')
   const [search,        setSearch]        = useState('')
   const [theme,         setTheme]         = useState<'dark' | 'light'>('dark')
+
+  // Preview / edit modal
+  const [previewInv,    setPreviewInv]    = useState<any | null>(null)
+  const [editDueDate,   setEditDueDate]   = useState('')
+  const [editStatus,    setEditStatus]    = useState('')
+  const [saving,        setSaving]        = useState(false)
+  const [saveMsg,       setSaveMsg]       = useState('')
+
+  function openPreview(inv: any) {
+    setPreviewInv(inv)
+    setEditDueDate(inv.due_date ? inv.due_date.slice(0, 10) : '')
+    setEditStatus(inv.status ?? 'pending')
+    setSaveMsg('')
+  }
+  function closePreview() { setPreviewInv(null); setSaveMsg('') }
+
+  async function saveInvoiceEdit() {
+    if (!previewInv) return
+    setSaving(true); setSaveMsg('')
+    const updates: any = { updated_at: new Date().toISOString() }
+    if (editDueDate) updates.due_date = editDueDate
+    if (editStatus)  updates.status   = editStatus
+
+    const { error } = await supabase
+      .from('payment_invoices')
+      .update(updates)
+      .eq('id', previewInv.id)
+
+    if (error) {
+      setSaveMsg('⚠️ ' + error.message)
+    } else {
+      // Patch local state
+      setInvoices(prev => prev.map(i =>
+        i.id === previewInv.id ? { ...i, ...updates } : i
+      ))
+      setPreviewInv((p: any) => ({ ...p, ...updates }))
+      setSaveMsg('✓ Saved')
+      setTimeout(() => setSaveMsg(''), 2500)
+    }
+    setSaving(false)
+  }
 
   // Generate invoices state
   const [genTerm,       setGenTerm]       = useState('First Term')
@@ -47,10 +104,11 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
   const filtered = useMemo(() => {
     return invoices.filter((inv: any) => {
-      const student = inv['profiles!student_id'] as any
+      const student = unwrapEmbed(inv['profiles!student_id']) as any
+      const fs       = unwrapEmbed(inv.fee_structures) as any
       const name    = student?.full_name?.toLowerCase() ?? ''
       const admNo   = student?.permanent_student_id?.toLowerCase() ?? ''
-      const invTerm = inv.fee_structures?.term ?? ''
+      const invTerm = fs?.term ?? ''
 
       const matchSearch = !search ||
         name.includes(search.toLowerCase()) ||
@@ -100,6 +158,104 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
   return (
     <div className={styles.page}>
+
+      {/* ── Invoice Preview / Edit Modal ── */}
+      {previewInv && (() => {
+        const student = unwrapEmbed(previewInv['profiles!student_id']) as any
+        const fee     = unwrapEmbed(previewInv.fee_structures) as any
+        const inp: React.CSSProperties = {
+          height: 38, padding: '0 12px', background: 'var(--input-bg)',
+          border: '1px solid var(--input-border)', borderRadius: 8,
+          color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none', width: '100%',
+          boxSizing: 'border-box',
+        }
+        return (
+          <div style={OVERLAY} onClick={closePreview}>
+            <div style={SHEET} onClick={e => e.stopPropagation()}>
+              {/* Handle */}
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
+
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                <div>
+                  <p style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    {student?.full_name ?? 'Unknown'}
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                    {student?.class_level ?? '—'} · {student?.permanent_student_id ?? student?.admission_number ?? '—'}
+                  </p>
+                </div>
+                <span className={`badge ${STATUS_COLORS[previewInv.status] ?? 'badge-info'}`}>
+                  {STATUS_EMOJIS[previewInv.status] ?? '🕐'} {previewInv.status}
+                </span>
+              </div>
+
+              {/* Fee info */}
+              <div style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+                <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                  {fee?.description ?? 'School Fees'}
+                </p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+                  {fee?.term ? fee.term.charAt(0).toUpperCase() + fee.term.slice(1) + ' Term' : '—'}
+                  {fee?.academic_year ? ` · ${fee.academic_year}` : ''}
+                </p>
+              </div>
+
+              {/* Amounts */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+                {[
+                  { label: 'Due',     val: fmt(previewInv.amount_due_ngn),  color: 'var(--text-primary)' },
+                  { label: 'Paid',    val: fmt(previewInv.amount_paid_ngn), color: 'var(--success)' },
+                  { label: 'Balance', val: fmt(previewInv.balance_ngn),     color: previewInv.balance_ngn > 0 ? 'var(--error)' : 'var(--success)' },
+                ].map(({ label, val, color }) => (
+                  <div key={label} style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label.toUpperCase()}</p>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 800, color, margin: 0 }}>{val}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Edit Fields ── */}
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: '0 0 10px' }}>EDIT INVOICE</p>
+
+              <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+                <div>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>DUE DATE</label>
+                  <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} style={inp} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>STATUS</label>
+                  <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={inp}>
+                    <option value="pending">🕐 Pending</option>
+                    <option value="partial">⏳ Partial</option>
+                    <option value="overdue">⚠️ Overdue</option>
+                    <option value="completed">✅ Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              {saveMsg && (
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: saveMsg.startsWith('✓') ? 'var(--success)' : 'var(--error)', margin: '0 0 10px' }}>
+                  {saveMsg}
+                </p>
+              )}
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={saveInvoiceEdit} disabled={saving}
+                  style={{ flex: 1, height: 42, background: '#7C3AED', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+                {previewInv.balance_ngn > 0 && (
+                  <a href={`/dashboard/bursar/record-payment?invoice=${previewInv.id}&student=${student?.full_name ?? ''}`}
+                    style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                    💳 Record Payment
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <header className={styles.header}>
         <button className={styles.backBtn} onClick={() => router.push('/dashboard/bursar')}>←</button>
@@ -253,11 +409,13 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           </div>
         ) : (
           filtered.map((inv: any) => {
-            const student = inv['profiles!student_id'] as any
-            const fee     = inv.fee_structures as any
+            const student = unwrapEmbed(inv['profiles!student_id']) as any
+            const fee     = unwrapEmbed(inv.fee_structures) as any
 
             return (
-              <div key={inv.id} className={`glass-card ${styles.invoiceCard}`}>
+              <div key={inv.id} className={`glass-card ${styles.invoiceCard}`}
+                onClick={() => openPreview(inv)}
+                style={{ cursor: 'pointer' }}>
                 <div className={styles.invoiceTop}>
                   <div>
                     <p className={styles.studentName}>{student?.full_name ?? 'Unknown'}</p>
@@ -300,14 +458,6 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
                     Due: {fmtDate(inv.due_date)}
                   </p>
-                )}
-
-                {inv.balance_ngn > 0 && (
-                  <a
-                    href={`/dashboard/bursar/record-payment?invoice=${inv.id}&student=${student?.full_name ?? ''}`}
-                    className={`btn btn-primary ${styles.recordBtn}`}>
-                    💳 Record Payment
-                  </a>
                 )}
               </div>
             )
