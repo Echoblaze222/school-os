@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { FileTextIcon } from '@/components/Icons'
 import { getCurrentAcademicYear, getCurrentTerm } from '@/lib/utils/term'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -27,9 +28,10 @@ const TERM_LABELS: Record<string, string> = {
 
 /** Flattens a payments row + its nested joins into the flat shape the UI expects */
 function flatten(row: any) {
-  const inv     = row.payment_invoices
-  const fs      = inv?.fee_structures
-  const student = row['profiles!student_id']
+  // Embeds can come back as object OR 1-element array — unwrap both shapes.
+  const inv     = unwrapEmbed(row.payment_invoices)
+  const fs      = unwrapEmbed(inv?.fee_structures)
+  const student = unwrapEmbed(row['profiles!student_id'])
   return {
     id:             row.id,
     receipt_number: row.receipt_number,
@@ -45,6 +47,18 @@ function flatten(row: any) {
     amount:         row.currency_used === 'USD' ? row.amount_paid_usd : row.amount_paid_ngn,
     currency:       row.currency_used,
   }
+}
+
+const OVERLAY: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 200,
+  background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+  display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+}
+const SHEET: React.CSSProperties = {
+  width: '100%', maxWidth: 520,
+  background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+  borderRadius: '18px 18px 0 0', padding: '20px 20px 36px',
+  maxHeight: '90vh', overflowY: 'auto',
 }
 
 export default function ReceiptsClient({ profile, school, userId }: Props) {
@@ -93,7 +107,8 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
     // verify the match client-side rather than trusting the server filter alone.
     const flattened = (data ?? [])
       .filter((row: any) => {
-        const fs = row.payment_invoices?.fee_structures
+        const inv = unwrapEmbed(row.payment_invoices)
+        const fs  = unwrapEmbed(inv?.fee_structures)
         return fs && fs.term === termKey && fs.academic_year === year
       })
       .map(flatten)
@@ -174,97 +189,86 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
     setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
 
-  // ── Receipt detail view ───────────────────────────────────
-  if (selected) return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Receipt">
-      <button onClick={() => setSelected(null)}
-        style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)',
-          fontSize:'0.8rem', fontWeight:700, marginBottom:'var(--space-5)', padding:0 }}>
-        ← Back to receipts
-      </button>
-
-      <div style={{ background:'var(--glass-bg)', border:`2px solid ${sc}40`,
-        borderRadius:'var(--radius-xl)', padding:'var(--space-5)' }}>
-
-        <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)',
-          paddingBottom:'var(--space-4)', marginBottom:'var(--space-4)' }}>
-          <p style={{ fontSize:'1rem', fontWeight:800, color:sc, margin:'0 0 2px' }}>
-            {school?.name}
-          </p>
-          {school?.address && (
-            <p style={{ fontSize:'0.73rem', color:'var(--text-muted)', margin:'0 0 10px' }}>
-              {school.address}
-            </p>
-          )}
-          <p style={{ fontSize:'0.68rem', fontWeight:800, letterSpacing:'0.12em',
-            color:'var(--text-muted)', margin:'0 0 4px' }}>PAYMENT RECEIPT</p>
-          <p style={{ fontSize:'0.9rem', fontWeight:800, color:sc, margin:0 }}>
-            {selected.receipt_number}
-          </p>
-        </div>
-
-        {([
-          ['Student',        selected.student_name],
-          ['Class',          selected.class_level],
-          ['Fee Type',       selected.fee_type?.replace(/_/g,' ')],
-          ['Term',           selected.term],
-          ['Academic Year',  selected.academic_year],
-          ['Payment Method', selected.payment_method?.replace(/_/g,' ')],
-          selected.reference ? ['Reference / Teller', selected.reference] : null,
-          selected.notes     ? ['Notes', selected.notes]                  : null,
-          ['Date',           fmtDate(selected.created_at)],
-        ] as any[]).filter(Boolean).map(([label, value]: [string, string]) => (
-          <div key={label} style={{ display:'flex', justifyContent:'space-between',
-            alignItems:'flex-start', padding:'9px 0',
-            borderBottom:'1px solid var(--glass-border)' }}>
-            <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', margin:0, flexShrink:0 }}>
-              {label}
-            </p>
-            <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-primary)',
-              margin:0, textTransform:'capitalize', textAlign:'right', maxWidth:'60%' }}>
-              {value}
-            </p>
-          </div>
-        ))}
-
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-          paddingTop:'var(--space-4)', marginTop:'var(--space-2)' }}>
-          <p style={{ fontSize:'0.88rem', fontWeight:800, color:'var(--text-primary)', margin:0 }}>
-            AMOUNT PAID
-          </p>
-          <p style={{ fontSize:'1.3rem', fontWeight:800, color:'#10B981', margin:0 }}>
-            {fmtAmt(selected.amount, selected.currency)}
-          </p>
-        </div>
-
-        {school?.account_number && (
-          <div style={{ marginTop:'var(--space-4)', padding:'var(--space-3)',
-            background:sc+'12', borderRadius:8 }}>
-            <p style={{ fontSize:'0.68rem', fontWeight:800, color:'var(--text-muted)',
-              letterSpacing:'0.06em', margin:'0 0 4px' }}>SCHOOL BANK ACCOUNT</p>
-            <p style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-primary)',
-              margin:'0 0 2px' }}>{school.account_name}</p>
-            <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0 }}>
-              {school.bank_name} · {school.account_number}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <button onClick={() => downloadReceipt(selected)}
-        style={{ width:'100%', height:46, marginTop:'var(--space-5)',
-          background:sc, color:'#fff', border:'none', borderRadius:10,
-          fontWeight:700, fontSize:'0.88rem', cursor:'pointer' }}>
-        ↓ Download / Print Receipt
-      </button>
-
-      <div className={styles.spacer}/>
-    </RolePageWrapper>
-  )
-
   // ── List view ─────────────────────────────────────────────
   return (
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Receipts">
+
+      {/* ── Receipt Preview Modal ── */}
+      {selected && (
+        <div style={OVERLAY} onClick={() => setSelected(null)}>
+          <div style={SHEET} onClick={e => e.stopPropagation()}>
+            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
+
+            {/* Header */}
+            <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)', paddingBottom:14, marginBottom:14 }}>
+              <p style={{ fontSize:'1rem', fontWeight:800, color:sc, margin:'0 0 2px' }}>
+                {school?.name}
+              </p>
+              {school?.address && (
+                <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', margin:'0 0 8px' }}>
+                  {school.address}
+                </p>
+              )}
+              <p style={{ fontSize:'0.65rem', fontWeight:800, letterSpacing:'0.12em', color:'var(--text-muted)', margin:'0 0 4px' }}>
+                PAYMENT RECEIPT
+              </p>
+              <p style={{ fontSize:'0.9rem', fontWeight:800, color:sc, margin:0 }}>
+                {selected.receipt_number}
+              </p>
+            </div>
+
+            {/* Amount */}
+            <div style={{ textAlign:'center', marginBottom:16 }}>
+              <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 4px' }}>
+                AMOUNT PAID
+              </p>
+              <p style={{ fontSize:'2rem', fontWeight:900, color:'#10B981', margin:0 }}>
+                {fmtAmt(selected.amount, selected.currency)}
+              </p>
+            </div>
+
+            {/* Detail rows */}
+            {([
+              ['Student',        selected.student_name],
+              ['Class',          selected.class_level          || '—'],
+              ['Fee Type',       selected.fee_type?.replace(/_/g,' ')],
+              ['Term',           selected.term                 || '—'],
+              ['Academic Year',  selected.academic_year        || '—'],
+              ['Payment Method', selected.payment_method?.replace(/_/g,' ')],
+              selected.reference ? ['Reference / Teller', selected.reference] : null,
+              selected.notes     ? ['Notes',               selected.notes]    : null,
+              ['Date',           fmtDate(selected.created_at)],
+            ] as any[]).filter(Boolean).map(([label, value]: [string, string]) => (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'9px 0', borderBottom:'1px solid var(--glass-border)' }}>
+                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600, flexShrink:0 }}>{label}</span>
+                <span style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-primary)', textTransform:'capitalize', textAlign:'right', maxWidth:'60%' }}>{value}</span>
+              </div>
+            ))}
+
+            {school?.account_number && (
+              <div style={{ marginTop:14, padding:'10px 12px', background:sc+'12', borderRadius:8 }}>
+                <p style={{ fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)', letterSpacing:'0.06em', margin:'0 0 4px' }}>SCHOOL BANK ACCOUNT</p>
+                <p style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-primary)', margin:'0 0 2px' }}>{school.account_name}</p>
+                <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0 }}>
+                  {school.bank_name} · {school.account_number}
+                </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display:'flex', gap:10, marginTop:16 }}>
+              <button onClick={() => downloadReceipt(selected)}
+                style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
+                ↓ Download / Print
+              </button>
+              <button onClick={() => setSelected(null)}
+                style={{ flex:1, height:44, background:'var(--input-bg)', color:'var(--text-primary)', border:'1px solid var(--input-border)', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display:'flex', gap:'var(--space-3)', marginBottom:'var(--space-4)', alignItems:'center' }}>
         <input value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
           style={{ height:40, padding:'0 12px', background:'var(--input-bg)',
@@ -306,27 +310,23 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
           : <div className={styles.list}>
               {payments.map((p: any) => (
                 <div key={p.id} className={styles.card}
-                  style={{ cursor:'pointer' }}>
-                  <div style={{ display:'contents' }} onClick={() => setSelected(p)}>
-                    <div className={styles.cardIcon} style={{ background:sc+'20' }}>
-                      <FileTextIcon size={16} color={sc}/>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <p className={styles.cardTitle}>{p.student_name}</p>
-                      <p className={styles.cardMeta}>
-                        {p.receipt_number} · {p.fee_type?.replace(/_/g,' ')}
-                        {p.class_level ? ` · ${p.class_level}` : ''}
-                      </p>
-                    </div>
+                  style={{ cursor:'pointer' }}
+                  onClick={() => setSelected(p)}>
+                  <div className={styles.cardIcon} style={{ background:sc+'20' }}>
+                    <FileTextIcon size={16} color={sc}/>
                   </div>
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end',
-                    gap:4, flexShrink:0 }}>
-                    <p style={{ fontSize:'0.88rem', fontWeight:800, color:'#10B981', margin:0 }}
-                      onClick={() => setSelected(p)}>
+                  <div className={styles.cardBody}>
+                    <p className={styles.cardTitle}>{p.student_name}</p>
+                    <p className={styles.cardMeta}>
+                      {p.receipt_number} · {p.fee_type?.replace(/_/g,' ')}
+                      {p.class_level ? ` · ${p.class_level}` : ''}
+                    </p>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0 }}>
+                    <p style={{ fontSize:'0.88rem', fontWeight:800, color:'#10B981', margin:0 }}>
                       {fmtAmt(p.amount, p.currency)}
                     </p>
-                    <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}
-                      onClick={() => setSelected(p)}>
+                    <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}>
                       {fmtShort(p.created_at)}
                     </p>
                     <button onClick={e => { e.stopPropagation(); downloadReceipt(p) }}
