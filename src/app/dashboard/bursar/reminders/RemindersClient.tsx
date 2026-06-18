@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BellIcon, PeopleIcon } from '@/components/Icons'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 type Tab = 'send' | 'history'
@@ -63,6 +64,20 @@ export default function RemindersClient({ profile, school, userId }: Props) {
   const [preview,    setPreview]    = useState('')
   const [error,      setError]      = useState('')
 
+  const [previewMsg,    setPreviewMsg]    = useState<any | null>(null)
+
+  const OVERLAY: React.CSSProperties = {
+    position: 'fixed', inset: 0, zIndex: 200,
+    background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+  }
+  const SHEET: React.CSSProperties = {
+    width: '100%', maxWidth: 520,
+    background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+    borderRadius: '18px 18px 0 0', padding: '20px 20px 36px',
+    maxHeight: '85vh', overflowY: 'auto',
+  }
+
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
   const schoolName = school?.name ?? 'the school'
@@ -113,10 +128,16 @@ export default function RemindersClient({ profile, school, userId }: Props) {
     }
 
     // Aggregate outstanding per student (one student may have multiple invoices)
+    // Also re-verify term/year client-side — the .eq('fee_structures.term', ...)
+    // filter above targets a nested embed that PostgREST doesn't always honor reliably.
     const studentMap = new Map<string, any>()
     for (const inv of (data ?? [])) {
-      const student = (inv as any)['profiles!student_id']
+      const fs = unwrapEmbed((inv as any).fee_structures)
+      if (!fs || fs.term !== termKey || fs.academic_year !== year) continue
+
+      const student = unwrapEmbed((inv as any)['profiles!student_id'])
       if (!student) continue
+      const parent = unwrapEmbed(student.parent)
       const sid = student.id
       if (!studentMap.has(sid)) {
         studentMap.set(sid, {
@@ -124,7 +145,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           full_name:   student.full_name,
           class_level: student.class_level ?? '—',
           default_code: student.default_code ?? '',
-          parent:      student.parent ?? null,
+          parent:      parent ?? null,
           outstanding: 0,
           invoiceIds:  [],
         })
@@ -249,6 +270,54 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
   return (
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Fee Reminders">
+
+      {/* ── Message Preview Modal ── */}
+      {previewMsg && (() => {
+        const inv     = unwrapEmbed(previewMsg.payment_invoices)
+        const student = unwrapEmbed(inv?.['profiles!student_id'])
+        return (
+          <div style={OVERLAY} onClick={() => setPreviewMsg(null)}>
+            <div style={SHEET} onClick={e => e.stopPropagation()}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                <div>
+                  <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    {student?.full_name ?? 'Unknown Student'}
+                  </p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                    {student?.class_level ?? '—'} · {fmtDate(previewMsg.sent_at ?? previewMsg.created_at)}
+                  </p>
+                </div>
+                <span style={{
+                  padding: '3px 10px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
+                  background: previewMsg.status === 'sent' ? '#10B98120' : '#F59E0B20',
+                  color:      previewMsg.status === 'sent' ? '#10B981'   : '#F59E0B',
+                }}>
+                  {previewMsg.status}
+                </span>
+              </div>
+
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+                MESSAGE BODY
+              </p>
+              <div style={{
+                background: 'var(--input-bg)', border: '1px solid var(--glass-border)',
+                borderRadius: 10, padding: '14px', fontSize: '0.82rem',
+                color: 'var(--text-primary)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
+              }}>
+                {previewMsg.message_body ?? '(No message body recorded)'}
+              </div>
+
+              <button
+                onClick={() => setPreviewMsg(null)}
+                style={{ width: '100%', height: 42, marginTop: 16, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Tab switcher */}
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
@@ -477,13 +546,14 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             : (
               <div className={styles.list}>
                 {history.map((item: any) => {
-                  const inv     = item.payment_invoices
-                  const student = inv?.['profiles!student_id']
+                  const inv     = unwrapEmbed(item.payment_invoices)
+                  const student = unwrapEmbed(inv?.['profiles!student_id'])
                   return (
                     <div key={item.id} style={{
                       background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
                       borderRadius: 12, padding: '14px 16px', marginBottom: 8,
-                    }}>
+                      cursor: 'pointer',
+                    }} onClick={() => setPreviewMsg(item)}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                         <div>
                           <p style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -506,11 +576,11 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                           fontSize: '0.75rem', color: 'var(--text-muted)', margin: '8px 0 0',
                           lineHeight: 1.5,
                           display: '-webkit-box',
-                          WebkitLineClamp: 3,
+                          WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                         }}>
-                          {item.message_body.slice(0, 180)}{item.message_body.length > 180 ? '…' : ''}
+                          {item.message_body.slice(0, 120)}{item.message_body.length > 120 ? '… tap to view' : ''}
                         </p>
                       )}
                     </div>
