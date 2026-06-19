@@ -6,7 +6,16 @@
 // but was never wired up — it had no page.tsx fetching the props it needs
 // (stats, classFees, recentPayments, overdueInvoices, schoolId).
 //
-// This page now fetches everything from the same live tables the rest of
+// UPDATE: previously this page silently guessed the current term from the
+// calendar month, with no way for the principal to see or change that guess.
+// If the school's actual term didn't match the calendar assumption (e.g.
+// it's June but the school is still in First Term), the dashboard would
+// show all zeros with zero indication of why. It now reads term/year from
+// the URL (?term=first&year=2025/2026), defaulting to the calendar guess
+// only when no params are provided, and the client renders a picker that
+// navigates via those params — same pattern as the bursar's term/year tabs.
+//
+// This page fetches everything from the same live tables the rest of
 // the app uses: fee_structures, payment_invoices, payments, profiles.
 
 import { createClient } from '@/lib/supabase/server'
@@ -26,7 +35,11 @@ function getCurrentAcademicYear(): string {
   return m >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`
 }
 
-export default async function PrincipalFeesPage() {
+export default async function PrincipalFeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ term?: string; year?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -37,10 +50,14 @@ export default async function PrincipalFeesPage() {
 
   if (!school) redirect('/login')
 
-  const termKey = getCurrentTermKey()
-  const year    = getCurrentAcademicYear()
+  const params  = await searchParams
+  // Only fall back to the calendar guess if the principal hasn't picked a
+  // term/year explicitly — once they do, the URL params take over so the
+  // dashboard never silently shows the "wrong" term with no explanation.
+  const termKey = params.term ?? getCurrentTermKey()
+  const year    = params.year ?? getCurrentAcademicYear()
 
-  // ── Pull all invoices for the current term/year, with student info ──
+  // ── Pull all invoices for the selected term/year, with student info ──
   const { data: invoices } = await supabase
     .from('payment_invoices')
     .select(`
@@ -50,7 +67,7 @@ export default async function PrincipalFeesPage() {
     `)
     .eq('school_id', school.id)
 
-  // Filter client-side to the current term/year (2nd-level nested filters
+  // Filter client-side to the selected term/year (2nd-level nested filters
   // aren't reliably applied by PostgREST — same caveat as the bursar pages).
   // Embeds can come back as object OR 1-element array, so unwrap before reading.
   const termInvoices = (invoices ?? []).filter((inv: any) => {
@@ -78,6 +95,9 @@ export default async function PrincipalFeesPage() {
     .slice(0, 50)
 
   // ── Recent payments (last 20, from the real `payments` table) ──
+  // NOTE: intentionally NOT filtered by term/year — "recent" means recent,
+  // so the principal can always see latest activity regardless of which
+  // term they're viewing in the Overview/Classes/Overdue tabs.
   const { data: recentPaymentsRaw } = await supabase
     .from('payments')
     .select(`
@@ -95,6 +115,9 @@ export default async function PrincipalFeesPage() {
       recentPayments={recentPaymentsRaw ?? []}
       overdueInvoices={overdueInvoices}
       schoolId={school.id}
+      currentTerm={termKey}
+      currentYear={year}
     />
   )
 }
+  
