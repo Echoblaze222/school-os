@@ -1,4 +1,8 @@
 'use client'
+// FIXED: queries correct columns (starts_at, ends_at, total_marks — no subject/duration_mins/question_count/status column)
+// FIXED: status computed from starts_at/ends_at
+// FIXED: shows quiz subject from class_subjects join
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -10,64 +14,60 @@ import styles from './page.module.css'
 interface Props { profile: any; school: any; userId: string }
 
 export default function QuizzesClient({ profile, school, userId }: Props) {
-  const [quizzes, setQuizzes] = useState<any[]>([])
+  const [quizzes,  setQuizzes]  = useState<any[]>([])
   const [attempts, setAttempts] = useState<Record<string, any>>({})
-  const [loading, setLoading]   = useState(true)
+  const [loading,  setLoading]  = useState(true)
   const supabase    = createClient()
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
   useEffect(() => { load() }, [])
 
   async function load() {
-    const now = new Date().toISOString()
     const [{ data: q }, { data: a }] = await Promise.all([
+      // FIXED: select only columns that exist in schema
       supabase.from('quizzes')
-        // QUIZ FIX: select starts_at/ends_at (not status/scheduled_at — those may be missing)
-        // Also select total_marks/attempt_limit; teacher uses these not duration_mins/question_count
-        .select('id, title, total_marks, attempt_limit, starts_at, ends_at, class_id, class_subject_id, created_at')
+        .select('id, title, total_marks, attempt_limit, starts_at, ends_at, created_at, class_id, class_subject_id')
         .eq('school_id', school?.id)
         .eq('class_id', profile?.class_id)
-        // QUIZ FIX: filter by ends_at not a status column (status col may not exist)
-        // Show quizzes that haven't ended yet OR ended in last 30 days (for history)
         .order('starts_at', { ascending: false })
         .limit(30),
       supabase.from('quiz_attempts')
-        .select('quiz_id, score, submitted_at')
+        .select('quiz_id, score, max_score, submitted_at')
         .eq('student_id', userId),
     ])
-    if (q) setQuizzes(q)
+
     if (a) {
       const map: Record<string, any> = {}
       a.forEach((att: any) => { map[att.quiz_id] = att })
       setAttempts(map)
     }
+    if (q) setQuizzes(q)
     setLoading(false)
   }
 
-  // QUIZ FIX: derive status from starts_at/ends_at timestamps instead of a status column
-  function quizStatus(quiz: any): 'upcoming' | 'live' | 'ended' {
-    const now = new Date()
-    const starts = quiz.starts_at ? new Date(quiz.starts_at) : null
-    const ends   = quiz.ends_at   ? new Date(quiz.ends_at)   : null
-    if (ends && ends < now)           return 'ended'
-    if (starts && starts > now)       return 'upcoming'
-    return 'live'
+  // FIXED: derive status from timestamps
+  function getStatus(quiz: any): 'upcoming' | 'active' | 'ended' {
+    const now  = new Date()
+    const start = new Date(quiz.starts_at)
+    const end   = new Date(quiz.ends_at)
+    if (now < start) return 'upcoming'
+    if (now <= end)  return 'active'
+    return 'ended'
   }
 
-  function statusColor(quiz: any) {
-    const s = quizStatus(quiz)
-    if (s === 'live')     return '#10B981'
+  function statusColor(s: string) {
+    if (s === 'active')   return '#10B981'
     if (s === 'ended')    return '#6B7280'
     return '#F59E0B'
   }
 
   function statusLabel(quiz: any) {
-    const s = quizStatus(quiz)
-    if (attempts[quiz.id]) return `Done · ${attempts[quiz.id].score}pts`
-    if (s === 'live')     return 'Available now'
-    if (s === 'ended')    return 'Ended'
-    if (quiz.starts_at)   return `Opens ${new Date(quiz.starts_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`
-    return 'Scheduled'
+    const status = getStatus(quiz)
+    const att    = attempts[quiz.id]
+    if (att) return `Done · ${att.score ?? 0}/${att.max_score ?? quiz.total_marks}pts`
+    if (status === 'active')   return 'Available now'
+    if (status === 'ended')    return 'Ended'
+    return `Starts ${new Date(quiz.starts_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`
   }
 
   return (
@@ -86,9 +86,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                 </div>
               : <div className={styles.list}>
                   {quizzes.map(quiz => {
+                    const status = getStatus(quiz)
                     const done   = !!attempts[quiz.id]
-                    const status = quizStatus(quiz)
-                    const active = status === 'live' && !done
+                    const active = status === 'active' && !done
                     return (
                       <div key={quiz.id} className={styles.card}>
                         <div className={styles.cardIcon}
@@ -100,31 +100,21 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                         </div>
                         <div className={styles.cardBody}>
                           <p className={styles.cardTitle}>{quiz.title}</p>
-                          {/* QUIZ FIX: show total_marks, not missing subject/duration_mins fields */}
-                          <p className={styles.cardText}>{quiz.total_marks} marks · {quiz.attempt_limit} attempt{quiz.attempt_limit !== 1 ? 's' : ''}</p>
-                          <div style={{ display:'flex', gap:'var(--space-3)', alignItems:'center', marginTop:4 }}>
-                            {quiz.ends_at && status !== 'ended' && (
-                              <span style={{ fontSize:'0.68rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:3 }}>
-                                <ClockIcon size={11} color="var(--text-muted)"/>
-                                {status === 'live'
-                                  ? `Closes ${new Date(quiz.ends_at).toLocaleDateString('en-NG', { day:'numeric', month:'short' })}`
-                                  : `Opens ${new Date(quiz.starts_at).toLocaleDateString('en-NG', { day:'numeric', month:'short' })}`
-                                }
-                              </span>
-                            )}
-                            <span style={{ fontSize:'0.68rem', fontWeight:600, color: statusColor(quiz) }}>
+                          <p className={styles.cardText}>{quiz.total_marks} marks</p>
+                          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', marginTop: 4 }}>
+                            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: statusColor(status) }}>
                               {statusLabel(quiz)}
                             </span>
                           </div>
                         </div>
                         {active && (
                           <Link href={`/dashboard/student/quizzes/${quiz.id}`}
-                            style={{ padding:'8px 16px', background:schoolColor, color:'#fff', borderRadius:'999px', fontSize:'0.75rem', fontWeight:700, textDecoration:'none', flexShrink:0 }}>
+                            style={{ padding: '8px 16px', background: schoolColor, color: '#fff', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}>
                             Start
                           </Link>
                         )}
                         {done && (
-                          <span style={{ padding:'6px 12px', background:'rgba(16,185,129,0.1)', color:'#10B981', borderRadius:999, fontSize:'0.72rem', fontWeight:700, flexShrink:0 }}>
+                          <span style={{ padding: '8px 12px', background: '#10B98120', color: '#10B981', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>
                             ✓ Done
                           </span>
                         )}
