@@ -135,7 +135,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       const fs = unwrapEmbed((inv as any).fee_structures)
       if (!fs || fs.term !== termKey || fs.academic_year !== year) continue
 
-      const student = unwrapEmbed((inv as any)['profiles!student_id'])
+      const student = unwrapEmbed((inv as any).profiles)
       if (!student) continue
       const parent = unwrapEmbed(student.parent)
       const sid = student.id
@@ -274,7 +274,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       {/* ── Message Preview Modal ── */}
       {previewMsg && (() => {
         const inv     = unwrapEmbed(previewMsg.payment_invoices)
-        const student = unwrapEmbed(inv?.['profiles!student_id'])
+        const student = unwrapEmbed(inv?.profiles)
         return (
           <div style={OVERLAY} onClick={() => setPreviewMsg(null)}>
             <div style={SHEET} onClick={e => e.stopPropagation()}>
@@ -547,7 +547,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               <div className={styles.list}>
                 {history.map((item: any) => {
                   const inv     = unwrapEmbed(item.payment_invoices)
-                  const student = unwrapEmbed(inv?.['profiles!student_id'])
+                  const student = unwrapEmbed(inv?.profiles)
                   return (
                     <div key={item.id} style={{
                       background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
