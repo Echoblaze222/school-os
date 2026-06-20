@@ -1,18 +1,23 @@
 // src/lib/utils/unwrapEmbed.ts
 //
-// Supabase/PostgREST embeds (e.g. `profiles!student_id(...)`) don't always
-// come back as a flat object. Depending on how PostgREST infers the
-// relationship cardinality, the same query can return either:
+// Supabase/PostgREST embeds don't always come back as a flat object —
+// depending on inferred cardinality, the same query can return either
+// an object or a 1-element array for the same embedded relation. This
+// helper normalizes both shapes safely.
 //
-//   row['profiles!student_id'] = { full_name: 'Jane', ... }       // object
-//   row['profiles!student_id'] = [{ full_name: 'Jane', ... }]     // array
+// IMPORTANT — key naming: when you disambiguate a relationship with a
+// hint like `profiles!student_id(...)` in a .select() string, that hint
+// is ONLY used to pick which foreign key to follow. It does NOT change
+// the key name in the response — the response key is always just the
+// table name, e.g. `row.profiles`, never `row['profiles!student_id']`.
+// (Confirmed directly from a live Supabase response during debugging:
+// the row came back as `{ profiles: { full_name, class_level } }`.)
 //
-// This silently breaks any code that does `row['profiles!student_id']?.full_name`
-// when the actual shape is an array — no error is thrown, the optional
-// chain just resolves to undefined, and the UI falls back to "Unknown".
+// The key DOES change if you use alias syntax instead of a hint, e.g.
+// `parent:profiles!parent_id(...)` returns `row.parent`, not `row.profiles`.
 //
-// Use this helper anywhere you read an embedded relation to handle both
-// shapes safely.
+// Use this helper anywhere you read an embedded relation, reading by the
+// correct key (table name, or alias if one was used) — never the hint.
 
 export function unwrapEmbed<T = any>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null
