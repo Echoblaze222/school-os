@@ -18,6 +18,8 @@ export default async function TeacherDashboardPage() {
     .eq('id', userId)
     .single()
 
+  if (!profile || profile.role !== 'teacher') redirect('/login')
+
   const school = (profile as any)?.schools ?? null
 
   // ── Parallel count queries (FIX #4) ─────────────────────────
@@ -93,4 +95,4 @@ export default async function TeacherDashboardPage() {
       counts={counts}
     />
   )
-}
+          }
