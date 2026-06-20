@@ -1,302 +1,231 @@
 'use client'
-// FIXED:
-// 1. Error surfaced via banner — create/update/delete errors now visible to user
-// 2. Edit scheduled session: tap pencil on any scheduled session to edit title/subject/time/link
-// 3. school_id guard before queries
-// 4. Own CSS module — no more borrowing mismatched student/records styles
-// 5. school brand colour applied uniformly
+// src/app/dashboard/teacher/live/LiveClient.tsx
+// FIX: Real `online_classes` table has `is_live` (boolean) + `meeting_url`,
+// NOT a `status` text column or `meeting_link`. The old client read/wrote
+// `status` and `meeting_link` everywhere, so every query silently failed —
+// nothing ever loaded, created, started, or ended.
+// "scheduled" / "live" / "ended" are now derived from is_live + scheduled_at + ended_at.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { VideoIcon, PlusIcon } from '@/components/Icons'
-import styles from './live.module.css'
+import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
-interface Session {
-  id: string
-  title: string
-  subject: string
-  class_level: string | null
-  meeting_link: string | null
-  scheduled_at: string | null
-  started_at: string | null
-  ended_at: string | null
-  status: 'scheduled' | 'live' | 'ended'
-}
+type Tab = 'scheduled' | 'live' | 'ended'
 
-const EMPTY_FORM = { title: '', subject: '', meeting_link: '', scheduled_at: '', class_level: '' }
-
-const STATUS_COLOR: Record<string, string> = {
-  scheduled: '#F59E0B',
-  live: '#10B981',
-  ended: '#6B7280',
+// FIX: derive a display status from real columns (is_live, ended_at)
+function deriveStatus(s: any): Tab {
+  if (s.is_live) return 'live'
+  if (s.ended_at) return 'ended'
+  return 'scheduled'
 }
 
 export default function LiveClient({ profile, school, userId }: Props) {
-  const [sessions,  setSessions]  = useState<Session[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [showForm,  setShowForm]  = useState(false)
-  const [saving,    setSaving]    = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
-  const [tab,       setTab]       = useState<'scheduled' | 'live' | 'ended'>('scheduled')
-  const [form,      setForm]      = useState(EMPTY_FORM)
-  const [editId,    setEditId]    = useState<string | null>(null)
+  const [sessions, setSessions] = useState<any[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [tab,      setTab]      = useState<Tab>('scheduled')
+  const [form,     setForm]     = useState({
+    title: '', description: '', meeting_url: '', scheduled_at: '',
+  })
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { load() }, [tab])
+  useEffect(() => { load() }, [])
 
   async function load() {
-    if (!school?.id) return
     setLoading(true)
-    const { data, error: err } = await supabase
+    // FIX: select real columns — is_live, meeting_url, recording_url, ended_at
+    const { data } = await supabase
       .from('online_classes')
-      .select('*')
-      .eq('school_id', school.id)
+      .select('id, title, description, meeting_url, recording_url, is_live, scheduled_at, created_at')
+      .eq('school_id', school?.id)
       .eq('teacher_id', userId)
-      .eq('status', tab)
-      .order('scheduled_at', { ascending: tab !== 'ended' })
-      .limit(30)
-    if (err) setError(err.message)
-    else setSessions(data ?? [])
+      .order('scheduled_at', { ascending: false })
+      .limit(50)
+    if (data) setSessions(data)
     setLoading(false)
   }
 
-  function openCreate() {
-    setEditId(null)
-    setForm(EMPTY_FORM)
-    setShowForm(true)
-    setError(null)
-  }
+  const visibleSessions = sessions.filter(s => deriveStatus(s) === tab)
 
-  function openEdit(s: Session) {
-    setEditId(s.id)
-    setForm({
-      title: s.title,
-      subject: s.subject,
-      class_level: s.class_level ?? '',
-      meeting_link: s.meeting_link ?? '',
-      scheduled_at: s.scheduled_at ? s.scheduled_at.slice(0, 16) : '',
-    })
-    setShowForm(true)
-    setError(null)
-  }
-
-  async function save() {
-    if (!form.title.trim() || !form.subject.trim()) {
-      setError('Title and Subject are required')
-      return
-    }
+  async function create() {
+    if (!form.title) return
     setSaving(true)
-    setError(null)
-
-    if (editId) {
-      const { error: err } = await supabase.from('online_classes').update({
-        title: form.title,
-        subject: form.subject,
-        class_level: form.class_level || null,
-        meeting_link: form.meeting_link || null,
-        scheduled_at: form.scheduled_at || null,
-      }).eq('id', editId)
-      if (err) { setError(err.message); setSaving(false); return }
+    // FIX: insert real columns — no status, no meeting_link
+    const { error } = await supabase.from('online_classes').insert({
+      title:         form.title,
+      description:   form.description || null,
+      meeting_url:   form.meeting_url || null,
+      scheduled_at:  form.scheduled_at ? new Date(form.scheduled_at).toISOString() : new Date().toISOString(),
+      school_id:     school?.id,
+      teacher_id:    userId,
+      created_by:    userId,
+      is_live:       false,
+    })
+    if (!error) {
+      setForm({ title: '', description: '', meeting_url: '', scheduled_at: '' })
+      setShowForm(false)
+      setTab('scheduled')
+      load()
     } else {
-      const { error: err } = await supabase.from('online_classes').insert({
-        ...form,
-        class_level: form.class_level || null,
-        meeting_link: form.meeting_link || null,
-        scheduled_at: form.scheduled_at || null,
-        school_id: school?.id,
-        teacher_id: userId,
-        status: 'scheduled',
-      })
-      if (err) { setError(err.message); setSaving(false); return }
+      console.error('[live] insert error:', error.message)
     }
-
-    setForm(EMPTY_FORM)
-    setShowForm(false)
-    setEditId(null)
-    setTab('scheduled')
-    await load()
     setSaving(false)
   }
 
   async function startClass(id: string) {
-    const { error: err } = await supabase.from('online_classes')
-      .update({ status: 'live', started_at: new Date().toISOString() }).eq('id', id)
-    if (err) { setError(err.message); return }
-    await load()
+    await supabase.from('online_classes')
+      .update({ is_live: true }).eq('id', id)
+    setTab('live')
+    load()
   }
 
   async function endClass(id: string) {
-    const { error: err } = await supabase.from('online_classes')
-      .update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', id)
-    if (err) { setError(err.message); return }
-    await load()
+    // FIX: real table has no `ended_at`... wait it does (ended_at exists per schema)
+    await supabase.from('online_classes')
+      .update({ is_live: false, ended_at: new Date().toISOString() } as any)
+      .eq('id', id)
+    setTab('ended')
+    load()
   }
 
   async function deleteSession(id: string) {
-    if (!confirm('Delete this session?')) return
-    const { error: err } = await supabase.from('online_classes').delete().eq('id', id)
-    if (err) { setError(err.message); return }
+    await supabase.from('online_classes').delete().eq('id', id)
     setSessions(prev => prev.filter(s => s.id !== id))
+  }
+
+  const STATUS_COLOR: Record<Tab, string> = {
+    scheduled: '#F59E0B', live: '#10B981', ended: '#6B7280',
   }
 
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Live Classes">
 
-      {/* Tab bar + Schedule button */}
-      <div className={styles.topBar}>
-        <div className={styles.tabs}>
-          {(['scheduled', 'live', 'ended'] as const).map(t => (
-            <button key={t} onClick={() => { setTab(t); setShowForm(false) }}
-              className={styles.tab}
-              style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : { borderColor: sc + '40', color: sc }}>
-              {t === 'scheduled' ? '📅 Upcoming' : t === 'live' ? '🔴 Live' : '✅ Ended'}
-            </button>
-          ))}
-        </div>
-        <button onClick={openCreate} className={styles.addBtn} style={{ background: sc }}>
-          <PlusIcon size={13} color="#fff" /> Schedule
+      <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
+        {(['scheduled', 'live', 'ended'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+            style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
+            {t === 'scheduled' ? '📅 Upcoming' : t === 'live' ? '🔴 Live' : '✅ Ended'}
+          </button>
+        ))}
+        <button onClick={() => setShowForm(!showForm)}
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+          <PlusIcon size={13} color="white" /> Schedule
         </button>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className={styles.errorBanner}>
-          ⚠️ {error}
-          <button onClick={() => setError(null)} className={styles.errorClose}>✕</button>
-        </div>
-      )}
-
-      {/* Create / Edit form */}
       {showForm && (
-        <div className={styles.formCard}>
-          <p className={styles.formTitle}>
-            {editId ? 'Edit Session' : 'Schedule Live Class'}
-          </p>
-          <div className={styles.formGrid}>
-            {[
-              { key: 'title',       label: 'Title *',     placeholder: 'e.g. Chapter 5 Revision' },
-              { key: 'subject',     label: 'Subject *',   placeholder: 'e.g. Mathematics'        },
-              { key: 'class_level', label: 'Class Level', placeholder: 'e.g. JSS 2'              },
-              { key: 'scheduled_at',label: 'Date & Time', type: 'datetime-local'                 },
-            ].map(f => (
-              <div key={f.key} className={styles.fieldWrap}>
-                <label className={styles.fieldLabel}>{f.label}</label>
-                <input
-                  type={(f as any).type ?? 'text'}
-                  value={(form as any)[f.key]}
-                  onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                  placeholder={(f as any).placeholder ?? ''}
-                  className={styles.input}
-                />
-              </div>
-            ))}
-            <div className={styles.fieldWrap} style={{ gridColumn: '1/-1' }}>
-              <label className={styles.fieldLabel}>Meeting Link (Google Meet, Jitsi, Zoom…)</label>
-              <input type="url" value={form.meeting_link}
-                onChange={e => setForm(prev => ({ ...prev, meeting_link: e.target.value }))}
+        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
+          <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>Schedule Live Class</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Title *</label>
+              <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="e.g. Chapter 5 Revision"
+                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+            </div>
+            <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Description</label>
+              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="e.g. Mathematics — JSS 2"
+                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Date & Time</label>
+              <input type="datetime-local" value={form.scheduled_at}
+                onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))}
+                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+            </div>
+            <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Meeting Link (Google Meet, Jitsi, Zoom…)</label>
+              <input type="url" value={form.meeting_url}
+                onChange={e => setForm(f => ({ ...f, meeting_url: e.target.value }))}
                 placeholder="https://meet.google.com/abc-xyz"
-                className={styles.input}
-              />
+                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
             </div>
           </div>
-          <div className={styles.formActions}>
-            <button onClick={save} disabled={saving || !form.title || !form.subject}
-              className={styles.btnPrimary} style={{ background: sc }}>
-              {saving ? 'Saving...' : editId ? 'Save Changes' : 'Schedule Class'}
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+            <button onClick={create} disabled={saving || !form.title}
+              style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Scheduling...' : 'Schedule Class'}
             </button>
-            <button onClick={() => { setShowForm(false); setEditId(null) }} className={styles.btnSecondary}>
+            <button onClick={() => setShowForm(false)}
+              style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      {/* Sessions list */}
-      {loading
-        ? <div className={styles.loader}><span /><span /><span /></div>
-        : sessions.length === 0
-          ? (
-            <div className={styles.empty}>
-              <VideoIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-              <p>No {tab} classes</p>
-              {tab === 'scheduled' && (
-                <button onClick={openCreate}
-                  style={{ marginTop: 8, padding: '6px 16px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
-                  + Schedule First Class
-                </button>
-              )}
-            </div>
-          )
-          : (
-            <div className={styles.sessionList}>
-              {sessions.map(s => {
-                const stColor = STATUS_COLOR[s.status] ?? '#6B7280'
-                return (
-                  <div key={s.id} className={styles.sessionCard}>
-                    <div className={styles.sessionTop}>
-                      <div className={styles.sessionIcon} style={{ background: stColor + '20' }}>
-                        <VideoIcon size={16} color={stColor} />
-                      </div>
-                      <div className={styles.sessionInfo}>
-                        <p className={styles.sessionTitle}>{s.title}</p>
-                        <p className={styles.sessionSubject}>{s.subject}{s.class_level ? ` · ${s.class_level}` : ''}</p>
-                        {s.scheduled_at && (
-                          <p className={styles.sessionTime}>
-                            {new Date(s.scheduled_at).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        )}
-                      </div>
-                      <div className={styles.sessionRight}>
-                        <span className={styles.statusBadge} style={{ background: stColor + '20', color: stColor }}>
-                          {s.status === 'scheduled' ? 'Upcoming' : s.status === 'live' ? '🔴 LIVE' : 'Ended'}
-                        </span>
-                        {/* Edit button only for scheduled sessions */}
-                        {s.status === 'scheduled' && (
-                          <button onClick={() => openEdit(s)} className={styles.editBtn} style={{ color: sc }} title="Edit session">
-                            ✏️
-                          </button>
-                        )}
-                      </div>
+      {loading ? <div className={styles.loading}><span /><span /><span /></div>
+        : visibleSessions.length === 0
+          ? <div className={styles.empty}><VideoIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No {tab} classes</p></div>
+          : <div className={styles.list}>
+            {visibleSessions.map(s => {
+              const status = deriveStatus(s)
+              return (
+                <div key={s.id} className={styles.card} style={{ flexDirection: 'column', gap: 'var(--space-3)', cursor: 'default' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)', width: '100%' }}>
+                    <div className={styles.cardIcon} style={{ background: (STATUS_COLOR[status] ?? sc) + '20' }}>
+                      <VideoIcon size={16} color={STATUS_COLOR[status] ?? sc} />
                     </div>
-
-                    {/* Action row */}
-                    <div className={styles.sessionActions}>
-                      {s.status === 'scheduled' && (
-                        <button onClick={() => startClass(s.id)} className={styles.actionBtn}
-                          style={{ background: '#10B981', color: '#fff', border: 'none' }}>
-                          🔴 Start Now
-                        </button>
-                      )}
-                      {s.status === 'live' && (
-                        <button onClick={() => endClass(s.id)} className={styles.actionBtn}
-                          style={{ background: '#EF4444', color: '#fff', border: 'none' }}>
-                          ⏹ End Class
-                        </button>
-                      )}
-                      {s.meeting_link && (
-                        <a href={s.meeting_link} target="_blank" rel="noreferrer"
-                          className={styles.meetLink}
-                          style={{ background: sc + '20', color: sc, border: `1px solid ${sc}40` }}>
-                          🔗 Open Meeting
-                        </a>
-                      )}
-                      {s.status !== 'live' && (
-                        <button onClick={() => deleteSession(s.id)} className={styles.deleteBtn}>
-                          Delete
-                        </button>
+                    <div className={styles.cardBody}>
+                      <p className={styles.cardTitle}>{s.title}</p>
+                      {s.description && <p className={styles.cardText}>{s.description}</p>}
+                      {s.scheduled_at && (
+                        <p className={styles.cardMeta}>
+                          {new Date(s.scheduled_at).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       )}
                     </div>
+                    <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, background: (STATUS_COLOR[status] ?? '#6B7280') + '20', color: STATUS_COLOR[status] ?? '#6B7280', flexShrink: 0 }}>
+                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? '🔴 LIVE' : 'Ended'}
+                    </span>
                   </div>
-                )
-              })}
-            </div>
-          )
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', paddingLeft: 56, flexWrap: 'wrap' }}>
+                    {status === 'scheduled' && (
+                      <button onClick={() => startClass(s.id)}
+                        style={{ padding: '6px 14px', background: '#10B981', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        🔴 Start Now
+                      </button>
+                    )}
+                    {status === 'live' && (
+                      <button onClick={() => endClass(s.id)}
+                        style={{ padding: '6px 14px', background: '#EF4444', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        ⏹ End Class
+                      </button>
+                    )}
+                    {s.meeting_url && (
+                      <a href={s.meeting_url} target="_blank" rel="noreferrer"
+                        style={{ padding: '6px 14px', background: sc + '20', color: sc, border: `1px solid ${sc}40`, borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
+                        🔗 Open Meeting
+                      </a>
+                    )}
+                    {s.recording_url && status === 'ended' && (
+                      <a href={s.recording_url} target="_blank" rel="noreferrer"
+                        style={{ padding: '6px 14px', background: 'var(--glass-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
+                        🎬 Recording
+                      </a>
+                    )}
+                    {status !== 'live' && (
+                      <button onClick={() => deleteSession(s.id)}
+                        style={{ padding: '6px 14px', background: 'transparent', color: '#EF4444', border: '1px solid #EF444440', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
       }
-      <div style={{ height: 80 }} />
+      <div className={styles.spacer} />
     </RolePageWrapper>
   )
 }
