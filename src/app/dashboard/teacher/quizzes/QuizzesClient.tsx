@@ -1,13 +1,22 @@
 'use client'
 // src/app/dashboard/teacher/quizzes/QuizzesClient.tsx
-// FIXES:
-//   1. Removed useSearchParams() — it was only used for ?class_id= which is never
-//      actually linked to by anything. This was the root cause of the redirect-to-login
-//      bug: useSearchParams() without <Suspense> crashes the component in Next.js 15,
-//      Next.js falls through to its error boundary which redirects to /login.
-//      If you ever need the ?class_id= feature back, wrap in <Suspense> in page.tsx first.
-//   2. Preview/Edit step: back button (router.back) in DashboardHeader navigated away
-//      from the app. Fixed by using an explicit onBack callback that resets step to 'list'.
+//
+// FIX (this round): QuestionBuilder was defined INSIDE QuizzesClient's function body.
+// Every keystroke called setQuestions() → QuizzesClient re-rendered → a brand-new
+// QuestionBuilder function was created → React saw it as a NEW component type →
+// it unmounted the old <textarea>/<input> DOM (losing focus, closing the keyboard)
+// and mounted a fresh one on every single character. This is why the keyboard
+// appeared to flicker open/closed on every keystroke, and why question text
+// frequently ended up empty (the keystroke landed on an input that was about to
+// be destroyed) — which in turn explains why students saw "No questions yet":
+// the saved row's `question` text was blank or the row never got inserted because
+// the Save button stayed disabled (questions.some(q => !q.question) was still true).
+//
+// FIX: QuestionBuilder is now a stable, module-level component declared OUTSIDE
+// QuizzesClient. Its identity never changes across renders, so React reuses the
+// same DOM nodes and focus is preserved while typing.
+//
+// (Carried over from earlier fixes: no useSearchParams/Suspense crash, no router.back() to login)
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -42,6 +51,85 @@ const BLANK_Q: Question = {
   marks: 1,
 }
 
+// ── Stable, module-level component ──────────────────────────
+// FIX: previously nested inside QuizzesClient. Now declared here, once,
+// so its identity is stable across parent re-renders and inputs keep focus.
+function QuestionBuilder({
+  questions, setQuestions, onSave, onCancel, saveLabel, saving, sc,
+}: {
+  questions:     Question[]
+  setQuestions:  React.Dispatch<React.SetStateAction<Question[]>>
+  onSave:        () => void
+  onCancel:      () => void
+  saveLabel:     string
+  saving:        boolean
+  sc:            string
+}) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
+        {questions.map((q, qi) => (
+          <div key={qi} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: sc }}>Q{qi + 1}</span>
+              {questions.length > 1 && (
+                <button onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
+                  style={{ fontSize: '0.72rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>Remove</button>
+              )}
+            </div>
+            <textarea value={q.question}
+              onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, question: e.target.value } : x))}
+              placeholder="Type the question here..." rows={2}
+              style={{ width: '100%', padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'none', marginBottom: 'var(--space-3)', boxSizing: 'border-box' as const }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+              {q.options.map((opt, oi) => (
+                <div key={opt.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: q.answer === opt.label ? '#10B981' : 'var(--text-muted)', width: 16, flexShrink: 0 }}>{opt.label}</span>
+                  <input value={opt.text}
+                    onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, options: x.options.map((o, j) => j === oi ? { ...o, text: e.target.value } : o) } : x))}
+                    placeholder={`Option ${opt.label}`}
+                    style={{ flex: 1, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? '#10B981' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Correct Answer</label>
+                <select value={q.answer}
+                  onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, answer: e.target.value } : x))}
+                  style={{ height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: '#10B981', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
+                  {q.options.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Marks</label>
+                <input type="number" min={1} value={q.marks}
+                  onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, marks: Number(e.target.value) } : x))}
+                  style={{ width: 64, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+        <button onClick={() => setQuestions(prev => [...prev, { ...BLANK_Q, options: BLANK_Q.options.map(o => ({ ...o })) }])}
+          style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+          + Add Question
+        </button>
+        <button onClick={onSave} disabled={saving || questions.some(q => !q.question.trim())}
+          style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Saving...' : saveLabel}
+        </button>
+        <button onClick={onCancel}
+          style={{ height: 40, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
+          Cancel
+        </button>
+      </div>
+    </>
+  )
+}
+
 export default function QuizzesClient({ profile, school, userId }: Props) {
   const [quizzes,       setQuizzes]       = useState<any[]>([])
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
@@ -62,7 +150,6 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     ends_at: '',
     attempt_limit: 1,
   })
-  // FIX: removed useSearchParams() — was crashing the page in Next.js 15
 
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
@@ -130,7 +217,6 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     setLoading(false)
   }
 
-  // FIX: openPreview only sets state — no router navigation — so back button is safe
   async function openPreview(quiz: any) {
     setEditingQuiz(quiz)
     const { data: qs } = await supabase
@@ -164,8 +250,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   async function saveEditedQuestions() {
     if (!editingQuiz) return
     setSaving(true)
-    await supabase.from('quiz_questions').delete().eq('quiz_id', editingQuiz.id)
-    await supabase.from('quiz_questions').insert(
+    const { error: delErr } = await supabase.from('quiz_questions').delete().eq('quiz_id', editingQuiz.id)
+    if (delErr) console.error('[quiz] delete error:', delErr.message)
+    const { error: insErr } = await supabase.from('quiz_questions').insert(
       questions.map((q, i) => ({
         quiz_id:  editingQuiz.id,
         question: q.question,
@@ -175,6 +262,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         position: i,
       }))
     )
+    if (insErr) console.error('[quiz] insert error:', insErr.message)
     setSaving(false)
     backToList()
     loadQuizzes()
@@ -192,7 +280,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     const now        = new Date()
     const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('quizzes')
       .insert({
         class_subject_id: cls.class_subject_id,
@@ -210,9 +298,11 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       .select()
       .single()
 
+    if (error) console.error('[quiz] create error:', error.message)
+
     if (data) {
       setNewQuiz(data)
-      setQuestions([{ ...BLANK_Q }])
+      setQuestions([{ ...BLANK_Q, options: BLANK_Q.options.map(o => ({ ...o })) }])
       setStep('questions')
     }
     setSaving(false)
@@ -221,7 +311,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   async function saveQuestions() {
     if (!newQuiz) return
     setSaving(true)
-    await supabase.from('quiz_questions').insert(
+    const { error } = await supabase.from('quiz_questions').insert(
       questions.map((q, i) => ({
         quiz_id:  newQuiz.id,
         question: q.question,
@@ -231,6 +321,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         position: i,
       }))
     )
+    if (error) console.error('[quiz] save questions error:', error.message)
     setSaving(false)
     backToList()
     loadQuizzes()
@@ -260,76 +351,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     return 'closed'
   }
 
-  // ── Shared question builder UI ────────────────────────────
-  function QuestionBuilder({ onSave, onCancel, saveLabel }: { onSave: () => void; onCancel: () => void; saveLabel: string }) {
-    return (
-      <>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-          {questions.map((q, qi) => (
-            <div key={qi} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: sc }}>Q{qi + 1}</span>
-                {questions.length > 1 && (
-                  <button onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
-                    style={{ fontSize: '0.72rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>Remove</button>
-                )}
-              </div>
-              <textarea value={q.question}
-                onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, question: e.target.value } : x))}
-                placeholder="Type the question here..." rows={2}
-                style={{ width: '100%', padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'none', marginBottom: 'var(--space-3)', boxSizing: 'border-box' as const }} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                {q.options.map((opt, oi) => (
-                  <div key={opt.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.8rem', color: q.answer === opt.label ? '#10B981' : 'var(--text-muted)', width: 16, flexShrink: 0 }}>{opt.label}</span>
-                    <input value={opt.text}
-                      onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, options: x.options.map((o, j) => j === oi ? { ...o, text: e.target.value } : o) } : x))}
-                      placeholder={`Option ${opt.label}`}
-                      style={{ flex: 1, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? '#10B981' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Correct Answer</label>
-                  <select value={q.answer}
-                    onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, answer: e.target.value } : x))}
-                    style={{ height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: '#10B981', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
-                    {q.options.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Marks</label>
-                  <input type="number" min={1} value={q.marks}
-                    onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, marks: Number(e.target.value) } : x))}
-                    style={{ width: 64, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-          <button onClick={() => setQuestions(prev => [...prev, { ...BLANK_Q }])}
-            style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
-            + Add Question
-          </button>
-          <button onClick={onSave} disabled={saving || questions.some(q => !q.question)}
-            style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-            {saving ? 'Saving...' : saveLabel}
-          </button>
-          <button onClick={onCancel}
-            style={{ height: 40, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
-            Cancel
-          </button>
-        </div>
-      </>
-    )
-  }
-
   // ── Preview / Edit existing quiz ──────────────────────────
-  // FIX: showBack=false prevents router.back() from sending teacher to login.
-  //      The "← Back" in the header is replaced by Cancel/back buttons inside the page.
   if (step === 'preview' && editingQuiz) return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Edit Quiz" showBack={false}>
       <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
@@ -339,7 +361,6 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         </p>
       </div>
 
-      {/* Back to list button */}
       <button onClick={backToList}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         ← Back to Quizzes
@@ -350,9 +371,13 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       </p>
 
       <QuestionBuilder
+        questions={questions}
+        setQuestions={setQuestions}
         onSave={saveEditedQuestions}
         onCancel={backToList}
         saveLabel={`Save ${questions.length} Question${questions.length !== 1 ? 's' : ''}`}
+        saving={saving}
+        sc={sc}
       />
       <div style={{ height: 100 }} />
     </RolePageWrapper>
@@ -361,7 +386,6 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   // ── New quiz: add questions step ──────────────────────────
   if (step === 'questions') return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Add Questions" showBack={false}>
-      {/* Back to list button */}
       <button onClick={backToList}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         ← Back to Quizzes
@@ -373,9 +397,13 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       </p>
 
       <QuestionBuilder
+        questions={questions}
+        setQuestions={setQuestions}
         onSave={saveQuestions}
         onCancel={backToList}
         saveLabel={`Save ${questions.length} Question${questions.length !== 1 ? 's' : ''}`}
+        saving={saving}
+        sc={sc}
       />
       <div style={{ height: 100 }} />
     </RolePageWrapper>
@@ -384,7 +412,6 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   // ── Create form ───────────────────────────────────────────
   if (step === 'create') return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" showBack={false}>
-      {/* Back to list button */}
       <button onClick={backToList}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         ← Back to Quizzes
