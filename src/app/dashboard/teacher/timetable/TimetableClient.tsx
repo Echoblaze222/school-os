@@ -6,6 +6,10 @@
 // nothing ever loaded or saved.
 // This version resolves the teacher's classes via class_teachers → class_subjects,
 // lets the teacher pick a class from a dropdown, and stores class_subject_id + class_id.
+//
+// FIX (this round): added visible error banner + error checks on load/create/delete.
+// Previously a failed insert only logged to console — looked identical to
+// nothing happening at all.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -30,6 +34,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   const [loading,  setLoading]  = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving,   setSaving]   = useState(false)
+  const [error,    setError]    = useState<string | null>(null) // FIX: visible error state
   const [day,      setDay]      = useState(() => {
     const d = new Date().getDay()
     return d === 0 || d === 6 ? 'Monday' : DAYS[d - 1]
@@ -45,12 +50,13 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   useEffect(() => { if (school?.id) load() }, [day, school?.id])
 
   async function loadTeacherClasses() {
-    const { data: ct } = await supabase
+    const { data: ct, error: err } = await supabase
       .from('class_teachers')
       .select('class_id, subject, classes(name)')
       .eq('teacher_id', userId)
       .eq('school_id', school?.id)
 
+    if (err) { console.error('[timetable] class_teachers error:', err.message); setError(err.message); return }
     if (!ct?.length) return
 
     const list: TeacherClass[] = await Promise.all(
@@ -77,9 +83,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    // FIX: select class_id + class_subject_id, join classes(name) and
-    // class_subjects(subjects(name)) for display — no `subject`/`class_level` columns exist
-    const { data } = await supabase
+    const { data, error: err } = await supabase
       .from('timetable')
       .select(`
         id, room, start_time, end_time, day_of_week,
@@ -91,6 +95,10 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       .eq('teacher_id', userId)
       .eq('day_of_week', day)
       .order('start_time')
+    if (err) {
+      console.error('[timetable] load error:', err.message)
+      setError(err.message)
+    }
     if (data) setPeriods(data)
     setLoading(false)
   }
@@ -98,8 +106,8 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   async function create() {
     if (!form.class_id) return
     setSaving(true)
-    // FIX: insert class_id + class_subject_id, not free-text subject/class_level
-    const { error } = await supabase.from('timetable').insert({
+    setError(null) // FIX: clear previous error before retrying
+    const { error: err } = await supabase.from('timetable').insert({
       class_id:         form.class_id,
       class_subject_id: form.class_subject_id || null,
       room:             form.room || null,
@@ -109,18 +117,22 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       school_id:        school?.id,
       teacher_id:       userId,
     })
-    if (!error) {
+    if (!err) {
       setForm(f => ({ ...f, room: '', start_time: '08:00', end_time: '09:00' }))
       setShowForm(false)
       load()
     } else {
-      console.error('[timetable] insert error:', error.message)
+      // FIX: surface to UI, not just console
+      console.error('[timetable] insert error:', err.message)
+      setError(err.message)
     }
     setSaving(false)
   }
 
   async function deletePeriod(id: string) {
-    await supabase.from('timetable').delete().eq('id', id)
+    setError(null)
+    const { error: err } = await supabase.from('timetable').delete().eq('id', id)
+    if (err) { console.error('[timetable] delete error:', err.message); setError(err.message); return }
     setPeriods(prev => prev.filter(p => p.id !== id))
   }
 
@@ -133,6 +145,12 @@ export default function TimetableClient({ profile, school, userId }: Props) {
 
   if (!loading && teacherClasses.length === 0) return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        </div>
+      )}
       <div className={styles.empty}>
         <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} />
         <p>No classes assigned yet. Ask the principal to assign you a class.</p>
@@ -156,6 +174,14 @@ export default function TimetableClient({ profile, school, userId }: Props) {
           <PlusIcon size={13} color="white" /> Add
         </button>
       </div>
+
+      {/* FIX: visible error banner, dismissible */}
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        </div>
+      )}
 
       {showForm && (
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
