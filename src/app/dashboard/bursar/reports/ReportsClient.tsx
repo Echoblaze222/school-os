@@ -1,8 +1,17 @@
 'use client'
+// src/app/dashboard/bursar/reports/ReportsClient.tsx
+//
+// Fixed: was reading from `school_fees` and `fee_payments`, tables nothing
+// writes to anymore. Now reads from `payment_invoices` (for expected/collected
+// per class, paid/unpaid counts) and `payments` (for the By Type breakdown,
+// since fee type lives on fee_structures.description, reached via
+// payment_invoices -> fee_structures).
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BarChartIcon } from '@/components/Icons'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 type Tab = 'summary' | 'by_class' | 'by_type'
@@ -12,6 +21,10 @@ const TERMS    = ['First Term', 'Second Term', 'Third Term']
 const CUR_YEAR = new Date().getMonth() >= 8
   ? `${new Date().getFullYear()}/${new Date().getFullYear()+1}`
   : `${new Date().getFullYear()-1}/${new Date().getFullYear()}`
+
+const TERM_KEY_MAP: Record<string, string> = {
+  'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
+}
 
 function currentTerm() {
   const m = new Date().getMonth()
@@ -29,6 +42,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
   const [tab,     setTab]     = useState<Tab>('summary')
   const [report,  setReport]  = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
   const [term,    setTerm]    = useState(currentTerm())
   const [year,    setYear]    = useState(CUR_YEAR)
   const supabase = createClient()
@@ -38,57 +52,66 @@ export default function ReportsClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    const [{ data: fees }, { data: pays }, { data: studs }] = await Promise.all([
-      supabase.from('school_fees').select('class_level, amount')
-        .eq('school_id', school?.id).eq('term', term).eq('academic_year', year),
-      supabase.from('fee_payments').select('student_id, class_level, fee_type, amount')
-        .eq('school_id', school?.id).eq('term', term).eq('academic_year', year),
-      supabase.from('profiles').select('id, class_level')
-        .eq('school_id', school?.id).eq('role', 'student'),
+    setError('')
+    const termKey = TERM_KEY_MAP[term] ?? 'first'
+
+    const [{ data: invoices, error: invErr }, { data: studs, error: studErr }] = await Promise.all([
+      supabase
+        .from('payment_invoices')
+        .select(`
+          student_id, amount_due_ngn, amount_paid_ngn, status,
+          fee_structures ( term, academic_year, description ),
+          profiles ( class_level )
+        `)
+        .eq('school_id', school?.id),
+      supabase
+        .from('profiles')
+        .select('id, class_level')
+        .eq('school_id', school?.id)
+        .eq('role', 'student'),
     ])
 
-    const feeList  = fees  ?? []
-    const payList  = pays  ?? []
+    if (invErr || studErr) {
+      setError((invErr ?? studErr)?.message ?? 'Failed to load report data.')
+      setLoading(false)
+      return
+    }
+
     const studList = studs ?? []
 
-    const totalCollected = payList.reduce((s: number, p: any) => s + (p.amount ?? 0), 0)
-    const paidIds        = new Set(payList.map((p: any) => p.student_id).filter(Boolean))
+    // Filter to the selected term/year client-side — embeds can come back
+    // as object OR 1-element array, and PostgREST doesn't reliably apply
+    // filters on a 2nd-level nested embed, so we verify here instead.
+    const termInvoices = (invoices ?? []).filter((inv: any) => {
+      const fs = unwrapEmbed(inv.fee_structures)
+      return fs && fs.term === termKey && fs.academic_year === year
+    })
+
+    const totalCollected = termInvoices.reduce((s: number, i: any) => s + (i.amount_paid_ngn ?? 0), 0)
+    const totalExpected  = termInvoices.reduce((s: number, i: any) => s + (i.amount_due_ngn  ?? 0), 0)
+    const paidIds         = new Set(
+      termInvoices.filter((i: any) => (i.amount_paid_ngn ?? 0) > 0).map((i: any) => i.student_id)
+    )
     const paidCount      = paidIds.size
-    const unpaidCount    = studList.length - paidCount
+    const unpaidCount    = Math.max(0, studList.length - paidCount)
 
-    // Expected per class_level × student count in that class
-    const feesByClass: Record<string, number> = {}
-    for (const f of feeList) {
-      feesByClass[f.class_level] = (feesByClass[f.class_level] ?? 0) + (f.amount ?? 0)
-    }
-    let totalExpected = 0
-    for (const s of studList) {
-      totalExpected += feesByClass[s.class_level] ?? 0
-    }
-
-    // Collected by class
+    // Collected + expected by class
     const byClass: Record<string, { collected:number; expected:number }> = {}
-    for (const p of payList) {
-      const cl = p.class_level ?? 'Unknown'
-      if (!byClass[cl]) {
-        const clStudCount = studList.filter((s: any) => s.class_level === cl).length
-        byClass[cl] = { collected:0, expected:(feesByClass[cl] ?? 0) * clStudCount }
-      }
-      byClass[cl].collected += p.amount ?? 0
-    }
-    // Include classes with expected but zero payments
-    for (const [cl, feeAmt] of Object.entries(feesByClass)) {
-      if (!byClass[cl]) {
-        const cnt = studList.filter((s: any) => s.class_level === cl).length
-        byClass[cl] = { collected:0, expected: feeAmt * cnt }
-      }
+    for (const inv of termInvoices) {
+      const student = unwrapEmbed((inv as any).profiles)
+      const cl = student?.class_level ?? 'Unassigned'
+      if (!byClass[cl]) byClass[cl] = { collected:0, expected:0 }
+      byClass[cl].collected += inv.amount_paid_ngn ?? 0
+      byClass[cl].expected  += inv.amount_due_ngn  ?? 0
     }
 
-    // Collected by fee type
+    // Collected by fee type — fee type lives on fee_structures.description
+    // (e.g. 'school_fees', 'other', 'uniform'), not on payments directly.
     const byType: Record<string, number> = {}
-    for (const p of payList) {
-      const ft = p.fee_type ?? 'other'
-      byType[ft] = (byType[ft] ?? 0) + (p.amount ?? 0)
+    for (const inv of termInvoices) {
+      const fs = unwrapEmbed((inv as any).fee_structures)
+      const ft = fs?.description ?? 'other'
+      byType[ft] = (byType[ft] ?? 0) + (inv.amount_paid_ngn ?? 0)
     }
 
     setReport({
@@ -151,6 +174,13 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             </button>
           ))}
       </div>
+
+      {error && (
+        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
+          ⚠️ {error}
+        </div>
+      )}
 
       {loading
         ? <div className={styles.loading}><span/><span/><span/></div>
@@ -250,8 +280,8 @@ export default function ReportsClient({ profile, school, userId }: Props) {
                             <div style={{ display:'flex', justifyContent:'space-between',
                               alignItems:'baseline', marginBottom:'var(--space-3)' }}>
                               <p style={{ fontSize:'0.88rem', fontWeight:800,
-                                color:'var(--text-primary)', margin:0 }}>
-                                {TYPE_LABELS[type] ?? type}
+                                color:'var(--text-primary)', margin:0, textTransform:'capitalize' }}>
+                                {TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}
                               </p>
                               <p style={{ fontSize:'0.88rem', fontWeight:800, color:sc, margin:0 }}>
                                 {fmtAmt(amount)}
