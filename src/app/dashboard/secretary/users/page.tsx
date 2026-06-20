@@ -65,17 +65,39 @@ export default async function UsersPage() {
       is_active,
       default_code,
       created_at,
-      avatar_url,
-      last_sign_in
+      avatar_url
     `)
     .eq('school_id', profile.school_id)
     .order('created_at', { ascending: false })
 
   if (error) console.error('[users] fetch error:', error.message)
 
+  // `last_sign_in` doesn't exist on `profiles` — it lives on Supabase Auth's
+  // user records as `last_sign_in_at`. Pull it from there and merge it in.
+  const lastSignInMap = new Map<string, string | null>()
+  try {
+    let page = 1
+    const perPage = 1000
+    // Safety cap so a runaway loop can't hammer the auth API
+    while (page <= 10) {
+      const { data: authPage, error: authErr } = await admin.auth.admin.listUsers({ page, perPage })
+      if (authErr || !authPage) break
+      for (const au of authPage.users) lastSignInMap.set(au.id, au.last_sign_in_at ?? null)
+      if (authPage.users.length < perPage) break
+      page++
+    }
+  } catch (e) {
+    console.error('[users] auth listUsers error:', e)
+  }
+
+  const usersWithLastSignIn = (users ?? []).map(u => ({
+    ...u,
+    last_sign_in: lastSignInMap.get(u.id) ?? null,
+  }))
+
   return (
     <SecretaryUsersClient
-      users={(users ?? []) as ManagedUser[]}
+      users={usersWithLastSignIn as ManagedUser[]}
       currentUserId={user.id}
       profile={profile}
       school={school}
