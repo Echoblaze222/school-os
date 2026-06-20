@@ -38,7 +38,7 @@ const MORE_NAV_ITEMS = [
   { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
   { href: '/dashboard/teacher/submissions',   Icon: ClipboardIcon, label: 'Submissions'   },
   { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Class'    },
-  { href: '/dashboard/teacher/messages',      Icon: MessageIcon,   label: 'Messages'      },
+  { href: '/dashboard/teacher/chat',          Icon: MessageIcon,   label: 'Messages'      },
   { href: '/dashboard/teacher/notes',         Icon: BookIcon,      label: 'Study Notes'   },
   { href: '/dashboard/teacher/timetable',     Icon: ClockIcon,     label: 'Timetable'     },
   { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
