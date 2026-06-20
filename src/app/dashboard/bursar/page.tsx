@@ -5,8 +5,8 @@
 // 1. `totalCollected` summed ALL payments ever made, with zero term/year
 //    filtering — unlike every other bursar screen (History, Receipts,
 //    Reports, Invoices), which all filter strictly by the selected term.
-//    This is why a payment with no invoice link (see confirm-claim fix)
-//    could show up here while being invisible everywhere else: this card
+//    This is why a payment with no invoice link (e.g. an orphaned claim confirmation that
+//    had no invoice to link to) could show up here while being invisible everywhere else: this card
 //    never excluded it in the first place, no matter what term it belonged to.
 //
 // 2. `term` was computed as the display label ('First Term', 'Second Term',
@@ -53,6 +53,8 @@ export default async function BursarDashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+
+  if (!profile || profile.role !== 'bursar') redirect('/login')
 
   const school   = (profile as any)?.schools ?? null
   const schoolId = school?.id
@@ -134,4 +136,5 @@ export default async function BursarDashboardPage() {
       }}
     />
   )
-}
+                                                }
+                            
