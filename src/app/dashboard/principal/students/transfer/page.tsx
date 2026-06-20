@@ -1,22 +1,24 @@
 'use client'
 // src/app/dashboard/principal/students/transfer/page.tsx
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './transfer.module.css'
 
 interface Student { id: string; full_name: string; admission_number: string; class_label: string; outstanding_fees: number }
 interface School   { id: string; name: string; city: string }
 
-export default function TransferPage() {
+function TransferPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [studentSearch, setStudentSearch] = useState('')
   const [studentResults, setStudentResults] = useState<Student[]>([])
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [preselected, setPreselected] = useState(false)
   const [schoolSearch, setSchoolSearch] = useState('')
   const [schoolResults, setSchoolResults] = useState<School[]>([])
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
@@ -36,7 +38,36 @@ export default function TransferPage() {
     const { data: me } = await supabase.auth.getUser()
     if (!me.user) return
     const { data: p } = await supabase.from('profiles').select('school_id').eq('id', me.user.id).single()
-    setMySchoolId((p as any)?.school_id ?? null)
+    const schoolId = (p as any)?.school_id ?? null
+    setMySchoolId(schoolId)
+
+    // Coming from the Students page with a specific student already chosen —
+    // load them directly instead of making the principal search again.
+    const studentId = searchParams.get('studentId')
+    if (studentId) await loadStudentById(studentId)
+  }
+
+  async function loadStudentById(studentId: string) {
+    const { data: p } = await supabase
+      .from('profiles')
+      .select(`id, full_name, student_profiles ( admission_number, classes ( level, section ) )`)
+      .eq('id', studentId)
+      .single()
+    if (!p) return
+    const sp = (p as any).student_profiles
+    const { data: inv } = await supabase
+      .from('payment_invoices')
+      .select('balance_ngn')
+      .eq('student_id', p.id)
+      .in('status', ['pending', 'partial', 'overdue'])
+    const fees = (inv ?? []).reduce((s: number, i: any) => s + (i.balance_ngn ?? 0), 0)
+    setSelectedStudent({
+      id: p.id, full_name: p.full_name,
+      admission_number: sp?.admission_number ?? '—',
+      class_label: sp?.classes ? `${sp.classes.level}${sp.classes.section}` : '—',
+      outstanding_fees: fees,
+    })
+    setPreselected(true)
   }
 
   async function searchStudents() {
@@ -51,6 +82,7 @@ export default function TransferPage() {
         )
       `)
       .eq('role', 'student')
+      .eq('school_id', mySchoolId ?? '') // only students enrolled in this school can be transferred
       .ilike('full_name', `%${studentSearch}%`)
       .limit(10)
 
@@ -131,7 +163,7 @@ export default function TransferPage() {
             The Principal of <strong>{selectedSchool?.name}</strong> has been notified.
             Once they approve, the transfer will be completed automatically.
           </p>
-          <button className={styles.resetBtn} onClick={() => { setSuccess(false); setSelectedStudent(null); setSelectedSchool(null) }}>
+          <button className={styles.resetBtn} onClick={() => { setSuccess(false); setSelectedStudent(null); setSelectedSchool(null); setPreselected(false) }}>
             New Transfer
           </button>
         </div>
@@ -154,25 +186,27 @@ export default function TransferPage() {
       </header>
 
       <main className={styles.main}>
-        {/* Step 1: Search student */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Step 1 — Find Student</h2>
-          <div className={styles.searchRow}>
-            <input className={styles.input} placeholder="Search by student name..." value={studentSearch} onChange={e => setStudentSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchStudents()} />
-            <button className={styles.searchBtn} onClick={searchStudents}>Search</button>
+        {/* Step 1: Search student — skipped if we arrived with a student already chosen */}
+        {!preselected && (
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>Step 1 — Find Student</h2>
+            <div className={styles.searchRow}>
+              <input className={styles.input} placeholder="Search by student name..." value={studentSearch} onChange={e => setStudentSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchStudents()} />
+              <button className={styles.searchBtn} onClick={searchStudents}>Search</button>
+            </div>
+            {studentResults.map(s => (
+              <button key={s.id} className={`${styles.resultRow} ${selectedStudent?.id === s.id ? styles.resultRowActive : ''}`} onClick={() => setSelectedStudent(s)}>
+                <div>
+                  <p className={styles.resultName}>{s.full_name}</p>
+                  <p className={styles.resultMeta}>{s.class_label} · {s.admission_number}</p>
+                </div>
+                {s.outstanding_fees > 0 && (
+                  <span className={styles.debtBadge}>₦{s.outstanding_fees.toLocaleString()} owed</span>
+                )}
+              </button>
+            ))}
           </div>
-          {studentResults.map(s => (
-            <button key={s.id} className={`${styles.resultRow} ${selectedStudent?.id === s.id ? styles.resultRowActive : ''}`} onClick={() => setSelectedStudent(s)}>
-              <div>
-                <p className={styles.resultName}>{s.full_name}</p>
-                <p className={styles.resultMeta}>{s.class_label} · {s.admission_number}</p>
-              </div>
-              {s.outstanding_fees > 0 && (
-                <span className={styles.debtBadge}>₦{s.outstanding_fees.toLocaleString()} owed</span>
-              )}
-            </button>
-          ))}
-        </div>
+        )}
 
         {/* Student profile + fee warning */}
         {selectedStudent && (
@@ -180,6 +214,14 @@ export default function TransferPage() {
             <h2 className={styles.cardTitle}>Selected Student</h2>
             <p className={styles.profileName}>{selectedStudent.full_name}</p>
             <p className={styles.profileMeta}>{selectedStudent.class_label} · {selectedStudent.admission_number}</p>
+            {preselected && (
+              <button
+                onClick={() => { setPreselected(false); setSelectedStudent(null); setStudentResults([]); setAcknowledged(false) }}
+                style={{ background: 'none', border: 'none', padding: 0, color: 'var(--color-brand)', fontSize: 'var(--font-size-xs)', fontWeight: 700, cursor: 'pointer', marginBottom: 'var(--space-2)' }}
+              >
+                Change student
+              </button>
+            )}
             {hasDebt && (
               <div className={styles.warningBox}>
                 <p className={styles.warningTitle}>⚠️ Outstanding Fees</p>
@@ -231,5 +273,13 @@ export default function TransferPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function TransferPage() {
+  return (
+    <Suspense fallback={<div className={styles.page} />}>
+      <TransferPageContent />
+    </Suspense>
   )
 }
