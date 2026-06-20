@@ -13,6 +13,9 @@ export default async function PrincipalDashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+
+  if (!profile || profile.role !== 'principal') redirect('/login')
+
   const school   = (profile as any)?.schools ?? null
   const schoolId = school?.id
 
@@ -57,5 +60,4 @@ export default async function PrincipalDashboardPage() {
       }}
     />
   )
-      }
-  
+}
