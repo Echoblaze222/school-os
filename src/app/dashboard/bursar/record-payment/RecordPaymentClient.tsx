@@ -158,7 +158,7 @@ export default function RecordPaymentClient({
       .single()
 
     if (data) {
-      const student = unwrapEmbed((data as any)['profiles!student_id'])
+      const student = unwrapEmbed((data as any).profiles)
       if (student) {
         setSelectedStudent({
           id:                   student.id,
