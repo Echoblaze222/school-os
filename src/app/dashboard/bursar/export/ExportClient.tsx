@@ -83,7 +83,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
         }).map((row: any) => {
           const inv     = unwrapEmbed(row.payment_invoices)
           const fs      = unwrapEmbed(inv?.fee_structures)
-          const student = unwrapEmbed(row['profiles!student_id'])
+          const student = unwrapEmbed(row.profiles)
           return {
             receipt_number: row.receipt_number,
             student_name:   student?.full_name ?? '',
@@ -142,7 +142,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
         for (const inv of (invoices ?? [])) {
           const fs = unwrapEmbed((inv as any).fee_structures)
           if (!fs) continue
-          const student = unwrapEmbed((inv as any)['profiles!student_id'])
+          const student = unwrapEmbed((inv as any).profiles)
           if (!student) continue
           const key = student.full_name
           if (!byStudent.has(key)) byStudent.set(key, { full_name: student.full_name, class_level: student.class_level ?? '', outstanding: 0 })
@@ -192,7 +192,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
           .map((row: any) => {
             const inv      = unwrapEmbed(row.payment_invoices)
             const fs       = unwrapEmbed(inv?.fee_structures)
-            const student  = unwrapEmbed(row['profiles!student_id'])
+            const student  = unwrapEmbed(row.profiles)
             return {
               receipt_number: row.receipt_number,
               student_name:   student?.full_name ?? '',
@@ -269,7 +269,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
         for (const inv of (invoices ?? [])) {
           const fs = unwrapEmbed((inv as any).fee_structures)
           if (!fs) continue
-          const student = unwrapEmbed((inv as any)['profiles!student_id'])
+          const student = unwrapEmbed((inv as any).profiles)
           if (!student) continue
           const key = student.full_name + '|' + (student.default_code ?? '')
           if (!byStudent.has(key)) {
