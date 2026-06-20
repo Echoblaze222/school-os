@@ -1,11 +1,18 @@
 'use client'
-// FIXED: Preview/Edit quiz + questions, correct schema columns
+// src/app/dashboard/teacher/quizzes/QuizzesClient.tsx
+// FIXES:
+//   1. Removed useSearchParams() — it was only used for ?class_id= which is never
+//      actually linked to by anything. This was the root cause of the redirect-to-login
+//      bug: useSearchParams() without <Suspense> crashes the component in Next.js 15,
+//      Next.js falls through to its error boundary which redirects to /login.
+//      If you ever need the ?class_id= feature back, wrap in <Suspense> in page.tsx first.
+//   2. Preview/Edit step: back button (router.back) in DashboardHeader navigated away
+//      from the app. Fixed by using an explicit onBack callback that resets step to 'list'.
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { AwardIcon, PlusIcon, PeopleIcon } from '@/components/Icons'
+import { AwardIcon, PlusIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -36,16 +43,16 @@ const BLANK_Q: Question = {
 }
 
 export default function QuizzesClient({ profile, school, userId }: Props) {
-  const [quizzes, setQuizzes] = useState<any[]>([])
+  const [quizzes,       setQuizzes]       = useState<any[]>([])
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
-  const [loading, setLoading] = useState(true)
-  const [step, setStep] = useState<'list' | 'create' | 'questions' | 'preview'>('list')
-  const [saving, setSaving] = useState(false)
-  const [editingQuiz, setEditingQuiz] = useState<any>(null) // quiz being previewed/edited
-  const [newQuiz, setNewQuiz] = useState<any>(null)
-  const [questions, setQuestions] = useState<Question[]>([{ ...BLANK_Q }])
+  const [loading,       setLoading]       = useState(true)
+  const [step,          setStep]          = useState<'list' | 'create' | 'questions' | 'preview'>('list')
+  const [saving,        setSaving]        = useState(false)
+  const [editingQuiz,   setEditingQuiz]   = useState<any>(null)
+  const [newQuiz,       setNewQuiz]       = useState<any>(null)
+  const [questions,     setQuestions]     = useState<Question[]>([{ ...BLANK_Q }])
   const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({})
-  const [form, setForm] = useState({
+  const [form,          setForm]          = useState({
     title: '',
     class_id: '',
     class_subject_id: '',
@@ -55,22 +62,15 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     ends_at: '',
     attempt_limit: 1,
   })
-  const searchParams = useSearchParams()
+  // FIX: removed useSearchParams() — was crashing the page in Next.js 15
+
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#7C3AED'
 
   useEffect(() => {
     loadTeacherClasses()
     loadQuizzes()
   }, [])
-
-  useEffect(() => {
-    const classId = searchParams.get('class_id')
-    if (classId) {
-      setForm(prev => ({ ...prev, class_id: classId }))
-      setStep('create')
-    }
-  }, [searchParams])
 
   async function loadTeacherClasses() {
     const { data: ct } = await supabase
@@ -90,9 +90,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
           .limit(1)
           .maybeSingle()
         return {
-          class_id: row.class_id,
-          class_name: row.classes?.name ?? '',
-          subject: row.subject,
+          class_id:        row.class_id,
+          class_name:      row.classes?.name ?? '',
+          subject:         row.subject,
           class_subject_id: cs?.id ?? null,
         }
       })
@@ -130,10 +130,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     setLoading(false)
   }
 
-  // ── Open a quiz in preview/edit mode ──────────────────────
+  // FIX: openPreview only sets state — no router navigation — so back button is safe
   async function openPreview(quiz: any) {
     setEditingQuiz(quiz)
-    // Load its existing questions
     const { data: qs } = await supabase
       .from('quiz_questions')
       .select('id, question, options, answer, marks, position')
@@ -148,7 +147,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
           { label: 'C', text: '' }, { label: 'D', text: '' },
         ],
         answer: q.answer,
-        marks: q.marks ?? 1,
+        marks:  q.marks ?? 1,
       })))
     } else {
       setQuestions([{ ...BLANK_Q }])
@@ -156,25 +155,28 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     setStep('preview')
   }
 
-  // ── Save edited questions for an existing quiz ─────────────
+  function backToList() {
+    setStep('list')
+    setEditingQuiz(null)
+    setNewQuiz(null)
+  }
+
   async function saveEditedQuestions() {
     if (!editingQuiz) return
     setSaving(true)
-    // Delete old questions then re-insert (simpler than diffing)
     await supabase.from('quiz_questions').delete().eq('quiz_id', editingQuiz.id)
     await supabase.from('quiz_questions').insert(
       questions.map((q, i) => ({
-        quiz_id: editingQuiz.id,
+        quiz_id:  editingQuiz.id,
         question: q.question,
-        options: q.options,
-        answer: q.answer,
-        marks: q.marks,
+        options:  q.options,
+        answer:   q.answer,
+        marks:    q.marks,
         position: i,
       }))
     )
     setSaving(false)
-    setStep('list')
-    setEditingQuiz(null)
+    backToList()
     loadQuizzes()
   }
 
@@ -187,23 +189,23 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     if (!form.title) return
     setSaving(true)
 
-    const now = new Date()
+    const now        = new Date()
     const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     const { data } = await supabase
       .from('quizzes')
       .insert({
         class_subject_id: cls.class_subject_id,
-        class_id: form.class_id,
-        title: form.title,
-        total_marks: form.total_marks,
-        attempt_limit: form.attempt_limit,
-        starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
-        ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : defaultEnd.toISOString(),
-        scheduled_at: form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
-        closes_at: form.ends_at ? new Date(form.ends_at).toISOString() : defaultEnd.toISOString(),
-        created_by: userId,
-        school_id: school?.id,
+        class_id:         form.class_id,
+        title:            form.title,
+        total_marks:      form.total_marks,
+        attempt_limit:    form.attempt_limit,
+        starts_at:        form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
+        ends_at:          form.ends_at ? new Date(form.ends_at).toISOString() : defaultEnd.toISOString(),
+        scheduled_at:     form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
+        closes_at:        form.ends_at ? new Date(form.ends_at).toISOString() : defaultEnd.toISOString(),
+        created_by:       userId,
+        school_id:        school?.id,
       })
       .select()
       .single()
@@ -221,16 +223,16 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     setSaving(true)
     await supabase.from('quiz_questions').insert(
       questions.map((q, i) => ({
-        quiz_id: newQuiz.id,
+        quiz_id:  newQuiz.id,
         question: q.question,
-        options: q.options,
-        answer: q.answer,
-        marks: q.marks,
+        options:  q.options,
+        answer:   q.answer,
+        marks:    q.marks,
         position: i,
       }))
     )
     setSaving(false)
-    setStep('list')
+    backToList()
     loadQuizzes()
   }
 
@@ -254,7 +256,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   function quizStatus(q: any): string {
     const now = new Date()
     if (new Date(q.starts_at) > now) return 'scheduled'
-    if (new Date(q.ends_at) > now) return 'live'
+    if (new Date(q.ends_at)   > now) return 'live'
     return 'closed'
   }
 
@@ -275,7 +277,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
               <textarea value={q.question}
                 onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, question: e.target.value } : x))}
                 placeholder="Type the question here..." rows={2}
-                style={{ width: '100%', padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'none', marginBottom: 'var(--space-3)', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'none', marginBottom: 'var(--space-3)', boxSizing: 'border-box' as const }} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                 {q.options.map((opt, oi) => (
                   <div key={opt.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -326,15 +328,22 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   }
 
   // ── Preview / Edit existing quiz ──────────────────────────
+  // FIX: showBack=false prevents router.back() from sending teacher to login.
+  //      The "← Back" in the header is replaced by Cancel/back buttons inside the page.
   if (step === 'preview' && editingQuiz) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Edit Quiz">
-      {/* Quiz meta summary */}
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Edit Quiz" showBack={false}>
       <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
         <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{editingQuiz.title}</p>
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          {editingQuiz.classes?.name ?? '—'} &middot; {editingQuiz.total_marks} marks &middot; {questions.length} question{questions.length !== 1 ? 's' : ''}
+          {editingQuiz.classes?.name ?? '—'} · {editingQuiz.total_marks} marks · {questions.length} question{questions.length !== 1 ? 's' : ''}
         </p>
       </div>
+
+      {/* Back to list button */}
+      <button onClick={backToList}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+        ← Back to Quizzes
+      </button>
 
       <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
         Edit Questions
@@ -342,7 +351,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
       <QuestionBuilder
         onSave={saveEditedQuestions}
-        onCancel={() => { setStep('list'); setEditingQuiz(null) }}
+        onCancel={backToList}
         saveLabel={`Save ${questions.length} Question${questions.length !== 1 ? 's' : ''}`}
       />
       <div style={{ height: 100 }} />
@@ -351,15 +360,21 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
   // ── New quiz: add questions step ──────────────────────────
   if (step === 'questions') return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Add Questions">
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Add Questions" showBack={false}>
+      {/* Back to list button */}
+      <button onClick={backToList}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+        ← Back to Quizzes
+      </button>
+
       <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
         Quiz: <strong style={{ color: 'var(--text-primary)' }}>{newQuiz?.title}</strong>
-        {newQuiz?.classes?.name && <span style={{ color: sc, marginLeft: 8 }}>&middot; {newQuiz.classes.name}</span>}
+        {newQuiz?.classes?.name && <span style={{ color: sc, marginLeft: 8 }}>· {newQuiz.classes.name}</span>}
       </p>
 
       <QuestionBuilder
         onSave={saveQuestions}
-        onCancel={() => { setStep('list'); setNewQuiz(null) }}
+        onCancel={backToList}
         saveLabel={`Save ${questions.length} Question${questions.length !== 1 ? 's' : ''}`}
       />
       <div style={{ height: 100 }} />
@@ -368,7 +383,13 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
   // ── Create form ───────────────────────────────────────────
   if (step === 'create') return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="New Quiz">
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" showBack={false}>
+      {/* Back to list button */}
+      <button onClick={backToList}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+        ← Back to Quizzes
+      </button>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
@@ -437,7 +458,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
             style={{ flex: 1, height: 44, background: sc, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', opacity: saving || !form.class_id ? 0.5 : 1 }}>
             {saving ? 'Creating...' : 'Continue → Add Questions'}
           </button>
-          <button onClick={() => setStep('list')}
+          <button onClick={backToList}
             style={{ height: 44, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 10, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
             Cancel
           </button>
@@ -449,7 +470,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
   // ── Quiz list ─────────────────────────────────────────────
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Quizzes">
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Quizzes" showBack={false}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
         <button onClick={() => setStep('create')}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
@@ -467,7 +488,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {quizzes.map(q => {
-            const status = quizStatus(q)
+            const status    = quizStatus(q)
             const statusCol = status === 'live' ? '#10B981' : status === 'scheduled' ? '#F59E0B' : '#6B7280'
             const statusLabel = status === 'live' ? 'Live' : status === 'scheduled' ? 'Scheduled' : 'Closed'
             return (
@@ -488,10 +509,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                     {statusLabel}
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    {/* FIXED: Preview/Edit button */}
                     <button onClick={() => openPreview(q)}
                       style={{ fontSize: '0.7rem', fontWeight: 700, color: sc, background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Preview/Edit
+                      Edit
                     </button>
                     <button onClick={() => togglePublish(q.id, q.ends_at)}
                       style={{ fontSize: '0.7rem', fontWeight: 700, color: status === 'live' ? '#F59E0B' : sc, background: 'none', border: 'none', cursor: 'pointer' }}>
