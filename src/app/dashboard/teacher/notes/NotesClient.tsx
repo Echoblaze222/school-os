@@ -1,6 +1,14 @@
 'use client'
-// FIXED: queries school_notes (correct table), supports typed notes + PDF upload
-// Connects to class_subjects via class_teachers → class_subjects resolution
+// src/app/dashboard/teacher/notes/NotesClient.tsx
+// FIXES:
+//   1. `term` is a Postgres ENUM accepting only 'first' | 'second' | 'third' —
+//      the UI was sending 'First Term' / 'Second Term' / 'Third Term' straight
+//      through, which Postgres rejected with "invalid input value for enum term".
+//      The dropdown still shows friendly labels; we map to the enum value only
+//      when writing, and map back to a friendly label only when displaying.
+//   2. Added visible error display on save failure — previously errors were
+//      silently swallowed (only logged to console), so a failed save looked
+//      identical to nothing happening at all.
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +25,15 @@ interface TeacherClass {
   class_subject_id: string | null
 }
 
-const TERMS = ['First Term', 'Second Term', 'Third Term']
+// FIX: UI label ↔ DB enum value mapping.
+// The enum `term` only accepts: 'first' | 'second' | 'third'
+const TERM_OPTIONS: { label: string; value: string }[] = [
+  { label: 'First Term',  value: 'first' },
+  { label: 'Second Term', value: 'second' },
+  { label: 'Third Term',  value: 'third' },
+]
+const TERM_LABEL: Record<string, string> = Object.fromEntries(TERM_OPTIONS.map(t => [t.value, t.label]))
+
 const CURRENT_YEAR = new Date().getFullYear()
 const ACADEMIC_YEAR = `${CURRENT_YEAR}/${CURRENT_YEAR + 1}`
 
@@ -30,24 +46,24 @@ export default function NotesClient({ profile, school, userId }: Props) {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadMode, setUploadMode] = useState<'type' | 'upload'>('type')
+  const [error, setError] = useState<string | null>(null) // FIX: visible error state
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     title: '',
     class_id: '',
     class_subject_id: '',
-    term: 'First Term',
+    term: 'first', // FIX: default to enum value, not the friendly label
     academic_year: ACADEMIC_YEAR,
     content: '',
   })
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
+
   const supabase = createClient()
   const sc = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { loadTeacherClasses() }, [])
-  useEffect(() => { loadNotes() }, [])
+  useEffect(() => { loadTeacherClasses(); loadNotes() }, [])
 
   async function loadTeacherClasses() {
-    // Load teacher's assigned classes + resolve class_subject_id
     const { data: ct } = await supabase
       .from('class_teachers')
       .select('class_id, subject, classes(name)')
@@ -56,24 +72,19 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
     if (!ct?.length) return
 
-    // For each class+subject, find the class_subjects record
     const list: TeacherClass[] = await Promise.all(
       ct.map(async (row: any) => {
-        let csId: string | null = null
-        if (row.class_id) {
-          const { data: cs } = await supabase
-            .from('class_subjects')
-            .select('id')
-            .eq('class_id', row.class_id)
-            .limit(1)
-            .maybeSingle()
-          csId = cs?.id ?? null
-        }
+        const { data: cs } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', row.class_id)
+          .limit(1)
+          .maybeSingle()
         return {
           class_id: row.class_id,
           class_name: row.classes?.name ?? '',
           subject: row.subject,
-          class_subject_id: csId,
+          class_subject_id: cs?.id ?? null,
         }
       })
     )
@@ -89,13 +100,14 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
   async function loadNotes() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error: err } = await supabase
       .from('school_notes')
       .select('id, title, description, file_url, term, academic_year, created_at, class_subject_id, uploaded_by')
       .eq('school_id', school?.id)
       .eq('uploaded_by', userId)
       .order('created_at', { ascending: false })
       .limit(40)
+    if (err) console.error('[notes] load error:', err.message)
     if (data) setRows(data)
     setLoading(false)
   }
@@ -111,11 +123,12 @@ export default function NotesClient({ profile, school, userId }: Props) {
     setUploading(true)
     const ext = uploadedFile.name.split('.').pop()
     const path = `${school?.id}/${userId}/${Date.now()}.${ext}`
-    const { error } = await supabase.storage
+    const { error: upErr } = await supabase.storage
       .from('notes')
       .upload(path, uploadedFile, { upsert: false })
-    if (error) {
-      console.error('Upload error:', error)
+    if (upErr) {
+      console.error('[notes] upload error:', upErr.message)
+      setError(`Upload failed: ${upErr.message}`)
       setUploading(false)
       return null
     }
@@ -125,11 +138,11 @@ export default function NotesClient({ profile, school, userId }: Props) {
   }
 
   async function createNote() {
-    // BUG 8 FIX: removed hard block on class_subject_id — it's optional
     if (!form.title) return
     if (uploadMode === 'upload' && !uploadedFile) return
 
     setSaving(true)
+    setError(null) // FIX: clear previous error before retrying
 
     let fileUrl: string | null = null
     if (uploadMode === 'upload' && uploadedFile) {
@@ -143,19 +156,26 @@ export default function NotesClient({ profile, school, userId }: Props) {
     const cls  = teacherClasses.find(c => c.class_id === form.class_id)
     const csId = cls?.class_subject_id ?? form.class_subject_id ?? null
 
-    // BUG 8 FIX: added class_id and visibility so notes are actually visible to students
-    await supabase.from('school_notes').insert({
-      class_subject_id: csId,           // nullable — no longer blocks save
-      class_id:         form.class_id || null,  // needed for student visibility filter
-      visibility:       'class',                 // required for student loadNotes() query
-      title: form.title,
-      description: uploadMode === 'type' ? form.content : null,
-      file_url: fileUrl ?? null,
-      term: form.term,
-      academic_year: form.academic_year,
-      uploaded_by: userId,
-      school_id: school?.id,
+    const { error: err } = await supabase.from('school_notes').insert({
+      class_subject_id: csId,
+      class_id:         form.class_id || null,
+      visibility:       'class',
+      title:            form.title,
+      description:      uploadMode === 'type' ? form.content : null,
+      file_url:         fileUrl ?? null,
+      term:             form.term, // FIX: now already an enum value ('first'/'second'/'third')
+      academic_year:    form.academic_year,
+      uploaded_by:       userId,
+      school_id:        school?.id,
     })
+
+    if (err) {
+      // FIX: surface the error to the UI instead of failing silently
+      console.error('[notes] insert error:', err.message)
+      setError(err.message)
+      setSaving(false)
+      return
+    }
 
     setForm(f => ({ ...f, title: '', content: '' }))
     setUploadedFile(null)
@@ -166,7 +186,8 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
   async function deleteNote(id: string) {
     if (!confirm('Delete this note?')) return
-    await supabase.from('school_notes').delete().eq('id', id).eq('uploaded_by', userId)
+    const { error: err } = await supabase.from('school_notes').delete().eq('id', id).eq('uploaded_by', userId)
+    if (err) { setError(err.message); return }
     setRows(prev => prev.filter(r => r.id !== id))
   }
 
@@ -180,11 +201,18 @@ export default function NotesClient({ profile, school, userId }: Props) {
         </button>
       </div>
 
+      {/* FIX: visible error banner, dismissible */}
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        </div>
+      )}
+
       {showForm && (
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
           <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>New Note</p>
 
-          {/* Class selector */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Class *</label>
@@ -204,14 +232,14 @@ export default function NotesClient({ profile, school, userId }: Props) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Term *</label>
+              {/* FIX: option value is now the enum value; label is what the teacher sees */}
               <select value={form.term} onChange={e => setForm(f => ({ ...f, term: e.target.value }))}
                 style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
-                {TERMS.map(t => <option key={t}>{t}</option>)}
+                {TERM_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Title */}
           <div style={{ marginBottom: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Title *</label>
             <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
@@ -219,7 +247,6 @@ export default function NotesClient({ profile, school, userId }: Props) {
               style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
           </div>
 
-          {/* Mode toggle */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-3)' }}>
             {(['type', 'upload'] as const).map(mode => (
               <button key={mode} onClick={() => setUploadMode(mode)}
@@ -274,7 +301,8 @@ export default function NotesClient({ profile, school, userId }: Props) {
                   </div>
                   <div className={styles.cardBody}>
                     <p className={styles.cardTitle}>{item.title}</p>
-                    <p className={styles.cardMeta}>{item.term} · {item.academic_year}</p>
+                    {/* FIX: map stored enum value back to a friendly label for display */}
+                    <p className={styles.cardMeta}>{TERM_LABEL[item.term] ?? item.term} · {item.academic_year}</p>
                     <p className={styles.cardText} style={{ fontSize: '0.7rem' }}>
                       {new Date(item.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
