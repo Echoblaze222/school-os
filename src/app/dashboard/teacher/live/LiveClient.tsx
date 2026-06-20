@@ -1,16 +1,15 @@
 'use client'
 // src/app/dashboard/teacher/live/LiveClient.tsx
-// FIX: Real `online_classes` table has `is_live` (boolean) + `meeting_url`,
-// NOT a `status` text column or `meeting_link`. The old client read/wrote
-// `status` and `meeting_link` everywhere, so every query silently failed —
-// nothing ever loaded, created, started, or ended.
-// "scheduled" / "live" / "ended" are now derived from is_live + scheduled_at + ended_at.
+// FIX: `online_classes.class_subject_id` is a NOT NULL column, but the
+// "Schedule Live Class" form never collected or sent it — every insert was
+// rejected with "null value in column class_subject_id violates not-null
+// constraint". This version resolves the teacher's classes via
+// class_teachers → class_subjects (same pattern as TimetableClient) and
+// adds a required Class dropdown to the form, sending class_id +
+// class_subject_id on create.
 //
-// FIX (this round): every Supabase call's error was either ignored or only
-// console.error'd — so a failed insert/update looked identical to nothing
-// happening at all. Added a visible error banner and error checks on every
-// DB call (load, create, startClass, endClass, deleteSession) so failures
-// are no longer silent.
+// Carried over: is_live/meeting_url (not status/meeting_link), visible
+// error banner on every DB call instead of console-only logging.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +18,13 @@ import { VideoIcon, PlusIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
+
+interface TeacherClass {
+  class_id: string
+  class_name: string
+  subject: string | null
+  class_subject_id: string | null
+}
 
 type Tab = 'scheduled' | 'live' | 'ended'
 
@@ -29,25 +35,60 @@ function deriveStatus(s: any): Tab {
 }
 
 export default function LiveClient({ profile, school, userId }: Props) {
+  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
   const [sessions, setSessions] = useState<any[]>([])
   const [loading,  setLoading]  = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [tab,      setTab]      = useState<Tab>('scheduled')
-  const [error,    setError]    = useState<string | null>(null) // FIX: visible error state
+  const [error,    setError]    = useState<string | null>(null)
   const [form,     setForm]     = useState({
     title: '', description: '', meeting_url: '', scheduled_at: '',
+    class_id: '', class_subject_id: '',
   })
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { loadTeacherClasses(); load() }, [])
+
+  // FIX: same class resolution pattern as TimetableClient
+  async function loadTeacherClasses() {
+    const { data: ct, error: err } = await supabase
+      .from('class_teachers')
+      .select('class_id, subject, classes(name)')
+      .eq('teacher_id', userId)
+      .eq('school_id', school?.id)
+
+    if (err) { console.error('[live] class_teachers error:', err.message); setError(err.message); return }
+    if (!ct?.length) return
+
+    const list: TeacherClass[] = await Promise.all(
+      ct.map(async (row: any) => {
+        const { data: cs } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', row.class_id)
+          .limit(1)
+          .maybeSingle()
+        return {
+          class_id:         row.class_id,
+          class_name:       row.classes?.name ?? '',
+          subject:          row.subject,
+          class_subject_id: cs?.id ?? null,
+        }
+      })
+    )
+    setTeacherClasses(list)
+    if (list[0]) {
+      setForm(f => ({ ...f, class_id: list[0].class_id, class_subject_id: list[0].class_subject_id ?? '' }))
+    }
+  }
 
   async function load() {
     setLoading(true)
     const { data, error: err } = await supabase
       .from('online_classes')
-      .select('id, title, description, meeting_url, recording_url, is_live, scheduled_at, created_at')
+      .select('id, title, description, meeting_url, recording_url, is_live, scheduled_at, created_at, class_id, class_subjects(subjects(name)), classes(name)')
       .eq('school_id', school?.id)
       .eq('teacher_id', userId)
       .order('scheduled_at', { ascending: false })
@@ -64,25 +105,27 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
   async function create() {
     if (!form.title) return
+    if (!form.class_id) { setError('Please select a class'); return }
     setSaving(true)
-    setError(null) // FIX: clear previous error before retrying
+    setError(null)
     const { error: err } = await supabase.from('online_classes').insert({
-      title:         form.title,
-      description:   form.description || null,
-      meeting_url:   form.meeting_url || null,
-      scheduled_at:  form.scheduled_at ? new Date(form.scheduled_at).toISOString() : new Date().toISOString(),
-      school_id:     school?.id,
-      teacher_id:    userId,
-      created_by:    userId,
-      is_live:       false,
+      title:             form.title,
+      description:       form.description || null,
+      meeting_url:       form.meeting_url || null,
+      scheduled_at:      form.scheduled_at ? new Date(form.scheduled_at).toISOString() : new Date().toISOString(),
+      school_id:         school?.id,
+      teacher_id:        userId,
+      created_by:        userId,
+      is_live:           false,
+      class_id:          form.class_id,          // FIX: now sent
+      class_subject_id:  form.class_subject_id,  // FIX: was missing, NOT NULL on DB
     })
     if (!err) {
-      setForm({ title: '', description: '', meeting_url: '', scheduled_at: '' })
+      setForm(f => ({ ...f, title: '', description: '', meeting_url: '', scheduled_at: '' }))
       setShowForm(false)
       setTab('scheduled')
       load()
     } else {
-      // FIX: surface to UI, not just console
       console.error('[live] insert error:', err.message)
       setError(err.message)
     }
@@ -136,7 +179,6 @@ export default function LiveClient({ profile, school, userId }: Props) {
         </button>
       </div>
 
-      {/* FIX: visible error banner, dismissible */}
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
           <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
@@ -144,10 +186,35 @@ export default function LiveClient({ profile, school, userId }: Props) {
         </div>
       )}
 
+      {teacherClasses.length === 0 && !loading && (
+        <div style={{ padding: '10px 14px', background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: '#F59E0B' }}>
+          No classes assigned yet. Ask the principal to assign you a class before scheduling live classes.
+        </div>
+      )}
+
       {showForm && (
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
           <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>Schedule Live Class</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+
+            {/* FIX: required class picker — previously absent, causing the NOT NULL error */}
+            <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Class *</label>
+              <select value={form.class_id}
+                onChange={e => {
+                  const cls = teacherClasses.find(c => c.class_id === e.target.value)
+                  setForm(f => ({ ...f, class_id: e.target.value, class_subject_id: cls?.class_subject_id ?? '' }))
+                }}
+                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
+                <option value="">Select a class</option>
+                {teacherClasses.map(cls => (
+                  <option key={cls.class_id} value={cls.class_id}>
+                    {cls.class_name}{cls.subject ? ` (${cls.subject})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Title *</label>
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
@@ -175,8 +242,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-            <button onClick={create} disabled={saving || !form.title}
-              style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+            <button onClick={create} disabled={saving || !form.title || !form.class_id}
+              style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving || !form.class_id ? 0.5 : 1 }}>
               {saving ? 'Scheduling...' : 'Schedule Class'}
             </button>
             <button onClick={() => setShowForm(false)}
@@ -201,6 +268,10 @@ export default function LiveClient({ profile, school, userId }: Props) {
                     </div>
                     <div className={styles.cardBody}>
                       <p className={styles.cardTitle}>{s.title}</p>
+                      {/* FIX: show resolved class/subject */}
+                      <p className={styles.cardMeta} style={{ marginBottom: 2 }}>
+                        {s.classes?.name ?? ''}{s.class_subjects?.subjects?.name ? ` · ${s.class_subjects.subjects.name}` : ''}
+                      </p>
                       {s.description && <p className={styles.cardText}>{s.description}</p>}
                       {s.scheduled_at && (
                         <p className={styles.cardMeta}>
