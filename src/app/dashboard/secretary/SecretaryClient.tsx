@@ -7,7 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import ChatWidget from '@/components/ChatWidget'
 import RoleNav from '@/components/RoleNav'
 import {
-  UserIcon, UsersIcon, FileTextIcon, CalendarIcon,
+  UserIcon, UsersIcon, CalendarIcon,
   MessageIcon, BellIcon, SettingsIcon, FolderIcon,
   ClipboardIcon, CheckCircleIcon, BookOpenIcon, SparklesIcon,
 } from '@/components/Icons'
@@ -15,8 +15,7 @@ import styles from './secretary.module.css'
 
 const MODULES = [
   { id: 'students',      label: 'Students',       Icon: UsersIcon,       href: '/dashboard/secretary/students',      accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'admissions',    label: 'Admissions',      Icon: ClipboardIcon,   href: '/dashboard/secretary/admissions',    accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'applications',  label: 'Applications',    Icon: FileTextIcon,    href: '/dashboard/secretary/applications',  accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'transfers',     label: 'Transfers',      Icon: ClipboardIcon,   href: '/dashboard/secretary/transfers',     accent: '#3B82F6', bg: '#1e3a5f' },
   { id: 'users',         label: 'Users',           Icon: UserIcon,        href: '/dashboard/secretary/users',         accent: '#8B5CF6', bg: '#2e1f5e' },
   { id: 'records',       label: 'Records',         Icon: FolderIcon,      href: '/dashboard/secretary/records',       accent: '#EC4899', bg: '#5a1a40' },
   { id: 'documents',     label: 'Documents',       Icon: BookOpenIcon,    href: '/dashboard/secretary/documents',     accent: '#06B6D4', bg: '#0a3040' },
@@ -39,7 +38,7 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
 
   const stats = [
     { label: 'Total Students', value: counts.totalStudents  ?? 0, color: '#10B981' },
-    { label: 'Pending Apps',   value: counts.pendingApps    ?? 0, color: '#F59E0B' },
+    { label: 'Pending Transfers', value: counts.pendingApps    ?? 0, color: '#F59E0B' },
     { label: 'New This Week',  value: counts.newThisWeek    ?? 0, color: '#3B82F6' },
     { label: 'Active Users',   value: counts.activeUsers    ?? 0, color: '#8B5CF6' },
   ]
@@ -72,8 +71,8 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
             <Link href="/dashboard/secretary/students?action=add" className={styles.quickBtn} style={{ borderColor: '#10B981', color: '#10B981' }}>
               + Add Student
             </Link>
-            <Link href="/dashboard/secretary/admissions" className={styles.quickBtn} style={{ borderColor: '#3B82F6', color: '#3B82F6' }}>
-              📋 Admissions
+            <Link href="/dashboard/secretary/transfers" className={styles.quickBtn} style={{ borderColor: '#3B82F6', color: '#3B82F6' }}>
+              ✈️ Transfers
             </Link>
             <Link href="/dashboard/secretary/notices" className={styles.quickBtn} style={{ borderColor: '#EF4444', color: '#EF4444' }}>
               📢 Post Notice
