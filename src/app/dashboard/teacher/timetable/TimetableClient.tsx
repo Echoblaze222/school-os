@@ -1,118 +1,125 @@
 'use client'
-// FIXED:
-// 1. Own CSS module (no longer borrows student/records styles that don't have the right classes)
-// 2. School-brand colour applied to active tabs, buttons, period accent bar
-// 3. Edit modal — click any period to open an edit form pre-filled with its values
-// 4. Supabase error surfaced to the user (toast-style banner)
-// 5. create() and update() both reload the list after success
-// 6. school_id guard before any query
+// src/app/dashboard/teacher/timetable/TimetableClient.tsx
+// FIX: Real `timetable` table has class_id + class_subject_id (foreign keys),
+// NOT free-text `subject` / `class_level` columns. The old client tried to
+// select/insert those columns directly, so every query failed silently —
+// nothing ever loaded or saved.
+// This version resolves the teacher's classes via class_teachers → class_subjects,
+// lets the teacher pick a class from a dropdown, and stores class_subject_id + class_id.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { ClockIcon, PlusIcon } from '@/components/Icons'
-import styles from './timetable.module.css'
+import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
-interface Period {
-  id: string
-  subject: string
-  room: string
-  start_time: string
-  end_time: string
-  day_of_week: string
-  class_level: string
+interface TeacherClass {
+  class_id: string
+  class_name: string
+  subject: string | null
+  class_subject_id: string | null
 }
 
-const EMPTY_FORM = { subject: '', room: '', start_time: '08:00', end_time: '09:00', class_level: '' }
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 export default function TimetableClient({ profile, school, userId }: Props) {
-  const [periods,   setPeriods]   = useState<Period[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [showForm,  setShowForm]  = useState(false)
-  const [saving,    setSaving]    = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
-  const [editId,    setEditId]    = useState<string | null>(null)
-  const [day, setDay] = useState(() => {
+  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
+  const [periods,  setPeriods]  = useState<any[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [day,      setDay]      = useState(() => {
     const d = new Date().getDay()
     return d === 0 || d === 6 ? 'Monday' : DAYS[d - 1]
   })
-  const [form, setForm] = useState(EMPTY_FORM)
-
+  const [form, setForm] = useState({
+    class_id: '', class_subject_id: '',
+    room: '', start_time: '08:00', end_time: '09:00',
+  })
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => { load() }, [day])
+  useEffect(() => { loadTeacherClasses() }, [])
+  useEffect(() => { if (school?.id) load() }, [day, school?.id])
+
+  async function loadTeacherClasses() {
+    const { data: ct } = await supabase
+      .from('class_teachers')
+      .select('class_id, subject, classes(name)')
+      .eq('teacher_id', userId)
+      .eq('school_id', school?.id)
+
+    if (!ct?.length) return
+
+    const list: TeacherClass[] = await Promise.all(
+      ct.map(async (row: any) => {
+        const { data: cs } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', row.class_id)
+          .limit(1)
+          .maybeSingle()
+        return {
+          class_id:          row.class_id,
+          class_name:        row.classes?.name ?? '',
+          subject:           row.subject,
+          class_subject_id:  cs?.id ?? null,
+        }
+      })
+    )
+    setTeacherClasses(list)
+    if (list[0]) {
+      setForm(f => ({ ...f, class_id: list[0].class_id, class_subject_id: list[0].class_subject_id ?? '' }))
+    }
+  }
 
   async function load() {
-    if (!school?.id) return
     setLoading(true)
-    const { data, error: err } = await supabase
+    // FIX: select class_id + class_subject_id, join classes(name) and
+    // class_subjects(subjects(name)) for display — no `subject`/`class_level` columns exist
+    const { data } = await supabase
       .from('timetable')
-      .select('id, subject, room, start_time, end_time, day_of_week, class_level')
-      .eq('school_id', school.id)
+      .select(`
+        id, room, start_time, end_time, day_of_week,
+        class_id, class_subject_id,
+        classes ( name ),
+        class_subjects ( subjects ( name ) )
+      `)
+      .eq('school_id', school?.id)
       .eq('teacher_id', userId)
       .eq('day_of_week', day)
       .order('start_time')
-    if (err) setError(err.message)
-    else setPeriods(data ?? [])
+    if (data) setPeriods(data)
     setLoading(false)
   }
 
-  function openCreate() {
-    setEditId(null)
-    setForm(EMPTY_FORM)
-    setShowForm(true)
-    setError(null)
-  }
-
-  function openEdit(p: Period) {
-    setEditId(p.id)
-    setForm({
-      subject: p.subject,
-      room: p.room ?? '',
-      start_time: p.start_time?.slice(0, 5) ?? '08:00',
-      end_time: p.end_time?.slice(0, 5) ?? '09:00',
-      class_level: p.class_level ?? '',
-    })
-    setShowForm(true)
-    setError(null)
-  }
-
-  async function save() {
-    if (!form.subject.trim()) { setError('Subject is required'); return }
+  async function create() {
+    if (!form.class_id) return
     setSaving(true)
-    setError(null)
-    if (editId) {
-      const { error: err } = await supabase.from('timetable').update({
-        subject: form.subject,
-        room: form.room,
-        start_time: form.start_time,
-        end_time: form.end_time,
-        class_level: form.class_level,
-      }).eq('id', editId)
-      if (err) { setError(err.message); setSaving(false); return }
+    // FIX: insert class_id + class_subject_id, not free-text subject/class_level
+    const { error } = await supabase.from('timetable').insert({
+      class_id:         form.class_id,
+      class_subject_id: form.class_subject_id || null,
+      room:             form.room || null,
+      start_time:       form.start_time,
+      end_time:         form.end_time,
+      day_of_week:      day,
+      school_id:        school?.id,
+      teacher_id:       userId,
+    })
+    if (!error) {
+      setForm(f => ({ ...f, room: '', start_time: '08:00', end_time: '09:00' }))
+      setShowForm(false)
+      load()
     } else {
-      const { error: err } = await supabase.from('timetable').insert({
-        ...form,
-        day_of_week: day,
-        school_id: school?.id,
-        teacher_id: userId,
-      })
-      if (err) { setError(err.message); setSaving(false); return }
+      console.error('[timetable] insert error:', error.message)
     }
-    setForm(EMPTY_FORM)
-    setShowForm(false)
-    setEditId(null)
-    await load()
     setSaving(false)
   }
 
   async function deletePeriod(id: string) {
-    if (!confirm('Remove this period?')) return
     await supabase.from('timetable').delete().eq('id', id)
     setPeriods(prev => prev.filter(p => p.id !== id))
   }
@@ -124,126 +131,112 @@ export default function TimetableClient({ profile, school, userId }: Props) {
     return mins > 0 ? `${mins} min` : ''
   }
 
+  if (!loading && teacherClasses.length === 0) return (
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
+      <div className={styles.empty}>
+        <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} />
+        <p>No classes assigned yet. Ask the principal to assign you a class.</p>
+      </div>
+    </RolePageWrapper>
+  )
+
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
 
-      {/* Day tabs + Add button */}
-      <div className={styles.topBar}>
-        <div className={styles.dayTabs}>
-          {DAYS.map(d => (
-            <button key={d} onClick={() => { setDay(d); setShowForm(false) }}
-              className={styles.dayTab}
-              style={day === d
-                ? { background: sc, color: '#fff', borderColor: sc }
-                : { borderColor: sc + '40', color: sc }}>
-              {d.slice(0, 3)}
-            </button>
-          ))}
-        </div>
-        <button onClick={openCreate} className={styles.addBtn} style={{ background: sc }}>
-          <PlusIcon size={13} color="#fff" /> Add
+      <div className={styles.dayTabs} style={{ marginBottom: 'var(--space-4)' }}>
+        {DAYS.map(d => (
+          <button key={d} onClick={() => setDay(d)}
+            className={`${styles.dayTab} ${day === d ? styles.dayTabActive : ''}`}
+            style={day === d ? { background: sc, color: '#fff', borderColor: sc } : {}}>
+            {d.slice(0, 3)}
+          </button>
+        ))}
+        <button onClick={() => setShowForm(!showForm)}
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}>
+          <PlusIcon size={13} color="white" /> Add
         </button>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className={styles.errorBanner}>
-          ⚠️ {error}
-          <button onClick={() => setError(null)} className={styles.errorClose}>✕</button>
-        </div>
-      )}
-
-      {/* Create / Edit form */}
       {showForm && (
-        <div className={styles.formCard}>
-          <p className={styles.formTitle}>
-            {editId ? 'Edit Period' : `Add Period — ${day}`}
-          </p>
-          <div className={styles.formGrid}>
+        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
+          <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>Add Period — {day}</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--space-3)' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Class *</label>
+            <select value={form.class_id}
+              onChange={e => {
+                const cls = teacherClasses.find(c => c.class_id === e.target.value)
+                setForm(f => ({ ...f, class_id: e.target.value, class_subject_id: cls?.class_subject_id ?? '' }))
+              }}
+              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
+              {teacherClasses.map(cls => (
+                <option key={cls.class_id} value={cls.class_id}>
+                  {cls.class_name}{cls.subject ? ` (${cls.subject})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             {[
-              { key: 'subject',     label: 'Subject *',   placeholder: 'e.g. Mathematics', col: true },
-              { key: 'start_time',  label: 'Start Time',  type: 'time' },
-              { key: 'end_time',    label: 'End Time',    type: 'time' },
-              { key: 'class_level', label: 'Class Level', placeholder: 'e.g. JSS 2' },
-              { key: 'room',        label: 'Room',        placeholder: 'e.g. Room 12' },
+              { key: 'start_time', label: 'Start Time', type: 'time' },
+              { key: 'end_time',   label: 'End Time',   type: 'time' },
+              { key: 'room',       label: 'Room',       placeholder: 'e.g. Room 12', col: '1/-1' },
             ].map(f => (
-              <div key={f.key} className={styles.fieldWrap} style={f.col ? { gridColumn: '1/-1' } : {}}>
-                <label className={styles.fieldLabel}>{f.label}</label>
-                <input
-                  type={f.type ?? 'text'}
-                  value={(form as any)[f.key]}
+              <div key={f.key} style={{ gridColumn: (f as any).col ?? 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{f.label}</label>
+                <input type={f.type ?? 'text'} value={(form as any)[f.key]}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   placeholder={f.placeholder ?? ''}
-                  className={styles.input}
-                  style={{ borderColor: (form as any)[f.key] ? sc + '80' : undefined }}
-                />
+                  style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
               </div>
             ))}
           </div>
-          <div className={styles.formActions}>
-            <button onClick={save} disabled={saving || !form.subject}
-              className={styles.btnPrimary} style={{ background: sc }}>
-              {saving ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save Changes' : 'Add Period')}
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+            <button onClick={create} disabled={saving || !form.class_id}
+              style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Adding...' : 'Add Period'}
             </button>
-            <button onClick={() => { setShowForm(false); setEditId(null) }} className={styles.btnSecondary}>
+            <button onClick={() => setShowForm(false)}
+              style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      {/* List */}
-      {loading
-        ? <div className={styles.loader}><span /><span /><span /></div>
+      {loading ? <div className={styles.loading}><span /><span /><span /></div>
         : periods.length === 0
-          ? (
-            <div className={styles.empty}>
-              <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-              <p>No periods for {day}</p>
-              <button onClick={openCreate} style={{ marginTop: 8, padding: '6px 16px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
-                + Add First Period
-              </button>
-            </div>
-          )
-          : (
-            <div className={styles.periodList}>
-              {periods.map(p => (
-                <div key={p.id} className={styles.periodCard} onClick={() => openEdit(p)} style={{ cursor: 'pointer' }}>
-                  {/* Time column */}
-                  <div className={styles.timeCol}>
-                    <span className={styles.timeStart}>{p.start_time?.slice(0, 5)}</span>
-                    <div className={styles.timeLine} style={{ background: sc + '50' }} />
-                    <span className={styles.timeEnd}>{p.end_time?.slice(0, 5)}</span>
-                  </div>
-                  {/* Body */}
-                  <div className={styles.periodBody} style={{ borderLeftColor: sc }}>
-                    <p className={styles.periodSubject}>{p.subject}</p>
-                    <p className={styles.periodMeta}>
-                      {p.class_level ? `${p.class_level}` : ''}
-                      {p.class_level && p.room ? ' · ' : ''}
-                      {p.room ? `📍 ${p.room}` : ''}
-                    </p>
-                    <div className={styles.periodFooter}>
-                      <span className={styles.duration}>
-                        <ClockIcon size={11} color="var(--text-muted)" />
-                        {duration(p.start_time, p.end_time)}
-                      </span>
-                      <span className={styles.editHint}>Tap to edit</span>
-                    </div>
-                  </div>
-                  {/* Delete */}
-                  <button
-                    onClick={e => { e.stopPropagation(); deletePeriod(p.id) }}
-                    className={styles.deleteBtn}
-                    title="Remove period">
-                    ✕
-                  </button>
+          ? <div className={styles.empty}><ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No periods for {day}</p></div>
+          : <div className={styles.periodList}>
+            {periods.map((p: any) => (
+              <div key={p.id} className={styles.periodCard}>
+                <div className={styles.periodTime}>
+                  <span className={styles.timeStart}>{p.start_time?.slice(0, 5)}</span>
+                  <div className={styles.timeLine} style={{ background: sc + '60' }} />
+                  <span className={styles.timeEnd}>{p.end_time?.slice(0, 5)}</span>
                 </div>
-              ))}
-            </div>
-          )
+                <div className={styles.periodBody} style={{ borderLeftColor: sc }}>
+                  <p className={styles.periodSubject}>
+                    {p.classes?.name ?? '—'}{p.class_subjects?.subjects?.name ? ` · ${p.class_subjects.subjects.name}` : ''}
+                  </p>
+                  <p className={styles.periodMeta}>{p.room ? `📍 ${p.room}` : ''}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className={styles.periodDuration}>
+                      <ClockIcon size={11} color="var(--text-muted)" />
+                      <span>{duration(p.start_time, p.end_time)}</span>
+                    </div>
+                    <button onClick={() => deletePeriod(p.id)}
+                      style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
       }
-      <div style={{ height: 80 }} />
+      <div className={styles.spacer} />
     </RolePageWrapper>
   )
 }
