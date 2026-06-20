@@ -1,8 +1,16 @@
 'use client'
+// src/app/dashboard/bursar/debtors/DebtorsClient.tsx
+//
+// Fixed: was reading from `school_fees` and `fee_payments`, tables nothing
+// writes to anymore. Now reads directly from `payment_invoices` — the same
+// table InvoicesClient, RemindersClient, and the principal dashboard use —
+// so debtor totals stay in sync with everything else in the app.
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { PeopleIcon } from '@/components/Icons'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -11,6 +19,10 @@ const TERMS    = ['First Term', 'Second Term', 'Third Term']
 const CUR_YEAR = new Date().getMonth() >= 8
   ? `${new Date().getFullYear()}/${new Date().getFullYear()+1}`
   : `${new Date().getFullYear()-1}/${new Date().getFullYear()}`
+
+const TERM_KEY_MAP: Record<string, string> = {
+  'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
+}
 
 function currentTerm() {
   const m = new Date().getMonth()
@@ -22,6 +34,7 @@ function currentTerm() {
 export default function DebtorsClient({ profile, school, userId }: Props) {
   const [debtors, setDebtors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
   const [term,    setTerm]    = useState(currentTerm())
   const [year,    setYear]    = useState(CUR_YEAR)
   const supabase = createClient()
@@ -31,40 +44,58 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
 
   async function compute() {
     setLoading(true)
-    const [{ data: students }, { data: feeStructures }, { data: payments }] = await Promise.all([
-      supabase.from('profiles')
-        .select('id, full_name, default_code, class_level, avatar_url')
-        .eq('school_id', school?.id).eq('role', 'student'),
-      supabase.from('school_fees')
-        .select('class_level, fee_type, amount')
-        .eq('school_id', school?.id).eq('term', term).eq('academic_year', year),
-      supabase.from('fee_payments')
-        .select('student_id, amount')
-        .eq('school_id', school?.id).eq('term', term).eq('academic_year', year),
-    ])
+    setError('')
+    const termKey = TERM_KEY_MAP[term] ?? 'first'
 
-    if (!students || !feeStructures || !payments) { setLoading(false); return }
+    const { data, error: err } = await supabase
+      .from('payment_invoices')
+      .select(`
+        id, student_id, amount_due_ngn, amount_paid_ngn, balance_ngn, status,
+        fee_structures ( term, academic_year ),
+        profiles ( id, full_name, default_code, class_level, avatar_url )
+      `)
+      .eq('school_id', school?.id)
 
-    // Sum expected fees per class level
-    const expected: Record<string, number> = {}
-    for (const fee of feeStructures) {
-      expected[fee.class_level] = (expected[fee.class_level] ?? 0) + (fee.amount ?? 0)
+    if (err) {
+      setError(err.message)
+      setDebtors([])
+      setLoading(false)
+      return
     }
 
-    // Sum payments per student
-    const paid: Record<string, number> = {}
-    for (const p of payments) {
-      if (p.student_id) paid[p.student_id] = (paid[p.student_id] ?? 0) + (p.amount ?? 0)
+    // Aggregate per student — a student may have multiple invoices for the
+    // same term (e.g. school fees + uniform + PTA), so sum across all of them.
+    // Embeds can come back as object OR 1-element array, so unwrap before
+    // reading, and verify term/year client-side since PostgREST doesn't
+    // reliably apply filters on a 2nd-level nested embed.
+    const byStudent = new Map<string, any>()
+    for (const inv of (data ?? [])) {
+      const fs = unwrapEmbed((inv as any).fee_structures)
+      if (!fs || fs.term !== termKey || fs.academic_year !== year) continue
+
+      const student = unwrapEmbed((inv as any).profiles)
+      if (!student) continue
+
+      if (!byStudent.has(student.id)) {
+        byStudent.set(student.id, {
+          id:           student.id,
+          full_name:    student.full_name,
+          default_code: student.default_code ?? '',
+          class_level:  student.class_level ?? '',
+          avatar_url:   student.avatar_url ?? null,
+          expected:     0,
+          paid:         0,
+          outstanding:  0,
+        })
+      }
+      const entry = byStudent.get(student.id)
+      entry.expected    += inv.amount_due_ngn  ?? 0
+      entry.paid        += inv.amount_paid_ngn ?? 0
+      entry.outstanding += inv.balance_ngn     ?? 0
     }
 
-    const result = students
-      .map(s => ({
-        ...s,
-        expected:    expected[s.class_level] ?? 0,
-        paid:        paid[s.id]              ?? 0,
-        outstanding: (expected[s.class_level] ?? 0) - (paid[s.id] ?? 0),
-      }))
-      .filter(s => s.outstanding > 0)
+    const result = Array.from(byStudent.values())
+      .filter(d => d.outstanding > 0)
       .sort((a, b) => b.outstanding - a.outstanding)
 
     setDebtors(result)
@@ -97,6 +128,13 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
           ))}
         </div>
       </div>
+
+      {error && (
+        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
+          ⚠️ {error}
+        </div>
+      )}
 
       {!loading && debtors.length > 0 && (
         <div style={{ padding:'var(--space-4)', background:'#EF444415',
