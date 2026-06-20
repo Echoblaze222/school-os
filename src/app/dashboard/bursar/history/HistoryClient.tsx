@@ -29,7 +29,7 @@ function flatten(row: any) {
   // shapes safely instead of assuming one or the other.
   const inv     = unwrapEmbed(row.payment_invoices)
   const fs      = unwrapEmbed(inv?.fee_structures)
-  const student = unwrapEmbed(row['profiles!student_id'])
+  const student = unwrapEmbed(row.profiles)
   return {
     id:             row.id,
     receipt_number: row.receipt_number,
