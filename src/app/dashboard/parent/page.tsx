@@ -13,6 +13,8 @@ export default async function ParentDashboardPage() {
     .eq('id', user.id)
     .single()
 
+  if (!profile || profile.role !== 'parent') redirect('/login')
+
   const school = (profile as any)?.schools ?? null
   return <ParentDashboardClient profile={profile} school={school} userId={user.id} />
 }
