@@ -5,6 +5,12 @@
 // `status` and `meeting_link` everywhere, so every query silently failed —
 // nothing ever loaded, created, started, or ended.
 // "scheduled" / "live" / "ended" are now derived from is_live + scheduled_at + ended_at.
+//
+// FIX (this round): every Supabase call's error was either ignored or only
+// console.error'd — so a failed insert/update looked identical to nothing
+// happening at all. Added a visible error banner and error checks on every
+// DB call (load, create, startClass, endClass, deleteSession) so failures
+// are no longer silent.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -16,7 +22,6 @@ interface Props { profile: any; school: any; userId: string }
 
 type Tab = 'scheduled' | 'live' | 'ended'
 
-// FIX: derive a display status from real columns (is_live, ended_at)
 function deriveStatus(s: any): Tab {
   if (s.is_live) return 'live'
   if (s.ended_at) return 'ended'
@@ -29,6 +34,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [tab,      setTab]      = useState<Tab>('scheduled')
+  const [error,    setError]    = useState<string | null>(null) // FIX: visible error state
   const [form,     setForm]     = useState({
     title: '', description: '', meeting_url: '', scheduled_at: '',
   })
@@ -39,14 +45,17 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    // FIX: select real columns — is_live, meeting_url, recording_url, ended_at
-    const { data } = await supabase
+    const { data, error: err } = await supabase
       .from('online_classes')
       .select('id, title, description, meeting_url, recording_url, is_live, scheduled_at, created_at')
       .eq('school_id', school?.id)
       .eq('teacher_id', userId)
       .order('scheduled_at', { ascending: false })
       .limit(50)
+    if (err) {
+      console.error('[live] load error:', err.message)
+      setError(err.message)
+    }
     if (data) setSessions(data)
     setLoading(false)
   }
@@ -56,8 +65,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
   async function create() {
     if (!form.title) return
     setSaving(true)
-    // FIX: insert real columns — no status, no meeting_link
-    const { error } = await supabase.from('online_classes').insert({
+    setError(null) // FIX: clear previous error before retrying
+    const { error: err } = await supabase.from('online_classes').insert({
       title:         form.title,
       description:   form.description || null,
       meeting_url:   form.meeting_url || null,
@@ -67,35 +76,42 @@ export default function LiveClient({ profile, school, userId }: Props) {
       created_by:    userId,
       is_live:       false,
     })
-    if (!error) {
+    if (!err) {
       setForm({ title: '', description: '', meeting_url: '', scheduled_at: '' })
       setShowForm(false)
       setTab('scheduled')
       load()
     } else {
-      console.error('[live] insert error:', error.message)
+      // FIX: surface to UI, not just console
+      console.error('[live] insert error:', err.message)
+      setError(err.message)
     }
     setSaving(false)
   }
 
   async function startClass(id: string) {
-    await supabase.from('online_classes')
+    setError(null)
+    const { error: err } = await supabase.from('online_classes')
       .update({ is_live: true }).eq('id', id)
+    if (err) { console.error('[live] start error:', err.message); setError(err.message); return }
     setTab('live')
     load()
   }
 
   async function endClass(id: string) {
-    // FIX: real table has no `ended_at`... wait it does (ended_at exists per schema)
-    await supabase.from('online_classes')
-      .update({ is_live: false, ended_at: new Date().toISOString() } as any)
+    setError(null)
+    const { error: err } = await supabase.from('online_classes')
+      .update({ is_live: false, ended_at: new Date().toISOString() })
       .eq('id', id)
+    if (err) { console.error('[live] end error:', err.message); setError(err.message); return }
     setTab('ended')
     load()
   }
 
   async function deleteSession(id: string) {
-    await supabase.from('online_classes').delete().eq('id', id)
+    setError(null)
+    const { error: err } = await supabase.from('online_classes').delete().eq('id', id)
+    if (err) { console.error('[live] delete error:', err.message); setError(err.message); return }
     setSessions(prev => prev.filter(s => s.id !== id))
   }
 
@@ -119,6 +135,14 @@ export default function LiveClient({ profile, school, userId }: Props) {
           <PlusIcon size={13} color="white" /> Schedule
         </button>
       </div>
+
+      {/* FIX: visible error banner, dismissible */}
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        </div>
+      )}
 
       {showForm && (
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
