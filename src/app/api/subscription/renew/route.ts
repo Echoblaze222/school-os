@@ -89,7 +89,7 @@ export async function POST(request: Request) {
         amount:       amount * 100, // Paystack uses kobo
         currency:     'NGN',
         reference,
-        callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscriptions/callback`,
+        callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/callback`,
         metadata: {
           school_id:      schoolId,
           school_name:    school.name,
