@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import StudentDashboardClient from './StudentDashboardClient'
 
 export default async function StudentDashboardPage() {
-  const supabase =await createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -12,6 +12,8 @@ export default async function StudentDashboardPage() {
     .select('*, schools(*)')
     .eq('id', user.id)
     .single()
+
+  if (!profile || profile.role !== 'student') redirect('/login')
 
   const school = (profile as any)?.schools ?? null
 
@@ -71,4 +73,4 @@ export default async function StudentDashboardPage() {
       }}
     />
   )
-}
+    }
