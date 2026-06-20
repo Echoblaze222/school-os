@@ -26,10 +26,16 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
   const [msg,     setMsg]    = useState('')
   const [form,    setForm]   = useState({ title: '', category: 'General' })
   const [file,    setFile]   = useState<File | null>(null)
+  const [previewItem, setPreviewItem] = useState<Doc | null>(null)
 
   const fileRef  = useRef<HTMLInputElement>(null)
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
+
+  function extOf(url: string | null) { return url?.split('.')?.pop()?.toLowerCase()?.split('?')[0] ?? '' }
+  function isImage(url: string | null) { return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extOf(url)) }
+  function isPdf(url: string | null) { return extOf(url) === 'pdf' }
+
 
   const filtered = docs.filter(d => {
     const matchCat    = catTab === 'all' || d.category === catTab
@@ -105,7 +111,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
         <div className={styles.emptyState}><p className={styles.emptyEmoji}>📁</p><p className={styles.emptyTitle}>No documents</p><p className={styles.emptyHint}>Upload school documents, forms, and policies</p></div>
       ) : (
         filtered.map(d => (
-          <div key={d.id} className={styles.listItem}>
+          <div key={d.id} className={styles.listItem} onClick={() => setPreviewItem(d)} style={{ cursor: 'pointer' }}>
             <div className={styles.listIconBox} style={{ background: (CAT_COLORS[d.category] ?? sc) + '22' }}>
               <span style={{ fontSize: '1.3rem' }}>{fileIcon(d.file_url)}</span>
             </div>
@@ -116,12 +122,41 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
             <span className={styles.listBadge} style={{ background: (CAT_COLORS[d.category] ?? '#6B7280') + '22', color: CAT_COLORS[d.category] ?? '#6B7280' }}>{d.category}</span>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               {d.file_url && (
-                <a href={d.file_url} target="_blank" rel="noopener noreferrer" style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇️</a>
+                <a href={d.file_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇️</a>
               )}
-              <button onClick={() => deleteDoc(d.id)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+              <button onClick={e => { e.stopPropagation(); deleteDoc(d.id) }} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
             </div>
           </div>
         ))
+      )}
+
+      {/* Preview modal */}
+      {previewItem && (
+        <div className={styles.modalOverlay} onClick={() => setPreviewItem(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: isPdf(previewItem.file_url) || isImage(previewItem.file_url) ? 680 : undefined }}>
+            <h2 className={styles.modalTitle}>{previewItem.title}</h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: -8, marginBottom: 'var(--space-4)' }}>{previewItem.category} · {formatSize(previewItem.file_size)}</p>
+
+            {previewItem.file_url && isImage(previewItem.file_url) ? (
+              <img src={previewItem.file_url} alt={previewItem.title} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)' }} />
+            ) : previewItem.file_url && isPdf(previewItem.file_url) ? (
+              <iframe src={previewItem.file_url} title={previewItem.title} style={{ width: '100%', height: '70vh', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }} />
+            ) : (
+              <div className={styles.emptyState} style={{ padding: 'var(--space-5) 0' }}>
+                <p className={styles.emptyEmoji}>{fileIcon(previewItem.file_url)}</p>
+                <p className={styles.emptyTitle}>No preview available</p>
+                <p className={styles.emptyHint}>This file type can't be previewed in-app. Download it to view the contents.</p>
+              </div>
+            )}
+
+            <div className={styles.modalActions} style={{ marginTop: 'var(--space-4)' }}>
+              <button className={styles.btnGhost} onClick={() => setPreviewItem(null)}>Close</button>
+              {previewItem.file_url && (
+                <a href={previewItem.file_url} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ textDecoration: 'none', textAlign: 'center' }}>⬇️ Download</a>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {modal && (
