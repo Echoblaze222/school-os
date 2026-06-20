@@ -570,6 +570,20 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                           <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
                         </svg>
                       </button>
+                      <Link
+                        href={`/dashboard/principal/students/transfer?studentId=${student.id}`}
+                        title="Transfer this student"
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          width: 28, height: 28, borderRadius: 8, cursor: 'pointer',
+                          background: 'transparent', border: '1px solid var(--glass-border)',
+                          color: 'var(--text-muted)', flexShrink: 0, marginRight: 4, textDecoration: 'none',
+                        }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/>
+                        </svg>
+                      </Link>
                       <button className={styles.delBtn} onClick={() => setConfirmDel(student)} title="Remove student">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                       </button>
