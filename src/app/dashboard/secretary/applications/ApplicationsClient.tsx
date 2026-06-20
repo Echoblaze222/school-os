@@ -6,10 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '../secretary.module.css'
 
-const APP_TYPES  = ['Enrollment', 'Transfer In', 'Transfer Out', 'Re-enrollment', 'Special Needs', 'Other']
-const STATUS_MAP = { pending: styles.badgeYellow, approved: styles.badgeGreen, rejected: styles.badgeRed, reviewing: styles.badgeBlue }
+// `applications.status` is constrained in the DB to exactly these 3 values —
+// keep the UI in lock-step or updates silently fail the CHECK constraint.
+const STATUS_MAP = { pending: styles.badgeYellow, admitted: styles.badgeGreen, rejected: styles.badgeRed }
+const APP_TYPES   = ['Enrollment', 'Transfer In', 'Transfer Out', 'Re-enrollment', 'Special Needs', 'Other']
 
-interface Application { id: string; applicant_name: string; class_applying_for: string; status: string; created_at: string; notes: string | null }
+interface Application { id: string; applicant_name: string; class_applying_for: string; status: 'pending' | 'admitted' | 'rejected'; created_at: string; notes: string | null }
 interface Props { applications: Application[]; profile: any; school: any; userId: string }
 
 export default function ApplicationsClient({ applications: init, profile, school, userId }: Props) {
@@ -41,10 +43,16 @@ export default function ApplicationsClient({ applications: init, profile, school
     setSaving(false)
   }
 
-  async function updateStatus(id: string, status: string) {
-    await supabase.from('applications').update({ status }).eq('id', id)
-    setApps(p => p.map(a => a.id === id ? { ...a, status } : a))
-    setViewItem(v => v?.id === id ? { ...v, status } : v)
+  async function updateStatus(id: string, status: Application['status']) {
+    setSaving(true)
+    const { error } = await supabase.from('applications').update({ status, reviewed_by: userId, reviewed_at: new Date().toISOString() }).eq('id', id)
+    if (!error) {
+      setApps(p => p.map(a => a.id === id ? { ...a, status } : a))
+      setViewItem(v => v?.id === id ? { ...v, status } : v)
+    } else {
+      setMsg(error.message)
+    }
+    setSaving(false)
   }
 
   async function deleteApp(id: string) {
@@ -57,7 +65,7 @@ export default function ApplicationsClient({ applications: init, profile, school
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Applications">
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1, overflowX: 'auto' }}>
-          {['all', 'pending', 'reviewing', 'approved', 'rejected'].map(t => (
+          {['all', 'pending', 'admitted', 'rejected'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t ? sc + '22' : 'var(--glass-bg)', borderColor: tab === t ? sc : 'var(--glass-border)', color: tab === t ? sc : 'var(--text-muted)' }}>
               {t.charAt(0).toUpperCase() + t.slice(1)} ({apps.filter(a => t === 'all' || a.status === t).length})
             </button>
@@ -90,10 +98,11 @@ export default function ApplicationsClient({ applications: init, profile, school
                 <span style={{ color: 'var(--text-muted)' }}>{l}</span><span style={{ fontWeight: 600, color: 'var(--text-primary)', textTransform: l === 'Status' ? 'capitalize' : 'none' }}>{v}</span>
               </div>
             ))}
+            {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: 'var(--space-3) 0 0' }}>{msg}</p>}
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
-              {viewItem.status !== 'approved'  && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'approved')}  style={{ flex: 1 }}>✅ Approve</button>}
-              {viewItem.status !== 'reviewing' && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'reviewing')} style={{ flex: 1 }}>👀 Review</button>}
-              {viewItem.status !== 'rejected'  && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')}  style={{ flex: 1 }}>✕ Reject</button>}
+              {viewItem.status !== 'admitted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'admitted')} disabled={saving} style={{ flex: 1 }}>✅ Admit</button>}
+              {viewItem.status !== 'rejected' && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1 }}>✕ Reject</button>}
+              {viewItem.status !== 'pending'  && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'pending')}  disabled={saving} style={{ flex: 1 }}>↺ Back to Pending</button>}
             </div>
             <button onClick={() => deleteApp(viewItem.id)} style={{ width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>🗑️ Delete application</button>
           </div>
