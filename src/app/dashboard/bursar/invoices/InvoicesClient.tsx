@@ -104,7 +104,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
   const filtered = useMemo(() => {
     return invoices.filter((inv: any) => {
-      const student = unwrapEmbed(inv['profiles!student_id']) as any
+      const student = unwrapEmbed(inv.profiles) as any
       const fs       = unwrapEmbed(inv.fee_structures) as any
       const name    = student?.full_name?.toLowerCase() ?? ''
       const admNo   = student?.permanent_student_id?.toLowerCase() ?? ''
@@ -161,7 +161,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
       {/* ── Invoice Preview / Edit Modal ── */}
       {previewInv && (() => {
-        const student = unwrapEmbed(previewInv['profiles!student_id']) as any
+        const student = unwrapEmbed(previewInv.profiles) as any
         const fee     = unwrapEmbed(previewInv.fee_structures) as any
         const inp: React.CSSProperties = {
           height: 38, padding: '0 12px', background: 'var(--input-bg)',
@@ -409,7 +409,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           </div>
         ) : (
           filtered.map((inv: any) => {
-            const student = unwrapEmbed(inv['profiles!student_id']) as any
+            const student = unwrapEmbed(inv.profiles) as any
             const fee     = unwrapEmbed(inv.fee_structures) as any
 
             return (
