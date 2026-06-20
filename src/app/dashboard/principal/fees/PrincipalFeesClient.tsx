@@ -23,10 +23,23 @@ const SHEET: React.CSSProperties = {
 
 export default function PrincipalFeesClient({
   stats, classFees, recentPayments, overdueInvoices, schoolId,
+  currentTerm, currentYear,
 }: any) {
   const router = useRouter()
   const [tab,   setTab]   = useState<'overview' | 'classes' | 'overdue' | 'recent'>('overview')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [yearInput, setYearInput] = useState(currentYear)
+
+  const TERM_OPTIONS = [
+    { key: 'first',  label: 'First' },
+    { key: 'second', label: 'Second' },
+    { key: 'third',  label: 'Third' },
+  ]
+
+  function goToTermYear(term: string, year: string) {
+    const params = new URLSearchParams({ term, year })
+    router.push(`/dashboard/principal/fees?${params.toString()}`)
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme') as any
@@ -184,6 +197,41 @@ export default function PrincipalFeesClient({
           {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
         </button>
       </header>
+
+      {/* Term/Year picker — without this, the dashboard silently guessed
+          the term from today's calendar date with no way to correct it,
+          which is exactly what caused it to show all zeros when the
+          school's actual term didn't match that guess. */}
+      <div style={{ display: 'flex', gap: 10, padding: '0 16px 12px', alignItems: 'center' }}>
+        <input
+          value={yearInput}
+          onChange={e => setYearInput(e.target.value)}
+          onBlur={() => { if (yearInput && yearInput !== currentYear) goToTermYear(currentTerm, yearInput) }}
+          onKeyDown={e => { if (e.key === 'Enter') goToTermYear(currentTerm, yearInput) }}
+          placeholder="2025/2026"
+          style={{
+            height: 38, width: 108, flexShrink: 0, padding: '0 10px',
+            background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+            borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.8rem', outline: 'none',
+          }}
+        />
+        <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+          {TERM_OPTIONS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => goToTermYear(t.key, yearInput || currentYear)}
+              style={{
+                flex: 1, height: 38, borderRadius: 8, fontWeight: 700, fontSize: '0.78rem',
+                cursor: 'pointer', transition: 'all 0.15s',
+                border: `1px solid ${currentTerm === t.key ? 'var(--burgundy)' : 'var(--input-border)'}`,
+                background: currentTerm === t.key ? 'var(--burgundy)' : 'var(--input-bg)',
+                color: currentTerm === t.key ? '#fff' : 'var(--text-muted)',
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className={styles.tabs}>
