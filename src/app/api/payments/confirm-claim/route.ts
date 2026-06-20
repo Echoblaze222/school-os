@@ -16,6 +16,7 @@
 import { NextResponse }      from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient }      from '@/lib/supabase/server'
+import { unwrapEmbed }       from '@/lib/utils/unwrapEmbed'
 
 const TERM_KEY_MAP: Record<string, string> = {
   'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
   // payment_invoices has no direct term/year columns; those live on the
   // linked fee_structures row. We join through that to filter correctly.
   let resolvedInvoiceId = invoice_id ?? null
+  let invoiceWarning: string | null = null
 
   if (!resolvedInvoiceId) {
     const termKey = TERM_KEY_MAP[term] ?? term
@@ -77,10 +79,13 @@ export async function POST(req: Request) {
       .neq('status', 'completed')
       .order('created_at', { ascending: true })
 
-    // Filter client-side on the nested fee_structures term/year, since
-    // PostgREST does not reliably apply filters on a 2nd-level embed.
+    // Filter on the nested fee_structures term/year. Embeds can come back
+    // as object OR 1-element array, so unwrap before reading — this was
+    // previously read directly as `inv.fee_structures`, which silently
+    // returned undefined whenever PostgREST returned an array shape,
+    // making every match fail even when a valid invoice existed.
     const match = (candidateInvoices ?? []).find((inv: any) => {
-      const fs = inv.fee_structures
+      const fs = unwrapEmbed(inv.fee_structures)
       return fs && fs.term === termKey && fs.academic_year === year
     })
 
@@ -88,6 +93,20 @@ export async function POST(req: Request) {
     // term/year match is found (e.g. claim predates fee structure setup),
     // but NEVER fall back across students or schools.
     resolvedInvoiceId = match?.id ?? (candidateInvoices?.[0]?.id ?? null)
+
+    // If we STILL have nothing, this payment is about to be recorded with
+    // no invoice link at all — meaning it won't show up in any term/year-
+    // filtered view (History, Receipts, Reports, Principal dashboard),
+    // even though it correctly counts toward the unfiltered bursar home
+    // total. Surface this clearly instead of letting it happen silently,
+    // since the bursar needs to know to generate invoices and re-link this
+    // payment manually afterward.
+    if (!resolvedInvoiceId) {
+      invoiceWarning = `No invoice exists yet for this student for ${term} ${year}. ` +
+        `The payment was recorded, but it won't appear in term-filtered views ` +
+        `(History, Receipts, Reports) until you generate invoices for this ` +
+        `term and link this payment manually.`
+    }
   }
 
   // ── 3. Insert into payments table (matches your real schema) ───
@@ -150,5 +169,7 @@ export async function POST(req: Request) {
     ok: true,
     receipt_number: receiptNumber,
     invoice_id: resolvedInvoiceId,
+    warning: invoiceWarning,
   })
-}
+    }
+      
