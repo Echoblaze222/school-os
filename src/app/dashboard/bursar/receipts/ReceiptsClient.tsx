@@ -68,6 +68,9 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
   const [term,     setTerm]     = useState(getCurrentTerm())
   const [year,     setYear]     = useState(CUR_YEAR)
   const [error,    setError]    = useState('')
+  // TEMPORARY DEBUG — holds the raw Supabase result so we can show it
+  // directly on screen (no desktop/DevTools needed). Remove once resolved.
+  const [debugRaw, setDebugRaw] = useState<string>('')
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
@@ -100,6 +103,12 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       setLoading(false)
       return
     }
+
+    // TEMPORARY DEBUG — find the specific problem row and stash its raw,
+    // unprocessed shape so it can be shown directly on screen below.
+    const problemRow = (data ?? []).find((r: any) => r.receipt_number === 'RCP-20260618-8834')
+    if (problemRow) setDebugRaw(JSON.stringify(problemRow, null, 2))
+    else setDebugRaw(`Row with that receipt_number was not found in this query's ${(data ?? []).length} results (term=${termKey}, year=${year}).`)
 
     // The .eq() filters above target a 2nd-level nested embed
     // (payments -> payment_invoices -> fee_structures). PostgREST does not
@@ -192,6 +201,24 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
   // ── List view ─────────────────────────────────────────────
   return (
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Receipts">
+
+      {/* ── TEMPORARY ON-SCREEN DEBUG PANEL — remove once resolved ── */}
+      {debugRaw && (
+        <div style={{
+          background: '#000', border: '2px solid #F59E0B', borderRadius: 10,
+          padding: 12, marginBottom: 16, maxHeight: 320, overflow: 'auto',
+        }}>
+          <p style={{ color: '#F59E0B', fontWeight: 800, fontSize: '0.75rem', margin: '0 0 8px' }}>
+            🔍 DEBUG — raw row for RCP-20260618-8834
+          </p>
+          <pre style={{
+            color: '#0F0', fontSize: '0.62rem', whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all', margin: 0, fontFamily: 'monospace',
+          }}>
+            {debugRaw}
+          </pre>
+        </div>
+      )}
 
       {/* ── Receipt Preview Modal ── */}
       {selected && (
@@ -343,4 +370,5 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       <div className={styles.spacer}/>
     </RolePageWrapper>
   )
-}
+    }
+      
