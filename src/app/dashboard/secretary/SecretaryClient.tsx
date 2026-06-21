@@ -156,5 +156,5 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
       </div>
     </div>
   )
-    }
-                                  
+   }
+  
