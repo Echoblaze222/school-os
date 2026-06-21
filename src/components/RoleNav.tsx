@@ -186,8 +186,9 @@ const NAV: Record<string, {
   parent: {
     sidebar: [
       { label: 'Main', items: [
-        { href: '/dashboard/parent',             Icon: HomeIcon,      label: 'Dashboard'      },
-        { href: '/dashboard/parent/chat',        Icon: MessageIcon,   label: 'Message School' },
+        { href: '/dashboard/parent',               Icon: HomeIcon,    label: 'Dashboard'      },
+        { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Notifications'  },
+        { href: '/dashboard/parent/chat',          Icon: MessageIcon, label: 'Message School' },
       ]},
       { label: "Child's Progress", items: [
         { href: '/dashboard/parent/child',       Icon: UserIcon,      label: 'Child Profile'  },
@@ -204,8 +205,8 @@ const NAV: Record<string, {
       { href: '/dashboard/parent/child',   Icon: UserIcon,     label: 'Child'   },
       { href: '/dashboard/parent/results', Icon: BarChartIcon, label: 'Results' },
       { home: true },
-      { href: '/dashboard/parent/fees',    Icon: WalletIcon,   label: 'Fees'    },
-      { href: '/dashboard/parent/chat',    Icon: MessageIcon,  label: 'Chat'    },
+      { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Alerts' },
+      { href: '/dashboard/parent/chat',         Icon: MessageIcon, label: 'Chat'   },
     ],
   },
 }
