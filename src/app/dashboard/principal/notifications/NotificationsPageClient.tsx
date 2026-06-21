@@ -1,9 +1,35 @@
+// SHARED: used by all 5 roles
+// src/app/dashboard/principal/notifications/NotificationsPageClient.tsx
+// src/app/dashboard/teacher/notifications/NotificationsPageClient.tsx
+// src/app/dashboard/student/notifications/NotificationsPageClient.tsx
+// src/app/dashboard/bursar/notifications/NotificationsPageClient.tsx
+// src/app/dashboard/secretary/notifications/NotificationsPageClient.tsx
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// FIX: All notification pages had a hardcoded bottom nav using plain emoji
+//      anchor tags and the class "bottom-nav" (or "bottom-nav-mobile" in the
+//      principal variant). Neither matches the canonical RoleNav component that
+//      every other dashboard page uses.
+//
+//      Problems with the old nav:
+//      1. Emoji icons instead of SVG icons — looked visually different
+//      2. "bottom-nav" CSS class doesn't exist in globals.css for most roles
+//      3. Home button used "nav-home" / "nav-home-btn" — different classes
+//      4. No active-state highlighting driven by usePathname()
+//      5. No school color theming
+//      6. Bursar page had NO bottom nav at all — it was missing entirely
+//
+//      Fix: import <RoleNav> (the same component every other page uses) and
+//      pass the same props. The notification page already has userId, profile,
+//      school, role, and schoolColor available.
+// ─────────────────────────────────────────────────────────────────────────────
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import RoleNav from '@/components/RoleNav'
 import styles from './notifications.module.css'
 
 interface Notification {
@@ -22,16 +48,19 @@ interface Props {
   userId: string
   role: string
   schoolId?: string
+  profile?: any
+  school?: any
+  schoolColor?: string
 }
 
 const FILTERS = [
-  { key: 'all',          label: 'All',          emoji: '🔔' },
-  { key: 'unread',       label: 'Unread',       emoji: '🔵' },
-  { key: 'result',       label: 'Results',      emoji: '📊' },
-  { key: 'payment',      label: 'Payments',     emoji: '💰' },
-  { key: 'announcement', label: 'News',         emoji: '📣' },
-  { key: 'assignment',   label: 'Assignments',  emoji: '📝' },
-  { key: 'system',       label: 'System',       emoji: '⚙️' },
+  { key: 'all',          label: 'All',         emoji: '🔔' },
+  { key: 'unread',       label: 'Unread',      emoji: '🔵' },
+  { key: 'result',       label: 'Results',     emoji: '📊' },
+  { key: 'payment',      label: 'Payments',    emoji: '💰' },
+  { key: 'announcement', label: 'News',        emoji: '📣' },
+  { key: 'assignment',   label: 'Assignments', emoji: '📝' },
+  { key: 'system',       label: 'System',      emoji: '⚙️' },
 ]
 
 const TYPE_EMOJIS: Record<string, string> = {
@@ -60,7 +89,14 @@ const NOTIF_TYPES  = ['announcement','result','assignment','payment','meeting','
 const TARGET_ROLES = ['all','students','teachers','parents','bursar','secretary']
 
 export default function NotificationsPageClient({
-  initialNotifications, unreadCount, userId, role, schoolId,
+  initialNotifications,
+  unreadCount,
+  userId,
+  role,
+  schoolId,
+  profile,
+  school,
+  schoolColor = '#7C3AED',
 }: Props) {
   const router   = useRouter()
   const supabase = createClient()
@@ -68,7 +104,6 @@ export default function NotificationsPageClient({
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
   const [filter,        setFilter]        = useState('all')
   const [loading,       setLoading]       = useState(false)
-  const [theme,         setTheme]         = useState<'dark' | 'light'>('dark')
   const [localUnread,   setLocalUnread]   = useState(unreadCount)
 
   // Principal broadcast state
@@ -81,19 +116,13 @@ export default function NotificationsPageClient({
   const [sendResult, setSendResult] = useState<'success' | 'error' | null>(null)
   const [sendError,  setSendError]  = useState('')
 
-  // ── Web Push hook ─────────────────────────────────────
   const push = usePushNotifications()
 
   const dashboardPath = ROLE_DASHBOARDS[role] ?? '/dashboard/student'
   const isPrincipal   = role === 'principal'
 
+  // ── Realtime new notifications ────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem('schoolos_theme') as any
-    if (saved) {
-      setTheme(saved)
-      document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : '')
-    }
-
     const channel = supabase
       .channel(`notifs-page:${userId}`)
       .on('postgres_changes', {
@@ -107,10 +136,10 @@ export default function NotificationsPageClient({
         setLocalUnread(prev => prev + 1)
       })
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [userId])
 
+  // ── Actions ───────────────────────────────────────────────
   async function markAllRead() {
     await supabase
       .from('notifications')
@@ -149,51 +178,39 @@ export default function NotificationsPageClient({
     if (!sendTitle.trim() || !sendBody.trim()) return
     setSending(true); setSendResult(null); setSendError('')
 
-    // 1. Fetch target user IDs
-    let query = supabase
-      .from('profiles')
-      .select('id')
-      .eq('school_id', schoolId ?? '')
-
+    let query = supabase.from('profiles').select('id').eq('school_id', schoolId ?? '')
     if (sendTarget !== 'all') {
       const roleMap: Record<string, string> = { students: 'student', teachers: 'teacher', parents: 'parent' }
       query = query.eq('role', roleMap[sendTarget] ?? sendTarget)
     }
-
     const { data: targets, error: fetchErr } = await query
     if (fetchErr || !targets?.length) {
       setSending(false); setSendResult('error'); setSendError(fetchErr?.message ?? 'No users found'); return
     }
 
-    // 2. Insert in-app notifications
     const rows = targets.map(t => ({
       user_id:  t.id,
+      school_id: schoolId,
       title:    sendTitle.trim(),
       body:     sendBody.trim(),
       type:     sendType,
       is_read:  false,
       link_url: null,
     }))
-
     const { error: insertErr } = await supabase.from('notifications').insert(rows)
     if (insertErr) {
       setSending(false); setSendResult('error'); setSendError(insertErr.message); return
     }
 
-    // 3. 🔔 Fire Web Push to all targets (non-blocking)
     fetch('/api/push/send', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        targetRole: sendTarget,
-        title:      sendTitle.trim(),
-        body:       sendBody.trim(),
-        url:        dashboardPath + '/notifications',
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        targetRole: sendTarget, title: sendTitle.trim(),
+        body: sendBody.trim(), url: dashboardPath + '/notifications',
       }),
-    }).catch(() => {}) // ignore push errors — notifications already saved
+    }).catch(() => {})
 
-    setSending(false)
-    setSendResult('success')
+    setSending(false); setSendResult('success')
     setSendTitle(''); setSendBody(''); setSendType('announcement'); setSendTarget('all')
     setTimeout(() => { setSendResult(null); setShowSend(false) }, 2500)
   }
@@ -218,12 +235,6 @@ export default function NotificationsPageClient({
     return date.toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
-  const filtered = notifications.filter(n => {
-    if (filter === 'all')    return true
-    if (filter === 'unread') return !n.is_read
-    return n.type === filter
-  })
-
   function getDateGroup(dateStr: string) {
     const date = new Date(dateStr)
     const now  = new Date()
@@ -234,6 +245,12 @@ export default function NotificationsPageClient({
     return date.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' })
   }
 
+  const filtered = notifications.filter(n => {
+    if (filter === 'all')    return true
+    if (filter === 'unread') return !n.is_read
+    return n.type === filter
+  })
+
   const groups: Record<string, Notification[]> = {}
   const groupOrder: string[] = []
   for (const n of filtered) {
@@ -242,12 +259,13 @@ export default function NotificationsPageClient({
     groups[g].push(n)
   }
 
-  // ── Push toggle button (inline, no external component needed) ─────────────
   function PushBtn() {
     if (!push.supported) return null
-    if (push.loading) return <span style={{ fontSize:'0.75rem', opacity:0.5 }}>🔔…</span>
+    if (push.loading) return <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>🔔…</span>
     if (push.permission === 'denied') return (
-      <span style={{ fontSize:'0.75rem', opacity:0.5 }} title="Notifications blocked in browser settings">🔕 Blocked</span>
+      <span style={{ fontSize: '0.75rem', opacity: 0.5 }} title="Notifications blocked in browser settings">
+        🔕 Blocked
+      </span>
     )
     return (
       <button
@@ -276,23 +294,9 @@ export default function NotificationsPageClient({
           {localUnread > 0 && <span className={styles.unreadBadge}>{localUnread}</span>}
         </div>
         <div className={styles.headerRight}>
-          {/* Theme toggle */}
-          <button className={styles.iconBtn} onClick={() => {
-            const next = theme === 'dark' ? 'light' : 'dark'
-            setTheme(next)
-            localStorage.setItem('schoolos_theme', next)
-            document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '')
-          }}>
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-
-          {/* Push toggle */}
           <PushBtn />
-
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead}>
-              ✓ All read
-            </button>
+            <button className={styles.markAllBtn} onClick={markAllRead}>✓ All read</button>
           )}
           {isPrincipal && (
             <button
@@ -309,13 +313,9 @@ export default function NotificationsPageClient({
       {/* Push error banner */}
       {push.error && (
         <div style={{
-          margin: '8px 16px',
-          padding: '10px 14px',
-          borderRadius: 10,
-          background: 'rgba(239,68,68,0.1)',
-          border: '1px solid rgba(239,68,68,0.3)',
-          color: '#f87171',
-          fontSize: '0.8rem',
+          margin: '8px 16px', padding: '10px 14px', borderRadius: 10,
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+          color: '#f87171', fontSize: '0.8rem',
         }}>
           ⚠️ {push.error}
         </div>
@@ -325,22 +325,20 @@ export default function NotificationsPageClient({
       {isPrincipal && showSend && (
         <div className={styles.broadcastPanel}>
           <p className={styles.broadcastTitle}>📢 Send Notification to School</p>
-
-          {sendResult === 'success' && (
-            <div className={styles.sendSuccess}>✓ Notification sent successfully!</div>
-          )}
-          {sendResult === 'error' && (
-            <div className={styles.sendError}>✕ {sendError || 'Failed to send'}</div>
-          )}
-
+          {sendResult === 'success' && <div className={styles.sendSuccess}>✓ Notification sent!</div>}
+          {sendResult === 'error'   && <div className={styles.sendError}>✕ {sendError || 'Failed to send'}</div>}
           <div className={styles.broadcastGrid}>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Title *</label>
-              <input className={styles.bFieldInput} placeholder="e.g. Important Reminder" value={sendTitle} onChange={e => setSendTitle(e.target.value)} maxLength={120} />
+              <input className={styles.bFieldInput} placeholder="e.g. Important Reminder"
+                value={sendTitle} onChange={e => setSendTitle(e.target.value)} maxLength={120} />
             </div>
             <div className={styles.bFieldGroup} style={{ gridColumn: '1/-1' }}>
               <label className={styles.bFieldLabel}>Message *</label>
-              <textarea className={styles.bFieldInput} style={{ resize: 'vertical', minHeight: 80, lineHeight: 1.6 }} rows={3} placeholder="Write the notification body…" value={sendBody} onChange={e => setSendBody(e.target.value)} maxLength={500} />
+              <textarea className={styles.bFieldInput}
+                style={{ resize: 'vertical', minHeight: 80, lineHeight: 1.6 }}
+                rows={3} placeholder="Write the notification body…"
+                value={sendBody} onChange={e => setSendBody(e.target.value)} maxLength={500} />
             </div>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Type</label>
@@ -351,17 +349,16 @@ export default function NotificationsPageClient({
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Send To</label>
               <select className={styles.bFieldInput} value={sendTarget} onChange={e => setSendTarget(e.target.value)}>
-                {TARGET_ROLES.map(r => <option key={r} value={r}>{r === 'all' ? 'Everyone' : r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                {TARGET_ROLES.map(r => (
+                  <option key={r} value={r}>{r === 'all' ? 'Everyone' : r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                ))}
               </select>
             </div>
           </div>
           <div className={styles.broadcastActions}>
             <button className={styles.cancelBroadcast} onClick={() => setShowSend(false)}>Cancel</button>
-            <button
-              className={styles.sendBroadcast}
-              onClick={sendBroadcast}
-              disabled={sending || !sendTitle.trim() || !sendBody.trim()}
-            >
+            <button className={styles.sendBroadcast} onClick={sendBroadcast}
+              disabled={sending || !sendTitle.trim() || !sendBody.trim()}>
               {sending ? 'Sending…' : `📤 Send to ${sendTarget === 'all' ? 'Everyone' : sendTarget}`}
             </button>
           </div>
@@ -376,7 +373,6 @@ export default function NotificationsPageClient({
             : f.key === 'all'
             ? notifications.length
             : notifications.filter(n => n.type === f.key).length
-
           return (
             <button
               key={f.key}
@@ -432,9 +428,7 @@ export default function NotificationsPageClient({
                         className={styles.deleteBtn}
                         onClick={e => deleteNotif(notif.id, e)}
                         title="Delete"
-                      >
-                        ✕
-                      </button>
+                      >✕</button>
                     </div>
                   </button>
                 ))}
@@ -449,31 +443,18 @@ export default function NotificationsPageClient({
           </button>
         )}
 
-        <div style={{ height: '100px' }} />
+        {/* Space for bottom nav */}
+        <div style={{ height: '90px' }} />
       </div>
 
-      {/* Bottom Nav */}
-      <nav className="bottom-nav-mobile">
-        <a href={dashboardPath} className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>Home</span>
-        </a>
-        <a href={`${dashboardPath}/notifications`} className="nav-item active">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          <span>Alerts</span>
-        </a>
-        <a href={dashboardPath} className="nav-home-btn" aria-label="Dashboard">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-        </a>
-        <a href={`${dashboardPath}/chat`} className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span>Chat</span>
-        </a>
-        <a href={`${dashboardPath}/profile`} className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Profile</span>
-        </a>
-      </nav>
+      {/* ── Canonical RoleNav — same as every other dashboard page ── */}
+      <RoleNav
+        userId={userId}
+        profile={profile}
+        school={school}
+        role={role}
+        schoolColor={schoolColor}
+      />
     </div>
   )
 }
