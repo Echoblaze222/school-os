@@ -1,8 +1,10 @@
 // public/sw.js
 // SchoolOS Service Worker — handles Web Push notifications
 // =========================================================
-// Deploy location: /public/sw.js  →  served at /sw.js
-// The root layout.tsx already registers this file.
+// FIX: sw.js used '/icons/icon-192.png' but manifest.json defines
+//      '/icons/icon-192x192.png'. Mismatched icon path caused Android
+//      Chrome to show a blank/broken icon on push notifications.
+//      Both icon and badge now use '/icons/icon-192x192.png'.
 
 const CACHE_NAME = 'schoolos-v1'
 
@@ -27,13 +29,12 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body:    body   || '',
-    icon:    icon   || '/icons/icon-192.png',
-    badge:   badge  || '/icons/icon-192.png',
+    // FIX: was '/icons/icon-192.png' — file doesn't exist, correct name is icon-192x192.png
+    icon:    icon   || '/icons/icon-192x192.png',
+    badge:   badge  || '/icons/icon-192x192.png',
     tag:     tag    || 'schoolos-notification',
     data:    { url: url || '/' },
-    // Show a vibration pattern on Android
     vibrate: [200, 100, 200],
-    // Keep visible until user interacts
     requireInteraction: false,
   }
 
@@ -50,7 +51,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a SchoolOS tab is already open, focus it and navigate
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus()
@@ -58,7 +58,6 @@ self.addEventListener('notificationclick', (event) => {
           return
         }
       }
-      // Otherwise open a new tab
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl)
       }
@@ -67,8 +66,6 @@ self.addEventListener('notificationclick', (event) => {
 })
 
 // ── Push subscription change ──────────────────────────────
-// Fires when the browser auto-renews a subscription.
-// We tell our server about the new endpoint.
 self.addEventListener('pushsubscriptionchange', (event) => {
   event.waitUntil(
     event.newSubscription
