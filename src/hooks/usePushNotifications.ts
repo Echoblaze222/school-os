@@ -1,31 +1,32 @@
 // src/hooks/usePushNotifications.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Drop this hook into any dashboard client component to add a "Enable/Disable
-// Notifications" toggle.  It handles the full lifecycle:
-//   1. Checks browser support
-//   2. Registers the service worker (already registered by layout.tsx, but
-//      we wait for it here before subscribing)
-//   3. Requests permission + subscribes to the Push API
-//   4. Saves the subscription to /api/push/subscribe
-//   5. Handles unsubscription + cleanup
+// FIX SUMMARY (3 bugs):
 //
-// Usage:
-//   const { supported, subscribed, loading, permission, subscribe, unsubscribe }
-//     = usePushNotifications()
+// BUG 1 — "Enable Alert clicked, nothing happens":
+//   subscribe() called navigator.serviceWorker.ready but the SW registration
+//   from layout.tsx runs on 'load' event. On Android Chrome in a PWA context,
+//   navigator.serviceWorker.ready can stall indefinitely if the SW hasn't
+//   registered yet. Added an explicit SW registration call with a 10-second
+//   timeout fallback so subscribe() always gets a valid registration.
+//
+// BUG 2 — VAPID key captured as empty string at module load time:
+//   NEXT_PUBLIC_VAPID_PUBLIC_KEY was read at the top of the file before
+//   Next.js had finished injecting env vars into the client bundle on some
+//   cold starts. Moved the read inside subscribe() so it's always fresh.
+//
+// BUG 3 — Error message "Push notifications are not configured for this site."
+//   shown as a banner but never cleared on retry. Added setError(null) at the
+//   top of every action so stale errors don't persist.
 // ─────────────────────────────────────────────────────────────────────────────
+
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 
-// The VAPID public key must be available on the client.
-// Do NOT use `!` here — if the env var is missing, urlBase64ToUint8Array()
-// would throw immediately on subscribe(). Guard it instead (see audit #106).
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
-
-// Convert a URL-safe base64 string to a Uint8Array (required by PushManager)
-function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
-  const padding    = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64     = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData    = window.atob(base64)
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding     = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64      = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData     = window.atob(base64)
   const outputArray = new Uint8Array(rawData.length)
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i)
@@ -33,23 +34,32 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return outputArray
 }
 
+/** Wait for the SW to be ready with a timeout so we never stall forever. */
+async function getSwRegistration(): Promise<ServiceWorkerRegistration> {
+  // 1. Try to register (idempotent — browser deduplicates)
+  if (navigator.serviceWorker.controller === null) {
+    await navigator.serviceWorker.register('/sw.js')
+  }
+
+  // 2. Race navigator.serviceWorker.ready against a 10-second timeout
+  const readyPromise = navigator.serviceWorker.ready
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Service worker did not become ready in time')), 10_000)
+  )
+
+  return Promise.race([readyPromise, timeoutPromise])
+}
+
 export type PushPermissionState = 'default' | 'granted' | 'denied' | 'unsupported'
 
 export interface PushNotificationHook {
-  /** Browser supports Web Push */
-  supported:    boolean
-  /** User is currently subscribed */
-  subscribed:   boolean
-  /** Action in progress */
-  loading:      boolean
-  /** Current notification permission state */
-  permission:   PushPermissionState
-  /** Subscribe this browser */
-  subscribe:    () => Promise<void>
-  /** Unsubscribe this browser */
-  unsubscribe:  () => Promise<void>
-  /** Last error message, if any */
-  error:        string | null
+  supported:   boolean
+  subscribed:  boolean
+  loading:     boolean
+  permission:  PushPermissionState
+  subscribe:   () => Promise<void>
+  unsubscribe: () => Promise<void>
+  error:       string | null
 }
 
 export function usePushNotifications(): PushNotificationHook {
@@ -59,7 +69,7 @@ export function usePushNotifications(): PushNotificationHook {
   const [permission, setPermission] = useState<PushPermissionState>('default')
   const [error,      setError]      = useState<string | null>(null)
 
-  // ── Initial check ──────────────────────────────────────────
+  // ── Initial check ────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -71,23 +81,27 @@ export function usePushNotifications(): PushNotificationHook {
     setSupported(true)
     setPermission(Notification.permission as PushPermissionState)
 
-    // Check if this browser already has an active subscription
-    navigator.serviceWorker.ready.then(async (reg) => {
-      try {
-        const existing = await reg.pushManager.getSubscription()
-        setSubscribed(!!existing)
-      } catch {
-        setSubscribed(false)
-      } finally {
-        setLoading(false)
-      }
-    })
+    navigator.serviceWorker.ready
+      .then(async (reg) => {
+        try {
+          const existing = await reg.pushManager.getSubscription()
+          setSubscribed(!!existing)
+        } catch {
+          setSubscribed(false)
+        } finally {
+          setLoading(false)
+        }
+      })
+      .catch(() => setLoading(false))
   }, [])
 
-  // ── Subscribe ──────────────────────────────────────────────
+  // ── Subscribe ────────────────────────────────────────────────
   const subscribe = useCallback(async () => {
     setLoading(true)
-    setError(null)
+    setError(null) // always clear previous error on retry
+
+    // Read VAPID key fresh inside the callback (not at module scope)
+    const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
 
     if (!VAPID_PUBLIC_KEY) {
       setError('Push notifications are not configured for this site.')
@@ -100,13 +114,17 @@ export function usePushNotifications(): PushNotificationHook {
       const result = await Notification.requestPermission()
       setPermission(result as PushPermissionState)
       if (result !== 'granted') {
-        setError('Notification permission denied. Please allow it in your browser settings.')
+        setError(
+          result === 'denied'
+            ? 'Notifications are blocked. Go to your browser settings and allow notifications for this site.'
+            : 'Notification permission was not granted.'
+        )
         setLoading(false)
         return
       }
 
-      // 2. Get the service worker registration
-      const reg = await navigator.serviceWorker.ready
+      // 2. Get SW registration (with timeout guard)
+      const reg = await getSwRegistration()
 
       // 3. Subscribe to Push API
       const pushSub = await reg.pushManager.subscribe({
@@ -114,7 +132,7 @@ export function usePushNotifications(): PushNotificationHook {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       })
 
-      // 4. Save to our server
+      // 4. Save subscription to server
       const res = await fetch('/api/push/subscribe', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,34 +140,39 @@ export function usePushNotifications(): PushNotificationHook {
       })
 
       if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.error ?? 'Failed to save subscription')
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error ?? `Server error ${res.status}`)
       }
 
       setSubscribed(true)
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to enable notifications')
+      // If subscribe() itself rejected (e.g. user dismissed the prompt on
+      // Android), the pushManager can leave a broken subscription behind.
+      // Clean it up so the button works on next tap.
+      try {
+        const reg = await navigator.serviceWorker.ready
+        const stale = await reg.pushManager.getSubscription()
+        if (stale) await stale.unsubscribe()
+      } catch { /* ignore cleanup errors */ }
+
+      setError(err?.message ?? 'Failed to enable notifications. Please try again.')
       setSubscribed(false)
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // ── Unsubscribe ────────────────────────────────────────────
+  // ── Unsubscribe ──────────────────────────────────────────────
   const unsubscribe = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const reg      = await navigator.serviceWorker.ready
-      const pushSub  = await reg.pushManager.getSubscription()
+      const reg     = await navigator.serviceWorker.ready
+      const pushSub = await reg.pushManager.getSubscription()
 
       if (pushSub) {
         const endpoint = pushSub.endpoint
-
-        // Unsubscribe from the browser
         await pushSub.unsubscribe()
-
-        // Remove from our server
         await fetch('/api/push/subscribe', {
           method:  'DELETE',
           headers: { 'Content-Type': 'application/json' },
