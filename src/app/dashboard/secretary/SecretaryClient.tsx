@@ -13,26 +13,82 @@ import {
 } from '@/components/Icons'
 import styles from './secretary.module.css'
 
-const MODULES = [
-  { id: 'students',      label: 'Students',       Icon: UsersIcon,       href: '/dashboard/secretary/students',      accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'transfers',     label: 'Transfers',      Icon: ClipboardIcon,   href: '/dashboard/secretary/transfers',     accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'users',         label: 'Users',           Icon: UserIcon,        href: '/dashboard/secretary/users',         accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'records',       label: 'Records',         Icon: FolderIcon,      href: '/dashboard/secretary/records',       accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'documents',     label: 'Documents',       Icon: BookOpenIcon,    href: '/dashboard/secretary/documents',     accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'notices',       label: 'Notices',         Icon: BellIcon,        href: '/dashboard/secretary/notices',       accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'calendar',      label: 'Calendar',        Icon: CalendarIcon,    href: '/dashboard/secretary/calendar',      accent: '#F97316', bg: '#4a2810' },
-  { id: 'codes',         label: 'Access Codes',    Icon: CheckCircleIcon, href: '/dashboard/secretary/codes',         accent: '#7C3AED', bg: '#2d1060' },
-  { id: 'chat',          label: 'Messages',        Icon: MessageIcon,     href: '/dashboard/secretary/chat',          accent: '#14B8A6', bg: '#0d3330' },
-  { id: 'ai',            label: 'AI Assistant',    Icon: SparklesIcon,    href: '/dashboard/secretary/ai',            accent: '#A78BFA', bg: '#2d1a5e' },
-  { id: 'settings',      label: 'Settings',        Icon: SettingsIcon,    href: '/dashboard/secretary/settings',      accent: '#6B7280', bg: '#1e2a38' },
+const MODULE_DEFS = [
+  { id: 'students',   label: 'Students',      Icon: UsersIcon,       href: '/dashboard/secretary/students'   },
+  { id: 'transfers',  label: 'Transfers',     Icon: ClipboardIcon,   href: '/dashboard/secretary/transfers'  },
+  { id: 'users',      label: 'Users',         Icon: UserIcon,        href: '/dashboard/secretary/users'      },
+  { id: 'records',    label: 'Records',       Icon: FolderIcon,      href: '/dashboard/secretary/records'    },
+  { id: 'documents',  label: 'Documents',     Icon: BookOpenIcon,    href: '/dashboard/secretary/documents'  },
+  { id: 'notices',    label: 'Notices',       Icon: BellIcon,        href: '/dashboard/secretary/notices'    },
+  { id: 'calendar',   label: 'Calendar',      Icon: CalendarIcon,    href: '/dashboard/secretary/calendar'   },
+  { id: 'codes',      label: 'Access Codes',  Icon: CheckCircleIcon, href: '/dashboard/secretary/codes'      },
+  { id: 'chat',       label: 'Messages',      Icon: MessageIcon,     href: '/dashboard/secretary/chat'       },
+  { id: 'ai',         label: 'AI Assistant',  Icon: SparklesIcon,    href: '/dashboard/secretary/ai'         },
+  { id: 'settings',   label: 'Settings',      Icon: SettingsIcon,    href: '/dashboard/secretary/settings'   },
 ]
+
+// Each tile keeps its own distinct colour, but that colour is now generated
+// FROM the school's brand colour (evenly-spaced hue rotations around it),
+// instead of a fixed rainbow that's identical for every school regardless
+// of their actual brand.
+function hexToHsl(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.slice(0, 2), 16) / 255
+  const g = parseInt(clean.slice(2, 4), 16) / 255
+  const b = parseInt(clean.slice(4, 6), 16) / 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  let h = 0
+  const l = (max + min) / 2
+  const d = max - min
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1))
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6
+    else if (max === g) h = (b - r) / d + 2
+    else h = (r - g) / d + 4
+    h *= 60
+    if (h < 0) h += 360
+  }
+  return [h, s * 100, l * 100]
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360
+  s /= 100; l /= 100
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1))
+  const m = l - c / 2
+  let r = 0, g = 0, b = 0
+  if (h < 60) { r = c; g = x; b = 0 }
+  else if (h < 120) { r = x; g = c; b = 0 }
+  else if (h < 180) { r = 0; g = c; b = x }
+  else if (h < 240) { r = 0; g = x; b = c }
+  else if (h < 300) { r = x; g = 0; b = c }
+  else { r = c; g = 0; b = x }
+  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function brandPalette(schoolColor: string, count: number) {
+  const [baseH, baseS] = hexToHsl(schoolColor)
+  const sat = Math.min(78, Math.max(55, baseS))
+  return Array.from({ length: count }, (_, i) => {
+    const hue = baseH + (360 / count) * i
+    return {
+      accent: hslToHex(hue, sat, 58),
+      bg:     hslToHex(hue, Math.max(35, sat - 20), 18),
+    }
+  })
+}
 
 interface Props { profile: any; school: any; userId: string; counts?: any }
 
 export default function SecretaryClient({ profile, school, userId, counts = {} }: Props) {
   const pathname   = usePathname()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#6B7280'
   const firstName  = profile?.full_name?.split(' ')[0] ?? 'Secretary'
+
+  const palette = brandPalette(schoolColor, MODULE_DEFS.length)
+  const MODULES = MODULE_DEFS.map((m, i) => ({ ...m, ...palette[i] }))
 
   function isActive(href: string) { return pathname.startsWith(href) }
 
@@ -100,4 +156,5 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
       </div>
     </div>
   )
-}
+    }
+                                  
