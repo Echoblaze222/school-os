@@ -189,4 +189,5 @@ export function usePushNotifications(): PushNotificationHook {
   }, [])
 
   return { supported, subscribed, loading, permission, subscribe, unsubscribe, error }
-}
+    }
+      
