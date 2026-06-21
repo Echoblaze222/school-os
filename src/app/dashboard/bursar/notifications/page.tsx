@@ -1,14 +1,9 @@
+// src/app/dashboard/bursar/notifications/page.tsx
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { redirect }     from 'next/navigation'
 import NotificationsPageClient from './NotificationsPageClient'
 
-// Place this file at each role's notifications folder:
-// src/app/dashboard/student/notifications/page.tsx
-// src/app/dashboard/teacher/notifications/page.tsx
-// src/app/dashboard/principal/notifications/page.tsx
-// etc.
-
-export default async function NotificationsPage() {
+export default async function BursarNotificationsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -19,9 +14,14 @@ export default async function NotificationsPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile) redirect('/login')
+  if (!profile || profile.role !== 'bursar') redirect('/login')
 
-  // Load first 50 notifications
+  const { data: school } = await supabase
+    .from('schools')
+    .select('id, name, logo_url, primary_color')
+    .eq('id', profile.school_id)
+    .single()
+
   const { data: notifications } = await supabase
     .from('notifications')
     .select('id, title, body, type, is_read, created_at, link_url')
@@ -29,7 +29,7 @@ export default async function NotificationsPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0
+  const unreadCount = (notifications ?? []).filter((n: any) => !n.is_read).length
 
   return (
     <NotificationsPageClient
@@ -37,6 +37,10 @@ export default async function NotificationsPage() {
       unreadCount={unreadCount}
       userId={user.id}
       role={profile.role}
+      schoolId={profile.school_id}
+      profile={profile}
+      school={school}
+      schoolColor={school?.primary_color ?? '#7C3AED'}
     />
   )
-}
+          }
