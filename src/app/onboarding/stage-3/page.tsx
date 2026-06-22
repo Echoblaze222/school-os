@@ -1,3 +1,19 @@
+// src/app/onboarding/stage-3/page.tsx
+//
+// FIX: When DOJAH_APP_ID / DOJAH_API_KEY env vars are not set, the NIN
+// verification API returns "Identity verification is not configured" and the
+// user is permanently blocked from completing onboarding — the submit button
+// never enables because ninStatus never becomes 'verified'.
+//
+// Solution: treat the "not configured" 503 response as a BYPASS signal.
+// When the API is unconfigured, we:
+//   1. Show a gentle info banner instead of a blocking error
+//   2. Allow the user to continue without NIN being verified
+//   3. Save nin_verified: false so the principal can follow up later
+//   4. Mark onboarding complete so the user reaches their dashboard
+//
+// Once you add DOJAH_APP_ID + DOJAH_API_KEY to Vercel env vars,
+// the full live verification flow resumes automatically — no code change needed.
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -22,17 +38,20 @@ type VerifiedIdentity = {
   photo:       string | null
 }
 
-type NinStatus = 'idle' | 'verifying' | 'verified' | 'failed'
+type NinStatus = 'idle' | 'verifying' | 'verified' | 'failed' | 'bypassed'
 
 export default function OnboardingStage3() {
-  const [photo,           setPhoto]           = useState<File | null>(null)
-  const [nin,             setNin]             = useState('')
-  const [preview,         setPreview]         = useState('')
-  const [loading,         setLoading]         = useState(false)
-  const [error,           setError]           = useState('')
-  const [ninStatus,       setNinStatus]       = useState<NinStatus>('idle')
-  const [ninError,        setNinError]        = useState('')
-  const [verifiedId,      setVerifiedId]      = useState<VerifiedIdentity | null>(null)
+  const [photo,      setPhoto]      = useState<File | null>(null)
+  const [nin,        setNin]        = useState('')
+  const [preview,    setPreview]    = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState('')
+  const [ninStatus,  setNinStatus]  = useState<NinStatus>('idle')
+  const [ninError,   setNinError]   = useState('')
+  const [verifiedId, setVerifiedId] = useState<VerifiedIdentity | null>(null)
+  // True when API keys aren't configured — unlocks submit without verification
+  const [ninBypassed, setNinBypassed] = useState(false)
+
   const router   = useRouter()
   const supabase = createClient()
 
@@ -48,20 +67,25 @@ export default function OnboardingStage3() {
     setPreview(URL.createObjectURL(file))
   }
 
-  // Called when the NIN field loses focus or the user clicks "Verify NIN"
   async function verifyNin() {
     if (nin.length !== 11) return
     setNinStatus('verifying')
     setNinError('')
     setVerifiedId(null)
 
-    const res = await fetch('/api/auth/verify-nin', {
+    const res  = await fetch('/api/auth/verify-nin', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ nin }),
     })
-
     const data = await res.json()
+
+    // ── API keys not configured (503) → bypass NIN, let user continue ──────
+    if (res.status === 503) {
+      setNinStatus('bypassed')
+      setNinBypassed(true)
+      return
+    }
 
     if (!res.ok || !data.verified) {
       setNinStatus('failed')
@@ -75,17 +99,28 @@ export default function OnboardingStage3() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!photo)                  { setError('Please upload your passport photo'); return }
-    if (nin.length !== 11)       { setError('NIN must be 11 digits'); return }
-    if (ninStatus !== 'verified') { setError('Please verify your NIN before continuing'); return }
+
+    if (!photo) { setError('Please upload your passport photo'); return }
+
+    // Require either a verified NIN or a bypassed state (no API keys)
+    const canProceed = ninStatus === 'verified' || ninStatus === 'bypassed'
+    if (nin.length === 11 && !canProceed) {
+      setError('Please verify your NIN before continuing')
+      return
+    }
+    // If NIN was entered but bypass mode is active, still allow empty NIN to proceed
+    if (nin.length > 0 && nin.length !== 11) {
+      setError('NIN must be exactly 11 digits')
+      return
+    }
 
     setLoading(true); setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const nameParts = photo.name.split('.')
-    const ext  = nameParts.length > 1 ? nameParts.pop()!.toLowerCase() : 'jpg'
+    // Upload passport photo
+    const ext  = photo.name.split('.').pop()?.toLowerCase() ?? 'jpg'
     const path = `passports/${user.id}.${ext}`
 
     const { error: upErr } = await supabase.storage
@@ -99,13 +134,15 @@ export default function OnboardingStage3() {
 
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
 
-    const { data: profile, error: profileErr } = await supabase.from('profiles')
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
       .update({
-        avatar_url:         urlData.publicUrl,
-        nin_screenshot_url: nin,
-        nin_verified:       true,
-        nin_verified_at:    new Date().toISOString(),
-        onboarding_stage:   'complete',
+        avatar_url:       urlData.publicUrl,
+        nin_number:       nin || null,
+        // Only mark as verified if Dojah actually confirmed it
+        nin_verified:     ninStatus === 'verified',
+        nin_verified_at:  ninStatus === 'verified' ? new Date().toISOString() : null,
+        onboarding_stage: 'complete',
       })
       .eq('id', user.id)
       .select('role')
@@ -120,7 +157,13 @@ export default function OnboardingStage3() {
     router.push(ROLE_ROUTES[(profile as any)?.role ?? 'student'])
   }
 
-  // NIN status indicator shown next to the input
+  // Whether the submit button should be enabled
+  const canSubmit = !!photo && (
+    ninStatus === 'verified' ||
+    ninStatus === 'bypassed' ||
+    (ninBypassed && nin.length === 0) // photo-only mode when API not configured
+  )
+
   const ninIndicator = () => {
     if (ninStatus === 'verifying') return (
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
@@ -131,6 +174,11 @@ export default function OnboardingStage3() {
     if (ninStatus === 'verified') return (
       <span style={{ fontSize: '0.72rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontWeight: 600 }}>
         ✅ NIN verified
+      </span>
+    )
+    if (ninStatus === 'bypassed') return (
+      <span style={{ fontSize: '0.72rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+        ⏭️ NIN saved — will be verified later by admin
       </span>
     )
     if (ninStatus === 'failed') return (
@@ -159,6 +207,18 @@ export default function OnboardingStage3() {
           ))}
         </div>
 
+        {/* Bypass info banner — only shown when API keys not set */}
+        {ninBypassed && (
+          <div style={{
+            background: 'rgba(245,158,11,0.08)',
+            border: '1px solid rgba(245,158,11,0.3)',
+            borderRadius: 12, padding: '12px 16px', marginBottom: 20,
+            fontSize: '0.78rem', color: '#F59E0B', lineHeight: 1.5,
+          }}>
+            ℹ️ Live NIN verification is not yet active on this platform. Your NIN will be recorded and verified by your school admin. You can still complete setup now.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Photo upload */}
@@ -180,9 +240,10 @@ export default function OnboardingStage3() {
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
               National Identification Number (NIN)
+              {ninBypassed && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> — optional for now</span>}
             </label>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
-              11 digits — verified in real time against NIMC
+              11 digits{ninBypassed ? ' — enter if available' : ' — verified in real time against NIMC'}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
@@ -193,34 +254,30 @@ export default function OnboardingStage3() {
                 onChange={e => {
                   const val = e.target.value.replace(/\D/g, '')
                   setNin(val)
-                  // Reset verification if user edits the NIN
-                  if (ninStatus !== 'idle') {
+                  if (ninStatus !== 'idle' && ninStatus !== 'bypassed') {
                     setNinStatus('idle')
                     setVerifiedId(null)
                     setNinError('')
                   }
                 }}
-                onBlur={() => { if (nin.length === 11 && ninStatus === 'idle') verifyNin() }}
+                onBlur={() => {
+                  if (nin.length === 11 && ninStatus === 'idle') verifyNin()
+                }}
                 placeholder="e.g. 12345678901"
                 style={{
-                  flex: 1,
-                  height: 48,
-                  padding: '0 14px',
+                  flex: 1, height: 48, padding: '0 14px',
                   background: 'var(--input-bg)',
                   border: `1px solid ${
                     ninStatus === 'verified' ? '#10B981' :
+                    ninStatus === 'bypassed' ? '#F59E0B' :
                     ninStatus === 'failed'   ? 'var(--danger)' :
                     'var(--input-border)'
                   }`,
-                  borderRadius: 12,
-                  color: 'var(--text-primary)',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  letterSpacing: '0.08em',
-                  transition: 'border-color 0.2s',
+                  borderRadius: 12, color: 'var(--text-primary)',
+                  fontSize: '0.9rem', outline: 'none',
+                  letterSpacing: '0.08em', transition: 'border-color 0.2s',
                 }}
               />
-              {/* Manual verify button — for when onBlur doesn't fire (e.g. mobile) */}
               {nin.length === 11 && ninStatus !== 'verified' && (
                 <button
                   type="button"
@@ -230,10 +287,8 @@ export default function OnboardingStage3() {
                     height: 48, padding: '0 16px',
                     background: 'var(--glass-bg)',
                     border: '1px solid var(--glass-border)',
-                    borderRadius: 12,
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
+                    borderRadius: 12, color: 'var(--text-secondary)',
+                    fontSize: '0.78rem', fontWeight: 700,
                     cursor: ninStatus === 'verifying' ? 'not-allowed' : 'pointer',
                     whiteSpace: 'nowrap',
                   }}
@@ -245,24 +300,17 @@ export default function OnboardingStage3() {
             {ninIndicator()}
           </div>
 
-          {/* Verified identity card — shown after successful NIN lookup */}
+          {/* Verified identity card */}
           {ninStatus === 'verified' && verifiedId && (
             <div style={{
               background: 'rgba(16,185,129,0.06)',
               border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: 14,
-              padding: '16px 18px',
-              display: 'flex',
-              gap: 16,
-              alignItems: 'flex-start',
+              borderRadius: 14, padding: '16px 18px',
+              display: 'flex', gap: 16, alignItems: 'flex-start',
             }}>
-              {/* NIMC photo if returned */}
               {verifiedId.photo ? (
-                <img
-                  src={`data:image/jpeg;base64,${verifiedId.photo}`}
-                  alt="NIMC photo"
-                  style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: '2px solid rgba(16,185,129,0.4)', flexShrink: 0 }}
-                />
+                <img src={`data:image/jpeg;base64,${verifiedId.photo}`} alt="NIMC photo"
+                  style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: '2px solid rgba(16,185,129,0.4)', flexShrink: 0 }} />
               ) : (
                 <div style={{ width: 52, height: 52, borderRadius: 10, background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🪪</div>
               )}
@@ -271,12 +319,8 @@ export default function OnboardingStage3() {
                 <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
                   {[verifiedId.firstName, verifiedId.middleName, verifiedId.lastName].filter(Boolean).join(' ')}
                 </p>
-                {verifiedId.dateOfBirth && (
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 1px' }}>DOB: {verifiedId.dateOfBirth}</p>
-                )}
-                {verifiedId.gender && (
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, textTransform: 'capitalize' }}>{verifiedId.gender}</p>
-                )}
+                {verifiedId.dateOfBirth && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 1px' }}>DOB: {verifiedId.dateOfBirth}</p>}
+                {verifiedId.gender      && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, textTransform: 'capitalize' }}>{verifiedId.gender}</p>}
               </div>
             </div>
           )}
@@ -289,25 +333,25 @@ export default function OnboardingStage3() {
 
           <button
             type="submit"
-            disabled={loading || ninStatus !== 'verified'}
+            disabled={loading || !canSubmit}
             style={{
               width: '100%', height: 50,
-              background: ninStatus === 'verified'
+              background: canSubmit
                 ? 'linear-gradient(135deg,#10B981,#059669)'
                 : 'var(--glass-bg)',
-              color: ninStatus === 'verified' ? '#fff' : 'var(--text-muted)',
-              border: ninStatus === 'verified' ? 'none' : '1px solid var(--glass-border)',
+              color:  canSubmit ? '#fff' : 'var(--text-muted)',
+              border: canSubmit ? 'none' : '1px solid var(--glass-border)',
               borderRadius: 12, fontSize: '0.9rem', fontWeight: 700,
-              cursor: ninStatus === 'verified' ? 'pointer' : 'not-allowed',
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: ninStatus === 'verified' ? '0 4px 16px rgba(16,185,129,0.3)' : 'none',
+              boxShadow: canSubmit ? '0 4px 16px rgba(16,185,129,0.3)' : 'none',
               transition: 'all 0.25s',
               opacity: loading ? 0.7 : 1,
             }}
           >
             {loading
               ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
-              : ninStatus === 'verified' ? '🚀 Complete Setup' : 'Verify NIN to continue'
+              : canSubmit ? '🚀 Complete Setup' : 'Upload photo to continue'
             }
           </button>
 
@@ -316,4 +360,5 @@ export default function OnboardingStage3() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
-}
+                       }
+      
