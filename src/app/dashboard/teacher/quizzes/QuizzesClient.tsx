@@ -1,27 +1,23 @@
 'use client'
-// src/app/dashboard/teacher/quizzes/QuizzesClient.tsx
+// src/app/dashboard/teacher/timetable/TimetableClient.tsx
+// FIX: Real `timetable` table has class_id + class_subject_id (foreign keys),
+// NOT free-text `subject` / `class_level` columns.
 //
-// FIX (this round): QuestionBuilder was defined INSIDE QuizzesClient's function body.
-// Every keystroke called setQuestions() → QuizzesClient re-rendered → a brand-new
-// QuestionBuilder function was created → React saw it as a NEW component type →
-// it unmounted the old <textarea>/<input> DOM (losing focus, closing the keyboard)
-// and mounted a fresh one on every single character. This is why the keyboard
-// appeared to flicker open/closed on every keystroke, and why question text
-// frequently ended up empty (the keystroke landed on an input that was about to
-// be destroyed) — which in turn explains why students saw "No questions yet":
-// the saved row's `question` text was blank or the row never got inserted because
-// the Save button stayed disabled (questions.some(q => !q.question) was still true).
+// FIX (this round): `class_subjects.subject_id` has no FK constraint in the
+// database, so PostgREST's nested-join syntax `class_subjects(subjects(name))`
+// fails with "Could not find a relationship between 'class_subjects' and
+// 'subjects'". Rather than depend on a DB migration being applied, this
+// version resolves subject/class names manually via a local lookup built
+// from teacherClasses (already fetched separately) instead of asking
+// PostgREST to join it. Run fix_class_subjects_fk.sql too — it's still
+// worth having the FK for other features, but this file no longer depends on it.
 //
-// FIX: QuestionBuilder is now a stable, module-level component declared OUTSIDE
-// QuizzesClient. Its identity never changes across renders, so React reuses the
-// same DOM nodes and focus is preserved while typing.
-//
-// (Carried over from earlier fixes: no useSearchParams/Suspense crash, no router.back() to login)
+// Carried over: visible error banner + error checks on load/create/delete.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { AwardIcon, PlusIcon } from '@/components/Icons'
+import { ClockIcon, PlusIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -33,139 +29,50 @@ interface TeacherClass {
   class_subject_id: string | null
 }
 
-type Question = {
-  id?: string
-  question: string
-  options: { label: string; text: string }[]
-  answer: string
-  marks: number
-}
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+// FIX: `day_of_week` is an INTEGER column, not text — the old client sent
+// 'Monday' directly and got "invalid input syntax for type integer".
+// Using ISO convention: 1 = Monday ... 5 = Friday (matches the Mon–Fri tabs,
+// no DB constraint or existing data defines this, so this is the standard
+// assumption for a school-week schedule with no weekend entries).
+const DAY_TO_NUM: Record<string, number> = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 }
+const NUM_TO_DAY: Record<number, string> = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 
-const BLANK_Q: Question = {
-  question: '',
-  options: [
-    { label: 'A', text: '' }, { label: 'B', text: '' },
-    { label: 'C', text: '' }, { label: 'D', text: '' },
-  ],
-  answer: 'A',
-  marks: 1,
-}
-
-// ── Stable, module-level component ──────────────────────────
-// FIX: previously nested inside QuizzesClient. Now declared here, once,
-// so its identity is stable across parent re-renders and inputs keep focus.
-function QuestionBuilder({
-  questions, setQuestions, onSave, onCancel, saveLabel, saving, sc,
-}: {
-  questions:     Question[]
-  setQuestions:  React.Dispatch<React.SetStateAction<Question[]>>
-  onSave:        () => void
-  onCancel:      () => void
-  saveLabel:     string
-  saving:        boolean
-  sc:            string
-}) {
-  return (
-    <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-        {questions.map((q, qi) => (
-          <div key={qi} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: sc }}>Q{qi + 1}</span>
-              {questions.length > 1 && (
-                <button onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
-                  style={{ fontSize: '0.72rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>Remove</button>
-              )}
-            </div>
-            <textarea value={q.question}
-              onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, question: e.target.value } : x))}
-              placeholder="Type the question here..." rows={2}
-              style={{ width: '100%', padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'none', marginBottom: 'var(--space-3)', boxSizing: 'border-box' as const }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-              {q.options.map((opt, oi) => (
-                <div key={opt.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: q.answer === opt.label ? '#10B981' : 'var(--text-muted)', width: 16, flexShrink: 0 }}>{opt.label}</span>
-                  <input value={opt.text}
-                    onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, options: x.options.map((o, j) => j === oi ? { ...o, text: e.target.value } : o) } : x))}
-                    placeholder={`Option ${opt.label}`}
-                    style={{ flex: 1, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? '#10B981' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Correct Answer</label>
-                <select value={q.answer}
-                  onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, answer: e.target.value } : x))}
-                  style={{ height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: '#10B981', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
-                  {q.options.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Marks</label>
-                <input type="number" min={1} value={q.marks}
-                  onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, marks: Number(e.target.value) } : x))}
-                  style={{ width: 64, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-        <button onClick={() => setQuestions(prev => [...prev, { ...BLANK_Q, options: BLANK_Q.options.map(o => ({ ...o })) }])}
-          style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
-          + Add Question
-        </button>
-        <button onClick={onSave} disabled={saving || questions.some(q => !q.question.trim())}
-          style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-          {saving ? 'Saving...' : saveLabel}
-        </button>
-        <button onClick={onCancel}
-          style={{ height: 40, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
-          Cancel
-        </button>
-      </div>
-    </>
-  )
-}
-
-export default function QuizzesClient({ profile, school, userId }: Props) {
-  const [quizzes,       setQuizzes]       = useState<any[]>([])
+export default function TimetableClient({ profile, school, userId }: Props) {
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
-  const [loading,       setLoading]       = useState(true)
-  const [step,          setStep]          = useState<'list' | 'create' | 'questions' | 'preview'>('list')
-  const [saving,        setSaving]        = useState(false)
-  const [editingQuiz,   setEditingQuiz]   = useState<any>(null)
-  const [newQuiz,       setNewQuiz]       = useState<any>(null)
-  const [questions,     setQuestions]     = useState<Question[]>([{ ...BLANK_Q }])
-  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({})
-  const [form,          setForm]          = useState({
-    title: '',
-    class_id: '',
-    class_subject_id: '',
-    term: 'First Term',
-    total_marks: 10,
-    starts_at: '',
-    ends_at: '',
-    attempt_limit: 1,
+  const [periods,  setPeriods]  = useState<any[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
+  const [day,      setDay]      = useState(() => {
+    const d = new Date().getDay()
+    return d === 0 || d === 6 ? 'Monday' : DAYS[d - 1]
   })
-
+  const [form, setForm] = useState({
+    class_id: '', class_subject_id: '',
+    room: '', start_time: '08:00', end_time: '09:00',
+  })
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => {
-    loadTeacherClasses()
-    loadQuizzes()
-  }, [])
+  // FIX: lookup map built locally instead of relying on a PostgREST nested join
+  const classLookup: Record<string, { className: string; subject: string | null }> = {}
+  teacherClasses.forEach(c => {
+    if (c.class_id) classLookup[c.class_id] = { className: c.class_name, subject: c.subject }
+  })
+
+  useEffect(() => { loadTeacherClasses() }, [])
+  useEffect(() => { if (school?.id) load() }, [day, school?.id])
 
   async function loadTeacherClasses() {
-    const { data: ct } = await supabase
+    const { data: ct, error: err } = await supabase
       .from('class_teachers')
       .select('class_id, subject, classes(name)')
       .eq('teacher_id', userId)
       .eq('school_id', school?.id)
 
+    if (err) { console.error('[timetable] class_teachers error:', err.message); setError(err.message); return }
     if (!ct?.length) return
 
     const list: TeacherClass[] = await Promise.all(
@@ -177,10 +84,10 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
           .limit(1)
           .maybeSingle()
         return {
-          class_id:        row.class_id,
-          class_name:      row.classes?.name ?? '',
-          subject:         row.subject,
-          class_subject_id: cs?.id ?? null,
+          class_id:          row.class_id,
+          class_name:        row.classes?.name ?? '',
+          subject:           row.subject,
+          class_subject_id:  cs?.id ?? null,
         }
       })
     )
@@ -190,372 +97,189 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     }
   }
 
-  async function loadQuizzes() {
+  async function load() {
     setLoading(true)
-    const { data } = await supabase
-      .from('quizzes')
-      .select('id, title, total_marks, attempt_limit, starts_at, ends_at, created_at, class_id, class_subject_id, classes(name)')
+    // FIX: no nested join — select class_id directly, resolve name via classLookup at render time
+    const { data, error: err } = await supabase
+      .from('timetable')
+      .select('id, room, start_time, end_time, day_of_week, class_id, class_subject_id')
       .eq('school_id', school?.id)
-      .eq('created_by', userId)
-      .order('created_at', { ascending: false })
-      .limit(30)
-    if (data) {
-      setQuizzes(data)
-      const ids = data.map((q: any) => q.id)
-      if (ids.length) {
-        const { data: attempts } = await supabase
-          .from('quiz_attempts')
-          .select('quiz_id')
-          .in('quiz_id', ids)
-        if (attempts) {
-          const counts: Record<string, number> = {}
-          attempts.forEach((a: any) => { counts[a.quiz_id] = (counts[a.quiz_id] ?? 0) + 1 })
-          setAttemptCounts(counts)
-        }
-      }
+      .eq('teacher_id', userId)
+      .eq('day_of_week', DAY_TO_NUM[day]) // FIX: send integer, not 'Monday'
+      .order('start_time')
+    if (err) {
+      console.error('[timetable] load error:', err.message)
+      setError(err.message)
     }
+    if (data) setPeriods(data)
     setLoading(false)
   }
 
-  async function openPreview(quiz: any) {
-    setEditingQuiz(quiz)
-    const { data: qs } = await supabase
-      .from('quiz_questions')
-      .select('id, question, options, answer, marks, position')
-      .eq('quiz_id', quiz.id)
-      .order('position', { ascending: true })
-    if (qs && qs.length > 0) {
-      setQuestions(qs.map((q: any) => ({
-        id: q.id,
-        question: q.question,
-        options: Array.isArray(q.options) ? q.options : [
-          { label: 'A', text: '' }, { label: 'B', text: '' },
-          { label: 'C', text: '' }, { label: 'D', text: '' },
-        ],
-        answer: q.answer,
-        marks:  q.marks ?? 1,
-      })))
+  async function create() {
+    if (!form.class_id) return
+    setSaving(true)
+    setError(null)
+    const now2 = new Date()
+    const academicYear = `${now2.getFullYear()}/${now2.getFullYear() + 1}`
+    const { error: err } = await supabase.from('timetable').insert({
+      class_id:         form.class_id,
+      class_subject_id: form.class_subject_id || null,
+      room:             form.room || null,
+      start_time:       form.start_time,
+      end_time:         form.end_time,
+      day_of_week:      DAY_TO_NUM[day],
+      school_id:        school?.id,
+      teacher_id:       userId,
+      academic_year:    academicYear,
+    })
+    if (!err) {
+      setForm(f => ({ ...f, room: '', start_time: '08:00', end_time: '09:00' }))
+      setShowForm(false)
+      load()
     } else {
-      setQuestions([{ ...BLANK_Q }])
-    }
-    setStep('preview')
-  }
-
-  function backToList() {
-    setStep('list')
-    setEditingQuiz(null)
-    setNewQuiz(null)
-  }
-
-  async function saveEditedQuestions() {
-    if (!editingQuiz) return
-    setSaving(true)
-    const { error: delErr } = await supabase.from('quiz_questions').delete().eq('quiz_id', editingQuiz.id)
-    if (delErr) console.error('[quiz] delete error:', delErr.message)
-    const { error: insErr } = await supabase.from('quiz_questions').insert(
-      questions.map((q, i) => ({
-        quiz_id:  editingQuiz.id,
-        question: q.question,
-        options:  q.options,
-        answer:   q.answer,
-        marks:    q.marks,
-        position: i,
-      }))
-    )
-    if (insErr) console.error('[quiz] insert error:', insErr.message)
-    setSaving(false)
-    backToList()
-    loadQuizzes()
-  }
-
-  async function createQuiz() {
-    const cls = teacherClasses.find(c => c.class_id === form.class_id)
-    if (!cls?.class_subject_id) {
-      alert('No class_subject found. Ensure subjects are assigned to classes by the principal.')
-      return
-    }
-    if (!form.title) return
-    setSaving(true)
-
-    const now        = new Date()
-    const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-
-    const { data, error } = await supabase
-      .from('quizzes')
-      .insert({
-        class_subject_id: cls.class_subject_id,
-        class_id:         form.class_id,
-        title:            form.title,
-        total_marks:      form.total_marks,
-        attempt_limit:    form.attempt_limit,
-        starts_at:        form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
-        ends_at:          form.ends_at ? new Date(form.ends_at).toISOString() : defaultEnd.toISOString(),
-        scheduled_at:     form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
-        closes_at:        form.ends_at ? new Date(form.ends_at).toISOString() : defaultEnd.toISOString(),
-        created_by:       userId,
-        school_id:        school?.id,
-      })
-      .select()
-      .single()
-
-    if (error) console.error('[quiz] create error:', error.message)
-
-    if (data) {
-      setNewQuiz(data)
-      setQuestions([{ ...BLANK_Q, options: BLANK_Q.options.map(o => ({ ...o })) }])
-      setStep('questions')
+      console.error('[timetable] insert error:', err.message)
+      setError(err.message)
     }
     setSaving(false)
   }
 
-  async function saveQuestions() {
-    if (!newQuiz) return
-    setSaving(true)
-    const { error } = await supabase.from('quiz_questions').insert(
-      questions.map((q, i) => ({
-        quiz_id:  newQuiz.id,
-        question: q.question,
-        options:  q.options,
-        answer:   q.answer,
-        marks:    q.marks,
-        position: i,
-      }))
-    )
-    if (error) console.error('[quiz] save questions error:', error.message)
-    setSaving(false)
-    backToList()
-    loadQuizzes()
+  async function deletePeriod(id: string) {
+    setError(null)
+    const { error: err } = await supabase.from('timetable').delete().eq('id', id)
+    if (err) { console.error('[timetable] delete error:', err.message); setError(err.message); return }
+    setPeriods(prev => prev.filter(p => p.id !== id))
   }
 
-  async function togglePublish(id: string, currentEnds: string) {
-    const now = new Date()
-    const isActive = new Date(currentEnds) > now
-    const newEndsAt = isActive
-      ? now.toISOString()
-      : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    await supabase.from('quizzes').update({ ends_at: newEndsAt, closes_at: newEndsAt }).eq('id', id)
-    loadQuizzes()
+  function duration(start: string, end: string) {
+    const [sh, sm] = start.split(':').map(Number)
+    const [eh, em] = end.split(':').map(Number)
+    const mins = (eh * 60 + em) - (sh * 60 + sm)
+    return mins > 0 ? `${mins} min` : ''
   }
 
-  async function deleteQuiz(id: string) {
-    if (!confirm('Delete this quiz and all its questions?')) return
-    await supabase.from('quiz_questions').delete().eq('quiz_id', id)
-    await supabase.from('quizzes').delete().eq('id', id)
-    setQuizzes(prev => prev.filter(q => q.id !== id))
-  }
+  if (!loading && teacherClasses.length === 0) return (
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        </div>
+      )}
+      <div className={styles.empty}>
+        <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} />
+        <p>No classes assigned yet. Ask the principal to assign you a class.</p>
+      </div>
+    </RolePageWrapper>
+  )
 
-  function quizStatus(q: any): string {
-    const now = new Date()
-    if (new Date(q.starts_at) > now) return 'scheduled'
-    if (new Date(q.ends_at)   > now) return 'live'
-    return 'closed'
-  }
+  return (
+    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
 
-  // ── Preview / Edit existing quiz ──────────────────────────
-  if (step === 'preview' && editingQuiz) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Edit Quiz" showBack={false}>
-      <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-        <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{editingQuiz.title}</p>
-        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          {editingQuiz.classes?.name ?? '—'} · {editingQuiz.total_marks} marks · {questions.length} question{questions.length !== 1 ? 's' : ''}
-        </p>
+      <div className={styles.dayTabs} style={{ marginBottom: 'var(--space-4)' }}>
+        {DAYS.map(d => (
+          <button key={d} onClick={() => setDay(d)}
+            className={`${styles.dayTab} ${day === d ? styles.dayTabActive : ''}`}
+            style={day === d ? { background: sc, color: '#fff', borderColor: sc } : {}}>
+            {d.slice(0, 3)}
+          </button>
+        ))}
+        <button onClick={() => setShowForm(!showForm)}
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}>
+          <PlusIcon size={13} color="white" /> Add
+        </button>
       </div>
 
-      <button onClick={backToList}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        ← Back to Quizzes
-      </button>
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        </div>
+      )}
 
-      <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
-        Edit Questions
-      </p>
+      {showForm && (
+        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
+          <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>Add Period — {day}</p>
 
-      <QuestionBuilder
-        questions={questions}
-        setQuestions={setQuestions}
-        onSave={saveEditedQuestions}
-        onCancel={backToList}
-        saveLabel={`Save ${questions.length} Question${questions.length !== 1 ? 's' : ''}`}
-        saving={saving}
-        sc={sc}
-      />
-      <div style={{ height: 100 }} />
-    </RolePageWrapper>
-  )
-
-  // ── New quiz: add questions step ──────────────────────────
-  if (step === 'questions') return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Add Questions" showBack={false}>
-      <button onClick={backToList}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        ← Back to Quizzes
-      </button>
-
-      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
-        Quiz: <strong style={{ color: 'var(--text-primary)' }}>{newQuiz?.title}</strong>
-        {newQuiz?.classes?.name && <span style={{ color: sc, marginLeft: 8 }}>· {newQuiz.classes.name}</span>}
-      </p>
-
-      <QuestionBuilder
-        questions={questions}
-        setQuestions={setQuestions}
-        onSave={saveQuestions}
-        onCancel={backToList}
-        saveLabel={`Save ${questions.length} Question${questions.length !== 1 ? 's' : ''}`}
-        saving={saving}
-        sc={sc}
-      />
-      <div style={{ height: 100 }} />
-    </RolePageWrapper>
-  )
-
-  // ── Create form ───────────────────────────────────────────
-  if (step === 'create') return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" showBack={false}>
-      <button onClick={backToList}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        ← Back to Quizzes
-      </button>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-          <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Quiz Title *</label>
-            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Chapter 5 Test"
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
-          </div>
-
-          <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Assign to Class *</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--space-3)' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Class *</label>
             <select value={form.class_id}
               onChange={e => {
                 const cls = teacherClasses.find(c => c.class_id === e.target.value)
                 setForm(f => ({ ...f, class_id: e.target.value, class_subject_id: cls?.class_subject_id ?? '' }))
               }}
               style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
-              <option value="">Select a class</option>
               {teacherClasses.map(cls => (
                 <option key={cls.class_id} value={cls.class_id}>
                   {cls.class_name}{cls.subject ? ` (${cls.subject})` : ''}
                 </option>
               ))}
             </select>
-            {form.class_id && !teacherClasses.find(c => c.class_id === form.class_id)?.class_subject_id && (
-              <p style={{ fontSize: '0.7rem', color: '#F59E0B', margin: 0 }}>No subject mapping found. Ask principal to assign subjects to this class.</p>
-            )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Marks</label>
-            <input type="number" min={1} value={form.total_marks}
-              onChange={e => setForm(f => ({ ...f, total_marks: Number(e.target.value) }))}
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Attempt Limit</label>
-            <select value={form.attempt_limit} onChange={e => setForm(f => ({ ...f, attempt_limit: Number(e.target.value) }))}
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
-              {[1, 2, 3, 5].map(n => <option key={n} value={n}>{n === 1 ? '1 attempt' : `${n} attempts`}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: 'var(--space-4)' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 var(--space-3)' }}>Scheduling</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Opens At</label>
-              <input type="datetime-local" value={form.starts_at} onChange={e => setForm(f => ({ ...f, starts_at: e.target.value }))}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>Leave blank = open now</p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Closes At</label>
-              <input type="datetime-local" value={form.ends_at} onChange={e => setForm(f => ({ ...f, ends_at: e.target.value }))}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>Leave blank = 7 days from now</p>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button onClick={createQuiz} disabled={saving || !form.title || !form.class_id}
-            style={{ flex: 1, height: 44, background: sc, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', opacity: saving || !form.class_id ? 0.5 : 1 }}>
-            {saving ? 'Creating...' : 'Continue → Add Questions'}
-          </button>
-          <button onClick={backToList}
-            style={{ height: 44, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 10, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-      <div style={{ height: 100 }} />
-    </RolePageWrapper>
-  )
-
-  // ── Quiz list ─────────────────────────────────────────────
-  return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Quizzes" showBack={false}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
-        <button onClick={() => setStep('create')}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
-          <PlusIcon size={13} color="white" /> New Quiz
-        </button>
-      </div>
-
-      {loading ? (
-        <div className={styles.loading}><span /><span /><span /></div>
-      ) : quizzes.length === 0 ? (
-        <div className={styles.empty}>
-          <AwardIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-          <p>No quizzes yet. Create your first one.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {quizzes.map(q => {
-            const status    = quizStatus(q)
-            const statusCol = status === 'live' ? '#10B981' : status === 'scheduled' ? '#F59E0B' : '#6B7280'
-            const statusLabel = status === 'live' ? 'Live' : status === 'scheduled' ? 'Scheduled' : 'Closed'
-            return (
-              <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: sc + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <AwardIcon size={18} color={sc} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem' }}>{q.title}</p>
-                  <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.72rem' }}>
-                    {q.classes?.name ?? '—'}
-                    {' · '}{q.total_marks} marks
-                    {' · '}{attemptCounts[q.id] ?? 0} attempt{(attemptCounts[q.id] ?? 0) !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                  <span style={{ padding: '3px 8px', borderRadius: 999, background: statusCol + '20', color: statusCol, fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    {statusLabel}
-                  </span>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => openPreview(q)}
-                      style={{ fontSize: '0.7rem', fontWeight: 700, color: sc, background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Edit
-                    </button>
-                    <button onClick={() => togglePublish(q.id, q.ends_at)}
-                      style={{ fontSize: '0.7rem', fontWeight: 700, color: status === 'live' ? '#F59E0B' : sc, background: 'none', border: 'none', cursor: 'pointer' }}>
-                      {status === 'live' ? 'Close' : 'Open'}
-                    </button>
-                    <button onClick={() => deleteQuiz(q.id)}
-                      style={{ fontSize: '0.7rem', fontWeight: 700, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Delete
-                    </button>
-                  </div>
-                </div>
+            {[
+              { key: 'start_time', label: 'Start Time', type: 'time' },
+              { key: 'end_time',   label: 'End Time',   type: 'time' },
+              { key: 'room',       label: 'Room',       placeholder: 'e.g. Room 12', col: '1/-1' },
+            ].map(f => (
+              <div key={f.key} style={{ gridColumn: (f as any).col ?? 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{f.label}</label>
+                <input type={f.type ?? 'text'} value={(form as any)[f.key]}
+                  onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                  placeholder={f.placeholder ?? ''}
+                  style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
               </div>
-            )
-          })}
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+            <button onClick={create} disabled={saving || !form.class_id}
+              style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Adding...' : 'Add Period'}
+            </button>
+            <button onClick={() => setShowForm(false)}
+              style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
-      <div style={{ height: 100 }} />
+
+      {loading ? <div className={styles.loading}><span /><span /><span /></div>
+        : periods.length === 0
+          ? <div className={styles.empty}><ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No periods for {day}</p></div>
+          : <div className={styles.periodList}>
+            {periods.map((p: any) => {
+              const cls = classLookup[p.class_id] // FIX: resolved locally, not via DB join
+              return (
+                <div key={p.id} className={styles.periodCard}>
+                  <div className={styles.periodTime}>
+                    <span className={styles.timeStart}>{p.start_time?.slice(0, 5)}</span>
+                    <div className={styles.timeLine} style={{ background: sc + '60' }} />
+                    <span className={styles.timeEnd}>{p.end_time?.slice(0, 5)}</span>
+                  </div>
+                  <div className={styles.periodBody} style={{ borderLeftColor: sc }}>
+                    <p className={styles.periodSubject}>
+                      {cls?.className ?? '—'}{cls?.subject ? ` · ${cls.subject}` : ''}
+                    </p>
+                    <p className={styles.periodMeta}>{p.room ? `📍 ${p.room}` : ''}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className={styles.periodDuration}>
+                        <ClockIcon size={11} color="var(--text-muted)" />
+                        <span>{duration(p.start_time, p.end_time)}</span>
+                      </div>
+                      <button onClick={() => deletePeriod(p.id)}
+                        style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+      }
+      <div className={styles.spacer} />
     </RolePageWrapper>
   )
-}
+    }
+      
