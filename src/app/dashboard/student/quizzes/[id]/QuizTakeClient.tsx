@@ -372,4 +372,5 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       </div>
     </div>
   )
-}
+         }
+    
