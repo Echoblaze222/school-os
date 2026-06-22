@@ -119,15 +119,18 @@ export default function TimetableClient({ profile, school, userId }: Props) {
     if (!form.class_id) return
     setSaving(true)
     setError(null)
+    const now2 = new Date()
+    const academicYear = `${now2.getFullYear()}/${now2.getFullYear() + 1}`
     const { error: err } = await supabase.from('timetable').insert({
       class_id:         form.class_id,
       class_subject_id: form.class_subject_id || null,
       room:             form.room || null,
       start_time:       form.start_time,
       end_time:         form.end_time,
-      day_of_week:      DAY_TO_NUM[day], // FIX: send integer, not 'Monday'
+      day_of_week:      DAY_TO_NUM[day],
       school_id:        school?.id,
       teacher_id:       userId,
+      academic_year:    academicYear,
     })
     if (!err) {
       setForm(f => ({ ...f, room: '', start_time: '08:00', end_time: '09:00' }))
@@ -278,4 +281,5 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       <div className={styles.spacer} />
     </RolePageWrapper>
   )
-}
+          }
+                    
