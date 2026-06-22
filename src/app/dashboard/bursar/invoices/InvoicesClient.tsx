@@ -4,6 +4,11 @@ import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
+import {
+  ZapIcon, SunIcon, MoonIcon, ClipboardIcon, CheckCircleIcon,
+  AlertCircleIcon, WalletIcon, SearchIcon, CreditCardIcon,
+  ReceiptIcon, ClockIcon, AlertIcon, CheckIcon,
+} from '@/components/Icons'
 import styles from './invoices.module.css'
 
 const TERMS = ['First Term', 'Second Term', 'Third Term']
@@ -17,16 +22,16 @@ const STATUS_COLORS: Record<string, string> = {
   pending:   'badge-info',
   overdue:   'badge-error',
 }
-const STATUS_EMOJIS: Record<string, string> = {
-  completed: '✅',
-  partial:   '⏳',
-  pending:   '🕐',
-  overdue:   '⚠️',
+function StatusIcon({ status }: { status: string }) {
+  if (status === 'completed') return <CheckCircleIcon size={13} color="currentColor" />
+  if (status === 'partial')   return <ClockIcon       size={13} color="currentColor" />
+  if (status === 'overdue')   return <AlertCircleIcon size={13} color="currentColor" />
+  return <ClockIcon size={13} color="currentColor" />
 }
 
 const OVERLAY: React.CSSProperties = {
   position: 'fixed', inset: 0, zIndex: 200,
-  background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+  background: 'var(--bg-overlay)', backdropFilter: 'blur(4px)',
   display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
   padding: '0 0 0 0',
 }
@@ -74,14 +79,14 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
       .eq('id', previewInv.id)
 
     if (error) {
-      setSaveMsg('⚠️ ' + error.message)
+      setSaveMsg('Error: ' + error.message)
     } else {
       // Patch local state
       setInvoices(prev => prev.map(i =>
         i.id === previewInv.id ? { ...i, ...updates } : i
       ))
       setPreviewInv((p: any) => ({ ...p, ...updates }))
-      setSaveMsg('✓ Saved')
+      setSaveMsg('Saved')
       setTimeout(() => setSaveMsg(''), 2500)
     }
     setSaving(false)
@@ -185,8 +190,9 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                     {student?.class_level ?? '—'} · {student?.permanent_student_id ?? student?.admission_number ?? '—'}
                   </p>
                 </div>
-                <span className={`badge ${STATUS_COLORS[previewInv.status] ?? 'badge-info'}`}>
-                  {STATUS_EMOJIS[previewInv.status] ?? '🕐'} {previewInv.status}
+                <span className={`badge ${STATUS_COLORS[previewInv.status] ?? 'badge-info'}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <StatusIcon status={previewInv.status} /> {previewInv.status}
                 </span>
               </div>
 
@@ -226,29 +232,29 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                 <div>
                   <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>STATUS</label>
                   <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={inp}>
-                    <option value="pending">🕐 Pending</option>
-                    <option value="partial">⏳ Partial</option>
-                    <option value="overdue">⚠️ Overdue</option>
-                    <option value="completed">✅ Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="partial">Partial</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="completed">Completed</option>
                   </select>
                 </div>
               </div>
 
               {saveMsg && (
-                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: saveMsg.startsWith('✓') ? 'var(--success)' : 'var(--error)', margin: '0 0 10px' }}>
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: saveMsg.startsWith('Error') ? 'var(--danger)' : 'var(--success)', margin: '0 0 10px' }}>
                   {saveMsg}
                 </p>
               )}
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={saveInvoiceEdit} disabled={saving}
-                  style={{ flex: 1, height: 42, background: '#7C3AED', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+                  style={{ flex: 1, height: 42, background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
                 {previewInv.balance_ngn > 0 && (
                   <a href={`/dashboard/bursar/record-payment?invoice=${previewInv.id}&student=${student?.full_name ?? ''}`}
-                    style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
-                    💳 Record Payment
+                    style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
+                    <CreditCardIcon size={15} color="var(--text-primary)" /> Record Payment
                   </a>
                 )}
               </div>
@@ -264,9 +270,8 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           <button
             className={styles.iconBtn}
             onClick={() => { setShowGenPanel(p => !p); setGenResult(null) }}
-            title="Generate invoices from fee structures"
-            style={{ fontSize: '1.1rem' }}>
-            ⚡
+            title="Generate invoices from fee structures">
+            <ZapIcon size={18} color="var(--text-primary)" />
           </button>
           <button className={styles.iconBtn} onClick={() => {
             const next = theme === 'dark' ? 'light' : 'dark'
@@ -274,7 +279,9 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
             localStorage.setItem('schoolos_theme', next)
             document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '')
           }}>
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark'
+              ? <SunIcon size={18} color="var(--text-primary)" />
+              : <MoonIcon size={18} color="var(--text-primary)" />}
           </button>
         </div>
       </header>
@@ -285,8 +292,8 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
           borderRadius: 12, padding: '16px', marginBottom: 16,
         }}>
-          <p style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 12px' }}>
-            ⚡ Generate Invoices from Fee Structures
+          <p style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ZapIcon size={14} color="var(--brand)" /> Generate Invoices from Fee Structures
           </p>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
             This creates invoices for all active students based on the fee structures you've set up.
@@ -319,12 +326,16 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           {genResult && (
             <div style={{
               padding: '10px 14px', marginBottom: 12,
-              background: genResult.ok ? '#10B98115' : '#EF444415',
-              border: `1px solid ${genResult.ok ? '#10B98140' : '#EF444440'}`,
+              background: genResult.ok ? 'var(--success-subtle)' : 'var(--danger-subtle)',
+              border: `1px solid ${genResult.ok ? 'var(--success)' : 'var(--danger)'}`,
               borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
-              color: genResult.ok ? '#10B981' : '#EF4444',
+              color: genResult.ok ? 'var(--success)' : 'var(--danger)',
+              display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              {genResult.ok ? '✓' : '⚠️'} {genResult.msg}
+              {genResult.ok
+                ? <CheckIcon size={14} color="var(--success)" />
+                : <AlertIcon size={14} color="var(--danger)" />}
+              {genResult.msg}
             </div>
           )}
 
@@ -332,7 +343,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
             onClick={generateInvoices}
             disabled={generating}
             style={{
-              width: '100%', height: 40, background: '#7C3AED',
+              width: '100%', height: 40, background: 'var(--brand)',
               color: '#fff', border: 'none', borderRadius: 8,
               fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
               opacity: generating ? 0.6 : 1,
@@ -345,17 +356,17 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
       {/* Stats */}
       <div className={styles.statsRow}>
         <div className={`glass-card ${styles.statCard}`}>
-          <span className={styles.statEmoji}>📋</span>
+          <span className={styles.statEmoji}><ClipboardIcon size={22} color="var(--brand)" /></span>
           <p className={styles.statValue}>{fmt(stats.totalDue)}</p>
           <p className={styles.statLabel}>Total Due</p>
         </div>
         <div className={`glass-card ${styles.statCard}`}>
-          <span className={styles.statEmoji}>✅</span>
+          <span className={styles.statEmoji}><CheckCircleIcon size={22} color="var(--success)" /></span>
           <p className={styles.statValue}>{fmt(stats.totalPaid)}</p>
           <p className={styles.statLabel}>Collected</p>
         </div>
         <div className={`glass-card ${styles.statCard}`}>
-          <span className={styles.statEmoji}>⚠️</span>
+          <span className={styles.statEmoji}><AlertCircleIcon size={22} color="var(--warning)" /></span>
           <p className={styles.statValue}>{stats.overdue}</p>
           <p className={styles.statLabel}>Overdue</p>
         </div>
@@ -363,14 +374,16 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
       {/* Balance card */}
       <div className={`glass-card ${styles.balanceCard}`}>
-        <p className={styles.balanceLabel}>💰 Outstanding Balance</p>
+        <p className={styles.balanceLabel} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+          <WalletIcon size={14} color="var(--text-muted)" /> Outstanding Balance
+        </p>
         <p className={styles.balanceAmount}>{fmt(stats.totalBalance)}</p>
       </div>
 
       {/* Filters */}
       <div className={styles.filters}>
         <div className={styles.searchBar}>
-          <span>🔍</span>
+          <SearchIcon size={15} color="var(--text-muted)" />
           <input
             type="text"
             placeholder="Search student name or ID..."
@@ -382,10 +395,10 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
         <div className={styles.filterRow}>
           <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="all">All Status</option>
-            <option value="completed">✅ Paid</option>
-            <option value="partial">⏳ Partial</option>
-            <option value="pending">🕐 Pending</option>
-            <option value="overdue">⚠️ Overdue</option>
+            <option value="completed">Paid</option>
+            <option value="partial">Partial</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
           </select>
           <select className={styles.filterSelect} value={termFilter} onChange={e => setTermFilter(e.target.value)}>
             <option value="all">All Terms</option>
@@ -400,10 +413,10 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
       <div className={styles.invoiceList}>
         {filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            <p className={styles.emptyEmoji}>🧾</p>
+            <p className={styles.emptyEmoji}><ReceiptIcon size={40} color="var(--text-faint)" strokeWidth={1} /></p>
             <p className={styles.emptyTitle}>No invoices found</p>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>
-              Tap ⚡ above to generate invoices from your fee structures,{'\n'}
+              Tap the Generate button above to create invoices from your fee structures,{'\n'}
               or create fee structures first under Fee Records.
             </p>
           </div>
@@ -424,8 +437,9 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                       {student?.class_level ? ` · ${student.class_level}` : ''}
                     </p>
                   </div>
-                  <span className={`badge ${STATUS_COLORS[inv.status] ?? 'badge-info'}`}>
-                    {STATUS_EMOJIS[inv.status] ?? '🕐'} {inv.status}
+                  <span className={`badge ${STATUS_COLORS[inv.status] ?? 'badge-info'}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <StatusIcon status={inv.status} /> {inv.status}
                   </span>
                 </div>
 
