@@ -45,7 +45,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
     // instead of interpolating a possibly-undefined value into the query string
     let query = supabase
       .from('school_notes')
-      .select('id, title, file_url, description, content, created_at, author:profiles!uploaded_by(full_name)')
+      .select('id, title, file_url, description, content, created_at, uploaded_by')
       .eq('school_id', school?.id)
 
     if (profile?.class_id) {
@@ -61,7 +61,23 @@ export default function NotesClient({ profile, school, userId }: Props) {
       console.error('[student notes] load error:', err.message)
       setError(err.message)
     }
-    if (data) setNotes(data)
+    if (data) {
+      setNotes(data)
+      // FIX: fetch author names separately — profiles!uploaded_by join fails
+      // because uploaded_by has no FK constraint to profiles in the schema cache
+      const uploaderIds = [...new Set(data.map((n: any) => n.uploaded_by).filter(Boolean))]
+      if (uploaderIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', uploaderIds)
+        if (profiles) {
+          const nameMap: Record<string, string> = {}
+          profiles.forEach((p: any) => { nameMap[p.id] = p.full_name })
+          setNotes(data.map((n: any) => ({ ...n, author: { full_name: nameMap[n.uploaded_by] ?? 'Teacher' } })))
+        }
+      }
+    }
     setLoading(false)
   }
 
@@ -135,4 +151,5 @@ export default function NotesClient({ profile, school, userId }: Props) {
       )}
     </div>
   )
-}
+  }
+          
