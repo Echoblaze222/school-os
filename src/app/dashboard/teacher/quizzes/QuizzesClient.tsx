@@ -221,7 +221,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     setEditingQuiz(quiz)
     const { data: qs } = await supabase
       .from('quiz_questions')
-      .select('id, text, question, options, answer, marks, position')
+      .select('id, question, options, answer, marks, position')
       .eq('quiz_id', quiz.id)
       .order('position', { ascending: true })
     if (qs && qs.length > 0) {
