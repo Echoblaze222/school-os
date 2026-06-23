@@ -33,7 +33,7 @@ const MODULES = [
   { id: 'reports',       label: 'Reports',        Icon: FileTextIcon,  href: '/dashboard/principal/reports',            accent: '#F97316', bg: '#4a2810' },
   { id: 'subscriptions', label: 'Subscriptions',  Icon: ShieldIcon,    href: '/dashboard/principal/subscriptions',      accent: '#10B981', bg: '#1a4a3a' },
   { id: 'alumni',        label: 'Alumni',         Icon: GlobeIcon,     href: '/dashboard/principal/alumni',             accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'transfers',     label: 'Transfers',      Icon: RefreshIcon,   href: '/dashboard/principal/transfers/pending',  accent: '#F59E0B', bg: '#4a3510' },
+  { id: 'transfers',     label: 'Transfers',      Icon: RefreshIcon,   href: '/dashboard/principal/transfers',  accent: '#F59E0B', bg: '#4a3510' },
   { id: 'chat',          label: 'Messages',       Icon: MessageIcon,   href: '/dashboard/principal/chat',               accent: '#7C3AED', bg: '#2d1060' },
   { id: 'profile',       label: 'Profile',        Icon: UserIcon,      href: '/dashboard/principal/profile',            accent: '#6B7280', bg: '#1e2a38' },
   { id: 'ai',            label: 'AI Insights',    Icon: AiIcon,        href: '/dashboard/principal/ai',                 accent: '#F59E0B', bg: '#4a3510' },
