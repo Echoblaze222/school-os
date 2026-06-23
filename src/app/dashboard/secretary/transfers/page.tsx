@@ -1,65 +1,100 @@
 // src/app/dashboard/secretary/transfers/page.tsx
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import TransfersClient from './TransfersClient'
 
 export default async function TransfersPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll() { return cookieStore.getAll() }, setAll(c: any[]) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } })
+  const supabase = await createClient()
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
+  // FIX: join schools(*) inline — same pattern as principal/page.tsx
+  // Old code queried school_branding which is a different table entirely
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*, schools(*)')
+    .eq('id', user.id)
+    .single()
+
   if (!profile || profile.role !== 'secretary') redirect('/login')
-  const { data: school } = await supabase.from('school_branding').select('*').eq('id', profile.school_id).single()
 
-  // Transfers this school has sent out (origin) and received (destination),
-  // so the secretary can track both directions in one place.
-  // NOTE: `student_transfers` has no FK constraints in the schema, so nested
-  // embeds like `schools!destination_school_id(...)` aren't reliable here —
-  // fetch schools separately and join client-side instead.
-  const { data: sent } = await supabase
-    .from('student_transfers')
-    .select(`
-      id, student_id, status, requested_at, approved_at, completed_at, rejection_reason,
-      has_outstanding_fees, outstanding_amount, debt_acknowledged, from_class, to_class,
-      origin_school_id, destination_school_id
-    `)
-    .eq('origin_school_id', profile.school_id)
-    .order('requested_at', { ascending: false })
+  const school   = (profile as any).schools ?? null
+  const schoolId = profile.school_id
 
-  const { data: received } = await supabase
-    .from('student_transfers')
-    .select(`
-      id, student_id, status, requested_at, approved_at, completed_at, rejection_reason,
-      has_outstanding_fees, outstanding_amount, debt_acknowledged, from_class, to_class,
-      origin_school_id, destination_school_id
-    `)
-    .eq('destination_school_id', profile.school_id)
-    .order('requested_at', { ascending: false })
+  // FIX: removed from_class, to_class — those columns don't exist in student_transfers
+  const [sentRes, receivedRes] = await Promise.all([
+    supabase
+      .from('student_transfers')
+      .select(`
+        id, student_id, status, requested_at, approved_at, completed_at,
+        rejection_reason, has_outstanding_fees, outstanding_amount,
+        debt_acknowledged, debt_note, origin_school_id, destination_school_id
+      `)
+      .eq('origin_school_id', schoolId)
+      .order('requested_at', { ascending: false }),
 
-  // Student names for whichever transfers came back — resolved client-side via this map
-  const studentIds = [...new Set([...(sent ?? []), ...(received ?? [])].map((t: any) => t.student_id))]
-  const { data: studentProfiles } = studentIds.length
-    ? await supabase.from('profiles').select('id, full_name, admission_number').in('id', studentIds)
+    supabase
+      .from('student_transfers')
+      .select(`
+        id, student_id, status, requested_at, approved_at, completed_at,
+        rejection_reason, has_outstanding_fees, outstanding_amount,
+        debt_acknowledged, debt_note, origin_school_id, destination_school_id
+      `)
+      .eq('destination_school_id', schoolId)
+      .order('requested_at', { ascending: false }),
+  ])
+
+  const sent     = sentRes.data     ?? []
+  const received = receivedRes.data ?? []
+
+  // Resolve student names for transfers that exist
+  const transferStudentIds = [...new Set([...sent, ...received].map((t: any) => t.student_id))]
+  const { data: transferStudents } = transferStudentIds.length
+    ? await supabase.from('profiles').select('id, full_name, admission_number, class_id').in('id', transferStudentIds)
     : { data: [] }
 
-  // Same for the other school in each transfer (the one that isn't this school)
-  const schoolIds = [...new Set([...(sent ?? []).map((t: any) => t.destination_school_id), ...(received ?? []).map((t: any) => t.origin_school_id)])]
-  const { data: otherSchools } = schoolIds.length
-    ? await supabase.from('schools').select('id, name, city').in('id', schoolIds)
+  // Resolve other school names
+  const otherSchoolIds = [...new Set([
+    ...sent.map((t: any) => t.destination_school_id),
+    ...received.map((t: any) => t.origin_school_id),
+  ])]
+  const { data: otherSchools } = otherSchoolIds.length
+    ? await supabase.from('schools').select('id, name, city').in('id', otherSchoolIds)
     : { data: [] }
+
+  // NEW: load all students in this school so they display in the student list tab
+  const { data: allStudents } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, admission_number, class_id, onboarding_stage, is_active, created_at')
+    .eq('school_id', schoolId)
+    .eq('role', 'student')
+    .order('full_name')
+
+  // Resolve class names for all students
+  const classIds = [...new Set((allStudents ?? []).map((s: any) => s.class_id).filter(Boolean))]
+  const { data: classes } = classIds.length
+    ? await supabase.from('classes').select('id, name').in('id', classIds)
+    : { data: [] }
+
+  const classMap: Record<string, string> = {}
+  ;(classes ?? []).forEach((c: any) => { classMap[c.id] = c.name })
+
+  const studentsWithClass = (allStudents ?? []).map((s: any) => ({
+    ...s,
+    class_name: s.class_id ? classMap[s.class_id] : null,
+  }))
 
   return (
     <TransfersClient
-      sent={sent ?? []}
-      received={received ?? []}
-      studentProfiles={studentProfiles ?? []}
+      sent={sent}
+      received={received}
+      studentProfiles={transferStudents ?? []}
       schools={otherSchools ?? []}
+      allStudents={studentsWithClass}
       profile={profile}
       school={school}
       userId={user.id}
     />
   )
-    }
-    
+         }
