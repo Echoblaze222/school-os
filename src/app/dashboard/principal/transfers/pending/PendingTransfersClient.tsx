@@ -1,122 +1,241 @@
 'use client'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+// src/app/dashboard/principal/transfers/pending/PendingTransfersClient.tsx
+// Rebuilt with RolePageWrapper + secretary.module.css to match the rest of the principal dashboard.
+
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import styles from '@/app/dashboard/secretary/secretary.module.css'
 import type { PendingTransferRow } from '../../types'
-import styles from '../../principal.module.css'
 
-interface Props { transfers: PendingTransferRow[]; principalId: string }
+interface Props {
+  transfers: PendingTransferRow[]
+  principalId: string
+  profile: any
+  school: any
+  userId: string
+}
 
-function relTime(iso: string) { const d=Date.now()-new Date(iso).getTime(); const days=Math.floor(d/86400000); return days===0?'Today':`${days}d ago` }
-function initials(n: string) { return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() }
+function relTime(iso: string) {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  return days === 0 ? 'Today' : `${days}d ago`
+}
 
-const IconSun=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-const IconMoon=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
-const IconChevronLeft=()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}><path d="M15 18l-6-6 6-6"/></svg>
+function initials(n: string) {
+  return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
 
-export default function PendingTransfersClient({ transfers: initial, principalId }: Props) {
-  const [isDark, setIsDark] = useState(true)
-  const [mounted, setMounted] = useState(false)
+export default function PendingTransfersClient({
+  transfers: initial, principalId, profile, school, userId,
+}: Props) {
   const [transfers, setTransfers] = useState<PendingTransferRow[]>(initial)
-  const [loading, setLoading] = useState<Set<string>>(new Set())
-  const [rejectingId, setRejectingId] = useState<string|null>(null)
-  const [rejectReason, setRejectReason] = useState<Record<string,string>>({})
-  const [toast, setToast] = useState<string|null>(null)
+  const [loading,     setLoading]     = useState<Set<string>>(new Set())
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
+  const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
+  const [toast, setToast] = useState<string | null>(null)
 
-  useEffect(()=>{ const s=localStorage.getItem('schoolos_theme'); const dark=s!=='light'; setIsDark(dark); document.documentElement.setAttribute('data-theme',dark?'dark':'light'); setMounted(true) },[])
-  const toggleTheme=()=>{ const n=!isDark; setIsDark(n); document.documentElement.setAttribute('data-theme',n?'dark':'light'); localStorage.setItem('schoolos_theme',n?'dark':'light') }
-  function showToast(m: string) { setToast(m); setTimeout(()=>setToast(null),3000) }
+  const supabase = createClient()
+  const sc = school?.primary_color ?? '#7C3AED'
+
+  function showToast(m: string) {
+    setToast(m)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   async function approve(t: PendingTransferRow) {
-    setLoading(p=>new Set(p).add(t.id))
-    const supabase = createClient()
+    setLoading(p => new Set(p).add(t.id))
     const now = new Date().toISOString()
-    // Update to approved then completed — DB trigger does the rest
-    await supabase.from('student_transfers').update({ status:'approved', approved_at: now, approved_by: principalId }).eq('id', t.id)
-    // Also call complete_transfer if available, fallback to manual update
+
+    await supabase.from('student_transfers')
+      .update({ status: 'approved', approved_at: now, approved_by: principalId })
+      .eq('id', t.id)
+
     let error = null
-try {
-  const res = await supabase.rpc('complete_transfer', { transfer_id: t.id })
-  error = res.error
-} catch {
-  error = null
-}
+    try {
+      const res = await supabase.rpc('complete_transfer', { transfer_id: t.id })
+      error = res.error
+    } catch { error = null }
+
     if (error) {
-      // Manual fallback if RPC not available
-      await supabase.from('student_transfers').update({ status:'completed' }).eq('id', t.id)
+      await supabase.from('student_transfers').update({ status: 'completed' }).eq('id', t.id)
     }
-    await supabase.from('notifications').insert({ user_id: t.student_id, title:'Transfer Approved', body:'Your school transfer has been approved!', type:'transfer', read: false, created_at: now })
-    setTransfers(p=>p.filter(x=>x.id!==t.id))
-    setLoading(p=>{ const n=new Set(p); n.delete(t.id); return n })
+
+    await supabase.from('notifications').insert({
+      user_id: t.student_id, title: 'Transfer Approved',
+      body: 'Your school transfer has been approved!',
+      type: 'transfer', read: false, created_at: now,
+    })
+
+    setTransfers(p => p.filter(x => x.id !== t.id))
+    setLoading(p => { const n = new Set(p); n.delete(t.id); return n })
     showToast(`Transfer for ${t.student_name} approved`)
   }
 
   async function reject(t: PendingTransferRow) {
     const reason = rejectReason[t.id] ?? ''
-    setLoading(p=>new Set(p).add(t.id))
-    const supabase = createClient()
+    setLoading(p => new Set(p).add(t.id))
     const now = new Date().toISOString()
-    await supabase.from('student_transfers').update({ status:'rejected', rejection_reason: reason||null, rejected_at: now, rejected_by: principalId }).eq('id', t.id)
-    await supabase.from('notifications').insert({ user_id: t.student_id, title:'Transfer Rejected', body:`Your transfer was rejected.${reason?` Reason: ${reason}`:''}`, type:'transfer', read: false, created_at: now })
-    setTransfers(p=>p.filter(x=>x.id!==t.id))
-    setLoading(p=>{ const n=new Set(p); n.delete(t.id); return n })
+
+    await supabase.from('student_transfers').update({
+      status: 'rejected', rejection_reason: reason || null,
+      rejected_at: now, rejected_by: principalId,
+    }).eq('id', t.id)
+
+    await supabase.from('notifications').insert({
+      user_id: t.student_id, title: 'Transfer Rejected',
+      body: `Your transfer was rejected.${reason ? ` Reason: ${reason}` : ''}`,
+      type: 'transfer', read: false, created_at: now,
+    })
+
+    setTransfers(p => p.filter(x => x.id !== t.id))
+    setLoading(p => { const n = new Set(p); n.delete(t.id); return n })
     setRejectingId(null)
     showToast(`Transfer for ${t.student_name} rejected`)
   }
 
-  if (!mounted) return null
-
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <Link href="/dashboard/principal" className={styles.backBtn} style={{marginBottom:8,display:'inline-flex'}}><IconChevronLeft /> Dashboard</Link>
-          <h1 className={styles.pageTitle}>Pending <span>Transfers</span></h1>
+    <RolePageWrapper
+      userId={userId}
+      role="principal"
+      profile={profile}
+      school={school}
+      title="Pending Transfers"
+      showBack
+    >
+      {transfers.length === 0 ? (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyEmoji}>✈️</p>
+          <p className={styles.emptyTitle}>No pending requests</p>
+          <p className={styles.emptyHint}>Transfer requests from other schools will appear here for your review.</p>
         </div>
-        <div className={styles.headerActions}><button className={styles.themeBtn} onClick={toggleTheme}>{isDark?<IconSun />:<IconMoon />}</button></div>
-      </header>
-
-      <div style={{position:'relative',zIndex:1,padding:'var(--space-6)',display:'flex',flexDirection:'column',gap:'var(--space-4)',maxWidth:800}}>
-        {transfers.length===0
-          ? <div className={styles.emptyState} style={{background:'var(--glass-bg)',border:'1px solid var(--glass-border)',borderRadius:'var(--radius-xl)'}}>No pending transfer requests.</div>
-          : transfers.map(t=>{
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {transfers.map(t => {
             const busy = loading.has(t.id)
             return (
-              <div key={t.id} className={styles.card} style={{animationDelay:'0ms'}}>
-                <div className={styles.drawerHeader} style={{border:'none',paddingBottom:0}}>
-                  <div className={styles.drawerAvatar}>{initials(t.student_name)}</div>
-                  <div style={{flex:1}}>
-                    <p className={styles.drawerName}>{t.student_name}</p>
-                    <p className={styles.drawerSub}>From: {t.origin_school_name??'Unknown'} · {relTime(t.initiated_at)}</p>
-                    {t.notes&&<p style={{fontSize:'.75rem',color:'var(--text-secondary)',marginTop:4}}>{t.notes}</p>}
+              <div key={t.id} style={{
+                background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-xl)', overflow: 'hidden',
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)' }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                    background: sc + '25', color: sc,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: '0.95rem',
+                  }}>
+                    {initials(t.student_name)}
                   </div>
-                  <span className={`${styles.badge} ${styles.badgeWarning}`}>Pending</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>
+                      {t.student_name}
+                    </p>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                      From: {t.origin_school_name ?? 'Unknown'} · {relTime(t.initiated_at)}
+                    </p>
+                    {t.notes && (
+                      <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '3px 0 0' }}>
+                        {t.notes}
+                      </p>
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px',
+                    borderRadius: 'var(--radius-full)', flexShrink: 0,
+                    background: 'rgba(245,158,11,0.15)', color: '#F59E0B',
+                  }}>
+                    Pending
+                  </span>
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'var(--space-3)',padding:'var(--space-4) var(--space-6)',borderTop:'1px solid var(--glass-border)',borderBottom:'1px solid var(--glass-border)',margin:'var(--space-4) 0 0'}}>
-                  {[['Avg Score', t.avg_score!==null?`${t.avg_score}%`:'—'],['Results',t.total_results],['Outstanding Fees',t.outstanding_fees>0?`₦${t.outstanding_fees.toLocaleString()}`:'None']].map(([lbl,val])=>(
-                    <div key={String(lbl)} style={{display:'flex',flexDirection:'column',gap:3}}>
-                      <span style={{fontFamily:'var(--font-display)',fontSize:'1.15rem',fontWeight:700,color:lbl==='Outstanding Fees'&&t.outstanding_fees>0?'var(--error)':'var(--text-primary)',lineHeight:1}}>{val}</span>
-                      <span style={{fontSize:'.62rem',fontWeight:700,letterSpacing:'.07em',textTransform:'uppercase',color:'var(--text-muted)'}}>{lbl}</span>
+
+                {/* Stats strip */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(3,1fr)',
+                  borderTop: '1px solid var(--glass-border)',
+                  borderBottom: '1px solid var(--glass-border)',
+                }}>
+                  {([
+                    ['Avg Score',        t.avg_score !== null ? `${t.avg_score}%` : '—', false],
+                    ['Results',          t.total_results,                                 false],
+                    ['Outstanding Fees', t.outstanding_fees > 0
+                      ? `₦${t.outstanding_fees.toLocaleString()}` : 'None',               t.outstanding_fees > 0],
+                  ] as [string, any, boolean][]).map(([lbl, val, isRed]) => (
+                    <div key={lbl} style={{
+                      padding: 'var(--space-3) var(--space-4)',
+                      display: 'flex', flexDirection: 'column', gap: 3,
+                      borderRight: lbl !== 'Outstanding Fees' ? '1px solid var(--glass-border)' : undefined,
+                    }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, lineHeight: 1, color: isRed ? '#EF4444' : 'var(--text-primary)' }}>
+                        {val}
+                      </span>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                        {lbl}
+                      </span>
                     </div>
                   ))}
                 </div>
-                <div style={{padding:'var(--space-4) var(--space-6)',display:'flex',flexDirection:'column',gap:'var(--space-3)'}}>
-                  <div style={{display:'flex',gap:'var(--space-3)'}}>
-                    <button className={styles.submitBtn} style={{flex:1,background:'linear-gradient(135deg,var(--success),#2aaa65)',boxShadow:'0 3px 12px rgba(45,139,85,.3)'}} onClick={()=>approve(t)} disabled={busy}>{busy?'Processing…':'Approve Transfer'}</button>
-                    <button className={styles.dangerBtn} onClick={()=>setRejectingId(rejectingId===t.id?null:t.id)} disabled={busy}>Reject</button>
+
+                {/* Actions */}
+                <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                    <button
+                      className={styles.btnPrimary}
+                      style={{ flex: 1, background: '#10B981', borderColor: '#10B981' }}
+                      onClick={() => approve(t)}
+                      disabled={busy}>
+                      {busy ? 'Processing…' : 'Approve Transfer'}
+                    </button>
+                    <button
+                      className={styles.btnGhost}
+                      style={{ color: '#EF4444', borderColor: '#EF444440' }}
+                      onClick={() => setRejectingId(rejectingId === t.id ? null : t.id)}
+                      disabled={busy}>
+                      Reject
+                    </button>
                   </div>
-                  {rejectingId===t.id&&(
-                    <div style={{display:'flex',gap:'var(--space-2)'}}>
-                      <input className={styles.searchInput} style={{flex:1}} placeholder="Reason (optional)…" value={rejectReason[t.id]??''} onChange={e=>setRejectReason(p=>({...p,[t.id]:e.target.value}))} />
-                      <button className={styles.dangerBtn} onClick={()=>reject(t)} disabled={busy}>Confirm Reject</button>
+
+                  {rejectingId === t.id && (
+                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                      <input
+                        className={styles.formInput}
+                        style={{ flex: 1 }}
+                        placeholder="Reason (optional)…"
+                        value={rejectReason[t.id] ?? ''}
+                        onChange={e => setRejectReason(p => ({ ...p, [t.id]: e.target.value }))}
+                      />
+                      <button
+                        className={styles.btnPrimary}
+                        style={{ background: '#EF4444', borderColor: '#EF4444', whiteSpace: 'nowrap' }}
+                        onClick={() => reject(t)}
+                        disabled={busy}>
+                        Confirm
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
             )
           })}
-      </div>
-      {toast&&<div className={styles.toast}>{toast}</div>}
-    </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+          backdropFilter: 'blur(16px)', borderRadius: 'var(--radius-full)',
+          padding: '10px 20px', fontSize: '0.82rem', fontWeight: 600,
+          color: 'var(--text-primary)', zIndex: 9999, whiteSpace: 'nowrap',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        }}>
+          {toast}
+        </div>
+      )}
+
+      <div style={{ height: 80 }} />
+    </RolePageWrapper>
   )
-}
+      }
+  
