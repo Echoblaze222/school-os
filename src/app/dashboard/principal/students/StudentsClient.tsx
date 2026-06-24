@@ -299,20 +299,35 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   async function handleEditSave() {
     if (!editStudent) return
     setEditSaving(true)
-    const { error } = await supabase.from('profiles').update({
-      full_name:        editForm.full_name        || editStudent.full_name,
-      phone:            editForm.phone            ?? editStudent.phone,
-      date_of_birth:    editForm.date_of_birth    ?? editStudent.date_of_birth,
-      gender:           editForm.gender           ?? editStudent.gender,
-      admission_number: editForm.admission_number ?? editStudent.admission_number,
-      guardian_name:    editForm.guardian_name    ?? editStudent.guardian_name,
-      guardian_phone:   editForm.guardian_phone   ?? editStudent.guardian_phone,
-      address:          editForm.address          ?? editStudent.address,
-    }).eq('id', editStudent.id)
+
+    // Only send fields that changed — track by key presence in editForm
+    const profileUpdate: any = {}
+    const f = editForm
+    if ('full_name'        in f) profileUpdate.full_name        = f.full_name        || editStudent.full_name
+    if ('phone'            in f) profileUpdate.phone            = f.phone            || null
+    if ('date_of_birth'    in f) profileUpdate.date_of_birth    = f.date_of_birth    || null
+    if ('gender'           in f) profileUpdate.gender           = f.gender           || null
+    if ('admission_number' in f) profileUpdate.admission_number = f.admission_number || null
+    if ('address'          in f) profileUpdate.address          = f.address          || null
+    if ('class_level'      in f) profileUpdate.class_level      = f.class_level      || null
+
+    const { error } = await supabase.from('profiles').update(profileUpdate).eq('id', editStudent.id)
+
+    // guardian_name + guardian_phone live in student_profiles
+    const spUpdate: any = {}
+    if ('guardian_name'    in f) spUpdate.guardian_name    = f.guardian_name    || null
+    if ('guardian_phone'   in f) spUpdate.guardian_phone   = f.guardian_phone   || null
+    if ('admission_number' in f) spUpdate.admission_number = f.admission_number || editStudent.admission_number
+    if (Object.keys(spUpdate).length > 0) {
+      await supabase.from('student_profiles').update(spUpdate).eq('id', editStudent.id)
+    }
+
     setEditSaving(false)
     if (error) { showToast('Failed to save changes', false); return }
-    setStudents(prev => prev.map(s => s.id === editStudent.id ? { ...s, ...editForm } : s))
-    setPreviewStudent((p: any) => p ? { ...p, ...editForm } : p)
+
+    const merged = { ...editStudent, ...profileUpdate, ...spUpdate }
+    setStudents(prev => prev.map(s => s.id === editStudent.id ? merged : s))
+    setPreviewStudent(merged)
     setEditStudent(null)
     setEditForm({})
     showToast('Student details updated')
@@ -673,7 +688,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
               <button
                 className={styles.saveBtn}
                 style={{ flex:1, background:sc }}
-                onClick={() => { setEditStudent(previewStudent); setEditForm({ ...previewStudent }) }}
+                onClick={() => { setEditStudent(previewStudent); setEditForm({}) }}
               >
                 ✏️ Edit Details
               </button>
@@ -714,21 +729,25 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                     className={styles.fieldInput}
                     type={type}
                     placeholder={placeholder}
-                    value={editForm[key] ?? ''}
+                    value={key in editForm ? editForm[key] : (editStudent?.[key] ?? '')}
                     onChange={e => setEditForm((f:any) => ({ ...f, [key]: e.target.value }))}
                   />
                 </div>
               ))}
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Gender</label>
-                <select className={styles.fieldInput} value={editForm.gender ?? ''} onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
+                <select className={styles.fieldInput}
+                  value={'gender' in editForm ? editForm.gender : (editStudent?.gender ?? '')}
+                  onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
                   <option value="">Select gender</option>
                   {GENDER_OPTS.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Class</label>
-                <select className={styles.fieldInput} value={editForm.class_level ?? ''} onChange={e => setEditForm((f:any) => ({ ...f, class_level: e.target.value }))}>
+                <select className={styles.fieldInput}
+                  value={'class_level' in editForm ? editForm.class_level : (editStudent?.class_level ?? '')}
+                  onChange={e => setEditForm((f:any) => ({ ...f, class_level: e.target.value }))}>
                   <option value="">Select class</option>
                   {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
