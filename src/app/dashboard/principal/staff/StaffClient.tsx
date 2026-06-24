@@ -277,19 +277,25 @@ export default function StaffClient({ profile, school, userId }: Props) {
   async function handleEditSave() {
     if (!editMember) return
     setEditSaving(true)
-    const { error } = await supabase.from('profiles').update({
-      full_name:     editForm.full_name     || editMember.full_name,
-      phone:         editForm.phone         ?? editMember.phone,
-      date_of_birth: editForm.date_of_birth ?? editMember.date_of_birth,
-      gender:        editForm.gender        ?? editMember.gender,
-      qualification: editForm.qualification ?? editMember.qualification,
-      subject:       editForm.subject       ?? editMember.subject,
-      address:       editForm.address       ?? editMember.address,
-    }).eq('id', editMember.id)
+
+    const profileUpdate: any = {}
+    const f = editForm
+    if ('full_name'     in f) profileUpdate.full_name     = f.full_name     || editMember.full_name
+    if ('phone'         in f) profileUpdate.phone         = f.phone         || null
+    if ('date_of_birth' in f) profileUpdate.date_of_birth = f.date_of_birth || null
+    if ('gender'        in f) profileUpdate.gender        = f.gender        || null
+    if ('qualification' in f) profileUpdate.qualification = f.qualification || null
+    if ('subject'       in f) profileUpdate.subject       = f.subject       || null
+    if ('address'       in f) profileUpdate.address       = f.address       || null
+    if ('role'          in f) profileUpdate.role          = f.role          || editMember.role
+
+    const { error } = await supabase.from('profiles').update(profileUpdate).eq('id', editMember.id)
     setEditSaving(false)
     if (error) { showToast('Failed to save changes', false); return }
-    setStaff(prev => prev.map(s => s.id === editMember.id ? { ...s, ...editForm } : s))
-    setPreviewMember((p: any) => p ? { ...p, ...editForm } : p)
+
+    const merged = { ...editMember, ...profileUpdate }
+    setStaff(prev => prev.map(s => s.id === editMember.id ? merged : s))
+    setPreviewMember(merged)
     setEditMember(null)
     setEditForm({})
     showToast('Staff details updated')
@@ -591,7 +597,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
 
             <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
               <button className={styles.saveBtn} style={{ flex:1, background:sc }}
-                onClick={() => { setEditMember(previewMember); setEditForm({ ...previewMember }) }}>
+                onClick={() => { setEditMember(previewMember); setEditForm({}) }}>
                 ✏️ Edit Details
               </button>
               <button className={styles.cancelBtn} onClick={() => setPreviewMember(null)}>Close</button>
@@ -627,13 +633,14 @@ export default function StaffClient({ profile, school, userId }: Props) {
                 <div key={key} className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>{label}</label>
                   <input className={styles.fieldInput} type={type} placeholder={placeholder}
-                    value={editForm[key] ?? ''}
+                    value={key in editForm ? editForm[key] : (editMember?.[key] ?? '')}
                     onChange={e => setEditForm((f:any) => ({ ...f, [key]: e.target.value }))} />
                 </div>
               ))}
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Gender</label>
-                <select className={styles.fieldInput} value={editForm.gender ?? ''}
+                <select className={styles.fieldInput}
+                  value={'gender' in editForm ? editForm.gender : (editMember?.gender ?? '')}
                   onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
@@ -643,7 +650,8 @@ export default function StaffClient({ profile, school, userId }: Props) {
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Role</label>
-                <select className={styles.fieldInput} value={editForm.role ?? editMember.role}
+                <select className={styles.fieldInput}
+                  value={'role' in editForm ? editForm.role : (editMember?.role ?? '')}
                   onChange={e => setEditForm((f:any) => ({ ...f, role: e.target.value }))}>
                   {ROLES.map(r => <option key={r} value={r} style={{ textTransform:'capitalize' }}>{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}
                 </select>
