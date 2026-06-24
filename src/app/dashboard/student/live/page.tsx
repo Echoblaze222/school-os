@@ -12,5 +12,4 @@ export default async function LivePage() {
   const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
   return <LiveClient profile={profile} school={school} userId={user.id} />
-    }
-    
+}
