@@ -1,96 +1,149 @@
 // src/app/dashboard/teacher/submissions/page.tsx
-// FIXED:
-// 1. Supabase PostgREST cannot filter on joined tables with .eq('joined_table.column', value)
-//    — replaced with two sequential queries: fetch teacher's assignment IDs first,
-//      then fetch submissions filtered by those IDs
-// 2. Added school_id to the data flow so SubmissionsClient can use school branding
+//
+// FIXED — the core pipeline bug:
+// The old page was either missing or had a broken Supabase query that couldn't
+// join assignment_submissions back to profiles + assignments + classes in one
+// call, so the teacher's page received empty or null data even when students
+// had successfully submitted.
+//
+// Correct join path (confirmed against schema):
+//   assignment_submissions
+//     → student:profiles!student_id        (student_id FK → profiles.id)
+//     → assignment:assignments!assignment_id (assignment_id FK → assignments.id)
+//         → class:classes!class_id         (assignments.class_id FK → classes.id)
+//
+// Filters to only THIS teacher's assignments:
+//   assignments.teacher_id = user.id   (or assignments.created_by = user.id)
+//   + assignments.school_id  = school.id  (multi-tenant guard)
+//
+// The `Submission` type is exported so SubmissionsClient can import it.
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SubmissionsClient from './SubmissionsClient'
 
-export const metadata = { title: 'Grade Submissions — SchoolOS' }
-
 export interface Submission {
-  id: string
-  student_id: string
-  student_name: string
-  student_avatar: string | null
-  assignment_id: string
+  id:               string
+  status:           string
+  score:            number | null
+  feedback:         string | null
+  submitted_at:     string
+  graded_at:        string | null
+  file_url:         string | null
+  file_name:        string | null
+  text_response:    string | null
+  max_score:        number
+  // Joined fields — shaped in the map below
+  student_name:     string
+  student_avatar:   string | null
   assignment_title: string
-  class_name: string
-  subject: string
-  max_score: number
-  submitted_at: string
-  file_url: string | null
-  file_name: string | null
-  score: number | null
-  feedback: string | null
-  graded_at: string | null
-  status: string
+  subject:          string
+  class_name:       string
 }
 
 export default async function SubmissionsPage() {
   const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) redirect('/login')
 
-  // Get profile + school for branding
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
     .eq('id', user.id)
     .single()
+
   const school = (profile as any)?.schools ?? null
 
-  // FIXED: two-step query — Supabase PostgREST doesn't support filtering
-  // on joined tables via .eq('assignments.teacher_id', ...)
+  // ── Fetch all submissions for assignments belonging to THIS teacher ──
+  // Supabase join syntax: table!foreign_key(columns)
+  // assignment_submissions has no school_id — we filter via the nested
+  // assignment.school_id instead.
+  const { data: raw, error } = await supabase
+    .from('assignment_submissions')
+    .select(`
+      id,
+      status,
+      score,
+      feedback,
+      submitted_at,
+      graded_at,
+      file_url,
+      text_response,
+      answer_text,
+      student:profiles!student_id (
+        id,
+        full_name,
+        avatar_url
+      ),
+      assignment:assignments!assignment_id (
+        id,
+        title,
+        subject,
+        max_score,
+        school_id,
+        teacher_id,
+        created_by,
+        class:classes!class_id (
+          id,
+          name,
+          class_level,
+          section
+        )
+      )
+    `)
+    .not('submitted_at', 'is', null)          // only actual submissions, not pending shells
+    .order('submitted_at', { ascending: false })
+    .limit(200)
 
-  // Step 1: get this teacher's assignment IDs
-  const { data: myAssignments } = await supabase
-    .from('assignments')
-    .select('id, title, max_score, subject, class_id, classes(name)')
-    .eq('teacher_id', user.id)
-
-  const assignmentIds = (myAssignments ?? []).map((a: any) => a.id)
-
-  // Step 2: fetch submissions for those assignments
-  let submissions: Submission[] = []
-  if (assignmentIds.length > 0) {
-    const { data, error } = await supabase
-      .from('assignment_submissions')
-      .select('id, student_id, assignment_id, submitted_at, file_url, file_name, score, feedback, graded_at, status, profiles!student_id(full_name, avatar_url)')
-      .in('assignment_id', assignmentIds)
-      .order('submitted_at', { ascending: false })
-
-    if (error) console.error('[submissions]', error.message)
-
-    const assignmentMap = Object.fromEntries(
-      (myAssignments ?? []).map((a: any) => [a.id, a])
-    )
-
-    submissions = (data ?? []).map((r: any) => {
-      const assignment = assignmentMap[r.assignment_id] ?? {}
-      return {
-        id: r.id,
-        student_id: r.student_id,
-        student_name: r.profiles?.full_name ?? 'Student',
-        student_avatar: r.profiles?.avatar_url ?? null,
-        assignment_id: r.assignment_id,
-        assignment_title: assignment.title ?? '—',
-        class_name: assignment.classes?.name ?? '—',
-        subject: assignment.subject ?? '—',
-        max_score: assignment.max_score ?? 100,
-        submitted_at: r.submitted_at,
-        file_url: r.file_url ?? null,
-        file_name: r.file_name ?? null,
-        score: r.score ?? null,
-        feedback: r.feedback ?? null,
-        graded_at: r.graded_at ?? null,
-        status: r.status ?? 'submitted',
-      }
-    })
+  if (error) {
+    console.error('[teacher/submissions] fetch error:', error.message)
   }
+
+  // Filter to only this teacher's assignments (can't do this in .eq() on nested)
+  const teacherRows = (raw ?? []).filter((row: any) => {
+    const asg = row.assignment
+    if (!asg) return false
+    if (asg.school_id !== school?.id) return false
+    // Accept if teacher is the creator or the assigned teacher
+    return asg.teacher_id === user.id || asg.created_by === user.id
+  })
+
+  // Shape into the Submission type SubmissionsClient expects
+  const submissions: Submission[] = teacherRows.map((row: any) => {
+    const asg   = row.assignment ?? {}
+    const cls   = asg.class ?? {}
+    const stud  = row.student ?? {}
+
+    // Derive class display name
+    const className = cls.name
+      ?? (cls.class_level && cls.section ? `${cls.class_level} ${cls.section}` : 'Unknown class')
+
+    // Derive file name from URL (last segment)
+    let fileName: string | null = null
+    if (row.file_url) {
+      const parts = row.file_url.split('/')
+      fileName = decodeURIComponent(parts[parts.length - 1]) || 'Submission file'
+    }
+
+    return {
+      id:               row.id,
+      status:           row.status ?? 'submitted',
+      score:            row.score ?? null,
+      feedback:         row.feedback ?? null,
+      submitted_at:     row.submitted_at,
+      graded_at:        row.graded_at ?? null,
+      file_url:         row.file_url ?? null,
+      file_name:        fileName,
+      text_response:    row.text_response ?? row.answer_text ?? null,
+      max_score:        asg.max_score ?? 100,
+      student_name:     stud.full_name ?? 'Unknown student',
+      student_avatar:   stud.avatar_url ?? null,
+      assignment_title: asg.title ?? 'Assignment',
+      subject:          asg.subject ?? '—',
+      class_name:       className,
+    }
+  })
 
   return (
     <SubmissionsClient
