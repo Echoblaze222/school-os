@@ -1,14 +1,20 @@
 'use client'
 // src/app/dashboard/teacher/results/PostResultsClient.tsx
-// Step-by-step: 1) Pick class+subject  2) Pick term+type  3) Enter scores  4) Review+submit
+// Step-by-step: 1) Pick class+subject  2) Pick term+type  3) Enter scores  4) Save
 //
-// FIXED: term internal state ('first'/'second'/'third') now mapped to DB values
-//        ('First Term'/'Second Term'/'Third Term') before every upsert and pre-fill comparison.
-// FIXED: upsert payload now includes school_id, academic_year, and posted_by.
-// FIXED: pre-fill comparison now matches against DB term value (not internal key).
-// ADDED: schoolId prop (pass from page.tsx: schoolId={school?.id}).
+// FIX: Replaced broken upsert (which required a DB unique constraint that didn't exist)
+//      with a safe insert-or-update pattern:
+//        - Check which student_ids already have a row for this combo
+//        - UPDATE existing rows
+//        - INSERT new rows
+//      This works without any schema migration.
+//
+// FIX: academic_year now computed from school_settings current_year if available,
+//      falling back to a reliable calendar computation.
+// FIX: scores state is cleared when term/resultType/selectedCS changes so stale
+//      pre-fills don't carry over.
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { TeacherClass, StudentForResult, ExistingResult } from './types'
@@ -20,7 +26,8 @@ interface Props {
   existingResults: ExistingResult[]
   teacherId:       string
   teacherName:     string
-  schoolId:        string   // ← NEW: pass school?.id from page.tsx
+  schoolId:        string
+  academicYear?:   string   // pass from page.tsx (school_settings.current_year)
 }
 
 type ResultType = 'day_test' | 'mid_term' | 'exam'
@@ -32,21 +39,26 @@ const RESULT_TYPE_LABELS: Record<ResultType, string> = {
   exam:     'Exam',
 }
 
-// Display labels (shown to the teacher)
 const TERM_LABELS: Record<Term, string> = {
   first:  'First Term',
   second: 'Second Term',
   third:  'Third Term',
 }
 
-// DB values — what actually gets written to / read from results.term
+// These are the exact values stored in results.term (enum/text in DB)
 const TERM_TO_DB: Record<Term, string> = {
   first:  'First Term',
   second: 'Second Term',
   third:  'Third Term',
 }
 
-const currentAcademicYear = `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
+function getAcademicYear(override?: string): string {
+  if (override) return override
+  const now = new Date()
+  const y   = now.getFullYear()
+  // Nigerian schools: new academic year starts in September
+  return now.getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`
+}
 
 function computeGrade(score: number, maxScore: number): string {
   if (maxScore === 0) return '—'
@@ -65,10 +77,15 @@ function gradeStyle(grade: string): string {
   return styles.gradeD
 }
 
-function initials(n: string) { return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() }
-function getTimeOfDay() { const h = new Date().getHours(); return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening' }
+function initials(n: string) {
+  return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+function getTimeOfDay() {
+  const h = new Date().getHours()
+  return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening'
+}
 
-// Icons
+// ── Icons ────────────────────────────────────────────────────────────────────
 const IconSun         = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
 const IconMoon        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
 const IconHome        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -79,6 +96,7 @@ const IconCheck       = () => <svg viewBox="0 0 24 24" fill="none" stroke="curre
 const IconAlertCircle = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 const IconSave        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function PostResultsClient({
   teacherClasses,
   allStudents,
@@ -86,18 +104,22 @@ export default function PostResultsClient({
   teacherId,
   teacherName,
   schoolId,
+  academicYear,
 }: Props) {
-  const [isDark,        setIsDark]        = useState(true)
-  const [mounted,       setMounted]       = useState(false)
-  const [step,          setStep]          = useState(1)
-  const [selectedCS,    setSelectedCS]    = useState<TeacherClass | null>(null)
-  const [term,          setTerm]          = useState<Term>('first')
-  const [resultType,    setResultType]    = useState<ResultType>('day_test')
-  const [maxScore,      setMaxScore]      = useState('100')
-  const [scores,        setScores]        = useState<Record<string, string>>({})
-  const [isSubmitting,  setIsSubmitting]  = useState(false)
-  const [submitStatus,  setSubmitStatus]  = useState<'idle' | 'success' | 'error'>('idle')
-  const [errorMsg,      setErrorMsg]      = useState('')
+  const [isDark,       setIsDark]       = useState(true)
+  const [mounted,      setMounted]      = useState(false)
+  const [step,         setStep]         = useState(1)
+  const [selectedCS,   setSelectedCS]   = useState<TeacherClass | null>(null)
+  const [term,         setTerm]         = useState<Term>('first')
+  const [resultType,   setResultType]   = useState<ResultType>('day_test')
+  const [maxScore,     setMaxScore]     = useState('100')
+  const [scores,       setScores]       = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMsg,     setErrorMsg]     = useState('')
+  const [savedCount,   setSavedCount]   = useState(0)
+
+  const currentAcademicYear = getAcademicYear(academicYear)
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme')
@@ -114,13 +136,14 @@ export default function PostResultsClient({
     localStorage.setItem('schoolos_theme', next ? 'dark' : 'light')
   }
 
+  // Students belonging to the selected class
   const classStudents = useMemo(() => {
     if (!selectedCS) return []
     return allStudents.filter(s => s.class_id === selectedCS.class_id)
   }, [selectedCS, allStudents])
 
-  // Pre-fill scores from existing results when step 3 loads.
-  // FIXED: compare r.term against TERM_TO_DB[term] (the DB value), not the internal key.
+  // Pre-fill scores when arriving at step 3, and clear when combo changes.
+  // Uses existingResults passed from the server so no extra round-trip needed.
   useEffect(() => {
     if (step !== 3 || !selectedCS) return
     const dbTerm = TERM_TO_DB[term]
@@ -128,73 +151,125 @@ export default function PostResultsClient({
     existingResults.forEach(r => {
       if (
         r.class_subject_id === selectedCS.class_subject_id &&
-        r.term             === dbTerm &&          // ← FIXED
+        r.term             === dbTerm &&
         r.result_type      === resultType
       ) {
         pre[r.student_id] = String(r.score)
       }
     })
     setScores(pre)
+    // Reset save status when switching context
+    setSubmitStatus('idle')
+    setErrorMsg('')
   }, [step, selectedCS, term, resultType, existingResults])
 
   const filledCount = Object.values(scores).filter(v => v !== '' && !isNaN(Number(v))).length
   const maxNum      = Number(maxScore) || 100
 
-  async function handleSubmit() {
+  // ── Safe insert-or-update (no unique constraint needed) ───────────────────
+  const handleSubmit = useCallback(async () => {
     if (!selectedCS) return
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setErrorMsg('')
 
     const supabase = createClient()
-    const dbTerm   = TERM_TO_DB[term]   // ← FIXED: map to DB value before writing
+    const dbTerm   = TERM_TO_DB[term]
 
-    const upsertRows = classStudents
-      .filter(s => scores[s.student_id] !== '' && scores[s.student_id] !== undefined)
-      .map(s => {
-        const scoreNum = Math.min(Math.max(Number(scores[s.student_id]) || 0, 0), maxNum)
-        return {
-          student_id:       s.student_id,
-          class_subject_id: selectedCS.class_subject_id,
-          result_type:      resultType,
-          term:             dbTerm,             // ← FIXED: 'First Term' not 'first'
-          score:            scoreNum,
-          max_score:        maxNum,
-          grade:            computeGrade(scoreNum, maxNum),
-          school_id:        schoolId,           // ← ADDED
-          academic_year:    currentAcademicYear, // ← ADDED
-          posted_by:        teacherId,           // ← ADDED (principal view needs this)
-        }
-      })
+    // Only process students who have a score entered
+    const studentsWithScores = classStudents.filter(s => {
+      const v = scores[s.student_id]
+      return v !== '' && v !== undefined && !isNaN(Number(v))
+    })
 
-    if (upsertRows.length === 0) {
+    if (studentsWithScores.length === 0) {
       setIsSubmitting(false)
       setSubmitStatus('error')
       setErrorMsg('No scores entered.')
       return
     }
 
-    const { error } = await supabase
+    // 1) Find which students already have a row for this exact combo
+    const studentIds = studentsWithScores.map(s => s.student_id)
+    const { data: existing, error: fetchErr } = await supabase
       .from('results')
-      .upsert(upsertRows, {
-        onConflict:       'student_id,class_subject_id,result_type,term',
-        ignoreDuplicates: false,
+      .select('id, student_id')
+      .eq('class_subject_id', selectedCS.class_subject_id)
+      .eq('term',             dbTerm)
+      .eq('result_type',      resultType)
+      .eq('school_id',        schoolId)
+      .in('student_id',       studentIds)
+
+    if (fetchErr) {
+      setIsSubmitting(false)
+      setSubmitStatus('error')
+      setErrorMsg(`Failed to check existing results: ${fetchErr.message}`)
+      return
+    }
+
+    const existingMap = new Map((existing ?? []).map(r => [r.student_id, r.id]))
+
+    // 2) Split into updates vs inserts
+    const toUpdate = studentsWithScores.filter(s =>  existingMap.has(s.student_id))
+    const toInsert = studentsWithScores.filter(s => !existingMap.has(s.student_id))
+
+    const errors: string[] = []
+
+    // 3) Run updates one-by-one (or batch via .in if you prefer)
+    for (const s of toUpdate) {
+      const scoreNum = Math.min(Math.max(Number(scores[s.student_id]) || 0, 0), maxNum)
+      const { error } = await supabase
+        .from('results')
+        .update({
+          score:        scoreNum,
+          max_score:    maxNum,
+          grade:        computeGrade(scoreNum, maxNum),
+          posted_by:    teacherId,
+          posted_at:    new Date().toISOString(),
+        })
+        .eq('id', existingMap.get(s.student_id)!)
+      if (error) errors.push(`Update failed for ${s.full_name}: ${error.message}`)
+    }
+
+    // 4) Batch-insert new rows
+    if (toInsert.length > 0) {
+      const insertRows = toInsert.map(s => {
+        const scoreNum = Math.min(Math.max(Number(scores[s.student_id]) || 0, 0), maxNum)
+        return {
+          student_id:       s.student_id,
+          class_subject_id: selectedCS.class_subject_id,
+          result_type:      resultType,
+          term:             dbTerm,
+          score:            scoreNum,
+          max_score:        maxNum,
+          grade:            computeGrade(scoreNum, maxNum),
+          school_id:        schoolId,
+          academic_year:    currentAcademicYear,
+          posted_by:        teacherId,
+        }
       })
+      const { error } = await supabase.from('results').insert(insertRows)
+      if (error) errors.push(`Insert failed: ${error.message}`)
+    }
 
     setIsSubmitting(false)
-    if (error) {
+
+    if (errors.length > 0) {
       setSubmitStatus('error')
-      setErrorMsg(error.message)
+      setErrorMsg(errors.join(' | '))
     } else {
+      setSavedCount(studentsWithScores.length)
       setSubmitStatus('success')
     }
-  }
+  }, [selectedCS, classStudents, scores, term, resultType, maxNum, schoolId, teacherId, currentAcademicYear])
 
   if (!mounted) return null
 
   return (
     <div className={styles.page}>
       <div className={styles.layoutWrap}>
-        {/* Side Nav */}
+
+        {/* ── Side Nav ── */}
         <nav className={styles.sideNav}>
           <div className={styles.sideNavLogo}>School<span>OS</span></div>
           <Link href="/dashboard/teacher"         className={styles.sideNavItem}><IconHome />      Overview</Link>
@@ -210,12 +285,15 @@ export default function PostResultsClient({
               <h1 className={styles.pageTitle}>Post <span>Results</span></h1>
             </div>
             <div className={styles.headerActions}>
-              <button className={styles.themeBtn} onClick={toggleTheme}>{isDark ? <IconSun /> : <IconMoon />}</button>
+              <button className={styles.themeBtn} onClick={toggleTheme}>
+                {isDark ? <IconSun /> : <IconMoon />}
+              </button>
             </div>
           </header>
 
           <main className={styles.content}>
-            {/* Step bar */}
+
+            {/* Step progress bar */}
             <div className={styles.stepBar}>
               {[
                 { n: 1, label: 'Class & Subject' },
@@ -225,7 +303,13 @@ export default function PostResultsClient({
                 <div
                   key={s.n}
                   className={`${styles.step} ${step === s.n ? styles.stepActive : ''} ${step > s.n ? styles.stepDone : ''}`}
-                  onClick={() => { if (s.n < step || (s.n === 2 && selectedCS) || (s.n === 3 && selectedCS)) setStep(s.n) }}
+                  onClick={() => {
+                    // Allow clicking back to any completed step
+                    if (s.n < step) setStep(s.n)
+                    // Allow jumping to step 2/3 only if class is selected
+                    if (s.n === 2 && selectedCS) setStep(2)
+                    if (s.n === 3 && selectedCS) setStep(3)
+                  }}
                 >
                   <div className={styles.stepNum}>{step > s.n ? <IconCheck /> : s.n}</div>
                   <span className={styles.stepLabel}>{s.label}</span>
@@ -233,12 +317,12 @@ export default function PostResultsClient({
               ))}
             </div>
 
-            {/* ── Step 1: Pick class ── */}
+            {/* ── Step 1: Pick class & subject ── */}
             {step === 1 && (
               <div className={styles.card} style={{ animationDelay: '0ms' }}>
                 <div className={styles.cardHeader}>
                   <div>
-                    <p className={styles.cardTitle}>Select Class & Subject</p>
+                    <p className={styles.cardTitle}>Select Class &amp; Subject</p>
                     <p className={styles.cardSubtitle}>Choose which class you are posting results for</p>
                   </div>
                 </div>
@@ -261,7 +345,11 @@ export default function PostResultsClient({
                   )}
                 </div>
                 <div className={styles.actionRow}>
-                  <button className={styles.primaryBtn} disabled={!selectedCS} onClick={() => setStep(2)}>
+                  <button
+                    className={styles.primaryBtn}
+                    disabled={!selectedCS}
+                    onClick={() => setStep(2)}
+                  >
                     Continue →
                   </button>
                 </div>
@@ -323,7 +411,11 @@ export default function PostResultsClient({
                 </div>
                 <div className={styles.actionRow}>
                   <button className={styles.secondaryBtn} onClick={() => setStep(1)}>← Back</button>
-                  <button className={styles.primaryBtn} disabled={!maxScore || Number(maxScore) <= 0} onClick={() => setStep(3)}>
+                  <button
+                    className={styles.primaryBtn}
+                    disabled={!maxScore || Number(maxScore) <= 0}
+                    onClick={() => setStep(3)}
+                  >
                     Continue →
                   </button>
                 </div>
@@ -341,13 +433,17 @@ export default function PostResultsClient({
                     <p className={styles.cardSubtitle}>
                       {TERM_LABELS[term]} · {RESULT_TYPE_LABELS[resultType]} · Out of {maxNum}
                     </p>
+                    <p className={styles.cardSubtitle} style={{ marginTop: 2, opacity: 0.6 }}>
+                      {currentAcademicYear}
+                    </p>
                   </div>
                 </div>
 
+                {/* Status banners */}
                 {submitStatus === 'success' && (
                   <div style={{ margin: 'var(--space-4) var(--space-6) 0' }}>
                     <div className={styles.statusSuccess}>
-                      <IconCheck /> Results saved for {filledCount} student{filledCount !== 1 ? 's' : ''}!
+                      <IconCheck /> Results saved for {savedCount} student{savedCount !== 1 ? 's' : ''}!
                     </div>
                   </div>
                 )}
@@ -374,14 +470,14 @@ export default function PostResultsClient({
                         </thead>
                         <tbody>
                           {classStudents.map(s => {
-                            const raw   = scores[s.student_id] ?? ''
-                            const num   = raw !== '' ? Number(raw) : NaN
-                            const grade = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : '—'
+                            const raw    = scores[s.student_id] ?? ''
+                            const num    = raw !== '' ? Number(raw) : NaN
+                            const grade  = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : '—'
                             const isOver = !isNaN(num) && num > maxNum
                             return (
                               <tr key={s.student_id}>
                                 <td>
-                                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <div className={styles.studentAvatar}>{initials(s.full_name)}</div>
                                     <div>
                                       <p className={styles.studentName}>{s.full_name}</p>
@@ -395,10 +491,16 @@ export default function PostResultsClient({
                                     type="number" min="0" max={maxNum}
                                     placeholder="—"
                                     value={raw}
-                                    onChange={e => setScores(prev => ({ ...prev, [s.student_id]: e.target.value }))}
+                                    onChange={e =>
+                                      setScores(prev => ({ ...prev, [s.student_id]: e.target.value }))
+                                    }
                                     style={isOver ? { borderColor: 'var(--error)' } : {}}
                                   />
-                                  {isOver && <span style={{ fontSize: '0.68rem', color: 'var(--error)', marginLeft: 6 }}>max {maxNum}</span>}
+                                  {isOver && (
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--error)', marginLeft: 6 }}>
+                                      max {maxNum}
+                                    </span>
+                                  )}
                                 </td>
                                 <td>
                                   <div className={`${styles.gradeBadge} ${grade === '—' ? styles.gradeEmpty : gradeStyle(grade)}`}>
@@ -422,7 +524,9 @@ export default function PostResultsClient({
                     disabled={isSubmitting || filledCount === 0}
                   >
                     <IconSave />
-                    {isSubmitting ? 'Saving…' : `Save ${filledCount > 0 ? `(${filledCount})` : ''} Results`}
+                    {isSubmitting
+                      ? 'Saving…'
+                      : `Save${filledCount > 0 ? ` (${filledCount})` : ''} Results`}
                   </button>
                   <span className={styles.submitCount}>
                     {filledCount} / {classStudents.length} filled
@@ -430,6 +534,7 @@ export default function PostResultsClient({
                 </div>
               </div>
             )}
+
           </main>
         </div>
       </div>
