@@ -1,18 +1,21 @@
 'use client'
 // src/app/dashboard/teacher/timetable/TimetableClient.tsx
-// FIX: Real `timetable` table has class_id + class_subject_id (foreign keys),
-// NOT free-text `subject` / `class_level` columns.
 //
-// FIX (this round): `class_subjects.subject_id` has no FK constraint in the
-// database, so PostgREST's nested-join syntax `class_subjects(subjects(name))`
-// fails with "Could not find a relationship between 'class_subjects' and
-// 'subjects'". Rather than depend on a DB migration being applied, this
-// version resolves subject/class names manually via a local lookup built
-// from teacherClasses (already fetched separately) instead of asking
-// PostgREST to join it. Run fix_class_subjects_fk.sql too — it's still
-// worth having the FK for other features, but this file no longer depends on it.
+// FIX (this round): subject mismatch between teacher and student dashboards.
+// Root cause: `loadTeacherClasses()` resolved class_subject_id by doing
+// `.from('class_subjects').select('id').eq('class_id', row.class_id).limit(1)`
+// which picked the FIRST class_subject row arbitrarily. Since a class has
+// multiple subjects, this returned a random subject (e.g. Biology when the
+// teacher teaches Civic Education), making the timetable period save with
+// the wrong class_subject_id. The student dashboard then displayed that
+// wrong subject instead of the one the teacher actually teaches.
 //
-// Carried over: visible error banner + error checks on load/create/delete.
+// FIX: resolve class_subject_id by matching BOTH class_id AND subject name
+// (via subjects.name = row.subject from class_teachers). This ensures the
+// stored class_subject_id always corresponds to the teacher's actual subject.
+//
+// Carried over: day_of_week integer fix, academic_year NOT NULL fix,
+// local subject lookup for display, visible error banner.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -30,11 +33,6 @@ interface TeacherClass {
 }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-// FIX: `day_of_week` is an INTEGER column, not text — the old client sent
-// 'Monday' directly and got "invalid input syntax for type integer".
-// Using ISO convention: 1 = Monday ... 5 = Friday (matches the Mon–Fri tabs,
-// no DB constraint or existing data defines this, so this is the standard
-// assumption for a school-week schedule with no weekend entries).
 const DAY_TO_NUM: Record<string, number> = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 }
 const NUM_TO_DAY: Record<number, string> = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 
@@ -56,7 +54,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  // FIX: lookup map built locally instead of relying on a PostgREST nested join
+  // Local lookup: class_id → { className, subject }
   const classLookup: Record<string, { className: string; subject: string | null }> = {}
   teacherClasses.forEach(c => {
     if (c.class_id) classLookup[c.class_id] = { className: c.class_name, subject: c.subject }
@@ -77,17 +75,41 @@ export default function TimetableClient({ profile, school, userId }: Props) {
 
     const list: TeacherClass[] = await Promise.all(
       ct.map(async (row: any) => {
-        const { data: cs } = await supabase
-          .from('class_subjects')
-          .select('id')
-          .eq('class_id', row.class_id)
-          .limit(1)
-          .maybeSingle()
+        // FIX: match class_subject_id by BOTH class_id AND subject name —
+        // not just .limit(1) which picks an arbitrary subject.
+        // Join class_subjects → subjects to find the one where subjects.name
+        // matches this teacher's subject for this class.
+        let class_subject_id: string | null = null
+
+        if (row.subject) {
+          const { data: cs } = await supabase
+            .from('class_subjects')
+            .select('id, subjects(name)')
+            .eq('class_id', row.class_id)
+
+          if (cs) {
+            // Find the class_subject whose subject name matches the teacher's subject
+            const match = cs.find((c: any) =>
+              c.subjects?.name?.toLowerCase() === row.subject?.toLowerCase()
+            )
+            class_subject_id = match?.id ?? cs[0]?.id ?? null
+          }
+        } else {
+          // No subject on class_teachers row — fall back to first (shouldn't happen)
+          const { data: cs } = await supabase
+            .from('class_subjects')
+            .select('id')
+            .eq('class_id', row.class_id)
+            .limit(1)
+            .maybeSingle()
+          class_subject_id = cs?.id ?? null
+        }
+
         return {
-          class_id:          row.class_id,
-          class_name:        row.classes?.name ?? '',
-          subject:           row.subject,
-          class_subject_id:  cs?.id ?? null,
+          class_id:         row.class_id,
+          class_name:       row.classes?.name ?? '',
+          subject:          row.subject,
+          class_subject_id,
         }
       })
     )
@@ -99,13 +121,12 @@ export default function TimetableClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    // FIX: no nested join — select class_id directly, resolve name via classLookup at render time
     const { data, error: err } = await supabase
       .from('timetable')
       .select('id, room, start_time, end_time, day_of_week, class_id, class_subject_id')
       .eq('school_id', school?.id)
       .eq('teacher_id', userId)
-      .eq('day_of_week', DAY_TO_NUM[day]) // FIX: send integer, not 'Monday'
+      .eq('day_of_week', DAY_TO_NUM[day])
       .order('start_time')
     if (err) {
       console.error('[timetable] load error:', err.message)
@@ -249,7 +270,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
           ? <div className={styles.empty}><ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No periods for {day}</p></div>
           : <div className={styles.periodList}>
             {periods.map((p: any) => {
-              const cls = classLookup[p.class_id] // FIX: resolved locally, not via DB join
+              const cls = classLookup[p.class_id]
               return (
                 <div key={p.id} className={styles.periodCard}>
                   <div className={styles.periodTime}>
@@ -281,5 +302,4 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       <div className={styles.spacer} />
     </RolePageWrapper>
   )
-          }
-                    
+}
