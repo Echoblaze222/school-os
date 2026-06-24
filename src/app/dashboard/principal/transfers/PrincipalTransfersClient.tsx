@@ -210,6 +210,11 @@ export default function PrincipalTransfersClient({
           </button>
         ))}
         <div style={{ flex: 1 }} />
+        <a href="/dashboard/principal/transfers/pending"
+          className={styles.btnGhost}
+          style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
+          ⏳ Pending
+        </a>
         <button className={styles.btnPrimary}
           onClick={() => setModal(true)}
           style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
