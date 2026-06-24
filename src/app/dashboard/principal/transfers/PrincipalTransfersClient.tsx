@@ -78,6 +78,8 @@ export default function PrincipalTransfersClient({
   const [selectedStudent, setSelectedStudent] = useState<SearchStudent | null>(null)
   const [schoolSearch,    setSchoolSearch]    = useState('')
   const [schoolResults,   setSchoolResults]   = useState<SearchSchool[]>([])
+  const [allSchools,      setAllSchools]      = useState<SearchSchool[]>([])
+  const [schoolsLoaded,   setSchoolsLoaded]   = useState(false)
   const [selectedSchool,  setSelectedSchool]  = useState<SearchSchool | null>(null)
   const [acknowledged,    setAcknowledged]    = useState(false)
   const [submitting,      setSubmitting]      = useState(false)
@@ -147,15 +149,27 @@ export default function PrincipalTransfersClient({
     setStudentResults(results)
   }
 
-  async function searchSchools() {
-    if (!schoolSearch.trim()) return
+  async function loadAllSchools() {
+    if (schoolsLoaded) return
     const { data } = await supabase
       .from('schools')
       .select('id, name, city')
-      .ilike('name', `%${schoolSearch}%`)
       .neq('id', profile.school_id)
-      .limit(10)
+      .order('name')
+    setAllSchools(data ?? [])
     setSchoolResults(data ?? [])
+    setSchoolsLoaded(true)
+  }
+
+  async function searchSchools() {
+    if (!schoolSearch.trim()) {
+      setSchoolResults(allSchools)
+      return
+    }
+    setSchoolResults(allSchools.filter(s =>
+      s.name.toLowerCase().includes(schoolSearch.toLowerCase()) ||
+      (s.city ?? '').toLowerCase().includes(schoolSearch.toLowerCase())
+    ))
   }
 
   async function submitTransfer() {
@@ -190,7 +204,7 @@ export default function PrincipalTransfersClient({
   function resetModal() {
     setModal(false); setSuccess(false); setFormError(null)
     setStudentSearch(''); setStudentResults([]); setSelectedStudent(null)
-    setSchoolSearch(''); setSchoolResults([]); setSelectedSchool(null)
+    setSchoolSearch(''); setSchoolResults([]); setAllSchools([]); setSchoolsLoaded(false); setSelectedSchool(null)
     setAcknowledged(false)
   }
 
@@ -472,6 +486,8 @@ export default function PrincipalTransfersClient({
 
                 {selectedStudent && (!hasDebt || acknowledged) && (
                   <>
+                    {/* Load all schools as soon as Step 2 becomes visible */}
+                    {(() => { if (!schoolsLoaded) loadAllSchools(); return null })()}
                     <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 'var(--space-5) 0 var(--space-2)' }}>Step 2 — Destination School</p>
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                       <input className={styles.formInput} placeholder="Search school name…"
