@@ -1,13 +1,10 @@
 'use client'
 // src/app/dashboard/student/live/LiveClient.tsx
-// Rebuilt from teacher's working LiveClient.
-// Queries: online_classes filtered by school_id + class_id (from student profile).
-// No teacher-specific logic (no form, no start/end/delete).
-// Tab order: live → scheduled → ended.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import ReminderButton from '@/components/ReminderButton'
 import { VideoIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -48,14 +45,12 @@ export default function LiveClient({ profile, school, userId }: Props) {
     setLoading(true)
     setError(null)
 
-    // Guard: student must be assigned to a class
     if (!profile?.class_id) {
       setError('You have not been assigned to a class yet. Please contact your school administrator.')
       setLoading(false)
       return
     }
 
-    // Same table + same columns the teacher writes to
     const { data, error: err } = await supabase
       .from('online_classes')
       .select('id, title, description, meeting_url, recording_url, is_live, scheduled_at, ended_at, class_id, teacher_id')
@@ -64,24 +59,19 @@ export default function LiveClient({ profile, school, userId }: Props) {
       .order('scheduled_at', { ascending: false })
       .limit(50)
 
-    if (err) {
-      console.error('[student live] load error:', err.message)
-      setError(err.message)
-    }
+    if (err) { setError(err.message) }
     if (data) setSessions(data)
     setLoading(false)
   }
 
   const visibleSessions = sessions.filter(s => deriveStatus(s) === tab)
 
-  // Count per tab for badge
   const counts: Record<Tab, number> = { live: 0, scheduled: 0, ended: 0 }
   sessions.forEach(s => { counts[deriveStatus(s)]++ })
 
   return (
     <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Live Classes">
 
-      {/* Tabs */}
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {(['live', 'scheduled', 'ended'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
@@ -102,7 +92,6 @@ export default function LiveClient({ profile, school, userId }: Props) {
         ))}
       </div>
 
-      {/* Error banner */}
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
           <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
@@ -110,7 +99,6 @@ export default function LiveClient({ profile, school, userId }: Props) {
         </div>
       )}
 
-      {/* Session list */}
       {loading
         ? <div className={styles.loading}><span /><span /><span /></div>
         : visibleSessions.length === 0
@@ -118,7 +106,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
             <div className={styles.empty}>
               <VideoIcon size={40} color="var(--text-faint)" strokeWidth={1} />
               <p>
-                {tab === 'live'      ? 'No class is live right now'  :
+                {tab === 'live'      ? 'No class is live right now'    :
                  tab === 'scheduled' ? 'No upcoming classes scheduled' :
                                        'No ended classes yet'}
               </p>
@@ -127,75 +115,55 @@ export default function LiveClient({ profile, school, userId }: Props) {
           : (
             <div className={styles.list}>
               {visibleSessions.map(s => {
-                const status = deriveStatus(s)
+                const status   = deriveStatus(s)
+                const isFuture = s.scheduled_at && new Date(s.scheduled_at) > new Date()
                 return (
                   <div key={s.id} className={styles.card}
                     style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default' }}>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)' }}>
-                      <div className={styles.cardIcon}
-                        style={{ background: STATUS_COLOR[status] + '20', flexShrink: 0 }}>
+                      <div className={styles.cardIcon} style={{ background: STATUS_COLOR[status] + '20', flexShrink: 0 }}>
                         <VideoIcon size={16} color={STATUS_COLOR[status]} />
                       </div>
-
                       <div className={styles.cardBody} style={{ flex: 1, minWidth: 0 }}>
                         <p className={styles.cardTitle}>{s.title}</p>
-                        {s.description && (
-                          <p className={styles.cardText} style={{ margin: '2px 0 0' }}>
-                            {s.description}
-                          </p>
-                        )}
+                        {s.description && <p className={styles.cardText} style={{ margin: '2px 0 0' }}>{s.description}</p>}
                         {s.scheduled_at && (
                           <p className={styles.cardMeta} style={{ margin: '4px 0 0' }}>
-                            {new Date(s.scheduled_at).toLocaleString('en-NG', {
-                              day: 'numeric', month: 'short',
-                              hour: '2-digit', minute: '2-digit',
-                            })}
+                            {new Date(s.scheduled_at).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         )}
                       </div>
-
-                      <span style={{
-                        padding: '3px 10px', borderRadius: 999,
-                        fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
-                        background: STATUS_COLOR[status] + '20',
-                        color: STATUS_COLOR[status],
-                      }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, flexShrink: 0, background: STATUS_COLOR[status] + '20', color: STATUS_COLOR[status] }}>
                         {STATUS_LABEL[status]}
                       </span>
                     </div>
 
-                    {/* Join button — only when live and URL exists */}
-                    {status === 'live' && s.meeting_url && (
-                      <a href={s.meeting_url} target="_blank" rel="noreferrer"
-                        style={{
-                          marginTop: 12, marginLeft: 52,
-                          display: 'inline-flex', alignSelf: 'flex-start',
-                          alignItems: 'center', gap: 6,
-                          padding: '8px 18px', background: '#10B981',
-                          color: '#fff', borderRadius: 999,
-                          fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none',
-                        }}>
-                        🔴 Join Now
-                      </a>
-                    )}
-
-                    {/* Recording button — only when ended and URL exists */}
-                    {status === 'ended' && s.recording_url && (
-                      <a href={s.recording_url} target="_blank" rel="noreferrer"
-                        style={{
-                          marginTop: 12, marginLeft: 52,
-                          display: 'inline-flex', alignSelf: 'flex-start',
-                          alignItems: 'center', gap: 6,
-                          padding: '8px 18px',
-                          background: 'var(--glass-bg)',
-                          border: '1px solid var(--glass-border)',
-                          color: 'var(--text-secondary)', borderRadius: 999,
-                          fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none',
-                        }}>
-                        🎬 Watch Recording
-                      </a>
-                    )}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10, marginLeft: 52, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {status === 'live' && s.meeting_url && (
+                        <a href={s.meeting_url} target="_blank" rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: '#10B981', color: '#fff', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
+                          🔴 Join Now
+                        </a>
+                      )}
+                      {status === 'ended' && s.recording_url && (
+                        <a href={s.recording_url} target="_blank" rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
+                          🎬 Watch Recording
+                        </a>
+                      )}
+                      {(status === 'scheduled' || status === 'live') && isFuture && s.scheduled_at && (
+                        <ReminderButton
+                          sourceType="live_class"
+                          sourceId={s.id}
+                          eventTime={s.scheduled_at}
+                          title={s.title}
+                          body="Your live class starts in {n} minutes"
+                          url="/dashboard/student/live"
+                          color={sc}
+                        />
+                      )}
+                    </div>
 
                   </div>
                 )
@@ -203,9 +171,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
             </div>
           )
       }
-
       <div className={styles.spacer} />
     </RolePageWrapper>
   )
-    }
-              
+                            }
