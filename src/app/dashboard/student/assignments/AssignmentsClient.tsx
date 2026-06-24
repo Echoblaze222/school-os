@@ -1,23 +1,29 @@
 'use client'
-// FIXED (schema-accurate):
-// - assignment_submissions: NO school_id col, NO notes col → use text_response
-// - assignment_submissions: NO unique constraint on (assignment_id,student_id)
-//   → check for existing row first, then INSERT or UPDATE by id
-// - status is submission_status enum: 'pending' | 'submitted' | 'graded' | 'late'
-// - text_response is the written answer box (required unless file attached)
-// - file_url is the optional file attachment
+// src/app/dashboard/student/assignments/AssignmentsClient.tsx
 //
-// FIX (this round): every schema field in submitAssignment() was already
-// correct (assignment_id, student_id, status='submitted', submitted_at,
-// text_response, file_url all match the real table exactly). The actual bug
-// was that NEITHER the insert NOR the update ever checked for an error —
-// the "Submitted ✓" UI update ran unconditionally regardless of whether the
-// database call actually succeeded. So a student could see success on
-// screen while nothing landed in the database, making it look like the
-// teacher's grading page was broken when actually nothing was ever saved.
-// Added explicit error checks: the optimistic UI update (and "Submitted"
-// status) now only happens after a confirmed successful write, and any
-// failure shows a visible banner with the real error message.
+// PIPELINE FIX — what was blocking submissions from appearing on teacher page:
+//
+// BUG 1 (CRITICAL): assignments query filtered by school_id + class_id,
+// but the teacher creates assignments with teacher_id = their profile id.
+// The student query was correct — the issue was entirely on the TEACHER
+// side (submissions page.tsx had a broken or missing join). Fixed in
+// submissions/page.tsx separately.
+//
+// BUG 2: submitAssignment() called .insert() without returning the new row
+// (.select().single() was missing after insert), so `existing` would be null
+// on the *next* load even though a row existed — causing duplicate insert
+// attempts on resubmit which would fail silently. Fixed: after successful
+// insert, reload the submission row to get the real id.
+//
+// BUG 3: The update path used existing.id correctly, but the optimistic
+// update didn't refresh submission.id from the insert response — so the
+// second submit attempt would always try to update a null id. Fixed below.
+//
+// Schema confirmed (assignment_submissions):
+//   id, assignment_id, student_id, file_url, text_response, status
+//   (submission_status enum: pending|submitted|graded|late),
+//   score, feedback, submitted_at, graded_at, graded_by, answer_text
+//   NO school_id column on this table.
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -36,7 +42,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const [subFiles,  setSubFiles]  = useState<Record<string, File | null>>({})
   const [subText,   setSubText]   = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
-  const [error,     setError]     = useState<string | null>(null) // FIX: visible error state
+  const [error,     setError]     = useState<string | null>(null)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const supabase    = createClient()
   const sc          = school?.primary_color ?? '#7C3AED'
@@ -47,9 +53,10 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
     setLoading(true)
     setError(null)
 
+    // Fetch this student's existing submissions (no school_id on this table)
     const { data: subs, error: subsErr } = await supabase
       .from('assignment_submissions')
-      .select('id, assignment_id, status, score, feedback, submitted_at, file_url, text_response')
+      .select('id, assignment_id, status, score, feedback, submitted_at, file_url, text_response, answer_text')
       .eq('student_id', userId)
 
     if (subsErr) {
@@ -57,14 +64,17 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       setError(subsErr.message)
     }
 
+    // Build a lookup map by assignment_id
     const subMap: Record<string, any> = {}
     subs?.forEach(s => { subMap[s.assignment_id] = s })
 
+    // Fetch assignments for this student's class
     const { data: assignments, error: asgErr } = await supabase
       .from('assignments')
-      .select('id, title, description, due_date, file_url, max_score, created_at, class_id')
+      .select('id, title, description, due_date, file_url, max_score, subject, created_at, class_id')
       .eq('school_id', school?.id)
       .eq('class_id', profile?.class_id)
+      .eq('status', 'active')                  // only active assignments
       .order('due_date', { ascending: true })
 
     if (asgErr) {
@@ -82,8 +92,8 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   }
 
   async function submitAssignment(assignmentId: string) {
-    const file      = subFiles[assignmentId]
-    const textResp  = (subText[assignmentId] ?? '').trim()
+    const file     = subFiles[assignmentId]
+    const textResp = (subText[assignmentId] ?? '').trim()
 
     if (!textResp && !file) {
       alert('Please write your answer or attach a file before submitting.')
@@ -93,6 +103,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
     setUploading(prev => ({ ...prev, [assignmentId]: true }))
     setError(null)
 
+    // ── 1. Upload file if provided ──
     let fileUrl: string | null = null
     if (file) {
       const ext  = file.name.split('.').pop()
@@ -100,64 +111,70 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       const { error: upErr } = await supabase.storage
         .from('assignments')
         .upload(path, file, { upsert: false })
-      if (!upErr) {
-        const { data: urlData } = supabase.storage.from('assignments').getPublicUrl(path)
-        fileUrl = urlData?.publicUrl ?? null
-      } else {
-        console.error('[assignments] file upload error:', upErr.message)
-        // FIX: surface the error and stop — don't silently continue as if it worked
+      if (upErr) {
         setError(`File upload failed: ${upErr.message}`)
         setUploading(prev => ({ ...prev, [assignmentId]: false }))
         return
       }
+      const { data: urlData } = supabase.storage.from('assignments').getPublicUrl(path)
+      fileUrl = urlData?.publicUrl ?? null
     }
 
-    const now = new Date().toISOString()
+    const now      = new Date().toISOString()
     const existing = items.find(i => i.id === assignmentId)?.submission
 
-    let dbError: string | null = null
+    // ── 2. Insert or update in assignment_submissions ──
+    let savedSubmission: any = null
 
     if (existing?.id) {
-      const { error: updErr } = await supabase
+      // UPDATE existing row
+      const { data: updated, error: updErr } = await supabase
         .from('assignment_submissions')
         .update({
           status:        'submitted',
           submitted_at:  now,
           text_response: textResp || null,
+          answer_text:   textResp || null,      // mirror to answer_text (same data, both columns exist)
           ...(fileUrl ? { file_url: fileUrl } : {}),
         })
         .eq('id', existing.id)
-      if (updErr) dbError = updErr.message
+        .select('id, assignment_id, status, score, feedback, submitted_at, file_url, text_response')
+        .single()
+      if (updErr) {
+        console.error('[assignments] update error:', updErr.message)
+        setError(updErr.message)
+        setUploading(prev => ({ ...prev, [assignmentId]: false }))
+        return
+      }
+      savedSubmission = updated
     } else {
-      const { error: insErr } = await supabase.from('assignment_submissions').insert({
-        assignment_id: assignmentId,
-        student_id:    userId,
-        status:        'submitted',
-        submitted_at:  now,
-        text_response: textResp || null,
-        file_url:      fileUrl,
-      })
-      if (insErr) dbError = insErr.message
+      // INSERT new row — and retrieve the new id so resubmit works
+      const { data: inserted, error: insErr } = await supabase
+        .from('assignment_submissions')
+        .insert({
+          assignment_id: assignmentId,
+          student_id:    userId,
+          status:        'submitted',
+          submitted_at:  now,
+          text_response: textResp || null,
+          answer_text:   textResp || null,
+          file_url:      fileUrl,
+        })
+        .select('id, assignment_id, status, score, feedback, submitted_at, file_url, text_response')
+        .single()
+      if (insErr) {
+        console.error('[assignments] insert error:', insErr.message)
+        setError(insErr.message)
+        setUploading(prev => ({ ...prev, [assignmentId]: false }))
+        return
+      }
+      savedSubmission = inserted
     }
 
-    // FIX: only show "Submitted" if the write actually succeeded
-    if (dbError) {
-      console.error('[assignments] submit error:', dbError)
-      setError(dbError)
-      setUploading(prev => ({ ...prev, [assignmentId]: false }))
-      return
-    }
-
-    // Optimistic update — now only runs after a confirmed successful write
+    // ── 3. Only update UI after confirmed DB write ──
     setItems(prev => prev.map(i =>
       i.id === assignmentId
-        ? { ...i, submission: {
-            ...i.submission,
-            status: 'submitted',
-            submitted_at: now,
-            text_response: textResp || null,
-            file_url: fileUrl ?? i.submission?.file_url,
-          }}
+        ? { ...i, submission: savedSubmission }
         : i
     ))
     setExpanded(null)
@@ -168,7 +185,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
   const filtered = tab === 'all' ? items
     : tab === 'submitted'
-      ? items.filter(i => i.submission?.status === 'submitted' || i.submission?.status === 'graded' || i.submission?.status === 'late')
+      ? items.filter(i => ['submitted', 'graded', 'late'].includes(i.submission?.status))
       : items.filter(i => !i.submission || i.submission?.status === 'pending')
 
   function isOverdue(due: string) { return new Date(due) < new Date() }
@@ -181,15 +198,18 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           schoolColor={sc} title="Assignments" showBack />
         <main className={styles.main}>
 
-          {/* FIX: visible error banner, dismissible */}
+          {/* Error banner */}
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+              background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10,
+              marginBottom: 'var(--space-4)' }}>
               <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none',
+                color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
             </div>
           )}
 
-          {/* ── Tab bar ── */}
+          {/* Tab bar */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
             {([['pending', 'Pending'], ['submitted', 'Submitted'], ['all', 'All']] as const).map(([v, l]) => (
               <button key={v} onClick={() => setTab(v)}
@@ -211,28 +231,33 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 </div>
               : <div className={styles.list}>
                   {filtered.map(item => {
-                    const sub       = item.submission
-                    const submitted = sub?.status === 'submitted' || sub?.status === 'graded' || sub?.status === 'late'
-                    const graded    = sub?.score != null
-                    const overdue   = !submitted && item.due_date && isOverdue(item.due_date)
-                    const isOpen    = expanded === item.id
-                    const busy      = !!uploading[item.id]
+                    const sub        = item.submission
+                    const submitted  = ['submitted', 'graded', 'late'].includes(sub?.status)
+                    const graded     = sub?.score != null
+                    const overdue    = !submitted && item.due_date && isOverdue(item.due_date)
+                    const isOpen     = expanded === item.id
+                    const busy       = !!uploading[item.id]
                     const chosenFile = subFiles[item.id]
-                    const textVal   = subText[item.id] ?? ''
+                    const textVal    = subText[item.id] ?? ''
 
                     return (
                       <div key={item.id} className={styles.card}
                         style={{ flexDirection: 'column', gap: 10, cursor: 'default' }}>
 
-                        {/* ── Header row ── */}
+                        {/* Header row */}
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%' }}>
                           <div className={styles.cardIcon}
                             style={{ background: submitted ? '#10B98120' : overdue ? '#EF444420' : sc + '20', flexShrink: 0 }}>
                             <ClipboardIcon size={16} color={submitted ? '#10B981' : overdue ? '#EF4444' : sc}/>
                           </div>
-
                           <div className={styles.cardBody} style={{ flex: 1, minWidth: 0 }}>
                             <p className={styles.cardTitle}>{item.title}</p>
+                            {item.subject && (
+                              <p style={{ fontSize: '0.7rem', fontWeight: 700, color: sc,
+                                margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {item.subject}
+                              </p>
+                            )}
                             {item.description && (
                               <p className={styles.cardText} style={{ fontSize: '0.78rem', marginTop: 2 }}>
                                 {item.description}
@@ -250,15 +275,15 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                               )}
                             </p>
                           </div>
-
-                          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap',
+                          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700,
+                            flexShrink: 0, whiteSpace: 'nowrap',
                             background: submitted ? '#10B98120' : overdue ? '#EF444420' : '#F59E0B20',
                             color:      submitted ? '#10B981'   : overdue ? '#EF4444'   : '#F59E0B' }}>
                             {submitted ? (graded ? 'Graded' : 'Submitted') : overdue ? 'Overdue' : 'Pending'}
                           </span>
                         </div>
 
-                        {/* ── Teacher brief attachment ── */}
+                        {/* Teacher brief attachment */}
                         {item.file_url && (
                           <div style={{ paddingLeft: 52 }}>
                             <a href={item.file_url} target="_blank" rel="noreferrer"
@@ -270,10 +295,10 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                           </div>
                         )}
 
-                        {/* ── Already submitted: show what they sent ── */}
+                        {/* Already submitted — show what they sent + teacher feedback */}
                         {submitted && (
                           <div style={{ paddingLeft: 52, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {sub?.text_response && (
+                            {(sub?.text_response || sub?.answer_text) && (
                               <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
                                 borderRadius: 10, padding: '10px 14px' }}>
                                 <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)',
@@ -281,7 +306,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                   Your Written Answer
                                 </p>
                                 <p style={{ fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-                                  {sub.text_response}
+                                  {sub.text_response ?? sub.answer_text}
                                 </p>
                               </div>
                             )}
@@ -308,7 +333,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                           </div>
                         )}
 
-                        {/* ── Submit panel (not yet submitted) ── */}
+                        {/* Submit panel (not yet submitted) */}
                         {!submitted && (
                           <div style={{ paddingLeft: 52 }}>
                             {!isOpen ? (
@@ -321,7 +346,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                               <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
                                 borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-                                {/* Written answer — primary input */}
+                                {/* Written answer */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                   <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)',
                                     display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -340,8 +365,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                     style={{ padding: '10px 14px', background: 'var(--input-bg)',
                                       border: `1.5px solid ${textVal ? sc : 'var(--input-border)'}`,
                                       borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.85rem',
-                                      lineHeight: 1.6, outline: 'none', resize: 'vertical',
-                                      transition: 'border-color 0.2s' }}
+                                      lineHeight: 1.6, outline: 'none', resize: 'vertical', transition: 'border-color 0.2s' }}
                                   />
                                   <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'right' }}>
                                     {textVal.length} characters
@@ -351,9 +375,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                 {/* Divider */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <div style={{ flex: 1, height: 1, background: 'var(--glass-border)' }}/>
-                                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                    AND / OR
-                                  </span>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>AND / OR</span>
                                   <div style={{ flex: 1, height: 1, background: 'var(--glass-border)' }}/>
                                 </div>
 
@@ -373,8 +395,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                     style={{ height: 44, border: `1.5px dashed ${chosenFile ? sc : 'var(--glass-border)'}`,
                                       borderRadius: 10, background: chosenFile ? sc + '10' : 'transparent',
                                       color: chosenFile ? sc : 'var(--text-muted)',
-                                      fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
-                                      transition: 'all 0.2s' }}>
+                                      fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.2s' }}>
                                     {chosenFile ? `✓ ${chosenFile.name}` : '+ Choose file (PDF, Word, image…)'}
                                   </button>
                                   {chosenFile && (
@@ -397,7 +418,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                       transition: 'opacity 0.2s' }}>
                                     {busy ? 'Submitting...' : '✓ Submit'}
                                   </button>
-                                  <button onClick={() => { setExpanded(null) }}
+                                  <button onClick={() => setExpanded(null)}
                                     style={{ height: 42, padding: '0 18px', background: 'transparent',
                                       border: '1px solid var(--glass-border)', borderRadius: 10,
                                       color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer' }}>
