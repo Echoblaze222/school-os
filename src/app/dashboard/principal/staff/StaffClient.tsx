@@ -183,6 +183,11 @@ export default function StaffClient({ profile, school, userId }: Props) {
   const [confirmDel, setConfirmDel] = useState<any | null>(null)
   const [saving,     setSaving]     = useState(false)
   const [addResult,  setAddResult]  = useState<{ full_name: string; email: string; role: string; code: string; password: string } | null>(null)
+  // ── Preview / Edit bottom sheets ───────────────────────────
+  const [previewMember, setPreviewMember] = useState<any | null>(null)
+  const [editMember,    setEditMember]    = useState<any | null>(null)
+  const [editForm,      setEditForm]      = useState<any>({})
+  const [editSaving,    setEditSaving]    = useState(false)
 
   const [form, setForm] = useState({
     full_name: '', email: '', phone: '', role: 'teacher',
@@ -266,6 +271,28 @@ export default function StaffClient({ profile, school, userId }: Props) {
       showToast(err.message ?? 'Failed to add staff member', false)
     }
     setSaving(false)
+  }
+
+  // ── Save edited staff details ───────────────────────────────
+  async function handleEditSave() {
+    if (!editMember) return
+    setEditSaving(true)
+    const { error } = await supabase.from('profiles').update({
+      full_name:     editForm.full_name     || editMember.full_name,
+      phone:         editForm.phone         ?? editMember.phone,
+      date_of_birth: editForm.date_of_birth ?? editMember.date_of_birth,
+      gender:        editForm.gender        ?? editMember.gender,
+      qualification: editForm.qualification ?? editMember.qualification,
+      subject:       editForm.subject       ?? editMember.subject,
+      address:       editForm.address       ?? editMember.address,
+    }).eq('id', editMember.id)
+    setEditSaving(false)
+    if (error) { showToast('Failed to save changes', false); return }
+    setStaff(prev => prev.map(s => s.id === editMember.id ? { ...s, ...editForm } : s))
+    setPreviewMember((p: any) => p ? { ...p, ...editForm } : p)
+    setEditMember(null)
+    setEditForm({})
+    showToast('Staff details updated')
   }
 
   const filtered = staff.filter(s => {
@@ -451,7 +478,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
               const initials  = member.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
               const roleColor = ROLE_COLORS[member.role] ?? sc
               return (
-                <div key={member.id} className={styles.staffCard}>
+                <div key={member.id} className={styles.staffCard} onClick={() => setPreviewMember(member)} style={{ cursor: 'pointer' }}>
                   <div className={styles.cardHeader}>
                     <div className={styles.avatar} style={{ background: roleColor + '30', color: roleColor }}>
                       {member.avatar_url
@@ -510,6 +537,128 @@ export default function StaffClient({ profile, school, userId }: Props) {
         )}
         <div style={{ height: 100 }}/>
       </div>
+
+      {/* ── Preview bottom sheet ─────────────────────────────── */}
+      {previewMember && !editMember && (
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'flex-end' }}
+          onClick={() => setPreviewMember(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'85vh', overflowY:'auto' }}
+          >
+            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
+
+            {/* Avatar + name */}
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', marginBottom:'var(--space-5)' }}>
+              {(() => {
+                const roleColor = ROLE_COLORS[previewMember.role] ?? sc
+                const initials  = previewMember.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase() ?? '?'
+                return (
+                  <div style={{ width:56, height:56, borderRadius:'50%', flexShrink:0, overflow:'hidden', background:roleColor+'25', color:roleColor, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:'1.2rem' }}>
+                    {previewMember.avatar_url ? <img src={previewMember.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : initials}
+                  </div>
+                )
+              })()}
+              <div>
+                <p style={{ fontWeight:800, fontSize:'1.1rem', color:'var(--text-primary)', margin:0 }}>{previewMember.full_name}</p>
+                <span style={{ fontSize:'0.72rem', fontWeight:700, padding:'2px 10px', borderRadius:'var(--radius-full)', background:(ROLE_COLORS[previewMember.role]??sc)+'22', color:ROLE_COLORS[previewMember.role]??sc, textTransform:'capitalize' }}>
+                  {previewMember.role}
+                </span>
+              </div>
+            </div>
+
+            {([
+              ['Email',         previewMember.email],
+              ['Phone',         previewMember.phone],
+              ['Gender',        previewMember.gender],
+              ['Date of Birth', previewMember.date_of_birth],
+              ['Qualification', previewMember.qualification],
+              ['Subject',       previewMember.subject],
+              ['Address',       previewMember.address],
+              ['Access Code',   previewMember.default_code],
+              ['Joined',        previewMember.created_at ? new Date(previewMember.created_at).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'}) : null],
+            ] as [string,string|null|undefined][]).map(([label, value]) => (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'var(--space-3) 0', borderBottom:'1px solid var(--glass-border)', gap:'var(--space-4)' }}>
+                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', flexShrink:0 }}>{label}</span>
+                {value
+                  ? <span style={{ fontSize:'0.82rem', fontWeight:600, color:'var(--text-primary)', textAlign:'right' }}>{value}</span>
+                  : <span style={{ fontSize:'0.78rem', color:'var(--text-faint)', fontStyle:'italic' }}>Not set</span>
+                }
+              </div>
+            ))}
+
+            <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
+              <button className={styles.saveBtn} style={{ flex:1, background:sc }}
+                onClick={() => { setEditMember(previewMember); setEditForm({ ...previewMember }) }}>
+                ✏️ Edit Details
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setPreviewMember(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit bottom sheet ────────────────────────────────── */}
+      {editMember && (
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:1001, display:'flex', alignItems:'flex-end' }}
+          onClick={() => { setEditMember(null); setEditForm({}) }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'92vh', overflowY:'auto' }}
+          >
+            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
+            <p style={{ fontWeight:800, fontSize:'1rem', color:'var(--text-primary)', marginBottom:'var(--space-5)' }}>
+              Edit — {editMember.full_name}
+            </p>
+
+            <div className={styles.formGrid}>
+              {([
+                ['Full Name',     'full_name',     'text', 'e.g. John Adeyemi'],
+                ['Phone',         'phone',         'tel',  '080xxxxxxxx'],
+                ['Date of Birth', 'date_of_birth', 'date', ''],
+                ['Qualification', 'qualification', 'text', 'e.g. B.Sc Education'],
+                ['Subject',       'subject',       'text', 'e.g. Mathematics'],
+                ['Address',       'address',       'text', 'e.g. 12 Lagos Street'],
+              ] as [string,string,string,string][]).map(([label, key, type, placeholder]) => (
+                <div key={key} className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>{label}</label>
+                  <input className={styles.fieldInput} type={type} placeholder={placeholder}
+                    value={editForm[key] ?? ''}
+                    onChange={e => setEditForm((f:any) => ({ ...f, [key]: e.target.value }))} />
+                </div>
+              ))}
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Gender</label>
+                <select className={styles.fieldInput} value={editForm.gender ?? ''}
+                  onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Role</label>
+                <select className={styles.fieldInput} value={editForm.role ?? editMember.role}
+                  onChange={e => setEditForm((f:any) => ({ ...f, role: e.target.value }))}>
+                  {ROLES.map(r => <option key={r} value={r} style={{ textTransform:'capitalize' }}>{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.formActions}>
+              <button className={styles.cancelFormBtn} onClick={() => { setEditMember(null); setEditForm({}) }}>Cancel</button>
+              <button className={styles.saveBtn} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
+                {editSaving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </RolePageWrapper>
   )
 }
