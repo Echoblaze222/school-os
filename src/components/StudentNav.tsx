@@ -77,7 +77,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       { href: '/dashboard/student/notes',       Icon: BookIcon,      label: 'Notes'        },
       { href: '/dashboard/student/syllabus',    Icon: BookOpenIcon,  label: 'Syllabus'     },
       { href: '/dashboard/student/timetable',   Icon: ClockIcon,     label: 'Timetable'    },
-      { href: '/dashboard/student/classes',     Icon: VideoIcon,     label: 'Live Classes' },
+      { href: '/dashboard/student/live',        Icon: VideoIcon,     label: 'Live Classes' },
       { href: '/dashboard/student/schedule',    Icon: CalendarIcon,  label: 'Study Plan'   },
     ],
   },
