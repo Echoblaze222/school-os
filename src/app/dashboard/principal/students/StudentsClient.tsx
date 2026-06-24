@@ -177,6 +177,11 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
   const [saving,      setSaving]      = useState(false)
   const [enrollResult, setEnrollResult] = useState<{ full_name: string; email: string; code: string; password: string } | null>(null)
+  // ── Preview / Edit bottom sheets ───────────────────────────
+  const [previewStudent, setPreviewStudent] = useState<any | null>(null)
+  const [editStudent,    setEditStudent]    = useState<any | null>(null)
+  const [editForm,       setEditForm]       = useState<any>({})
+  const [editSaving,     setEditSaving]     = useState(false)
   // ── Assign-class modal state ────────────────────────────────────────────
   const [assignTarget,  setAssignTarget]  = useState<any | null>(null)
   const [assignClassId, setAssignClassId] = useState('')
@@ -288,6 +293,29 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     setAssignTarget(null)
     setAssignClassId('')
     showToast(`${assignTarget.full_name} assigned to ${className}`)
+  }
+
+  // ── Save edited student details ────────────────────────────
+  async function handleEditSave() {
+    if (!editStudent) return
+    setEditSaving(true)
+    const { error } = await supabase.from('profiles').update({
+      full_name:        editForm.full_name        || editStudent.full_name,
+      phone:            editForm.phone            ?? editStudent.phone,
+      date_of_birth:    editForm.date_of_birth    ?? editStudent.date_of_birth,
+      gender:           editForm.gender           ?? editStudent.gender,
+      admission_number: editForm.admission_number ?? editStudent.admission_number,
+      guardian_name:    editForm.guardian_name    ?? editStudent.guardian_name,
+      guardian_phone:   editForm.guardian_phone   ?? editStudent.guardian_phone,
+      address:          editForm.address          ?? editStudent.address,
+    }).eq('id', editStudent.id)
+    setEditSaving(false)
+    if (error) { showToast('Failed to save changes', false); return }
+    setStudents(prev => prev.map(s => s.id === editStudent.id ? { ...s, ...editForm } : s))
+    setPreviewStudent((p: any) => p ? { ...p, ...editForm } : p)
+    setEditStudent(null)
+    setEditForm({})
+    showToast('Student details updated')
   }
 
   const classMap: Record<string, string> = {}
@@ -537,7 +565,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                   const initials = student.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase() ?? '?'
                   const genderColor = student.gender?.toLowerCase() === 'female' ? '#EC4899' : student.gender?.toLowerCase() === 'male' ? '#3B82F6' : sc
                   return (
-                    <div key={student.id} className={styles.studentRow}>
+                    <div key={student.id} className={styles.studentRow} onClick={() => { setPreviewStudent(student) }} style={{ cursor: 'pointer' }}>
                       <div className={styles.studentAvatar} style={{ background: genderColor + '25', color: genderColor }}>
                         {student.avatar_url
                           ? <img src={student.avatar_url} alt="" style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}/>
@@ -570,20 +598,6 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                           <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
                         </svg>
                       </button>
-                      <Link
-                        href={`/dashboard/principal/students/transfer?studentId=${student.id}`}
-                        title="Transfer this student"
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: 28, height: 28, borderRadius: 8, cursor: 'pointer',
-                          background: 'transparent', border: '1px solid var(--glass-border)',
-                          color: 'var(--text-muted)', flexShrink: 0, marginRight: 4, textDecoration: 'none',
-                        }}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/>
-                        </svg>
-                      </Link>
                       <button className={styles.delBtn} onClick={() => setConfirmDel(student)} title="Remove student">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                       </button>
@@ -596,6 +610,140 @@ export default function StudentsClient({ profile, school, userId }: Props) {
         )}
         <div style={{ height: 100 }}/>
       </div>
+
+      {/* ── Preview bottom sheet ─────────────────────────────── */}
+      {previewStudent && !editStudent && (
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'flex-end' }}
+          onClick={() => setPreviewStudent(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'85vh', overflowY:'auto', animation:'slide-up 0.25s ease' }}
+          >
+            {/* Handle */}
+            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
+
+            {/* Avatar + name */}
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', marginBottom:'var(--space-5)' }}>
+              <div style={{
+                width:56, height:56, borderRadius:'50%', flexShrink:0, overflow:'hidden',
+                background:(previewStudent.gender?.toLowerCase()==='female'?'#EC4899':sc)+'25',
+                color:(previewStudent.gender?.toLowerCase()==='female'?'#EC4899':sc),
+                display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:'1.2rem',
+              }}>
+                {previewStudent.avatar_url
+                  ? <img src={previewStudent.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                  : previewStudent.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()
+                }
+              </div>
+              <div>
+                <p style={{ fontWeight:800, fontSize:'1.1rem', color:'var(--text-primary)', margin:0 }}>{previewStudent.full_name}</p>
+                <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:'3px 0 0' }}>
+                  {previewStudent.class_level ?? 'No class'} · {previewStudent.role}
+                </p>
+              </div>
+            </div>
+
+            {/* Details */}
+            {([
+              ['Admission No.',   previewStudent.admission_number],
+              ['Email',           previewStudent.email],
+              ['Phone',           previewStudent.phone],
+              ['Gender',          previewStudent.gender],
+              ['Date of Birth',   previewStudent.date_of_birth],
+              ['Guardian',        previewStudent.guardian_name],
+              ['Guardian Phone',  previewStudent.guardian_phone],
+              ['Address',         previewStudent.address],
+              ['Access Code',     previewStudent.default_code],
+            ] as [string,string|null|undefined][]).map(([label, value]) => value ? (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'var(--space-3) 0', borderBottom:'1px solid var(--glass-border)', gap:'var(--space-4)' }}>
+                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', flexShrink:0 }}>{label}</span>
+                <span style={{ fontSize:'0.82rem', fontWeight:600, color:'var(--text-primary)', textAlign:'right' }}>{value}</span>
+              </div>
+            ) : (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'var(--space-3) 0', borderBottom:'1px solid var(--glass-border)', gap:'var(--space-4)' }}>
+                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', flexShrink:0 }}>{label}</span>
+                <span style={{ fontSize:'0.78rem', color:'var(--text-faint)', fontStyle:'italic' }}>Not set</span>
+              </div>
+            ))}
+
+            {/* Actions */}
+            <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
+              <button
+                className={styles.saveBtn}
+                style={{ flex:1, background:sc }}
+                onClick={() => { setEditStudent(previewStudent); setEditForm({ ...previewStudent }) }}
+              >
+                ✏️ Edit Details
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setPreviewStudent(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit bottom sheet ────────────────────────────────── */}
+      {editStudent && (
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:1001, display:'flex', alignItems:'flex-end' }}
+          onClick={() => { setEditStudent(null); setEditForm({}) }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'92vh', overflowY:'auto', animation:'slide-up 0.25s ease' }}
+          >
+            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
+            <p style={{ fontWeight:800, fontSize:'1rem', color:'var(--text-primary)', marginBottom:'var(--space-5)' }}>
+              Edit — {editStudent.full_name}
+            </p>
+
+            <div className={styles.formGrid}>
+              {([
+                ['Full Name',          'full_name',        'text',   'e.g. Chioma Okonkwo'],
+                ['Phone',              'phone',            'tel',    'e.g. 08012345678'],
+                ['Date of Birth',      'date_of_birth',    'date',   ''],
+                ['Admission Number',   'admission_number', 'text',   'e.g. ADM/2025/001'],
+                ['Guardian Name',      'guardian_name',    'text',   'e.g. Mr. Okonkwo'],
+                ['Guardian Phone',     'guardian_phone',   'tel',    'e.g. 08098765432'],
+                ['Address',            'address',          'text',   'e.g. 12 Lagos Street'],
+              ] as [string,string,string,string][]).map(([label, key, type, placeholder]) => (
+                <div key={key} className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>{label}</label>
+                  <input
+                    className={styles.fieldInput}
+                    type={type}
+                    placeholder={placeholder}
+                    value={editForm[key] ?? ''}
+                    onChange={e => setEditForm((f:any) => ({ ...f, [key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Gender</label>
+                <select className={styles.fieldInput} value={editForm.gender ?? ''} onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
+                  <option value="">Select gender</option>
+                  {GENDER_OPTS.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Class</label>
+                <select className={styles.fieldInput} value={editForm.class_level ?? ''} onChange={e => setEditForm((f:any) => ({ ...f, class_level: e.target.value }))}>
+                  <option value="">Select class</option>
+                  {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.formActions}>
+              <button className={styles.cancelFormBtn} onClick={() => { setEditStudent(null); setEditForm({}) }}>Cancel</button>
+              <button className={styles.saveBtn} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
+                {editSaving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </RolePageWrapper>
   )
 }
