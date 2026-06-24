@@ -1,10 +1,25 @@
 'use client'
 // src/app/dashboard/teacher/grades/GradeSubmissionsClient.tsx
-// FIX #7: Removed custom isDark state, custom nav, custom icon components
-//         Now uses RolePageWrapper like every other teacher page
-//         All grading logic preserved exactly
+//
+// FIXED (in sync with page.tsx fixes):
+//
+// 1. sub.notes → sub.text_response
+//    'notes' column doesn't exist on assignment_submissions. The student's
+//    written answer is in text_response (and mirrored to answer_text).
+//    The UI label is updated to "Student's Answer" to reflect this.
+//
+// 2. filterTab 'pending' now correctly matches status !== 'graded'
+//    Students submit with status='submitted', not 'pending'. The old
+//    filter (s.status === 'pending') would show 0 results in the Pending
+//    tab even though the teacher had submissions waiting.
+//
+// 3. Status type updated to match real enum:
+//    'pending' | 'submitted' | 'graded' | 'late'
+//    (was 'pending' | 'graded' | 'returned')
+//
+// All grading logic and UI layout preserved exactly.
 
-import { useEffect, useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import type { Submission, AssignmentGroup } from './page'
@@ -13,7 +28,6 @@ interface Props {
   submissions:      Submission[]
   assignmentGroups: AssignmentGroup[]
   teacherId:        string
-  // FIX: page.tsx now passes profile + school so RolePageWrapper has what it needs
   profile:          any
   school:           any
 }
@@ -76,8 +90,10 @@ export default function GradeSubmissionsClient({
     return submissions
       .filter(s => {
         if (s.assignment_id !== selectedAssignment) return false
-        if (filterTab === 'pending') return s.status === 'pending'
-        if (filterTab === 'graded')  return s.status !== 'pending'
+        // FIX: 'pending' tab = needs grading = status is NOT 'graded'
+        // (covers 'submitted', 'late', and legacy 'pending' rows)
+        if (filterTab === 'pending') return s.status !== 'graded'
+        if (filterTab === 'graded')  return s.status === 'graded'
         return true
       })
       .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime())
@@ -96,10 +112,10 @@ export default function GradeSubmissionsClient({
       .from('assignment_submissions')
       .update({
         score,
-        feedback:   feedback || null,
-        status:     'graded',
-        graded_at:  new Date().toISOString(),
-        graded_by:  teacherId,
+        feedback:  feedback || null,
+        status:    'graded',
+        graded_at: new Date().toISOString(),
+        graded_by: teacherId,
       })
       .eq('id', sub.id)
 
@@ -109,6 +125,9 @@ export default function GradeSubmissionsClient({
       setSubmissions(prev => prev.map(s =>
         s.id === sub.id ? { ...s, score, feedback: feedback || null, status: 'graded' } : s
       ))
+      // Clear edit state so the graded view shows immediately
+      setScoreInputs(p => { const n = { ...p }; delete n[sub.id]; return n })
+      setFeedbackInputs(p => { const n = { ...p }; delete n[sub.id]; return n })
     }
   }
 
@@ -124,16 +143,20 @@ export default function GradeSubmissionsClient({
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
           <p style={{ fontSize: '2rem', marginBottom: 8 }}>📋</p>
           <p>No assignments with submissions yet.</p>
+          <p style={{ fontSize: '0.78rem', marginTop: 8, color: 'var(--text-muted)' }}>
+            Submissions will appear here once students submit their work.
+          </p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr)',
-          gap: 'var(--space-4)',
-        }}>
-          {/* Assignment selector pills */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 'var(--space-4)' }}>
+
+          {/* Assignment selector */}
           <div>
-            <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 var(--space-3)' }}>
+            <p style={{
+              fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const, color: 'var(--text-muted)',
+              margin: '0 0 var(--space-3)',
+            }}>
               Select Assignment ({assignmentGroups.length})
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -152,8 +175,12 @@ export default function GradeSubmissionsClient({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div>
-                      <p style={{ margin: '0 0 2px', fontWeight: 700, color: selectedAssignment === g.assignment_id ? sc : 'var(--text-primary)', fontSize: '0.88rem' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        margin: '0 0 2px', fontWeight: 700, fontSize: '0.88rem',
+                        color: selectedAssignment === g.assignment_id ? sc : 'var(--text-primary)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
                         {g.title}
                       </p>
                       <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.72rem' }}>
@@ -161,7 +188,7 @@ export default function GradeSubmissionsClient({
                         {g.due_date ? ` · Due ${fmtDate(g.due_date)}` : ''}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 5, flexShrink: 0, marginLeft: 8 }}>
                       {g.pending_count > 0 && (
                         <span style={{
                           padding: '2px 8px', borderRadius: 999,
@@ -190,6 +217,7 @@ export default function GradeSubmissionsClient({
           {/* Grading panel */}
           {selectedGroup && (
             <div>
+              {/* Assignment header */}
               <div style={{
                 padding: '12px 14px',
                 background: 'var(--glass-bg)',
@@ -216,7 +244,7 @@ export default function GradeSubmissionsClient({
                       color: filterTab === t ? '#fff' : 'var(--text-muted)',
                       fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
                     }}>
-                    {t === 'pending' ? `Pending (${selectedGroup.pending_count})`
+                    {t === 'pending' ? `Needs Grading (${selectedGroup.pending_count})`
                       : t === 'graded' ? `Graded (${selectedGroup.graded_count})`
                       : 'All'}
                   </button>
@@ -225,12 +253,14 @@ export default function GradeSubmissionsClient({
 
               {visibleSubs.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)' }}>
-                  {filterTab === 'pending' ? '✅ All caught up — no pending submissions!' : 'No submissions here.'}
+                  {filterTab === 'pending'
+                    ? '✅ All caught up — no pending submissions!'
+                    : 'No submissions here.'}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {visibleSubs.map(sub => {
-                    const isGraded = sub.status !== 'pending'
+                    const isGraded = sub.status === 'graded'
                     const isSaving = savingIds.has(sub.id)
                     const scoreStr = scoreInputs[sub.id] ?? (sub.score !== null ? String(sub.score) : '')
                     const grade    = scoreStr !== '' ? computeGrade(Number(scoreStr), sub.max_score) : '—'
@@ -242,6 +272,7 @@ export default function GradeSubmissionsClient({
                         border: `1px solid ${isGraded && scoreInputs[sub.id] === undefined ? '#10B98130' : 'var(--glass-border)'}`,
                         borderRadius: 12,
                       }}>
+
                         {/* Student info row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                           <div style={{
@@ -259,8 +290,12 @@ export default function GradeSubmissionsClient({
                             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.7rem' }}>
                               {sub.student_number ? `${sub.student_number} · ` : ''}
                               Submitted {relTime(sub.submitted_at)}
+                              {sub.status === 'late' && (
+                                <span style={{ color: '#F97316', fontWeight: 700, marginLeft: 4 }}>· Late</span>
+                              )}
                             </p>
                           </div>
+
                           {/* Already graded display */}
                           {isGraded && scoreInputs[sub.id] === undefined && (
                             <div style={{ textAlign: 'right' as const }}>
@@ -282,22 +317,39 @@ export default function GradeSubmissionsClient({
                           )}
                         </div>
 
-                        {/* Notes from student */}
-                        {sub.notes && (
-                          <p style={{ margin: '0 0 8px', fontSize: '0.78rem', color: 'var(--text-secondary)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 6, padding: '6px 10px' }}>
-                            {sub.notes}
-                          </p>
+                        {/* FIX: was sub.notes — real column is text_response */}
+                        {sub.text_response && (
+                          <div style={{
+                            margin: '0 0 8px',
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: 6, padding: '8px 10px',
+                          }}>
+                            <p style={{
+                              fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)',
+                              textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px',
+                            }}>
+                              Student's Answer
+                            </p>
+                            <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                              {sub.text_response}
+                            </p>
+                          </div>
                         )}
 
                         {/* File link */}
                         {sub.file_url && (
                           <a href={sub.file_url} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 600, color: sc, marginBottom: 8, textDecoration: 'none' }}>
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: '0.75rem', fontWeight: 600, color: sc,
+                              marginBottom: 8, textDecoration: 'none',
+                            }}>
                             📎 View Submission →
                           </a>
                         )}
 
-                        {/* Grade form — shown for pending OR when editing a graded submission */}
+                        {/* Grade form — shown for pending/submitted OR when editing a graded submission */}
                         {(!isGraded || scoreInputs[sub.id] !== undefined) && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -355,11 +407,14 @@ export default function GradeSubmissionsClient({
                                   cursor: scoreStr !== '' ? 'pointer' : 'default',
                                   opacity: isSaving ? 0.6 : 1,
                                 }}>
-                                {isSaving ? 'Saving...' : 'Save Grade'}
+                                {isSaving ? 'Saving...' : isGraded ? '✏️ Update Grade' : 'Save Grade'}
                               </button>
                               {isGraded && (
                                 <button
-                                  onClick={() => setScoreInputs(p => { const n = { ...p }; delete n[sub.id]; return n })}
+                                  onClick={() => {
+                                    setScoreInputs(p => { const n = { ...p }; delete n[sub.id]; return n })
+                                    setFeedbackInputs(p => { const n = { ...p }; delete n[sub.id]; return n })
+                                  }}
                                   style={{
                                     height: 38, padding: '0 12px',
                                     background: 'transparent',
@@ -381,7 +436,11 @@ export default function GradeSubmissionsClient({
                               setScoreInputs(p => ({ ...p, [sub.id]: String(sub.score ?? '') }))
                               setFeedbackInputs(p => ({ ...p, [sub.id]: sub.feedback ?? '' }))
                             }}
-                            style={{ marginTop: 4, fontSize: '0.7rem', fontWeight: 700, color: sc, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                            style={{
+                              marginTop: 4, fontSize: '0.7rem', fontWeight: 700,
+                              color: sc, background: 'none', border: 'none',
+                              cursor: 'pointer', padding: 0,
+                            }}>
                             Edit grade
                           </button>
                         )}
