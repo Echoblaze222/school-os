@@ -334,11 +334,11 @@ export default function PostResultsClient({
     // 4) Refresh live results from DB so overview updates immediately
     const { data: refreshed } = await supabase
       .from('results')
-      .select('id, student_id, class_subject_id, result_type, term, score, max_score, grade')
+      .select('id, student_id, class_subject_id, result_type, term, score, max_score, grade, approved')
       .eq('school_id', schoolId)
       .in('class_subject_id', teacherClasses.map(tc => tc.class_subject_id))
 
-    if (refreshed) setLiveResults(refreshed)
+    if (refreshed) setLiveResults(refreshed as ExistingResult[])
 
     setSavedCount(studentsWithScores.length)
     setSubmitStatus('success')
