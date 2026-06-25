@@ -19,9 +19,11 @@ const MODULES = [
   { id:'assignments', label:'Assignments',      Icon:ClipboardIcon,href:'/dashboard/parent/assignments', accent:'#EC4899', bg:'#5a1a40' },
   { id:'timetable',   label:'Timetable',        Icon:ClockIcon,    href:'/dashboard/parent/timetable',   accent:'#06B6D4', bg:'#0a3040' },
   { id:'leaderboard', label:'Leaderboard',      Icon:TrophyIcon,   href:'/dashboard/parent/leaderboard', accent:'#F97316', bg:'#4a2810' },
+  { id:'meetings',    label:'Meetings',         Icon:CalendarIcon, href:'/dashboard/parent/meetings',    accent:'#06B6D4', bg:'#0a3040' },
   { id:'chat',        label:'Message School',   Icon:MessageIcon,  href:'/dashboard/parent/chat',        accent:'#7C3AED', bg:'#2d1060' },
 ]
 
+interface ChildStats { attendance: number | null; gpa: number | null; rank: number | null; pendingTasks: number }
 interface Props { profile: any; school: any; userId: string; counts?: any }
 
 export default function ParentDashboardClient({ profile, school, userId, counts = {} }: Props) {
@@ -31,6 +33,8 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   const [checking,      setChecking]      = useState(true)
   const [showLinkForm,  setShowLinkForm]  = useState(false)
   const [activeChildId, setActiveChildId] = useState<string | null>(null)
+  const [childStats,    setChildStats]    = useState<ChildStats>({ attendance: null, gpa: null, rank: null, pendingTasks: 0 })
+  const [statsLoading,  setStatsLoading]  = useState(false)
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
@@ -45,6 +49,69 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         setChecking(false)
       })
   }, [userId])
+
+  useEffect(() => {
+    if (!activeChildId) return
+    loadChildStats(activeChildId)
+  }, [activeChildId])
+
+  async function loadChildStats(childId: string) {
+    setStatsLoading(true)
+    const child = children.find(c => c.id === childId)
+    if (!child) { setStatsLoading(false); return }
+
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const currentTerm = month >= 9 ? 'first' : month >= 5 ? 'third' : 'second'
+    const currentYear = month >= 9
+      ? `${now.getFullYear()}/${now.getFullYear() + 1}`
+      : `${now.getFullYear() - 1}/${now.getFullYear()}`
+
+    const [
+      { data: attendanceRows },
+      { data: resultRows },
+      { data: leaderboardRows },
+      { count: tasksCount },
+    ] = await Promise.all([
+      supabase.from('attendance')
+        .select('status, is_present')
+        .eq('student_id', childId)
+        .eq('school_id', child.school_id),
+      supabase.from('results')
+        .select('score, max_score')
+        .eq('student_id', childId)
+        .eq('school_id', child.school_id)
+        .eq('term', currentTerm)
+        .eq('academic_year', currentYear)
+        .eq('approved', true),
+      supabase.from('student_leaderboard')
+        .select('student_id, total_points')
+        .eq('class_id', child.class_id)
+        .eq('term', currentTerm)
+        .eq('academic_year', currentYear)
+        .order('total_points', { ascending: false }),
+      supabase.from('assignments')
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', child.school_id)
+        .eq('class_id', child.class_id)
+        .eq('status', 'active'),
+    ])
+
+    const totalDays   = attendanceRows?.length ?? 0
+    const presentDays = attendanceRows?.filter(r => r.status === 'present' || (!r.status && r.is_present)).length ?? 0
+    const attendance  = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : null
+
+    const valid = resultRows?.filter(r => r.score != null && r.max_score > 0) ?? []
+    const gpa   = valid.length > 0
+      ? Math.round(((valid.reduce((s, r) => s + (r.score! / r.max_score), 0) / valid.length) * 5) * 10) / 10
+      : null
+
+    const rankPos = leaderboardRows?.findIndex(r => r.student_id === childId)
+    const rank    = (rankPos != null && rankPos >= 0) ? rankPos + 1 : null
+
+    setChildStats({ attendance, gpa, rank, pendingTasks: tasksCount ?? 0 })
+    setStatsLoading(false)
+  }
 
   function isActive(href: string) { return pathname.startsWith(href) }
 
@@ -110,6 +177,23 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
               </div>
               {/* BUG 12 FIX: pass child id as query param so child page shows correct child */}
               <Link href={`/dashboard/parent/child?id=${activeChild.id}`} className={styles.viewChildBtn} style={{ borderColor:sc+'40',color:sc }}>View →</Link>
+            </div>
+          )}
+
+          {/* Child stats — attendance, GPA, rank, tasks */}
+          {activeChild && (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
+              {[
+                { label:'Attendance', value: statsLoading ? '…' : childStats.attendance != null ? `${childStats.attendance}%` : '—', color:'#10B981' },
+                { label:'Term GPA',   value: statsLoading ? '…' : childStats.gpa        != null ? childStats.gpa.toFixed(1)       : '—', color: sc      },
+                { label:'Class Rank', value: statsLoading ? '…' : childStats.rank       != null ? `#${childStats.rank}`           : '—', color:'#8B5CF6' },
+                { label:'Tasks Due',  value: statsLoading ? '…' : childStats.pendingTasks,                                               color:'#F59E0B' },
+              ].map(s => (
+                <div key={s.label} style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:10, padding:'10px 14px' }}>
+                  <p style={{ margin:'0 0 2px', fontSize:'1.1rem', fontWeight:800, color:s.color }}>{s.value}</p>
+                  <p style={{ margin:0, fontSize:'0.65rem', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{s.label}</p>
+                </div>
+              ))}
             </div>
           )}
 
