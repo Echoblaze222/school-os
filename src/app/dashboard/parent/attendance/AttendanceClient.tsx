@@ -62,14 +62,19 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   }
 
   async function loadAttendance(childId: string) {
-    const { data } = await supabase
+    // DEBUG: log the childId being queried so we can verify it matches attendance rows
+    console.log('[ParentAttendance] querying attendance for student_id:', childId)
+
+    const { data, error } = await supabase
       .from('attendance')
       .select('id, date, status, is_present, notes, created_at')
       .eq('student_id', childId)
       .order('date', { ascending: false })
       .limit(60)
 
-    if (data) {
+    console.log('[ParentAttendance] rows returned:', data?.length ?? 0, 'error:', error?.message ?? 'none')
+
+    if (data?.length) {
       const normalised = data.map(r => ({
         ...r,
         status: r.status ?? (r.is_present ? 'present' : 'absent'),
@@ -81,6 +86,13 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         late:    normalised.filter(r => r.status === 'late').length,
       })
     } else {
+      // DEBUG: check if ANY attendance rows exist for this school
+      const { data: anyRows } = await supabase
+        .from('attendance')
+        .select('student_id')
+        .eq('school_id', school?.id)
+        .limit(5)
+      console.log('[ParentAttendance] sample student_ids in attendance table for this school:', anyRows?.map(r => r.student_id))
       setRows([])
       setSummary({ present: 0, absent: 0, late: 0 })
     }
@@ -172,4 +184,4 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       <div className={styles.spacer}/>
     </RolePageWrapper>
   )
-      }
+    }
