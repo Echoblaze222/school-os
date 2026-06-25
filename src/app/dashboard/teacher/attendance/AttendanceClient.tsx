@@ -186,13 +186,22 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     if (expandedDate === d) { setExpandedDate(null); return }
     setExpandedDate(d)
     setExpandedLoading(true)
-    const { data } = await supabase
+    // Supabase cannot auto-resolve profiles join on attendance because two FKs
+    // point to profiles (student_id + teacher_id) — fetch separately instead
+    const { data: rows } = await supabase
       .from("attendance")
-      .select("student_id, status, is_present, profiles(full_name, default_code, avatar_url)")
+      .select("student_id, status, is_present")
       .eq("school_id", school?.id)
       .eq("class_id", selectedClass!.class_id)
       .eq("date", d)
-    setExpandedStudents(data ?? [])
+    if (!rows?.length) { setExpandedStudents([]); setExpandedLoading(false); return }
+    const ids = rows.map(r => r.student_id)
+    const { data: profileRows } = await supabase
+      .from("profiles")
+      .select("id, full_name, default_code, avatar_url")
+      .in("id", ids)
+    const profileMap = Object.fromEntries((profileRows ?? []).map(p => [p.id, p]))
+    setExpandedStudents(rows.map(r => ({ ...r, profiles: profileMap[r.student_id] ?? null })))
     setExpandedLoading(false)
   }
 
