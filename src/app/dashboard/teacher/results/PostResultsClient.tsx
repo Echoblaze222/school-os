@@ -43,15 +43,18 @@ const TERM_LABELS: Record<Term, string> = {
   second: 'Second Term',
   third:  'Third Term',
 }
+// Confirmed DB enum values (from pg_enum query):
+// results.term      → 'first' | 'second' | 'third'
+// results.result_type → 'day_test' | 'mid_term' | 'exam'
 const TERM_TO_DB: Record<Term, string> = {
-  first:  'First Term',
-  second: 'Second Term',
-  third:  'Third Term',
+  first:  'first',
+  second: 'second',
+  third:  'third',
 }
 const DB_TO_TERM: Record<string, Term> = {
-  'First Term':  'first',
-  'Second Term': 'second',
-  'Third Term':  'third',
+  first:  'first',
+  second: 'second',
+  third:  'third',
 }
 const TYPE_ORDER: Record<string, number> = { day_test: 0, mid_term: 1, exam: 2 }
 
