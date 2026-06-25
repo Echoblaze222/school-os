@@ -9,7 +9,7 @@ import ChatWidget from '@/components/ChatWidget'
 import {
   HomeIcon, WalletIcon, FileTextIcon, BarChartIcon,
   MessageIcon, DownloadIcon, PeopleIcon, ClockIcon,
-  CheckCircleIcon, BellIcon, SettingsIcon,
+  CheckCircleIcon, BellIcon, SettingsIcon, CalendarIcon,
   CreditCardIcon, AiIcon, ClipboardIcon, UploadIcon,
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
@@ -31,6 +31,7 @@ const MODULES = [
   { id: 'chat',           label: 'Messages',         Icon: MessageIcon,     href: '/dashboard/bursar/chat',           accent: '#7C3AED', bg: '#2d1060' },
   { id: 'notifications',  label: 'Notifications',    Icon: BellIcon,        href: '/dashboard/bursar/notifications',  accent: '#F59E0B', bg: '#4a3510' },
   { id: 'ai',             label: 'AI Assistant',     Icon: AiIcon,          href: '/dashboard/bursar/ai',             accent: '#6EE7B7', bg: '#0d3530' },
+  { id: 'meetings',       label: 'Meetings',         Icon: CalendarIcon,    href: '/dashboard/bursar/meetings',       accent: '#06B6D4', bg: '#0a3040' },
   { id: 'settings',       label: 'Settings',         Icon: SettingsIcon,    href: '/dashboard/bursar/settings',       accent: '#6B7280', bg: '#1e2a38' },
 ]
 
