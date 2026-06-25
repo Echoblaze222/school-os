@@ -1,15 +1,4 @@
 // src/app/dashboard/teacher/grades/page.tsx
-//
-// DEFINITIVE FIX — avoids all 5 failure modes:
-//
-// 1. No longer depends on class_subjects.teacher_id (always null)
-// 2. Uses TWO separate queries instead of .or() — PostgREST .or() with
-//    multiple uuid columns can silently fail if any column has a FK
-//    constraint that causes a planner issue. Two queries + JS merge is safer.
-// 3. Falls back across posted_by → teacher_id → created_by so old rows
-//    (created before teacher_id was added to the insert) are still found.
-// 4. Logs every query result to server console so you can see in Vercel
-//    logs exactly where the chain breaks if still empty.
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -63,11 +52,6 @@ export default async function GradeSubmissionsPage() {
     redirect('/dashboard/student')
   }
 
-  // ── 1. Fetch assignments — three separate queries, merge by id ──────────
-  // Why separate instead of .or(): PostgREST .or() across FK-constrained
-  // uuid columns can silently return 0 rows in some Supabase versions.
-  // Three queries + JS Set merge is explicit and debuggable.
-
   const selectCols = `
     id, title, class_subject_id, class_id,
     due_date, max_score, subject, posted_by,
@@ -77,19 +61,17 @@ export default async function GradeSubmissionsPage() {
 
   const [byPostedBy, byTeacherId, byCreatedBy] = await Promise.all([
     supabase.from('assignments').select(selectCols)
-      .eq('school_id', school?.id).eq('posted_by',   user.id),
+      .eq('school_id', school?.id).eq('posted_by',  user.id),
     supabase.from('assignments').select(selectCols)
-      .eq('school_id', school?.id).eq('teacher_id',  user.id),
+      .eq('school_id', school?.id).eq('teacher_id', user.id),
     supabase.from('assignments').select(selectCols)
-      .eq('school_id', school?.id).eq('created_by',  user.id),
+      .eq('school_id', school?.id).eq('created_by', user.id),
   ])
 
-  // Vercel server log — will show in your Vercel dashboard → Functions → logs
-  console.log('[grades] posted_by rows:', byPostedBy.data?.length ?? 0, byPostedBy.error?.message ?? 'ok')
-  console.log('[grades] teacher_id rows:', byTeacherId.data?.length ?? 0, byTeacherId.error?.message ?? 'ok')
-  console.log('[grades] created_by rows:', byCreatedBy.data?.length ?? 0, byCreatedBy.error?.message ?? 'ok')
+  console.log('[grades] posted_by:', byPostedBy.data?.length ?? 0, byPostedBy.error?.message ?? 'ok')
+  console.log('[grades] teacher_id:', byTeacherId.data?.length ?? 0, byTeacherId.error?.message ?? 'ok')
+  console.log('[grades] created_by:', byCreatedBy.data?.length ?? 0, byCreatedBy.error?.message ?? 'ok')
 
-  // Merge, deduplicate by id
   const asgMap: Record<string, any> = {}
   for (const row of [
     ...(byPostedBy.data  ?? []),
@@ -98,12 +80,11 @@ export default async function GradeSubmissionsPage() {
   ]) {
     asgMap[row.id] = row
   }
+
   const allAssignments = Object.values(asgMap)
   const assignmentIds  = allAssignments.map((a: any) => a.id)
+  console.log('[grades] total assignments:', allAssignments.length)
 
-  console.log('[grades] total unique assignments:', allAssignments.length)
-
-  // ── 2. Enrich with class_subjects display names (best-effort) ────────────
   const csIds = [...new Set(
     allAssignments.map((a: any) => a.class_subject_id).filter(Boolean)
   )] as string[]
@@ -130,7 +111,6 @@ export default async function GradeSubmissionsPage() {
     }
   }
 
-  // ── 3. Fetch submissions ─────────────────────────────────────────────────
   let submissions: Submission[] = []
 
   if (assignmentIds.length > 0) {
@@ -155,29 +135,28 @@ export default async function GradeSubmissionsPage() {
     submissions = (subs ?? []).map((s: any) => {
       const asgn  = asgMap[s.assignment_id]
       const names = asgn ? getNames(asgn) : { subject: 'Unknown', class: 'Unknown' }
-      const stud  = s.student ?? {}
+      const stud  = Array.isArray(s.student) ? s.student[0] : (s.student ?? {})
       return {
         id:               s.id,
         student_id:       s.student_id,
-        student_name:     stud.full_name      ?? 'Unknown Student',
-        student_number:   stud.student_number ?? null,
+        student_name:     stud?.full_name      ?? 'Unknown Student',
+        student_number:   stud?.student_number ?? null,
         assignment_id:    s.assignment_id,
-        assignment_title: asgn?.title         ?? 'Assignment',
+        assignment_title: asgn?.title          ?? 'Assignment',
         subject_name:     names.subject,
         class_name:       names.class,
         class_subject_id: asgn?.class_subject_id ?? '',
         submitted_at:     s.submitted_at,
-        file_url:         s.file_url          ?? null,
+        file_url:         s.file_url           ?? null,
         text_response:    s.text_response ?? s.answer_text ?? null,
-        score:            s.score             ?? null,
-        max_score:        asgn?.max_score     ?? 100,
-        feedback:         s.feedback          ?? null,
-        status:           s.status            ?? 'submitted',
+        score:            s.score              ?? null,
+        max_score:        asgn?.max_score      ?? 100,
+        feedback:         s.feedback           ?? null,
+        status:           s.status             ?? 'submitted',
       }
     })
   }
 
-  // ── 4. Build assignment groups ───────────────────────────────────────────
   const groupMap: Record<string, AssignmentGroup> = {}
   allAssignments.forEach((a: any) => {
     const names = getNames(a)
@@ -204,7 +183,7 @@ export default async function GradeSubmissionsPage() {
     .filter(g => g.pending_count + g.graded_count > 0)
     .sort((a, b) => b.pending_count - a.pending_count)
 
-  console.log('[grades] assignmentGroups with submissions:', assignmentGroups.length)
+  console.log('[grades] groups with submissions:', assignmentGroups.length)
 
   return (
     <GradeSubmissionsClient
@@ -215,5 +194,4 @@ export default async function GradeSubmissionsPage() {
       school={school}
     />
   )
-      }
-      
+}
