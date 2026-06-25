@@ -1,11 +1,11 @@
 // src/app/dashboard/student/results/page.tsx
 // FIXED: added school_id filter to results query (RLS safety + multi-tenant correctness)
-// FIXED: results.student_id is profiles.id — query uses user.id which is correct
-// FIXED: join path class_subjects → subjects + classes is correct for subject name resolution
+// FIXED: cast results to ResultRow[] to avoid Supabase inferred array-join type mismatch
+//        (Supabase infers FK joins as arrays; our interface expects a single object | null)
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
-import ResultsClient    from './ResultsClient'
+import ResultsClient, { type ResultRow } from './ResultsClient'
 
 export default async function ResultsPage() {
   const supabase = await createClient()
@@ -47,20 +47,23 @@ export default async function ResultsPage() {
     .order('academic_year', { ascending: false })
     .order('posted_at',     { ascending: false })
 
-  // Add school_id filter if we have one (protects against cross-school data leaks)
   if (schoolId) {
     resultsQuery.eq('school_id', schoolId)
   }
 
   const { data: results } = await resultsQuery
 
+  // Cast needed: Supabase infers FK joins as T[] but our interface uses T | null
+  // (class_subjects is a many-to-one FK from results — always a single row)
+  const typedResults = (results ?? []) as unknown as ResultRow[]
+
   return (
     <ResultsClient
       profile={profile}
       school={school}
       userId={user.id}
-      results={results ?? []}
+      results={typedResults}
     />
   )
-}
-  
+                             }
+           
