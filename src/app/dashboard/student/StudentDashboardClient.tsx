@@ -26,6 +26,7 @@ const MODULES = [
   { id: 'ai',            label: 'AI Tutor',      Icon: AiIcon,        href: '/dashboard/student/ai',            accent: '#EC4899', bg: '#5a1a40' },
   { id: 'chat',          label: 'Messages',      Icon: MessageIcon,   href: '/dashboard/student/chat',          accent: '#14B8A6', bg: '#0f3d38' },
   { id: 'schedule',      label: 'Study Plan',    Icon: CalendarIcon,  href: '/dashboard/student/schedule',      accent: '#F97316', bg: '#4a2810' },
+  { id: 'meetings',      label: 'Meetings',      Icon: CalendarIcon,  href: '/dashboard/student/meetings',      accent: '#06B6D4', bg: '#0a3040' },
   { id: 'records',       label: 'Records',       Icon: FileTextIcon,  href: '/dashboard/student/records',       accent: '#64748B', bg: '#1e2a38' },
   { id: 'syllabus',      label: 'Syllabus',      Icon: BookOpenIcon,  href: '/dashboard/student/syllabus',      accent: '#06B6D4', bg: '#0a3040' },
   { id: 'alumni',        label: 'Alumni',        Icon: GlobeIcon,     href: '/dashboard/student/alumni',        accent: '#A855F7', bg: '#2d1060' },
@@ -69,7 +70,7 @@ function updateStreak() {
 
 interface Props {
   profile: any; school: any; userId: string
-  counts: { pendingTasks: number; upcomingQuizzes: number; isLive: boolean; notifications: number; attendance?: number; rank?: number; gpa?: number }
+  counts: { pendingTasks: number; upcomingQuizzes: number; isLive: boolean; notifications: number; attendance: number | null; rank: number | null; gpa: number | null }
 }
 
 export default function StudentDashboardClient({ profile, school, userId, counts }: Props) {
@@ -78,9 +79,9 @@ export default function StudentDashboardClient({ profile, school, userId, counts
   const [greeting,setGreeting]= useState('')
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Student'
-  const attendance  = counts.attendance ?? 92
-  const gpa         = counts.gpa        ?? 4.1
-  const rank        = counts.rank       ?? 7
+  const attendance  = counts.attendance  // null = no data yet
+  const gpa         = counts.gpa         // null = no results yet
+  const rank        = counts.rank        // null = not on leaderboard yet
 
   useEffect(() => {
     updateStreak(); setStreak(getStreak())
@@ -137,8 +138,8 @@ export default function StudentDashboardClient({ profile, school, userId, counts
             {[
               { label: 'Pending',    value: counts.pendingTasks,    color: '#3B82F6', bg: '#1e3a5f', Icon: ClipboardIcon },
               { label: 'Quizzes',    value: counts.upcomingQuizzes, color: '#F59E0B', bg: '#4a3510', Icon: AwardIcon     },
-              { label: 'Attendance', value: `${attendance}%`,       color: '#10B981', bg: '#1a4a3a', Icon: BarChartIcon  },
-              { label: 'Class Rank', value: `#${rank}`,             color: '#8B5CF6', bg: '#2e1f5e', Icon: TrophyIcon    },
+              { label: 'Attendance', value: attendance != null ? `${attendance}%` : '—', color: '#10B981', bg: '#1a4a3a', Icon: BarChartIcon  },
+              { label: 'Class Rank', value: rank != null ? `#${rank}` : '—',               color: '#8B5CF6', bg: '#2e1f5e', Icon: TrophyIcon    },
             ].map(s => (
               <div key={s.label} className={styles.statCard}>
                 <div className={styles.statIcon} style={{ background: s.bg }}>
@@ -156,13 +157,13 @@ export default function StudentDashboardClient({ profile, school, userId, counts
           <div className={styles.gpaCard}>
             <div className={styles.gpaLeft}>
               <p className={styles.gpaLabel}>Term GPA</p>
-              <p className={styles.gpaValue}>{gpa.toFixed(1)}</p>
+              <p className={styles.gpaValue}>{gpa != null ? gpa.toFixed(1) : '—'}</p>
               <p className={styles.gpaSub}>/ 5.0</p>
             </div>
             <div className={styles.gpaRight}>
               <div className={styles.gpaTrack}>
                 <div className={styles.gpaFill}
-                  style={{ width: `${(gpa/5)*100}%`, background: `linear-gradient(90deg,${schoolColor},#EC4899)` }} />
+                  style={{ width: `${gpa != null ? (gpa/5)*100 : 0}%`, background: `linear-gradient(90deg,${schoolColor},#EC4899)` }} />
               </div>
               <div className={styles.liveRow}>
                 {counts.isLive
