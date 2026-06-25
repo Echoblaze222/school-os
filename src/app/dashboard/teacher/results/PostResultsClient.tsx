@@ -1,25 +1,21 @@
 'use client'
 // src/app/dashboard/teacher/results/PostResultsClient.tsx
-// Step-by-step: 1) Pick class+subject  2) Pick term+type  3) Enter scores  4) Save
 //
-// FIX: Replaced broken upsert (which required a DB unique constraint that didn't exist)
-//      with a safe insert-or-update pattern:
-//        - Check which student_ids already have a row for this combo
-//        - UPDATE existing rows
-//        - INSERT new rows
-//      This works without any schema migration.
+// REDESIGNED: Proper dashboard with 3 modes:
+//   "overview" → landing page showing all posted results grouped by subject
+//                with Edit buttons per group and a "+ Post New Results" button
+//   "wizard"   → 3-step flow: pick class/subject → pick term/type → enter scores
+//   "preview"  → read-only view of a specific class+term+type before editing
 //
-// FIX: academic_year now computed from school_settings current_year if available,
-//      falling back to a reliable calendar computation.
-// FIX: scores state is cleared when term/resultType/selectedCS changes so stale
-//      pre-fills don't carry over.
+// FIXED: upsert replaced with safe check-then-insert-or-update pattern
+// FIXED: academic_year computed correctly for Nigerian school calendar
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { TeacherClass, StudentForResult, ExistingResult } from './types'
 import styles from './teacher.module.css'
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
   teacherClasses:  TeacherClass[]
   allStudents:     (StudentForResult & { class_id: string })[]
@@ -27,36 +23,39 @@ interface Props {
   teacherId:       string
   teacherName:     string
   schoolId:        string
-  academicYear?:   string   // pass from page.tsx (school_settings.current_year)
+  academicYear?:   string
 }
 
 type ResultType = 'day_test' | 'mid_term' | 'exam'
 type Term       = 'first' | 'second' | 'third'
+type Mode       = 'overview' | 'wizard' | 'preview'
 
 const RESULT_TYPE_LABELS: Record<ResultType, string> = {
   day_test: 'Day Test',
   mid_term: 'Mid-Term',
   exam:     'Exam',
 }
-
 const TERM_LABELS: Record<Term, string> = {
   first:  'First Term',
   second: 'Second Term',
   third:  'Third Term',
 }
-
-// These are the exact values stored in results.term (enum/text in DB)
 const TERM_TO_DB: Record<Term, string> = {
   first:  'First Term',
   second: 'Second Term',
   third:  'Third Term',
 }
+const DB_TO_TERM: Record<string, Term> = {
+  'First Term':  'first',
+  'Second Term': 'second',
+  'Third Term':  'third',
+}
+const TYPE_ORDER: Record<string, number> = { day_test: 0, mid_term: 1, exam: 2 }
 
 function getAcademicYear(override?: string): string {
   if (override) return override
   const now = new Date()
   const y   = now.getFullYear()
-  // Nigerian schools: new academic year starts in September
   return now.getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`
 }
 
@@ -70,85 +69,120 @@ function computeGrade(score: number, maxScore: number): string {
   return 'F'
 }
 
-function gradeStyle(grade: string): string {
-  if (grade === 'A') return styles.gradeA
-  if (grade === 'B') return styles.gradeB
-  if (grade === 'C') return styles.gradeC
-  return styles.gradeD
+function gradeColor(g: string) {
+  if (g === 'A') return '#10B981'
+  if (g === 'B') return '#3B82F6'
+  if (g === 'C') return '#F59E0B'
+  if (g === 'D') return '#F97316'
+  return '#EF4444'
+}
+
+function gradeBg(g: string) {
+  if (g === 'A') return '#10B98120'
+  if (g === 'B') return '#3B82F620'
+  if (g === 'C') return '#F59E0B20'
+  if (g === 'D') return '#F9731620'
+  return '#EF444420'
 }
 
 function initials(n: string) {
   return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 }
-function getTimeOfDay() {
-  const h = new Date().getHours()
-  return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening'
-}
 
-// ── Icons ────────────────────────────────────────────────────────────────────
-const IconSun         = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-const IconMoon        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
-const IconHome        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-const IconClipboard   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-const IconEdit        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-const IconBarChart    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-const IconCheck       = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-const IconAlertCircle = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-const IconSave        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+// ── Inline SVG icons ──────────────────────────────────────────────────────────
+const IcPlus    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcEdit    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+const IcEye     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+const IcBack    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+const IcCheck   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+const IcAlert   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+const IcSave    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+const IcEmpty   = () => <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function PostResultsClient({
   teacherClasses,
   allStudents,
-  existingResults,
+  existingResults: initialResults,
   teacherId,
-  teacherName,
   schoolId,
   academicYear,
 }: Props) {
-  const [isDark,       setIsDark]       = useState(true)
-  const [mounted,      setMounted]      = useState(false)
+  // Live results — starts from server data, updated after each save
+  const [liveResults,  setLiveResults]  = useState<ExistingResult[]>(initialResults)
+
+  // Navigation state
+  const [mode,         setMode]         = useState<Mode>('overview')
   const [step,         setStep]         = useState(1)
+
+  // Wizard selections
   const [selectedCS,   setSelectedCS]   = useState<TeacherClass | null>(null)
   const [term,         setTerm]         = useState<Term>('first')
   const [resultType,   setResultType]   = useState<ResultType>('day_test')
   const [maxScore,     setMaxScore]     = useState('100')
   const [scores,       setScores]       = useState<Record<string, string>>({})
+
+  // Save state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMsg,     setErrorMsg]     = useState('')
   const [savedCount,   setSavedCount]   = useState(0)
 
   const currentAcademicYear = getAcademicYear(academicYear)
+  const maxNum = Number(maxScore) || 100
 
+  // ── Derived: group existing results for the overview ──────────────────────
+  // Groups: { "class_subject_id|term|result_type" → { label, count, avg, rows } }
+  const overviewGroups = useMemo(() => {
+    const map: Record<string, {
+      key:             string
+      csId:            string
+      subjectName:     string
+      className:       string
+      term:            string
+      termKey:         Term
+      resultType:      ResultType
+      count:           number
+      avg:             number
+      maxScore:        number
+    }> = {}
+
+    liveResults.forEach(r => {
+      const groupKey = `${r.class_subject_id}|${r.term}|${r.result_type}`
+      const tc = teacherClasses.find(c => c.class_subject_id === r.class_subject_id)
+      if (!map[groupKey]) {
+        map[groupKey] = {
+          key:         groupKey,
+          csId:        r.class_subject_id,
+          subjectName: tc?.subject_name ?? '—',
+          className:   tc?.class_name   ?? '—',
+          term:        r.term,
+          termKey:     DB_TO_TERM[r.term] ?? 'first',
+          resultType:  r.result_type as ResultType,
+          count:       0,
+          avg:         0,
+          maxScore:    r.max_score,
+        }
+      }
+      const g = map[groupKey]
+      const prevTotal = g.avg * g.count
+      g.count++
+      g.avg = Math.round((prevTotal + (r.score / (r.max_score || 100)) * 100) / g.count)
+      g.maxScore = r.max_score
+    })
+
+    return Object.values(map).sort((a, b) => {
+      if (a.subjectName !== b.subjectName) return a.subjectName.localeCompare(b.subjectName)
+      return (TYPE_ORDER[a.resultType] ?? 9) - (TYPE_ORDER[b.resultType] ?? 9)
+    })
+  }, [liveResults, teacherClasses])
+
+  // ── Pre-fill scores when entering wizard step 3 ───────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem('schoolos_theme')
-    const dark  = saved !== 'light'
-    setIsDark(dark)
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
-    setMounted(true)
-  }, [])
-
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
-    localStorage.setItem('schoolos_theme', next ? 'dark' : 'light')
-  }
-
-  // Students belonging to the selected class
-  const classStudents = useMemo(() => {
-    if (!selectedCS) return []
-    return allStudents.filter(s => s.class_id === selectedCS.class_id)
-  }, [selectedCS, allStudents])
-
-  // Pre-fill scores when arriving at step 3, and clear when combo changes.
-  // Uses existingResults passed from the server so no extra round-trip needed.
-  useEffect(() => {
-    if (step !== 3 || !selectedCS) return
+    if (mode !== 'wizard' || step !== 3 || !selectedCS) return
     const dbTerm = TERM_TO_DB[term]
     const pre: Record<string, string> = {}
-    existingResults.forEach(r => {
+    liveResults.forEach(r => {
       if (
         r.class_subject_id === selectedCS.class_subject_id &&
         r.term             === dbTerm &&
@@ -158,15 +192,55 @@ export default function PostResultsClient({
       }
     })
     setScores(pre)
-    // Reset save status when switching context
     setSubmitStatus('idle')
     setErrorMsg('')
-  }, [step, selectedCS, term, resultType, existingResults])
+  }, [mode, step, selectedCS, term, resultType, liveResults])
+
+  // ── Students in selected class ────────────────────────────────────────────
+  const classStudents = useMemo(() => {
+    if (!selectedCS) return []
+    return allStudents.filter(s => s.class_id === selectedCS.class_id)
+  }, [selectedCS, allStudents])
 
   const filledCount = Object.values(scores).filter(v => v !== '' && !isNaN(Number(v))).length
-  const maxNum      = Number(maxScore) || 100
 
-  // ── Safe insert-or-update (no unique constraint needed) ───────────────────
+  // ── Navigate: open wizard fresh ───────────────────────────────────────────
+  function openNewWizard() {
+    setSelectedCS(null)
+    setTerm('first')
+    setResultType('day_test')
+    setMaxScore('100')
+    setScores({})
+    setSubmitStatus('idle')
+    setErrorMsg('')
+    setStep(1)
+    setMode('wizard')
+  }
+
+  // ── Navigate: edit an existing group ─────────────────────────────────────
+  function openEditWizard(group: typeof overviewGroups[0]) {
+    const tc = teacherClasses.find(c => c.class_subject_id === group.csId)
+    if (!tc) return
+    setSelectedCS(tc)
+    setTerm(group.termKey)
+    setResultType(group.resultType)
+    setMaxScore(String(group.maxScore))
+    setScores({})            // will be pre-filled by the useEffect above
+    setSubmitStatus('idle')
+    setErrorMsg('')
+    setStep(3)               // jump straight to score entry
+    setMode('wizard')
+  }
+
+  // ── Navigate: preview a group (read-only) ────────────────────────────────
+  const [previewGroup, setPreviewGroup] = useState<typeof overviewGroups[0] | null>(null)
+
+  function openPreview(group: typeof overviewGroups[0]) {
+    setPreviewGroup(group)
+    setMode('preview')
+  }
+
+  // ── Save handler ──────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!selectedCS) return
     setIsSubmitting(true)
@@ -176,7 +250,6 @@ export default function PostResultsClient({
     const supabase = createClient()
     const dbTerm   = TERM_TO_DB[term]
 
-    // Only process students who have a score entered
     const studentsWithScores = classStudents.filter(s => {
       const v = scores[s.student_id]
       return v !== '' && v !== undefined && !isNaN(Number(v))
@@ -189,8 +262,9 @@ export default function PostResultsClient({
       return
     }
 
-    // 1) Find which students already have a row for this exact combo
     const studentIds = studentsWithScores.map(s => s.student_id)
+
+    // 1) Check which rows already exist
     const { data: existing, error: fetchErr } = await supabase
       .from('results')
       .select('id, student_id')
@@ -203,37 +277,34 @@ export default function PostResultsClient({
     if (fetchErr) {
       setIsSubmitting(false)
       setSubmitStatus('error')
-      setErrorMsg(`Failed to check existing results: ${fetchErr.message}`)
+      setErrorMsg(`Check failed: ${fetchErr.message}`)
       return
     }
 
     const existingMap = new Map((existing ?? []).map(r => [r.student_id, r.id]))
-
-    // 2) Split into updates vs inserts
-    const toUpdate = studentsWithScores.filter(s =>  existingMap.has(s.student_id))
-    const toInsert = studentsWithScores.filter(s => !existingMap.has(s.student_id))
-
+    const toUpdate    = studentsWithScores.filter(s =>  existingMap.has(s.student_id))
+    const toInsert    = studentsWithScores.filter(s => !existingMap.has(s.student_id))
     const errors: string[] = []
 
-    // 3) Run updates one-by-one (or batch via .in if you prefer)
+    // 2) Update existing rows
     for (const s of toUpdate) {
       const scoreNum = Math.min(Math.max(Number(scores[s.student_id]) || 0, 0), maxNum)
       const { error } = await supabase
         .from('results')
         .update({
-          score:        scoreNum,
-          max_score:    maxNum,
-          grade:        computeGrade(scoreNum, maxNum),
-          posted_by:    teacherId,
-          posted_at:    new Date().toISOString(),
+          score:     scoreNum,
+          max_score: maxNum,
+          grade:     computeGrade(scoreNum, maxNum),
+          posted_by: teacherId,
+          posted_at: new Date().toISOString(),
         })
         .eq('id', existingMap.get(s.student_id)!)
-      if (error) errors.push(`Update failed for ${s.full_name}: ${error.message}`)
+      if (error) errors.push(error.message)
     }
 
-    // 4) Batch-insert new rows
+    // 3) Insert new rows
     if (toInsert.length > 0) {
-      const insertRows = toInsert.map(s => {
+      const rows = toInsert.map(s => {
         const scoreNum = Math.min(Math.max(Number(scores[s.student_id]) || 0, 0), maxNum)
         return {
           student_id:       s.student_id,
@@ -248,8 +319,8 @@ export default function PostResultsClient({
           posted_by:        teacherId,
         }
       })
-      const { error } = await supabase.from('results').insert(insertRows)
-      if (error) errors.push(`Insert failed: ${error.message}`)
+      const { error } = await supabase.from('results').insert(rows)
+      if (error) errors.push(error.message)
     }
 
     setIsSubmitting(false)
@@ -257,287 +328,521 @@ export default function PostResultsClient({
     if (errors.length > 0) {
       setSubmitStatus('error')
       setErrorMsg(errors.join(' | '))
-    } else {
-      setSavedCount(studentsWithScores.length)
-      setSubmitStatus('success')
+      return
     }
-  }, [selectedCS, classStudents, scores, term, resultType, maxNum, schoolId, teacherId, currentAcademicYear])
 
-  if (!mounted) return null
+    // 4) Refresh live results from DB so overview updates immediately
+    const { data: refreshed } = await supabase
+      .from('results')
+      .select('id, student_id, class_subject_id, result_type, term, score, max_score, grade')
+      .eq('school_id', schoolId)
+      .in('class_subject_id', teacherClasses.map(tc => tc.class_subject_id))
 
-  return (
-    <div className={styles.page}>
-      <div className={styles.layoutWrap}>
+    if (refreshed) setLiveResults(refreshed)
 
-        {/* ── Side Nav ── */}
-        <nav className={styles.sideNav}>
-          <div className={styles.sideNavLogo}>School<span>OS</span></div>
-          <Link href="/dashboard/teacher"         className={styles.sideNavItem}><IconHome />      Overview</Link>
-          <Link href="/dashboard/teacher/results" className={`${styles.sideNavItem} ${styles.sideNavItemActive}`}><IconClipboard /> Post Results</Link>
-          <Link href="/dashboard/teacher/grades"  className={styles.sideNavItem}><IconEdit />      Grade Submissions</Link>
-          <Link href="/dashboard/teacher/classes" className={styles.sideNavItem}><IconBarChart />  My Classes</Link>
-        </nav>
+    setSavedCount(studentsWithScores.length)
+    setSubmitStatus('success')
+  }, [selectedCS, classStudents, scores, term, resultType, maxNum, schoolId, teacherId, currentAcademicYear, teacherClasses])
 
-        <div className={styles.mainCol}>
-          <header className={styles.header}>
-            <div className={styles.headerLeft}>
-              <p className={styles.greeting}>Good {getTimeOfDay()}</p>
-              <h1 className={styles.pageTitle}>Post <span>Results</span></h1>
-            </div>
-            <div className={styles.headerActions}>
-              <button className={styles.themeBtn} onClick={toggleTheme}>
-                {isDark ? <IconSun /> : <IconMoon />}
-              </button>
-            </div>
-          </header>
+  // ── Preview rows for the selected group ───────────────────────────────────
+  const previewRows = useMemo(() => {
+    if (!previewGroup) return []
+    return liveResults
+      .filter(r =>
+        r.class_subject_id === previewGroup.csId &&
+        r.term             === previewGroup.term  &&
+        r.result_type      === previewGroup.resultType
+      )
+      .map(r => ({
+        ...r,
+        studentName:   allStudents.find(s => s.student_id === r.student_id)?.full_name ?? 'Unknown',
+        studentNumber: allStudents.find(s => s.student_id === r.student_id)?.student_number ?? '—',
+      }))
+      .sort((a, b) => a.studentName.localeCompare(b.studentName))
+  }, [previewGroup, liveResults, allStudents])
 
-          <main className={styles.content}>
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────
 
-            {/* Step progress bar */}
-            <div className={styles.stepBar}>
-              {[
-                { n: 1, label: 'Class & Subject' },
-                { n: 2, label: 'Term & Type'     },
-                { n: 3, label: 'Enter Scores'    },
-              ].map(s => (
-                <div
-                  key={s.n}
-                  className={`${styles.step} ${step === s.n ? styles.stepActive : ''} ${step > s.n ? styles.stepDone : ''}`}
-                  onClick={() => {
-                    // Allow clicking back to any completed step
-                    if (s.n < step) setStep(s.n)
-                    // Allow jumping to step 2/3 only if class is selected
-                    if (s.n === 2 && selectedCS) setStep(2)
-                    if (s.n === 3 && selectedCS) setStep(3)
-                  }}
-                >
-                  <div className={styles.stepNum}>{step > s.n ? <IconCheck /> : s.n}</div>
-                  <span className={styles.stepLabel}>{s.label}</span>
-                </div>
-              ))}
-            </div>
+  // ── OVERVIEW ─────────────────────────────────────────────────────────────
+  if (mode === 'overview') {
+    return (
+      <div style={{ padding: '20px 16px 100px', maxWidth: 600, margin: '0 auto' }}>
 
-            {/* ── Step 1: Pick class & subject ── */}
-            {step === 1 && (
-              <div className={styles.card} style={{ animationDelay: '0ms' }}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <p className={styles.cardTitle}>Select Class &amp; Subject</p>
-                    <p className={styles.cardSubtitle}>Choose which class you are posting results for</p>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Teacher Dashboard
+            </p>
+            <h1 style={{ margin: '2px 0 0', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Results
+            </h1>
+          </div>
+          <button
+            onClick={openNewWizard}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '10px 16px', borderRadius: 10,
+              background: 'var(--accent, #7C3AED)', color: '#fff',
+              border: 'none', cursor: 'pointer',
+              fontSize: '0.82rem', fontWeight: 700,
+            }}
+          >
+            <IcPlus /> Post Results
+          </button>
+        </div>
+
+        {/* Stats bar */}
+        {liveResults.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
+            {[
+              { label: 'Groups',   value: overviewGroups.length },
+              { label: 'Students', value: new Set(liveResults.map(r => r.student_id)).size },
+              { label: 'Records',  value: liveResults.length },
+            ].map(s => (
+              <div key={s.label} style={{
+                textAlign: 'center', padding: '10px 8px',
+                background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12,
+              }}>
+                <p style={{ margin: '0 0 2px', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{s.value}</p>
+                <p style={{ margin: 0, fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Posted results grouped by subject */}
+        {overviewGroups.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+            <div style={{ marginBottom: 12 }}><IcEmpty /></div>
+            <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)' }}>No results posted yet</p>
+            <p style={{ margin: '0 0 20px', fontSize: '0.8rem' }}>Tap "Post Results" to get started</p>
+            <button
+              onClick={openNewWizard}
+              style={{
+                padding: '10px 20px', borderRadius: 10,
+                background: 'var(--accent, #7C3AED)', color: '#fff',
+                border: 'none', cursor: 'pointer',
+                fontSize: '0.82rem', fontWeight: 700,
+              }}
+            >
+              + Post First Results
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {overviewGroups.map(g => (
+              <div key={g.key} style={{
+                background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+                borderRadius: 14, padding: '14px 16px',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {g.subjectName}
+                  </p>
+                  <p style={{ margin: '0 0 6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    {g.className} · {g.term} · {RESULT_TYPE_LABELS[g.resultType]}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {/* Avg badge */}
+                    <span style={{
+                      fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                      background: gradeBg(computeGrade(g.avg, 100)),
+                      color: gradeColor(computeGrade(g.avg, 100)),
+                    }}>
+                      Avg {g.avg}%
+                    </span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      {g.count} student{g.count !== 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
-                <div className={styles.cardBody}>
-                  {teacherClasses.length === 0 ? (
-                    <div className={styles.emptyState}>You are not assigned to any classes yet.</div>
-                  ) : (
-                    <div className={styles.classGrid}>
-                      {teacherClasses.map(tc => (
-                        <button
-                          key={tc.class_subject_id}
-                          className={`${styles.classOption} ${selectedCS?.class_subject_id === tc.class_subject_id ? styles.classOptionSelected : ''}`}
-                          onClick={() => setSelectedCS(tc)}
-                        >
-                          <p className={styles.classOptionSubject}>{tc.subject_name}</p>
-                          <p className={styles.classOptionName}>{tc.class_name}</p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className={styles.actionRow}>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   <button
-                    className={styles.primaryBtn}
-                    disabled={!selectedCS}
-                    onClick={() => setStep(2)}
+                    onClick={() => openPreview(g)}
+                    title="Preview scores"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                      background: 'var(--glass-border)', border: '1px solid var(--glass-border)',
+                      color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700,
+                    }}
                   >
-                    Continue →
+                    <IcEye /> View
+                  </button>
+                  <button
+                    onClick={() => openEditWizard(g)}
+                    title="Edit scores"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                      background: 'var(--accent, #7C3AED)', border: 'none',
+                      color: '#fff', fontSize: '0.72rem', fontWeight: 700,
+                    }}
+                  >
+                    <IcEdit /> Edit
                   </button>
                 </div>
               </div>
-            )}
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
-            {/* ── Step 2: Term & Type ── */}
-            {step === 2 && (
-              <div className={styles.card} style={{ animationDelay: '0ms' }}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <p className={styles.cardTitle}>{selectedCS?.subject_name} — {selectedCS?.class_name}</p>
-                    <p className={styles.cardSubtitle}>Set the assessment details</p>
-                  </div>
+  // ── PREVIEW (read-only score table) ──────────────────────────────────────
+  if (mode === 'preview' && previewGroup) {
+    const avgPct = previewGroup.avg
+    return (
+      <div style={{ padding: '20px 16px 100px', maxWidth: 600, margin: '0 auto' }}>
+
+        {/* Back + title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <button onClick={() => setMode('overview')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+            <IcBack />
+          </button>
+          <div>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+              {previewGroup.subjectName}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              {previewGroup.className} · {previewGroup.term} · {RESULT_TYPE_LABELS[previewGroup.resultType]}
+            </p>
+          </div>
+          <button
+            onClick={() => openEditWizard(previewGroup)}
+            style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
+              padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
+              background: 'var(--accent, #7C3AED)', border: 'none',
+              color: '#fff', fontSize: '0.78rem', fontWeight: 700,
+            }}
+          >
+            <IcEdit /> Edit
+          </button>
+        </div>
+
+        {/* Summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+          {[
+            { label: 'Students', value: previewGroup.count },
+            { label: 'Avg Score', value: `${avgPct}%`, color: avgPct >= 50 ? '#10B981' : '#EF4444' },
+            { label: 'Max Score', value: previewGroup.maxScore },
+          ].map(s => (
+            <div key={s.label} style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10 }}>
+              <p style={{ margin: '0 0 2px', fontSize: '1.2rem', fontWeight: 800, color: (s as any).color ?? 'var(--text-primary)' }}>{s.value}</p>
+              <p style={{ margin: 0, fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Score rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {previewRows.map((r, i) => {
+            const pct = r.max_score > 0 ? Math.round((r.score / r.max_score) * 100) : 0
+            return (
+              <div key={r.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px', background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)', borderRadius: 12,
+              }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: 'var(--glass-border)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0,
+                }}>
+                  {initials(r.studentName)}
                 </div>
-                <div className={styles.cardBody}>
-                  <div className={styles.segRow}>
-                    <div className={styles.segGroup}>
-                      <span className={styles.segLabel}>Term</span>
-                      <div className={styles.segButtons}>
-                        {(['first', 'second', 'third'] as Term[]).map(t => (
-                          <button
-                            key={t}
-                            className={`${styles.segBtn} ${term === t ? styles.segBtnActive : ''}`}
-                            onClick={() => setTerm(t)}
-                          >
-                            {TERM_LABELS[t]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className={styles.segGroup}>
-                      <span className={styles.segLabel}>Assessment Type</span>
-                      <div className={styles.segButtons}>
-                        {(['day_test', 'mid_term', 'exam'] as ResultType[]).map(rt => (
-                          <button
-                            key={rt}
-                            className={`${styles.segBtn} ${resultType === rt ? styles.segBtnActive : ''}`}
-                            onClick={() => setResultType(rt)}
-                          >
-                            {RESULT_TYPE_LABELS[rt]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className={styles.fieldRow}>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Maximum Score</label>
-                      <input
-                        className={styles.fieldInput}
-                        type="number" min="1" max="1000"
-                        value={maxScore}
-                        onChange={e => setMaxScore(e.target.value)}
-                        placeholder="100"
-                      />
-                    </div>
-                  </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {r.studentName}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.68rem', color: 'var(--text-muted)' }}>{r.studentNumber}</p>
                 </div>
-                <div className={styles.actionRow}>
-                  <button className={styles.secondaryBtn} onClick={() => setStep(1)}>← Back</button>
-                  <button
-                    className={styles.primaryBtn}
-                    disabled={!maxScore || Number(maxScore) <= 0}
-                    onClick={() => setStep(3)}
-                  >
-                    Continue →
-                  </button>
+                {/* Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {r.score}<span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>/{r.max_score}</span>
+                    </span>
+                    <div style={{ width: 56, height: 4, background: 'var(--glass-border)', borderRadius: 999, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: gradeColor(r.grade), borderRadius: 999 }} />
+                    </div>
+                  </div>
+                  <div style={{ width: 30, height: 30, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: gradeBg(r.grade) }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.82rem', color: gradeColor(r.grade) }}>{r.grade}</span>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* ── Step 3: Enter scores ── */}
-            {step === 3 && (
-              <div className={styles.card} style={{ animationDelay: '0ms' }}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <p className={styles.cardTitle}>
-                      {selectedCS?.subject_name} — {selectedCS?.class_name}
-                    </p>
-                    <p className={styles.cardSubtitle}>
-                      {TERM_LABELS[term]} · {RESULT_TYPE_LABELS[resultType]} · Out of {maxNum}
-                    </p>
-                    <p className={styles.cardSubtitle} style={{ marginTop: 2, opacity: 0.6 }}>
-                      {currentAcademicYear}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Status banners */}
-                {submitStatus === 'success' && (
-                  <div style={{ margin: 'var(--space-4) var(--space-6) 0' }}>
-                    <div className={styles.statusSuccess}>
-                      <IconCheck /> Results saved for {savedCount} student{savedCount !== 1 ? 's' : ''}!
-                    </div>
-                  </div>
-                )}
-                {submitStatus === 'error' && (
-                  <div style={{ margin: 'var(--space-4) var(--space-6) 0' }}>
-                    <div className={styles.statusError}>
-                      <IconAlertCircle /> {errorMsg || 'Failed to save results.'}
-                    </div>
-                  </div>
-                )}
-
-                <div className={styles.cardBody} style={{ padding: 0 }}>
-                  {classStudents.length === 0 ? (
-                    <div className={styles.emptyState}>No students found in this class.</div>
-                  ) : (
-                    <div className={styles.scoreTableWrap}>
-                      <table className={styles.scoreTable}>
-                        <thead>
-                          <tr>
-                            <th>Student</th>
-                            <th>Score / {maxNum}</th>
-                            <th>Grade</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {classStudents.map(s => {
-                            const raw    = scores[s.student_id] ?? ''
-                            const num    = raw !== '' ? Number(raw) : NaN
-                            const grade  = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : '—'
-                            const isOver = !isNaN(num) && num > maxNum
-                            return (
-                              <tr key={s.student_id}>
-                                <td>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <div className={styles.studentAvatar}>{initials(s.full_name)}</div>
-                                    <div>
-                                      <p className={styles.studentName}>{s.full_name}</p>
-                                      <p className={styles.studentNum}>{s.student_number ?? '—'}</p>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td>
-                                  <input
-                                    className={styles.scoreInput}
-                                    type="number" min="0" max={maxNum}
-                                    placeholder="—"
-                                    value={raw}
-                                    onChange={e =>
-                                      setScores(prev => ({ ...prev, [s.student_id]: e.target.value }))
-                                    }
-                                    style={isOver ? { borderColor: 'var(--error)' } : {}}
-                                  />
-                                  {isOver && (
-                                    <span style={{ fontSize: '0.68rem', color: 'var(--error)', marginLeft: 6 }}>
-                                      max {maxNum}
-                                    </span>
-                                  )}
-                                </td>
-                                <td>
-                                  <div className={`${styles.gradeBadge} ${grade === '—' ? styles.gradeEmpty : gradeStyle(grade)}`}>
-                                    {grade}
-                                  </div>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.actionRow}>
-                  <button className={styles.secondaryBtn} onClick={() => setStep(2)}>← Back</button>
-                  <button
-                    className={styles.primaryBtn}
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || filledCount === 0}
-                  >
-                    <IconSave />
-                    {isSubmitting
-                      ? 'Saving…'
-                      : `Save${filledCount > 0 ? ` (${filledCount})` : ''} Results`}
-                  </button>
-                  <span className={styles.submitCount}>
-                    {filledCount} / {classStudents.length} filled
-                  </span>
-                </div>
-              </div>
-            )}
-
-          </main>
+            )
+          })}
         </div>
       </div>
+    )
+  }
+
+  // ── WIZARD ────────────────────────────────────────────────────────────────
+  return (
+    <div style={{ padding: '20px 16px 100px', maxWidth: 600, margin: '0 auto' }}>
+
+      {/* Back + title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <button
+          onClick={() => { setMode('overview'); setStep(1) }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+        >
+          <IcBack />
+        </button>
+        <div>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+            {step === 1 ? 'Select Class & Subject'
+              : step === 2 ? 'Assessment Details'
+              : `${selectedCS?.subject_name} — ${selectedCS?.class_name}`}
+          </p>
+          <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            Step {step} of 3
+          </p>
+        </div>
+      </div>
+
+      {/* Step indicators */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+        {[1, 2, 3].map(n => (
+          <div key={n} style={{
+            flex: 1, height: 4, borderRadius: 999,
+            background: step >= n ? 'var(--accent, #7C3AED)' : 'var(--glass-border)',
+            transition: 'background 0.2s',
+          }} />
+        ))}
+      </div>
+
+      {/* ── Step 1: Pick class + subject ── */}
+      {step === 1 && (
+        <>
+          {teacherClasses.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+              <p>You are not assigned to any classes yet.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {teacherClasses.map(tc => (
+                <button
+                  key={tc.class_subject_id}
+                  onClick={() => { setSelectedCS(tc); setStep(2) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '14px 16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
+                    background: selectedCS?.class_subject_id === tc.class_subject_id
+                      ? 'var(--accent, #7C3AED)' : 'var(--glass-bg)',
+                    border: `1px solid ${selectedCS?.class_subject_id === tc.class_subject_id
+                      ? 'var(--accent, #7C3AED)' : 'var(--glass-border)'}`,
+                    color: selectedCS?.class_subject_id === tc.class_subject_id ? '#fff' : 'var(--text-primary)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '0.9rem' }}>{tc.subject_name}</p>
+                    <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.7 }}>{tc.class_name}</p>
+                  </div>
+                  <span style={{ fontSize: '1.2rem', opacity: 0.5 }}>›</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Step 2: Term, type, max score ── */}
+      {step === 2 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Term */}
+          <div>
+            <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Term</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['first', 'second', 'third'] as Term[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTerm(t)}
+                  style={{
+                    flex: 1, padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
+                    fontSize: '0.78rem', fontWeight: 700,
+                    background: term === t ? 'var(--accent, #7C3AED)' : 'var(--glass-bg)',
+                    border: `1px solid ${term === t ? 'var(--accent, #7C3AED)' : 'var(--glass-border)'}`,
+                    color: term === t ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {TERM_LABELS[t].replace(' Term', '')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Assessment type */}
+          <div>
+            <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Assessment Type</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['day_test', 'mid_term', 'exam'] as ResultType[]).map(rt => (
+                <button
+                  key={rt}
+                  onClick={() => setResultType(rt)}
+                  style={{
+                    flex: 1, padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
+                    fontSize: '0.78rem', fontWeight: 700,
+                    background: resultType === rt ? 'var(--accent, #7C3AED)' : 'var(--glass-bg)',
+                    border: `1px solid ${resultType === rt ? 'var(--accent, #7C3AED)' : 'var(--glass-border)'}`,
+                    color: resultType === rt ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {RESULT_TYPE_LABELS[rt]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Max score */}
+          <div>
+            <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Maximum Score</p>
+            <input
+              type="number" min="1" max="1000"
+              value={maxScore}
+              onChange={e => setMaxScore(e.target.value)}
+              placeholder="100"
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 10, boxSizing: 'border-box',
+                background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+                color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 600,
+              }}
+            />
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button onClick={() => setStep(1)} style={{ flex: 1, padding: '12px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>
+              ← Back
+            </button>
+            <button
+              onClick={() => setStep(3)}
+              disabled={!maxScore || Number(maxScore) <= 0}
+              style={{ flex: 2, padding: '12px', borderRadius: 10, cursor: 'pointer', background: 'var(--accent, #7C3AED)', border: 'none', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: (!maxScore || Number(maxScore) <= 0) ? 0.5 : 1 }}
+            >
+              Continue → Enter Scores
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 3: Score entry ── */}
+      {step === 3 && (
+        <div>
+          {/* Context reminder */}
+          <div style={{ padding: '10px 14px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, marginBottom: 16, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            {TERM_LABELS[term]} · {RESULT_TYPE_LABELS[resultType]} · Max {maxNum} · {currentAcademicYear}
+          </div>
+
+          {/* Status banners */}
+          {submitStatus === 'success' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: '#10B98120', border: '1px solid #10B981', color: '#10B981', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
+              <IcCheck /> Saved {savedCount} result{savedCount !== 1 ? 's' : ''} successfully!
+            </div>
+          )}
+          {submitStatus === 'error' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: '#EF444420', border: '1px solid #EF4444', color: '#EF4444', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
+              <IcAlert /> {errorMsg || 'Failed to save results.'}
+            </div>
+          )}
+
+          {/* Student score rows */}
+          {classStudents.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              No students found in this class.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {classStudents.map(s => {
+                const raw   = scores[s.student_id] ?? ''
+                const num   = raw !== '' ? Number(raw) : NaN
+                const grade = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : '—'
+                const isOver = !isNaN(num) && num > maxNum
+                return (
+                  <div key={s.student_id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 14px', background: 'var(--glass-bg)',
+                    border: `1px solid ${isOver ? '#EF4444' : 'var(--glass-border)'}`,
+                    borderRadius: 12,
+                  }}>
+                    {/* Avatar */}
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0 }}>
+                      {initials(s.full_name)}
+                    </div>
+                    {/* Name */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: '0 0 1px', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.full_name}</p>
+                      <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-muted)' }}>{s.student_number ?? '—'}</p>
+                    </div>
+                    {/* Score input */}
+                    <input
+                      type="number" min="0" max={maxNum}
+                      placeholder="—"
+                      value={raw}
+                      onChange={e => setScores(prev => ({ ...prev, [s.student_id]: e.target.value }))}
+                      style={{
+                        width: 68, padding: '8px 10px', borderRadius: 8, textAlign: 'center',
+                        background: 'var(--glass-bg)', fontWeight: 700, fontSize: '0.95rem',
+                        color: isOver ? '#EF4444' : 'var(--text-primary)',
+                        border: `1px solid ${isOver ? '#EF4444' : 'var(--glass-border)'}`,
+                        flexShrink: 0,
+                      }}
+                    />
+                    {/* Grade badge */}
+                    <div style={{ width: 30, height: 30, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: grade !== '—' ? gradeBg(grade) : 'var(--glass-border)', flexShrink: 0 }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.8rem', color: grade !== '—' ? gradeColor(grade) : 'var(--text-muted)' }}>
+                        {grade}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button
+              onClick={() => setStep(2)}
+              style={{ padding: '12px 16px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting || filledCount === 0}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '12px', borderRadius: 10, cursor: 'pointer',
+                background: 'var(--accent, #7C3AED)', border: 'none',
+                color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+                opacity: (isSubmitting || filledCount === 0) ? 0.6 : 1,
+              }}
+            >
+              <IcSave />
+              {isSubmitting ? 'Saving…' : `Save ${filledCount > 0 ? `(${filledCount}) ` : ''}Results`}
+            </button>
+          </div>
+          <p style={{ textAlign: 'center', margin: '10px 0 0', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            {filledCount} of {classStudents.length} students filled
+          </p>
+        </div>
+      )}
     </div>
   )
 }
