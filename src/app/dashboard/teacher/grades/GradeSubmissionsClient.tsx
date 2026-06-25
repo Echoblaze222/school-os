@@ -22,7 +22,6 @@
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import type { Submission, AssignmentGroup } from './page'
 
 interface Props {
   submissions:      Submission[]
