@@ -18,7 +18,6 @@ import {
   XIcon, CameraIcon, ImageIcon,
 } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
-import { getCurrentAcademicYear, getCurrentTerm } from '@/lib/utils/term'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -27,7 +26,9 @@ type Tab = 'overview' | 'receipts' | 'submit' | 'reminders'
 
 const TERMS     = ['First Term', 'Second Term', 'Third Term']
 const FEE_TYPES = ['school_fees','development_levy','pta','uniform','exam','other']
-const CUR_YEAR  = getCurrentAcademicYear()
+const CUR_YEAR  = new Date().getMonth() >= 8
+  ? `${new Date().getFullYear()}/${new Date().getFullYear()+1}`
+  : `${new Date().getFullYear()-1}/${new Date().getFullYear()}`
 
 const TERM_KEY_MAP: Record<string, string> = {
   'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
@@ -52,7 +53,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   const [children, setChildren] = useState<any[]>([])
   const [childId,  setChildId]  = useState<string | null>(null)
   const [tab,      setTab]      = useState<Tab>('overview')
-  const [term,     setTerm]     = useState(getCurrentTerm())
+  const [term,     setTerm]     = useState('First Term')
   const [year,     setYear]     = useState(CUR_YEAR)
 
   const [loading,  setLoading]  = useState(true)
@@ -105,7 +106,28 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
     setChildren(childData)
     setChildId(childData[0].id)
+    await detectActiveTermYear(childData[0].id)
     // loadAll fires via the childId/term/year effect once childId is set
+  }
+
+  // Instead of guessing the "current" term from the calendar (terms are set
+  // by the school, not derived from the date), find the most recently
+  // created invoice for this child and default the view to that term/year.
+  // Falls back to First Term / CUR_YEAR if the child has no invoices yet.
+  async function detectActiveTermYear(id: string) {
+    const { data } = await supabase
+      .from('payment_invoices')
+      .select('fee_structures ( term, academic_year ), created_at')
+      .eq('student_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const latest = data?.[0]
+    const fs = latest ? unwrapEmbed((latest as any).fee_structures) : null
+    if (fs?.term) {
+      setTerm(TERM_LABELS[fs.term] ?? 'First Term')
+      setYear(fs.academic_year ?? CUR_YEAR)
+    }
   }
 
   async function loadAll(id: string) {
@@ -137,18 +159,19 @@ export default function FeesClient({ profile, school, userId }: Props) {
     })
     setInvoices(filteredInv)
 
-    // ── Receipts: payments -> payment_invoices -> fee_structures ──
+    // ── Receipts: payments (own student_id, school_id) -> payment_invoices -> fee_structures ──
     const { data: payData, error: payErr } = await supabase
       .from('payments')
       .select(`
         id, receipt_number, payment_method, payment_reference, notes,
         paid_at, created_at, amount_paid_ngn, amount_paid_usd, currency_used,
         payment_invoices (
-          student_id,
           fee_structures ( description, term, academic_year )
         )
       `)
-      .eq('payment_invoices.student_id', id)
+      .eq('student_id', id)
+      .eq('payment_invoices.fee_structures.term', termKey)
+      .eq('payment_invoices.fee_structures.academic_year', year)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -156,10 +179,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
       setError(payErr.message)
       setPayments([])
     } else {
+      // .eq() filters above target a 2nd-level nested embed
+      // (payments -> payment_invoices -> fee_structures). PostgREST does not
+      // reliably apply filters at that depth in all versions, so we ALSO
+      // verify term/year client-side rather than trusting the server filter alone.
       const filteredPay = (payData ?? []).filter((row: any) => {
         const inv = unwrapEmbed(row.payment_invoices)
-        if (!inv || inv.student_id !== id) return false
-        const fs = unwrapEmbed(inv.fee_structures)
+        const fs = unwrapEmbed(inv?.fee_structures)
         return fs && fs.term === termKey && fs.academic_year === year
       })
       setPayments(filteredPay)
