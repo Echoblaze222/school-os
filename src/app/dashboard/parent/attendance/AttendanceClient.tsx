@@ -23,45 +23,45 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const sc = school?.primary_color ?? '#7C3AED'
 
   useEffect(() => { load() }, [])
-  useEffect(() => { if (child) loadAttendance(child.id) }, [child])
 
   async function load() {
-    // Use parent_student_links — supports multiple children and does not
-    // rely on profiles.parent_id which may not be set for all accounts
+    setLoading(true)
+
+    // Resolve children via parent_student_links first, fallback to profiles.parent_id
     const { data: links } = await supabase
       .from('parent_student_links')
       .select('student_id')
       .eq('parent_id', userId)
 
-    if (!links?.length) {
-      // Fallback: try profiles.parent_id for legacy accounts
+    let resolvedChildren: any[] = []
+
+    if (links?.length) {
+      const ids = links.map(l => l.student_id)
+      const { data: childProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_level, school_id, class_id')
+        .in('id', ids)
+      resolvedChildren = childProfiles ?? []
+    } else {
+      // Legacy fallback: profiles.parent_id
       const { data: fallback } = await supabase
         .from('profiles')
         .select('id, full_name, class_level, school_id, class_id')
         .eq('parent_id', userId)
-      if (fallback?.length) {
-        setChildren(fallback)
-        setChild(fallback[0])
-      }
-      setLoading(false)
-      return
+      resolvedChildren = fallback ?? []
     }
 
-    const ids = links.map(l => l.student_id)
-    const { data: childProfiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, class_level, school_id, class_id')
-      .in('id', ids)
+    if (!resolvedChildren.length) { setLoading(false); return }
 
-    if (childProfiles?.length) {
-      setChildren(childProfiles)
-      setChild(childProfiles[0])
-    }
+    setChildren(resolvedChildren)
+    setChild(resolvedChildren[0])
+
+    // Load attendance for the first child before releasing loading state
+    await loadAttendance(resolvedChildren[0].id)
     setLoading(false)
   }
 
   async function loadAttendance(childId: string) {
-    // attendance has no subject column — use notes for context if present
     const { data } = await supabase
       .from('attendance')
       .select('id, date, status, is_present, notes, created_at')
@@ -70,7 +70,6 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       .limit(60)
 
     if (data) {
-      // Normalise status — fall back to is_present boolean for old rows
       const normalised = data.map(r => ({
         ...r,
         status: r.status ?? (r.is_present ? 'present' : 'absent'),
@@ -81,7 +80,18 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         absent:  normalised.filter(r => r.status === 'absent').length,
         late:    normalised.filter(r => r.status === 'late').length,
       })
+    } else {
+      setRows([])
+      setSummary({ present: 0, absent: 0, late: 0 })
     }
+  }
+
+  // When parent switches child tab, reload attendance for that child
+  async function switchChild(c: any) {
+    setChild(c)
+    setRows([])
+    setSummary({ present: 0, absent: 0, late: 0 })
+    await loadAttendance(c.id)
   }
 
   const total = summary.present + summary.absent + summary.late
@@ -101,7 +111,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
               {children.length > 1 && (
                 <div style={{ display:'flex', gap:6, overflowX:'auto', marginBottom:'var(--space-3)', paddingBottom:2 }}>
                   {children.map(c => (
-                    <button key={c.id} onClick={() => setChild(c)}
+                    <button key={c.id} onClick={() => switchChild(c)}
                       style={{ flexShrink:0, padding:'5px 12px', borderRadius:999, border:'1px solid ' + (child?.id === c.id ? sc : sc + '40'), background: child?.id === c.id ? sc : 'transparent', color: child?.id === c.id ? '#fff' : sc, fontSize:'0.75rem', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
                       {c.full_name.split(' ')[0]}
                     </button>
@@ -162,4 +172,4 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       <div className={styles.spacer}/>
     </RolePageWrapper>
   )
-                }
+      }
