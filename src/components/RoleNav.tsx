@@ -138,6 +138,7 @@ const NAV: Record<string, {
         { href: '/dashboard/bursar/reports',       Icon: BarChartIcon,    label: 'Reports'        },
         { href: '/dashboard/bursar/history',       Icon: ClockIcon,       label: 'History'        },
         { href: '/dashboard/bursar/export',        Icon: DownloadIcon,    label: 'Export Data'    },
+        { href: '/dashboard/bursar/meetings',      Icon: CalendarIcon,    label: 'Meetings'       },
       ]},
       { label: 'Account', items: [
         { href: '/dashboard/bursar/profile',       Icon: UserIcon,        label: 'My Profile'    },
@@ -170,6 +171,7 @@ const NAV: Record<string, {
         { href: '/dashboard/secretary/documents',     Icon: FileTextIcon,  label: 'Documents'     },
         { href: '/dashboard/secretary/notices',       Icon: MegaphoneIcon, label: 'Notices'       },
         { href: '/dashboard/secretary/codes',         Icon: ShieldIcon,    label: 'Access Codes'  },
+        { href: '/dashboard/secretary/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
         { href: '/dashboard/secretary/settings',      Icon: SettingsIcon,  label: 'Settings'      },
         { href: '/dashboard/secretary/profile',       Icon: UserIcon,      label: 'My Profile'    },
       ]},
@@ -198,6 +200,7 @@ const NAV: Record<string, {
         { href: '/dashboard/parent/timetable',   Icon: ClockIcon,     label: 'Timetable'      },
         { href: '/dashboard/parent/leaderboard', Icon: TrophyIcon,    label: 'Leaderboard'    },
         { href: '/dashboard/parent/fees',        Icon: WalletIcon,    label: 'Fee Status'     },
+        { href: '/dashboard/parent/meetings',    Icon: CalendarIcon,  label: 'Meetings'       },
         { href: '/dashboard/parent/profile',     Icon: UserIcon,      label: 'My Profile'     },
       ]},
     ],
