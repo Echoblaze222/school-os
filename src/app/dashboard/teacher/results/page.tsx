@@ -79,7 +79,7 @@ export default async function TeacherResultsPage() {
   if (classSubjectIds.length > 0) {
     const { data: existing } = await supabase
       .from('results')
-      .select('id, student_id, class_subject_id, result_type, term, score, max_score, grade')
+      .select('id, student_id, class_subject_id, result_type, term, score, max_score, grade, approved')
       .eq('school_id', schoolId)
       .in('class_subject_id', classSubjectIds)
 
