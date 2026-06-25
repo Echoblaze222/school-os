@@ -12,8 +12,8 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import RolePageWrapper from '@/components/RolePageWrapper'
 import type { TeacherClass, StudentForResult, ExistingResult } from './types'
-import styles from './teacher.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -25,6 +25,8 @@ interface Props {
   schoolId:        string
   academicYear?:   string
   primaryColor?:   string
+  profile?:        any
+  school?:         any
 }
 
 type ResultType = 'day_test' | 'mid_term' | 'exam'
@@ -109,6 +111,9 @@ export default function PostResultsClient({
   schoolId,
   academicYear,
   primaryColor = '#7C3AED',
+  teacherName,
+  profile,
+  school,
 }: Props) {
   // Live results — starts from server data, updated after each save
   const [liveResults,  setLiveResults]  = useState<ExistingResult[]>(initialResults)
@@ -370,32 +375,13 @@ export default function PostResultsClient({
   // ── OVERVIEW ─────────────────────────────────────────────────────────────
   if (mode === 'overview') {
     return (
-      <div style={{ padding: '20px 16px 100px', maxWidth: 600, margin: '0 auto' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div>
-            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Teacher Dashboard
-            </p>
-            <h1 style={{ margin: '2px 0 0', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Results
-            </h1>
-          </div>
-          <button
-            onClick={openNewWizard}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '10px 16px', borderRadius: 10,
-              background: primaryColor, color: '#fff',
-              border: 'none', cursor: 'pointer',
-              fontSize: '0.82rem', fontWeight: 700,
-            }}
-          >
+      <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title="Results">
+        {/* Post Results button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <button onClick={openNewWizard} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
             <IcPlus /> Post Results
           </button>
         </div>
-
         {/* Stats bar */}
         {liveResults.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
@@ -495,7 +481,7 @@ export default function PostResultsClient({
             ))}
           </div>
         )}
-      </div>
+      </RolePageWrapper>
     )
   }
 
@@ -503,34 +489,19 @@ export default function PostResultsClient({
   if (mode === 'preview' && previewGroup) {
     const avgPct = previewGroup.avg
     return (
-      <div style={{ padding: '20px 16px 100px', maxWidth: 600, margin: '0 auto' }}>
-
-        {/* Back + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <button onClick={() => setMode('overview')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-            <IcBack />
+      <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title={previewGroup.subjectName}>
+        {/* Back + edit row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <button onClick={() => setMode('overview')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
+            <IcBack /> Back
           </button>
-          <div>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-              {previewGroup.subjectName}
-            </p>
-            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              {previewGroup.className} · {previewGroup.term} · {RESULT_TYPE_LABELS[previewGroup.resultType]}
-            </p>
-          </div>
-          <button
-            onClick={() => openEditWizard(previewGroup)}
-            style={{
-              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
-              padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
-              background: primaryColor, border: 'none',
-              color: '#fff', fontSize: '0.78rem', fontWeight: 700,
-            }}
-          >
+          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', flex: 1 }}>
+            {previewGroup.className} · {previewGroup.term} · {RESULT_TYPE_LABELS[previewGroup.resultType]}
+          </p>
+          <button onClick={() => openEditWizard(previewGroup)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontSize: '0.78rem', fontWeight: 700 }}>
             <IcEdit /> Edit
           </button>
         </div>
-
         {/* Summary */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
           {[
@@ -587,32 +558,26 @@ export default function PostResultsClient({
             )
           })}
         </div>
-      </div>
+      </RolePageWrapper>
     )
   }
 
   // ── WIZARD ────────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: '20px 16px 100px', maxWidth: 600, margin: '0 auto' }}>
+  const wizardTitle = step === 1 ? 'Post Results'
+    : step === 2 ? 'Assessment Details'
+    : `${selectedCS?.subject_name ?? ''} — ${selectedCS?.class_name ?? ''}`
 
-      {/* Back + title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button
-          onClick={() => { setMode('overview'); setStep(1) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
-        >
-          <IcBack />
+  return (
+    <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title={wizardTitle}>
+
+      {/* Back + step info */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <button onClick={() => { setMode('overview'); setStep(1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
+          <IcBack /> Back
         </button>
-        <div>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-            {step === 1 ? 'Select Class & Subject'
-              : step === 2 ? 'Assessment Details'
-              : `${selectedCS?.subject_name} — ${selectedCS?.class_name}`}
-          </p>
-          <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-            Step {step} of 3
-          </p>
-        </div>
+        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          Step {step} of 3{step > 1 && selectedCS ? ` · ${selectedCS.class_name}` : ''}
+        </p>
       </div>
 
       {/* Step indicators */}
@@ -845,6 +810,6 @@ export default function PostResultsClient({
           </p>
         </div>
       )}
-    </div>
+    </RolePageWrapper>
   )
 }
