@@ -25,6 +25,7 @@ const MODULES = [
   { id: 'codes',     label: 'Access Codes',  Icon: CheckCircleIcon, href: '/dashboard/secretary/codes',      accent: '#7C3AED', bg: '#2d1060' },
   { id: 'chat',      label: 'Messages',      Icon: MessageIcon,     href: '/dashboard/secretary/chat',       accent: '#14B8A6', bg: '#0d3330' },
   { id: 'ai',        label: 'AI Assistant',  Icon: SparklesIcon,    href: '/dashboard/secretary/ai',         accent: '#A78BFA', bg: '#2d1a5e' },
+  { id: 'meetings',  label: 'Meetings',      Icon: CalendarIcon,    href: '/dashboard/secretary/meetings',   accent: '#06B6D4', bg: '#0a3040' },
   { id: 'settings',  label: 'Settings',      Icon: SettingsIcon,    href: '/dashboard/secretary/settings',   accent: '#6B7280', bg: '#1e2a38' },
 ]
 
