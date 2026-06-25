@@ -14,7 +14,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { BarChartIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
-interface ResultRow {
+export interface ResultRow {
   id:            string
   term:          string
   academic_year: string | null
@@ -31,7 +31,7 @@ interface ResultRow {
   } | null
 }
 
-interface Props {
+export interface ResultsClientProps {
   profile: any
   school:  any
   userId:  string
@@ -79,7 +79,7 @@ function resolveClassName(r: ResultRow): string {
   return cls?.name ?? cls?.class_level ?? '—'
 }
 
-export default function ResultsClient({ profile, school, userId, results }: Props) {
+export default function ResultsClient({ profile, school, userId, results }: ResultsClientProps) {
   const [termFilter, setTermFilter] = useState<string>('All Terms')
   const sc = school?.primary_color ?? '#7C3AED'
 
