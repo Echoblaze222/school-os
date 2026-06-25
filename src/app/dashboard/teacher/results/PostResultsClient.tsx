@@ -24,6 +24,7 @@ interface Props {
   teacherName:     string
   schoolId:        string
   academicYear?:   string
+  primaryColor?:   string
 }
 
 type ResultType = 'day_test' | 'mid_term' | 'exam'
@@ -107,6 +108,7 @@ export default function PostResultsClient({
   teacherId,
   schoolId,
   academicYear,
+  primaryColor = '#7C3AED',
 }: Props) {
   // Live results — starts from server data, updated after each save
   const [liveResults,  setLiveResults]  = useState<ExistingResult[]>(initialResults)
@@ -385,7 +387,7 @@ export default function PostResultsClient({
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '10px 16px', borderRadius: 10,
-              background: 'var(--accent, #7C3AED)', color: '#fff',
+              background: primaryColor, color: '#fff',
               border: 'none', cursor: 'pointer',
               fontSize: '0.82rem', fontWeight: 700,
             }}
@@ -423,7 +425,7 @@ export default function PostResultsClient({
               onClick={openNewWizard}
               style={{
                 padding: '10px 20px', borderRadius: 10,
-                background: 'var(--accent, #7C3AED)', color: '#fff',
+                background: primaryColor, color: '#fff',
                 border: 'none', cursor: 'pointer',
                 fontSize: '0.82rem', fontWeight: 700,
               }}
@@ -482,7 +484,7 @@ export default function PostResultsClient({
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
-                      background: 'var(--accent, #7C3AED)', border: 'none',
+                      background: primaryColor, border: 'none',
                       color: '#fff', fontSize: '0.72rem', fontWeight: 700,
                     }}
                   >
@@ -521,7 +523,7 @@ export default function PostResultsClient({
             style={{
               marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
               padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
-              background: 'var(--accent, #7C3AED)', border: 'none',
+              background: primaryColor, border: 'none',
               color: '#fff', fontSize: '0.78rem', fontWeight: 700,
             }}
           >
@@ -618,7 +620,7 @@ export default function PostResultsClient({
         {[1, 2, 3].map(n => (
           <div key={n} style={{
             flex: 1, height: 4, borderRadius: 999,
-            background: step >= n ? 'var(--accent, #7C3AED)' : 'var(--glass-border)',
+            background: step >= n ? primaryColor : 'var(--glass-border)',
             transition: 'background 0.2s',
           }} />
         ))}
@@ -641,9 +643,9 @@ export default function PostResultsClient({
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '14px 16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
                     background: selectedCS?.class_subject_id === tc.class_subject_id
-                      ? 'var(--accent, #7C3AED)' : 'var(--glass-bg)',
+                      ? primaryColor : 'var(--glass-bg)',
                     border: `1px solid ${selectedCS?.class_subject_id === tc.class_subject_id
-                      ? 'var(--accent, #7C3AED)' : 'var(--glass-border)'}`,
+                      ? primaryColor : 'var(--glass-border)'}`,
                     color: selectedCS?.class_subject_id === tc.class_subject_id ? '#fff' : 'var(--text-primary)',
                     transition: 'all 0.15s ease',
                   }}
@@ -674,8 +676,8 @@ export default function PostResultsClient({
                   style={{
                     flex: 1, padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
                     fontSize: '0.78rem', fontWeight: 700,
-                    background: term === t ? 'var(--accent, #7C3AED)' : 'var(--glass-bg)',
-                    border: `1px solid ${term === t ? 'var(--accent, #7C3AED)' : 'var(--glass-border)'}`,
+                    background: term === t ? primaryColor : 'var(--glass-bg)',
+                    border: `1px solid ${term === t ? primaryColor : 'var(--glass-border)'}`,
                     color: term === t ? '#fff' : 'var(--text-muted)',
                     transition: 'all 0.15s',
                   }}
@@ -697,8 +699,8 @@ export default function PostResultsClient({
                   style={{
                     flex: 1, padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
                     fontSize: '0.78rem', fontWeight: 700,
-                    background: resultType === rt ? 'var(--accent, #7C3AED)' : 'var(--glass-bg)',
-                    border: `1px solid ${resultType === rt ? 'var(--accent, #7C3AED)' : 'var(--glass-border)'}`,
+                    background: resultType === rt ? primaryColor : 'var(--glass-bg)',
+                    border: `1px solid ${resultType === rt ? primaryColor : 'var(--glass-border)'}`,
                     color: resultType === rt ? '#fff' : 'var(--text-muted)',
                     transition: 'all 0.15s',
                   }}
@@ -733,7 +735,7 @@ export default function PostResultsClient({
             <button
               onClick={() => setStep(3)}
               disabled={!maxScore || Number(maxScore) <= 0}
-              style={{ flex: 2, padding: '12px', borderRadius: 10, cursor: 'pointer', background: 'var(--accent, #7C3AED)', border: 'none', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: (!maxScore || Number(maxScore) <= 0) ? 0.5 : 1 }}
+              style={{ flex: 2, padding: '12px', borderRadius: 10, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: (!maxScore || Number(maxScore) <= 0) ? 0.5 : 1 }}
             >
               Continue → Enter Scores
             </button>
@@ -829,7 +831,7 @@ export default function PostResultsClient({
               style={{
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '12px', borderRadius: 10, cursor: 'pointer',
-                background: 'var(--accent, #7C3AED)', border: 'none',
+                background: primaryColor, border: 'none',
                 color: '#fff', fontWeight: 700, fontSize: '0.85rem',
                 opacity: (isSubmitting || filledCount === 0) ? 0.6 : 1,
               }}
