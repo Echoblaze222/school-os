@@ -102,19 +102,30 @@ export default function GradeSubmissionsPage() {
 
     const { data: subs, error: subErr } = await supabase
       .from('assignment_submissions')
-      .select(`id,student_id,assignment_id,submitted_at,file_url,text_response,answer_text,score,feedback,status,profiles!student_id(full_name)`)
+      .select(`id,student_id,assignment_id,submitted_at,file_url,text_response,answer_text,score,feedback,status`)
       .in('assignment_id', asgIds)
       .not('submitted_at','is',null)
       .order('submitted_at', { ascending: false })
     log(`submissions:${subs?.length??0} ${subErr?.message??'ok'}`)
     if (subErr) setFetchErr(`Submissions: ${subErr.message}`)
 
+    // Fetch student names separately — avoids schema cache FK lookup issues
+    const studentIds = [...new Set((subs??[]).map((s:any) => s.student_id))]
+    const nameMap: Record<string,string> = {}
+    if (studentIds.length > 0) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', studentIds)
+      ;(profs??[]).forEach((p:any) => { nameMap[p.id] = p.full_name ?? 'Unknown' })
+    }
+    log(`student names fetched: ${Object.keys(nameMap).length}`)
+
     const shaped: Submission[] = (subs??[]).map((s:any) => {
       const a = asgMap[s.assignment_id]
-      const st = Array.isArray(s.profiles) ? s.profiles[0] : (s.profiles??{})
       return {
         id: s.id, student_id: s.student_id,
-        student_name: st?.full_name ?? 'Unknown',
+        student_name: nameMap[s.student_id] ?? 'Unknown',
         assignment_id: s.assignment_id,
         assignment_title: a?.title ?? 'Assignment',
         class_name: a?.classes?.name ?? a?.subject ?? '—',
