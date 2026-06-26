@@ -1,3 +1,5 @@
+// src/app/dashboard/principal/types.ts
+
 export interface PrincipalDashData {
   totalStudents: number
   totalTeachers: number
@@ -19,23 +21,32 @@ export interface PrincipalDashData {
 }
 
 export interface ResultRow {
-  id: string
-  student_name: string
-  student_number: string | null
-  subject_name: string
-  class_id: string
-  class_name: string
-  term: string
-  result_type: string
-  score: number
-  max_score: number
-  grade: string
-  teacher_name: string | null
-  approved: boolean
+  id:               string
+  student_id:       string
+  class_subject_id: string
+  class_id:         string | null   // resolved from class_subjects.class_id
+  term:             string           // enum: 'first' | 'second' | 'third'
+  academic_year:    string
+  result_type:      string           // enum: 'day_test' | 'mid_term' | 'exam'
+  score:            number
+  max_score:        number
+  grade:            string
+  remarks:          string | null
+  posted_at:        string | null
+  approved:         boolean
+  approved_at:      string | null
+  school_id:        string | null
+  // Joined display fields (flattened in page.tsx)
+  student_name:     string
+  student_number:   string | null
+  subject_name:     string
+  subject_code:     string
+  class_name:       string
+  teacher_name:     string | null
 }
 
 export interface ClassOption {
-  id: string
+  id:   string
   name: string
 }
 
@@ -85,4 +96,4 @@ export interface PendingTransferRow {
   avg_score: number | null
   total_results: number
   outstanding_fees: number
-}
+  }
