@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import styles from './login.module.css'
 
@@ -524,9 +525,9 @@ export default function LoginPage() {
 
               <p className={styles.loginFooterLinks}>
                 By signing in you agree to our{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Terms &amp; Conditions</a>
+                <Link href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Terms &amp; Conditions</Link>
                 {' '}and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Privacy Policy</a>
+                <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Privacy Policy</Link>
               </p>
             </div>
           )}
@@ -690,24 +691,27 @@ export default function LoginPage() {
                           </button>
                         </div>
 
-                        <label className={styles.termsRow}>
+                        <div className={styles.termsRow}>
                           <input
+                            id="terms-checkbox"
                             type="checkbox"
                             checked={termsAccepted}
                             onChange={e => setTermsAccepted(e.target.checked)}
                             className={styles.termsCheckbox}
                           />
-                          <span className={styles.termsText}>
+                          <label htmlFor="terms-checkbox" className={styles.termsText}>
                             I have read and agree to the{' '}
-                            <a href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>
+                            <Link href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}
+                              onClick={e => e.stopPropagation()}>
                               Terms &amp; Conditions
-                            </a>{' '}
+                            </Link>{' '}
                             and{' '}
-                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>
+                            <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}
+                              onClick={e => e.stopPropagation()}>
                               Privacy Policy
-                            </a>
-                          </span>
-                        </label>
+                            </Link>
+                          </label>
+                        </div>
 
                         <div className={styles.summaryBox}>
                           <p className={styles.summaryLine}><span>School:</span> {reg.schoolName}</p>
