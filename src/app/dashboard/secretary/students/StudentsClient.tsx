@@ -466,19 +466,19 @@ export default function StudentsClient({ profile, school, userId }: Props) {
         {/* Summary */}
         <div style={{ display: "flex", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
           <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: sc }}>{students.length}</p>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: sc }}>{students.length}</p>
             <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Total Students</p>
           </div>
           <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: '#10B981' }}>{students.filter(s => s.gender?.toLowerCase() === 'male').length}</p>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: '#10B981' }}>{students.filter(s => s.gender?.toLowerCase() === 'male').length}</p>
             <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Male</p>
           </div>
           <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: '#EC4899' }}>{students.filter(s => s.gender?.toLowerCase() === 'female').length}</p>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: '#EC4899' }}>{students.filter(s => s.gender?.toLowerCase() === 'female').length}</p>
             <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Female</p>
           </div>
           <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: '#8B5CF6' }}>{classes.length}</p>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: '#8B5CF6' }}>{classes.length}</p>
             <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Classes</p>
           </div>
         </div>
