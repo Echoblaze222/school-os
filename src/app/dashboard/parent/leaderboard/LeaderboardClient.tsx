@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import StudentNav from '@/components/StudentNav'
-import ParentNav from '@/components/ParentNav'
 import { TrophyIcon } from '@/components/Icons'
 import styles from './page.module.css'
 
@@ -30,8 +29,7 @@ interface Props {
   profile: any
   school: any
   userId: string
-  // Parent-only: pre-fetched linked child IDs (passed from page.tsx)
-  childIds?: string[]
+  childIds?: string[]   // parent only — pre-fetched from page.tsx
 }
 
 export default function LeaderboardClient({ profile, school, userId, childIds = [] }: Props) {
@@ -43,7 +41,6 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const isParent    = profile?.role === 'parent'
 
-  // For student: highlight themselves. For parent: highlight any linked child.
   const isHighlighted = (entry: LeaderboardEntry) =>
     isParent ? childIds.includes(entry.student_id) : entry.student_id === userId
 
@@ -65,23 +62,22 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
   const rest     = board.slice(3)
   const pct      = (score: number) => Math.min(100, Math.round((score / 1000) * 100))
 
-  // ── Highlighted entries not in top 3 (student's own rank / parent's children) ──
+  // Entries outside top 3 that should be pinned (student's own / parent's children)
   const pinnedEntries = board
-    .map((e, i) => ({ entry: e, rank: i + 1 }))
+    .map((entry, i) => ({ entry, rank: i + 1 }))
     .filter(({ entry, rank }) => isHighlighted(entry) && rank > 3)
 
   return (
     <div className={styles.page}>
-      {isParent
-        ? <ParentNav   userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-        : <StudentNav  userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-      }
+      {/* StudentNav reads profile.role internally — works for both student and parent */}
+      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
 
       <div className={styles.content}>
         <DashboardHeader
           userId={userId}
           role={isParent ? 'parent' : 'student'}
-          profile={profile} school={school}
+          profile={profile}
+          school={school}
           schoolColor={schoolColor}
           title="Leaderboard"
           showBack
@@ -104,10 +100,9 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                   <div style={{ flex: 1, marginLeft: 10 }}>
                     <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem' }}>
                       {entry.full_name}
-                      {isParent
-                        ? <span style={{ color: schoolColor, fontSize: '0.75rem', marginLeft: 6 }}>Your child</span>
-                        : <span style={{ color: schoolColor, fontSize: '0.75rem', marginLeft: 6 }}>(You)</span>
-                      }
+                      <span style={{ color: schoolColor, fontSize: '0.75rem', marginLeft: 6 }}>
+                        {isParent ? 'Your child' : '(You)'}
+                      </span>
                     </p>
                     <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{entry.class_level}</p>
                   </div>
@@ -136,7 +131,10 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                       >
                         <div className={styles.podiumMedal}>{medals[i]}</div>
 
-                        <div className={styles.podiumAvatar} style={{ background: schoolColor + '30', color: schoolColor }}>
+                        <div
+                          className={styles.podiumAvatar}
+                          style={{ background: schoolColor + '30', color: schoolColor }}
+                        >
                           {entry.avatar_url
                             ? <img src={entry.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                             : entry.full_name.charAt(0).toUpperCase()}
@@ -179,9 +177,9 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
                         {expanded === entry.student_id && (
                           <div className={styles.expandedDetail}>
-                            <DetailRow label="Quizzes"     avg={entry.quiz_avg}        count={entry.quizzes_taken}    pts={entry.quiz_contribution}        color="#6366f1" />
-                            <DetailRow label="Assignments" avg={entry.assignment_avg}  count={entry.assignments_done} pts={entry.assignment_contribution}  color="#f59e0b" />
-                            <DetailRow label="Results"     avg={entry.result_avg}      count={entry.results_count}    pts={entry.result_contribution}      color="#10b981" />
+                            <DetailRow label="Quizzes"     avg={entry.quiz_avg}       count={entry.quizzes_taken}    pts={entry.quiz_contribution}       color="#6366f1" />
+                            <DetailRow label="Assignments" avg={entry.assignment_avg} count={entry.assignments_done} pts={entry.assignment_contribution} color="#f59e0b" />
+                            <DetailRow label="Results"     avg={entry.result_avg}     count={entry.results_count}    pts={entry.result_contribution}     color="#10b981" />
                           </div>
                         )}
                       </div>
@@ -193,7 +191,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
               {/* ── Ranked list (#4 onwards) ── */}
               <div className={styles.list}>
                 {rest.map((entry, i) => {
-                  const rank       = i + 4
+                  const rank        = i + 4
                   const highlighted = isHighlighted(entry)
                   const isOpen      = expanded === entry.student_id
                   return (
@@ -224,15 +222,17 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
                         {isOpen && (
                           <div className={styles.expandedDetail}>
-                            <DetailRow label="Quizzes"     avg={entry.quiz_avg}        count={entry.quizzes_taken}    pts={entry.quiz_contribution}        color="#6366f1" />
-                            <DetailRow label="Assignments" avg={entry.assignment_avg}  count={entry.assignments_done} pts={entry.assignment_contribution}  color="#f59e0b" />
-                            <DetailRow label="Results"     avg={entry.result_avg}      count={entry.results_count}    pts={entry.result_contribution}      color="#10b981" />
+                            <DetailRow label="Quizzes"     avg={entry.quiz_avg}       count={entry.quizzes_taken}    pts={entry.quiz_contribution}       color="#6366f1" />
+                            <DetailRow label="Assignments" avg={entry.assignment_avg} count={entry.assignments_done} pts={entry.assignment_contribution} color="#f59e0b" />
+                            <DetailRow label="Results"     avg={entry.result_avg}     count={entry.results_count}    pts={entry.result_contribution}     color="#10b981" />
                           </div>
                         )}
                       </div>
 
                       <div className={styles.scoreCol}>
-                        <p className={styles.scoreValue} style={highlighted ? { color: schoolColor } : {}}>{entry.total_score}</p>
+                        <p className={styles.scoreValue} style={highlighted ? { color: schoolColor } : {}}>
+                          {entry.total_score}
+                        </p>
                         <p className={styles.scorePts}>pts</p>
                       </div>
                     </div>
@@ -249,7 +249,9 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
   )
 }
 
-function DetailRow({ label, avg, count, pts, color }: { label: string; avg: number; count: number; pts: number; color: string }) {
+function DetailRow({ label, avg, count, pts, color }: {
+  label: string; avg: number; count: number; pts: number; color: string
+}) {
   return (
     <div className={styles.detailRow}>
       <span className={styles.dot} style={{ background: color }} />
