@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import styles from './students.module.css'
+import styles from '../secretary.module.css'
 
 const GENDER_OPTS = ['Male', 'Female', 'Other']
 
@@ -37,8 +37,8 @@ function EnrolSuccessModal({
   }
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.dialog} style={{ maxWidth: 440, width: '100%' }}>
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal} style={{ maxWidth: 440, width: '100%' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{
@@ -50,7 +50,7 @@ function EnrolSuccessModal({
               <polyline points="20 6 9 17 4 12"/>
             </svg>
           </div>
-          <h3 className={styles.dialogTitle} style={{ marginBottom: 4 }}>Enrolment Complete!</h3>
+          <h3 className={styles.modalTitle} style={{ marginBottom: 4 }}>Enrolment Complete!</h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
             Share these login details with <strong style={{ color: 'var(--text-base)' }}>{result.full_name}</strong>
           </p>
@@ -145,7 +145,7 @@ function EnrolSuccessModal({
         </button>
         <button
           onClick={onClose}
-          className={styles.saveBtn}
+          className={styles.btnPrimary}
           style={{ width: '100%', background: sc }}
         >
           Done — Enrol Another
@@ -358,7 +358,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Students">
       {toast && (
-        <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
+        <div style={{ position: "fixed", top: "var(--space-5)", left: "50%", transform: "translateX(-50%)", zIndex: 9999, padding: "10px 20px", borderRadius: 10, fontWeight: 700, fontSize: "0.85rem", color: "#fff", background: toast.ok ? "#10B981" : "#EF4444", boxShadow: "0 4px 20px rgba(0,0,0,0.3)", whiteSpace: "nowrap" }}>
           {toast.ok ? '✓' : '✕'} {toast.msg}
         </div>
       )}
@@ -373,15 +373,15 @@ export default function StudentsClient({ profile, school, userId }: Props) {
       )}
 
       {confirmDel && (
-        <div className={styles.overlay}>
-          <div className={styles.dialog}>
-            <h3 className={styles.dialogTitle}>Remove Student?</h3>
-            <p className={styles.dialogBody}>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h3 className={styles.modalTitle}>Remove Student?</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "var(--space-5)" }}>
               This will permanently remove <strong>{confirmDel.full_name}</strong> from the school records. This cannot be undone.
             </p>
-            <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmDel(null)}>Cancel</button>
-              <button className={styles.deleteBtn} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className={styles.btnDanger} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
                 {deleting === confirmDel.id ? 'Removing…' : 'Yes, Remove'}
               </button>
             </div>
@@ -391,8 +391,8 @@ export default function StudentsClient({ profile, school, userId }: Props) {
 
       {/* ── Assign / reassign class modal ─────────────────────────────── */}
       {assignTarget && (
-        <div className={styles.overlay}>
-          <div className={styles.dialog} style={{ maxWidth: 400 }}>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} style={{ maxWidth: 400 }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
               <div style={{
@@ -405,7 +405,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                 </svg>
               </div>
               <div>
-                <h3 className={styles.dialogTitle} style={{ margin: 0 }}>Assign to Class</h3>
+                <h3 className={styles.modalTitle} style={{ margin: 0 }}>Assign to Class</h3>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {assignTarget.full_name}
                   {assignTarget.class_level ? ` · currently in ${assignTarget.class_level}` : ' · currently unassigned'}
@@ -445,12 +445,12 @@ export default function StudentsClient({ profile, school, userId }: Props) {
               </div>
             )}
 
-            <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => { setAssignTarget(null); setAssignClassId('') }}>
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => { setAssignTarget(null); setAssignClassId('') }}>
                 Cancel
               </button>
               <button
-                className={styles.saveBtn}
+                className={styles.btnPrimary}
                 style={{ background: sc, opacity: !assignClassId ? 0.5 : 1 }}
                 onClick={handleAssignClass}
                 disabled={assigning || !assignClassId}
@@ -462,96 +462,96 @@ export default function StudentsClient({ profile, school, userId }: Props) {
         </div>
       )}
 
-      <div className={styles.container}>
+      <div style={{ padding: "0 var(--space-4) var(--space-4)" }}>
         {/* Summary */}
-        <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: sc }}>{students.length}</p>
-            <p className={styles.statLbl}>Total Students</p>
+        <div style={{ display: "flex", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: sc }}>{students.length}</p>
+            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Total Students</p>
           </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#10B981' }}>{students.filter(s => s.gender?.toLowerCase() === 'male').length}</p>
-            <p className={styles.statLbl}>Male</p>
+          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: '#10B981' }}>{students.filter(s => s.gender?.toLowerCase() === 'male').length}</p>
+            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Male</p>
           </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#EC4899' }}>{students.filter(s => s.gender?.toLowerCase() === 'female').length}</p>
-            <p className={styles.statLbl}>Female</p>
+          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: '#EC4899' }}>{students.filter(s => s.gender?.toLowerCase() === 'female').length}</p>
+            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Female</p>
           </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#8B5CF6' }}>{classes.length}</p>
-            <p className={styles.statLbl}>Classes</p>
+          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
+            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2 }} style={{ color: '#8B5CF6' }}>{classes.length}</p>
+            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Classes</p>
           </div>
         </div>
 
         {/* Toolbar */}
-        <div className={styles.toolbar}>
-          <div className={styles.searchWrap}>
-            <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "center", marginBottom: "var(--space-4)", flexWrap: "wrap" }}>
+          <div className={styles.searchBar}>
+            <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input className={styles.searchInput} placeholder="Search students…" value={search} onChange={e => setSearch(e.target.value)}/>
           </div>
-          <select className={styles.filterSelect} value={classFilter} onChange={e => setClassFilter(e.target.value)}>
+          <select className={styles.formSelect} value={classFilter} onChange={e => setClassFilter(e.target.value)}>
             <option value="">All Classes</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
+          <button className={styles.btnPrimary} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? '✕ Close' : '+ Enrol Student'}
           </button>
-          <Link href="/dashboard/principal/students/transfer" className={styles.addBtn} style={{ background: '#F59E0B', textDecoration: 'none' }}>
+          <Link href="/dashboard/principal/students/transfer" className={styles.btnPrimary} style={{ background: '#F59E0B', textDecoration: 'none' }}>
             ⇄ Transfer Student
           </Link>
         </div>
 
         {/* Enrol form */}
         {showForm && (
-          <div className={styles.formCard}>
-            <p className={styles.formTitle}>Enrol New Student</p>
-            <div className={styles.formGrid}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Full Name *</label>
-                <input className={styles.fieldInput} placeholder="e.g. Chioma Okonkwo" value={form.full_name} onChange={e => setForm(f=>({...f,full_name:e.target.value}))}/>
+          <div className={styles.modal}>
+            <p className={styles.modalTitle}>Enrol New Student</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Full Name *</label>
+                <input className={styles.formInput} placeholder="e.g. Chioma Okonkwo" value={form.full_name} onChange={e => setForm(f=>({...f,full_name:e.target.value}))}/>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Email *</label>
-                <input className={styles.fieldInput} type="email" placeholder="e.g. chioma@gmail.com" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}/>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Email *</label>
+                <input className={styles.formInput} type="email" placeholder="e.g. chioma@gmail.com" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}/>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Phone</label>
-                <input className={styles.fieldInput} placeholder="optional" value={form.phone} onChange={e => setForm(f=>({...f,phone:e.target.value}))}/>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Phone</label>
+                <input className={styles.formInput} placeholder="optional" value={form.phone} onChange={e => setForm(f=>({...f,phone:e.target.value}))}/>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Date of Birth</label>
-                <input className={styles.fieldInput} type="date" value={form.date_of_birth} onChange={e => setForm(f=>({...f,date_of_birth:e.target.value}))}/>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Date of Birth</label>
+                <input className={styles.formInput} type="date" value={form.date_of_birth} onChange={e => setForm(f=>({...f,date_of_birth:e.target.value}))}/>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Gender</label>
-                <select className={styles.fieldInput} value={form.gender} onChange={e => setForm(f=>({...f,gender:e.target.value}))}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Gender</label>
+                <select className={styles.formInput} value={form.gender} onChange={e => setForm(f=>({...f,gender:e.target.value}))}>
                   <option value="">Select gender</option>
                   {GENDER_OPTS.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Class</label>
-                <select className={styles.fieldInput} value={form.class_id} onChange={e => setForm(f=>({...f,class_id:e.target.value}))}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Class</label>
+                <select className={styles.formInput} value={form.class_id} onChange={e => setForm(f=>({...f,class_id:e.target.value}))}>
                   <option value="">Select class</option>
                   {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Admission Number</label>
-                <input className={styles.fieldInput} placeholder="e.g. ADM/2025/001" value={form.admission_number} onChange={e => setForm(f=>({...f,admission_number:e.target.value}))}/>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Admission Number</label>
+                <input className={styles.formInput} placeholder="e.g. ADM/2025/001" value={form.admission_number} onChange={e => setForm(f=>({...f,admission_number:e.target.value}))}/>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Parent / Guardian Name</label>
-                <input className={styles.fieldInput} placeholder="e.g. Mr. Okonkwo Emeka" value={form.guardian_name} onChange={e => setForm(f=>({...f,guardian_name:e.target.value}))}/>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Parent / Guardian Name</label>
+                <input className={styles.formInput} placeholder="e.g. Mr. Okonkwo Emeka" value={form.guardian_name} onChange={e => setForm(f=>({...f,guardian_name:e.target.value}))}/>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Parent / Guardian Phone</label>
-                <input className={styles.fieldInput} type="tel" placeholder="e.g. 08012345678" value={form.guardian_phone} onChange={e => setForm(f=>({...f,guardian_phone:e.target.value}))}/>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Parent / Guardian Phone</label>
+                <input className={styles.formInput} type="tel" placeholder="e.g. 08012345678" value={form.guardian_phone} onChange={e => setForm(f=>({...f,guardian_phone:e.target.value}))}/>
               </div>
             </div>
-            <div className={styles.formActions} style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', marginBottom: 0 }}>
-              <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim() || !form.email.trim()}>
+            <div className={styles.modalActions} style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
+              <button className={styles.btnGhost} onClick={() => setShowForm(false)}>Cancel</button>
+              <button className={styles.btnPrimary} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim() || !form.email.trim()}>
                 {saving ? 'Enrolling…' : 'Enrol & Get Code'}
               </button>
             </div>
@@ -560,39 +560,39 @@ export default function StudentsClient({ profile, school, userId }: Props) {
 
         {/* Students list grouped by class */}
         {loading ? (
-          <div className={styles.loadingList}>
-            {[1,2,3,4].map(i => <div key={i} className={styles.skeleton}/>)}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            {[1,2,3,4].map(i => <div key={i} style={{ height: 64, borderRadius: "var(--radius-lg)", background: "var(--glass-bg)", animation: "pulse 1.5s ease-in-out infinite" }}/>)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className={styles.empty}>
+          <div className={styles.emptyState}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             <p>{search || classFilter ? 'No students match your filters' : 'No students enrolled yet'}</p>
           </div>
         ) : (
           Object.entries(byClass).sort(([a],[b]) => a.localeCompare(b)).map(([cls, studs]) => (
-            <div key={cls} className={styles.classGroup}>
-              <div className={styles.classHeader}>
-                <span className={styles.className}>{cls}</span>
-                <span className={styles.classCount}>{studs.length} student{studs.length !== 1 ? 's' : ''}</span>
+            <div key={cls} style={{ marginBottom: "var(--space-4)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--space-2) 0", marginBottom: "var(--space-2)", borderBottom: "1px solid var(--glass-border)" }}>
+                <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{cls}</span>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{studs.length} student{studs.length !== 1 ? 's' : ''}</span>
               </div>
-              <div className={styles.studentList}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                 {studs.map(student => {
                   const initials = student.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase() ?? '?'
                   const genderColor = student.gender?.toLowerCase() === 'female' ? '#EC4899' : student.gender?.toLowerCase() === 'male' ? '#3B82F6' : sc
                   return (
-                    <div key={student.id} className={styles.studentRow} onClick={() => { setPreviewStudent(student) }} style={{ cursor: 'pointer' }}>
-                      <div className={styles.studentAvatar} style={{ background: genderColor + '25', color: genderColor }}>
+                    <div key={student.id} className={styles.listItem} onClick={() => { setPreviewStudent(student) }} style={{ cursor: 'pointer' }}>
+                      <div className={styles.listIconBox} style={{ background: genderColor + '25', color: genderColor }}>
                         {student.avatar_url
                           ? <img src={student.avatar_url} alt="" style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}/>
                           : initials
                         }
                       </div>
-                      <div className={styles.studentInfo}>
-                        <p className={styles.studentName}>{student.full_name}</p>
-                        <div className={styles.studentMeta}>
+                      <div className={styles.listContent}>
+                        <p className={styles.listTitle}>{student.full_name}</p>
+                        <div className={styles.listSub}>
                           {student.gender && <span>{student.gender}</span>}
                           {student.date_of_birth && <span>· Age {new Date().getFullYear() - new Date(student.date_of_birth).getFullYear()}</span>}
-                          {student.default_code && <span className={styles.codeTag}>{student.default_code}</span>}
+                          {student.default_code && <span style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 4, padding: "1px 6px", fontSize: "0.7rem", fontFamily: "monospace" }}>{student.default_code}</span>}
                         </div>
                       </div>
                       {/* Assign class button */}
@@ -613,7 +613,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                           <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
                         </svg>
                       </button>
-                      <button className={styles.delBtn} onClick={() => setConfirmDel(student)} title="Remove student">
+                      <button className={styles.btnDanger} onClick={() => setConfirmDel(student)} title="Remove student">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                       </button>
                     </div>
@@ -686,13 +686,13 @@ export default function StudentsClient({ profile, school, userId }: Props) {
             {/* Actions */}
             <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
               <button
-                className={styles.saveBtn}
+                className={styles.btnPrimary}
                 style={{ flex:1, background:sc }}
                 onClick={() => { setEditStudent(previewStudent); setEditForm({}) }}
               >
                 ✏️ Edit Details
               </button>
-              <button className={styles.cancelBtn} onClick={() => setPreviewStudent(null)}>Close</button>
+              <button className={styles.btnGhost} onClick={() => setPreviewStudent(null)}>Close</button>
             </div>
           </div>
         </div>
@@ -713,7 +713,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
               Edit — {editStudent.full_name}
             </p>
 
-            <div className={styles.formGrid}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
               {([
                 ['Full Name',          'full_name',        'text',   'e.g. Chioma Okonkwo'],
                 ['Phone',              'phone',            'tel',    'e.g. 08012345678'],
@@ -723,10 +723,10 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                 ['Guardian Phone',     'guardian_phone',   'tel',    'e.g. 08098765432'],
                 ['Address',            'address',          'text',   'e.g. 12 Lagos Street'],
               ] as [string,string,string,string][]).map(([label, key, type, placeholder]) => (
-                <div key={key} className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{label}</label>
+                <div key={key} className={styles.formGroup}>
+                  <label className={styles.formLabel}>{label}</label>
                   <input
-                    className={styles.fieldInput}
+                    className={styles.formInput}
                     type={type}
                     placeholder={placeholder}
                     value={key in editForm ? editForm[key] : (editStudent?.[key] ?? '')}
@@ -734,18 +734,18 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                   />
                 </div>
               ))}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Gender</label>
-                <select className={styles.fieldInput}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Gender</label>
+                <select className={styles.formInput}
                   value={'gender' in editForm ? editForm.gender : (editStudent?.gender ?? '')}
                   onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
                   <option value="">Select gender</option>
                   {GENDER_OPTS.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Class</label>
-                <select className={styles.fieldInput}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Class</label>
+                <select className={styles.formInput}
                   value={'class_level' in editForm ? editForm.class_level : (editStudent?.class_level ?? '')}
                   onChange={e => setEditForm((f:any) => ({ ...f, class_level: e.target.value }))}>
                   <option value="">Select class</option>
@@ -754,9 +754,9 @@ export default function StudentsClient({ profile, school, userId }: Props) {
               </div>
             </div>
 
-            <div className={styles.formActions}>
-              <button className={styles.cancelFormBtn} onClick={() => { setEditStudent(null); setEditForm({}) }}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => { setEditStudent(null); setEditForm({}) }}>Cancel</button>
+              <button className={styles.btnPrimary} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
                 {editSaving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
