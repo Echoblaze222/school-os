@@ -1,4 +1,16 @@
 'use client'
+// src/app/dashboard/principal/assignments/AssignmentsClient.tsx
+//
+// FIX: this file filtered/wrote assignments.class_level (a display string)
+// instead of assignments.class_id (the real FK), and referenced a
+// teacher_name column that doesn't exist on assignments — teacher identity
+// is via teacher_id/created_by/posted_by → profiles.full_name, confirmed
+// against the teacher grading pages and parent/student assignment fixes.
+//
+// ADDED: a school-wide overview — for each assignment, a per-class
+// breakdown of how many students have submitted/been graded vs. the total
+// roster for that class (profiles.class_id), so the principal can see
+// completion at a glance without opening every teacher's gradebook.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -15,6 +27,8 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const sc = school?.primary_color ?? '#7C3AED'
   const [assignments, setAssignments] = useState<any[]>([])
   const [classes,     setClasses]     = useState<any[]>([])
+  const [classRoster,  setClassRoster] = useState<Record<string, number>>({})
+  const [submissions,  setSubmissions] = useState<any[]>([])
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
   const [confirmDel,  setConfirmDel]  = useState<any | null>(null)
@@ -22,6 +36,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const [saving,      setSaving]      = useState(false)
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
   const [filter,      setFilter]      = useState<Status | ''>('')
+  const [expanded,    setExpanded]    = useState<string | null>(null)
   const [form, setForm] = useState({
     title: '', description: '', subject: '', class_id: '',
     due_date: '', max_score: '100', status: 'active' as Status,
@@ -31,36 +46,69 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
   async function load() {
     if (!school?.id) { setLoading(false); return }
+
     const [{ data: asgn }, { data: cls }] = await Promise.all([
       supabase.from('assignments')
-        .select('id, title, description, subject, class_level, due_date, max_score, status, created_at, teacher_name')
+        .select(`
+          id, title, description, subject, class_id, due_date, max_score, status, created_at,
+          teacher_id, created_by, posted_by,
+          classes ( id, name ),
+          teacher:profiles!teacher_id ( full_name )
+        `)
         .eq('school_id', school.id)
         .order('created_at', { ascending: false })
         .limit(60),
       supabase.from('classes').select('id, name').eq('school_id', school.id).order('name'),
     ])
+
     if (asgn) setAssignments(asgn)
     if (cls)  setClasses(cls)
+
+    // Total roster size per class, for "X of Y submitted"
+    if (cls && cls.length > 0) {
+      const { data: roster } = await supabase
+        .from('profiles')
+        .select('class_id')
+        .eq('school_id', school.id)
+        .eq('role', 'student')
+        .in('class_id', cls.map((c: any) => c.id))
+
+      const counts: Record<string, number> = {}
+      roster?.forEach((r: any) => { counts[r.class_id] = (counts[r.class_id] ?? 0) + 1 })
+      setClassRoster(counts)
+    }
+
+    // All submissions for this school's assignments, for the per-class breakdown
+    if (asgn && asgn.length > 0) {
+      const { data: subs } = await supabase
+        .from('assignment_submissions')
+        .select('id, assignment_id, student_id, status, score, student:profiles!student_id(full_name, class_id)')
+        .in('assignment_id', asgn.map((a: any) => a.id))
+      setSubmissions(subs ?? [])
+    }
+
     setLoading(false)
   }
 
   function showToast(msg: string, ok = true) { setToast({ msg, ok }); setTimeout(() => setToast(null), 3000) }
 
   async function handleCreate() {
-    if (!form.title.trim()) return
+    if (!form.title.trim() || !form.class_id) {
+      showToast('Title and class are required', false)
+      return
+    }
     setSaving(true)
-    const cls = classes.find(c => c.id === form.class_id)
     const { data, error } = await supabase.from('assignments').insert({
       title:       form.title.trim(),
       description: form.description.trim() || null,
       subject:     form.subject.trim() || null,
-      class_level: cls?.name ?? null,
+      class_id:    form.class_id,
       due_date:    form.due_date || null,
       max_score:   parseInt(form.max_score) || 100,
       status:      form.status,
       school_id:   school.id,
       created_by:  userId,
-    }).select().single()
+    }).select('*, classes(id, name)').single()
     setSaving(false)
     if (error) { showToast(error.message, false); return }
     setAssignments(prev => [data, ...prev])
@@ -177,7 +225,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Class</label>
                 <select className={styles.fieldInput} value={form.class_id} onChange={e => setForm(f=>({...f,class_id:e.target.value}))}>
-                  <option value="">All classes</option>
+                  <option value="">Select a class…</option>
                   {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -220,38 +268,86 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               const sc2 = STATUS_COLOR[asgn.status as Status] ?? '#6B7280'
               const overdue = asgn.due_date && new Date(asgn.due_date) < new Date() && asgn.status === 'active'
               return (
-                <div key={asgn.id} className={`${styles.assignmentCard} ${overdue ? styles.overdueCard : ''}`}>
-                  <div className={styles.cardLeft}>
-                    <div className={styles.cardTop}>
-                      <span className={styles.statusPill} style={{ background: sc2 + '20', color: sc2 }}>{asgn.status}</span>
-                      {asgn.subject && <span className={styles.subjectTag}>{asgn.subject}</span>}
-                      {asgn.class_level && <span className={styles.classTag}>{asgn.class_level}</span>}
+                <div key={asgn.id} className={`${styles.assignmentCard} ${overdue ? styles.overdueCard : ''}`}
+                  style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex' }}>
+                    <div className={styles.cardLeft} onClick={() => setExpanded(expanded === asgn.id ? null : asgn.id)} style={{ cursor: 'pointer', flex: 1 }}>
+                      <div className={styles.cardTop}>
+                        <span className={styles.statusPill} style={{ background: sc2 + '20', color: sc2 }}>{asgn.status}</span>
+                        {asgn.subject && <span className={styles.subjectTag}>{asgn.subject}</span>}
+                        {asgn.classes?.name && <span className={styles.classTag}>{asgn.classes.name}</span>}
+                      </div>
+                      <h3 className={styles.assignmentTitle}>{asgn.title}</h3>
+                      {asgn.description && <p className={styles.assignmentDesc}>{asgn.description}</p>}
+                      <div className={styles.cardMeta}>
+                        {asgn.due_date && (
+                          <span className={`${styles.dueDate} ${overdue ? styles.dueDateOverdue : ''}`}>
+                            📅 {relTime(asgn.due_date)} · {new Date(asgn.due_date).toLocaleDateString('en-NG',{day:'numeric',month:'short'})}
+                          </span>
+                        )}
+                        {asgn.max_score && <span className={styles.scoreTag}>/{asgn.max_score} pts</span>}
+                        {asgn.teacher?.full_name && <span className={styles.teacherTag}>👤 {asgn.teacher.full_name}</span>}
+                      </div>
+
+                      {/* Submission completion bar */}
+                      {(() => {
+                        const total = classRoster[asgn.class_id] ?? 0
+                        const subs  = submissions.filter(s => s.assignment_id === asgn.id)
+                        const done  = subs.length
+                        const pct   = total > 0 ? Math.round((done / total) * 100) : 0
+                        return total > 0 ? (
+                          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ flex: 1, height: 5, borderRadius: 3, background: 'var(--glass-border)', overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10B981' : sc, transition: 'width 0.2s' }}/>
+                            </div>
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                              {done}/{total} submitted
+                            </span>
+                          </div>
+                        ) : null
+                      })()}
                     </div>
-                    <h3 className={styles.assignmentTitle}>{asgn.title}</h3>
-                    {asgn.description && <p className={styles.assignmentDesc}>{asgn.description}</p>}
-                    <div className={styles.cardMeta}>
-                      {asgn.due_date && (
-                        <span className={`${styles.dueDate} ${overdue ? styles.dueDateOverdue : ''}`}>
-                          📅 {relTime(asgn.due_date)} · {new Date(asgn.due_date).toLocaleDateString('en-NG',{day:'numeric',month:'short'})}
-                        </span>
-                      )}
-                      {asgn.max_score && <span className={styles.scoreTag}>/{asgn.max_score} pts</span>}
-                      {asgn.teacher_name && <span className={styles.teacherTag}>👤 {asgn.teacher_name}</span>}
+                    <div className={styles.cardActions}>
+                      <button
+                        className={styles.statusToggle}
+                        onClick={() => toggleStatus(asgn)}
+                        title={`Change status (currently ${asgn.status})`}
+                        style={{ color: sc2 }}
+                      >
+                        ↻
+                      </button>
+                      <button className={styles.delBtn} onClick={() => setConfirmDel(asgn)} title="Delete">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+                      </button>
                     </div>
                   </div>
-                  <div className={styles.cardActions}>
-                    <button
-                      className={styles.statusToggle}
-                      onClick={() => toggleStatus(asgn)}
-                      title={`Change status (currently ${asgn.status})`}
-                      style={{ color: sc2 }}
-                    >
-                      ↻
-                    </button>
-                    <button className={styles.delBtn} onClick={() => setConfirmDel(asgn)} title="Delete">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-                    </button>
-                  </div>
+
+                  {/* Expandable: every student's submission status for this assignment */}
+                  {expanded === asgn.id && (
+                    <div style={{ borderTop: '1px solid var(--glass-border)',
+                      marginTop: 10, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {(() => {
+                        const subs = submissions.filter(s => s.assignment_id === asgn.id)
+                        if (subs.length === 0) {
+                          return <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                            No submissions yet for {asgn.classes?.name ?? 'this class'}.
+                          </p>
+                        }
+                        return subs.map((s: any) => (
+                          <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '6px 10px', background: 'var(--glass-bg)', borderRadius: 8 }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                              {s.student?.full_name ?? 'Unknown student'}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700,
+                              color: s.status === 'graded' ? '#10B981' : '#F59E0B' }}>
+                              {s.status === 'graded' ? `${s.score}/${asgn.max_score}` : s.status ?? 'submitted'}
+                            </span>
+                          </div>
+                        ))
+                      })()}
+                    </div>
+                  )}
                 </div>
               )
             })}
