@@ -112,8 +112,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         balance_ngn,
         status,
         fee_structures ( description, term, academic_year ),
-        profiles!student_id ( id, full_name, class_level, default_code, parent_id,
-          parent:profiles!parent_id ( id, full_name, email, phone ) )
+        profiles!student_id ( id, full_name, class_level, default_code )
       `)
       .eq('school_id', school?.id)
       .eq('fee_structures.term', termKey)
@@ -137,7 +136,6 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
       const student = unwrapEmbed((inv as any).profiles)
       if (!student) continue
-      const parent = unwrapEmbed(student.parent)
       const sid = student.id
       if (!studentMap.has(sid)) {
         studentMap.set(sid, {
@@ -145,7 +143,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           full_name:   student.full_name,
           class_level: student.class_level ?? '—',
           default_code: student.default_code ?? '',
-          parent:      parent ?? null,
+          parent:      null,  // resolved via parent_student_links in sendReminders
           outstanding: 0,
           invoiceIds:  [],
         })
@@ -217,8 +215,14 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             .replace('{year}', year)
         : buildMessage(debtor.full_name, debtor.class_level, debtor.outstanding, term, year, schoolName)
 
-      // Determine parent_id: use linked parent or fall back to student's own id
-      const parentId = debtor.parent?.id ?? debtor.id
+      // FIX: look up parent via parent_student_links (profiles has no parent_id column)
+      const { data: linkRow } = await supabase
+        .from('parent_student_links')
+        .select('parent_id')
+        .eq('student_id', debtor.id)
+        .maybeSingle()
+
+      const parentId = linkRow?.parent_id ?? null
 
       // Insert one fee_reminder record per invoice for this student
       for (const invoiceId of debtor.invoiceIds) {
@@ -226,8 +230,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           .from('fee_reminders')
           .insert({
             invoice_id:   invoiceId,
-            parent_id:    parentId,
-            channel:      'in_app',         // 'in_app' | 'sms' | 'email' — use in_app for now
+            parent_id:    parentId,   // null if no parent linked — parent won't see it but won't crash
+            channel:      'in_app',
             status:       'sent',
             message_body: msgBody,
             sent_at:      new Date().toISOString(),
@@ -236,6 +240,18 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
         if (remErr) {
           console.error('Reminder insert error:', remErr.message)
+          continue
+        }
+
+        // FIX: also push a notification so it shows on parent dashboard instantly
+        if (parentId) {
+          await supabase.from('notifications').insert({
+            user_id:   parentId,
+            school_id: school?.id,
+            title:     'Fee Reminder',
+            body:      `Outstanding balance reminder for ${debtor.full_name} — ${term} ${year}`,
+            type:      'fee_reminder',
+          }).then(() => {}).catch(() => {})  // non-critical
         }
       }
 
