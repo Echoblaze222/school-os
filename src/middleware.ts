@@ -21,6 +21,8 @@ const PUBLIC_PATHS = [
   '/register',
   '/forgot-password',
   '/reset-password',
+  '/terms',
+  '/privacy',
   '/offline',
   '/api/auth',                          // code-signin, first-login — must be public
   '/api/schools/register',
