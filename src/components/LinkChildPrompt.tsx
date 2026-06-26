@@ -14,72 +14,71 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props
   async function findChild() {
     if (!code.trim()) return
     setLoading(true); setError(''); setFound(null)
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    // FIX: profiles has no class_level — join student_profiles for class info
-    const { data, error: qErr } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        full_name,
-        avatar_url,
-        student_profiles (
-          class_id,
-          classes ( name, class_level )
-        )
-      `)
-      .eq('default_code', code.trim().toUpperCase())
-      .eq('role', 'student')
-      .eq('school_id', schoolId)
-      .maybeSingle()  // FIX: .single() throws if no row — use maybeSingle()
+      // Step 1: find student by code — simple query, no joins
+      const { data: student, error: e1 } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('default_code', code.trim().toUpperCase())
+        .eq('role', 'student')
+        .eq('school_id', schoolId)
+        .maybeSingle()
 
-    if (qErr) {
+      if (e1) throw e1
+      if (!student) {
+        setError('No student found with that code. Check with the school admin.')
+        return
+      }
+
+      // Step 2: get their class label separately
+      const { data: sp } = await supabase
+        .from('student_profiles')
+        .select('class_id, classes(name, class_level)')
+        .eq('id', student.id)
+        .maybeSingle()
+
+      const classLabel = (sp?.classes as any)?.class_level
+                      ?? (sp?.classes as any)?.name
+                      ?? 'Student'
+
+      setFound({ ...student, class_label: classLabel })
+    } catch (err: any) {
+      console.error('findChild error:', err)
       setError('Something went wrong. Please try again.')
+    } finally {
       setLoading(false)
-      return
     }
-    if (!data) {
-      setError('No student found with that code. Check with the school admin.')
-      setLoading(false)
-      return
-    }
-
-    const sp          = (data as any).student_profiles
-    const classLabel  = sp?.classes?.class_level ?? sp?.classes?.name ?? 'Student'
-    setFound({ ...data, class_label: classLabel })
-    setLoading(false)
   }
 
   async function linkChild() {
     setLoading(true); setError('')
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    // Check if link already exists
-    const { data: existing } = await supabase
-      .from('parent_student_links')
-      .select('id')
-      .eq('parent_id', userId)
-      .eq('student_id', found.id)
-      .maybeSingle()
+      // Check if already linked
+      const { data: existing } = await supabase
+        .from('parent_student_links')
+        .select('id')
+        .eq('parent_id', userId)
+        .eq('student_id', found.id)
+        .maybeSingle()
 
-    if (existing) {
-      // Already linked — just reload
+      if (!existing) {
+        const { error: insertErr } = await supabase
+          .from('parent_student_links')
+          .insert({ parent_id: userId, student_id: found.id })
+
+        if (insertErr) throw insertErr
+      }
+
       window.location.reload()
-      return
-    }
-
-    const { error: insertErr } = await supabase
-      .from('parent_student_links')
-      .insert({ parent_id: userId, student_id: found.id })
-
-    if (insertErr) {
-      setError('Failed to link child: ' + insertErr.message)
+    } catch (err: any) {
+      console.error('linkChild error:', err)
+      setError('Failed to link child: ' + (err?.message ?? 'unknown error'))
       setLoading(false)
-      return
     }
-
-    // Hard reload so parent dashboard re-fetches children
-    window.location.reload()
   }
 
   return (
