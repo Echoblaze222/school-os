@@ -1,27 +1,35 @@
 // src/app/dashboard/secretary/records/page.tsx
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import RecordsClient from './RecordsClient'
 
 export default async function RecordsPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll() { return cookieStore.getAll() }, setAll(c: any[]) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } })
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-  if (!profile || profile.role !== 'secretary') redirect('/login')
-  const { data: school } = await supabase.from('school_branding').select('*').eq('id', profile.school_id).single()
 
-  // All profiles in the school — used to resolve student_id / recorded_by to names
+  // FIX: use profiles → schools(*) — same pattern as every other dashboard page
+  // school_branding.id !== school_id so querying school_branding by profile.school_id was wrong
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*, schools(*)')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || profile.role !== 'secretary') redirect('/login')
+
+  const school = (profile as any).schools ?? null
+
+  // All students in the school for the dropdown
   const { data: allProfiles } = await supabase
     .from('profiles')
-    .select('id, full_name, role, admission_number, class_id')
+    .select('id, full_name, role, default_code')
     .eq('school_id', profile.school_id)
     .order('full_name')
 
-  const students = (allProfiles ?? []).filter(p => p.role === 'student')
+  const students = (allProfiles ?? []).filter((p: any) => p.role === 'student')
 
+  // Existing behaviour records for this school
   const { data: records } = await supabase
     .from('behaviour_records')
     .select('*')

@@ -131,7 +131,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input className={styles.searchInput} placeholder="Search by student or description…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setForm({ student_id: '', type: 'neutral', description: '' }); setModal(true) }} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>+ New</button>
+        <button onClick={() => { setMsg(''); setForm({ student_id: '', type: 'neutral', description: '' }); setModal(true) }} style={{ height: 44, padding: '0 18px', whiteSpace: 'nowrap', background: sc, color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>+ New</button>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
@@ -188,8 +188,8 @@ export default function RecordsClient({ records: init, profile, school, userId, 
       )}
 
       {modal && (
-        <div className={styles.modalOverlay} onClick={() => setModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalOverlay} onClick={() => setModal(false)} style={{ alignItems: 'flex-end', paddingBottom: 80 }}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ paddingBottom: 32, marginBottom: 80 }}>
             <h2 className={styles.modalTitle}>New Behaviour Record</h2>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Student *</label>
@@ -210,7 +210,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
               <textarea className={styles.formTextarea} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Details of this record…" rows={4} />
             </div>
             {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
-            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button><button className={styles.btnPrimary} onClick={createRecord} disabled={saving}>{saving ? 'Saving…' : 'Create Record'}</button></div>
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button><button onClick={createRecord} disabled={saving} style={{ height: 42, padding: '0 20px', background: sc, color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.85rem', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Saving…' : 'Create Record'}</button></div>
           </div>
         </div>
       )}
