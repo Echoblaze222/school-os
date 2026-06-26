@@ -92,10 +92,10 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     const term = getCurrentTerm()
     const year = getCurrentYear()
 
-    // 1. All students in this school with their class
+    // 1a. Students — plain query, no joins
     const { data: students, error: sErr } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, student_profiles(class_id, classes(name, class_level))')
+      .select('id, full_name, avatar_url')
       .eq('school_id', school?.id)
       .eq('role', 'student')
 
@@ -107,6 +107,21 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     }
 
     const studentIds = students.map((s: any) => s.id)
+
+    // 1b. student_profiles — separate query, no FK join
+    const { data: spRows } = await supabase
+      .from('student_profiles')
+      .select('id, class_id, classes(name, class_level)')
+      .in('id', studentIds)
+
+    // Build a lookup map: student_id -> { class_id, class_level }
+    const spMap: Record<string, { class_id: string; class_level: string }> = {}
+    ;(spRows ?? []).forEach((sp: any) => {
+      spMap[sp.id] = {
+        class_id:    sp.class_id ?? null,
+        class_level: sp.classes?.class_level ?? sp.classes?.name ?? '—',
+      }
+    })
 
     // 2. Fetch all activity data in parallel
     const [
@@ -121,7 +136,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
       supabase
         .from('assignment_submissions')
-        .select('student_id, assignment_id, score, assignments(max_score, class_id)')
+        .select('student_id, assignment_id, score, assignments(max_score)')
         .in('student_id', studentIds)
         .eq('status', 'graded'),
 
@@ -136,9 +151,9 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
     // 3. Group by student and calculate scores
     const entries: LeaderboardEntry[] = students.map((s: any) => {
-      const sp         = Array.isArray(s.student_profiles) ? s.student_profiles[0] : s.student_profiles
-      const classLevel = sp?.classes?.class_level ?? sp?.classes?.name ?? '—'
-      const classId    = sp?.class_id ?? null
+      const sp         = spMap[s.id]
+      const classLevel = sp?.class_level ?? '—'
+      const classId    = sp?.class_id    ?? null
 
       // Quiz avg
       const myQuizzes = (quizAttempts ?? []).filter((q: any) => q.student_id === s.id)
