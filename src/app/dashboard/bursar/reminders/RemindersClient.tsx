@@ -245,13 +245,15 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
         // FIX: also push a notification so it shows on parent dashboard instantly
         if (parentId) {
-          await supabase.from('notifications').insert({
-            user_id:   parentId,
-            school_id: school?.id,
-            title:     'Fee Reminder',
-            body:      `Outstanding balance reminder for ${debtor.full_name} — ${term} ${year}`,
-            type:      'fee_reminder',
-          }).then(() => {}).catch(() => {})  // non-critical
+          try {
+            await supabase.from('notifications').insert({
+              user_id:   parentId,
+              school_id: school?.id,
+              title:     'Fee Reminder',
+              body:      `Outstanding balance reminder for ${debtor.full_name} — ${term} ${year}`,
+              type:      'fee_reminder',
+            })
+          } catch (_) {} // non-critical
         }
       }
 
