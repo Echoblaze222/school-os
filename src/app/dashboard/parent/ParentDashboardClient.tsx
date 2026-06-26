@@ -262,7 +262,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
           {activeChild && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
               {[
-                { label: 'Attendance', value: statsLoading ? '…' : attendance != null ? `${childStats.attendance}%` : '—', color: '#10B981' },
+                { label: 'Attendance', value: statsLoading ? '…' : childStats.attendance != null ? `${childStats.attendance}%` : '—', color: '#10B981' },
                 { label: 'Term GPA',   value: statsLoading ? '…' : childStats.gpa  != null ? childStats.gpa.toFixed(1)  : '—', color: sc       },
                 { label: 'Class Rank', value: statsLoading ? '…' : childStats.rank != null ? `#${childStats.rank}`      : '—', color: '#8B5CF6' },
                 { label: 'Tasks Due',  value: statsLoading ? '…' : childStats.pendingTasks,                                    color: '#F59E0B' },
