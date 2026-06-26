@@ -199,11 +199,12 @@ export default function LoginPage() {
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [newUserError,   setNewUserError]   = useState('')
 
-  const [regStep,     setRegStep]     = useState(1)
-  const [regLoading,  setRegLoading]  = useState(false)
-  const [regError,    setRegError]    = useState('')
-  const [regSuccess,  setRegSuccess]  = useState(false)
-  const [paymentMode, setPaymentMode] = useState<'full' | 'installment'>('full')
+  const [regStep,        setRegStep]        = useState(1)
+  const [regLoading,     setRegLoading]     = useState(false)
+  const [regError,       setRegError]       = useState('')
+  const [regSuccess,     setRegSuccess]     = useState(false)
+  const [paymentMode,    setPaymentMode]    = useState<'full' | 'installment'>('full')
+  const [termsAccepted,  setTermsAccepted]  = useState(false)
   const [reg, setReg] = useState({
     schoolName: '', schoolType: 'Secondary', address: '', city: '', state: '',
     phone: '', email: '', tagline: '',
@@ -282,6 +283,7 @@ export default function LoginPage() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setRegError('')
+    if (!termsAccepted) { setRegError('Please accept the Terms & Conditions and Privacy Policy to continue.'); return }
     setRegLoading(true)
     try {
       const res = await fetch('/api/schools/register', {
@@ -519,6 +521,13 @@ export default function LoginPage() {
                   </button>
                 </form>
               )}
+
+              <p className={styles.loginFooterLinks}>
+                By signing in you agree to our{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Terms &amp; Conditions</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Privacy Policy</a>
+              </p>
             </div>
           )}
 
@@ -681,8 +690,26 @@ export default function LoginPage() {
                           </button>
                         </div>
 
+                        <label className={styles.termsRow}>
+                          <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={e => setTermsAccepted(e.target.checked)}
+                            className={styles.termsCheckbox}
+                          />
+                          <span className={styles.termsText}>
+                            I have read and agree to the{' '}
+                            <a href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>
+                              Terms &amp; Conditions
+                            </a>{' '}
+                            and{' '}
+                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>
+                              Privacy Policy
+                            </a>
+                          </span>
+                        </label>
+
                         <div className={styles.summaryBox}>
-                          <p className={styles.summaryTitle}>Registration Summary</p>
                           <p className={styles.summaryLine}><span>School:</span> {reg.schoolName}</p>
                           <p className={styles.summaryLine}><span>Payment:</span> {paymentMode === 'full' ? 'Full payment' : '3-month installment'}</p>
                           <p className={styles.summaryLine}><span>Due today:</span> ₦{amountDueNow.toLocaleString()}</p>
