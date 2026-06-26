@@ -50,14 +50,17 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Notify child
-  await supabase.from('notifications').insert({
-    user_id:   child.id,
-    school_id: parent.school_id,
-    title:     '👨‍👩‍👧 Parent Linked',
-    body:      'A parent account has been linked to your profile.',
-    type:      'system',
-  }).throwOnError().catch(() => {}) // non-critical, don't fail the request
+  // Notify child — non-critical, ignore errors
+  try {
+    await supabase.from('notifications').insert({
+      user_id:   child.id,
+      school_id: parent.school_id,
+      title:     'Parent Linked',
+      body:      'A parent account has been linked to your profile.',
+      type:      'system',
+    })
+  } catch (_) {}
 
   return NextResponse.json({ ok: true, child: { id: child.id, full_name: child.full_name } })
     }
+      
