@@ -143,8 +143,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           full_name:    student.full_name,
           class_level:  student.class_level ?? '—',
           default_code: student.default_code ?? '',
-          parent_id:    student.parent_id ?? null,   // profiles.parent_id — direct FK
-          parent_name:  null,                         // resolved below
+          parent_id:    null,   // resolved below via parent_student_links
+          parent_name:  null,
           outstanding:  0,
           invoiceIds:   [],
         })
@@ -157,22 +157,36 @@ export default function RemindersClient({ profile, school, userId }: Props) {
     const result = Array.from(studentMap.values())
       .sort((a, b) => b.outstanding - a.outstanding)
 
-    // ── Resolve parent names in one batch using the parent_id already on profiles ──
-    const parentIds = [...new Set(result.map((s: any) => s.parent_id).filter(Boolean))]
-    if (parentIds.length > 0) {
-      const { data: parentProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', parentIds)
+    // ── Resolve parent_id via parent_student_links (the correct join table) ──
+    // LinkChildPrompt writes here: { parent_id, student_id }
+    // profiles.parent_id is on the parent's OWN row, not the student's
+    if (result.length > 0) {
+      const studentIds = result.map((s: any) => s.id)
 
-      if (parentProfiles) {
-        const parentMap = new Map(parentProfiles.map((p: any) => [p.id, p]))
+      const { data: links } = await supabase
+        .from('parent_student_links')
+        .select('student_id, parent_id')
+        .in('student_id', studentIds)
+
+      if (links && links.length > 0) {
+        // Collect unique parent IDs to fetch names in one shot
+        const parentIds = [...new Set(links.map((l: any) => l.parent_id))]
+        const { data: parents } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', parentIds)
+
+        const parentMap = new Map((parents ?? []).map((p: any) => [p.id, p.full_name]))
+        const linkMap   = new Map(links.map((l: any) => [l.student_id, l.parent_id]))
+
         for (const debtor of result) {
-          if (debtor.parent_id) debtor.parent_name = parentMap.get(debtor.parent_id)?.full_name ?? null
+          const pid = linkMap.get(debtor.id) ?? null
+          debtor.parent_id   = pid
+          debtor.parent_name = pid ? (parentMap.get(pid) ?? null) : null
         }
       }
     }
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
 
     setDebtors(result)
     setSelected(new Set())
@@ -181,20 +195,42 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
   async function loadHistory() {
     setLoading(true)
-    const { data } = await supabase
+
+    // Step 1: fetch reminders with parent name (direct FK on fee_reminders)
+    const { data: reminders } = await supabase
       .from('fee_reminders')
-      .select(`
-        id, channel, status, message_body, sent_at, created_at,
-        payment_invoices (
-          student_id,
-          profiles!student_id ( full_name, class_level )
-        )
-      `)
+      .select('id, channel, status, message_body, sent_at, created_at, invoice_id, parent_id')
       .eq('triggered_by', userId)
       .order('created_at', { ascending: false })
       .limit(50)
 
-    if (data) setHistory(data)
+    if (!reminders || reminders.length === 0) {
+      setHistory([])
+      setLoading(false)
+      return
+    }
+
+    // Step 2: fetch invoice→student info for display
+    const invoiceIds = [...new Set(reminders.map((r: any) => r.invoice_id).filter(Boolean))]
+    const { data: invoices } = await supabase
+      .from('payment_invoices')
+      .select('id, student_id, profiles!student_id ( full_name, class_level )')
+      .in('id', invoiceIds)
+
+    // Build map: invoice_id → { full_name, class_level }
+    const invoiceMap = new Map<string, any>()
+    for (const inv of (invoices ?? [])) {
+      const student = unwrapEmbed((inv as any).profiles)
+      if (student) invoiceMap.set(inv.id, student)
+    }
+
+    // Merge student info into reminder rows
+    const enriched = reminders.map((r: any) => ({
+      ...r,
+      _student: invoiceMap.get(r.invoice_id) ?? null,
+    }))
+
+    setHistory(enriched)
     setLoading(false)
   }
 
@@ -233,11 +269,10 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             .replace('{year}', year)
         : buildMessage(debtor.full_name, debtor.class_level, debtor.outstanding, term, year, schoolName)
 
-      // parent_id comes from profiles.parent_id, resolved during loadDebtors
+      // parent_id resolved from parent_student_links during loadDebtors
       const parentId: string | null = debtor.parent_id ?? null
 
       // fee_reminders.parent_id is NOT NULL — skip students with no linked parent
-      // and surface a visible warning instead of a silent DB error
       if (!parentId) {
         setError(prev =>
           (prev ? prev + '; ' : '') +
@@ -248,7 +283,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         continue
       }
 
-      // Insert one fee_reminder record per invoice for this student
+      // Insert one fee_reminder per invoice for this student
       let invoiceErrors = 0
       for (const invoiceId of debtor.invoiceIds) {
         const { error: remErr } = await supabase
@@ -269,7 +304,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           continue
         }
 
-        // Push an in-app notification so it appears on the parent dashboard immediately
+        // Push instant in-app notification to parent
         await supabase.from('notifications').insert({
           user_id:   parentId,
           school_id: school?.id,
@@ -596,8 +631,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             : (
               <div className={styles.list}>
                 {history.map((item: any) => {
-                  const inv     = unwrapEmbed(item.payment_invoices)
-                  const student = unwrapEmbed(inv?.profiles)
+                  const student = item._student ?? null
                   return (
                     <div key={item.id} style={{
                       background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
