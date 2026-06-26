@@ -71,6 +71,7 @@ export default function ParentNotificationsPageClient({
   const [filter,        setFilter]        = useState('all')
   const [loading,       setLoading]       = useState(false)
   const [localUnread,   setLocalUnread]   = useState(unreadCount)
+  const [selected,      setSelected]      = useState<Notification | null>(null)
 
   const push = usePushNotifications()
 
@@ -129,7 +130,16 @@ export default function ParentNotificationsPageClient({
 
   function handleClick(notif: Notification) {
     if (!notif.is_read) markOneRead(notif.id)
-    if (notif.link_url) router.push(notif.link_url)
+    setSelected(notif)
+  }
+
+  function closeModal() {
+    setSelected(null)
+  }
+
+  function viewLinkedItem() {
+    if (selected?.link_url) router.push(selected.link_url)
+    setSelected(null)
   }
 
   function formatTime(dateStr: string) {
@@ -305,6 +315,72 @@ export default function ParentNotificationsPageClient({
         {/* Space for bottom nav */}
         <div style={{ height: '90px' }} />
       </div>
+
+      {/* Notification detail modal */}
+      {selected && (
+        <div
+          onClick={closeModal}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '24px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--card-bg, #1a1a1f)',
+              border: '1px solid var(--border, rgba(255,255,255,0.1))',
+              borderRadius: 16,
+              maxWidth: 420,
+              width: '100%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              padding: '20px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '1.4rem' }}>{TYPE_EMOJIS[selected.type] ?? '🔔'}</span>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>{selected.title}</h2>
+              </div>
+              <button
+                onClick={closeModal}
+                style={{
+                  background: 'transparent', border: 'none', color: 'inherit',
+                  fontSize: '1.1rem', cursor: 'pointer', opacity: 0.6, lineHeight: 1,
+                }}
+              >✕</button>
+            </div>
+
+            <p style={{
+              margin: '16px 0', fontSize: '0.95rem', lineHeight: 1.6,
+              whiteSpace: 'pre-wrap', opacity: 0.9,
+            }}>
+              {selected.body}
+            </p>
+
+            <p style={{ fontSize: '0.75rem', opacity: 0.5, margin: '0 0 4px' }}>
+              {formatTime(selected.created_at)}
+            </p>
+
+            {selected.link_url && (
+              <button
+                onClick={viewLinkedItem}
+                style={{
+                  marginTop: 12, width: '100%', padding: '10px 16px',
+                  borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: 'var(--burgundy, #800020)', color: '#fff',
+                  fontWeight: 600, fontSize: '0.9rem',
+                }}
+              >
+                View Details
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Canonical RoleNav — same as ParentDashboardClient */}
       <RoleNav
