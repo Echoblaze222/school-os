@@ -26,28 +26,18 @@ const MODULES = [
   { id: 'chat',        label: 'Message School',   Icon: MessageIcon,   href: '/dashboard/parent/chat',        accent: '#7C3AED', bg: '#2d1060' },
 ]
 
-// FIX: term enum values must match DB — 'First Term' / 'Second Term' / 'Third Term'
 function getCurrentTerm(): string {
-  const month = new Date().getMonth() + 1
-  if (month >= 9 || month <= 1) return 'First Term'
-  if (month >= 5)               return 'Third Term'
+  const m = new Date().getMonth() + 1
+  if (m >= 9 || m <= 1) return 'First Term'
+  if (m >= 5)           return 'Third Term'
   return 'Second Term'
 }
-
 function getCurrentYear(): string {
-  const now   = new Date()
-  const month = now.getMonth() + 1
-  const y     = now.getFullYear()
-  return month >= 9 ? `${y}/${y + 1}` : `${y - 1}/${y}`
+  const now = new Date(); const m = now.getMonth() + 1; const y = now.getFullYear()
+  return m >= 9 ? `${y}/${y + 1}` : `${y - 1}/${y}`
 }
 
-interface ChildStats {
-  attendance:   number | null
-  gpa:          number | null
-  rank:         number | null
-  pendingTasks: number
-}
-
+interface ChildStats { attendance: number | null; gpa: number | null; rank: number | null; pendingTasks: number }
 interface Props { profile: any; school: any; userId: string; counts?: any }
 
 export default function ParentDashboardClient({ profile, school, userId, counts = {} }: Props) {
@@ -62,153 +52,144 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
 
-  useEffect(() => {
-    fetchChildren()
-  }, [userId])
-
-  useEffect(() => {
-    if (activeChildId) loadChildStats(activeChildId)
-  }, [activeChildId, children])
+  useEffect(() => { fetchChildren() }, [userId])
+  useEffect(() => { if (activeChildId && children.length) loadChildStats(activeChildId) }, [activeChildId, children])
 
   async function fetchChildren() {
     setChecking(true)
+    try {
+      // Step 1: get student IDs from parent_student_links
+      const { data: links } = await supabase
+        .from('parent_student_links')
+        .select('student_id')
+        .eq('parent_id', userId)
 
-    // Step 1: get student IDs linked to this parent
-    const { data: links, error: linkErr } = await supabase
-      .from('parent_student_links')
-      .select('student_id')
-      .eq('parent_id', userId)
-
-    if (linkErr || !links?.length) {
-      setChildren([])
-      setChecking(false)
-      return
-    }
-
-    const studentIds = links.map((l: any) => l.student_id)
-
-    // Step 2: fetch profiles + student_profiles in parallel for those IDs
-    const [
-      { data: profileRows },
-      { data: spRows },
-    ] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, default_code, school_id')
-        .in('id', studentIds),
-      supabase
-        .from('student_profiles')
-        .select('id, class_id, classes(id, name, class_level)')
-        .in('id', studentIds),
-    ])
-
-    // Merge by student id
-    const resolved = studentIds.map((sid: string) => {
-      const p  = profileRows?.find((r: any) => r.id === sid)
-      const sp = spRows?.find((r: any) => r.id === sid)
-      return {
-        id:           sid,
-        full_name:    p?.full_name    ?? 'Unknown',
-        avatar_url:   p?.avatar_url   ?? null,
-        default_code: p?.default_code ?? null,
-        school_id:    p?.school_id    ?? null,
-        class_id:     sp?.class_id    ?? null,
-        class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+      if (!links || links.length === 0) {
+        setChildren([])
+        return
       }
-    }).filter(c => c.full_name !== 'Unknown') // drop broken links
 
-    setChildren(resolved)
-    if (resolved.length) setActiveChildId(resolved[0].id)
-    setChecking(false)
+      const ids = links.map((l: any) => l.student_id as string)
+
+      // Step 2: fetch profiles + student_profiles separately then merge
+      const [{ data: pRows }, { data: spRows }] = await Promise.all([
+        supabase.from('profiles')
+          .select('id, full_name, avatar_url, default_code, school_id')
+          .in('id', ids),
+        supabase.from('student_profiles')
+          .select('id, class_id, classes(id, name, class_level)')
+          .in('id', ids),
+      ])
+
+      const resolved = ids.map((sid: string) => {
+        const p  = (pRows  ?? []).find((r: any) => r.id === sid)
+        const sp = (spRows ?? []).find((r: any) => r.id === sid)
+        return {
+          id:           sid,
+          full_name:    p?.full_name    ?? null,
+          avatar_url:   p?.avatar_url   ?? null,
+          default_code: p?.default_code ?? null,
+          school_id:    p?.school_id    ?? null,
+          class_id:     sp?.class_id    ?? null,
+          class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+        }
+      }).filter((c: any) => !!c.full_name)
+
+      setChildren(resolved)
+      if (resolved.length) setActiveChildId(resolved[0].id)
+    } catch (err) {
+      console.error('fetchChildren failed:', err)
+      setChildren([])
+    } finally {
+      setChecking(false)
+    }
   }
 
   async function loadChildStats(childId: string) {
     setStatsLoading(true)
-    const child = children.find(c => c.id === childId)
-    if (!child) { setStatsLoading(false); return }
+    try {
+      const child = children.find((c: any) => c.id === childId)
+      if (!child) return
 
-    const currentTerm = getCurrentTerm()
-    const currentYear = getCurrentYear()
+      const term = getCurrentTerm()
+      const year = getCurrentYear()
 
-    const [
-      { data: attendanceRows },
-      { data: resultRows },
-      { data: leaderboardRows },
-      { count: tasksCount },
-    ] = await Promise.all([
-      // Attendance — use status text field ('present'/'absent'/'late')
-      supabase
-        .from('attendance')
-        .select('status, is_present')
-        .eq('student_id', childId)
-        .eq('school_id', child.school_id),
+      const [
+        { data: attRows },
+        { data: resRows },
+        { data: lbRows },
+        { count: taskCount },
+      ] = await Promise.all([
+        supabase.from('attendance')
+          .select('status, is_present')
+          .eq('student_id', childId)
+          .eq('school_id', child.school_id),
 
-      // Results — approved only, current term/year
-      supabase
-        .from('results')
-        .select('score, max_score')
-        .eq('student_id', childId)
-        .eq('school_id', child.school_id)
-        .eq('term', currentTerm)
-        .eq('academic_year', currentYear)
-        .eq('approved', true),
+        supabase.from('results')
+          .select('score, max_score')
+          .eq('student_id', childId)
+          .eq('school_id', child.school_id)
+          .eq('term', term)
+          .eq('academic_year', year)
+          .eq('approved', true),
 
-      // Leaderboard — FIX: child.class_id is now properly resolved
-      supabase
-        .from('student_leaderboard')
-        .select('student_id, total_points')
-        .eq('class_id', child.class_id)
-        .eq('school_id', child.school_id)
-        .eq('term', currentTerm)
-        .eq('academic_year', currentYear)
-        .order('total_points', { ascending: false }),
+        child.class_id
+          ? supabase.from('student_leaderboard')
+              .select('student_id, total_points')
+              .eq('class_id', child.class_id)
+              .eq('school_id', child.school_id)
+              .eq('term', term)
+              .eq('academic_year', year)
+              .order('total_points', { ascending: false })
+          : Promise.resolve({ data: [] as any[] }),
 
-      // Pending assignments for child's class
-      supabase
-        .from('assignments')
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', child.school_id)
-        .eq('class_id', child.class_id)
-        .eq('status', 'active'),
-    ])
+        supabase.from('assignments')
+          .select('*', { count: 'exact', head: true })
+          .eq('school_id', child.school_id)
+          .eq('class_id', child.class_id)
+          .eq('status', 'active'),
+      ])
 
-    // Attendance: 'present' counts; 'late' counts as half; 'absent' = 0
-    const totalDays   = attendanceRows?.length ?? 0
-    const presentDays = attendanceRows?.filter(r =>
-      r.status === 'present' || (!r.status && r.is_present === true)
-    ).length ?? 0
-    const attendance  = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : null
+      const total   = attRows?.length ?? 0
+      const present = (attRows ?? []).filter((r: any) =>
+        r.status === 'present' || (!r.status && r.is_present === true)
+      ).length
+      const attendance = total > 0 ? Math.round((present / total) * 100) : null
 
-    // GPA: avg score as fraction of max_score, scaled to 5.0
-    const valid = resultRows?.filter(r => r.score != null && (r.max_score ?? 0) > 0) ?? []
-    const gpa   = valid.length > 0
-      ? Math.round(((valid.reduce((s, r) => s + (r.score! / r.max_score), 0) / valid.length) * 5) * 10) / 10
-      : null
+      const valid = (resRows ?? []).filter((r: any) => r.score != null && (r.max_score ?? 0) > 0)
+      const gpa   = valid.length > 0
+        ? Math.round(((valid.reduce((s: number, r: any) => s + r.score / r.max_score, 0) / valid.length) * 5) * 10) / 10
+        : null
 
-    // Rank: position in leaderboard array
-    const rankPos = leaderboardRows?.findIndex(r => r.student_id === childId) ?? -1
-    const rank    = rankPos >= 0 ? rankPos + 1 : null
+      const pos  = (lbRows ?? []).findIndex((r: any) => r.student_id === childId)
+      const rank = pos >= 0 ? pos + 1 : null
 
-    setChildStats({ attendance, gpa, rank, pendingTasks: tasksCount ?? 0 })
-    setStatsLoading(false)
+      setChildStats({ attendance, gpa, rank, pendingTasks: taskCount ?? 0 })
+    } catch (err) {
+      console.error('loadChildStats failed:', err)
+    } finally {
+      setStatsLoading(false)
+    }
   }
 
   function isActive(href: string) { return pathname.startsWith(href) }
 
+  // ── Loading ──
   if (checking) return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
       {[0, 1, 2].map(i => (
-        <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand)', animation: 'b 1.2s ease infinite', animationDelay: `${i * 0.2}s` }} />
+        <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: sc, animation: 'b 1.2s ease infinite', animationDelay: `${i * 0.2}s` }} />
       ))}
       <style>{`@keyframes b{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}`}</style>
     </div>
   )
 
+  // ── No children linked yet ──
   if (!children.length && !showLinkForm) {
     return <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} />
   }
 
-  const activeChild = children.find(c => c.id === activeChildId) ?? children[0]
+  const activeChild = children.find((c: any) => c.id === activeChildId) ?? children[0]
 
   return (
     <div className={styles.page}>
@@ -218,6 +199,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         {school?.setup_status === 'trial' && school?.trial_ends_at && (
           <TrialBanner trialEndsAt={school.trial_ends_at} schoolId={school.id} setupStatus={school.setup_status} schoolColor={sc} />
         )}
+
         <main className={styles.main}>
 
           <div className={styles.greeting}>
@@ -225,20 +207,17 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
             <h1 className={styles.greetName}>{profile?.full_name?.split(' ')[0] ?? 'Parent'} 👋</h1>
           </div>
 
-          {/* Child selector tabs (multiple children) */}
+          {/* Child selector tabs */}
           {children.length > 1 && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              {children.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveChildId(c.id)}
-                  style={{
-                    padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
-                    background: activeChildId === c.id ? sc : 'var(--glass-bg)',
-                    color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
-                    border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
-                    cursor: 'pointer', flexShrink: 0,
-                  }}>
+              {children.map((c: any) => (
+                <button key={c.id} onClick={() => setActiveChildId(c.id)} style={{
+                  padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+                  background: activeChildId === c.id ? sc : 'var(--glass-bg)',
+                  color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
+                  border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
+                  cursor: 'pointer', flexShrink: 0,
+                }}>
                   {c.full_name?.split(' ')[0]}
                 </button>
               ))}
@@ -260,23 +239,20 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
                   {activeChild.class_level ?? 'No class'} · {activeChild.default_code ?? ''} · {school?.name}
                 </p>
               </div>
-              <Link
-                href={`/dashboard/parent/child?id=${activeChild.id}`}
-                className={styles.viewChildBtn}
-                style={{ borderColor: sc + '40', color: sc }}>
+              <Link href={`/dashboard/parent/child?id=${activeChild.id}`} className={styles.viewChildBtn} style={{ borderColor: sc + '40', color: sc }}>
                 View →
               </Link>
             </div>
           )}
 
-          {/* Child stats grid */}
+          {/* Stats grid */}
           {activeChild && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
               {[
                 { label: 'Attendance', value: statsLoading ? '…' : childStats.attendance != null ? `${childStats.attendance}%` : '—', color: '#10B981' },
-                { label: 'Term GPA',   value: statsLoading ? '…' : childStats.gpa  != null ? childStats.gpa.toFixed(1)  : '—', color: sc       },
-                { label: 'Class Rank', value: statsLoading ? '…' : childStats.rank != null ? `#${childStats.rank}`      : '—', color: '#8B5CF6' },
-                { label: 'Tasks Due',  value: statsLoading ? '…' : childStats.pendingTasks,                                    color: '#F59E0B' },
+                { label: 'Term GPA',   value: statsLoading ? '…' : childStats.gpa        != null ? childStats.gpa.toFixed(1)       : '—', color: sc       },
+                { label: 'Class Rank', value: statsLoading ? '…' : childStats.rank       != null ? `#${childStats.rank}`           : '—', color: '#8B5CF6' },
+                { label: 'Tasks Due',  value: statsLoading ? '…' : childStats.pendingTasks,                                              color: '#F59E0B' },
               ].map(s => (
                 <div key={s.label} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 14px' }}>
                   <p style={{ margin: '0 0 2px', fontSize: '1.1rem', fontWeight: 800, color: s.color }}>{s.value}</p>
@@ -287,14 +263,11 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
           )}
 
           {/* Link another child */}
-          <button
-            onClick={() => setShowLinkForm(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '7px 16px', marginBottom: 20,
-              background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
-              borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
-            }}>
+          <button onClick={() => setShowLinkForm(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', marginBottom: 20,
+            background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
+            borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+          }}>
             + Link Another Child
           </button>
 
