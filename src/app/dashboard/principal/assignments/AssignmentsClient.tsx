@@ -29,6 +29,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const [classes,     setClasses]     = useState<any[]>([])
   const [classRoster,  setClassRoster] = useState<Record<string, number>>({})
   const [submissions,  setSubmissions] = useState<any[]>([])
+  const [subsError,    setSubsError]   = useState<string | null>(null)
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
   const [confirmDel,  setConfirmDel]  = useState<any | null>(null)
@@ -80,10 +81,17 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
     // All submissions for this school's assignments, for the per-class breakdown
     if (asgn && asgn.length > 0) {
-      const { data: subs } = await supabase
+      const { data: subs, error: subsErr } = await supabase
         .from('assignment_submissions')
         .select('id, assignment_id, student_id, status, score, student:profiles!student_id(full_name, class_id)')
         .in('assignment_id', asgn.map((a: any) => a.id))
+
+      if (subsErr) {
+        console.error('[principal assignments] submissions load error:', subsErr.message)
+        setSubsError(subsErr.message)
+      } else {
+        setSubsError(null)
+      }
       setSubmissions(subs ?? [])
     }
 
@@ -148,6 +156,12 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
   return (
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Assignments">
+      {subsError && (
+        <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
+          borderRadius: 8, marginBottom: 16, fontSize: '0.78rem', color: '#EF4444', fontFamily: 'monospace' }}>
+          ⚠️ Submissions query failed: {subsError}
+        </div>
+      )}
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
           {toast.ok ? '✓' : '✕'} {toast.msg}
