@@ -73,38 +73,49 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   async function fetchChildren() {
     setChecking(true)
 
-    // FIX: children are in parent_student_links, not profiles.parent_id
-    // Join to profiles + student_profiles to get class_id and display info
-    const { data: links } = await supabase
+    // Step 1: get student IDs linked to this parent
+    const { data: links, error: linkErr } = await supabase
       .from('parent_student_links')
-      .select(`
-        student_id,
-        profiles!parent_student_links_student_id_fkey (
-          id, full_name, avatar_url, default_code, school_id
-        ),
-        student_profiles!inner (
-          class_id,
-          classes (
-            id, name, class_level
-          )
-        )
-      `)
+      .select('student_id')
       .eq('parent_id', userId)
 
-    // Flatten into a usable child object with class_id resolved
-    const resolved = (links ?? []).map((link: any) => {
-      const p  = link.profiles
-      const sp = link.student_profiles
+    if (linkErr || !links?.length) {
+      setChildren([])
+      setChecking(false)
+      return
+    }
+
+    const studentIds = links.map((l: any) => l.student_id)
+
+    // Step 2: fetch profiles + student_profiles in parallel for those IDs
+    const [
+      { data: profileRows },
+      { data: spRows },
+    ] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, default_code, school_id')
+        .in('id', studentIds),
+      supabase
+        .from('student_profiles')
+        .select('id, class_id, classes(id, name, class_level)')
+        .in('id', studentIds),
+    ])
+
+    // Merge by student id
+    const resolved = studentIds.map((sid: string) => {
+      const p  = profileRows?.find((r: any) => r.id === sid)
+      const sp = spRows?.find((r: any) => r.id === sid)
       return {
-        id:          p?.id,
-        full_name:   p?.full_name,
-        avatar_url:  p?.avatar_url,
-        default_code:p?.default_code,
-        school_id:   p?.school_id,
-        class_id:    sp?.class_id,
-        class_level: sp?.classes?.class_level ?? sp?.classes?.name ?? null,
+        id:           sid,
+        full_name:    p?.full_name    ?? 'Unknown',
+        avatar_url:   p?.avatar_url   ?? null,
+        default_code: p?.default_code ?? null,
+        school_id:    p?.school_id    ?? null,
+        class_id:     sp?.class_id    ?? null,
+        class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
       }
-    }).filter(c => c.id) // safety: drop any rows with broken FK
+    }).filter(c => c.full_name !== 'Unknown') // drop broken links
 
     setChildren(resolved)
     if (resolved.length) setActiveChildId(resolved[0].id)
