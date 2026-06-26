@@ -299,7 +299,12 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           })
 
         if (remErr) {
-          console.error('Reminder insert error:', remErr.message, remErr.details)
+          // Surface the exact DB error so we can diagnose enum mismatches
+          console.error('Reminder insert error:', remErr.message, remErr.details, remErr.code, remErr.hint)
+          setError(prev =>
+            (prev ? prev + ' | ' : '') +
+            `DB error: ${remErr.message}${remErr.details ? ' — ' + remErr.details : ''}`
+          )
           invoiceErrors++
           continue
         }
