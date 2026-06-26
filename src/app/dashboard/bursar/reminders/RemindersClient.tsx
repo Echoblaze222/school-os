@@ -291,7 +291,10 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           .insert({
             invoice_id:   invoiceId,
             parent_id:    parentId,
-            channel:      'in_app',
+            // reminder_channel enum only allows 'sms' | 'whatsapp' | 'email' — no real
+            // outbound channel is wired up yet, so we record 'email' as a placeholder.
+            // Actual delivery right now is the in-app notification inserted below.
+            channel:      'email',
             status:       'sent',
             message_body: msgBody,
             sent_at:      new Date().toISOString(),
