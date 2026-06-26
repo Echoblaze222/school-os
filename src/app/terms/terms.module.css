@@ -1,0 +1,244 @@
+/* src/app/terms/terms.module.css */
+
+.page {
+  min-height: 100vh;
+  background: var(--bg, #0a0a0f);
+  position: relative;
+  overflow-x: hidden;
+  padding: 2rem 1rem 4rem;
+}
+
+.bgGlow {
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bgGrid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: 3rem;
+}
+
+.backBtn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.backBtn:hover {
+  border-color: rgba(255,255,255,0.25);
+  color: var(--text-primary, #fff);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand, #7c3aed);
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 800;
+  color: var(--text-primary, #fff);
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #888);
+  line-height: 1.6;
+  max-width: 580px;
+  margin: 0 0 0.75rem;
+}
+
+.lastUpdated {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  margin: 0;
+}
+
+/* ── Sections ── */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.section {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 1rem;
+  padding: 1.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  align-items: start;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionNumber {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--brand, #7c3aed);
+  letter-spacing: 0.05em;
+  padding-top: 4px;
+  opacity: 0.7;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.sectionIntro {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #888);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.sectionText {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #888);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── List ── */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.listItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #888);
+  line-height: 1.6;
+}
+
+.listDot {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand, #7c3aed);
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 3.5rem;
+  padding: 2rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.footerText {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+
+.footerLinks {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.footerLink {
+  background: none;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  color: var(--brand, #7c3aed);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.footerLink:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.copyright {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.2);
+  margin: 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .section {
+    grid-template-columns: 36px 1fr;
+    gap: 0.75rem;
+  }
+  .sectionNumber {
+    font-size: 0.65rem;
+  }
+}
