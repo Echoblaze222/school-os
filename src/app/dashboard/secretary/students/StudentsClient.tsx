@@ -483,28 +483,68 @@ export default function StudentsClient({ profile, school, userId }: Props) {
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "center", marginBottom: "var(--space-4)", flexWrap: "wrap" }}>
-          <div className={styles.searchBar}>
-            <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input className={styles.searchInput} placeholder="Search students…" value={search} onChange={e => setSearch(e.target.value)}/>
+        {/* Toolbar — row 1: search + class filter */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <svg style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Search students…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ paddingLeft: 32, width: '100%' }}
+            />
           </div>
-          <select className={styles.formSelect} value={classFilter} onChange={e => setClassFilter(e.target.value)}>
+          <select
+            value={classFilter}
+            onChange={e => setClassFilter(e.target.value)}
+            style={{
+              height: 40, padding: '0 8px', background: 'var(--input-bg)',
+              border: '1px solid var(--input-border)', borderRadius: 8,
+              color: 'var(--text-primary)', fontSize: '0.8rem', flexShrink: 0, maxWidth: 120,
+            }}
+          >
             <option value="">All Classes</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <button className={styles.btnPrimary} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
-            {showForm ? '✕ Close' : '+ Enrol Student'}
+        </div>
+
+        {/* Toolbar — row 2: action buttons */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)' }}>
+          <button
+            onClick={() => setShowForm(v => !v)}
+            style={{
+              flex: 1, height: 40, borderRadius: 8, cursor: 'pointer',
+              background: showForm ? 'var(--glass-bg)' : sc,
+              color: showForm ? 'var(--text-primary)' : '#fff',
+              fontWeight: 700, fontSize: '0.82rem',
+              border: showForm ? '1px solid var(--glass-border)' : 'none',
+            }}
+          >
+            {showForm ? '✕ Close Form' : '+ Enrol Student'}
           </button>
-          <Link href="/dashboard/principal/students/transfer" className={styles.btnPrimary} style={{ background: '#F59E0B', textDecoration: 'none' }}>
-            ⇄ Transfer Student
+          <Link
+            href="/dashboard/secretary/students/transfer"
+            style={{
+              flex: 1, height: 40, borderRadius: 8, border: 'none', cursor: 'pointer',
+              background: '#F59E0B', color: '#fff', fontWeight: 700, fontSize: '0.82rem',
+              textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ⇄ Transfer
           </Link>
         </div>
 
         {/* Enrol form */}
         {showForm && (
-          <div className={styles.modal}>
-            <p className={styles.modalTitle}>Enrol New Student</p>
+          <div style={{
+            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)',
+            marginBottom: 'var(--space-4)',
+          }}>
+            <p style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', margin: '0 0 var(--space-4)' }}>
+              📝 Enrol New Student
+            </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Full Name *</label>
