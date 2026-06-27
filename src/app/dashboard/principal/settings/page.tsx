@@ -57,7 +57,9 @@ export default async function PrincipalSettingsPage() {
         login_bg_image:   school.login_bg_image   ?? null,
         status:           school.status           ?? null,
         subscription_plan: school.subscription_plan ?? null,
+        paystack_subaccount_code:   school.paystack_subaccount_code   ?? null,
+        paystack_subaccount_active: school.paystack_subaccount_active ?? false,
       }}
     />
   )
-}
+        }
