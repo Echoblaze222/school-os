@@ -11,6 +11,7 @@
 // not unique per parent) via a child switcher, instead of assuming .single().
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import {
@@ -58,6 +59,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
   const [loading,  setLoading]  = useState(true)
   const [invoices, setInvoices] = useState<any[]>([])
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null)
+  const [payError,        setPayError]        = useState('')
   const [payments, setPayments] = useState<any[]>([])
   const [reminders,setReminders]= useState<any[]>([])
   const [claims,   setClaims]   = useState<any[]>([])
@@ -85,6 +88,20 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
   useEffect(() => { loadChildren() }, [])
   useEffect(() => { if (childId) loadAll(childId) }, [childId, term, year])
+
+  const searchParams = useSearchParams()
+  const router       = useRouter()
+
+  // Parent returns from Paystack's hosted checkout to this same page with
+  // ?payment=callback — webhook delivery is usually near-instant but can lag
+  // a second or two behind the redirect, so we refetch once on arrival and
+  // clean the query param so a manual refresh doesn't re-trigger this.
+  useEffect(() => {
+    if (searchParams.get('payment') === 'callback' && childId) {
+      loadAll(childId)
+      router.replace('/dashboard/parent/fees')
+    }
+  }, [searchParams, childId])
 
   async function loadChildren() {
     setLoading(true)
@@ -337,6 +354,26 @@ export default function FeesClient({ profile, school, userId }: Props) {
       created_at:     row.paid_at ?? row.created_at,
       amount:         row.currency_used === 'USD' ? row.amount_paid_usd : row.amount_paid_ngn,
       currency:       row.currency_used,
+    }
+  }
+
+  async function payWithPaystack(invoiceId: string) {
+    setPayingInvoiceId(invoiceId)
+    setPayError('')
+    try {
+      const res  = await fetch('/api/payments/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) throw new Error(json.error ?? 'Could not start payment.')
+
+      // Redirect to Paystack's hosted checkout
+      window.location.href = json.authorization_url
+    } catch (err: any) {
+      setPayError(err?.message ?? 'Could not start payment.')
+      setPayingInvoiceId(null)
     }
   }
 
@@ -599,8 +636,9 @@ export default function FeesClient({ profile, school, userId }: Props) {
                               {invoices.map((inv: any) => {
                                 const fs = unwrapEmbed(inv.fee_structures)
                                 const meta = STATUS_META[inv.status] ?? STATUS_META.pending
+                                const hasBalance = inv.balance_ngn > 0
                                 return (
-                                  <div key={inv.id} className={styles.card}>
+                                  <div key={inv.id} className={styles.card} style={{ flexWrap: 'wrap' }}>
                                     <div className={styles.cardIcon} style={{ background:sc+'20' }}>
                                       <WalletIcon size={16} color={sc}/>
                                     </div>
@@ -616,10 +654,32 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                       background:meta.bg, padding:'3px 10px', borderRadius:20, flexShrink:0 }}>
                                       {meta.label}
                                     </span>
+                                    {hasBalance && school?.paystack_subaccount_active && (
+                                      <button
+                                        onClick={() => payWithPaystack(inv.id)}
+                                        disabled={payingInvoiceId === inv.id}
+                                        style={{
+                                          width: '100%', height: 40, marginTop: 8,
+                                          background: payingInvoiceId === inv.id ? '#9CA3AF' : sc,
+                                          color: '#fff', border: 'none', borderRadius: 8,
+                                          fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                        }}
+                                      >
+                                        <WalletIcon size={14} color="#fff" />
+                                        {payingInvoiceId === inv.id
+                                          ? 'Redirecting to Paystack…'
+                                          : `Pay ${fmtAmt(inv.balance_ngn)} with Paystack`}
+                                      </button>
+                                    )}
                                   </div>
                                 )
                               })}
                             </div>
+
+                            {payError && (
+                              <p style={{ color: '#EF4444', fontSize: '0.8rem', marginTop: 10 }}>{payError}</p>
+                            )}
 
                             {totalOwed > 0 && (
                               <button onClick={() => { setTab('submit'); setShowForm(true) }}
