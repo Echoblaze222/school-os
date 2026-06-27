@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { invoiceId } = await req.json()
+    const { invoiceId, payAmount } = await req.json()
     if (!invoiceId) {
       return NextResponse.json({ error: 'invoiceId is required' }, { status: 400 })
     }
@@ -80,7 +80,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No email on file for your account.' }, { status: 400 })
     }
 
-    const amountKobo = Math.round(invoice.balance_ngn * 100) // Paystack uses kobo
+    // Determine how much to charge. The parent may pay any amount from ₦100
+    // up to the full balance — always validated server-side against the
+    // invoice's actual balance_ngn, never trusted from the client alone.
+    let amountToCharge = invoice.balance_ngn
+
+    if (payAmount !== undefined && payAmount !== null) {
+      const parsed = Number(payAmount)
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        return NextResponse.json({ error: 'Enter a valid amount to pay.' }, { status: 400 })
+      }
+      if (parsed < 100) {
+        return NextResponse.json({ error: 'Minimum payment is ₦100.' }, { status: 400 })
+      }
+      // Allow a tiny rounding tolerance (kobo conversion) but never let the
+      // charge exceed what's actually owed on this invoice.
+      if (parsed > invoice.balance_ngn + 0.5) {
+        return NextResponse.json({ error: 'Amount cannot exceed the outstanding balance.' }, { status: 400 })
+      }
+      amountToCharge = parsed
+    }
+
+    const amountKobo = Math.round(amountToCharge * 100) // Paystack uses kobo
     const reference   = `SCHOS-${invoice.id.slice(0, 8)}-${Date.now()}`
 
     const initRes = await fetch('https://api.paystack.co/transaction/initialize', {
@@ -125,5 +146,4 @@ export async function POST(req: NextRequest) {
     console.error('payment initialize error:', err)
     return NextResponse.json({ error: err.message ?? 'Unexpected server error' }, { status: 500 })
   }
-                   }
-                                                                                          
+}
