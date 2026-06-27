@@ -277,7 +277,13 @@
   font-size: 1rem;
   padding: 0;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.4);
 }
+
+.eyeBtn:hover { color: rgba(255,255,255,0.8); }
 
 .forgotLink {
   background: none;
@@ -1054,4 +1060,160 @@
   .spLogoArea  { width: 130px; height: 130px; }
   .spLogo      { width: 110px; height: 110px; }
   .spLoaderWrap{ width: 168px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAGE CONTENT WRAPPER
+   ══════════════════════════════════════════════════════════════ */
+
+.pageContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 440px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SITE FOOTER — below login card
+   ══════════════════════════════════════════════════════════════ */
+
+.siteFooter {
+  width: 100%;
+  padding: 28px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── About block ── */
+.footerAbout {
+  text-align: center;
+}
+
+.footerLogo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.07em;
+  margin: 0 0 7px;
+  line-height: 1;
+}
+
+.footerLogoAccent {
+  color: #9F67FF;
+}
+
+.footerTagline {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.3);
+  line-height: 1.65;
+  margin: 0 auto;
+  max-width: 340px;
+}
+
+/* ── Feature badges ── */
+.footerBadges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.065);
+  border-radius: 20px;
+  padding: 4px 11px;
+  font-size: 0.64rem;
+  color: rgba(255,255,255,0.36);
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* ── Divider ── */
+.footerDivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── Contact row ── */
+.footerContact {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footerContactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.68rem;
+  text-decoration: none;
+  transition: color 0.2s;
+  letter-spacing: 0.01em;
+  font-family: 'Inter', sans-serif;
+}
+
+.footerContactLink:hover {
+  color: #00b4d8;
+}
+
+/* ── Dot separator ── */
+.footerDotSep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── Nav links ── */
+.footerLinks {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footerLink {
+  color: rgba(255,255,255,0.25);
+  font-size: 0.67rem;
+  text-decoration: none;
+  transition: color 0.2s;
+  padding: 2px 7px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.footerLink:hover {
+  color: rgba(255,255,255,0.6);
+}
+
+/* ── Copyright ── */
+.footerCopy {
+  font-size: 0.59rem;
+  color: rgba(255,255,255,0.13);
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-bottom: 6px;
+}
+
+/* ── Mobile tweaks ── */
+@media (max-width: 390px) {
+  .footerBadge   { font-size: 0.6rem; padding: 3px 9px; }
+  .footerTagline { font-size: 0.67rem; }
 }
