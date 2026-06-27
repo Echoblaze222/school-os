@@ -61,6 +61,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
   const [invoices, setInvoices] = useState<any[]>([])
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null)
   const [payError,        setPayError]        = useState('')
+  const [payFormInvoiceId, setPayFormInvoiceId] = useState<string | null>(null)
+  const [payAmountInput,   setPayAmountInput]   = useState('')
   const [payments, setPayments] = useState<any[]>([])
   const [reminders,setReminders]= useState<any[]>([])
   const [claims,   setClaims]   = useState<any[]>([])
@@ -357,14 +359,26 @@ export default function FeesClient({ profile, school, userId }: Props) {
     }
   }
 
-  async function payWithPaystack(invoiceId: string) {
+  function openPayForm(invoiceId: string, balanceNgn: number) {
+    setPayFormInvoiceId(invoiceId)
+    setPayAmountInput(String(Math.round(balanceNgn)))
+    setPayError('')
+  }
+
+  function closePayForm() {
+    setPayFormInvoiceId(null)
+    setPayAmountInput('')
+    setPayError('')
+  }
+
+  async function payWithPaystack(invoiceId: string, amount: number) {
     setPayingInvoiceId(invoiceId)
     setPayError('')
     try {
       const res  = await fetch('/api/payments/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId }),
+        body: JSON.stringify({ invoiceId, payAmount: amount }),
       })
       const json = await res.json()
       if (!res.ok || json.error) throw new Error(json.error ?? 'Could not start payment.')
@@ -655,22 +669,76 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                       {meta.label}
                                     </span>
                                     {hasBalance && school?.paystack_subaccount_active && (
-                                      <button
-                                        onClick={() => payWithPaystack(inv.id)}
-                                        disabled={payingInvoiceId === inv.id}
-                                        style={{
-                                          width: '100%', height: 40, marginTop: 8,
-                                          background: payingInvoiceId === inv.id ? '#9CA3AF' : sc,
-                                          color: '#fff', border: 'none', borderRadius: 8,
-                                          fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-                                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                        }}
-                                      >
-                                        <WalletIcon size={14} color="#fff" />
-                                        {payingInvoiceId === inv.id
-                                          ? 'Redirecting to Paystack…'
-                                          : `Pay ${fmtAmt(inv.balance_ngn)} with Paystack`}
-                                      </button>
+                                      payFormInvoiceId === inv.id ? (
+                                        <div style={{ width: '100%', marginTop: 8 }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <div style={{
+                                              flex: 1, display: 'flex', alignItems: 'center',
+                                              background: 'var(--surface-2, #1a1a1f)', borderRadius: 8,
+                                              border: `1px solid ${sc}40`, padding: '0 10px', height: 40,
+                                            }}>
+                                              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginRight: 4 }}>₦</span>
+                                              <input
+                                                type="number"
+                                                inputMode="decimal"
+                                                value={payAmountInput}
+                                                onChange={e => setPayAmountInput(e.target.value)}
+                                                min={100}
+                                                max={inv.balance_ngn}
+                                                style={{
+                                                  flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                                                  color: 'var(--text-primary, #fff)', fontSize: '0.9rem', fontWeight: 700,
+                                                }}
+                                              />
+                                            </div>
+                                            <button
+                                              onClick={closePayForm}
+                                              style={{
+                                                height: 40, width: 40, flexShrink: 0, background: 'transparent',
+                                                border: '1px solid var(--border, rgba(255,255,255,0.15))',
+                                                borderRadius: 8, color: 'inherit', cursor: 'pointer',
+                                              }}
+                                            >✕</button>
+                                          </div>
+                                          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0' }}>
+                                            Balance owed: {fmtAmt(inv.balance_ngn)} — you can pay part or all of it.
+                                          </p>
+                                          <button
+                                            onClick={() => {
+                                              const amt = parseFloat(payAmountInput)
+                                              if (!amt || amt <= 0) { setPayError('Enter a valid amount.'); return }
+                                              if (amt > inv.balance_ngn) { setPayError('Amount cannot exceed the balance owed.'); return }
+                                              payWithPaystack(inv.id, amt)
+                                            }}
+                                            disabled={payingInvoiceId === inv.id}
+                                            style={{
+                                              width: '100%', height: 40,
+                                              background: payingInvoiceId === inv.id ? '#9CA3AF' : sc,
+                                              color: '#fff', border: 'none', borderRadius: 8,
+                                              fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                            }}
+                                          >
+                                            <WalletIcon size={14} color="#fff" />
+                                            {payingInvoiceId === inv.id
+                                              ? 'Redirecting to Paystack…'
+                                              : `Continue to Pay ₦${(parseFloat(payAmountInput) || 0).toLocaleString('en-NG')}`}
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => openPayForm(inv.id, inv.balance_ngn)}
+                                          style={{
+                                            width: '100%', height: 40, marginTop: 8,
+                                            background: sc, color: '#fff', border: 'none', borderRadius: 8,
+                                            fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                          }}
+                                        >
+                                          <WalletIcon size={14} color="#fff" />
+                                          {`Pay ${fmtAmt(inv.balance_ngn)} with Paystack`}
+                                        </button>
+                                      )
                                     )}
                                   </div>
                                 )
