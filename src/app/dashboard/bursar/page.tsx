@@ -20,7 +20,6 @@ import { redirect } from 'next/navigation'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import BursarDashboardClient from './BursarDashboardClient'
 import SubscriptionGate       from '@/components/SubscriptionGate' // ← ADD THIS IMPORT
-import TeacherDashboardClient from './TeacherDashboardClient'
 
 
 const TERM_LABELS: Record<string, string> = {
