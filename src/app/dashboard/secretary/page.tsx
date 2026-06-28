@@ -1,6 +1,8 @@
 // src/app/dashboard/secretary/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { checkSubscription }  from '@/lib/subscription'       // ← ADD THIS IMPORT
+import SubscriptionGate       from '@/components/SubscriptionGate'
 import SecretaryClient from './SecretaryClient'
 
 export default async function SecretaryPage() {
@@ -8,6 +10,27 @@ export default async function SecretaryPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // ── Subscription check ───────────────────────────────────────────────────
+  // ADD THIS BLOCK to every non-principal dashboard page
+  const sub = await checkSubscription(user.id)
+  if (sub.locked) {
+    return (
+      <SubscriptionGate
+        schoolName={sub.schoolName}
+        schoolColor={sub.schoolColor}
+        status={sub.status as any}
+      />
+    )
+  }
+  // ── End subscription check ───────────────────────────────────────────────
+
+  // ... rest of your existing page data-fetching and return ...
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
   // FIX: join schools(*) inline exactly like principal/page.tsx does
   // This is why logo, name and colour were missing — the separate schools query
