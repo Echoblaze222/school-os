@@ -28,6 +28,7 @@ const PUBLIC_PATHS = [
   '/api/schools/register',
   '/api/schools/payment-callback',
   '/api/schools/paystack-webhook',
+  '/super-admin/login',                 // super admin login must be publicly reachable
 ]
 
 // Routes that authenticated users should be bounced away from
@@ -37,6 +38,7 @@ const AUTH_ONLY_PATHS = [
   '/login',
   '/register',
   '/forgot-password',
+  '/super-admin/login',                 // logged-in super admins go straight to dashboard
 ]
 
 export async function middleware(request: NextRequest) {
@@ -124,8 +126,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isAuthOnlyPath) {
-    // Already logged in but hitting auth pages — send to dashboard
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Already logged in but hitting auth pages — send to the right dashboard
+    const dest = pathname.startsWith('/super-admin') ? '/super-admin' : '/dashboard'
+    return NextResponse.redirect(new URL(dest, request.url))
   }
 
   // ── Root redirect ────────────────────────────────────────────
