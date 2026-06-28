@@ -1,220 +1,269 @@
 // app/api/super-admin/manage-school/route.ts
-//
-// Single endpoint for every school-management mutation that used to happen
-// directly from the browser via the anon client. Every operation here:
-//   1. Re-verifies the caller is a super-admin on EVERY request (not just page load)
-//   2. Uses createAdminClient() (service-role) so RLS cannot block legitimate ops
-//   3. Returns a consistent { ok, error } shape the UI can rely on
-
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
-// ─── Supported actions ────────────────────────────────────────────────────────
-type Action =
-  | 'extend_trial'         // extend trial_ends_at by N days
-  | 'toggle_lock'          // flip active ↔ locked
-  | 'save_notes'           // update private notes field
-  | 'confirm_setup'        // mark setup paid → active + 1 month free
-  | 'confirm_subscription' // log subscription payment → extend access
-  | 'delete_school'        // permanently delete school + cascade
-
-interface Body {
-  action:     Action
-  school_id:  string
-  // extend_trial
-  days?:      number
-  // confirm_setup
-  amount_ngn?:  number
-  payment_ref?: string
-  // confirm_subscription
-  plan?:       string
-  // save_notes
-  notes?:     string
-}
-
-// ─── Helper: notify the school's principal ───────────────────────────────────
-async function notifyPrincipal(
-  admin: ReturnType<typeof createAdminClient>,
-  schoolId: string,
-  title: string,
-  body: string,
-) {
-  const { data: principal } = await admin
-    .from('profiles').select('id')
-    .eq('school_id', schoolId).eq('role', 'principal').single()
-
-  if (principal) {
-    await admin.from('notifications').insert({
-      user_id:   principal.id,
-      school_id: schoolId,
-      title,
-      body,
-      type: 'system',
-    })
-  }
-}
-
-// ─── Route handler ────────────────────────────────────────────────────────────
-export async function POST(req: Request) {
-  // 1. Verify session
-  const supabase = await createClient()
+// ─── Auth guard: must be an authenticated platform_admin ─────────────────────
+async function assertSuperAdmin() {
+  const supabase      = await createClient()
+  const adminSupabase = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (!user) throw new Error('Not authenticated')
+  const { data: sa } = await adminSupabase
+    .from('platform_admins')
+    .select('id')
+    .eq('id', user.id)
+    .single()
+  if (!sa) throw new Error('Not a super admin')
+  return { adminId: user.id, adminSupabase }
+}
 
-  // 2. Verify super-admin on EVERY call (not just page-load)
-  const admin = createAdminClient()
-  const { data: sa } = await admin
-    .from('platform_admins').select('id').eq('id', user.id).single()
-  if (!sa) {
-    return NextResponse.json({ error: 'Forbidden: not a super-admin' }, { status: 403 })
-  }
+export async function POST(req: Request) {
+  try {
+    const { adminId, adminSupabase } = await assertSuperAdmin()
+    const body = await req.json()
+    const { action, school_id } = body
 
-  // 3. Parse body
-  let body: Body
-  try { body = await req.json() }
-  catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+    if (!school_id) return NextResponse.json({ ok: false, error: 'school_id required' }, { status: 400 })
 
-  const { action, school_id } = body
-  if (!action)    return NextResponse.json({ error: 'action is required' },    { status: 400 })
-  if (!school_id) return NextResponse.json({ error: 'school_id is required' }, { status: 400 })
+    // ── toggle_lock ────────────────────────────────────────────────────────────
+    if (action === 'toggle_lock') {
+      // Get current status
+      const { data: school, error: fetchErr } = await adminSupabase
+        .from('schools')
+        .select('setup_status')
+        .eq('id', school_id)
+        .single()
 
-  // 4. Verify school exists
-  const { data: school } = await admin
-    .from('schools').select('id, name, trial_ends_at, setup_status').eq('id', school_id).single()
-  if (!school) return NextResponse.json({ error: 'School not found' }, { status: 404 })
+      if (fetchErr || !school) return NextResponse.json({ ok: false, error: 'School not found' }, { status: 404 })
 
-  // ── EXTEND TRIAL ─────────────────────────────────────────────────────────
-  if (action === 'extend_trial') {
-    const days = body.days ?? 5
-    if (days < 1 || days > 90) {
-      return NextResponse.json({ error: 'days must be between 1 and 90' }, { status: 400 })
-    }
-    const current = school.trial_ends_at ? new Date(school.trial_ends_at).getTime() : Date.now()
-    const newEnd  = new Date(Math.max(Date.now(), current) + days * 86_400_000)
+      const isLocked      = school.setup_status === 'locked'
+      const next_status   = isLocked ? 'expired' : 'locked'
+      const is_platform_active = isLocked  // unlock = true, lock = false
 
-    const { error } = await admin.from('schools').update({
-      trial_ends_at:  newEnd.toISOString(),
-      trial_extended: true,
-    }).eq('id', school_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({
+          setup_status:       next_status,
+          is_platform_active: is_platform_active,
+          updated_at:         new Date().toISOString(),
+        })
+        .eq('id', school_id)
 
-    await notifyPrincipal(admin, school_id,
-      '⏰ Trial Extended',
-      `Great news! Your free trial has been extended by ${days} days.`,
-    )
-    return NextResponse.json({ ok: true, trial_ends_at: newEnd.toISOString() })
-  }
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
 
-  // ── TOGGLE LOCK ───────────────────────────────────────────────────────────
-  if (action === 'toggle_lock') {
-    const next = school.setup_status === 'locked' ? 'active' : 'locked'
-    const { error } = await admin.from('schools')
-      .update({ setup_status: next }).eq('id', school_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    return NextResponse.json({ ok: true, setup_status: next })
-  }
-
-  // ── SAVE NOTES ────────────────────────────────────────────────────────────
-  if (action === 'save_notes') {
-    const { error } = await admin.from('schools')
-      .update({ notes: body.notes ?? '' }).eq('id', school_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    return NextResponse.json({ ok: true })
-  }
-
-  // ── CONFIRM SETUP PAYMENT → ACTIVATE ──────────────────────────────────────
-  if (action === 'confirm_setup') {
-    const now          = new Date()
-    const freeMonthEnd = new Date(now.getTime() + 30 * 86_400_000)
-
-    const { error: schoolErr } = await admin.from('schools').update({
-      setup_status:      'active',
-      setup_paid_at:     now.toISOString(),
-      free_month_starts: now.toISOString(),
-      free_month_ends:   freeMonthEnd.toISOString(),
-      subscription_plan: 'free_month',
-    }).eq('id', school_id)
-    if (schoolErr) return NextResponse.json({ error: schoolErr.message }, { status: 500 })
-
-    // Log payment if amount provided
-    if (body.amount_ngn && body.amount_ngn > 0) {
-      await admin.from('school_payments').insert({
-        school_id,
-        payment_type: 'setup',
-        amount_ngn:   body.amount_ngn,
-        payment_ref:  body.payment_ref ?? null,
-        confirmed_by: user.id,
+      // Log audit
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id:     adminId,
+        action:       isLocked ? 'unlock_school' : 'lock_school',
+        target_table: 'schools',
+        target_id:    school_id,
+        metadata:     { previous_status: school.setup_status, new_status: next_status },
       })
+
+      return NextResponse.json({ ok: true, setup_status: next_status })
     }
 
-    await notifyPrincipal(admin, school_id,
-      '🎉 Setup Complete!',
-      'Your payment has been confirmed. You now have 1 month of free access to all features.',
-    )
-    return NextResponse.json({ ok: true })
-  }
+    // ── lock_school (explicit) ─────────────────────────────────────────────────
+    if (action === 'lock_school') {
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({ setup_status: 'locked', is_platform_active: false, updated_at: new Date().toISOString() })
+        .eq('id', school_id)
 
-  // ── CONFIRM SUBSCRIPTION PAYMENT ──────────────────────────────────────────
-  if (action === 'confirm_subscription') {
-    const plan = body.plan ?? 'basic_500'
-    const now     = new Date()
-    const sub_end = new Date(now.getTime() + 30 * 86_400_000)
-
-    const { error: schoolErr } = await admin.from('schools').update({
-      setup_status:        'active',
-      subscription_plan:   plan,
-      subscription_starts: now.toISOString(),
-      subscription_ends:   sub_end.toISOString(),
-      next_payment_due:    sub_end.toISOString(),
-    }).eq('id', school_id)
-    if (schoolErr) return NextResponse.json({ error: schoolErr.message }, { status: 500 })
-
-    if (body.amount_ngn && body.amount_ngn > 0) {
-      await admin.from('school_payments').insert({
-        school_id,
-        payment_type: 'subscription',
-        amount_ngn:   body.amount_ngn,
-        payment_ref:  body.payment_ref ?? null,
-        plan,
-        confirmed_by: user.id,
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'lock_school', target_table: 'schools', target_id: school_id,
       })
+      return NextResponse.json({ ok: true, setup_status: 'locked' })
     }
 
-    const PLAN_LABELS: Record<string, string> = {
-      free_month: '1 Month Free', basic_500: '₦500/mo Basic',
-      standard_1000: '₦1,000/mo Standard', premium_2000: '₦2,000/mo Premium',
-      installment_3month: 'Installment Plan',
+    // ── unlock_school (explicit) ───────────────────────────────────────────────
+    if (action === 'unlock_school') {
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({ setup_status: 'active', is_platform_active: true, updated_at: new Date().toISOString() })
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'unlock_school', target_table: 'schools', target_id: school_id,
+      })
+      return NextResponse.json({ ok: true, setup_status: 'active' })
     }
-    await notifyPrincipal(admin, school_id,
-      '✅ Subscription Active',
-      `Your ${PLAN_LABELS[plan] ?? plan} subscription is now active. Next payment due in 30 days.`,
-    )
-    return NextResponse.json({ ok: true })
-  }
 
-  // ── DELETE SCHOOL ─────────────────────────────────────────────────────────
-  if (action === 'delete_school') {
-    // Delete auth users for all staff before deleting school
-    // (profiles rows cascade-delete with school, but auth.users do not)
-    const { data: staff } = await admin
-      .from('profiles').select('id').eq('school_id', school_id)
+    // ── extend_trial ──────────────────────────────────────────────────────────
+    if (action === 'extend_trial') {
+      const days = Number(body.days ?? 5)
+      if (!days || days < 1) return NextResponse.json({ ok: false, error: 'Invalid days' }, { status: 400 })
 
-    if (staff && staff.length > 0) {
-      for (const member of staff) {
-        await admin.auth.admin.deleteUser(member.id)
+      const { data: school, error: fetchErr } = await adminSupabase
+        .from('schools')
+        .select('trial_ends_at')
+        .eq('id', school_id)
+        .single()
+
+      if (fetchErr || !school) return NextResponse.json({ ok: false, error: 'School not found' }, { status: 404 })
+
+      const base         = school.trial_ends_at ? new Date(school.trial_ends_at) : new Date()
+      const newExpiry    = new Date(base.getTime() + days * 86_400_000)
+
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({
+          trial_ends_at:    newExpiry.toISOString(),
+          trial_extended:   true,
+          setup_status:     'trial',
+          is_platform_active: true,
+          updated_at:       new Date().toISOString(),
+        })
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'extend_trial', target_table: 'schools', target_id: school_id,
+        metadata: { days, new_expiry: newExpiry.toISOString() },
+      })
+      return NextResponse.json({ ok: true })
+    }
+
+    // ── confirm_setup (trial → 1 month free active) ────────────────────────────
+    if (action === 'confirm_setup') {
+      const amount_ngn  = Number(body.amount_ngn  ?? 0)
+      const payment_ref = body.payment_ref as string | undefined
+      const now         = new Date()
+      const freeEnd     = new Date(now.getTime() + 30 * 86_400_000)
+
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({
+          setup_status:       'active',
+          is_platform_active: true,
+          setup_paid_at:      now.toISOString(),
+          subscription_plan:  'free_month',
+          free_month_starts:  now.toISOString(),
+          free_month_ends:    freeEnd.toISOString(),
+          subscription_starts: now.toISOString(),
+          subscription_ends:  freeEnd.toISOString(),
+          next_payment_due:   freeEnd.toISOString(),
+          updated_at:         now.toISOString(),
+        })
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+
+      // Record payment
+      if (amount_ngn > 0) {
+        await adminSupabase.from('school_payments').insert({
+          school_id,
+          payment_type: 'setup',
+          amount_ngn,
+          payment_ref:  payment_ref ?? null,
+          confirmed_by: adminId,
+          confirmed_at: now.toISOString(),
+        })
       }
+
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'confirm_setup', target_table: 'schools', target_id: school_id,
+        metadata: { amount_ngn, payment_ref },
+      })
+      return NextResponse.json({ ok: true })
     }
 
-    const { error } = await admin.from('schools').delete().eq('id', school_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    // ── confirm_subscription (free month → paid plan) ─────────────────────────
+    if (action === 'confirm_subscription') {
+      const plan       = (body.plan as string) ?? 'basic_500'
+      const amount_ngn = Number(body.amount_ngn ?? 0)
+      const payment_ref = body.payment_ref as string | undefined
+      const now        = new Date()
 
-    return NextResponse.json({ ok: true })
+      // Determine billing period from plan slug
+      const cycleMonths: Record<string, number> = {
+        basic_500: 1, standard_1000: 1, premium_2000: 1, installment_3month: 3,
+      }
+      const months  = cycleMonths[plan] ?? 1
+      const subEnd  = new Date(now.getTime() + months * 30 * 86_400_000)
+
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({
+          setup_status:       'active',
+          is_platform_active: true,
+          subscription_plan:  plan,
+          subscription_starts: now.toISOString(),
+          subscription_ends:  subEnd.toISOString(),
+          next_payment_due:   subEnd.toISOString(),
+          updated_at:         now.toISOString(),
+        })
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+
+      if (amount_ngn > 0) {
+        await adminSupabase.from('school_payments').insert({
+          school_id,
+          payment_type: 'subscription',
+          plan,
+          amount_ngn,
+          payment_ref:  payment_ref ?? null,
+          confirmed_by: adminId,
+          confirmed_at: now.toISOString(),
+        })
+      }
+
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'confirm_subscription', target_table: 'schools', target_id: school_id,
+        metadata: { plan, amount_ngn, payment_ref },
+      })
+      return NextResponse.json({ ok: true })
+    }
+
+    // ── save_notes ────────────────────────────────────────────────────────────
+    if (action === 'save_notes') {
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({ notes: body.notes ?? '', updated_at: new Date().toISOString() })
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+      return NextResponse.json({ ok: true })
+    }
+
+    // ── delete_school ─────────────────────────────────────────────────────────
+    if (action === 'delete_school') {
+      // Get all user IDs for this school first so we can delete auth accounts
+      const { data: profiles } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('school_id', school_id)
+
+      // Delete the school row (cascades via FK to classes, profiles, etc.)
+      const { error } = await adminSupabase
+        .from('schools')
+        .delete()
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+
+      // Delete auth users for this school
+      if (profiles?.length) {
+        for (const p of profiles) {
+          try { await adminSupabase.auth.admin.deleteUser(p.id) } catch { /* ignore */ }
+        }
+      }
+
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'delete_school', target_table: 'schools', target_id: school_id,
+        metadata: { deleted_user_count: profiles?.length ?? 0 },
+      })
+      return NextResponse.json({ ok: true })
+    }
+
+    return NextResponse.json({ ok: false, error: `Unknown action: ${action}` }, { status: 400 })
+
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Server error'
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
   }
-
-  return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
 }
