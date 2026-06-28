@@ -19,6 +19,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import BursarDashboardClient from './BursarDashboardClient'
+import SubscriptionGate       from '@/components/SubscriptionGate' // ← ADD THIS IMPORT
+import TeacherDashboardClient from './TeacherDashboardClient'
+
 
 const TERM_LABELS: Record<string, string> = {
   first: 'First Term', second: 'Second Term', third: 'Third Term',
@@ -119,6 +122,26 @@ export default async function BursarDashboardPage() {
   const collectionRate = totalExpected > 0
     ? Math.round((totalCollected / totalExpected) * 100)
     : 0
+  // ── Subscription check ───────────────────────────────────────────────────
+  // ADD THIS BLOCK to every non-principal dashboard page
+  const sub = await checkSubscription(user.id)
+  if (sub.locked) {
+    return (
+      <SubscriptionGate
+        schoolName={sub.schoolName}
+        schoolColor={sub.schoolColor}
+        status={sub.status as any}
+      />
+    )
+  }
+  // ── End subscription check ───────────────────────────────────────────────
+
+  // ... rest of your existing page data-fetching and return ...
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
   return (
     <BursarDashboardClient
