@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AIBursarClient from './AIBursarClient'
+import SubscriptionGate       from '@/components/SubscriptionGate' // ← ADD THIS IMPORT
 
 export const metadata = { title: 'AI Assistant — Bursar | SchoolOS' }
 
@@ -21,5 +22,25 @@ export default async function BursarAIPage() {
 
   const systemPrompt = `You are a finance assistant for the Bursar of ${schoolName}. Help answer fee-related questions, explain payment summaries in plain language, identify students with long overdue fees, and help draft fee reminder messages. Be clear and precise with numbers. Always show figures in both NGN and USD equivalents when relevant (use approximate rate of ₦1,600 per $1 unless told otherwise). Format financial data in clear tables or lists.`
 
+  // ── Subscription check ───────────────────────────────────────────────────
+  // ADD THIS BLOCK to every non-principal dashboard page
+  const sub = await checkSubscription(user.id)
+  if (sub.locked) {
+    return (
+      <SubscriptionGate
+        schoolName={sub.schoolName}
+        schoolColor={sub.schoolColor}
+        status={sub.status as any}
+      />
+    )
+  }
+  // ── End subscription check ───────────────────────────────────────────────
+
+  // ... rest of your existing page data-fetching and return ...
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
   return <AIBursarClient bursarName={bursarName} schoolName={schoolName} systemPrompt={systemPrompt} />
 }
