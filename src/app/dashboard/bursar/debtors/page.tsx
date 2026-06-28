@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { checkSubscription }  from '@/lib/subscription'       // ← ADD THIS IMPORT
+import SubscriptionGate       from '@/components/SubscriptionGate'
 import DebtorsClient from './DebtorsClient'
 export default async function DebtorsPage() {
   const supabase =await createClient()
@@ -7,5 +9,25 @@ export default async function DebtorsPage() {
   if (!user) redirect('/login')
   const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
+  // ── Subscription check ───────────────────────────────────────────────────
+  // ADD THIS BLOCK to every non-principal dashboard page
+  const sub = await checkSubscription(user.id)
+  if (sub.locked) {
+    return (
+      <SubscriptionGate
+        schoolName={sub.schoolName}
+        schoolColor={sub.schoolColor}
+        status={sub.status as any}
+      />
+    )
+  }
+  // ── End subscription check ───────────────────────────────────────────────
+
+  // ... rest of your existing page data-fetching and return ...
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
   return <DebtorsClient profile={profile} school={school} userId={user.id} />
 }
