@@ -2,8 +2,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AIBursarClient from './AIBursarClient'
-import SubscriptionGate       from '@/components/SubscriptionGate' // ← ADD THIS IMPORT
-
+import { checkSubscription }  from '@/lib/subscription'       // ← ADD THIS IMPORT
+import SubscriptionGate       from '@/components/SubscriptionGate'
 export const metadata = { title: 'AI Assistant — Bursar | SchoolOS' }
 
 export default async function BursarAIPage() {
