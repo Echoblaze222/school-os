@@ -11,7 +11,7 @@ export default async function BursarDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // ── Subscription check (before any other data fetching) ──────────────────
+  // ── Subscription check ────────────────────────────────────────────────────
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return (
@@ -23,7 +23,7 @@ export default async function BursarDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ──────────────────────────────────────
+  // ── Profile + school ──────────────────────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -35,20 +35,13 @@ export default async function BursarDashboardPage() {
   const school   = (profile as any)?.schools ?? null
   const schoolId = profile.school_id
 
-  // ── Fee stats ─────────────────────────────────────────────────────────────
+  // ── Counts for stats cards ────────────────────────────────────────────────
   const [
-    { data: feeStructures },
     { count: pendingPayments },
     { count: totalStudents },
-    { data: recentPayments },
+    { count: paidThisMonth },
+    { count: overdueCount },
   ] = await Promise.all([
-    supabase
-      .from('fee_structures')
-      .select('id, name, amount, due_date')
-      .eq('school_id', schoolId)
-      .order('due_date', { ascending: true })
-      .limit(5),
-
     supabase
       .from('fee_payments')
       .select('*', { count: 'exact', head: true })
@@ -63,22 +56,32 @@ export default async function BursarDashboardPage() {
 
     supabase
       .from('fee_payments')
-      .select('id, amount, status, paid_at, student_id')
+      .select('*', { count: 'exact', head: true })
       .eq('school_id', schoolId)
-      .order('paid_at', { ascending: false })
-      .limit(10),
+      .eq('status', 'paid')
+      .gte('paid_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+
+    supabase
+      .from('fee_payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('school_id', schoolId)
+      .eq('status', 'overdue'),
   ])
+
+  const counts = {
+    pendingPayments: pendingPayments ?? 0,
+    totalStudents:   totalStudents   ?? 0,
+    paidThisMonth:   paidThisMonth   ?? 0,
+    overdueCount:    overdueCount    ?? 0,
+  }
 
   return (
     <BursarDashboardClient
       profile={profile}
       school={school}
       userId={user.id}
-      feeStructures={feeStructures ?? []}
-      pendingPayments={pendingPayments ?? 0}
-      totalStudents={totalStudents ?? 0}
-      recentPayments={recentPayments ?? []}
+      counts={counts}
     />
   )
-}
-  
+    }
+    
