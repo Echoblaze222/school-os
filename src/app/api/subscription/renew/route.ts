@@ -1,109 +1,80 @@
-// src/app/api/subscriptions/renew/route.ts
-// Initiates Paystack payment for subscription renewal
-// Per-student pricing: students × plan rate
+// app/api/subscription/renew/route.ts
+// Called by SubscriptionClient.tsx → handleRenew()
+// Initialises a Paystack transaction and returns the payment URL.
+// After payment, Paystack redirects to /dashboard/principal/subscription?status=success
 
-import { NextResponse }      from 'next/server'
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const PLAN_RATES: Record<string, number> = {
-  Basic:    500,
-  Standard: 1000,
-  Premium:  2000,
-}
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!
+const APP_URL         = process.env.NEXT_PUBLIC_APP_URL ?? 'https://school-os-sphg.vercel.app'
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const {
-      schoolId,
-      planType,
-      studentCount,
-      amount,
-      principalName,
-      userId,
-    } = await request.json()
+    const supabase      = await createClient()
+    const adminSupabase = createAdminClient()
 
-    if (!schoolId || !planType || !amount) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
+    // ── Auth: must be a logged-in principal ───────────────────────────────────
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, school_id, full_name, email')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'principal') {
+      return NextResponse.json({ error: 'Only principals can renew subscriptions' }, { status: 403 })
     }
 
-    const supabase   = createAdminClient()
-    const paystackKey = process.env.PAYSTACK_SECRET_KEY
+    // ── Body ──────────────────────────────────────────────────────────────────
+    const { schoolId, planType, studentCount, amount, principalName } = await req.json()
 
-    // Get school and principal email
+    if (!schoolId || !planType || !amount) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (Number(amount) <= 0) {
+      return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 })
+    }
+
+    // ── Get school info for email ─────────────────────────────────────────────
     const { data: school } = await supabase
       .from('schools')
       .select('name, email')
       .eq('id', schoolId)
       .single()
 
-    if (!school) {
-      return NextResponse.json({ error: 'School not found.' }, { status: 404 })
-    }
+    // ── Generate unique reference ─────────────────────────────────────────────
+    const reference = `SCOS-${schoolId.slice(0, 8).toUpperCase()}-${Date.now()}`
 
-    const { data: principal } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', userId)
-      .single()
-
-    if (!principal) {
-      return NextResponse.json({ error: 'Principal not found.' }, { status: 404 })
-    }
-
-    // Verify the amount matches expected
-    const expectedAmount = studentCount * (PLAN_RATES[planType] ?? 500)
-    if (amount !== expectedAmount) {
-      return NextResponse.json(
-        { error: 'Amount mismatch. Please refresh and try again.' },
-        { status: 400 }
-      )
-    }
-
-    if (!paystackKey) {
-      return NextResponse.json(
-        { error: 'Payment not configured. Contact SchoolOS support.' },
-        { status: 503 }
-      )
-    }
-
-    // Get current term info
-    const now      = new Date()
-    const month    = now.getMonth()
-    const term     = month < 4 ? 'first' : month < 8 ? 'second' : 'third'
-    const year     = now.getFullYear()
-    const nextYear = year + 1
-    const academicYear = `${year}/${nextYear}`
-
-    // Unique reference
-    const reference = `SUB-${schoolId.slice(0, 8).toUpperCase()}-${Date.now()}`
-
-    // Initiate Paystack payment
+    // ── Initialise Paystack transaction ───────────────────────────────────────
     const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
       method:  'POST',
       headers: {
-        Authorization:  `Bearer ${paystackKey}`,
+        Authorization:  `Bearer ${PAYSTACK_SECRET}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email:        principal.email,
-        amount:       amount * 100, // Paystack uses kobo
-        currency:     'NGN',
+        email:     profile.email ?? school?.email ?? `${schoolId}@schoolos.ng`,
+        amount:    Math.round(Number(amount) * 100), // Paystack uses kobo
         reference,
-        callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/callback`,
+        currency:  'NGN',
+        callback_url: `${APP_URL}/api/subscription/callback`,
         metadata: {
-          school_id:      schoolId,
-          school_name:    school.name,
-          plan_type:      planType,
-          student_count:  studentCount,
-          term,
-          academic_year:  academicYear,
-          principal_name: principalName,
-          reference,
+          school_id:     schoolId,
+          school_name:   school?.name ?? '',
+          plan_type:     planType,
+          student_count: studentCount,
+          principal_id:  user.id,
+          principal_name: principalName ?? profile.full_name,
+          amount_ngn:    amount,
           custom_fields: [
-            { display_name: 'School',    variable_name: 'school_name',   value: school.name },
-            { display_name: 'Plan',      variable_name: 'plan_type',     value: planType },
-            { display_name: 'Students',  variable_name: 'student_count', value: String(studentCount) },
-            { display_name: 'Term',      variable_name: 'term',          value: term },
+            { display_name: 'School',   variable_name: 'school_name', value: school?.name ?? '' },
+            { display_name: 'Plan',     variable_name: 'plan_type',   value: planType },
+            { display_name: 'Students', variable_name: 'student_count', value: String(studentCount) },
           ],
         },
       }),
@@ -112,23 +83,38 @@ export async function POST(request: Request) {
     const paystackData = await paystackRes.json()
 
     if (!paystackData.status || !paystackData.data?.authorization_url) {
-      console.error('Paystack error:', paystackData)
+      console.error('[renew] Paystack error:', paystackData)
       return NextResponse.json(
-        { error: 'Failed to initiate payment. Please try again.' },
+        { error: paystackData.message ?? 'Failed to initialise payment' },
         { status: 502 }
       )
     }
+
+    // ── Log pending payment in subscription_payments table ────────────────────
+    // This lets the super-admin see attempted payments even if webhook is delayed
+    await adminSupabase.from('subscription_payments').insert({
+      school_id:         schoolId,
+      amount_paid:       Number(amount),
+      currency_used:     'NGN',
+      plan_type:         planType,
+      student_count:     studentCount,
+      receipt_number:    reference,
+      paystack_reference: reference,
+      // paid_at will be set by the webhook on confirmation
+    }).select().single()
+    // Note: ignore insert error — it's just a pre-log, not critical
 
     return NextResponse.json({
       paymentUrl: paystackData.data.authorization_url,
       reference,
     })
 
-  } catch (error) {
-    console.error('Subscription renewal error:', error)
+  } catch (err) {
+    console.error('[renew] error:', err)
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
+      { error: 'Server error. Please try again.' },
       { status: 500 }
     )
   }
-}
+            }
+      
