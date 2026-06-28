@@ -1,9 +1,9 @@
 // src/app/dashboard/teacher/page.tsx
 // FIX #4: Now fetches real counts for stats cards
 
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { checkSubscription }  from '@/lib/subscription'       // ← ADD THIS IMPORT
+import { createClient }       from '@/lib/supabase/server'
+import { redirect }           from 'next/navigation'
+import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
 import TeacherDashboardClient from './TeacherDashboardClient'
 
@@ -14,15 +14,8 @@ export default async function TeacherDashboardPage() {
 
   const userId = user.id
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', userId)
-    .single()
-
-  // ── Subscription check ───────────────────────────────────────────────────
-  // ADD THIS BLOCK to every non-principal dashboard page
-  const sub = await checkSubscription(user.id)
+  // ── Subscription check (before any other data fetching) ──────────────────
+  const sub = await checkSubscription(userId)
   if (sub.locked) {
     return (
       <SubscriptionGate
@@ -32,34 +25,31 @@ export default async function TeacherDashboardPage() {
       />
     )
   }
-  // ── End subscription check ───────────────────────────────────────────────
 
-  // ... rest of your existing page data-fetching and return ...
+  // ── Profile + school (single query) ──────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
-    .eq('id', user.id)
+    .select('*, schools(*)')
+    .eq('id', userId)
     .single()
 
   if (!profile || profile.role !== 'teacher') redirect('/login')
 
   const school = (profile as any)?.schools ?? null
 
-  // ── Parallel count queries (FIX #4) ─────────────────────────
+  // ── Parallel count queries ────────────────────────────────────────────────
   const [
     { count: classCount },
     { count: assignmentCount },
     { count: pendingGrading },
     { count: quizCount },
   ] = await Promise.all([
-    // How many classes is this teacher assigned to
     supabase
       .from('class_teachers')
       .select('*', { count: 'exact', head: true })
       .eq('teacher_id', userId)
       .eq('school_id', school?.id),
 
-    // How many active assignments this teacher has created
     supabase
       .from('assignments')
       .select('*', { count: 'exact', head: true })
@@ -67,14 +57,12 @@ export default async function TeacherDashboardPage() {
       .eq('school_id', school?.id)
       .gte('due_date', new Date().toISOString()),
 
-    // Submissions waiting to be graded
     supabase
       .from('assignment_submissions')
       .select('assignments!inner(*)', { count: 'exact', head: true })
       .eq('assignments.teacher_id', userId)
       .eq('status', 'submitted'),
 
-    // Published quizzes
     supabase
       .from('quizzes')
       .select('*', { count: 'exact', head: true })
@@ -118,4 +106,4 @@ export default async function TeacherDashboardPage() {
       counts={counts}
     />
   )
-          }
+}
