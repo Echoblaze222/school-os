@@ -3,6 +3,8 @@
 // 1. Protects all dashboard/private routes — redirects to /login if no session
 // 2. Redirects authenticated users away from auth pages
 // 3. Sets session timeout: user is logged out after INACTIVITY_MINUTES of no activity
+// 4. Enforces school lock — locked/expired schools redirect non-principal
+//    roles to /school-locked. Principal dashboard is always accessible.
 // ─────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
@@ -28,7 +30,9 @@ const PUBLIC_PATHS = [
   '/api/schools/register',
   '/api/schools/payment-callback',
   '/api/schools/paystack-webhook',
+  '/api/webhooks/paystack',             // Paystack payment webhook
   '/super-admin/login',                 // super admin login must be publicly reachable
+  '/school-locked',                     // lock page itself must be reachable
 ]
 
 // Routes that authenticated users should be bounced away from
@@ -129,6 +133,43 @@ export async function middleware(request: NextRequest) {
     // Already logged in but hitting auth pages — send to the right dashboard
     const dest = pathname.startsWith('/super-admin') ? '/super-admin' : '/dashboard'
     return NextResponse.redirect(new URL(dest, request.url))
+  }
+
+  // ── School lock enforcement ──────────────────────────────────
+  // Only runs for authenticated users hitting /dashboard routes.
+  // Principals are ALWAYS allowed through — they need to see payment info.
+  // All other roles (teacher, student, parent, bursar, secretary) are
+  // blocked when the school is locked, expired, or suspended.
+  if (user && pathname.startsWith('/dashboard')) {
+    // Fetch the user's role and school_id from profiles
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, school_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profile && profile.role !== 'principal' && profile.school_id) {
+      const { data: school } = await supabase
+        .from('schools')
+        .select('setup_status, is_platform_active')
+        .eq('id', profile.school_id)
+        .single()
+
+      if (school) {
+        const isLocked =
+          !school.is_platform_active ||
+          school.setup_status === 'locked'   ||
+          school.setup_status === 'expired'  ||
+          school.setup_status === 'suspended'
+
+        if (isLocked) {
+          const lockedUrl = new URL('/school-locked', request.url)
+          lockedUrl.searchParams.set('status', school.setup_status)
+          lockedUrl.searchParams.set('role',   profile.role)
+          return NextResponse.redirect(lockedUrl)
+        }
+      }
+    }
   }
 
   // ── Root redirect ────────────────────────────────────────────
