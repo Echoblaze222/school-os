@@ -1,183 +1,179 @@
-// src/app/api/subscriptions/callback/route.ts
-// Paystack redirects here after subscription payment
-// Verifies payment and extends subscription by 4 months
+// app/api/subscription/callback/route.ts
+// Paystack redirects HERE after the user completes (or cancels) payment.
+// This is NOT the webhook — it's the browser redirect.
+// We verify the transaction, then redirect the principal to their subscription
+// page with a ?status= param so the toast message shows.
 
-import { NextResponse }      from 'next/server'
+import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const PLAN_FEATURES: Record<string, string[]> = {
-  Basic: [
-    'core_portal', 'fee_management', 'results_system',
-    'assignments', 'timetable', 'attendance',
-  ],
-  Standard: [
-    'core_portal', 'fee_management', 'results_system',
-    'assignments', 'timetable', 'attendance',
-    'ai_tutor', 'bulk_sms', 'live_classes', 'whatsapp_notifications',
-  ],
-  Premium: [
-    'core_portal', 'fee_management', 'results_system',
-    'assignments', 'timetable', 'attendance',
-    'ai_tutor', 'bulk_sms', 'live_classes', 'whatsapp_notifications',
-    'ai_face_match', 'custom_domain', 'advanced_analytics',
-    'cross_school_chat', 'id_cards',
-  ],
-}
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!
+const APP_URL         = process.env.NEXT_PUBLIC_APP_URL ?? 'https://school-os-sphg.vercel.app'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const reference = searchParams.get('reference')
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const reference        = searchParams.get('reference') ?? searchParams.get('trxref')
+
+  const redirectBase = `${APP_URL}/dashboard/principal/subscription`
 
   if (!reference) {
-    return NextResponse.redirect(
-      new URL('/dashboard/principal/subscriptions?status=failed', request.url)
-    )
+    return NextResponse.redirect(`${redirectBase}?status=failed`)
   }
 
   try {
-    // Verify payment with Paystack
+    // Verify transaction with Paystack
     const verifyRes = await fetch(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        },
-      }
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+      { headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` } }
     )
-
     const verifyData = await verifyRes.json()
 
     if (!verifyData.status || verifyData.data?.status !== 'success') {
-      return NextResponse.redirect(
-        new URL('/dashboard/principal/subscriptions?status=failed', request.url)
-      )
+      return NextResponse.redirect(`${redirectBase}?status=failed`)
     }
 
-    const meta         = verifyData.data.metadata
-    const schoolId     = meta.school_id
-    const planType     = meta.plan_type
-    const studentCount = meta.student_count
-    const term         = meta.term
-    const academicYear = meta.academic_year
-    const amountPaid   = verifyData.data.amount / 100 // Convert from kobo
+    const txData      = verifyData.data
+    const metadata    = txData.metadata ?? {}
+    const school_id   = metadata.school_id
+    const plan_type   = metadata.plan_type   ?? 'Standard'
+    const amount_ngn  = Number(txData.amount) / 100
 
-    if (!schoolId) {
-      return NextResponse.redirect(
-        new URL('/dashboard/principal/subscriptions?status=failed', request.url)
-      )
+    if (!school_id) {
+      return NextResponse.redirect(`${redirectBase}?status=failed`)
     }
 
-    const supabase = createAdminClient()
+    const adminSupabase = createAdminClient()
 
-    // Calculate new expiry — extend by 4 months from today
-    const now    = new Date()
-    const expiry = new Date(now)
-    expiry.setMonth(expiry.getMonth() + 4)
-    const expiryStr = expiry.toISOString().split('T')[0]
-
-    // Update or create subscription
-    const { data: existingSub } = await supabase
+    // Check idempotency — don't process twice
+    const { data: existing } = await adminSupabase
       .from('subscriptions')
       .select('id')
-      .eq('school_registry_id', schoolId)
-      .single()
+      .eq('payment_reference', reference)
+      .maybeSingle()
 
-    if (existingSub) {
-      // Extend existing subscription
-      await supabase
-        .from('subscriptions')
-        .update({
-          plan_type:    planType,
-          status:       'Active',
-          expiry_date:  expiryStr,
-          amount_paid:  amountPaid,
-          updated_at:   now.toISOString(),
-        })
-        .eq('school_registry_id', schoolId)
-    } else {
-      // Create new subscription record
-      await supabase
-        .from('subscriptions')
-        .insert({
-          school_registry_id: schoolId,
-          plan_type:          planType,
-          status:             'Active',
-          billing_cycle:      'Termly',
-          started_at:         now.toISOString().split('T')[0],
-          expiry_date:        expiryStr,
-          amount_paid:        amountPaid,
-          currency_used:      'NGN',
-        })
+    if (!existing) {
+      // Activate the subscription
+      await activateSubscription({
+        adminSupabase,
+        school_id,
+        plan_type,
+        amount_ngn,
+        reference,
+        student_count: metadata.student_count,
+        principal_id:  metadata.principal_id,
+      })
     }
 
-    // Save payment history
-    const receiptNumber = `REN-${Date.now().toString().slice(-8)}`
-    await supabase
-      .from('subscription_payments')
-      .insert({
-        school_id:      schoolId,
-        amount_paid:    amountPaid,
-        currency_used:  'NGN',
-        plan_type:      planType,
-        student_count:  studentCount,
-        term,
-        academic_year:  academicYear,
-        receipt_number: receiptNumber,
-        paystack_reference: reference,
-        paid_at:        now.toISOString(),
-      })
-
-    // Make sure school is active
-    await supabase
-      .from('schools')
-      .update({
-        status:             'active',
-        is_platform_active: true,
-        updated_at:         now.toISOString(),
-      })
-      .eq('id', schoolId)
-
-    // Update feature flags based on plan
-    const features = PLAN_FEATURES[planType] ?? PLAN_FEATURES.Basic
-
-    // Delete old flags and re-insert based on new plan
-    await supabase
-      .from('feature_flags')
-      .delete()
-      .eq('school_id', schoolId)
-
-    await supabase
-      .from('feature_flags')
-      .insert(
-        features.map(f => ({
-          school_id:    schoolId,
-          feature_name: f,
-          is_enabled:   true,
-          enabled_at:   now.toISOString(),
-        }))
-      )
-
-    // Send notification to Principal
-    await supabase
-      .from('notifications')
-      .insert({
-        school_id: schoolId,
-        type:      'system',
-        title:     'Subscription Renewed Successfully',
-        body:      `Your ${planType} plan has been renewed until ${expiry.toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })}. Thank you!`,
-        is_read:   false,
-        created_at: now.toISOString(),
-      })
-
-    // Redirect to success page
     return NextResponse.redirect(
-      new URL(`/dashboard/principal/subscriptions?status=success&receipt=${receiptNumber}`, request.url)
+      `${redirectBase}?status=success&receipt=${encodeURIComponent(reference)}`
     )
 
-  } catch (error) {
-    console.error('Subscription callback error:', error)
-    return NextResponse.redirect(
-      new URL('/dashboard/principal/subscriptions?status=failed', request.url)
-    )
+  } catch (err) {
+    console.error('[callback] error:', err)
+    return NextResponse.redirect(`${redirectBase}?status=failed`)
   }
 }
+
+// ─── Shared activation logic (also used by webhook) ──────────────────────────
+export async function activateSubscription({
+  adminSupabase,
+  school_id,
+  plan_type,
+  amount_ngn,
+  reference,
+  student_count,
+  principal_id,
+}: {
+  adminSupabase:  any
+  school_id:      string
+  plan_type:      string
+  amount_ngn:     number
+  reference:      string
+  student_count?: number
+  principal_id?:  string
+}) {
+  const now        = new Date()
+  // One term = 4 months
+  const expiryDate = new Date(now)
+  expiryDate.setMonth(expiryDate.getMonth() + 4)
+
+  // Determine billing cycle label from plan
+  const termMap: Record<string, string> = {
+    basic_500: 'Termly', standard_1000: 'Termly', premium_2000: 'Termly',
+    Basic: 'Termly', Standard: 'Termly', Premium: 'Termly',
+  }
+
+  // 1. Upsert the subscriptions row for this school
+  const { data: existingSub } = await adminSupabase
+    .from('subscriptions')
+    .select('id')
+    .eq('school_id', school_id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existingSub) {
+    await adminSupabase
+      .from('subscriptions')
+      .update({
+        plan_type:         plan_type,
+        status:            'Active',
+        billing_cycle:     termMap[plan_type] ?? 'Termly',
+        started_at:        now.toISOString().split('T')[0],
+        expiry_date:       expiryDate.toISOString().split('T')[0],
+        amount_paid:       amount_ngn,
+        currency_used:     'NGN',
+        payment_reference: reference,
+        updated_at:        now.toISOString(),
+      })
+      .eq('id', existingSub.id)
+  } else {
+    await adminSupabase
+      .from('subscriptions')
+      .insert({
+        school_id,
+        plan_type,
+        status:            'Active',
+        billing_cycle:     termMap[plan_type] ?? 'Termly',
+        started_at:        now.toISOString().split('T')[0],
+        expiry_date:       expiryDate.toISOString().split('T')[0],
+        amount_paid:       amount_ngn,
+        currency_used:     'NGN',
+        payment_reference: reference,
+      })
+  }
+
+  // 2. Unlock the school in the schools table
+  await adminSupabase
+    .from('schools')
+    .update({
+      setup_status:       'active',
+      is_platform_active: true,
+      updated_at:         now.toISOString(),
+    })
+    .eq('id', school_id)
+
+  // 3. Record in subscription_payments (update the pre-log row if it exists)
+  await adminSupabase
+    .from('subscription_payments')
+    .upsert({
+      school_id,
+      amount_paid:        amount_ngn,
+      currency_used:      'NGN',
+      plan_type,
+      student_count:      student_count ?? null,
+      receipt_number:     reference,
+      paystack_reference: reference,
+      paid_at:            now.toISOString(),
+    }, { onConflict: 'receipt_number' })
+
+  // 4. Log audit
+  await adminSupabase.from('portal_audit_log').insert({
+    actor_id:     principal_id ?? null,
+    action:       'subscription_payment_confirmed',
+    target_table: 'subscriptions',
+    target_id:    school_id,
+    metadata:     { reference, amount_ngn, plan_type },
+  })
+  }
+      
