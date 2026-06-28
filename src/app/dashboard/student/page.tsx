@@ -1,8 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { checkSubscription }  from '@/lib/subscription'       // ← ADD THIS IMPORT
-import SubscriptionGate       from '@/components/SubscriptionGate'
-import StudentDashboardClient from './StudentDashboardClient'
+// src/app/dashboard/student/page.tsx
+
+import { createClient }        from '@/lib/supabase/server'
+import { redirect }            from 'next/navigation'
+import { checkSubscription }   from '@/lib/subscription'
+import SubscriptionGate        from '@/components/SubscriptionGate'
+import StudentDashboardClient  from './StudentDashboardClient'
 
 function getCurrentTerm() {
   const m = new Date().getMonth() + 1
@@ -20,14 +22,7 @@ export default async function StudentDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  // ── Subscription check ───────────────────────────────────────────────────
-  // ADD THIS BLOCK to every non-principal dashboard page
+  // ── Subscription check (before any other data fetching) ──────────────────
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return (
@@ -38,12 +33,11 @@ export default async function StudentDashboardPage() {
       />
     )
   }
-  // ── End subscription check ───────────────────────────────────────────────
 
-  // ... rest of your existing page data-fetching and return ...
+  // ── Profile + school (single query) ──────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
@@ -72,19 +66,16 @@ export default async function StudentDashboardPage() {
     { data: resultRows },
     { data: leaderboardRows },
   ] = await Promise.all([
-    // All active assignments for this class
     supabase.from('assignments')
       .select('id')
       .eq('school_id', profile.school_id)
       .eq('class_id', classId)
       .eq('status', 'active'),
 
-    // Assignments this student already submitted
     supabase.from('assignment_submissions')
       .select('assignment_id')
       .eq('student_id', user.id),
 
-    // Active quizzes for this class right now
     supabase.from('quizzes')
       .select('*', { count: 'exact', head: true })
       .eq('school_id', profile.school_id)
@@ -92,7 +83,6 @@ export default async function StudentDashboardPage() {
       .lte('starts_at', new Date().toISOString())
       .gte('ends_at',   new Date().toISOString()),
 
-    // Any live class right now
     supabase.from('online_classes')
       .select('id')
       .eq('school_id', profile.school_id)
@@ -129,28 +119,23 @@ export default async function StudentDashboardPage() {
       : Promise.resolve({ data: [] as any[] }),
   ])
 
-  // Pending = active assignments student has NOT yet submitted
   const submittedIds = new Set((submittedAssignments ?? []).map((s: any) => s.assignment_id))
   const pendingTasks = (allAssignments ?? []).filter((a: any) => !submittedIds.has(a.id)).length
 
-  // Attendance %
   const totalDays   = attendanceRows?.length ?? 0
   const presentDays = attendanceRows?.filter((r: any) =>
     r.status === 'present' || (!r.status && r.is_present === true)
   ).length ?? 0
   const attendance  = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : null
 
-  // GPA on 5.0 scale
   const valid = resultRows?.filter((r: any) => r.score != null && (r.max_score ?? 0) > 0) ?? []
   const gpa   = valid.length > 0
     ? Math.round(((valid.reduce((s: number, r: any) => s + (r.score / r.max_score), 0) / valid.length) * 5) * 10) / 10
     : null
 
-  // Class rank
   const rankPos = leaderboardRows?.findIndex((r: any) => r.student_id === user.id) ?? -1
   const rank    = rankPos >= 0 ? rankPos + 1 : null
 
-  // Background trial check
   if (school?.id && school?.setup_status === 'trial') {
     fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/trial/check`, {
       method: 'POST',
@@ -175,4 +160,5 @@ export default async function StudentDashboardPage() {
       }}
     />
   )
-}
+    }
+    
