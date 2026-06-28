@@ -1,152 +1,90 @@
 // app/api/webhooks/paystack/route.ts
+// Paystack POSTs here on EVERY payment event.
+// We verify the HMAC signature, then activate the subscription.
 //
-// Paystack sends a POST here every time a payment succeeds.
-// Set your Paystack webhook URL in the Paystack dashboard to:
-//   https://your-domain.vercel.app/api/webhooks/paystack
+// Set this URL in Paystack Dashboard → Settings → API Keys & Webhooks:
+//   https://school-os-j4bn.vercel.app/api/webhooks/paystack
 //
-// Set PAYSTACK_SECRET_KEY in your Vercel env vars.
+// Required env var: PAYSTACK_SECRET_KEY
 
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { activateSubscription } from '@/app/api/subscription/callback/route'
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY ?? ''
 
-function verifySignature(body: string, signature: string): boolean {
-  const expected = crypto
+function verifySignature(rawBody: string, signature: string): boolean {
+  const hash = crypto
     .createHmac('sha512', PAYSTACK_SECRET)
-    .update(body)
+    .update(rawBody)
     .digest('hex')
-  return expected === signature
+  return hash === signature
 }
 
 export async function POST(req: Request) {
-  const rawBody  = await req.text()
+  const rawBody   = await req.text()
   const signature = req.headers.get('x-paystack-signature') ?? ''
 
-  // Always verify — reject anything unsigned
   if (!verifySignature(rawBody, signature)) {
+    console.warn('[paystack-webhook] Invalid signature — rejected')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
   let event: any
-  try { event = JSON.parse(rawBody) } catch {
+  try {
+    event = JSON.parse(rawBody)
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // We only care about successful charges
+  // Only handle successful charges
   if (event.event !== 'charge.success') {
     return NextResponse.json({ received: true })
   }
 
-  const data      = event.data
-  const reference = data.reference as string
-  const amountNgn = Number(data.amount) / 100          // Paystack sends kobo
-  const metadata  = data.metadata ?? {}
-
-  // Expect school_id to be passed as Paystack metadata.school_id
-  // (set this when initialising the Paystack transaction on your frontend)
+  const tx        = event.data
+  const reference = tx.reference as string
+  const amountNgn = Number(tx.amount) / 100
+  const metadata  = tx.metadata ?? {}
   const school_id = metadata.school_id as string | undefined
-  const plan      = (metadata.plan as string) ?? 'basic_500'
+  const plan_type = (metadata.plan_type as string) ?? 'Standard'
 
   if (!school_id) {
-    // No school_id in metadata — log and ignore
-    console.warn('Paystack webhook: payment without school_id', reference)
+    console.warn('[paystack-webhook] Payment received without school_id:', reference)
     return NextResponse.json({ received: true })
   }
 
   const adminSupabase = createAdminClient()
-  const now           = new Date()
 
-  // Check if this reference was already processed (idempotency)
-  const { data: existing } = await adminSupabase
-    .from('school_payments')
+  // Idempotency — skip if already processed
+  const { data: alreadyProcessed } = await adminSupabase
+    .from('subscriptions')
     .select('id')
-    .eq('payment_ref', reference)
+    .eq('payment_reference', reference)
     .maybeSingle()
 
-  if (existing) {
+  if (alreadyProcessed) {
     return NextResponse.json({ received: true, duplicate: true })
   }
 
-  // Determine subscription window from plan
-  const cycleMonths: Record<string, number> = {
-    basic_500: 1, standard_1000: 1, premium_2000: 1, installment_3month: 3,
-  }
-  const months = cycleMonths[plan] ?? 1
-  const subEnd = new Date(now.getTime() + months * 30 * 86_400_000)
-
-  // Determine whether this is a setup payment or a subscription renewal
-  const { data: school } = await adminSupabase
-    .from('schools')
-    .select('setup_status, setup_paid_at, subscription_plan')
-    .eq('id', school_id)
-    .single()
-
-  if (!school) {
-    return NextResponse.json({ received: true, error: 'School not found' })
-  }
-
-  const isSetupPayment = !school.setup_paid_at
-
-  if (isSetupPayment) {
-    // First-ever payment → grant 1 month free then subscription
-    const freeEnd = new Date(now.getTime() + 30 * 86_400_000)
-    await adminSupabase
-      .from('schools')
-      .update({
-        setup_status:       'active',
-        is_platform_active: true,
-        setup_paid_at:      now.toISOString(),
-        subscription_plan:  'free_month',
-        free_month_starts:  now.toISOString(),
-        free_month_ends:    freeEnd.toISOString(),
-        subscription_starts: now.toISOString(),
-        subscription_ends:  freeEnd.toISOString(),
-        next_payment_due:   freeEnd.toISOString(),
-        updated_at:         now.toISOString(),
-      })
-      .eq('id', school_id)
-
-    await adminSupabase.from('school_payments').insert({
+  try {
+    await activateSubscription({
+      adminSupabase,
       school_id,
-      payment_type: 'setup',
-      amount_ngn:   amountNgn,
-      payment_ref:  reference,
-      confirmed_at: now.toISOString(),
+      plan_type,
+      amount_ngn:    amountNgn,
+      reference,
+      student_count: metadata.student_count,
+      principal_id:  metadata.principal_id,
     })
-  } else {
-    // Renewal payment → extend/activate subscription
-    await adminSupabase
-      .from('schools')
-      .update({
-        setup_status:       'active',
-        is_platform_active: true,
-        subscription_plan:  plan,
-        subscription_starts: now.toISOString(),
-        subscription_ends:  subEnd.toISOString(),
-        next_payment_due:   subEnd.toISOString(),
-        updated_at:         now.toISOString(),
-      })
-      .eq('id', school_id)
 
-    await adminSupabase.from('school_payments').insert({
-      school_id,
-      payment_type: 'subscription',
-      plan,
-      amount_ngn:   amountNgn,
-      payment_ref:  reference,
-      confirmed_at: now.toISOString(),
-    })
+    console.log(`[paystack-webhook] School ${school_id} activated via ${reference}`)
+    return NextResponse.json({ received: true, ok: true })
+
+  } catch (err) {
+    console.error('[paystack-webhook] activation error:', err)
+    return NextResponse.json({ received: true, error: 'Activation failed' }, { status: 500 })
   }
-
-  // Log audit
-  await adminSupabase.from('portal_audit_log').insert({
-    action:       'paystack_payment_received',
-    target_table: 'schools',
-    target_id:    school_id,
-    metadata:     { reference, amount_ngn: amountNgn, plan, is_setup: isSetupPayment },
-  })
-
-  return NextResponse.json({ received: true, ok: true })
-}
+      }
+      
