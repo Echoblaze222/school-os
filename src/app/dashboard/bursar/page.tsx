@@ -19,8 +19,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import BursarDashboardClient from './BursarDashboardClient'
-import SubscriptionGate       from '@/components/SubscriptionGate' // ← ADD THIS IMPORT
-
+import { checkSubscription }  from '@/lib/subscription'       // ← ADD THIS IMPORT
+import SubscriptionGate       from '@/components/SubscriptionGate'
 
 const TERM_LABELS: Record<string, string> = {
   first: 'First Term', second: 'Second Term', third: 'Third Term',
