@@ -6,29 +6,30 @@
 // The principal must renew — then setup_status goes back to 'active'
 // and this gate disappears automatically on next page load.
 
+import { PhoneIcon } from '@/components/Icons'
 import styles from './SubscriptionGate.module.css'
 
 interface Props {
-  schoolName: string
+  schoolName:   string
   schoolColor?: string
-  status: 'expired' | 'suspended' | 'locked' | string
+  status:       'expired' | 'suspended' | 'locked' | string
 }
 
 const STATUS_COPY: Record<string, { emoji: string; heading: string; sub: string }> = {
   expired: {
-    emoji: '🔒',
+    emoji:   '🔒',
     heading: 'Subscription Expired',
-    sub: 'Your school\'s subscription for this term has ended. Please contact your school admin or principal to renew so you can continue using your dashboard.',
+    sub:     "Your school's subscription for this term has ended. Please contact your school admin or principal to renew so you can continue using your dashboard.",
   },
   suspended: {
-    emoji: '⚠️',
+    emoji:   '⚠️',
     heading: 'Account Suspended',
-    sub: 'Your school\'s account has been suspended. Please contact your school admin or principal to resolve this.',
+    sub:     "Your school's account has been suspended. Please contact your school admin or principal to resolve this.",
   },
   locked: {
-    emoji: '🚫',
+    emoji:   '🚫',
     heading: 'Account Locked',
-    sub: 'Access to this dashboard has been locked. Please contact your school admin or principal for assistance.',
+    sub:     'Access to this dashboard has been locked. Please contact your school admin or principal for assistance.',
   },
 }
 
@@ -59,15 +60,20 @@ export default function SubscriptionGate({ schoolName, schoolColor = '#7C3AED', 
           </ol>
         </div>
 
+        {/* WhatsApp support button — uses PhoneIcon from Icons.tsx */}
         <a
-          href={`https://wa.me/2347063523130?text=My%20school%20(${encodeURIComponent(schoolName)})%20subscription%20has%20expired.%20How%20do%20I%20renew%3F`}
+          href={`https://wa.me/2348086883144?text=Hello%2C%20my%20school%20(${encodeURIComponent(schoolName)})%20subscription%20has%20expired.%20Please%20help%20me%20renew.`}
           target="_blank"
           rel="noreferrer"
           className={styles.contactBtn}
           style={{ background: schoolColor }}
         >
+          <PhoneIcon size={16} color="#fff" strokeWidth={2.2} />
           Contact SchoolOS Support
         </a>
+
+        {/* Phone number */}
+        <p className={styles.phone}>+234 808 688 3144</p>
 
         <p className={styles.footer}>
           If you believe this is a mistake, please contact your school admin.
