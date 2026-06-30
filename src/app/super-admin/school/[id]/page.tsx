@@ -18,6 +18,7 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
     { data: payments },
     { data: staff },
     { data: reminders },
+    { data: compliance },
   ] = await Promise.all([
     supabase.from('school_subscription_summary').select('*').eq('id', id).single(),
     supabase.from('school_payments')
@@ -33,6 +34,10 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
       .select('day_trigger, sent_at, channel')
       .eq('school_id', id)
       .order('sent_at', { ascending: false }),
+    supabase.from('school_compliance_records')
+      .select('*')
+      .eq('school_id', id)
+      .maybeSingle(),
   ])
 
   if (!school) notFound()
@@ -44,6 +49,7 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
       staff={staff ?? []}
       reminders={reminders ?? []}
       adminId={user.id}
+      compliance={compliance ?? null}
     />
   )
-}
+    }
