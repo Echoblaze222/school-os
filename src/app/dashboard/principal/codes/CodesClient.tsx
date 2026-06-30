@@ -6,6 +6,7 @@
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import DOBPicker from '@/components/DOBPicker'
 import styles from './codes.module.css'
 
 interface CodeEntry {
@@ -89,8 +90,23 @@ function roleMeta(role: string) {
   return ROLE_META[role] ?? { color: '#6B7280', icon: '?', label: role }
 }
 
-interface BulkRow { full_name: string; email: string; role: string }
-const EMPTY_ROW = (): BulkRow => ({ full_name: '', email: '', role: 'student' })
+interface BulkRow {
+  full_name: string
+  email: string
+  role: string
+  phone: string
+  gender: string
+  dateOfBirth: string
+  classId: string
+  admissionNumber: string
+  guardianName: string
+  guardianPhone: string
+}
+const EMPTY_ROW = (): BulkRow => ({
+  full_name: '', email: '', role: 'student',
+  phone: '', gender: '', dateOfBirth: '',
+  classId: '', admissionNumber: '', guardianName: '', guardianPhone: '',
+})
 const DEFAULT_ROWS = 5
 
 function makePassword() {
@@ -315,55 +331,64 @@ export default function CodesClient({ entries: init, classes, profile, school, u
     setSLoading(false)
   }
 
-  function handleBulkParse() {
-    const validRows = bRows.filter(r => r.full_name.trim() && r.email.trim() && ROLES_ASSIGNABLE.includes(r.role))
-    const year = new Date().getFullYear()
-    setBResults(validRows.map(r => {
-      const prefix = r.role.slice(0, 3).toUpperCase()
-      const rand   = Math.floor(1000 + Math.random() * 9000)
-      return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: `${prefix}-${year}-${rand}`, password: makePassword(), saved: false, error: null }
-    }))
-    setBSaved(false)
-  }
-
+  // ── FIX: Bulk Add now saves directly — no more "Preview Codes" stage that
+  // showed fake, unsaved codes which looked real but didn't work at login.
+  // One click = real users created in the database immediately.
   async function handleBulkSave() {
-    if (!bResults.length) return
+    const validRows = bRows.filter(r => r.full_name.trim() && r.email.trim() && ROLES_ASSIGNABLE.includes(r.role))
+    if (!validRows.length) return
+
     setBLoading(true)
+    // Seed bResults immediately so the UI shows "Saving..." rows, not nothing
+    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', saved: false, error: null })))
+
     const updated = await Promise.all(
-      bResults.map(async (r) => {
+      validRows.map(async (r) => {
         try {
           const res  = await fetch('/api/secretary/create-user', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ fullName: r.full_name, email: r.email.toLowerCase(), role: r.role, schoolId }),
+            body:    JSON.stringify({
+              fullName:         r.full_name.trim(),
+              email:            r.email.trim().toLowerCase(),
+              role:             r.role,
+              schoolId,
+              phone:            r.phone.trim() || null,
+              gender:           r.gender || null,
+              dateOfBirth:      r.dateOfBirth || null,
+              classId:          r.role === 'student' ? (r.classId || null) : null,
+              admissionNumber:  r.role === 'student' ? (r.admissionNumber.trim() || null) : null,
+              guardianName:     r.role === 'student' ? (r.guardianName.trim() || null) : null,
+              guardianPhone:    r.role === 'student' ? (r.guardianPhone.trim() || null) : null,
+            }),
           })
           const json = await res.json()
-          if (!res.ok) return { ...r, error: json.error ?? 'Failed', saved: false }
-          return { ...r, code: json.code ?? r.code, password: json.password ?? r.password, saved: true, error: null }
+          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: json.error ?? 'Failed', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, password: json.password, saved: true, error: null }
         } catch (e: any) {
-          return { ...r, error: e.message ?? 'Network error', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: e.message ?? 'Network error', saved: false }
         }
       })
     )
     setBResults(updated)
-    if (updated.every(r => r.saved)) {
-      setBSaved(true)
+    if (updated.some(r => r.saved)) {
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
         .eq('school_id', schoolId).order('role').order('full_name')
       if (fresh) setEntries(fresh)
     }
+    if (updated.every(r => r.saved)) setBSaved(true)
     setBLoading(false)
   }
 
   async function copyAllCodes(list: GeneratedEntry[]) {
-    const text = list.map(r => `${r.full_name} | ${roleMeta(r.role).label} | Code: ${r.code} | Password: ${r.password}`).join('\n')
+    const text = list.filter(r => r.saved).map(r => `${r.full_name} | ${roleMeta(r.role).label} | Code: ${r.code} | Password: ${r.password}`).join('\n')
     await navigator.clipboard.writeText(text).catch(() => {})
     setCopiedAll(true)
     setTimeout(() => setCopiedAll(false), 2500)
   }
 
-  // ── FIX 2: Helper to update a bulk row and reset both results + saved flag ──
+  // Helper to update a bulk row and reset the results + saved flag
   function updateBulkRow(index: number, patch: Partial<BulkRow>) {
     setBRows(prev => {
       const next = [...prev]
@@ -371,7 +396,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
       return next
     })
     setBResults([])
-    setBSaved(false) // FIX: was missing — stale "All Saved ✓" badge no longer shown after re-editing
+    setBSaved(false)
   }
 
   const RoleChip = ({ r }: { r: string }) => {
@@ -526,7 +551,11 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Date of Birth</label>
-                  <input className={styles.fieldInput} type="date" value={fDOB} onChange={e => setFDOB(e.target.value)} />
+                  <DOBPicker value={fDOB} onChange={setFDOB} inputStyle={{
+                    background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+                    borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                    fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+                  }} />
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>State of Origin</label>
@@ -607,27 +636,28 @@ export default function CodesClient({ entries: init, classes, profile, school, u
             <div className={styles.formBody}>
 
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                  <colgroup>
-                    <col style={{ width: 32 }} />
-                    <col style={{ width: '35%' }} />
-                    <col style={{ width: '35%' }} />
-                    <col style={{ width: '22%' }} />
-                    <col style={{ width: 36 }} />
-                  </colgroup>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1100 }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-elevated)' }}>
                       <th style={thStyle}>#</th>
                       <th style={thStyle}>Full Name *</th>
                       <th style={thStyle}>Email *</th>
                       <th style={thStyle}>Role *</th>
+                      <th style={thStyle}>Phone</th>
+                      <th style={thStyle}>Gender</th>
+                      <th style={{ ...thStyle, minWidth: 230 }}>Date of Birth</th>
+                      <th style={thStyle}>Class</th>
+                      <th style={thStyle}>Admission No.</th>
+                      <th style={thStyle}>Guardian Name</th>
+                      <th style={thStyle}>Guardian Phone</th>
                       <th style={thStyle} />
                     </tr>
                   </thead>
                   <tbody>
                     {bRows.map((row, i) => {
-                      const isEmpty = !row.full_name && !row.email
-                      const m       = roleMeta(row.role)
+                      const isEmpty    = !row.full_name && !row.email
+                      const m          = roleMeta(row.role)
+                      const isStudentR = row.role === 'student'
                       return (
                         <tr
                           key={i}
@@ -682,6 +712,78 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                             </select>
                           </td>
 
+                          <td style={tdStyle}>
+                            <input
+                              type="tel"
+                              value={row.phone}
+                              placeholder="08012345678"
+                              onChange={e => updateBulkRow(i, { phone: e.target.value })}
+                              style={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.gender}
+                              onChange={e => updateBulkRow(i, { gender: e.target.value })}
+                              style={cellInputStyle}
+                            >
+                              <option value="">—</option>
+                              {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+                            </select>
+                          </td>
+
+                          <td style={tdStyle}>
+                            <DOBPicker
+                              value={row.dateOfBirth}
+                              onChange={v => updateBulkRow(i, { dateOfBirth: v })}
+                              inputStyle={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.classId}
+                              onChange={e => updateBulkRow(i, { classId: e.target.value })}
+                              disabled={!isStudentR}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            >
+                              <option value="">—</option>
+                              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              value={row.admissionNumber}
+                              placeholder={isStudentR ? 'ADM/2025/001' : ''}
+                              disabled={!isStudentR}
+                              onChange={e => updateBulkRow(i, { admissionNumber: e.target.value })}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              value={row.guardianName}
+                              placeholder={isStudentR ? 'Mr. Osei Kofi' : ''}
+                              disabled={!isStudentR}
+                              onChange={e => updateBulkRow(i, { guardianName: e.target.value })}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              type="tel"
+                              value={row.guardianPhone}
+                              placeholder={isStudentR ? '08098765432' : ''}
+                              disabled={!isStudentR}
+                              onChange={e => updateBulkRow(i, { guardianPhone: e.target.value })}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            />
+                          </td>
+
                           <td style={{ ...tdStyle, textAlign: 'center' }}>
                             <button
                               onClick={() => {
@@ -732,17 +834,17 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 const filled = bRows.filter(r => r.full_name.trim() && r.email.trim()).length
                 return filled > 0 ? (
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-                    {filled} user{filled !== 1 ? 's' : ''} ready to preview
+                    {filled} user{filled !== 1 ? 's' : ''} ready to save
                   </p>
                 ) : null
               })()}
 
               <button
-                onClick={handleBulkParse}
+                onClick={handleBulkSave}
                 className={styles.previewBtn}
-                disabled={!bRows.some(r => r.full_name.trim() && r.email.trim())}
+                disabled={bLoading || !bRows.some(r => r.full_name.trim() && r.email.trim())}
               >
-                Preview Codes
+                {bLoading ? 'Saving...' : 'Save All Users'}
               </button>
             </div>
           </div>
@@ -751,19 +853,15 @@ export default function CodesClient({ entries: init, classes, profile, school, u
             <div className={styles.bulkPreviewCard}>
               <div className={styles.bulkPreviewHeader}>
                 <div>
-                  <p className={styles.formTitle}>{bResults.length} User{bResults.length !== 1 ? 's' : ''} Ready</p>
-                  <p className={styles.formSub}>Review before saving.</p>
+                  <p className={styles.formTitle}>{bResults.length} User{bResults.length !== 1 ? 's' : ''} {bLoading ? 'Saving…' : 'Processed'}</p>
+                  <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live — share them now.'}</p>
                 </div>
                 <div className={styles.bulkActions}>
                   <button onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
+                    disabled={bLoading}
                     style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
                     {copiedAll ? 'All Copied' : 'Copy All'}
                   </button>
-                  {!bSaved && (
-                    <button onClick={handleBulkSave} disabled={bLoading} className={styles.generateBtn} style={{ width: 'auto', padding: '10px 24px' }}>
-                      {bLoading ? 'Saving...' : `Save All ${bResults.length} Users`}
-                    </button>
-                  )}
                   {bSaved && <span className={styles.savedBadge}>All Saved ✓</span>}
                 </div>
               </div>
@@ -783,22 +881,24 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                         </div>
                       </div>
                       <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
-                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code}</code>
+                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : '—')}</code>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>{r.password}</code>
-                        <button
-                          onClick={async () => {
-                            await navigator.clipboard.writeText(r.password).catch(() => {})
-                            setCopiedPwds(p => ({ ...p, [i]: true }))
-                            setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000)
-                          }}
-                          className={styles.actionBtn}
-                          style={copiedPwds[i] ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
-                          {copiedPwds[i] ? '✓' : 'Copy'}
-                        </button>
+                        <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>{r.password || (bLoading ? '…' : '—')}</code>
+                        {r.password && (
+                          <button
+                            onClick={async () => {
+                              await navigator.clipboard.writeText(r.password).catch(() => {})
+                              setCopiedPwds(p => ({ ...p, [i]: true }))
+                              setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000)
+                            }}
+                            className={styles.actionBtn}
+                            style={copiedPwds[i] ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
+                            {copiedPwds[i] ? '✓' : 'Copy'}
+                          </button>
+                        )}
                       </div>
                       <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
-                        {r.error ? (r.error.length > 20 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : 'Pending'}
+                        {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : bLoading ? 'Saving…' : 'Pending'}
                       </span>
                     </div>
                   )
