@@ -9,11 +9,23 @@ import {
 import styles from './school-detail.module.css'
 
 interface Props {
-  school:    any
-  payments:  any[]
-  staff:     any[]
-  reminders: any[]
-  adminId:   string
+  school:     any
+  payments:   any[]
+  staff:      any[]
+  reminders:  any[]
+  adminId:    string
+  compliance: {
+    contact_name?: string | null
+    contact_role?: string | null
+    contact_phone?: string | null
+    contact_email?: string | null
+    verified_bank_name?: string | null
+    verified_account_number?: string | null
+    verified_account_name?: string | null
+    verification_notes?: string | null
+    is_verified?: boolean
+    verified_at?: string | null
+  } | null
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -39,8 +51,8 @@ async function manageSchool(payload: Record<string, unknown>): Promise<{ ok: boo
   return res.json()
 }
 
-export default function SchoolDetailClient({ school, payments, staff, reminders, adminId }: Props) {
-  const [tab,        setTab]        = useState<'overview'|'staff'|'payments'|'settings'>('overview')
+export default function SchoolDetailClient({ school, payments, staff, reminders, adminId, compliance }: Props) {
+  const [tab,        setTab]        = useState<'overview'|'staff'|'payments'|'compliance'|'settings'>('overview')
   const [saving,     setSaving]     = useState(false)
   const [editNotes,  setEditNotes]  = useState(false)
   const [notes,      setNotes]      = useState(school.notes ?? '')
@@ -50,6 +62,20 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   // Track mutable school state locally so UI reflects changes without a reload
   const [schoolStatus, setSchoolStatus] = useState(school.setup_status)
   const router = useRouter()
+
+  // Compliance form state, seeded from the record passed in (or the
+  // school's existing principal/bank fields, as a sensible starting point
+  // if no compliance record exists yet).
+  const [complianceContactName,  setComplianceContactName]  = useState(compliance?.contact_name ?? '')
+  const [complianceContactRole,  setComplianceContactRole]  = useState(compliance?.contact_role ?? 'Principal')
+  const [complianceContactPhone, setComplianceContactPhone] = useState(compliance?.contact_phone ?? '')
+  const [complianceContactEmail, setComplianceContactEmail] = useState(compliance?.contact_email ?? '')
+  const [complianceBankName,     setComplianceBankName]     = useState(compliance?.verified_bank_name ?? school.bank_name ?? '')
+  const [complianceAccountNumber, setComplianceAccountNumber] = useState(compliance?.verified_account_number ?? school.account_number ?? '')
+  const [complianceAccountName,  setComplianceAccountName]  = useState(compliance?.verified_account_name ?? school.account_name ?? '')
+  const [complianceNotes,        setComplianceNotes]        = useState(compliance?.verification_notes ?? '')
+  const [isVerified,             setIsVerified]             = useState(compliance?.is_verified ?? false)
+  const [verifiedAt,             setVerifiedAt]             = useState(compliance?.verified_at ?? null)
 
   const daysLeft = schoolStatus === 'trial'
     ? Math.max(0, Math.ceil(school.trial_days_left ?? 0))
@@ -102,11 +128,63 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
     setSaving(false)
   }
 
+  async function saveCompliance() {
+    setSaving(true)
+    const data = await manageSchool({
+      action: 'save_compliance',
+      school_id: school.id,
+      contact_name:  complianceContactName,
+      contact_role:  complianceContactRole,
+      contact_phone: complianceContactPhone,
+      contact_email: complianceContactEmail,
+      verified_bank_name:      complianceBankName,
+      verified_account_number: complianceAccountNumber,
+      verified_account_name:   complianceAccountName,
+      verification_notes:      complianceNotes,
+    })
+    if (data.ok) flash('Compliance details saved ✓')
+    else flash(data.error ?? 'Failed to save compliance details', true)
+    setSaving(false)
+  }
+
+  async function toggleVerified() {
+    setSaving(true)
+    if (isVerified) {
+      const data = await manageSchool({ action: 'unverify_compliance', school_id: school.id })
+      if (data.ok) { setIsVerified(false); setVerifiedAt(null); flash('Verification removed') }
+      else flash(data.error ?? 'Failed to update', true)
+    } else {
+      // Save current form values first so verification reflects what's on screen
+      await manageSchool({
+        action: 'save_compliance',
+        school_id: school.id,
+        contact_name:  complianceContactName,
+        contact_role:  complianceContactRole,
+        contact_phone: complianceContactPhone,
+        contact_email: complianceContactEmail,
+        verified_bank_name:      complianceBankName,
+        verified_account_number: complianceAccountNumber,
+        verified_account_name:   complianceAccountName,
+        verification_notes:      complianceNotes,
+      })
+      const data = await manageSchool({ action: 'verify_compliance', school_id: school.id })
+      if (data.ok) {
+        setIsVerified(true)
+        setVerifiedAt(new Date().toISOString())
+        flash('School verified — Paystack can now be connected ✓')
+      } else {
+        flash(data.error ?? 'Failed to verify', true)
+      }
+    }
+    setSaving(false)
+  }
+
   const TABS = [
-    { id:'overview',  label:'Overview'  },
-    { id:'staff',     label:`Staff (${staff.length})`       },
-    { id:'payments',  label:`Payments (${payments.length})` },
-    { id:'settings',  label:'Settings'  },
+    { id:'overview',   label:'Overview'  },
+    { id:'staff',      label:`Staff (${staff.length})`       },
+    { id:'payments',   label:`Payments (${payments.length})` },
+    { id:'compliance', label: isVerified ? 'Compliance ✓' : 'Compliance' },
+    { id:'settings',   label:'Settings'  },
   ] as const
 
   return (
@@ -366,6 +444,132 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
       )}
 
       {/* ── SETTINGS ──────────────────────────────────────── */}
+      {tab === 'compliance' && (
+        <div className={styles.grid2}>
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Compliance Contact</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'var(--space-4)', lineHeight:1.5 }}>
+              Required before this school can connect Paystack split payments —
+              Paystack asks platforms like SchoolOS to keep due-diligence records
+              on file for each onboarded business.
+            </p>
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Contact Name</label>
+            <input
+              value={complianceContactName}
+              onChange={e => setComplianceContactName(e.target.value)}
+              placeholder="e.g. Simon Pius Segun"
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:12, fontSize:'0.85rem' }}
+            />
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Role</label>
+            <select
+              value={complianceContactRole}
+              onChange={e => setComplianceContactRole(e.target.value)}
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:12, fontSize:'0.85rem' }}
+            >
+              <option value="Principal">Principal</option>
+              <option value="Proprietor">Proprietor</option>
+              <option value="Bursar">Bursar</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Phone</label>
+            <input
+              value={complianceContactPhone}
+              onChange={e => setComplianceContactPhone(e.target.value)}
+              placeholder="e.g. 08012345678"
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:12, fontSize:'0.85rem' }}
+            />
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Email</label>
+            <input
+              value={complianceContactEmail}
+              onChange={e => setComplianceContactEmail(e.target.value)}
+              placeholder="e.g. principal@school.com"
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:4, fontSize:'0.85rem' }}
+            />
+          </div>
+
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Bank Verification</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'var(--space-4)', lineHeight:1.5 }}>
+              Snapshot of the account verified at sign-off time — kept separate
+              from the school's live banking details so changes later don't
+              silently alter this audit record.
+            </p>
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Bank Name</label>
+            <input
+              value={complianceBankName}
+              onChange={e => setComplianceBankName(e.target.value)}
+              placeholder="e.g. GTBank"
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:12, fontSize:'0.85rem' }}
+            />
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Account Number</label>
+            <input
+              value={complianceAccountNumber}
+              onChange={e => setComplianceAccountNumber(e.target.value)}
+              placeholder="10-digit NUBAN"
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:12, fontSize:'0.85rem' }}
+            />
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Account Name</label>
+            <input
+              value={complianceAccountName}
+              onChange={e => setComplianceAccountName(e.target.value)}
+              placeholder="Must match bank records"
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', marginBottom:12, fontSize:'0.85rem' }}
+            />
+
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Verification Notes</label>
+            <textarea
+              value={complianceNotes}
+              onChange={e => setComplianceNotes(e.target.value)}
+              placeholder="e.g. Confirmed via phone call with principal, CAC docs reviewed..."
+              rows={3}
+              style={{ width:'100%', borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'10px 12px', marginBottom:12, fontSize:'0.85rem', resize:'vertical' }}
+            />
+
+            <button
+              disabled={saving}
+              onClick={saveCompliance}
+              style={{ width:'100%', height:40, background:'var(--surface-2)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-primary)', fontWeight:700, fontSize:'0.82rem', cursor:'pointer', marginBottom:10, opacity: saving ? 0.6 : 1 }}
+            >
+              Save Details
+            </button>
+
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderTop:'1px solid var(--glass-border)' }}>
+              <div>
+                <p style={{ fontSize:'0.85rem', fontWeight:700, color: isVerified ? '#10B981' : 'var(--text-muted)' }}>
+                  {isVerified ? '✓ Verified' : 'Not Verified'}
+                </p>
+                {isVerified && verifiedAt && (
+                  <p style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>
+                    {new Date(verifiedAt).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })}
+                  </p>
+                )}
+              </div>
+              <button
+                disabled={saving}
+                onClick={toggleVerified}
+                style={{
+                  height:38, padding:'0 18px',
+                  background: isVerified ? 'var(--danger-subtle)' : '#10B981',
+                  border: isVerified ? '1px solid rgba(239,68,68,0.2)' : 'none',
+                  borderRadius:8,
+                  color: isVerified ? 'var(--danger)' : '#fff',
+                  fontWeight:700, fontSize:'0.8rem', cursor:'pointer', opacity: saving ? 0.6 : 1,
+                }}
+              >
+                {isVerified ? 'Unverify' : 'Mark Verified'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {tab === 'settings' && (
         <div className={styles.grid2}>
           <div className={styles.card}>
