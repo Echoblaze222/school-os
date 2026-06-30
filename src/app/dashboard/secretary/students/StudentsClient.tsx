@@ -1,808 +1,587 @@
 'use client'
+// src/app/dashboard/secretary/students/StudentsClient.tsx
+// Brought up to parity with the principal enrolment page:
+//   - Full detail fields (phone, gender, DOB, admission no., guardian info)
+//   - Fast Day/Month/Year DOB picker instead of native calendar
+//   - Bulk Add tab — saves directly, no fake "preview" codes
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import DOBPicker from '@/components/DOBPicker'
 import styles from '../secretary.module.css'
 
-const GENDER_OPTS = ['Male', 'Female', 'Other']
-
-interface Props { profile: any; school: any; userId: string }
-
-// ── Success modal shown after enrolment ─────────────────────
-function EnrolSuccessModal({
-  result, sc, onClose,
-}: {
-  result: { full_name: string; email: string; code: string; password: string }
-  sc: string
-  onClose: () => void
-}) {
-  const [copiedCode, setCopiedCode] = useState(false)
-  const [copiedPwd,  setCopiedPwd]  = useState(false)
-  const [copiedAll,  setCopiedAll]  = useState(false)
-  const initials = result.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-
-  async function copy(text: string, which: 'code' | 'pwd' | 'all') {
-    await navigator.clipboard.writeText(text).catch(() => {})
-    if (which === 'code') { setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }
-    else if (which === 'pwd') { setCopiedPwd(true); setTimeout(() => setCopiedPwd(false), 2000) }
-    else { setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2500) }
-  }
-
-  function copyAllDetails() {
-    const text = `Name: ${result.full_name}\nEmail: ${result.email}\nAccess Code: ${result.code}\nTemp Password: ${result.password}`
-    copy(text, 'all')
-  }
-
-  return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modal} style={{ maxWidth: 440, width: '100%' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%', background: '#10B98118',
-            border: '2px solid #10B981', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', margin: '0 auto 12px',
-          }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-          <h3 className={styles.modalTitle} style={{ marginBottom: 4 }}>Enrolment Complete!</h3>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-            Share these login details with <strong style={{ color: 'var(--text-base)' }}>{result.full_name}</strong>
-          </p>
-        </div>
-
-        {/* User badge */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-          background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-          borderRadius: 10, marginBottom: 16,
-        }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: '50%', background: sc + '22',
-            color: sc, fontWeight: 700, fontSize: '0.85rem',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>{initials}</div>
-          <div>
-            <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-base)' }}>{result.full_name}</p>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{result.email}</p>
-          </div>
-        </div>
-
-        {/* Access Code */}
-        <div style={{
-          border: `1px solid ${sc}44`, background: sc + '0a',
-          borderRadius: 10, padding: '12px 14px', marginBottom: 10,
-        }}>
-          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Access Code
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <code style={{
-              flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
-              color: sc, fontFamily: 'monospace',
-            }}>{result.code}</code>
-            <button
-              onClick={() => copy(result.code, 'code')}
-              style={{
-                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
-                background: copiedCode ? '#10B98122' : 'transparent',
-                border: `1px solid ${copiedCode ? '#10B981' : sc + '55'}`,
-                color: copiedCode ? '#10B981' : sc,
-              }}
-            >
-              {copiedCode ? '✓ Copied' : 'Copy'}
-            </button>
-          </div>
-        </div>
-
-        {/* Temp Password */}
-        <div style={{
-          border: '1px solid #F59E0B44', background: '#F59E0B0a',
-          borderRadius: 10, padding: '12px 14px', marginBottom: 16,
-        }}>
-          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Temporary Password
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <code style={{
-              flex: 1, fontSize: '1rem', fontWeight: 700,
-              color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
-            }}>{result.password}</code>
-            <button
-              onClick={() => copy(result.password, 'pwd')}
-              style={{
-                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
-                background: copiedPwd ? '#10B98122' : 'transparent',
-                border: `1px solid ${copiedPwd ? '#10B981' : '#F59E0B55'}`,
-                color: copiedPwd ? '#10B981' : '#F59E0B',
-              }}
-            >
-              {copiedPwd ? '✓ Copied' : 'Copy'}
-            </button>
-          </div>
-          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85 }}>
-            ⚠️ Student must change this password on first login.
-          </p>
-        </div>
-
-        {/* Actions */}
-        <button
-          onClick={copyAllDetails}
-          style={{
-            width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
-            fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-            background: copiedAll ? '#10B98122' : 'var(--glass-bg)',
-            border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
-            color: copiedAll ? '#10B981' : 'var(--text-base)',
-          }}
-        >
-          {copiedAll ? '✓ All Details Copied' : 'Copy All Details'}
-        </button>
-        <button
-          onClick={onClose}
-          className={styles.btnPrimary}
-          style={{ width: '100%', background: sc }}
-        >
-          Done — Enrol Another
-        </button>
-      </div>
-    </div>
-  )
+interface Student {
+  id: string
+  full_name: string
+  admission_number: string | null
+  class_id: string | null
+  class_name?: string
+  onboarding_stage: string
+  created_at: string
+  email?: string
+  phone?: string | null
+  gender?: string | null
+  date_of_birth?: string | null
 }
 
-export default function StudentsClient({ profile, school, userId }: Props) {
-  const supabase      = createClient()
-  const sc            = school?.primary_color ?? '#7C3AED'
+interface Props { students: Student[]; profile: any; school: any; userId: string; classes: any[] }
 
-  // ── Realtime: students list stays live without any manual refresh ──────────
-  const [students, setStudents] = useRealtimeTable<any>({
-    table:   'profiles',
-    filter:  school?.id ? `school_id=eq.${school.id}&role=eq.student` : undefined,
-    initial: [],
-    orderBy: (a, b) => a.full_name.localeCompare(b.full_name),
-  })
+const GENDERS = ['Male', 'Female', 'Other']
 
-  const [loading,     setLoading]     = useState(true)
-  const [search,      setSearch]      = useState('')
-  const [classFilter, setClassFilter] = useState('')
-  const [classes,     setClasses]     = useState<any[]>([])
-  const [showForm,    setShowForm]    = useState(false)
-  const [confirmDel,  setConfirmDel]  = useState<any | null>(null)
-  const [deleting,    setDeleting]    = useState<string | null>(null)
-  const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
-  const [saving,      setSaving]      = useState(false)
-  const [enrollResult, setEnrollResult] = useState<{ full_name: string; email: string; code: string; password: string } | null>(null)
-  // ── Preview / Edit bottom sheets ───────────────────────────
-  const [previewStudent, setPreviewStudent] = useState<any | null>(null)
-  const [editStudent,    setEditStudent]    = useState<any | null>(null)
-  const [editForm,       setEditForm]       = useState<any>({})
-  const [editSaving,     setEditSaving]     = useState(false)
-  // ── Assign-class modal state ────────────────────────────────────────────
-  const [assignTarget,  setAssignTarget]  = useState<any | null>(null)
-  const [assignClassId, setAssignClassId] = useState('')
-  const [assigning,     setAssigning]     = useState(false)
+interface BulkRow {
+  full_name: string; email: string; phone: string; gender: string
+  dateOfBirth: string; classId: string; admissionNumber: string
+  guardianName: string; guardianPhone: string
+}
+const EMPTY_ROW = (): BulkRow => ({
+  full_name: '', email: '', phone: '', gender: '',
+  dateOfBirth: '', classId: '', admissionNumber: '', guardianName: '', guardianPhone: '',
+})
+const DEFAULT_ROWS = 5
+
+interface GeneratedEntry extends BulkRow { code: string; password: string; saved: boolean; error: string | null }
+
+const thStyle: React.CSSProperties = {
+  padding: '8px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
+  color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
+  borderBottom: '1px solid var(--glass-border)', whiteSpace: 'nowrap',
+}
+const tdStyle: React.CSSProperties = { padding: '4px 6px', verticalAlign: 'middle' }
+const cellInputStyle: React.CSSProperties = {
+  width: '100%', background: 'transparent', border: 'none', outline: 'none',
+  color: 'var(--text-primary)', fontSize: '0.82rem', padding: '6px 4px',
+  borderRadius: 'var(--radius-sm)', fontFamily: 'inherit',
+}
+const dobInputStyle: React.CSSProperties = {
+  background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+  borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+  fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+}
+
+export default function StudentsClient({ students: init, profile, school, userId, classes }: Props) {
+  const [students, setStudents] = useState(init)
+  const [search,   setSearch]   = useState('')
+  const [modal,    setModal]    = useState(false)
+  const [editItem, setEditItem] = useState<Student | null>(null)
+  const [delItem,  setDelItem]  = useState<Student | null>(null)
+  const [saving,   setSaving]   = useState(false)
+  const [msg,      setMsg]      = useState('')
+  const [tab,      setTab]      = useState<'list' | 'bulk'>('list')
+
   const [form, setForm] = useState({
-    full_name: '', email: '', phone: '', date_of_birth: '',
-    gender: '', class_id: '', admission_number: '', guardian_name: '', guardian_phone: '',
+    full_name: '', email: '', class_id: '',
+    phone: '', gender: '', date_of_birth: '',
+    admission_number: '', guardian_name: '', guardian_phone: '',
   })
 
-  // Load students + classes on mount
-  useEffect(() => {
-    async function loadData() {
-      if (!school?.id) { setLoading(false); return }
-      const [clsRes, stuRes] = await Promise.all([
-        supabase.from('classes').select('id, name, level, section').eq('school_id', school.id).order('name'),
-        supabase.from('profiles').select('*').eq('school_id', school.id).eq('role', 'student').order('full_name'),
-      ])
-      if (clsRes.data) setClasses(clsRes.data)
-      if (stuRes.data) setStudents(stuRes.data)
-      setLoading(false)
-    }
-    loadData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [school?.id])
+  // ── Bulk ──────────────────────────────────────────────────
+  const [bRows,     setBRows]     = useState<BulkRow[]>(() => Array.from({ length: DEFAULT_ROWS }, EMPTY_ROW))
+  const [bResults,  setBResults]  = useState<GeneratedEntry[]>([])
+  const [bLoading,  setBLoading]  = useState(false)
+  const [bSaved,    setBSaved]    = useState(false)
+  const [copiedAll, setCopiedAll] = useState(false)
+  const [copiedPwds, setCopiedPwds] = useState<Record<number, boolean>>({})
 
-  function showToast(msg: string, ok = true) {
-    setToast({ msg, ok })
-    setTimeout(() => setToast(null), 3000)
+  const supabase  = createClient()
+  const sc        = school?.primary_color ?? '#7C3AED'
+  const schoolId  = school?.id
+
+  const filtered = students.filter(s =>
+    s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    s.admission_number?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  function emptyForm() {
+    return {
+      full_name: '', email: '', class_id: '',
+      phone: '', gender: '', date_of_birth: '',
+      admission_number: '', guardian_name: '', guardian_phone: '',
+    }
   }
 
-  async function handleDelete(student: any) {
-    setDeleting(student.id)
-    const { error } = await supabase.from('profiles').delete().eq('id', student.id)
-    setDeleting(null)
-    setConfirmDel(null)
-    if (error) { showToast('Failed to remove student', false); return }
-    setStudents(prev => prev.filter(s => s.id !== student.id))
-    showToast(`${student.full_name} removed`)
+  function openAdd() { setForm(emptyForm()); setEditItem(null); setModal(true) }
+  function openEdit(s: Student) {
+    setForm({
+      full_name: s.full_name, email: s.email ?? '', class_id: s.class_id ?? '',
+      phone: s.phone ?? '', gender: s.gender ?? '', date_of_birth: s.date_of_birth ?? '',
+      admission_number: s.admission_number ?? '', guardian_name: '', guardian_phone: '',
+    })
+    setEditItem(s); setModal(true)
   }
 
-  async function handleCreate() {
-    if (!form.full_name.trim() || !form.email.trim()) {
-      showToast('Full name and email are required.', false)
-      return
-    }
-    setSaving(true)
-    try {
-      const res  = await fetch('/api/secretary/create-user', {
-        method:  'POST',
+  async function saveStudent() {
+    if (!form.full_name.trim()) { setMsg('Full name is required.'); return }
+    setSaving(true); setMsg('')
+
+    if (editItem) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name:     form.full_name,
+          class_id:      form.class_id || null,
+          phone:         form.phone.trim() || null,
+          gender:        form.gender || null,
+          date_of_birth: form.date_of_birth || null,
+        })
+        .eq('id', editItem.id)
+
+      if (!error) {
+        setStudents(p => p.map(s => s.id === editItem.id
+          ? { ...s, full_name: form.full_name, class_id: form.class_id || null, phone: form.phone, gender: form.gender, date_of_birth: form.date_of_birth }
+          : s))
+        setMsg('Student updated!')
+        setModal(false)
+      } else setMsg(error.message)
+    } else {
+      if (!form.email.trim()) { setMsg('Email is required.'); setSaving(false); return }
+      const res = await fetch('/api/secretary/create-user', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
+        body: JSON.stringify({
           fullName:        form.full_name.trim(),
           email:           form.email.trim().toLowerCase(),
           role:            'student',
-          schoolId:        school.id,
-          phone:           form.phone.trim()           || null,
-          gender:          form.gender                 || null,
-          dateOfBirth:     form.date_of_birth          || null,
-          classId:         form.class_id               || null,
+          classId:         form.class_id || null,
+          schoolId,
+          phone:           form.phone.trim() || null,
+          gender:          form.gender || null,
+          dateOfBirth:     form.date_of_birth || null,
           admissionNumber: form.admission_number.trim() || null,
-          guardianName:    form.guardian_name.trim()   || null,
-          guardianPhone:   form.guardian_phone.trim()  || null,
+          guardianName:    form.guardian_name.trim() || null,
+          guardianPhone:   form.guardian_phone.trim() || null,
         }),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Failed to enrol student')
-
-      // Refresh list
-      const { data: fresh } = await supabase
-        .from('profiles').select('*')
-        .eq('school_id', school.id).eq('role', 'student').order('full_name')
-      if (fresh) setStudents(fresh)
-
-      // Reset form and show code/password modal
-      setForm({ full_name:'', email:'', phone:'', date_of_birth:'', gender:'', class_id:'', admission_number:'', guardian_name:'', guardian_phone:'' })
-      setShowForm(false)
-      setEnrollResult({ full_name: form.full_name.trim(), email: form.email.trim(), code: json.code, password: json.password })
-    } catch (err: any) {
-      showToast(err.message ?? 'Failed to enrol student', false)
+      const data = await res.json()
+      if (!res.ok) { setMsg(data.error ?? 'Failed to create student'); setSaving(false); return }
+      setMsg(`Student created! Code: ${data.code}`)
+      setStudents(p => [{
+        id: data.userId, full_name: form.full_name, admission_number: data.code,
+        class_id: form.class_id || null, onboarding_stage: 'stage_1_pending',
+        created_at: new Date().toISOString(), email: form.email,
+        phone: form.phone, gender: form.gender, date_of_birth: form.date_of_birth,
+      }, ...p])
+      setModal(false)
     }
     setSaving(false)
   }
 
-  // ── Assign / reassign student to a class ───────────────────────────────
-  async function handleAssignClass() {
-    if (!assignTarget || !assignClassId) return
-    setAssigning(true)
-    const chosenClass = classes.find(c => c.id === assignClassId)
-    const className   = chosenClass?.name ?? null
-
-    // Update profiles.class_level (text) — used for display & grouping
-    const { error: profErr } = await supabase
-      .from('profiles')
-      .update({ class_level: className })
-      .eq('id', assignTarget.id)
-
-    // Update student_profiles.class_id (uuid) — used for results/attendance joins
-    await supabase
-      .from('student_profiles')
-      .upsert({ id: assignTarget.id, class_id: assignClassId }, { onConflict: 'id' })
-
-    setAssigning(false)
-    if (profErr) { showToast('Failed to assign class', false); return }
-
-    // Optimistically update local list
-    setStudents(prev => prev.map(s =>
-      s.id === assignTarget.id ? { ...s, class_level: className } : s
-    ))
-    setAssignTarget(null)
-    setAssignClassId('')
-    showToast(`${assignTarget.full_name} assigned to ${className}`)
+  async function deleteStudent() {
+    if (!delItem) return
+    setSaving(true)
+    await supabase.from('profiles').update({ is_active: false }).eq('id', delItem.id)
+    setStudents(p => p.filter(s => s.id !== delItem.id))
+    setDelItem(null); setSaving(false)
   }
 
-  // ── Save edited student details ────────────────────────────
-  async function handleEditSave() {
-    if (!editStudent) return
-    setEditSaving(true)
+  // ── Bulk save — direct, no fake preview-only codes ──────────
+  async function handleBulkSave() {
+    const validRows = bRows.filter(r => r.full_name.trim() && r.email.trim())
+    if (!validRows.length) return
 
-    // Only send fields that changed — track by key presence in editForm
-    const profileUpdate: any = {}
-    const f = editForm
-    if ('full_name'        in f) profileUpdate.full_name        = f.full_name        || editStudent.full_name
-    if ('phone'            in f) profileUpdate.phone            = f.phone            || null
-    if ('date_of_birth'    in f) profileUpdate.date_of_birth    = f.date_of_birth    || null
-    if ('gender'           in f) profileUpdate.gender           = f.gender           || null
-    if ('admission_number' in f) profileUpdate.admission_number = f.admission_number || null
-    if ('address'          in f) profileUpdate.address          = f.address          || null
-    if ('class_level'      in f) profileUpdate.class_level      = f.class_level      || null
+    setBLoading(true)
+    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', saved: false, error: null })))
 
-    const { error } = await supabase.from('profiles').update(profileUpdate).eq('id', editStudent.id)
-
-    // guardian_name + guardian_phone live in student_profiles
-    const spUpdate: any = {}
-    if ('guardian_name'    in f) spUpdate.guardian_name    = f.guardian_name    || null
-    if ('guardian_phone'   in f) spUpdate.guardian_phone   = f.guardian_phone   || null
-    if ('admission_number' in f) spUpdate.admission_number = f.admission_number || editStudent.admission_number
-    if (Object.keys(spUpdate).length > 0) {
-      await supabase.from('student_profiles').update(spUpdate).eq('id', editStudent.id)
+    const updated = await Promise.all(
+      validRows.map(async (r) => {
+        try {
+          const res = await fetch('/api/secretary/create-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fullName:        r.full_name.trim(),
+              email:           r.email.trim().toLowerCase(),
+              role:            'student',
+              classId:         r.classId || null,
+              schoolId,
+              phone:           r.phone.trim() || null,
+              gender:          r.gender || null,
+              dateOfBirth:     r.dateOfBirth || null,
+              admissionNumber: r.admissionNumber.trim() || null,
+              guardianName:    r.guardianName.trim() || null,
+              guardianPhone:   r.guardianPhone.trim() || null,
+            }),
+          })
+          const json = await res.json()
+          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: json.error ?? 'Failed', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, password: json.password, saved: true, error: null }
+        } catch (e: any) {
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: e.message ?? 'Network error', saved: false }
+        }
+      })
+    )
+    setBResults(updated)
+    if (updated.some(r => r.saved)) {
+      const { data: fresh } = await supabase
+        .from('profiles')
+        .select('id, full_name, admission_number, class_id, onboarding_stage, created_at, email, phone, gender, date_of_birth')
+        .eq('school_id', schoolId).eq('role', 'student').order('created_at', { ascending: false })
+      if (fresh) setStudents(fresh as Student[])
     }
-
-    setEditSaving(false)
-    if (error) { showToast('Failed to save changes', false); return }
-
-    const merged = { ...editStudent, ...profileUpdate, ...spUpdate }
-    setStudents(prev => prev.map(s => s.id === editStudent.id ? merged : s))
-    setPreviewStudent(merged)
-    setEditStudent(null)
-    setEditForm({})
-    showToast('Student details updated')
+    if (updated.every(r => r.saved)) setBSaved(true)
+    setBLoading(false)
   }
 
-  const classMap: Record<string, string> = {}
-  classes.forEach(c => { classMap[c.id] = c.name })
+  function updateBulkRow(index: number, patch: Partial<BulkRow>) {
+    setBRows(prev => {
+      const next = [...prev]
+      next[index] = { ...next[index], ...patch }
+      return next
+    })
+    setBResults([])
+    setBSaved(false)
+  }
 
-  const filtered = students.filter(s => {
-    const q = search.toLowerCase()
-    const matchSearch = !search ||
-      s.full_name?.toLowerCase().includes(q) ||
-      s.email?.toLowerCase().includes(q) ||
-      s.default_code?.toLowerCase().includes(q) ||
-      s.class_level?.toLowerCase().includes(q)
-    const matchClass = !classFilter || s.class_level === classMap[classFilter]
-    return matchSearch && matchClass
-  })
-
-  // Group by class
-  const byClass: Record<string, any[]> = {}
-  filtered.forEach(s => {
-    const key = s.class_level ?? 'Unassigned'
-    if (!byClass[key]) byClass[key] = []
-    byClass[key].push(s)
-  })
+  async function copyAllCodes(list: GeneratedEntry[]) {
+    const text = list.filter(r => r.saved).map(r => `${r.full_name} | Code: ${r.code} | Password: ${r.password}`).join('\n')
+    await navigator.clipboard.writeText(text).catch(() => {})
+    setCopiedAll(true)
+    setTimeout(() => setCopiedAll(false), 2500)
+  }
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Students">
-      {toast && (
-        <div style={{ position: "fixed", top: "var(--space-5)", left: "50%", transform: "translateX(-50%)", zIndex: 9999, padding: "10px 20px", borderRadius: 10, fontWeight: 700, fontSize: "0.85rem", color: "#fff", background: toast.ok ? "#10B981" : "#EF4444", boxShadow: "0 4px 20px rgba(0,0,0,0.3)", whiteSpace: "nowrap" }}>
-          {toast.ok ? '✓' : '✕'} {toast.msg}
-        </div>
-      )}
 
-      {/* Code + password modal after enrolment */}
-      {enrollResult && (
-        <EnrolSuccessModal
-          result={enrollResult}
-          sc={sc}
-          onClose={() => setEnrollResult(null)}
-        />
-      )}
+      {/* ── Tabs ── */}
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', borderBottom: '1px solid var(--glass-border)', paddingBottom: 4, overflowX: 'auto' }}>
+        {(['list', 'bulk'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{
+              padding: '8px 16px', borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+              border: 'none', background: tab === t ? sc + '14' : 'transparent',
+              fontSize: '0.78rem', fontWeight: 700, color: tab === t ? sc : 'var(--text-muted)',
+              cursor: 'pointer', whiteSpace: 'nowrap',
+              borderBottom: tab === t ? `2px solid ${sc}` : '2px solid transparent', marginBottom: -5,
+            }}>
+            {t === 'list' ? 'All Students' : 'Bulk Add'}
+          </button>
+        ))}
+      </div>
 
-      {confirmDel && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <h3 className={styles.modalTitle}>Remove Student?</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "var(--space-5)" }}>
-              This will permanently remove <strong>{confirmDel.full_name}</strong> from the school records. This cannot be undone.
-            </p>
-            <div className={styles.modalActions}>
-              <button className={styles.btnGhost} onClick={() => setConfirmDel(null)}>Cancel</button>
-              <button className={styles.btnDanger} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
-                {deleting === confirmDel.id ? 'Removing…' : 'Yes, Remove'}
-              </button>
+      {/* ── LIST TAB ── */}
+      {tab === 'list' && (
+        <>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+            <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input className={styles.searchInput} placeholder="Search students…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
+            <button className={styles.btnPrimary} onClick={openAdd} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>+ Add</button>
           </div>
-        </div>
+
+          {filtered.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyEmoji}>🎓</p>
+              <p className={styles.emptyTitle}>No students found</p>
+              <p className={styles.emptyHint}>{search ? 'Try a different search' : 'Add your first student to get started'}</p>
+            </div>
+          ) : (
+            <div>
+              {filtered.map(s => (
+                <div key={s.id} className={styles.listItem}>
+                  <div className={styles.listIconBox} style={{ background: sc + '22' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🎓</span>
+                  </div>
+                  <div className={styles.listContent}>
+                    <p className={styles.listTitle}>{s.full_name}</p>
+                    <p className={styles.listSub}>{s.admission_number ?? '—'} · {s.class_name ?? 'No class'}</p>
+                  </div>
+                  <span className={`${styles.listBadge} ${s.onboarding_stage === 'complete' ? styles.badgeGreen : styles.badgeYellow}`}>
+                    {s.onboarding_stage === 'complete' ? 'Active' : 'Pending'}
+                  </span>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <button onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>✏️</button>
+                    <button onClick={() => setDelItem(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
-      {/* ── Assign / reassign class modal ─────────────────────────────── */}
-      {assignTarget && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal} style={{ maxWidth: 400 }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: '50%', background: sc + '20',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={sc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                  <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
-                </svg>
+      {/* ── BULK TAB ── */}
+      {tab === 'bulk' && (
+        <>
+          <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
+            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>Bulk Add Students</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Fill in each row directly. Leave blank rows empty — they'll be ignored. Saving creates real accounts immediately.</p>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1100 }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-elevated)' }}>
+                  <th style={thStyle}>#</th>
+                  <th style={thStyle}>Full Name *</th>
+                  <th style={thStyle}>Email *</th>
+                  <th style={thStyle}>Phone</th>
+                  <th style={thStyle}>Gender</th>
+                  <th style={{ ...thStyle, minWidth: 230 }}>Date of Birth</th>
+                  <th style={thStyle}>Class</th>
+                  <th style={thStyle}>Admission No.</th>
+                  <th style={thStyle}>Guardian Name</th>
+                  <th style={thStyle}>Guardian Phone</th>
+                  <th style={thStyle} />
+                </tr>
+              </thead>
+              <tbody>
+                {bRows.map((row, i) => {
+                  const isEmpty = !row.full_name && !row.email
+                  return (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--glass-border)', background: isEmpty ? 'transparent' : sc + '06' }}>
+                      <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700 }}>{i + 1}</td>
+                      <td style={tdStyle}>
+                        <input value={row.full_name} placeholder="e.g. Amara Osei"
+                          onChange={e => updateBulkRow(i, { full_name: e.target.value })}
+                          onKeyDown={e => {
+                            if (e.key === 'Tab' && !e.shiftKey && i === bRows.length - 1) {
+                              e.preventDefault()
+                              setBRows(r => [...r, EMPTY_ROW()])
+                            }
+                          }}
+                          style={cellInputStyle} />
+                      </td>
+                      <td style={tdStyle}>
+                        <input type="email" value={row.email} placeholder="e.g. amara@gmail.com"
+                          onChange={e => updateBulkRow(i, { email: e.target.value })} style={cellInputStyle} />
+                      </td>
+                      <td style={tdStyle}>
+                        <input type="tel" value={row.phone} placeholder="08012345678"
+                          onChange={e => updateBulkRow(i, { phone: e.target.value })} style={cellInputStyle} />
+                      </td>
+                      <td style={tdStyle}>
+                        <select value={row.gender} onChange={e => updateBulkRow(i, { gender: e.target.value })} style={cellInputStyle}>
+                          <option value="">—</option>
+                          {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+                        </select>
+                      </td>
+                      <td style={tdStyle}>
+                        <DOBPicker value={row.dateOfBirth} onChange={v => updateBulkRow(i, { dateOfBirth: v })} inputStyle={cellInputStyle} />
+                      </td>
+                      <td style={tdStyle}>
+                        <select value={row.classId} onChange={e => updateBulkRow(i, { classId: e.target.value })} style={cellInputStyle}>
+                          <option value="">—</option>
+                          {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </td>
+                      <td style={tdStyle}>
+                        <input value={row.admissionNumber} placeholder="ADM/2025/001"
+                          onChange={e => updateBulkRow(i, { admissionNumber: e.target.value })} style={cellInputStyle} />
+                      </td>
+                      <td style={tdStyle}>
+                        <input value={row.guardianName} placeholder="Mr. Osei Kofi"
+                          onChange={e => updateBulkRow(i, { guardianName: e.target.value })} style={cellInputStyle} />
+                      </td>
+                      <td style={tdStyle}>
+                        <input type="tel" value={row.guardianPhone} placeholder="08098765432"
+                          onChange={e => updateBulkRow(i, { guardianPhone: e.target.value })} style={cellInputStyle} />
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'center' }}>
+                        <button
+                          onClick={() => {
+                            const next = bRows.length === 1 ? [EMPTY_ROW()] : bRows.filter((_, idx) => idx !== i)
+                            setBRows(next); setBResults([]); setBSaved(false)
+                          }}
+                          title="Remove row"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, lineHeight: 1, opacity: isEmpty ? 0.3 : 0.7 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <button
+            onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, background: 'none',
+              border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-md)',
+              padding: '8px 16px', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700,
+              cursor: 'pointer', width: '100%', justifyContent: 'center', margin: 'var(--space-3) 0',
+            }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Row
+          </button>
+
+          {(() => {
+            const filled = bRows.filter(r => r.full_name.trim() && r.email.trim()).length
+            return filled > 0 ? (
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 var(--space-3)' }}>
+                {filled} student{filled !== 1 ? 's' : ''} ready to save
+              </p>
+            ) : null
+          })()}
+
+          <button
+            onClick={handleBulkSave}
+            className={styles.btnPrimary}
+            style={{ width: '100%' }}
+            disabled={bLoading || !bRows.some(r => r.full_name.trim() && r.email.trim())}>
+            {bLoading ? 'Saving...' : 'Save All Students'}
+          </button>
+
+          {bResults.length > 0 && (
+            <div style={{ marginTop: 'var(--space-5)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    {bResults.length} Student{bResults.length !== 1 ? 's' : ''} {bLoading ? 'Saving…' : 'Processed'}
+                  </p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+                    {bLoading ? 'Creating accounts, please wait...' : 'Codes below are live — share them now.'}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button onClick={() => copyAllCodes(bResults)} disabled={bLoading}
+                    style={{
+                      padding: '6px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: 700,
+                      cursor: 'pointer', background: 'var(--glass-bg)',
+                      border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
+                      color: copiedAll ? '#10B981' : 'var(--text-secondary)',
+                    }}>
+                    {copiedAll ? 'All Copied' : 'Copy All'}
+                  </button>
+                  {bSaved && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>All Saved ✓</span>}
+                </div>
               </div>
-              <div>
-                <h3 className={styles.modalTitle} style={{ margin: 0 }}>Assign to Class</h3>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {assignTarget.full_name}
-                  {assignTarget.class_level ? ` · currently in ${assignTarget.class_level}` : ' · currently unassigned'}
-                </p>
-              </div>
+
+              {bResults.map((r, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i > 0 ? '1px solid var(--glass-border)' : 'none', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                    <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.full_name}</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0 }}>{r.email}</p>
+                  </div>
+                  <code style={{ fontSize: '0.74rem', fontWeight: 700, color: sc, background: sc + '15', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontFamily: 'monospace' }}>
+                    {r.code || (bLoading ? '…' : '—')}
+                  </code>
+                  <code style={{ fontSize: '0.74rem', fontWeight: 700, color: '#F59E0B', background: '#F59E0B15', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontFamily: 'monospace' }}>
+                    {r.password || (bLoading ? '…' : '—')}
+                  </code>
+                  {r.password && (
+                    <button
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(r.password).catch(() => {})
+                        setCopiedPwds(p => ({ ...p, [i]: true }))
+                        setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000)
+                      }}
+                      style={{
+                        padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700,
+                        cursor: 'pointer', background: 'var(--glass-bg)',
+                        border: `1px solid ${copiedPwds[i] ? '#10B981' : '#F59E0B55'}`,
+                        color: copiedPwds[i] ? '#10B981' : '#F59E0B',
+                      }}>
+                      {copiedPwds[i] ? '✓' : 'Copy'}
+                    </button>
+                  )}
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)' }}>
+                    {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : bLoading ? 'Saving…' : 'Pending'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Add/Edit Modal (single student) */}
+      {modal && (
+        <div className={styles.modalOverlay} onClick={() => setModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>{editItem ? 'Edit Student' : 'Add New Student'}</h2>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Full Name *</label>
+              <input className={styles.formInput} value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. John Doe" />
             </div>
 
-            {classes.length === 0 ? (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                No classes found. Create classes first under the Classes section.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
-                {classes.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setAssignClassId(c.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
-                      background: assignClassId === c.id ? sc + '18' : 'var(--glass-bg)',
-                      border: `1.5px solid ${assignClassId === c.id ? sc + '66' : 'var(--glass-border)'}`,
-                      color: assignClassId === c.id ? sc : 'var(--text-base)',
-                      fontWeight: assignClassId === c.id ? 700 : 500,
-                      fontSize: '0.85rem',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <span>{c.name}</span>
-                    {assignClassId === c.id && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    )}
-                  </button>
-                ))}
+            {!editItem && (
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Email *</label>
+                <input className={styles.formInput} type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="student@example.com" />
               </div>
             )}
 
-            <div className={styles.modalActions}>
-              <button className={styles.btnGhost} onClick={() => { setAssignTarget(null); setAssignClassId('') }}>
-                Cancel
-              </button>
-              <button
-                className={styles.btnPrimary}
-                style={{ background: sc, opacity: !assignClassId ? 0.5 : 1 }}
-                onClick={handleAssignClass}
-                disabled={assigning || !assignClassId}
-              >
-                {assigning ? 'Assigning…' : 'Assign Class'}
-              </button>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Phone</label>
+              <input className={styles.formInput} type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="08012345678" />
             </div>
-          </div>
-        </div>
-      )}
 
-      <div style={{ padding: "0 var(--space-4) var(--space-4)" }}>
-        {/* Summary */}
-        <div style={{ display: "flex", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
-          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: sc }}>{students.length}</p>
-            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Total Students</p>
-          </div>
-          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: '#10B981' }}>{students.filter(s => s.gender?.toLowerCase() === 'male').length}</p>
-            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Male</p>
-          </div>
-          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: '#EC4899' }}>{students.filter(s => s.gender?.toLowerCase() === 'female').length}</p>
-            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Female</p>
-          </div>
-          <div style={{ flex: 1, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", textAlign: "center" }}>
-            <p style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, lineHeight: 1.2, color: '#8B5CF6' }}>{classes.length}</p>
-            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 600 }}>Classes</p>
-          </div>
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Gender</label>
+              <select className={styles.formSelect} value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
+                <option value="">— Select gender —</option>
+                {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+              </select>
+            </div>
 
-        {/* Toolbar — row 1: search + class filter */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-          <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <svg style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              className={styles.searchInput}
-              placeholder="Search students…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ paddingLeft: 32, width: '100%' }}
-            />
-          </div>
-          <select
-            value={classFilter}
-            onChange={e => setClassFilter(e.target.value)}
-            style={{
-              height: 40, padding: '0 8px', background: 'var(--input-bg)',
-              border: '1px solid var(--input-border)', borderRadius: 8,
-              color: 'var(--text-primary)', fontSize: '0.8rem', flexShrink: 0, maxWidth: 120,
-            }}
-          >
-            <option value="">All Classes</option>
-            {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Date of Birth</label>
+              <DOBPicker value={form.date_of_birth} onChange={v => setForm(p => ({ ...p, date_of_birth: v }))} inputStyle={dobInputStyle} />
+            </div>
 
-        {/* Toolbar — row 2: action buttons */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)' }}>
-          <button
-            onClick={() => setShowForm(v => !v)}
-            style={{
-              flex: 1, height: 40, borderRadius: 8, cursor: 'pointer',
-              background: showForm ? 'var(--glass-bg)' : sc,
-              color: showForm ? 'var(--text-primary)' : '#fff',
-              fontWeight: 700, fontSize: '0.82rem',
-              border: showForm ? '1px solid var(--glass-border)' : 'none',
-            }}
-          >
-            {showForm ? '✕ Close Form' : '+ Enrol Student'}
-          </button>
-          <Link
-            href="/dashboard/secretary/students/transfer"
-            style={{
-              flex: 1, height: 40, borderRadius: 8, border: 'none', cursor: 'pointer',
-              background: '#F59E0B', color: '#fff', fontWeight: 700, fontSize: '0.82rem',
-              textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            ⇄ Transfer
-          </Link>
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Class</label>
+              <select className={styles.formSelect} value={form.class_id} onChange={e => setForm(p => ({ ...p, class_id: e.target.value }))}>
+                <option value="">— Select class —</option>
+                {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
 
-        {/* Enrol form */}
-        {showForm && (
-          <div style={{
-            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)',
-            marginBottom: 'var(--space-4)',
-          }}>
-            <p style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', margin: '0 0 var(--space-4)' }}>
-              📝 Enrol New Student
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Full Name *</label>
-                <input className={styles.formInput} placeholder="e.g. Chioma Okonkwo" value={form.full_name} onChange={e => setForm(f=>({...f,full_name:e.target.value}))}/>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Email *</label>
-                <input className={styles.formInput} type="email" placeholder="e.g. chioma@gmail.com" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}/>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Phone</label>
-                <input className={styles.formInput} placeholder="optional" value={form.phone} onChange={e => setForm(f=>({...f,phone:e.target.value}))}/>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Date of Birth</label>
-                <input className={styles.formInput} type="date" value={form.date_of_birth} onChange={e => setForm(f=>({...f,date_of_birth:e.target.value}))}/>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Gender</label>
-                <select className={styles.formInput} value={form.gender} onChange={e => setForm(f=>({...f,gender:e.target.value}))}>
-                  <option value="">Select gender</option>
-                  {GENDER_OPTS.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Class</label>
-                <select className={styles.formInput} value={form.class_id} onChange={e => setForm(f=>({...f,class_id:e.target.value}))}>
-                  <option value="">Select class</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
+            {!editItem && (
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Admission Number</label>
-                <input className={styles.formInput} placeholder="e.g. ADM/2025/001" value={form.admission_number} onChange={e => setForm(f=>({...f,admission_number:e.target.value}))}/>
+                <input className={styles.formInput} value={form.admission_number} onChange={e => setForm(p => ({ ...p, admission_number: e.target.value }))} placeholder="e.g. ADM/2025/001" />
               </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Parent / Guardian Name</label>
-                <input className={styles.formInput} placeholder="e.g. Mr. Okonkwo Emeka" value={form.guardian_name} onChange={e => setForm(f=>({...f,guardian_name:e.target.value}))}/>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Parent / Guardian Phone</label>
-                <input className={styles.formInput} type="tel" placeholder="e.g. 08012345678" value={form.guardian_phone} onChange={e => setForm(f=>({...f,guardian_phone:e.target.value}))}/>
-              </div>
-            </div>
-            <div className={styles.modalActions} style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
-              <button className={styles.btnGhost} onClick={() => setShowForm(false)}>Cancel</button>
-              <button className={styles.btnPrimary} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim() || !form.email.trim()}>
-                {saving ? 'Enrolling…' : 'Enrol & Get Code'}
-              </button>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Students list grouped by class */}
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-            {[1,2,3,4].map(i => <div key={i} style={{ height: 64, borderRadius: "var(--radius-lg)", background: "var(--glass-bg)", animation: "pulse 1.5s ease-in-out infinite" }}/>)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className={styles.emptyState}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            <p>{search || classFilter ? 'No students match your filters' : 'No students enrolled yet'}</p>
-          </div>
-        ) : (
-          Object.entries(byClass).sort(([a],[b]) => a.localeCompare(b)).map(([cls, studs]) => (
-            <div key={cls} style={{ marginBottom: "var(--space-4)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--space-2) 0", marginBottom: "var(--space-2)", borderBottom: "1px solid var(--glass-border)" }}>
-                <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{cls}</span>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{studs.length} student{studs.length !== 1 ? 's' : ''}</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                {studs.map(student => {
-                  const initials = student.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase() ?? '?'
-                  const genderColor = student.gender?.toLowerCase() === 'female' ? '#EC4899' : student.gender?.toLowerCase() === 'male' ? '#3B82F6' : sc
-                  return (
-                    <div key={student.id} className={styles.listItem} onClick={() => { setPreviewStudent(student) }} style={{ cursor: 'pointer' }}>
-                      <div className={styles.listIconBox} style={{ background: genderColor + '25', color: genderColor }}>
-                        {student.avatar_url
-                          ? <img src={student.avatar_url} alt="" style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}/>
-                          : initials
-                        }
-                      </div>
-                      <div className={styles.listContent}>
-                        <p className={styles.listTitle}>{student.full_name}</p>
-                        <div className={styles.listSub}>
-                          {student.gender && <span>{student.gender}</span>}
-                          {student.date_of_birth && <span>· Age {new Date().getFullYear() - new Date(student.date_of_birth).getFullYear()}</span>}
-                          {student.default_code && <span style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 4, padding: "1px 6px", fontSize: "0.7rem", fontFamily: "monospace" }}>{student.default_code}</span>}
-                        </div>
-                      </div>
-                      {/* Assign class button */}
-                      <button
-                        onClick={() => { setAssignTarget(student); setAssignClassId('') }}
-                        title={student.class_level ? `Reassign from ${student.class_level}` : 'Assign to class'}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: 28, height: 28, borderRadius: 8, cursor: 'pointer',
-                          background: student.class_level ? 'transparent' : sc + '18',
-                          border: `1px solid ${student.class_level ? 'var(--glass-border)' : sc + '55'}`,
-                          color: student.class_level ? 'var(--text-muted)' : sc,
-                          flexShrink: 0, marginRight: 4,
-                        }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                          <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
-                        </svg>
-                      </button>
-                      <button className={styles.btnDanger} onClick={() => setConfirmDel(student)} title="Remove student">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))
-        )}
-        <div style={{ height: 100 }}/>
-      </div>
-
-      {/* ── Preview bottom sheet ─────────────────────────────── */}
-      {previewStudent && !editStudent && (
-        <div
-          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'flex-end' }}
-          onClick={() => setPreviewStudent(null)}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'85vh', overflowY:'auto', animation:'slide-up 0.25s ease' }}
-          >
-            {/* Handle */}
-            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
-
-            {/* Avatar + name */}
-            <div style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', marginBottom:'var(--space-5)' }}>
-              <div style={{
-                width:56, height:56, borderRadius:'50%', flexShrink:0, overflow:'hidden',
-                background:(previewStudent.gender?.toLowerCase()==='female'?'#EC4899':sc)+'25',
-                color:(previewStudent.gender?.toLowerCase()==='female'?'#EC4899':sc),
-                display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:'1.2rem',
-              }}>
-                {previewStudent.avatar_url
-                  ? <img src={previewStudent.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                  : previewStudent.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()
-                }
-              </div>
-              <div>
-                <p style={{ fontWeight:800, fontSize:'1.1rem', color:'var(--text-primary)', margin:0 }}>{previewStudent.full_name}</p>
-                <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:'3px 0 0' }}>
-                  {previewStudent.class_level ?? 'No class'} · {previewStudent.role}
-                </p>
-              </div>
-            </div>
-
-            {/* Details */}
-            {([
-              ['Admission No.',   previewStudent.admission_number],
-              ['Email',           previewStudent.email],
-              ['Phone',           previewStudent.phone],
-              ['Gender',          previewStudent.gender],
-              ['Date of Birth',   previewStudent.date_of_birth],
-              ['Guardian',        previewStudent.guardian_name],
-              ['Guardian Phone',  previewStudent.guardian_phone],
-              ['Address',         previewStudent.address],
-              ['Access Code',     previewStudent.default_code],
-            ] as [string,string|null|undefined][]).map(([label, value]) => value ? (
-              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'var(--space-3) 0', borderBottom:'1px solid var(--glass-border)', gap:'var(--space-4)' }}>
-                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', flexShrink:0 }}>{label}</span>
-                <span style={{ fontSize:'0.82rem', fontWeight:600, color:'var(--text-primary)', textAlign:'right' }}>{value}</span>
-              </div>
-            ) : (
-              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'var(--space-3) 0', borderBottom:'1px solid var(--glass-border)', gap:'var(--space-4)' }}>
-                <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', flexShrink:0 }}>{label}</span>
-                <span style={{ fontSize:'0.78rem', color:'var(--text-faint)', fontStyle:'italic' }}>Not set</span>
-              </div>
-            ))}
-
-            {/* Actions */}
-            <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
-              <button
-                className={styles.btnPrimary}
-                style={{ flex:1, background:sc }}
-                onClick={() => { setEditStudent(previewStudent); setEditForm({}) }}
-              >
-                ✏️ Edit Details
-              </button>
-              <button className={styles.btnGhost} onClick={() => setPreviewStudent(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Edit bottom sheet ────────────────────────────────── */}
-      {editStudent && (
-        <div
-          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:1001, display:'flex', alignItems:'flex-end' }}
-          onClick={() => { setEditStudent(null); setEditForm({}) }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'92vh', overflowY:'auto', animation:'slide-up 0.25s ease' }}
-          >
-            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
-            <p style={{ fontWeight:800, fontSize:'1rem', color:'var(--text-primary)', marginBottom:'var(--space-5)' }}>
-              Edit — {editStudent.full_name}
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
-              {([
-                ['Full Name',          'full_name',        'text',   'e.g. Chioma Okonkwo'],
-                ['Phone',              'phone',            'tel',    'e.g. 08012345678'],
-                ['Date of Birth',      'date_of_birth',    'date',   ''],
-                ['Admission Number',   'admission_number', 'text',   'e.g. ADM/2025/001'],
-                ['Guardian Name',      'guardian_name',    'text',   'e.g. Mr. Okonkwo'],
-                ['Guardian Phone',     'guardian_phone',   'tel',    'e.g. 08098765432'],
-                ['Address',            'address',          'text',   'e.g. 12 Lagos Street'],
-              ] as [string,string,string,string][]).map(([label, key, type, placeholder]) => (
-                <div key={key} className={styles.formGroup}>
-                  <label className={styles.formLabel}>{label}</label>
-                  <input
-                    className={styles.formInput}
-                    type={type}
-                    placeholder={placeholder}
-                    value={key in editForm ? editForm[key] : (editStudent?.[key] ?? '')}
-                    onChange={e => setEditForm((f:any) => ({ ...f, [key]: e.target.value }))}
-                  />
+            {!editItem && (
+              <>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Parent / Guardian Name</label>
+                  <input className={styles.formInput} value={form.guardian_name} onChange={e => setForm(p => ({ ...p, guardian_name: e.target.value }))} placeholder="e.g. Mr. Osei Kofi" />
                 </div>
-              ))}
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Gender</label>
-                <select className={styles.formInput}
-                  value={'gender' in editForm ? editForm.gender : (editStudent?.gender ?? '')}
-                  onChange={e => setEditForm((f:any) => ({ ...f, gender: e.target.value }))}>
-                  <option value="">Select gender</option>
-                  {GENDER_OPTS.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Class</label>
-                <select className={styles.formInput}
-                  value={'class_level' in editForm ? editForm.class_level : (editStudent?.class_level ?? '')}
-                  onChange={e => setEditForm((f:any) => ({ ...f, class_level: e.target.value }))}>
-                  <option value="">Select class</option>
-                  {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </div>
-            </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Parent / Guardian Phone</label>
+                  <input className={styles.formInput} type="tel" value={form.guardian_phone} onChange={e => setForm(p => ({ ...p, guardian_phone: e.target.value }))} placeholder="08098765432" />
+                </div>
+              </>
+            )}
+
+            {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') || msg.includes('Code') ? '#10B981' : '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
 
             <div className={styles.modalActions}>
-              <button className={styles.btnGhost} onClick={() => { setEditStudent(null); setEditForm({}) }}>Cancel</button>
-              <button className={styles.btnPrimary} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
-                {editSaving ? 'Saving…' : 'Save Changes'}
-              </button>
+              <button className={styles.btnGhost} onClick={() => setModal(false)}>Cancel</button>
+              <button className={styles.btnPrimary} onClick={saveStudent} disabled={saving}>{saving ? 'Saving…' : editItem ? 'Save Changes' : 'Create Student'}</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete confirm */}
+      {delItem && (
+        <div className={styles.modalOverlay} onClick={() => setDelItem(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Remove Student?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>
+              This will deactivate <strong>{delItem.full_name}</strong>'s account. This action cannot easily be undone.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={styles.btnGhost} onClick={() => setDelItem(null)}>Cancel</button>
+              <button className={styles.btnDanger} onClick={deleteStudent} disabled={saving}>{saving ? 'Removing…' : 'Remove Student'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ height: 110 }} />
     </RolePageWrapper>
   )
 }
