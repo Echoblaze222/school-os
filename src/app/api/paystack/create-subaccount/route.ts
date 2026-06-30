@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
 const PLATFORM_FEE_PERCENT = 3 // platform keeps 3%, school settlement gets 97%
@@ -47,6 +48,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Save bank name, account number, and account name in Settings → Banking first.' },
         { status: 400 }
+      )
+    }
+
+    // Gate: a super-admin must have verified this school's compliance record
+    // before Paystack split payments go live, per Paystack's compliance
+    // guidance for marketplace/aggregator platforms (due diligence on each
+    // school before onboarding them to split payments). Uses the admin
+    // client because school_compliance_records is locked to platform_admins
+    // by RLS — this server route reads it on the principal's behalf.
+    const adminSupabase = createAdminClient()
+    const { data: compliance } = await adminSupabase
+      .from('school_compliance_records')
+      .select('is_verified')
+      .eq('school_id', school.id)
+      .maybeSingle()
+
+    if (!compliance?.is_verified) {
+      return NextResponse.json(
+        {
+          error: 'This school has not yet been verified for online payments. ' +
+                 'Please contact SchoolOS support — this is a quick one-time check.',
+        },
+        { status: 403 }
       )
     }
 
@@ -146,4 +170,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message ?? 'Unexpected server error' }, { status: 500 })
   }
       }
-      
+          
