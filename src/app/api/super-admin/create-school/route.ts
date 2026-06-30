@@ -126,6 +126,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: `Profile error: ${profileErr.message}` }, { status: 500 })
     }
 
+    // Seed a compliance record from the principal's contact details on file.
+    // is_verified stays false until a super-admin actually reviews/confirms
+    // it (see SchoolDetailClient.tsx → Compliance tab) — this row just makes
+    // sure no school is ever fully missing a record to begin with. Non-fatal:
+    // a missing compliance row just means Paystack setup is blocked later
+    // (see create-subaccount route), not that school creation should fail.
+    try {
+      await adminSupabase.from('school_compliance_records').insert({
+        school_id:     school.id,
+        contact_name:  principalName,
+        contact_role:  'Principal',
+        contact_phone: principalPhone ?? null,
+        contact_email: principalEmail,
+        is_verified:   false,
+      })
+    } catch (complianceErr) {
+      console.error('[create-school] Compliance record seed failed (non-fatal):', complianceErr)
+    }
+
     if (setupType === 'permanent' && paymentAmount > 0) {
       await adminSupabase.from('school_payments').insert({
         school_id:    school.id,
@@ -213,4 +232,5 @@ export async function POST(req: Request) {
     console.error('[create-school] Unhandled error:', err)
     return NextResponse.json({ ok: false, error: err.message ?? 'Internal server error' }, { status: 500 })
   }
-}
+          }
+                                     
