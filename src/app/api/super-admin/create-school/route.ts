@@ -93,7 +93,18 @@ export async function POST(req: Request) {
     }
 
     const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-    const defaultCode  = `PRIN-${school.id.slice(0, 6).toUpperCase()}`
+    // PRIN-XXX-XXX — drawn from a charset with no 0/O or 1/I, since those
+    // are nearly indistinguishable in most UI fonts and cause exactly the
+    // kind of "Invalid access code" mistype this was built to prevent.
+    const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    function randomCodeSegment(len: number) {
+      let out = ''
+      for (let i = 0; i < len; i++) {
+        out += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]
+      }
+      return out
+    }
+    const defaultCode = `PRIN-${randomCodeSegment(3)}-${randomCodeSegment(3)}`
 
     const { data: authUser, error: authErr } = await adminSupabase.auth.admin.createUser({
       email:         principalEmail,
@@ -232,5 +243,5 @@ export async function POST(req: Request) {
     console.error('[create-school] Unhandled error:', err)
     return NextResponse.json({ ok: false, error: err.message ?? 'Internal server error' }, { status: 500 })
   }
-          }
-                                     
+  }
+      
