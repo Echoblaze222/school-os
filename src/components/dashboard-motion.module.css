@@ -1,0 +1,139 @@
+/*
+  dashboard-motion.module.css
+  ────────────────────────────────────────────────────────────────
+  Drop-in motion layer. Import alongside each role's existing CSS
+  module and apply these classes (or merge into the existing file)
+  to bring the dashboard to life without touching layout/colors.
+
+  Usage:
+    import motion from './dashboard-motion.module.css'
+    <section className={`${styles.greeting} ${motion.riseIn}`}>
+    <div className={styles.statCard} style={{ animationDelay: `${i * 60}ms` }}>
+*/
+
+/* ── Page-level entrance ──────────────────────────────────────────────── */
+.riseIn {
+  opacity: 0;
+  animation: riseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Staggered grid children (stat cards, module cards) ──────────────── */
+.staggerItem {
+  opacity: 0;
+  animation: staggerItem 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes staggerItem {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Tap / press feedback for interactive cards & links ───────────────── */
+.pressable {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s ease,
+              background 0.2s ease;
+}
+
+.pressable:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .pressable:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ── Number/count-up ready wrapper (pair with a JS count-up hook) ─────── */
+.countUp {
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
+}
+
+/* ── Live pulse dot (already exists in some dashboards, generalized) ──── */
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  position: relative;
+}
+
+.pulseDot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: #10B981;
+  opacity: 0.4;
+  animation: pulse 1.8s ease-out infinite;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(0.8); opacity: 0.5; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ── Shimmer for loading stat values ("…" states) ─────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.08) 25%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,255,255,0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+  color: transparent;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Greeting emoji subtle wave on mount ───────────────────────────────── */
+.waveEmoji {
+  display: inline-block;
+  animation: wave 0.6s ease 0.3s 1;
+  transform-origin: 70% 70%;
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  15%      { transform: rotate(14deg); }
+  30%      { transform: rotate(-8deg); }
+  45%      { transform: rotate(14deg); }
+  60%      { transform: rotate(-4deg); }
+  75%      { transform: rotate(10deg); }
+}
+
+/* ── GPA / progress bar fill-in on mount ───────────────────────────────── */
+.barFillIn {
+  animation: barFillIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes barFillIn {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .riseIn, .staggerItem, .waveEmoji, .barFillIn, .pulseDot::after, .shimmer {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .pressable {
+    transition: none;
+  }
+}
