@@ -8,11 +8,13 @@ import RoleNav from '@/components/RoleNav'
 import ChatWidget from '@/components/ChatWidget'
 import LinkChildPrompt from '@/components/LinkChildPrompt'
 import TrialBanner from '@/components/TrialBanner'
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
 import {
   UserIcon, BarChartIcon, WalletIcon, MessageIcon,
   CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon,
 } from '@/components/Icons'
 import styles from './parent.module.css'
+import motion from '@/components/dashboard-motion.module.css'               // ← NEW
 
 const MODULES = [
   { id: 'child',       label: "Child's Profile", Icon: UserIcon,      href: '/dashboard/parent/child',       accent: '#3B82F6', bg: '#1e3a5f' },
@@ -38,9 +40,9 @@ function getCurrentYear(): string {
 }
 
 interface ChildStats { attendance: number | null; gpa: number | null; rank: number | null; pendingTasks: number }
-interface Props { profile: any; school: any; userId: string; counts?: any }
+interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
 
-export default function ParentDashboardClient({ profile, school, userId, counts = {} }: Props) {
+export default function ParentDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
   const pathname = usePathname()
   const [children,      setChildren]      = useState<any[]>([])
   const [checking,      setChecking]      = useState(true)
@@ -58,7 +60,6 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   async function fetchChildren() {
     setChecking(true)
     try {
-      // Step 1: get student IDs from parent_student_links
       const { data: links } = await supabase
         .from('parent_student_links')
         .select('student_id')
@@ -71,7 +72,6 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
       const ids = links.map((l: any) => l.student_id as string)
 
-      // Step 2: fetch profiles + student_profiles separately then merge
       const [{ data: pRows }, { data: spRows }] = await Promise.all([
         supabase.from('profiles')
           .select('id, full_name, avatar_url, default_code, school_id')
@@ -174,6 +174,11 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
   function isActive(href: string) { return pathname.startsWith(href) }
 
+  // ── NEW: delete handler wired to Supabase ──────────────────────────────
+  async function handleDeleteActivity(id: string) {
+    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+  }
+
   // ── Loading ──
   if (checking) return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -202,22 +207,26 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
         <main className={styles.main}>
 
-          <div className={styles.greeting}>
+          <div className={`${styles.greeting} ${motion.riseIn}`}>
             <p className={styles.greetLabel}>Hello,</p>
-            <h1 className={styles.greetName}>{profile?.full_name?.split(' ')[0] ?? 'Parent'} 👋</h1>
+            <h1 className={styles.greetName}>{profile?.full_name?.split(' ')[0] ?? 'Parent'} <span className={motion.waveEmoji}>👋</span></h1>
           </div>
 
           {/* Child selector tabs */}
           {children.length > 1 && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
               {children.map((c: any) => (
-                <button key={c.id} onClick={() => setActiveChildId(c.id)} style={{
-                  padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
-                  background: activeChildId === c.id ? sc : 'var(--glass-bg)',
-                  color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
-                  border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
-                  cursor: 'pointer', flexShrink: 0,
-                }}>
+                <button
+                  key={c.id}
+                  onClick={() => setActiveChildId(c.id)}
+                  className={motion.pressable}
+                  style={{
+                    padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+                    background: activeChildId === c.id ? sc : 'var(--glass-bg)',
+                    color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
+                    border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
+                    cursor: 'pointer', flexShrink: 0,
+                  }}>
                   {c.full_name?.split(' ')[0]}
                 </button>
               ))}
@@ -226,7 +235,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
           {/* Active child card */}
           {activeChild && (
-            <div className={styles.childCard} style={{ borderColor: sc + '40' }}>
+            <div className={`${styles.childCard} ${motion.riseIn}`} style={{ borderColor: sc + '40', animationDelay: '100ms' }}>
               <div className={styles.childAvatar} style={{ background: sc }}>
                 {activeChild.avatar_url
                   ? <img src={activeChild.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
@@ -239,13 +248,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
                   {activeChild.class_level ?? 'No class'} · {activeChild.default_code ?? ''} · {school?.name}
                 </p>
               </div>
-              <Link href={`/dashboard/parent/child?id=${activeChild.id}`} className={styles.viewChildBtn} style={{ borderColor: sc + '40', color: sc }}>
+              <Link href={`/dashboard/parent/child?id=${activeChild.id}`} className={`${styles.viewChildBtn} ${motion.pressable}`} style={{ borderColor: sc + '40', color: sc }}>
                 View →
               </Link>
             </div>
           )}
 
-          {/* Stats grid */}
+          {/* Stats grid — staggered */}
           {activeChild && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
               {[
@@ -253,9 +262,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
                 { label: 'Term GPA',   value: statsLoading ? '…' : childStats.gpa        != null ? childStats.gpa.toFixed(1)       : '—', color: sc       },
                 { label: 'Class Rank', value: statsLoading ? '…' : childStats.rank       != null ? `#${childStats.rank}`           : '—', color: '#8B5CF6' },
                 { label: 'Tasks Due',  value: statsLoading ? '…' : childStats.pendingTasks,                                              color: '#F59E0B' },
-              ].map(s => (
-                <div key={s.label} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 14px' }}>
-                  <p style={{ margin: '0 0 2px', fontSize: '1.1rem', fontWeight: 800, color: s.color }}>{s.value}</p>
+              ].map((s, i) => (
+                <div
+                  key={s.label}
+                  className={`${motion.staggerItem} ${motion.pressable}`}
+                  style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 14px', animationDelay: `${160 + i * 50}ms` }}
+                >
+                  <p style={{ margin: '0 0 2px', fontSize: '1.1rem', fontWeight: 800, color: s.color }} className={statsLoading ? motion.shimmer : ''}>{s.value}</p>
                   <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
                 </div>
               ))}
@@ -263,11 +276,14 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
           )}
 
           {/* Link another child */}
-          <button onClick={() => setShowLinkForm(true)} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', marginBottom: 20,
-            background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
-            borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
-          }}>
+          <button
+            onClick={() => setShowLinkForm(true)}
+            className={motion.pressable}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', marginBottom: 20,
+              background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
+              borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+            }}>
             + Link Another Child
           </button>
 
@@ -283,8 +299,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
           <p className={styles.sectionLabel}>Parent Portal</p>
           <div className={styles.moduleGrid}>
-            {MODULES.map(m => (
-              <Link key={m.id} href={m.href} className={`${styles.moduleCard} ${isActive(m.href) ? styles.modActive : ''}`}>
+            {MODULES.map((m, i) => (
+              <Link
+                key={m.id}
+                href={m.href}
+                className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(m.href) ? styles.modActive : ''}`}
+                style={{ animationDelay: `${260 + i * 35}ms` }}
+              >
                 <div className={styles.modIcon} style={{ background: m.bg }}>
                   <m.Icon size={20} color={m.accent} />
                 </div>
@@ -292,6 +313,14 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
               </Link>
             ))}
           </div>
+
+          {/* NEW: Recent Activity feed */}
+          <RecentActivity
+            items={activities}
+            accentColor={sc}
+            onDelete={handleDeleteActivity}
+            emptyLabel="Nothing yet — updates about your child will show up here"
+          />
 
           <div className={styles.mobileSpace} />
         </main>
