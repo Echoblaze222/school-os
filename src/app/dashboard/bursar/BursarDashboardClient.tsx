@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import ChatWidget from '@/components/ChatWidget'
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
 import {
   HomeIcon, WalletIcon, FileTextIcon, BarChartIcon,
   MessageIcon, DownloadIcon, PeopleIcon, ClockIcon,
@@ -14,6 +15,7 @@ import {
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
 import styles from './bursar.module.css'
+import motion from '@/components/dashboard-motion.module.css'               // ← NEW
 
 const MODULES = [
   { id: 'fees',           label: 'Fee Records',      Icon: WalletIcon,      href: '/dashboard/bursar/fees',           accent: '#10B981', bg: '#1a4a3a' },
@@ -35,24 +37,20 @@ const MODULES = [
   { id: 'settings',       label: 'Settings',         Icon: SettingsIcon,    href: '/dashboard/bursar/settings',       accent: '#6B7280', bg: '#1e2a38' },
 ]
 
-interface Props { profile: any; school: any; userId: string; counts?: any }
+interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
 
-export default function BursarDashboardClient({ profile, school, userId, counts = {} }: Props) {
+export default function BursarDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
   const pathname    = usePathname()
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Bursar'
   const supabase    = createClient()
 
-  // Live pending claims badge
   const [pendingClaims, setPendingClaims] = useState<number>(0)
 
   useEffect(() => {
     if (!school?.id) return
-
-    // Initial fetch
     fetchPendingClaims()
 
-    // Realtime subscription — update badge whenever a new claim arrives
     const channel = supabase
       .channel('bursar-claims-badge')
       .on(
@@ -90,6 +88,11 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
     { label: 'Pending',         value: counts.pendingCount ?? 0,                                 color: '#F59E0B' },
   ]
 
+  // ── NEW: delete handler wired to Supabase ──────────────────────────────
+  async function handleDeleteActivity(id: string) {
+    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+  }
+
   return (
     <div className={styles.page}>
       <RoleNav
@@ -104,14 +107,15 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
         <DashboardHeader userId={userId} role="bursar" profile={profile} school={school} schoolColor={schoolColor} />
 
         <main className={styles.main}>
-          <div className={styles.greeting}>
-            <h1 className={styles.greetingName}>Hi, {firstName} 👋</h1>
+          <div className={`${styles.greeting} ${motion.riseIn}`}>
+            <h1 className={styles.greetingName}>Hi, {firstName} <span className={motion.waveEmoji}>👋</span></h1>
             <p className={styles.greetingSub}>Financial overview · {counts.currentTerm ?? 'This Term'}</p>
           </div>
 
           {/* ── Pending Claims Alert Banner ─────────────────────── */}
           {pendingClaims > 0 && (
             <Link href="/dashboard/bursar/claims"
+              className={`${motion.riseIn} ${motion.pressable}`}
               style={{
                 display:        'flex',
                 alignItems:     'center',
@@ -123,6 +127,7 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
                 marginBottom:   'var(--space-5)',
                 textDecoration: 'none',
                 gap:            12,
+                animationDelay: '100ms',
               }}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{
@@ -151,7 +156,7 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
           )}
 
           {/* ── Collection Progress Card ────────────────────────── */}
-          <div className={styles.collectionCard} style={{ borderColor: schoolColor + '40' }}>
+          <div className={`${styles.collectionCard} ${motion.riseIn}`} style={{ borderColor: schoolColor + '40', animationDelay: '160ms' }}>
             <div className={styles.colLeft}>
               <p className={styles.colLabel}>Collection</p>
               <p className={styles.colValue} style={{ color: schoolColor }}>
@@ -160,36 +165,39 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
             </div>
             <div className={styles.colRight}>
               <div className={styles.colTrack}>
-                <div className={styles.colFill}
-                  style={{ width: `${counts.collectionRate ?? 0}%`, background: schoolColor }} />
+                <div className={`${styles.colFill} ${motion.barFillIn}`}
+                  style={{ width: `${counts.collectionRate ?? 0}%`, background: schoolColor, transformOrigin: 'left' }} />
               </div>
               <p className={styles.colSub}>of expected revenue collected this term</p>
             </div>
           </div>
 
-          {/* ── Stats Row ───────────────────────────────────────── */}
+          {/* ── Stats Row — staggered ───────────────────────────── */}
           <div className={styles.statsRow}>
-            {stats.map(s => (
-              <div key={s.label} className={styles.statCard}>
+            {stats.map((s, i) => (
+              <div
+                key={s.label}
+                className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
                 <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
                 <p className={styles.statLbl}>{s.label}</p>
               </div>
             ))}
           </div>
 
-          {/* ── Module Grid ─────────────────────────────────────── */}
+          {/* ── Module Grid — staggered ──────────────────────────── */}
           <p className={styles.sectionLabel}>Finance Tools</p>
           <div className={styles.moduleGrid}>
-            {MODULES.map(mod => (
+            {MODULES.map((mod, i) => (
               <Link key={mod.id} href={mod.href}
-                className={`${styles.moduleCard} ${isActive(mod.href) ? styles.moduleActive : ''}`}
-                style={{ position: 'relative' }}>
+                className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.moduleActive : ''}`}
+                style={{ position: 'relative', animationDelay: `${220 + i * 30}ms` }}>
                 <div className={styles.modIcon} style={{ background: mod.bg }}>
                   <mod.Icon size={22} color={mod.accent} />
                 </div>
                 <span className={styles.modLabel}>{mod.label}</span>
 
-                {/* Badge for pending claims */}
                 {mod.id === 'claims' && pendingClaims > 0 && (
                   <span style={{
                     position:   'absolute',
@@ -213,6 +221,14 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
               </Link>
             ))}
           </div>
+
+          {/* NEW: Recent Activity feed */}
+          <RecentActivity
+            items={activities}
+            accentColor={schoolColor}
+            onDelete={handleDeleteActivity}
+            emptyLabel="Nothing yet — payments and records will show up here"
+          />
 
           <div className={styles.spacer} />
         </main>
