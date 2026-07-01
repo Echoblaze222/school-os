@@ -117,31 +117,24 @@ function makePassword() {
   return pass
 }
 
-interface GeneratedEntry extends BulkRow { code: string; password: string; saved: boolean; error: string | null }
+interface GeneratedEntry extends BulkRow { code: string; saved: boolean; error: string | null }
 
 // ─── Success screen shown after single enrolment ─────────────────────────────
 function CodeSuccessScreen({
   result, sc, onEnrolAnother,
 }: {
-  result: { full_name: string; email: string; role: string; code: string; password: string }
+  result: { full_name: string; email: string; role: string; code: string }
   sc: string
   onEnrolAnother: () => void
 }) {
   const [copiedCode, setCopiedCode] = useState(false)
-  const [copiedPwd,  setCopiedPwd]  = useState(false)
   const m = roleMeta(result.role)
 
-  async function copy(text: string, which: 'code' | 'pwd') {
+  async function copyCode() {
+    const text = `Name: ${result.full_name}\nRole: ${roleMeta(result.role).label}\nAccess Code: ${result.code}`
     await navigator.clipboard.writeText(text).catch(() => {})
-    if (which === 'code') { setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }
-    else                  { setCopiedPwd(true);  setTimeout(() => setCopiedPwd(false),  2000) }
-  }
-
-  async function copyBoth() {
-    const text = `Name: ${result.full_name}\nRole: ${roleMeta(result.role).label}\nAccess Code: ${result.code}\nPassword: ${result.password}`
-    await navigator.clipboard.writeText(text).catch(() => {})
-    setCopiedCode(true); setCopiedPwd(true)
-    setTimeout(() => { setCopiedCode(false); setCopiedPwd(false) }, 2500)
+    setCopiedCode(true)
+    setTimeout(() => setCopiedCode(false), 2500)
   }
 
   return (
@@ -154,7 +147,7 @@ function CodeSuccessScreen({
 
       <h2 className={styles.successTitle}>Enrolment Complete!</h2>
       <p className={styles.successSub}>
-        Share the code and password below with <strong>{result.full_name}</strong>. They will use these to log in for the first time.
+        Share the access code below with <strong>{result.full_name}</strong>. They will use it on the <strong>New User</strong> page to set their own password and complete setup.
       </p>
 
       <div className={styles.successBadge}>
@@ -175,32 +168,20 @@ function CodeSuccessScreen({
         <div className={styles.credRow}>
           <code className={styles.credValue} style={{ color: sc }}>{result.code}</code>
           <button
-            onClick={() => copy(result.code, 'code')}
+            onClick={() => { navigator.clipboard.writeText(result.code).catch(() => {}); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }}
             className={styles.credCopy}
             style={copiedCode ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: sc + '55', color: sc }}
           >
             {copiedCode ? '✓ Copied' : 'Copy'}
           </button>
         </div>
+        <p className={styles.credWarning}>
+          💡 The user enters this code on the <strong>New User</strong> tab at login to set their own password.
+        </p>
       </div>
 
-      <div className={styles.credentialBox} style={{ borderColor: '#F59E0B44', background: '#F59E0B0a' }}>
-        <p className={styles.credLabel}>Temporary Password</p>
-        <div className={styles.credRow}>
-          <code className={styles.credValue} style={{ color: '#F59E0B' }}>{result.password}</code>
-          <button
-            onClick={() => copy(result.password, 'pwd')}
-            className={styles.credCopy}
-            style={copiedPwd ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}
-          >
-            {copiedPwd ? '✓ Copied' : 'Copy'}
-          </button>
-        </div>
-        <p className={styles.credWarning}>⚠️ User must change this password on first login.</p>
-      </div>
-
-      <button onClick={copyBoth} className={styles.copyBothBtn}>
-        Copy All Details
+      <button onClick={copyCode} className={styles.copyBothBtn}>
+        Copy Details
       </button>
 
       <button onClick={onEnrolAnother} className={styles.enrolAnotherBtn}>
@@ -225,7 +206,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
   const [sRole,    setSRole]    = useState('student')
   const [sLoading, setSLoading] = useState(false)
   const [sError,   setSError]   = useState<string | null>(null)
-  const [sResult,  setSResult]  = useState<{ full_name: string; email: string; role: string; code: string; password: string } | null>(null)
+  const [sResult,  setSResult]  = useState<{ full_name: string; email: string; role: string; code: string } | null>(null)
 
   // Common fields
   const [fName,    setFName]    = useState('')
@@ -252,7 +233,6 @@ export default function CodesClient({ entries: init, classes, profile, school, u
   const [bLoading,   setBLoading]   = useState(false)
   const [bSaved,     setBSaved]     = useState(false)
   const [copiedAll,  setCopiedAll]  = useState(false)
-  const [copiedPwds, setCopiedPwds] = useState<Record<number, boolean>>({})
 
   const roles = useMemo(() => ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()], [entries])
 
@@ -317,7 +297,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to create user')
 
-      setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code, password: json.password })
+      setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code })
 
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
@@ -340,7 +320,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
     setBLoading(true)
     // Seed bResults immediately so the UI shows "Saving..." rows, not nothing
-    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', saved: false, error: null })))
+    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', saved: false, error: null })))
 
     const updated = await Promise.all(
       validRows.map(async (r) => {
@@ -363,10 +343,10 @@ export default function CodesClient({ entries: init, classes, profile, school, u
             }),
           })
           const json = await res.json()
-          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: json.error ?? 'Failed', saved: false }
-          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, password: json.password, saved: true, error: null }
+          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: json.error ?? 'Failed', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, saved: true, error: null }
         } catch (e: any) {
-          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: e.message ?? 'Network error', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: e.message ?? 'Network error', saved: false }
         }
       })
     )
@@ -382,7 +362,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
   }
 
   async function copyAllCodes(list: GeneratedEntry[]) {
-    const text = list.filter(r => r.saved).map(r => `${r.full_name} | ${roleMeta(r.role).label} | Code: ${r.code} | Password: ${r.password}`).join('\n')
+    const text = list.filter(r => r.saved).map(r => `${r.full_name} | ${roleMeta(r.role).label} | Code: ${r.code}`).join('\n')
     await navigator.clipboard.writeText(text).catch(() => {})
     setCopiedAll(true)
     setTimeout(() => setCopiedAll(false), 2500)
@@ -502,7 +482,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
             <div className={styles.enrolForm}>
               <div className={styles.formHeader}>
                 <p className={styles.formTitle}>Enrol / Add User</p>
-                <p className={styles.formSub}>Fill in the details below. After saving, you will get the access code and password to share with them.</p>
+                <p className={styles.formSub}>Fill in the details below. After saving, you will get the access code to share with them — they'll set their own password on first login.</p>
               </div>
 
               <div className={styles.fieldGroup}>
@@ -882,21 +862,6 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                       </div>
                       <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
                       <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : '—')}</code>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <code className={styles.codeChip} style={{ background: '#F59E0B15', color: '#F59E0B' }}>{r.password || (bLoading ? '…' : '—')}</code>
-                        {r.password && (
-                          <button
-                            onClick={async () => {
-                              await navigator.clipboard.writeText(r.password).catch(() => {})
-                              setCopiedPwds(p => ({ ...p, [i]: true }))
-                              setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000)
-                            }}
-                            className={styles.actionBtn}
-                            style={copiedPwds[i] ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: '#F59E0B55', color: '#F59E0B' }}>
-                            {copiedPwds[i] ? '✓' : 'Copy'}
-                          </button>
-                        )}
-                      </div>
                       <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
                         {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : bLoading ? 'Saving…' : 'Pending'}
                       </span>
