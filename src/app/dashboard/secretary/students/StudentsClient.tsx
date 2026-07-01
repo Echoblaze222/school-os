@@ -40,7 +40,7 @@ const EMPTY_ROW = (): BulkRow => ({
 })
 const DEFAULT_ROWS = 5
 
-interface GeneratedEntry extends BulkRow { code: string; password: string; saved: boolean; error: string | null }
+interface GeneratedEntry extends BulkRow { code: string; saved: boolean; error: string | null }
 
 const thStyle: React.CSSProperties = {
   padding: '8px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
@@ -81,7 +81,6 @@ export default function StudentsClient({ students: init, profile, school, userId
   const [bLoading,  setBLoading]  = useState(false)
   const [bSaved,    setBSaved]    = useState(false)
   const [copiedAll, setCopiedAll] = useState(false)
-  const [copiedPwds, setCopiedPwds] = useState<Record<number, boolean>>({})
 
   const supabase  = createClient()
   const sc        = school?.primary_color ?? '#7C3AED'
@@ -89,17 +88,16 @@ export default function StudentsClient({ students: init, profile, school, userId
 
   // ── Warn before navigating away if bulk results haven't been copied ──
   const hasUnsavedResults = bResults.length > 0 && !bSaved
-  const hasUncopiedPasswords = bResults.some(r => r.saved && r.password)
 
   useEffect(() => {
-    if (!hasUnsavedResults && !hasUncopiedPasswords) return
+    if (!hasUnsavedResults) return
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = 'You have unsaved student codes — are you sure you want to leave?'
     }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
-  }, [hasUnsavedResults, hasUncopiedPasswords])
+  }, [hasUnsavedResults])
 
   const filtered = students.filter(s =>
     s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -194,7 +192,7 @@ export default function StudentsClient({ students: init, profile, school, userId
     if (!validRows.length) return
 
     setBLoading(true)
-    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', saved: false, error: null })))
+    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', saved: false, error: null })))
 
     const updated = await Promise.all(
       validRows.map(async (r) => {
@@ -217,10 +215,10 @@ export default function StudentsClient({ students: init, profile, school, userId
             }),
           })
           const json = await res.json()
-          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: json.error ?? 'Failed', saved: false }
-          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, password: json.password, saved: true, error: null }
+          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: json.error ?? 'Failed', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, saved: true, error: null }
         } catch (e: any) {
-          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', password: '', error: e.message ?? 'Network error', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: e.message ?? 'Network error', saved: false }
         }
       })
     )
@@ -247,7 +245,7 @@ export default function StudentsClient({ students: init, profile, school, userId
   }
 
   async function copyAllCodes(list: GeneratedEntry[]) {
-    const text = list.filter(r => r.saved).map(r => `${r.full_name} | Code: ${r.code} | Password: ${r.password}`).join('\n')
+    const text = list.filter(r => r.saved).map(r => `${r.full_name} | Code: ${r.code}`).join('\n')
     await navigator.clipboard.writeText(text).catch(() => {})
     setCopiedAll(true)
     setBSaved(true) // clears the "don't leave" warning once they've copied everything
@@ -443,14 +441,6 @@ export default function StudentsClient({ students: init, profile, school, userId
             {bLoading ? 'Saving...' : 'Save All Students'}
           </button>
 
-          {bResults.length > 0 && hasUncopiedPasswords && !bLoading && (
-            <div style={{ margin: 'var(--space-4) 0 0', background: '#F59E0B0D', border: '1px solid #F59E0B44', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
-              <p style={{ fontSize: '0.75rem', color: '#F59E0B', margin: 0, lineHeight: 1.5 }}>
-                <strong>Don't leave this page yet.</strong> The passwords below are only shown once — they are not stored anywhere. Copy them all now before switching tabs or closing this page.
-              </p>
-            </div>
-          )}
 
           {bResults.length > 0 && (
             <div style={{ marginTop: 'var(--space-5)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)' }}>
@@ -486,25 +476,6 @@ export default function StudentsClient({ students: init, profile, school, userId
                   <code style={{ fontSize: '0.74rem', fontWeight: 700, color: sc, background: sc + '15', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontFamily: 'monospace' }}>
                     {r.code || (bLoading ? '…' : '—')}
                   </code>
-                  <code style={{ fontSize: '0.74rem', fontWeight: 700, color: '#F59E0B', background: '#F59E0B15', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontFamily: 'monospace' }}>
-                    {r.password || (bLoading ? '…' : '—')}
-                  </code>
-                  {r.password && (
-                    <button
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(r.password).catch(() => {})
-                        setCopiedPwds(p => ({ ...p, [i]: true }))
-                        setTimeout(() => setCopiedPwds(p => ({ ...p, [i]: false })), 2000)
-                      }}
-                      style={{
-                        padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700,
-                        cursor: 'pointer', background: 'var(--glass-bg)',
-                        border: `1px solid ${copiedPwds[i] ? '#10B981' : '#F59E0B55'}`,
-                        color: copiedPwds[i] ? '#10B981' : '#F59E0B',
-                      }}>
-                      {copiedPwds[i] ? '✓' : 'Copy'}
-                    </button>
-                  )}
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)' }}>
                     {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : bLoading ? 'Saving…' : 'Pending'}
                   </span>
