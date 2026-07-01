@@ -200,10 +200,6 @@ export async function POST(request: Request) {
                         <td style="color:#fff;font-weight:700;font-family:monospace;font-size:18px;letter-spacing:2px;">${code}</td>
                       </tr>
                       <tr>
-                        <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Temp Password</td>
-                        <td style="color:#fff;font-weight:600;font-family:monospace;font-size:14px;">${tempPass}</td>
-                      </tr>
-                      <tr>
                         <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Role</td>
                         <td style="color:#a78bfa;font-weight:600;font-size:14px;">${roleLabel}</td>
                       </tr>
@@ -247,7 +243,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       code,
-      password:  tempPass,
       userId,
       message:   'User created successfully',
       warning:   authWarning,
