@@ -69,5 +69,36 @@ export default async function SecretaryPage() {
     activeUsers:   activeUsers.count ?? 0,
   }
 
-  return <SecretaryClient profile={profile} school={school} userId={user.id} counts={counts} />
+  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  const { data: activityRows } = await supabase
+    .from('recent_activities')
+    .select('id, type, title, subtitle, href, metadata, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(15)
+
+  const activities = (activityRows ?? []).map(row => ({
+    id:         row.id,
+    type:       row.type,
+    title:      row.title,
+    subtitle:   row.subtitle ?? undefined,
+    href:       row.href,
+    created_at: row.created_at,
+    preview: row.metadata
+      ? {
+          body: row.metadata.body,
+          meta: row.metadata.meta,
+        }
+      : undefined,
+  }))
+
+  return (
+    <SecretaryClient
+      profile={profile}
+      school={school}
+      userId={user.id}
+      counts={counts}
+      activities={activities}
+    />
+  )
 }

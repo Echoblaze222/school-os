@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import ChatWidget from '@/components/ChatWidget'
 import RoleNav from '@/components/RoleNav'
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
 import {
   UserIcon, UsersIcon, CalendarIcon,
   MessageIcon, BellIcon, SettingsIcon, FolderIcon,
@@ -13,6 +14,7 @@ import {
   RefreshIcon,
 } from '@/components/Icons'
 import styles from './secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'               // ← NEW
 
 const MODULES = [
   { id: 'students',  label: 'Students',      Icon: UsersIcon,       href: '/dashboard/secretary/students',   accent: '#10B981', bg: '#1a4a3a' },
@@ -29,14 +31,13 @@ const MODULES = [
   { id: 'settings',  label: 'Settings',      Icon: SettingsIcon,    href: '/dashboard/secretary/settings',   accent: '#6B7280', bg: '#1e2a38' },
 ]
 
-interface Props { profile: any; school: any; userId: string; counts?: any }
+interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
 
-export default function SecretaryClient({ profile, school, userId, counts = {} }: Props) {
+export default function SecretaryClient({ profile, school, userId, counts = {}, activities }: Props) {
   const pathname    = usePathname()
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Secretary'
 
-  // Match the same greeting pattern as TeacherDashboardClient
   const hour     = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
@@ -49,35 +50,45 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
     { label: 'Active Users',      value: counts.activeUsers   ?? 0, color: '#8B5CF6' },
   ]
 
+  // ── NEW: delete handler wired to Supabase ──────────────────────────────
+  async function handleDeleteActivity(id: string) {
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+  }
+
   return (
     <div className={styles.page}>
-      {/* RoleNav first — same pattern as BursarDashboardClient which secretary.module.css mirrors */}
       <RoleNav userId={userId} profile={profile} school={school} role="secretary" schoolColor={schoolColor} />
 
       <div className={styles.content}>
         <DashboardHeader userId={userId} role="secretary" profile={profile} school={school} schoolColor={schoolColor} />
 
         <main className={styles.main}>
-          {/* Greeting — now time-based like TeacherDashboardClient */}
-          <div className={styles.greeting}>
-            <h1 className={styles.greetingName}>{greeting}, {firstName} 👋</h1>
+          <div className={`${styles.greeting} ${motion.riseIn}`}>
+            <h1 className={styles.greetingName}>{greeting}, {firstName} <span className={motion.waveEmoji}>👋</span></h1>
             <p className={styles.greetingSub}>Secretary dashboard · {school?.name ?? 'School'}</p>
           </div>
 
-          {/* Stats row */}
+          {/* Stats row — staggered */}
           <div className={styles.statsRow}>
-            {stats.map(s => (
-              <div key={s.label} className={styles.statCard}>
+            {stats.map((s, i) => (
+              <div
+                key={s.label}
+                className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
                 <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
                 <p className={styles.statLbl}>{s.label}</p>
               </div>
             ))}
           </div>
 
-          {/* Pending transfers alert — mirrors TeacherDashboardClient's pending grading alert */}
+          {/* Pending transfers alert */}
           {(counts.pendingApps ?? 0) > 0 && (
             <Link
               href="/dashboard/secretary/transfers"
+              className={`${motion.riseIn} ${motion.pressable}`}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px',
@@ -85,6 +96,7 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
                 borderRadius: 10, marginBottom: 'var(--space-5)',
                 textDecoration: 'none', color: '#F59E0B',
                 fontSize: '0.82rem', fontWeight: 600,
+                animationDelay: '150ms',
               }}
             >
               <span style={{ fontSize: 16 }}>⚠️</span>
@@ -95,11 +107,12 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
 
           <p className={styles.sectionLabel}>Secretary Tools</p>
           <div className={styles.moduleGrid}>
-            {MODULES.map(mod => (
+            {MODULES.map((mod, i) => (
               <Link
                 key={mod.id}
                 href={mod.href}
-                className={`${styles.moduleCard} ${isActive(mod.href) ? styles.moduleActive : ''}`}
+                className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.moduleActive : ''}`}
+                style={{ animationDelay: `${220 + i * 35}ms` }}
               >
                 <div className={styles.modIcon} style={{ background: mod.bg }}>
                   <mod.Icon size={22} color={mod.accent} />
@@ -108,6 +121,14 @@ export default function SecretaryClient({ profile, school, userId, counts = {} }
               </Link>
             ))}
           </div>
+
+          {/* NEW: Recent Activity feed */}
+          <RecentActivity
+            items={activities}
+            accentColor={schoolColor}
+            onDelete={handleDeleteActivity}
+            emptyLabel="Nothing yet — student records and transfers will show up here"
+          />
 
           <div className={styles.spacer} />
         </main>
