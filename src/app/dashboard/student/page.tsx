@@ -136,6 +136,29 @@ export default async function StudentDashboardPage() {
   const rankPos = leaderboardRows?.findIndex((r: any) => r.student_id === user.id) ?? -1
   const rank    = rankPos >= 0 ? rankPos + 1 : null
 
+  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  const { data: activityRows } = await supabase
+    .from('recent_activities')
+    .select('id, type, title, subtitle, href, metadata, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(15)
+
+  const activities = (activityRows ?? []).map(row => ({
+    id:         row.id,
+    type:       row.type,
+    title:      row.title,
+    subtitle:   row.subtitle ?? undefined,
+    href:       row.href,
+    created_at: row.created_at,
+    preview: row.metadata
+      ? {
+          body: row.metadata.body,
+          meta: row.metadata.meta,
+        }
+      : undefined,
+  }))
+
   if (school?.id && school?.setup_status === 'trial') {
     fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/trial/check`, {
       method: 'POST',
@@ -158,7 +181,7 @@ export default async function StudentDashboardPage() {
         gpa,
         rank,
       }}
+      activities={activities}
     />
   )
-    }
-    
+}
