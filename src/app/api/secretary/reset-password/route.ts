@@ -84,13 +84,15 @@ export async function POST(request: Request) {
     }
 
     // ── 4. Log the reset (optional audit trail) ─────────────────────────
-    await adminClient.from('portal_audit_log').insert({
-      school_id:  callerProfile.school_id,
-      actor_id:   caller.id,
-      action:     'password_reset',
-      target_id:  targetUserId,
-      details:    `Password reset for ${targetProfile.full_name} (${targetProfile.role}) by ${callerProfile.role}`,
-    }).maybeSingle().catch(() => {}) // silent — audit log is best-effort
+    try {
+      await adminClient.from('portal_audit_log').insert({
+        school_id:  callerProfile.school_id,
+        actor_id:   caller.id,
+        action:     'password_reset',
+        target_id:  targetUserId,
+        details:    `Password reset for ${targetProfile.full_name} (${targetProfile.role}) by ${callerProfile.role}`,
+      })
+    } catch (_) {} // silent — audit log is best-effort
 
     return NextResponse.json({ password: newPassword })
 
