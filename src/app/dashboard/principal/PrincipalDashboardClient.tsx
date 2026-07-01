@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import ChatWidget from '@/components/ChatWidget'
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
 import {
   HomeIcon, PeopleIcon, BarChartIcon, SchoolIcon,
   MessageIcon, BellIcon, WalletIcon, ClipboardIcon,
@@ -14,6 +15,7 @@ import {
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
 import styles from './principal.module.css'
+import motion from '@/components/dashboard-motion.module.css'               // ← NEW
 
 const MODULES = [
   { id: 'staff',         label: 'Staff',          Icon: PeopleIcon,    href: '/dashboard/principal/staff',              accent: '#3B82F6', bg: '#1e3a5f' },
@@ -40,10 +42,9 @@ const MODULES = [
   { id: 'settings',      label: 'Settings',       Icon: SettingsIcon,  href: '/dashboard/principal/settings',           accent: '#6B7280', bg: '#1e2a38' },
 ]
 
+interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
 
-interface Props { profile: any; school: any; userId: string; counts?: any }
-
-export default function PrincipalDashboardClient({ profile, school, userId, counts = {} }: Props) {
+export default function PrincipalDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
   const pathname = usePathname()
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Principal'
@@ -60,18 +61,25 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
     { label: 'Avg Score', value: `${counts.avgScore   ?? 0}%`, color: '#F59E0B' },
   ]
 
+  // ── NEW: delete handler wired to Supabase ──────────────────────────────
+  async function handleDeleteActivity(id: string) {
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+  }
+
   return (
     <div className={styles.page}>
       <DashboardHeader userId={userId} role="principal" profile={profile} school={school} schoolColor={schoolColor} />
 
       <main className={styles.main}>
-        <div className={styles.greeting}>
-          <h1 className={styles.greetingName}>Welcome, {firstName} 👋</h1>
+        <div className={`${styles.greeting} ${motion.riseIn}`}>
+          <h1 className={styles.greetingName}>Welcome, {firstName} <span className={motion.waveEmoji}>👋</span></h1>
           <p className={styles.greetingSub}>School overview at a glance</p>
         </div>
 
-        {/* School health banner */}
-        <div className={styles.healthBanner} style={{ borderColor: schoolColor }}>
+        {/* School health banner — animates in, bar fills */}
+        <div className={`${styles.healthBanner} ${motion.riseIn}`} style={{ borderColor: schoolColor, animationDelay: '120ms' }}>
           <div className={styles.healthLeft}>
             <p className={styles.healthTitle}>School Health Score</p>
             <p className={styles.healthScore} style={{ color: schoolColor }}>
@@ -80,8 +88,8 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
           </div>
           <div className={styles.healthRight}>
             <div className={styles.healthBar}>
-              <div className={styles.healthFill}
-                style={{ width: `${counts.healthScore ?? 87}%`, background: schoolColor }} />
+              <div className={`${styles.healthFill} ${motion.barFillIn}`}
+                style={{ width: `${counts.healthScore ?? 87}%`, background: schoolColor, transformOrigin: 'left' }} />
             </div>
             <p className={styles.healthSub}>
               {counts.pendingActions ?? 3} actions need your attention
@@ -89,9 +97,14 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
           </div>
         </div>
 
+        {/* Stats row — staggered */}
         <div className={styles.statsRow}>
-          {stats.map(s => (
-            <div key={s.label} className={styles.statCard}>
+          {stats.map((s, i) => (
+            <div
+              key={s.label}
+              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
               <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
               <p className={styles.statLbl}>{s.label}</p>
             </div>
@@ -100,9 +113,13 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
 
         <p className={styles.sectionLabel}>Management Tools</p>
         <div className={styles.moduleGrid}>
-          {MODULES.map(mod => (
-            <Link key={mod.id} href={mod.href}
-              className={`${styles.moduleCard} ${isActive(mod.href) ? styles.moduleActive : ''}`}>
+          {MODULES.map((mod, i) => (
+            <Link
+              key={mod.id}
+              href={mod.href}
+              className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.moduleActive : ''}`}
+              style={{ animationDelay: `${220 + i * 25}ms` }}
+            >
               <div className={styles.modIcon} style={{ background: mod.bg }}>
                 <mod.Icon size={22} color={mod.accent} />
               </div>
@@ -110,6 +127,15 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
             </Link>
           ))}
         </div>
+
+        {/* NEW: Recent Activity feed */}
+        <RecentActivity
+          items={activities}
+          accentColor={schoolColor}
+          onDelete={handleDeleteActivity}
+          emptyLabel="Nothing yet — school-wide actions will show up here"
+        />
+
         <div className={styles.spacer} />
       </main>
       <RoleNav
@@ -123,4 +149,4 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
       <ChatWidget userId={userId} role="principal" schoolColor={schoolColor} />
     </div>
   )
-  }
+}
