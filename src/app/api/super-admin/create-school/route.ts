@@ -78,11 +78,14 @@ export async function POST(req: Request) {
         setup_status:       setupType === 'trial' ? 'trial' : 'active',
         trial_started_at:   setupType === 'trial' ? now.toISOString() : null,
         trial_ends_at:      setupType === 'trial' ? trialEnd.toISOString() : null,
-        setup_paid_at:      setupType === 'permanent' ? now.toISOString() : null,
-        free_month_starts:  setupType === 'permanent' ? now.toISOString() : null,
-        free_month_ends:    setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
-        subscription_plan:  setupType === 'permanent' ? 'free_month' : null,
-        created_by_admin:   user.id,
+        setup_paid_at:        setupType === 'permanent' ? now.toISOString() : null,
+        free_month_starts:    setupType === 'permanent' ? now.toISOString() : null,
+        free_month_ends:      setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
+        subscription_plan:    setupType === 'permanent' ? 'free_month' : null,
+        subscription_starts:  setupType === 'permanent' ? now.toISOString() : null,
+        subscription_ends:    setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
+        next_payment_due:     setupType === 'permanent' ? freeMonthEnd.toISOString() : null,
+        created_by_admin:     user.id,
         notes,
       })
       .select('id, slug')
@@ -90,6 +93,46 @@ export async function POST(req: Request) {
 
     if (schoolErr) {
       return NextResponse.json({ ok: false, error: schoolErr.message }, { status: 500 })
+    }
+
+    // ── Seed the subscriptions row ──────────────────────────────────────────
+    // Without this, the principal's /dashboard/principal/subscription page
+    // finds no subscriptions row at all (that page only ever reads
+    // subscriptions.expiry_date — it never looks at schools.free_month_ends
+    // or schools.trial_ends_at). That made a brand-new school look
+    // "Expired / 0 days remaining" immediately instead of showing the free
+    // period countdown. This mirrors exactly what confirm_setup does later
+    // for a manual admin confirmation, so both paths stay consistent.
+    try {
+      if (setupType === 'trial') {
+        await adminSupabase.from('subscriptions').upsert({
+          school_id:     school.id,
+          plan_type:     'trial',
+          status:        'Active',
+          billing_cycle: 'Trial',
+          started_at:    now.toISOString().split('T')[0],
+          expiry_date:   trialEnd.toISOString().split('T')[0],
+          amount_paid:   0,
+          currency_used: 'NGN',
+        }, { onConflict: 'school_id' })
+      } else {
+        await adminSupabase.from('subscriptions').upsert({
+          school_id:         school.id,
+          plan_type:         'free_month',
+          status:            'Active',
+          billing_cycle:     'Monthly',
+          started_at:        now.toISOString().split('T')[0],
+          expiry_date:       freeMonthEnd.toISOString().split('T')[0],
+          amount_paid:       setupType === 'permanent' ? (paymentAmount ?? 0) : 0,
+          currency_used:     'NGN',
+          payment_reference: setupType === 'permanent' ? (paymentRef ?? null) : null,
+        }, { onConflict: 'school_id' })
+      }
+    } catch (subErr) {
+      // Non-fatal: school + principal account still get created. Logged so
+      // it's visible, but we don't roll back the whole signup over this —
+      // a super-admin can still run confirm_setup manually to backfill it.
+      console.error('[create-school] Subscription row seed failed (non-fatal):', subErr)
     }
 
     const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
