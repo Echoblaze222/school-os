@@ -29,10 +29,10 @@ export default async function SubscriptionPage() {
   const { data: subscription } = await supabase
     .from('subscriptions')
     .select('*')
-    .eq('school_registry_id', profile.school_id)
+    .eq('school_id', profile.school_id)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   // Get active student count
   const { count: studentCount } = await supabase
