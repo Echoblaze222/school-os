@@ -67,8 +67,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Advance onboarding stage
-    const nextStage = stage === 'stage_1_pending' ? 'stage_1_pending' : 2
+    // Advance onboarding to stage_2_pending so the client redirects correctly
+    const nextStage = 'stage_2_pending'
 
     await adminClient
       .from('profiles')
