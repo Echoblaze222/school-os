@@ -259,7 +259,11 @@ export default function LoginPage() {
     try {
       const res  = await fetch('/api/auth/first-login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: newCode.toUpperCase(), newPassword }),
+        body: JSON.stringify({
+          code:     newCode.toUpperCase(),
+          newPassword,
+          schoolId: school?.id ?? null,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -271,6 +275,10 @@ export default function LoginPage() {
       if (data.success) {
         const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password: newPassword })
         if (signInErr) { setNewUserError('Activation done but sign-in failed. Try signing in now.'); return }
+        // Sync localStorage school to the actual school this user belongs to
+        if (data.school) {
+          localStorage.setItem(SCHOOL_KEY, JSON.stringify(data.school))
+        }
         const stage = data.onboarding_stage
         router.replace(
           stage === 'stage_1_pending' ? '/onboarding/stage-1' :
