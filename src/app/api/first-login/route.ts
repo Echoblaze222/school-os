@@ -8,7 +8,7 @@ import { createClient }  from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
   try {
-    const { code, newPassword } = await request.json()
+    const { code, newPassword, schoolId } = await request.json()
 
     if (!code || !newPassword) {
       return NextResponse.json(
@@ -29,12 +29,15 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Look up the profile by access code
-    const { data: profile, error: profileErr } = await adminClient
+    // Look up the profile by access code — filter by school if provided
+    let query = adminClient
       .from('profiles')
-      .select('id, email, role, onboarding_stage')
+      .select('id, email, role, onboarding_stage, school_id')
       .eq('default_code', code.toUpperCase())
-      .single()
+
+    if (schoolId) query = query.eq('school_id', schoolId)
+
+    const { data: profile, error: profileErr } = await query.single()
 
     if (profileErr || !profile) {
       return NextResponse.json(
@@ -42,6 +45,13 @@ export async function POST(request: Request) {
         { status: 404 }
       )
     }
+
+    // Fetch school data to return for localStorage sync
+    const { data: schoolData } = await adminClient
+      .from('schools')
+      .select('id, name, primary_color, logo_url')
+      .eq('id', profile.school_id)
+      .single()
 
     // Only allow this route for accounts that haven't completed onboarding
     const stage = profile.onboarding_stage
@@ -76,11 +86,18 @@ export async function POST(request: Request) {
       .eq('id', profile.id)
 
     // CRITICAL: return the email so the client can sign in immediately
+    // Also return school data so the client can sync localStorage
     return NextResponse.json({
       success:          true,
       email:            profile.email,
       onboarding_stage: nextStage,
       role:             profile.role,
+      school:           schoolData ? {
+        id:           schoolData.id,
+        name:         schoolData.name,
+        primaryColor: schoolData.primary_color,
+        logoUrl:      schoolData.logo_url,
+      } : null,
     })
 
   } catch (e: unknown) {
