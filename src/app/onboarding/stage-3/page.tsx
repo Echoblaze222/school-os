@@ -102,15 +102,13 @@ export default function OnboardingStage3() {
 
     if (!photo) { setError('Please upload your passport photo'); return }
 
-    // Require either a verified NIN or a bypassed state (no API keys)
-    const canProceed = ninStatus === 'verified' || ninStatus === 'bypassed'
-    if (nin.length === 11 && !canProceed) {
-      setError('Please verify your NIN before continuing')
-      return
-    }
-    // If NIN was entered but bypass mode is active, still allow empty NIN to proceed
+    // Only enforce NIN verification if the user actually entered one
     if (nin.length > 0 && nin.length !== 11) {
       setError('NIN must be exactly 11 digits')
+      return
+    }
+    if (nin.length === 11 && ninStatus !== 'verified' && ninStatus !== 'bypassed') {
+      setError('Please verify your NIN before continuing')
       return
     }
 
@@ -157,12 +155,11 @@ export default function OnboardingStage3() {
     router.push(ROLE_ROUTES[(profile as any)?.role ?? 'student'])
   }
 
-  // Whether the submit button should be enabled
-  const canSubmit = !!photo && (
-    ninStatus === 'verified' ||
-    ninStatus === 'bypassed' ||
-    (ninBypassed && nin.length === 0) // photo-only mode when API not configured
-  )
+  // Submit is allowed when:
+  // 1. Photo is uploaded, AND
+  // 2. Either: NIN not entered at all, NIN verified, or NIN bypassed (API not configured)
+  const ninNotEntered = nin.length === 0
+  const canSubmit = !!photo && (ninNotEntered || ninStatus === 'verified' || ninStatus === 'bypassed')
 
   const ninIndicator = () => {
     if (ninStatus === 'verifying') return (
