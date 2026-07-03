@@ -107,7 +107,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       const ext  = file.name.split('.').pop()
       // No leading 'avatars/' here — that prefix is the bucket name itself,
       // adding it again created a nested avatars/avatars/ path inside the bucket.
-      const path = `${userId}_${Date.now()}.${ext}`
+      const path = `${userId}/${Date.now()}.${ext}`
 
       const { error: uploadErr } = await supabase
         .storage
@@ -154,11 +154,6 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   // Determine role type from class assignments
   const hasPrimaryClass  = myClasses.some(c => c.is_primary)
   const hasSubjectClasses = myClasses.some(c => !c.is_primary || c.subject)
-  const roleLabel =
-    hasPrimaryClass && hasSubjectClasses ? 'Class Teacher + Subject Teacher' :
-    hasPrimaryClass                       ? 'Class Teacher' :
-    hasSubjectClasses                     ? 'Subject Teacher' : 'Teacher'
-
   // Unique subjects taught
   const subjectsTaught = [...new Set(myClasses.filter(c => c.subject).map(c => c.subject!))]
 
@@ -221,13 +216,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             {profile?.full_name}
           </p>
-          <span style={{
-            padding: '4px 12px', borderRadius: 999,
-            background: sc + '20', border: `1px solid ${sc}40`,
-            color: sc, fontSize: '0.72rem', fontWeight: 700,
-          }}>
-            {roleLabel}
-          </span>
+
         </div>
       </div>
 
