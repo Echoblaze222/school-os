@@ -83,7 +83,7 @@ export default function ProfileClient({
     try {
       // Use a timestamped path so the browser never serves a stale cached image
       const ext  = file.name.split('.').pop()
-      const path = `${userId}_${Date.now()}.${ext}`
+      const path = `${userId}/${Date.now()}.${ext}`
 
       const { error: uploadErr } = await supabase.storage
         .from('avatars')
