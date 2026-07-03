@@ -275,10 +275,17 @@ export default function LoginPage() {
       if (data.success) {
         const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password: newPassword })
         if (signInErr) { setNewUserError('Activation done but sign-in failed. Try signing in now.'); return }
+
         // Sync localStorage school to the actual school this user belongs to
         if (data.school) {
           localStorage.setItem(SCHOOL_KEY, JSON.stringify(data.school))
         }
+
+        // Wait for the session cookie to be written before navigating.
+        // Without this, server-side routes on the next page (e.g. set-pin)
+        // call auth.getUser() before the cookie exists and return 401.
+        await supabase.auth.getSession()
+
         const stage = data.onboarding_stage
         router.replace(
           stage === 'stage_1_pending' ? '/onboarding/stage-1' :
