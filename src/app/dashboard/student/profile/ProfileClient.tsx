@@ -52,7 +52,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
     try {
       const ext  = file.name.split('.').pop()
-      const path = `${userId}_${Date.now()}.${ext}`
+      const path = `${userId}/${Date.now()}.${ext}`
 
       const { error: uploadErr } = await supabase
         .storage
@@ -134,7 +134,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             <div style={{ textAlign:'center' }}>
               <p style={{ fontSize:'1.1rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 2px' }}>{profile?.full_name}</p>
               <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0, textTransform:'capitalize' }}>
-                {profile?.role} · {profile?.class_level}
+                {profile?.class_level}
               </p>
             </div>
           </div>
