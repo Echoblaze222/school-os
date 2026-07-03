@@ -23,19 +23,20 @@ export default async function PrincipalAlumniPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
+  // FIX: was querying school_branding separately, which is a different
+  // table from `schools` and can hold a stale/unset primary_color. The
+  // main dashboard (principal/page.tsx) sources school + primary_color via
+  // profiles.select('*, schools(*)) — mirrored here so the brand colour
+  // actually matches what's shown everywhere else.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, role, school_id')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'principal') redirect('/login')
 
-  const { data: school } = await supabase
-    .from('school_branding')
-    .select('id, school_name, logo_url, primary_color')
-    .eq('id', profile.school_id)
-    .single()
+  const school = (profile as any)?.schools ?? null
 
   // student_profiles has no school_id column and no FK Supabase can use
   // for a nested select into profiles/classes, so: first get this school's
