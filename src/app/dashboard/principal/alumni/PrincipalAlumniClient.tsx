@@ -1,14 +1,25 @@
 'use client'
 
 // src/app/dashboard/principal/alumni/PrincipalAlumniClient.tsx
+//
+// FIX: this page previously rendered its own hardcoded bottom nav
+// (bottom-nav-mobile / nav-item / nav-home-btn markup) instead of the
+// canonical <RoleNav> every other dashboard page uses — so it didn't
+// share the desktop sidebar, active-state highlighting, or (in some
+// themes) the school's brand colour. Switched to <RoleNav> below,
+// matching the pattern already used by NotificationsPageClient.tsx.
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import RoleNav from '@/components/RoleNav'
 import styles from './alumni.module.css'
 import type { AlumniStudent } from './page'
 
-interface Props { alumni: AlumniStudent[] }
+interface Props {
+  alumni: AlumniStudent[]
+  userId: string; profile: any; school: any
+  role: string; schoolColor?: string
+}
 
 function initials(n: string) { return n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() }
 
@@ -29,7 +40,7 @@ function exportCSV(rows: AlumniStudent[]) {
   URL.revokeObjectURL(url)
 }
 
-export default function PrincipalAlumniClient({ alumni }: Props) {
+export default function PrincipalAlumniClient({ alumni, userId, profile, school, role, schoolColor }: Props) {
   const router = useRouter()
   const [search,     setSearch]     = useState('')
   const [yearFilter, setYearFilter] = useState('all')
@@ -190,28 +201,14 @@ export default function PrincipalAlumniClient({ alumni }: Props) {
         )}
       </main>
 
-      {/* Bottom Nav */}
-      <nav className="bottom-nav-mobile" aria-label="Principal navigation">
-        <Link href="/dashboard/principal" className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>Home</span>
-        </Link>
-        <Link href="/dashboard/principal/students" className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          <span>Students</span>
-        </Link>
-        <Link href="/dashboard/principal" className="nav-home-btn" aria-label="Dashboard">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-        </Link>
-        <Link href="/dashboard/principal/alumni" className="nav-item active">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-          <span>Alumni</span>
-        </Link>
-        <Link href="/dashboard/principal/ai" className="nav-item">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span>AI</span>
-        </Link>
-      </nav>
+      {/* Canonical RoleNav — same as every other dashboard page */}
+      <RoleNav
+        userId={userId}
+        profile={profile}
+        school={school}
+        role={role}
+        schoolColor={schoolColor}
+      />
     </div>
   )
 }
