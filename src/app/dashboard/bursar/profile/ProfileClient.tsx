@@ -93,7 +93,7 @@ export default function ProfileClient({
 
     try {
       const ext  = file.name.split('.').pop()
-      const path = `${userId}_${Date.now()}.${ext}`
+      const path = `${userId}/${Date.now()}.${ext}`
 
       const { error: uploadErr } = await supabase
         .storage
@@ -139,13 +139,6 @@ export default function ProfileClient({
   const fields = [
     ['Full Name', profile?.full_name ?? '—'],
     ['ID Code', profile?.default_code ?? '—'],
-    [
-      'Role',
-      (profile?.role ?? '')
-        .charAt(0)
-        .toUpperCase() +
-        (profile?.role ?? '').slice(1),
-    ],
     ['School', school?.name ?? '—'],
     ['Email', profile?.email ?? '—'],
     ['Phone', profile?.phone ?? '—'],
@@ -262,16 +255,7 @@ export default function ProfileClient({
             {profile?.full_name}
           </p>
 
-          <p
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--text-muted)',
-              margin: 0,
-              textTransform: 'capitalize',
-            }}
-          >
-            {profile?.role}
-          </p>
+
         </div>
       </div>
 
