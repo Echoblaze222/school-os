@@ -12,6 +12,7 @@ export default function OnboardingStage2() {
   const [showPin,  setShowPin]  = useState(false)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
+  const [authReady, setAuthReady] = useState(false)
   const router   = useRouter()
   const supabase = createClient()
 
@@ -20,8 +21,28 @@ export default function OnboardingStage2() {
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
+  // Wait for session to be ready before allowing form submission.
+  // This prevents the set-pin API from getting a 401 because the
+  // session cookie wasn't written yet when the page first loaded.
+  useEffect(() => {
+    let attempts = 0
+    const check = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setAuthReady(true)
+      } else if (attempts < 10) {
+        attempts++
+        setTimeout(check, 300) // retry every 300ms, up to 3s total
+      } else {
+        router.push('/login') // gave up — send back to login
+      }
+    }
+    check()
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!authReady) { setError('Still verifying your session, please wait a moment...'); return }
     if (pin.length !== 6)         { setError('PIN must be exactly 6 digits'); return }
     if (pin !== confirm)          { setError('PINs do not match'); return }
     if (secret.trim().length < 3) { setError('Secret identifier must be at least 3 characters'); return }
@@ -54,6 +75,11 @@ export default function OnboardingStage2() {
   return (
     <div className={styles.page}>
       <div className={styles.bgOrb1}/><div className={styles.bgOrb2}/>
+      {!authReady ? (
+        <div className={styles.card} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Verifying your session…</p>
+        </div>
+      ) : (
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.icon}><ShieldIcon size={26} color="white"/></div>
@@ -110,6 +136,7 @@ export default function OnboardingStage2() {
           </button>
         </form>
       </div>
+      )}
     </div>
   )
 }
