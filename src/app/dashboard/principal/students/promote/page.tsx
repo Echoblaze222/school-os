@@ -11,19 +11,18 @@ export default async function PromotePage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
+  // FIX: was querying school_branding separately (stale/different table
+  // from `schools`, source of the purple-instead-of-brand-colour bug).
+  // Mirrors the school_id, primary_color pattern from principal/page.tsx.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, role, school_id')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'principal') redirect('/login')
 
-  const { data: school } = await supabase
-    .from('school_branding')
-    .select('id, school_name, logo_url, primary_color')
-    .eq('id', profile.school_id)
-    .single()
+  const school = (profile as any)?.schools ?? null
 
   return (
     <PromoteClient
