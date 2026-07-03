@@ -49,7 +49,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
 
     try {
       const ext  = file.name.split('.').pop()
-      const path = `${userId}_${Date.now()}.${ext}`
+      const path = `${userId}/${Date.now()}.${ext}`
 
       const { error: uploadErr } = await supabase
         .storage
@@ -93,7 +93,6 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
   const fields = [
     ['Full Name', profile?.full_name ?? '—'],
     ['ID Code',   profile?.default_code ?? '—'],
-    ['Role',      'Secretary'],
     ['School',    school?.name ?? '—'],
     ['Email',     profile?.email ?? '—'],
     ['Phone',     profile?.phone ?? '—'],
@@ -121,7 +120,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
         </div>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>{profile?.full_name}</p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Secretary · {school?.name}</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{school?.name}</p>
         </div>
       </div>
 
