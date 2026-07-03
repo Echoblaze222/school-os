@@ -101,6 +101,7 @@ const NAV: Record<string, {
       { label: 'Management', items: [
         { href: '/dashboard/principal/staff',       Icon: PeopleIcon,    label: 'Staff'       },
         { href: '/dashboard/principal/students',    Icon: SchoolIcon,    label: 'Students'    },
+        { href: '/dashboard/principal/alumni',      Icon: AwardIcon,     label: 'Alumni'      },
         { href: '/dashboard/principal/analytics',   Icon: BarChartIcon,  label: 'Analytics'   },
         { href: '/dashboard/principal/results',     Icon: BarChartIcon,  label: 'Results'     },
         { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'        },
