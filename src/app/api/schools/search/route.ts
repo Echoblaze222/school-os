@@ -24,9 +24,15 @@ export async function GET(request: Request) {
 
   const { data: schools, error } = await supabase
     .from('schools')
-    .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active')
+    .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active, setup_status')
     .ilike('name', `%${q}%`)
-    .eq('is_platform_active', true)
+    // FIX: was .eq('is_platform_active', true) — that only becomes true after
+    // a real Paystack payment or manual super-admin activation, so brand-new
+    // schools still in their trial period (setup_status: 'trial', which is
+    // most schools right after registration) never showed up in search at
+    // all. Now we only hide schools that are explicitly suspended/locked/
+    // expired; trial and active schools are both searchable.
+    .not('setup_status', 'in', '(suspended,locked,expired)')
     .limit(8)
 
   if (error) {
@@ -56,4 +62,3 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ schools: enriched })
 }
-
