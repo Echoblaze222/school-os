@@ -23,6 +23,7 @@ interface Room {
   id:            string
   name:          string
   room_type:     string
+  is_group?:     boolean
   updated_at:    string
   last_message?: string | null
   last_sent_at?: string | null
@@ -126,23 +127,29 @@ export default function UniversalChatPage({
     // 3. For each room, get other user + last message in parallel
     const processed: Room[] = await Promise.all(
       roomsData.map(async (room: any) => {
-        // Get other member's user_id
-        const { data: otherMember } = await supabase
-          .from('chat_room_members')
-          .select('user_id')
-          .eq('room_id', room.id)
-          .neq('user_id', userId)
-          .limit(1)
-          .single()
-
         let otherUser = null
-        if (otherMember?.user_id) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, full_name, role, default_code, avatar_url')
-            .eq('id', otherMember.user_id)
+
+        // Group rooms (class/school community) have their own name — looking
+        // up "the other member" doesn't make sense with 3+ people and was
+        // picking an arbitrary member's name to display instead of the
+        // group's actual name.
+        if (!room.is_group) {
+          const { data: otherMember } = await supabase
+            .from('chat_room_members')
+            .select('user_id')
+            .eq('room_id', room.id)
+            .neq('user_id', userId)
+            .limit(1)
             .single()
-          otherUser = profile ?? null
+
+          if (otherMember?.user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, full_name, role, default_code, avatar_url')
+              .eq('id', otherMember.user_id)
+              .single()
+            otherUser = profile ?? null
+          }
         }
 
         // Get last message
@@ -157,8 +164,9 @@ export default function UniversalChatPage({
 
         return {
           id:           room.id,
-          name:         otherUser?.full_name ?? room.name ?? 'Chat',
+          name:         room.is_group ? (room.name ?? 'Group') : (otherUser?.full_name ?? room.name ?? 'Chat'),
           room_type:    room.room_type,
+          is_group:     room.is_group,
           updated_at:   lastMsg?.sent_at ?? room.updated_at,
           last_message: lastMsg?.content ?? null,
           last_sent_at: lastMsg?.sent_at ?? null,
@@ -551,7 +559,10 @@ export default function UniversalChatPage({
                   </div>
                   <div className={styles.roomInfo}>
                     <div className={styles.roomTopRow}>
-                      <p className={styles.roomName}>{room.name}</p>
+                      <p className={styles.roomName}>
+                        {room.room_type === 'school_group' ? '🏫 ' : room.room_type === 'class_group' ? '👥 ' : ''}
+                        {room.name}
+                      </p>
                       {room.last_sent_at && (
                         <span className={styles.roomTime}>{timeAgo(room.last_sent_at)}</span>
                       )}
@@ -583,4 +594,4 @@ export default function UniversalChatPage({
       </div>
     </div>
   )
-}
+}
