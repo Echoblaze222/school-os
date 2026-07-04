@@ -254,6 +254,67 @@
   margin: 2px 0 0; font-family: monospace;
 }
 
+/* ── Live access-code suggestions ────────────────────────── */
+.suggestList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  padding: 4px;
+}
+.suggestItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 7px 8px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+  width: 100%;
+}
+.suggestItem:hover { background: var(--glass-bg); }
+.suggestAvatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.suggestInfo { flex: 1; min-width: 0; }
+.suggestName {
+  font-size: 0.78rem; font-weight: 700; color: var(--text-primary);
+  margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.suggestMeta {
+  font-size: 0.64rem; color: var(--text-muted);
+  text-transform: capitalize; margin: 1px 0 0;
+}
+.suggestBadge {
+  font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+  color: var(--brand-light);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-full);
+  padding: 2px 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.suggestLoading {
+  display: flex; gap: 5px; justify-content: center; padding: var(--space-3);
+}
+.suggestLoading span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brand);
+  animation: bounce 1.2s ease infinite;
+}
+.suggestLoading span:nth-child(2) { animation-delay: 0.2s; }
+.suggestLoading span:nth-child(3) { animation-delay: 0.4s; }
+
 /* ── Empty chat (desktop right pane) ────────────────────── */
 .emptyChat {
   flex: 1;

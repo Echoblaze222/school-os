@@ -72,6 +72,8 @@ export default function UniversalChatPage({
   const [foundUser,   setFoundUser]   = useState<any>(null)
   const [findError,   setFindError]   = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [suggesting,  setSuggesting]  = useState(false)
 
   const supabase = createClient()
   const router   = useRouter()
@@ -175,7 +177,51 @@ export default function UniversalChatPage({
     setLoading(false)
   }
 
-  // ── Find user by ID code ──────────────────────────────────
+  // ── Live suggestions as you type an access code ────────────
+  // Everyone else is scoped to their own school — a secretary shouldn't be
+  // able to browse codes from a school they're not part of. Principals are
+  // the one exception: they can also match other schools' principals, since
+  // principal-to-principal is the one cross-school conversation that's
+  // expected to happen.
+  useEffect(() => {
+    if (!showFind) { setSuggestions([]); return }
+    const trimmed = code.trim()
+    if (trimmed.length < 2) { setSuggestions([]); return }
+    const handle = setTimeout(() => searchSuggestions(trimmed), 250)
+    return () => clearTimeout(handle)
+  }, [code, showFind])
+
+  async function searchSuggestions(query: string) {
+    setSuggesting(true)
+    const cleaned = query.toUpperCase()
+
+    let q = supabase
+      .from('profiles')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
+      .ilike('default_code', `%${cleaned}%`)
+      .neq('id', userId)
+      .limit(8)
+
+    q = role === 'principal'
+      // own school (any role) OR any principal anywhere
+      ? q.or(`school_id.eq.${profile?.school_id},role.eq.principal`)
+      // everyone else stays inside their own school
+      : q.eq('school_id', profile?.school_id)
+
+    const { data } = await q
+    setSuggestions(data ?? [])
+    setSuggesting(false)
+  }
+
+  function pickSuggestion(user: any) {
+    setFoundUser(user)
+    setCode(user.default_code ?? '')
+    setSuggestions([])
+    setFindError('')
+  }
+
+
+  // ── Find user by ID code (exact + fuzzy fallback) ──────────
   async function findUserByCode() {
     if (!code.trim()) return
     setFinding(true)
@@ -184,11 +230,16 @@ export default function UniversalChatPage({
 
     const cleaned = code.trim().toUpperCase()
 
-    const { data } = await supabase
+    let exact = supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, school_id')
       .eq('default_code', cleaned)
-      .maybeSingle()
+
+    exact = role === 'principal'
+      ? exact.or(`school_id.eq.${profile?.school_id},role.eq.principal`)
+      : exact.eq('school_id', profile?.school_id)
+
+    const { data } = await exact.maybeSingle()
 
     if (data) {
       if (data.id === userId) {
@@ -203,15 +254,19 @@ export default function UniversalChatPage({
 
     // Fuzzy fallback — strip dashes, match last 6 chars
     const stripped = cleaned.replace(/-/g, '').slice(-6)
-    const { data: fuzzy } = await supabase
+    let fuzzy = supabase
       .from('profiles')
       .select('id, full_name, role, default_code, avatar_url, school_id')
       .ilike('default_code', `%${stripped}%`)
-      .limit(1)
-      .maybeSingle()
 
-    if (fuzzy && fuzzy.id !== userId) {
-      setFoundUser(fuzzy)
+    fuzzy = role === 'principal'
+      ? fuzzy.or(`school_id.eq.${profile?.school_id},role.eq.principal`)
+      : fuzzy.eq('school_id', profile?.school_id)
+
+    const { data: fuzzyMatch } = await fuzzy.limit(1).maybeSingle()
+
+    if (fuzzyMatch && fuzzyMatch.id !== userId) {
+      setFoundUser(fuzzyMatch)
     } else {
       setFindError('No user found with that code. Check and try again.')
     }
@@ -367,13 +422,17 @@ export default function UniversalChatPage({
           {showFind && (
             <div className={styles.findPanel}>
               <p className={styles.findTitle}>New Message</p>
-              <p className={styles.findDesc}>Enter the user's ID code to start a chat</p>
+              <p className={styles.findDesc}>
+                {role === 'principal'
+                  ? "Type a code to search your school — or another principal, anywhere"
+                  : "Start typing a code — matches from your school will show up"}
+              </p>
               <div className={styles.findRow}>
                 <input
                   ref={codeRef}
                   className={styles.findInput}
                   value={code}
-                  onChange={e => setCode(e.target.value.toUpperCase())}
+                  onChange={e => { setCode(e.target.value.toUpperCase()); setFoundUser(null); setFindError('') }}
                   onKeyDown={e => e.key === 'Enter' && findUserByCode()}
                   placeholder="e.g. SCH-2024-001"
                 />
@@ -386,6 +445,36 @@ export default function UniversalChatPage({
                   {finding ? '…' : <SearchIcon size={15} color="white" />}
                 </button>
               </div>
+
+              {/* Live suggestions — same-school only, except a principal also
+                  sees principals from other schools */}
+              {!foundUser && code.trim().length >= 2 && (suggesting || suggestions.length > 0) && (
+                <div className={styles.suggestList}>
+                  {suggesting && suggestions.length === 0 && (
+                    <div className={styles.suggestLoading}>
+                      <span/><span/><span/>
+                    </div>
+                  )}
+                  {suggestions.map(u => {
+                    const crossSchool = u.school_id !== profile?.school_id
+                    return (
+                      <button key={u.id} className={styles.suggestItem} onClick={() => pickSuggestion(u)}>
+                        <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
+                          {u.avatar_url
+                            ? <img src={u.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                            : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.75rem' }}>{u.full_name?.[0]}</span>
+                          }
+                        </div>
+                        <div className={styles.suggestInfo}>
+                          <p className={styles.suggestName}>{u.full_name}</p>
+                          <p className={styles.suggestMeta}>{u.role} · {u.default_code}</p>
+                        </div>
+                        {crossSchool && <span className={styles.suggestBadge}>other school</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               {findError && <p className={styles.findError}>{findError}</p>}
 
@@ -402,7 +491,10 @@ export default function UniversalChatPage({
                   </div>
                   <div className={styles.foundInfo}>
                     <p className={styles.foundName}>{foundUser.full_name}</p>
-                    <p className={styles.foundMeta}>{foundUser.role} · {foundUser.default_code}</p>
+                    <p className={styles.foundMeta}>
+                      {foundUser.role} · {foundUser.default_code}
+                      {foundUser.school_id !== profile?.school_id && ' · other school'}
+                    </p>
                   </div>
                   <button
                     className={styles.dmBtn}
