@@ -59,6 +59,12 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [swipeX,      setSwipeX]      = useState(0)
   const [kbOffset,    setKbOffset]    = useState(0)
   const [readIds,     setReadIds]     = useState<Set<string>>(new Set())
+  const [contextMenuId, setContextMenuId] = useState<string | null>(null)
+  const [editingId,     setEditingId]     = useState<string | null>(null)
+  const [showProfile,   setShowProfile]   = useState(false)
+  const [memberCount,   setMemberCount]   = useState(0)
+  const [isModerator,   setIsModerator]   = useState(false)
+  const [savingMode,    setSavingMode]    = useState(false)
 
   // Attachment picked but not yet sent — shown in a preview sheet so people
   // can add a caption before it goes out (like WhatsApp's photo caption).
@@ -79,6 +85,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const touchStart     = useRef<{ x: number; y: number; id: string } | null>(null)
   const swipeLocked     = useRef<'h' | 'v' | null>(null)
   const messageIdsRef   = useRef<Set<string>>(new Set())
+  const longPressTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressFired  = useRef(false)
 
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
@@ -173,7 +181,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }, [messages])
 
   useEffect(() => {
-    const handler = () => { setEmojiTarget(null); setShowMenu(false) }
+    const handler = () => { setEmojiTarget(null); setShowMenu(false); setContextMenuId(null) }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
   }, [])
@@ -218,12 +226,26 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   async function loadRoomAndUsers() {
     const { data: room } = await supabase
       .from('chat_rooms')
-      .select('id, name, room_type, is_group')
+      .select('id, name, room_type, is_group, posting_mode, class_id, school_id, created_by')
       .eq('id', roomId)
       .single()
 
-    if (room) setRoomInfo(room)
+    if (!room) return
+    setRoomInfo(room)
 
+    if (room.is_group) {
+      const { count } = await supabase
+        .from('chat_room_members')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('room_id', roomId)
+      setMemberCount(count ?? 0)
+
+      const { data: mod } = await supabase.rpc('is_room_moderator', { _room_id: roomId, _user_id: userId })
+      setIsModerator(!!mod)
+      return
+    }
+
+    // Plain 1:1 DM — find the other participant
     const { data: members } = await supabase
       .from('chat_room_members')
       .select('user_id')
@@ -234,7 +256,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (members?.[0]?.user_id) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, role')
+        .select('id, full_name, avatar_url, role, default_code, school_id')
         .eq('id', members[0].user_id)
         .single()
 
@@ -243,6 +265,15 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         loadReadReceipts(profile.id)
       }
     }
+  }
+
+  // ── Group settings: who can post ─────────────────────────
+  async function updatePostingMode(mode: 'everyone' | 'moderators_only') {
+    if (!roomInfo || savingMode || roomInfo.posting_mode === mode) return
+    setSavingMode(true)
+    setRoomInfo((prev: any) => ({ ...prev, posting_mode: mode }))
+    await supabase.from('chat_rooms').update({ posting_mode: mode }).eq('id', roomId)
+    setSavingMode(false)
   }
 
   // ── Load messages ────────────────────────────────────────
@@ -413,6 +444,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // ── Send text ────────────────────────────────────────────
   function sendText() {
     if (!text.trim()) return
+    if (editingId) { saveEdit(); return }
+
     const content = text.trim()
     const replyId = replyTo?.id ?? null
     const tempId  = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -434,6 +467,37 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
     setMessages(prev => [...prev, temp])
     enqueue({ kind: 'text', tempId, content, replyId })
+  }
+
+  // ── Edit an existing message ─────────────────────────────
+  function startEdit(msg: Message) {
+    if (msg.file_type || msg.is_deleted) return // captions/files aren't editable here, just plain text
+    setEditingId(msg.id)
+    setReplyTo(null)
+    setText(msg.content ?? '')
+    setContextMenuId(null)
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setText('')
+  }
+
+  async function saveEdit() {
+    if (!editingId) return
+    const newContent = text.trim()
+    const msgId = editingId
+    setText('')
+    setEditingId(null)
+
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, content: newContent, is_edited: true } : m
+    ))
+    await supabase
+      .from('chat_messages')
+      .update({ content: newContent, is_edited: true, edited_at: new Date().toISOString() })
+      .eq('id', msgId).eq('sender_id', userId)
   }
 
   // ── Pick a file → show caption preview (doesn't send yet) ────
@@ -501,6 +565,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   // ── Delete ───────────────────────────────────────────────
   async function deleteMessage(msgId: string) {
+    setContextMenuId(null)
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, is_deleted: true, content: '🚫 This message was deleted' } : m
     ))
@@ -514,12 +579,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText() }
   }
 
-  // ── Swipe-to-reply ───────────────────────────────────────
-  // The CSS already scaffolds this (.msgGroup has overflow:visible and a
+  // ── Swipe-to-reply + long-press context menu ────────────
+  // The CSS already scaffolds swipe (.msgGroup has overflow:visible and a
   // centered .replyIndicator) — this wires up the actual touch drag.
   // Drag the row sideways — past SWIPE_TRIGGER, release to reply. Vertical
   // scrolling is left untouched: the gesture only engages once horizontal
   // movement clearly outpaces vertical movement.
+  //
+  // A long-press (no meaningful movement for ~450ms) opens a context menu
+  // with Reply / React / Edit / Delete. Those action buttons are hover-only
+  // and hidden entirely on mobile — swipe alone only covers reply, so
+  // edit/delete/react had no touch affordance at all before this.
   function onTouchStart(msg: Message, e: React.TouchEvent) {
     if (msg.is_deleted) return
     const t = e.touches[0]
@@ -527,6 +597,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     swipeLocked.current = null
     setSwipeId(msg.id)
     setSwipeX(0)
+
+    longPressFired.current = false
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true
+      touchStart.current = null
+      setSwipeId(null)
+      setSwipeX(0)
+      if (navigator.vibrate) navigator.vibrate(15)
+      setContextMenuId(msg.id)
+    }, 450)
   }
 
   function onTouchMove(e: React.TouchEvent) {
@@ -538,6 +619,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (swipeLocked.current === null) {
       if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
         swipeLocked.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+        // Any real movement means this isn't a long-press
+        if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
       }
     }
     if (swipeLocked.current !== 'h') return
@@ -550,10 +633,13 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }
 
   function onTouchEnd() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    if (longPressFired.current) return // context menu already opened this gesture
     if (!touchStart.current) return
     const msg = messages.find(m => m.id === touchStart.current!.id)
     if (msg && swipeX >= SWIPE_TRIGGER) {
       setReplyTo(msg)
+      setEditingId(null)
       setTimeout(() => inputRef.current?.focus(), 80)
       if (navigator.vibrate) navigator.vibrate(12)
     }
@@ -562,6 +648,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setSwipeId(null)
     setSwipeX(0)
   }
+
+
 
   function formatTime(d: string) {
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -583,6 +671,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }, {} as Record<string, Message[]>)
 
   const displayName = getRoomDisplayName()
+  const canPost = !roomInfo?.is_group || roomInfo.posting_mode === 'everyone' || isModerator
 
   // ── Render ───────────────────────────────────────────────
   return (
@@ -607,8 +696,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           </div>
           <div style={{ minWidth:0, flex:1 }}>
             <p className={styles.roomName}>{displayName}</p>
-            <p className={styles.roomMeta} style={{ color: isOnline ? '#22c55e' : undefined }}>
-              {isOnline ? '● Online' : (otherUser?.role ?? '')}
+            <p className={styles.roomMeta} style={{ color: (!roomInfo?.is_group && isOnline) ? '#22c55e' : undefined }}>
+              {roomInfo?.is_group
+                ? `${roomInfo.room_type === 'school_group' ? 'School Community' : 'Class Group'} · ${memberCount} member${memberCount === 1 ? '' : 's'}`
+                : (isOnline ? '● Online' : (otherUser?.role ?? ''))
+              }
             </p>
           </div>
         </div>
@@ -618,11 +710,70 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </button>
         {showMenu && (
           <div className={styles.headerMenu} onClick={e => e.stopPropagation()}>
-            <button onClick={() => { loadMessages(); setShowMenu(false) }}>🔄 Refresh</button>
-            <button onClick={() => router.push(`/dashboard/${role}/chat`)}>📋 All chats</button>
+            <button onClick={() => { setShowProfile(true); setShowMenu(false) }}>
+              {roomInfo?.is_group ? '👥 Group info' : '👤 View profile'}
+            </button>
+            <button onClick={() => { loadMessages(); setShowMenu(false) }}>🔄 Refresh chat</button>
           </div>
         )}
       </header>
+
+      {/* ── PROFILE / GROUP INFO CARD ──────────────────── */}
+      {showProfile && (
+        <div className={styles.profileOverlay} onClick={() => setShowProfile(false)}>
+          <div className={styles.profileCard} onClick={e => e.stopPropagation()}>
+            <div className={styles.profileAvatar} style={{ background: schoolColor }}>
+              {otherUser?.avatar_url
+                ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                : <span style={{ color:'#fff', fontWeight:700, fontSize:'1.6rem' }}>{displayName[0]?.toUpperCase() ?? '#'}</span>
+              }
+            </div>
+            <p className={styles.profileName}>{displayName}</p>
+
+            {roomInfo?.is_group ? (
+              <>
+                <p className={styles.profileMeta}>
+                  {roomInfo.room_type === 'school_group' ? 'School Community' : 'Class Group'} · {memberCount} member{memberCount === 1 ? '' : 's'}
+                </p>
+                {isModerator ? (
+                  <div className={styles.postingModeRow}>
+                    <span>Who can post</span>
+                    <div className={styles.postingModeToggle}>
+                      <button
+                        className={roomInfo.posting_mode !== 'everyone' ? styles.postingModeActive : ''}
+                        disabled={savingMode}
+                        onClick={() => updatePostingMode('moderators_only')}
+                      >
+                        {roomInfo.room_type === 'school_group' ? 'Staff only' : 'Teacher only'}
+                      </button>
+                      <button
+                        className={roomInfo.posting_mode === 'everyone' ? styles.postingModeActive : ''}
+                        disabled={savingMode}
+                        onClick={() => updatePostingMode('everyone')}
+                      >
+                        Everyone
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={styles.profileBadge}>
+                    {roomInfo.posting_mode === 'everyone' ? 'Everyone can post' : 'Only moderators can post here'}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className={styles.profileMeta}>{otherUser?.role}{otherUser?.default_code ? ` · ${otherUser.default_code}` : ''}</p>
+                {otherUser?.school_id !== school?.id && otherUser?.school_id && (
+                  <p className={styles.profileBadge}>From a different school</p>
+                )}
+              </>
+            )}
+
+            <button className={styles.profileClose} onClick={() => setShowProfile(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
       {/* ── MESSAGES ───────────────────────────────────── */}
       <div className={styles.messages}>
@@ -682,13 +833,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       <p className={styles.senderName}>{msg.sender?.full_name}</p>
                     )}
 
-                    {/* Reply preview */}
+                    {/* Reply preview — same hue as the bubble below it (darkened a touch)
+                        so this reads as the top strip of ONE message, not a second bubble */}
                     {msg.reply_to && (
-                      <div className={`${styles.replyPreview} ${isMe ? styles.replyPreviewMe : ''}`}>
-                        <div className={styles.replyBar} style={{ background: isMe ? 'rgba(255,255,255,0.5)' : schoolColor }} />
+                      <div
+                        className={`${styles.replyPreview} ${isMe ? styles.replyPreviewMe : ''}`}
+                        style={isMe ? { background: schoolColor, filter: 'brightness(0.82)' } : undefined}
+                      >
+                        <div className={styles.replyBar} style={{ background: isMe ? 'rgba(255,255,255,0.6)' : schoolColor }} />
                         <div className={styles.replyContent}>
-                          <p className={styles.replyAuthor}>{msg.reply_to.sender_name}</p>
-                          <p className={styles.replyText}>{msg.reply_to.content}</p>
+                          <p className={styles.replyAuthor} style={isMe ? { color: 'rgba(255,255,255,0.85)' } : undefined}>{msg.reply_to.sender_name}</p>
+                          <p className={styles.replyText} style={isMe ? { color: 'rgba(255,255,255,0.75)' } : undefined}>{msg.reply_to.content}</p>
                         </div>
                       </div>
                     )}
@@ -766,16 +921,25 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       </div>
                     )}
 
-                    {/* Action buttons — always visible on touch, hover-reveal on desktop via CSS */}
+                    {/* Action buttons — hover-reveal on desktop; hidden on mobile
+                        in favor of the long-press context menu below */}
                     <div className={`${styles.msgActions} ${isMe ? styles.msgActionsMe : ''}`}>
-                      <button className={styles.actionBtn} title="Reply"
-                        onClick={e => { e.stopPropagation(); setReplyTo(msg); setTimeout(() => inputRef.current?.focus(), 50) }}>
-                        ↩
-                      </button>
+                      {canPost && (
+                        <button className={styles.actionBtn} title="Reply"
+                          onClick={e => { e.stopPropagation(); setReplyTo(msg); setEditingId(null); setTimeout(() => inputRef.current?.focus(), 50) }}>
+                          ↩
+                        </button>
+                      )}
                       <button className={styles.actionBtn} title="React"
                         onClick={e => { e.stopPropagation(); setEmojiTarget(emojiTarget === msg.id ? null : msg.id) }}>
                         <SmileIcon size={13} />
                       </button>
+                      {isMe && !msg.is_deleted && !msg.file_type && (
+                        <button className={styles.actionBtn} title="Edit"
+                          onClick={e => { e.stopPropagation(); startEdit(msg) }}>
+                          ✎
+                        </button>
+                      )}
                       {isMe && !msg.is_deleted && (
                         <button className={styles.actionBtn} title="Delete"
                           onClick={e => { e.stopPropagation(); deleteMessage(msg.id) }}>
@@ -783,6 +947,29 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                         </button>
                       )}
                     </div>
+
+                    {/* Long-press context menu (mobile) — same actions as above */}
+                    {contextMenuId === msg.id && (
+                      <div className={styles.contextMenuOverlay} onClick={() => setContextMenuId(null)}>
+                        <div className={styles.contextMenu} onClick={e => e.stopPropagation()}>
+                          {canPost && (
+                            <button onClick={() => { setReplyTo(msg); setEditingId(null); setContextMenuId(null); setTimeout(() => inputRef.current?.focus(), 80) }}>
+                              ↩ Reply
+                            </button>
+                          )}
+                          <button onClick={() => { setEmojiTarget(msg.id); setContextMenuId(null) }}>
+                            😊 React
+                          </button>
+                          {isMe && !msg.is_deleted && !msg.file_type && (
+                            <button onClick={() => startEdit(msg)}>✎ Edit</button>
+                          )}
+                          {isMe && !msg.is_deleted && (
+                            <button className={styles.contextMenuDanger} onClick={() => deleteMessage(msg.id)}>🗑 Delete</button>
+                          )}
+                          <button className={styles.contextMenuCancel} onClick={() => setContextMenuId(null)}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Emoji picker */}
                     {emojiTarget === msg.id && (
@@ -804,7 +991,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       </div>
 
       {/* ── REPLY BANNER ───────────────────────────────── */}
-      {replyTo && (
+      {replyTo && !editingId && (
         <div className={styles.replyBanner}>
           <div className={styles.replyBannerBar} style={{ background: schoolColor }} />
           <div className={styles.replyBannerContent}>
@@ -816,6 +1003,19 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
             </p>
           </div>
           <button className={styles.replyBannerClose} onClick={() => setReplyTo(null)}>
+            <XIcon size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* ── EDITING BANNER ─────────────────────────────── */}
+      {editingId && (
+        <div className={styles.replyBanner}>
+          <div className={styles.replyBannerBar} style={{ background: '#f59e0b' }} />
+          <div className={styles.replyBannerContent}>
+            <p className={styles.replyBannerAuthor} style={{ color: '#f59e0b' }}>✎ Editing message</p>
+          </div>
+          <button className={styles.replyBannerClose} onClick={cancelEdit}>
             <XIcon size={16} />
           </button>
         </div>
@@ -858,29 +1058,35 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       )}
 
       {/* ── INPUT BAR — nudged above the keyboard via --kb-offset ── */}
-      <div className={styles.inputBar} style={{ transform: kbOffset ? `translateY(-${kbOffset}px)` : undefined }}>
-        <input ref={fileRef} type="file" className={styles.fileInput} onChange={pickFile}
-          accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-        <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
-          <PaperclipIcon size={18} color="var(--text-muted)" />
-        </button>
-        <input
-          ref={inputRef}
-          className={styles.textInput}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder={replyTo ? `Replying to ${replyTo.sender?.full_name ?? 'message'}...` : 'Message...'}
-        />
-        <button
-          className={styles.sendBtn}
-          style={{ background: schoolColor, opacity: !text.trim() ? 0.5 : 1 }}
-          onClick={sendText}
-          disabled={!text.trim()}
-        >
-          <SendIcon size={16} color="white" />
-        </button>
-      </div>
+      {canPost ? (
+        <div className={styles.inputBar}>
+          <input ref={fileRef} type="file" className={styles.fileInput} onChange={pickFile}
+            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
+          <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
+            <PaperclipIcon size={18} color="var(--text-muted)" />
+          </button>
+          <input
+            ref={inputRef}
+            className={styles.textInput}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder={editingId ? 'Edit message...' : replyTo ? `Replying to ${replyTo.sender?.full_name ?? 'message'}...` : 'Message...'}
+          />
+          <button
+            className={styles.sendBtn}
+            style={{ background: schoolColor, opacity: !text.trim() ? 0.5 : 1 }}
+            onClick={sendText}
+            disabled={!text.trim()}
+          >
+            <SendIcon size={16} color="white" />
+          </button>
+        </div>
+      ) : (
+        <div className={styles.readOnlyBar}>
+          🔒 Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here — you can still react and comment with emoji
+        </div>
+      )}
     </div>
   )
 }
