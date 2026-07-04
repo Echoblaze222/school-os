@@ -687,7 +687,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </button>
         <div className={styles.roomInfo}>
           <div className={styles.roomAvatar} style={{ background: schoolColor }}>
-            {otherUser?.avatar_url
+            {roomInfo?.room_type === 'school_group' && school?.logo_url
+              ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+              : otherUser?.avatar_url
               ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
               : <span style={{ color:'#fff', fontWeight:700, fontSize:'1rem' }}>
                   {displayName[0]?.toUpperCase() ?? '#'}
@@ -723,7 +725,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         <div className={styles.profileOverlay} onClick={() => setShowProfile(false)}>
           <div className={styles.profileCard} onClick={e => e.stopPropagation()}>
             <div className={styles.profileAvatar} style={{ background: schoolColor }}>
-              {otherUser?.avatar_url
+              {roomInfo?.room_type === 'school_group' && school?.logo_url
+                ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                : otherUser?.avatar_url
                 ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                 : <span style={{ color:'#fff', fontWeight:700, fontSize:'1.6rem' }}>{displayName[0]?.toUpperCase() ?? '#'}</span>
               }
