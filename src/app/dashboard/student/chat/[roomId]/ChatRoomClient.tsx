@@ -43,7 +43,7 @@ const SWIPE_MAX     = 68   // px cap on how far the bubble can travel
 // background so the UI never blocks and multiple sends never race.
 type QueueJob =
   | { kind: 'text'; tempId: string; content: string; replyId: string | null }
-  | { kind: 'file'; tempId: string; file: File }
+  | { kind: 'file'; tempId: string; file: File; caption: string }
 
 export default function ChatRoomClient({ roomId, userId, role, school }: Props) {
   const [messages,    setMessages]    = useState<Message[]>([])
@@ -58,6 +58,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [swipeId,     setSwipeId]     = useState<string | null>(null)
   const [swipeX,      setSwipeX]      = useState(0)
   const [kbOffset,    setKbOffset]    = useState(0)
+  const [readIds,     setReadIds]     = useState<Set<string>>(new Set())
+
+  // Attachment picked but not yet sent — shown in a preview sheet so people
+  // can add a caption before it goes out (like WhatsApp's photo caption).
+  const [pendingFile,    setPendingFile]    = useState<File | null>(null)
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null)
+  const [pendingKind,    setPendingKind]    = useState<'image' | 'video' | 'file'>('file')
+  const [caption,        setCaption]        = useState('')
 
   const router     = useRouter()
   const supabase   = createClient()
@@ -70,6 +78,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const processingRef = useRef(false)
   const touchStart     = useRef<{ x: number; y: number; id: string } | null>(null)
   const swipeLocked     = useRef<'h' | 'v' | null>(null)
+  const messageIdsRef   = useRef<Set<string>>(new Set())
 
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
@@ -94,6 +103,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
             if (prev.find(x => x.id === (msg as Message).id)) return prev
             return [...prev, msg as Message]
           })
+          // The room is open right now, so anything the other person just
+          // sent counts as read immediately.
+          if ((msg as Message).sender_id !== userId) markAsRead([(msg as Message).id])
         }
       })
       .on('postgres_changes', {
@@ -103,6 +115,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         setMessages(prev => prev.map(m =>
           m.id === payload.new.id ? { ...m, ...(payload.new as Message) } : m
         ))
+      })
+      // Someone (the other person) marked one of our messages as read —
+      // flip that message's ticks from sent to seen.
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public',
+        table: 'message_read_receipts',
+      }, payload => {
+        const receipt = payload.new as { message_id: string; user_id: string }
+        if (receipt.user_id === userId) return // that's our own read, not theirs
+        if (!messageIdsRef.current.has(receipt.message_id)) return // not this room
+        setReadIds(ids => new Set(ids).add(receipt.message_id))
       })
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState()
@@ -117,8 +140,36 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     return () => { supabase.removeChannel(ch) }
   }, [roomId])
 
+  // Refresh read state whenever the tab regains focus while sitting on this room
+  useEffect(() => {
+    function onVisible() { if (document.visibilityState === 'visible') loadMessages() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  // Mark the other person's messages read, and pick up who's already read ours
+  async function markAsRead(messageIds: string[]) {
+    if (messageIds.length === 0) return
+    const rows = messageIds.map(message_id => ({ message_id, user_id: userId }))
+    await supabase
+      .from('message_read_receipts')
+      .upsert(rows, { onConflict: 'message_id,user_id', ignoreDuplicates: true })
+  }
+
+  async function loadReadReceipts(otherUserId: string) {
+    const { data } = await supabase
+      .from('message_read_receipts')
+      .select('message_id, chat_messages!inner(room_id)')
+      .eq('user_id', otherUserId)
+      .eq('chat_messages.room_id', roomId)
+
+    if (data) setReadIds(new Set(data.map((r: any) => r.message_id)))
+  }
+
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messageIdsRef.current = new Set(messages.map(m => m.id))
   }, [messages])
 
   useEffect(() => {
@@ -132,6 +183,12 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // own, but Android Chrome / older Safari fire visualViewport resize
   // *before* dvh settles — this keeps the input bar glued above the keyboard
   // in every case by nudging it with a CSS var instead of guessing layout.
+  //
+  // Only 'resize' is listened to here. visualViewport also fires 'scroll'
+  // during ordinary page/list scrolling (not just keyboard show/hide) — that
+  // was previously wired up too and caused every scroll gesture to
+  // re-trigger the offset calc and snap the view back to the bottom,
+  // which is why scrolling up felt broken.
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
@@ -143,16 +200,18 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
 
     vv.addEventListener('resize', onViewportChange)
-    vv.addEventListener('scroll', onViewportChange)
-    return () => {
-      vv.removeEventListener('resize', onViewportChange)
-      vv.removeEventListener('scroll', onViewportChange)
-    }
+    return () => vv.removeEventListener('resize', onViewportChange)
   }, [])
 
+  const prevKbOffset = useRef(0)
   useEffect(() => {
     pageRef.current?.style.setProperty('--kb-offset', `${kbOffset}px`)
-    if (kbOffset > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Only auto-scroll on the 0 → open transition, not every fluctuation,
+    // so a person actively scrolling up isn't yanked back down.
+    if (kbOffset > 0 && prevKbOffset.current === 0) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    prevKbOffset.current = kbOffset
   }, [kbOffset])
 
   // ── Load room + other user (flat, separate queries) ──────
@@ -179,7 +238,10 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         .eq('id', members[0].user_id)
         .single()
 
-      if (profile) setOtherUser(profile)
+      if (profile) {
+        setOtherUser(profile)
+        loadReadReceipts(profile.id)
+      }
     }
   }
 
@@ -202,14 +264,26 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         return {
           ...m,
           reply_to: {
-            content:     parent.is_deleted ? '🚫 Deleted' : parent.content,
+            content:     parent.is_deleted ? '🚫 Deleted' : displayLabel(parent),
             sender_name: parent.sender?.full_name ?? 'Unknown',
           },
         }
       })
       setMessages(enriched)
+      const unreadFromOther = enriched.filter(m => m.sender_id !== userId).map(m => m.id)
+      markAsRead(unreadFromOther)
     }
     setLoading(false)
+  }
+
+  // A message's content is the caption when there is one; this fills in a
+  // plain label for uncaptioned media so previews/notifications never show
+  // a blank line.
+  function displayLabel(m: Message) {
+    if (m.content?.trim()) return m.content
+    if (m.file_type === 'image') return '🖼️ Photo'
+    if (m.file_type === 'video') return '🎥 Video'
+    return m.content ?? ''
   }
 
   function getRoomDisplayName() {
@@ -278,13 +352,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }
 
   async function runFileJob(job: Extract<QueueJob, { kind: 'file' }>) {
-    const { file, tempId } = job
+    const { file, tempId, caption } = job
     const ext      = file.name.split('.').pop()
     const isImage  = file.type.startsWith('image/')
     const isVideo  = file.type.startsWith('video/')
     const bucket   = isImage ? 'chat-images' : isVideo ? 'chat-videos' : 'chat-files'
     const fileType = isImage ? 'image' : isVideo ? 'video' : 'file'
-    const content  = isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`
+    const fallback = isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`
+    // If the person wrote a caption it becomes the message content; otherwise
+    // leave content blank and fall back to a plain label wherever content
+    // needs to stand alone (reply previews, notifications).
+    const content  = caption.trim() || (fileType === 'file' ? fallback : null)
     const fname    = `files/${userId}/${Date.now()}.${ext}`
 
     // Simulated progress while the upload is in flight — supabase-js's
@@ -323,7 +401,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       return
     }
     setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
-    pushNotification(content)
+    pushNotification(content || fallback)
   }
 
   function retry(msg: Message) {
@@ -349,7 +427,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       is_deleted: false, is_edited: false,
       reply_to_id: replyId,
       reply_to: replyTo ? {
-        content:     replyTo.is_deleted ? '🚫 Deleted' : replyTo.content,
+        content:     replyTo.is_deleted ? '🚫 Deleted' : displayLabel(replyTo),
         sender_name: replyTo.sender?.full_name ?? 'Unknown',
       } : null,
       _status: 'sending',
@@ -358,27 +436,50 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     enqueue({ kind: 'text', tempId, content, replyId })
   }
 
-  // ── Send file (queued, non-blocking) ────────────────────────
-  function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // ── Pick a file → show caption preview (doesn't send yet) ────
+  function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
 
-    const isImage  = file.type.startsWith('image/')
-    const isVideo  = file.type.startsWith('video/')
-    const fileType = isImage ? 'image' : isVideo ? 'video' : 'file'
-    const tempId   = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    const localUrl = (isImage || isVideo) ? URL.createObjectURL(file) : undefined
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+    setPendingFile(file)
+    setPendingKind(isImage ? 'image' : isVideo ? 'video' : 'file')
+    setPendingPreview((isImage || isVideo) ? URL.createObjectURL(file) : null)
+    setCaption('')
+  }
+
+  function cancelPendingFile() {
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview)
+    setPendingFile(null)
+    setPendingPreview(null)
+    setCaption('')
+  }
+
+  // ── Confirm from the caption sheet → actually queue the send ─
+  function confirmSendFile() {
+    if (!pendingFile) return
+    const file    = pendingFile
+    const fileType = pendingKind
+    const capText = caption
+    const tempId  = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const localUrl = pendingPreview ?? undefined
 
     const temp: Message = {
-      id: tempId, content: isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`,
+      id: tempId,
+      content: capText.trim() || (fileType === 'file' ? `📎 ${file.name}` : ''),
       sender_id: userId, sent_at: new Date().toISOString(),
       is_deleted: false, is_edited: false,
       file_url: localUrl, file_type: fileType,
       _status: 'uploading', _progress: 5,
     }
     setMessages(prev => [...prev, temp])
-    enqueue({ kind: 'file', tempId, file })
+    enqueue({ kind: 'file', tempId, file, caption: capText })
+
+    setPendingFile(null)
+    setPendingPreview(null)
+    setCaption('')
   }
 
   // ── Reactions ────────────────────────────────────────────
@@ -620,6 +721,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                           )}
                         </div>
                       )}
+                      {(msg.file_type === 'image' || msg.file_type === 'video') && msg.content?.trim() && (
+                        <p className={styles.captionText}>{msg.content}</p>
+                      )}
                       {msg.file_type === 'file' && msg.file_url && (
                         <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}>
                           📎 {msg.content}
@@ -635,7 +739,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                         <span className={styles.msgTime}>{formatTime(msg.sent_at)}</span>
                         {isMe && msg._status === 'sending' && <span className={styles.msgClock}>🕐</span>}
                         {isMe && msg._status === 'uploading' && <span className={styles.msgClock}>⬆</span>}
-                        {isMe && (msg._status === 'sent' || !msg._status) && <span className={styles.msgCheck}>✓✓</span>}
+                        {isMe && (msg._status === 'sent' || !msg._status) && (
+                          <span className={`${styles.msgCheck} ${readIds.has(msg.id) ? styles.msgCheckSeen : ''}`}>✓✓</span>
+                        )}
                         {isMe && msg._status === 'failed' && (
                           <button className={styles.retryBtn} onClick={e => { e.stopPropagation(); retry(msg) }}>
                             ⚠ retry
@@ -706,7 +812,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               Replying to {replyTo.sender?.full_name ?? 'message'}
             </p>
             <p className={styles.replyBannerText}>
-              {replyTo.is_deleted ? '🚫 Deleted message' : replyTo.content}
+              {replyTo.is_deleted ? '🚫 Deleted message' : displayLabel(replyTo)}
             </p>
           </div>
           <button className={styles.replyBannerClose} onClick={() => setReplyTo(null)}>
@@ -715,9 +821,45 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
+      {/* ── ATTACHMENT PREVIEW — add a caption before it actually sends ── */}
+      {pendingFile && (
+        <div className={styles.attachSheet}>
+          <div className={styles.attachSheetHeader}>
+            <span>Send {pendingKind === 'image' ? 'photo' : pendingKind === 'video' ? 'video' : 'file'}</span>
+            <button className={styles.attachSheetClose} onClick={cancelPendingFile}>
+              <XIcon size={16} />
+            </button>
+          </div>
+          <div className={styles.attachPreviewBody}>
+            {pendingKind === 'image' && pendingPreview && (
+              <img src={pendingPreview} alt="Preview" className={styles.attachPreviewImg} />
+            )}
+            {pendingKind === 'video' && pendingPreview && (
+              <video src={pendingPreview} className={styles.attachPreviewVideo} controls playsInline />
+            )}
+            {pendingKind === 'file' && (
+              <div className={styles.attachPreviewFile}>📎 {pendingFile.name}</div>
+            )}
+          </div>
+          <div className={styles.attachCaptionRow}>
+            <input
+              className={styles.attachCaptionInput}
+              value={caption}
+              onChange={e => setCaption(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && confirmSendFile()}
+              placeholder="Add a caption..."
+              autoFocus
+            />
+            <button className={styles.attachSendBtn} style={{ background: schoolColor }} onClick={confirmSendFile}>
+              <SendIcon size={16} color="white" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── INPUT BAR — nudged above the keyboard via --kb-offset ── */}
       <div className={styles.inputBar} style={{ transform: kbOffset ? `translateY(-${kbOffset}px)` : undefined }}>
-        <input ref={fileRef} type="file" className={styles.fileInput} onChange={sendFile}
+        <input ref={fileRef} type="file" className={styles.fileInput} onChange={pickFile}
           accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
         <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
           <PaperclipIcon size={18} color="var(--text-muted)" />

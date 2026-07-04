@@ -305,6 +305,10 @@
   color: rgba(255,255,255,0.65);
   letter-spacing: -1px;
 }
+.msgCheckSeen {
+  color: #60d4ff; /* bright, distinct from the default translucent white tick */
+  text-shadow: 0 0 6px rgba(96,212,255,0.4);
+}
 
 .deleted {
   font-size: 0.8rem;
@@ -717,4 +721,72 @@
   padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
   transition: transform 0.12s ease-out;
   will-change: transform;
+}
+
+/* ── Caption under a sent image/video ────────────────────── */
+.captionText {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Attachment preview sheet — caption before send ──────── */
+.attachSheet {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--glass-border);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+  animation: slideUp 0.15s ease;
+  max-height: 60dvh;
+}
+.attachSheetHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8rem; font-weight: 700; color: var(--text-primary);
+  border-bottom: 1px solid var(--glass-border);
+}
+.attachSheetClose {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass-bg); border: none; cursor: pointer; color: var(--text-muted);
+}
+.attachPreviewBody {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  overflow: hidden;
+  min-height: 120px;
+}
+.attachPreviewImg, .attachPreviewVideo {
+  max-width: 100%; max-height: 40dvh;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: #000;
+}
+.attachPreviewFile {
+  font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+  padding: var(--space-4);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+.attachCaptionRow {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--glass-border);
+}
+.attachCaptionInput {
+  flex: 1; height: 40px;
+  background: var(--input-bg); border: 1px solid var(--input-border);
+  border-radius: var(--radius-full); padding: 0 var(--space-4);
+  color: var(--text-primary); font-size: 0.86rem; outline: none;
+}
+.attachCaptionInput:focus { border-color: var(--brand); }
+.attachSendBtn {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+  border: none; display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
 }
