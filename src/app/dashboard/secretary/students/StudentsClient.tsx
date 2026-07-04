@@ -127,16 +127,32 @@ export default function StudentsClient({ students: init, profile, school, userId
     setSaving(true); setMsg('')
 
     if (editItem) {
+      // CLASS FIX: previously wrote class_id straight into `profiles`, but
+      // nothing reads that column — parent/student dashboards, results, and
+      // attendance all join through `student_profiles.class_id`. Principal's
+      // "Assign class" flow already does this correctly (profiles.class_level
+      // for display + student_profiles.class_id as the real FK); mirroring
+      // that here so a class assigned from either screen actually shows up
+      // everywhere (was causing "No class" on the parent dashboard even
+      // after the secretary assigned one).
+      const chosenClass = classes.find((c: any) => c.id === form.class_id)
+
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name:     form.full_name,
-          class_id:      form.class_id || null,
+          class_level:   chosenClass?.name ?? null,
           phone:         form.phone.trim() || null,
           gender:        form.gender || null,
           date_of_birth: form.date_of_birth || null,
         })
         .eq('id', editItem.id)
+
+      if (!error && form.class_id) {
+        await supabase
+          .from('student_profiles')
+          .upsert({ id: editItem.id, class_id: form.class_id }, { onConflict: 'id' })
+      }
 
       if (!error) {
         setStudents(p => p.map(s => s.id === editItem.id
