@@ -77,13 +77,23 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload): 
 
   if (!subs?.length) return
 
+  // WHATSAPP FIX: previously defaulted to a single static tag ('schoolos') when
+  // a caller didn't pass one. Android/Chrome collapses same-tag notifications
+  // into one slot — each new push silently *replaced* the last instead of
+  // showing/alerting as a new notification. WhatsApp gives every message its
+  // own tag so they stack; we do the same by default. Callers that WANT
+  // grouping/replacement (e.g. "3 new messages in this chat") can still pass
+  // an explicit tag — renotify below ensures even that still re-alerts.
+  const tag = payload.tag ?? `schoolos-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
   const message = JSON.stringify({
-    title: payload.title,
-    body:  payload.body,
-    url:   payload.url ?? '/',
-    tag:   payload.tag ?? 'schoolos',
-    icon:  '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
+    title:    payload.title,
+    body:     payload.body,
+    url:      payload.url ?? '/',
+    tag,
+    renotify: true, // re-alert (vibrate/sound) even if this tag is reused
+    icon:     '/icons/icon-192x192.png',
+    badge:    '/icons/icon-192x192.png',
   })
 
   const staleEndpoints: string[] = []
