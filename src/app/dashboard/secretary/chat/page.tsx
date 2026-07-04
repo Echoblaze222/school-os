@@ -1,16 +1,20 @@
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import UniversalChatPage from '@/components/UniversalChatPage'
 
-export default async function SecretaryChatPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c: any[]) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
+export default async function ChatPage() {
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || profile.role !== 'secretary') redirect('/login')
-  redirect('/dashboard/secretary/chat/general')
+  const { data: profile } = await supabase
+    .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+  const school = (profile as any)?.schools ?? null
+  const schoolColor = school?.primary_color ?? '#7C3AED'
+  return (
+    <UniversalChatPage
+      profile={profile} school={school}
+      userId={user.id} role="secretary"
+      schoolColor={schoolColor}
+    />
+  )
 }
