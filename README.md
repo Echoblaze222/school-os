@@ -1,32 +1,103 @@
-# School Portal — Layer 2: Auth & Onboarding
+# SchoolOS
 
-## What This Is
-The complete login and 3-stage onboarding system. No UI design — pure logic and security.
+Multi-tenant school management SaaS for Nigerian schools, built by Echoblaze.
+
+SchoolOS gives every school its own tenant with six role-based portals — **Principal, Teacher, Bursar, Secretary, Student, Parent** — plus a platform-level **Super Admin** dashboard for onboarding, billing, and compliance across all schools.
 
 ---
 
-## File Structure
+## Tech Stack
+
+| Layer            | Tech |
+|-------------------|------|
+| Framework         | Next.js (App Router, Turbopack) |
+| Language          | TypeScript |
+| Database / Auth   | Supabase (PostgreSQL, Auth, Storage, Row-Level Security) |
+| Styling           | CSS Modules + CSS variables (no Tailwind) |
+| Payments          | Paystack (subaccount split payments — 97% to school, 3% platform fee) |
+| Email             | Resend |
+| Push notifications| Web Push (VAPID) |
+| Hosting           | Vercel |
+| PWA               | Manifest + service worker (`public/manifest.json`, `public/sw.js`) |
+
+---
+
+## What's In This Repo
+
 ```
 src/
 ├── app/
-│   ├── layout.tsx                      Root layout
-│   ├── dashboard/page.tsx              Placeholder (Layer 3 replaces this)
-│   ├── login/page.tsx                  Stage 1 — code + password login
-│   ├── onboarding/
-│   │   ├── stage-2/page.tsx            Stage 2 — identity setup + password change
-│   │   └── stage-3/page.tsx            Stage 3 — document upload
+│   ├── login/                    Access-code + password login
+│   ├── onboarding/stage-1..3/    3-stage onboarding (identity, password, NIN + docs)
+│   ├── register-school/          Self-service school signup (Paystack registration)
+│   ├── select-school/            Multi-school selector for shared accounts
+│   ├── forgot-password/, reset-password/
+│   ├── school-locked/            Shown when a school's subscription lapses
+│   │
+│   ├── dashboard/
+│   │   ├── principal/            Students, staff, transfers, reports, school settings, banking/Paystack
+│   │   ├── teacher/              Classes, attendance, gradebook
+│   │   ├── bursar/               Invoices, fees, debtors, receipts, payment recording, reminders, export
+│   │   ├── secretary/            Admin/records support
+│   │   ├── student/              Grades, attendance, fees owed
+│   │   └── parent/               Child(ren) overview, fee payments, attendance
+│   │
+│   ├── super-admin/              Platform-level dashboard (all schools)
+│   │   ├── schools/              Full schools list (search/filter by status)
+│   │   ├── school/[id]/          Per-school detail: overview, staff, payments, compliance, settings
+│   │   ├── revenue/               Platform revenue view
+│   │   └── settings/              Platform admin settings
+│   │
+│   ├── admin/                    School-level admin utilities
 │   └── api/
-│       └── onboarding/
-│           ├── stage-2/route.ts        Server: hash identifier, update password
-│           └── stage-3/route.ts        Server: save storage paths, complete onboarding
+│       ├── auth/, first-login/, onboarding/     Auth + onboarding endpoints
+│       ├── principal/, bursar/, secretary/, parent/   Role-scoped actions
+│       ├── super-admin/          create-school, manage-school (compliance, verification, locking)
+│       ├── paystack/             create-subaccount (split payments), webhooks
+│       ├── payments/, subscription/, trial/, currency/
+│       ├── push/, notifications/  Web push subscriptions + delivery
+│       ├── receipts/              PDF/receipt generation
+│       ├── ai/, study-plan/       AI-assisted features
+│       └── cron/                 Scheduled jobs (trial reminders, etc.)
+│
 ├── lib/
-│   ├── types.ts                        TypeScript types matching the DB schema
+│   ├── types.ts                  TypeScript types matching the DB schema
 │   └── supabase/
-│       ├── client.ts                   Browser Supabase client
-│       ├── server.ts                   Server Supabase client (cookies)
-│       └── admin.ts                    Admin client (service role — server only)
-└── middleware.ts                       Route guard — enforces onboarding stages
+│       ├── client.ts              Browser client
+│       ├── server.ts              Server client (cookie-based, respects RLS)
+│       └── admin.ts               Service-role client — server-only, bypasses RLS
+└── middleware.ts                  Route guard — enforces onboarding stages + role-based routing (incl. /super-admin)
 ```
+
+---
+
+## Core Concepts
+
+### Roles & Multi-Tenancy
+Every profile belongs to a `school_id` and a `role`. Middleware and RLS both enforce that a user can only reach their own role's dashboard and their own school's data — no authenticated user can browse another school's or another role's pages.
+
+### Onboarding Flow
+```
+/login  (access code + temp password)
+  ↓
+/onboarding/stage-2   (identity confirmation + password change)
+  ↓
+/onboarding/stage-3   (NIN verification via Dojah + document upload)
+  ↓
+role dashboard
+```
+The `onboarding_stage` enum on the profile drives this; the middleware won't let a user skip ahead by URL.
+
+### Billing: Platform Subscriptions vs. Student Fees
+Two separate tables model two separate money flows:
+- **`school_payments`** — the school's subscription/platform bill (trial → paid plan).
+- **`fee_payments`** — student/parent fee payments collected *by* the school.
+
+### Online Fee Payments (Paystack Split)
+Schools never need their own Paystack account. A Paystack **subaccount** is created per school (`api/paystack/create-subaccount`), so each fee payment auto-splits: 97% settles directly to the school's bank account, 3% stays with the platform. Before a subaccount can be created, a super admin must mark the school **verified** in `school_compliance_records` — a one-time manual compliance check, gated in the API route.
+
+### Super Admin
+`/super-admin` — platform owner's view across all schools: subscription status, revenue, staff lists, compliance verification, and lock/unlock controls per school. Reached only by users present in `platform_admins`.
 
 ---
 
@@ -37,97 +108,30 @@ src/
 npm install
 ```
 
-### 2. Create your environment file
-```bash
-cp .env.example .env.local
-```
-Then fill in your three Supabase values from your project's Settings > API page.
+### 2. Environment variables
+Copy your Supabase project keys, plus service keys for the integrations below, into `.env.local`:
+- Supabase URL + anon key + service role key
+- `PAYSTACK_SECRET_KEY`
+- Resend API key
+- Web Push VAPID public/private keys
+- Dojah API credentials (NIN verification)
 
-### 3. Create Storage buckets in Supabase
-Go to your Supabase dashboard > Storage > New bucket:
+### 3. Supabase setup
+- Create the schema (profiles, schools, school_payments, fee_payments, school_compliance_records, notifications, push_subscriptions, etc.)
+- Create **private** Storage buckets: `passports`, `nin-documents`
+- Add RLS policies scoping each table to `school_id` / `auth.uid()` as appropriate
+- Add a service-role-only policy for `school_compliance_records` and other platform-admin tables — accessed only via `lib/supabase/admin.ts` from server routes
 
-| Bucket name    | Public? |
-|----------------|---------|
-| `passports`    | NO      |
-| `nin-documents`| NO      |
-
-Both must be **private**.
-
-### 4. Add Storage RLS policies
-In Supabase > Storage > passports > Policies, add:
-
-**Upload policy** (INSERT):
-```sql
-(auth.uid()::text = (storage.foldername(name))[1])
-```
-
-**Download policy** (SELECT):
-```sql
-(auth.uid()::text = (storage.foldername(name))[1])
-```
-
-Repeat the same two policies for the `nin-documents` bucket.
-
-This ensures users can only upload to and read from their own folder.
-
-### 5. Add profiles RLS policy for default_code lookup
-The login page needs to look up a profile by default_code before the user is authenticated.
-Add this policy in Supabase > Table Editor > profiles > RLS:
-
-**Policy name:** Allow default_code lookup
-**Operation:** SELECT
-**Expression:**
-```sql
-true
-```
-**With check:** Leave empty
-
-> Note: This allows unauthenticated reads of the profiles table.
-> To tighten this, move the default_code lookup to an API route using the admin client instead.
-
-### 6. Run the development server
+### 4. Run the dev server
 ```bash
 npm run dev
 ```
-
-Open http://localhost:3000 — it will redirect to /login.
-
----
-
-## How to Create a Test User
-
-In Supabase > Authentication > Users, create a user manually:
-- Email: `test@school.com`
-- Password: `temppass123`
-
-Then in Table Editor > profiles, insert a row:
-```
-id: (copy the UUID from the Auth user you just created)
-role: student
-full_name: Amara Johnson
-email: test@school.com
-default_code: SCH-2024-0001
-onboarding_stage: stage_1_pending
-```
-
-Now go to http://localhost:3000/login and enter:
-- Access code: `SCH-2024-0001`
-- Password: `temppass123`
-
-You should be walked through all 3 stages.
+Visit `http://localhost:3000` — you'll land on `/login`.
 
 ---
 
-## The Onboarding Flow
-
-```
-/login
-  ↓ (correct code + password)
-/onboarding/stage-2
-  ↓ (3 letters + PIN + new password)
-/onboarding/stage-3
-  ↓ (passport photo + NIN screenshot uploaded)
-/dashboard ← Layer 3 builds this out
-```
-
-The middleware enforces this — no stage can be skipped by URL.
+## Notes for Contributors
+- **Styling:** always use existing CSS variables (`var(--brand)`, `var(--glass-bg)`, `var(--text-primary)`, etc.) and wrap dashboard pages in `RolePageWrapper`. No Tailwind.
+- **Auth:** use `getUser()`, not `getSession()`, in server components/routes — `getSession()` doesn't re-verify the JWT server-side.
+- **Admin operations:** anything that needs to bypass RLS (super-admin actions, compliance checks) must go through `lib/supabase/admin.ts` inside a server route — never expose the service role key to the client.
+- **Vercel builds:** avoid module-level side effects (e.g. initializing `web-push` VAPID keys at import time) — this breaks the build; initialize lazily inside the handler instead.
