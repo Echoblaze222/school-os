@@ -32,9 +32,16 @@ self.addEventListener('push', (event) => {
     // FIX: was '/icons/icon-192.png' — file doesn't exist, correct name is icon-192x192.png
     icon:    icon   || '/icons/icon-192x192.png',
     badge:   badge  || '/icons/icon-192x192.png',
-    tag:     tag    || 'schoolos-notification',
-    data:    { url: url || '/' },
-    vibrate: [200, 100, 200],
+    // WHATSAPP FIX: tags are now unique per push (from webpush.ts), so this
+    // fallback only matters for malformed/legacy payloads. renotify:true
+    // means even if a tag IS reused, the OS still alerts (vibrate/sound)
+    // instead of silently swapping the notification text — this is what
+    // was causing pushes to "not always drop".
+    tag:      tag || `schoolos-${Date.now()}`,
+    renotify: true,
+    data:     { url: url || '/' },
+    vibrate:  [200, 100, 200],
+    timestamp: Date.now(),
     requireInteraction: false,
   }
 
