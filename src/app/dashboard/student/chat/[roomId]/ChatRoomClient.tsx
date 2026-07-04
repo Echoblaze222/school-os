@@ -87,6 +87,12 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const messageIdsRef   = useRef<Set<string>>(new Set())
   const longPressTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longPressFired  = useRef(false)
+  // Guards against the "ghost click": on touch devices, when the long-press
+  // timer opens the context menu WHILE the finger is still down, lifting the
+  // finger fires a trailing click at that same point. Since the menu now
+  // covers that point, that click would otherwise close the menu instantly —
+  // this flag swallows exactly that one click.
+  const suppressNextCloseClick = useRef(false)
 
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
@@ -181,7 +187,10 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }, [messages])
 
   useEffect(() => {
-    const handler = () => { setEmojiTarget(null); setShowMenu(false); setContextMenuId(null) }
+    const handler = () => {
+      if (suppressNextCloseClick.current) { suppressNextCloseClick.current = false; return }
+      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null)
+    }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
   }, [])
@@ -606,6 +615,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       setSwipeId(null)
       setSwipeX(0)
       if (navigator.vibrate) navigator.vibrate(15)
+      suppressNextCloseClick.current = true
       setContextMenuId(msg.id)
     }, 450)
   }
@@ -954,7 +964,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
                     {/* Long-press context menu (mobile) — same actions as above */}
                     {contextMenuId === msg.id && (
-                      <div className={styles.contextMenuOverlay} onClick={() => setContextMenuId(null)}>
+                      <div className={styles.contextMenuOverlay}
+                        onClick={() => {
+                          if (suppressNextCloseClick.current) { suppressNextCloseClick.current = false; return }
+                          setContextMenuId(null)
+                        }}>
                         <div className={styles.contextMenu} onClick={e => e.stopPropagation()}>
                           {canPost && (
                             <button onClick={() => { setReplyTo(msg); setEditingId(null); setContextMenuId(null); setTimeout(() => inputRef.current?.focus(), 80) }}>
