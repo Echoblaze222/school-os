@@ -549,7 +549,10 @@ export default function UniversalChatPage({
                         : schoolColor,
                     }}
                   >
-                    {room.other_user?.avatar_url
+                    {room.room_type === 'school_group' && school?.logo_url
+                      ? <img src={school.logo_url} alt=""
+                          style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                      : room.other_user?.avatar_url
                       ? <img src={room.other_user.avatar_url} alt=""
                           style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                       : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.95rem' }}>
