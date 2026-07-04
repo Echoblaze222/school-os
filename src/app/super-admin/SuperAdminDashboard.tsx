@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   SchoolIcon, PlusIcon, BarChartIcon, WalletIcon,
@@ -91,17 +92,27 @@ export default function SuperAdminDashboard() {
 
         <nav className={styles.sidebarNav}>
           {[
-            { icon: SchoolIcon, label: 'Schools',  active: true  },
-            { icon: BarChartIcon,label: 'Analytics', active: false },
-            { icon: WalletIcon,  label: 'Revenue',   active: false },
-            { icon: BellIcon,    label: 'Alerts',    active: false },
-            { icon: SettingsIcon,label: 'Settings',  active: false },
+            { icon: SchoolIcon,   label: 'Schools',   href: '/super-admin/schools', active: true },
+            { icon: BarChartIcon, label: 'Analytics', href: null },
+            { icon: WalletIcon,   label: 'Revenue',   href: '/super-admin/revenue' },
+            { icon: BellIcon,     label: 'Alerts',    href: null },
+            { icon: SettingsIcon, label: 'Settings',  href: '/super-admin/settings' },
           ].map(item => (
-            <button key={item.label}
-              className={`${styles.navItem} ${item.active ? styles.navActive : ''}`}>
-              <item.icon size={17} />
-              <span>{item.label}</span>
-            </button>
+            item.href ? (
+              <Link key={item.label} href={item.href}
+                className={`${styles.navItem} ${item.active ? styles.navActive : ''}`}>
+                <item.icon size={17} />
+                <span>{item.label}</span>
+              </Link>
+            ) : (
+              <button key={item.label} disabled
+                className={styles.navItem}
+                title="Coming soon"
+                style={{ opacity: 0.4, cursor: 'not-allowed' }}>
+                <item.icon size={17} />
+                <span>{item.label}</span>
+              </button>
+            )
           ))}
         </nav>
 

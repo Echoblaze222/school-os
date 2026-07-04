@@ -216,6 +216,10 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
               className={styles.viewBtn} target="_blank" rel="noreferrer">
               👁 View Portal
             </a>
+            <a href={`/super-admin/school/${school.id}`}
+              className={styles.viewBtn}>
+              ⚙️ Manage / Compliance
+            </a>
           </div>
         </div>
       )}
