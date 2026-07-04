@@ -20,13 +20,39 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
   useEffect(() => { load() }, [childId])
 
   async function load() {
-    // PARENT FIX: fetch ALL children first so we can show a switcher
-    const { data: allChildren } = await supabase
-      .from('profiles')
-      .select('id, full_name, default_code, class_level, avatar_url, email')
+    // PARENT FIX: resolve linked children via parent_student_links (source of truth),
+    // not profiles.parent_id which no longer exists.
+    const { data: links } = await supabase
+      .from('parent_student_links')
+      .select('student_id')
       .eq('parent_id', userId)
 
-    if (!allChildren?.length) { setLoading(false); return }
+    if (!links?.length) { setLoading(false); return }
+    const ids = links.map((l: any) => l.student_id as string)
+
+    const [{ data: pRows }, { data: spRows }] = await Promise.all([
+      supabase.from('profiles')
+        .select('id, full_name, default_code, avatar_url, email')
+        .in('id', ids),
+      supabase.from('student_profiles')
+        .select('id, class_id, classes(id, name, class_level)')
+        .in('id', ids),
+    ])
+
+    const allChildren = ids.map((sid: string) => {
+      const p  = (pRows  ?? []).find((r: any) => r.id === sid)
+      const sp = (spRows ?? []).find((r: any) => r.id === sid)
+      return {
+        id:           sid,
+        full_name:    p?.full_name    ?? null,
+        default_code: p?.default_code ?? null,
+        avatar_url:   p?.avatar_url   ?? null,
+        email:        p?.email        ?? null,
+        class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+      }
+    }).filter((c: any) => !!c.full_name)
+
+    if (!allChildren.length) { setLoading(false); return }
     setChildren(allChildren)
 
     // PARENT FIX: use the ?id= param to pick which child, fall back to first
