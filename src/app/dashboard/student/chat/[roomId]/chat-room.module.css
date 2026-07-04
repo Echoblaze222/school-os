@@ -113,6 +113,12 @@
 .messages::-webkit-scrollbar-track { background: transparent; }
 .messages::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
 
+.emptyMessages {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 0.85rem;
+}
+
 .loadingRow {
   display: flex;
   justify-content: center;
@@ -651,4 +657,64 @@
   .audio { width: 180px; }
   .msgImage { width: 190px; }
   .msgActions { display: none !important; } /* Actions via swipe on mobile */
+}
+
+/* ── Swipe-to-reply (wires up .replyIndicator / overflow:visible above) ── */
+.replyIndicator {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.7);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.replyIndicatorVisible {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+.msgGroup > .bubbleCol,
+.msgGroup > .avatarCol {
+  transition: transform 0.18s ease;
+}
+.msgGroupDragging > .bubbleCol,
+.msgGroupDragging > .avatarCol {
+  transition: none;
+}
+
+/* ── Send/upload status on the sender's own bubble ───────── */
+.bubbleFailed { outline: 2px solid var(--danger); outline-offset: 1px; }
+.msgClock {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.75);
+  animation: clockPulse 1.4s ease infinite;
+}
+@keyframes clockPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+.retryBtn {
+  background: none; border: none; color: var(--danger);
+  font-size: 0.62rem; font-weight: 700; cursor: pointer; padding: 0;
+}
+
+/* ── Upload progress overlay on image/video bubbles ──────── */
+.mediaWrap { position: relative; }
+.mediaOverlay {
+  position: absolute; inset: 4px 0 4px;
+  background: rgba(0,0,0,0.45);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; border-radius: var(--radius-md); color: #fff;
+  font-size: 0.7rem; font-weight: 700;
+}
+.spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Keyboard-safe input bar ──────────────────────────────── */
+/* No position:fixed on .inputBar — it's the last flex child of a 100dvh
+   column so it naturally sits above the keyboard. The transform below is
+   set inline from JS (visualViewport) as a defensive nudge for browsers
+   that reflow dvh late when the keyboard opens. */
+.inputBar {
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  transition: transform 0.12s ease-out;
+  will-change: transform;
 }

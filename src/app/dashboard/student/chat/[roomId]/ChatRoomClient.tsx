@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -22,6 +22,9 @@ interface Message {
   reply_to_id?: string | null
   reply_to?:    { content: string; sender_name: string } | null
   sender?:      { full_name: string; avatar_url?: string }
+  // client-only fields — never sent to the server
+  _status?:     'sending' | 'uploading' | 'sent' | 'failed'
+  _progress?:   number
 }
 
 interface Props {
@@ -32,24 +35,41 @@ interface Props {
 }
 
 const EMOJIS = ['👍','❤️','😂','😮','😢','🔥','👏','🎉']
+const SWIPE_TRIGGER = 46   // px of drag before "release to reply" fires
+const SWIPE_MAX     = 68   // px cap on how far the bubble can travel
+
+// ── Background send queue ─────────────────────────────────────────────────
+// Text + file sends are pushed here and processed one at a time in the
+// background so the UI never blocks and multiple sends never race.
+type QueueJob =
+  | { kind: 'text'; tempId: string; content: string; replyId: string | null }
+  | { kind: 'file'; tempId: string; file: File }
 
 export default function ChatRoomClient({ roomId, userId, role, school }: Props) {
   const [messages,    setMessages]    = useState<Message[]>([])
   const [roomInfo,    setRoomInfo]    = useState<any>(null)
   const [otherUser,   setOtherUser]   = useState<any>(null)
   const [text,        setText]        = useState('')
-  const [sending,     setSending]     = useState(false)
   const [loading,     setLoading]     = useState(true)
   const [emojiTarget, setEmojiTarget] = useState<string | null>(null)
   const [isOnline,    setIsOnline]    = useState(false)
   const [replyTo,     setReplyTo]     = useState<Message | null>(null)
   const [showMenu,    setShowMenu]    = useState(false)
+  const [swipeId,     setSwipeId]     = useState<string | null>(null)
+  const [swipeX,      setSwipeX]      = useState(0)
+  const [kbOffset,    setKbOffset]    = useState(0)
 
-  const router    = useRouter()
-  const supabase  = createClient()
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef  = useRef<HTMLInputElement>(null)
-  const fileRef   = useRef<HTMLInputElement>(null)
+  const router     = useRouter()
+  const supabase   = createClient()
+  const bottomRef  = useRef<HTMLDivElement>(null)
+  const inputRef   = useRef<HTMLInputElement>(null)
+  const fileRef    = useRef<HTMLInputElement>(null)
+  const pageRef    = useRef<HTMLDivElement>(null)
+
+  const queueRef      = useRef<QueueJob[]>([])
+  const processingRef = useRef(false)
+  const touchStart     = useRef<{ x: number; y: number; id: string } | null>(null)
+  const swipeLocked     = useRef<'h' | 'v' | null>(null)
 
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
@@ -86,7 +106,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       })
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState()
-        // Online if more than just us
         setIsOnline(Object.keys(state).length > 1)
       })
       .subscribe(async status => {
@@ -108,9 +127,36 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     return () => document.removeEventListener('click', handler)
   }, [])
 
+  // ── Keyboard-aware input bar ───────────────────────────────
+  // .page already uses 100dvh so most modern mobile browsers reflow on their
+  // own, but Android Chrome / older Safari fire visualViewport resize
+  // *before* dvh settles — this keeps the input bar glued above the keyboard
+  // in every case by nudging it with a CSS var instead of guessing layout.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+
+    function onViewportChange() {
+      const offset = Math.max(0, window.innerHeight - vv!.height - vv!.offsetTop)
+      // Ignore tiny fluctuations (URL bar show/hide) — only react to a real keyboard
+      setKbOffset(offset > 80 ? offset : 0)
+    }
+
+    vv.addEventListener('resize', onViewportChange)
+    vv.addEventListener('scroll', onViewportChange)
+    return () => {
+      vv.removeEventListener('resize', onViewportChange)
+      vv.removeEventListener('scroll', onViewportChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    pageRef.current?.style.setProperty('--kb-offset', `${kbOffset}px`)
+    if (kbOffset > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [kbOffset])
+
   // ── Load room + other user (flat, separate queries) ──────
   async function loadRoomAndUsers() {
-    // Get room basic info
     const { data: room } = await supabase
       .from('chat_rooms')
       .select('id, name, room_type, is_group')
@@ -119,7 +165,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
     if (room) setRoomInfo(room)
 
-    // Get the other user separately — flat query, no nested join
     const { data: members } = await supabase
       .from('chat_room_members')
       .select('user_id')
@@ -167,15 +212,12 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setLoading(false)
   }
 
-  // ── Display name ─────────────────────────────────────────
   function getRoomDisplayName() {
-    // Priority: other user's name → room name → 'Chat'
     if (otherUser?.full_name) return otherUser.full_name
     if (roomInfo?.is_group)   return roomInfo.name ?? 'Group Chat'
     return roomInfo?.name ?? 'Chat'
   }
 
-  // ── Notify other user ────────────────────────────────────
   async function pushNotification(content: string) {
     if (!otherUser?.id) return
     try {
@@ -186,18 +228,116 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         type:     'chat',
         link_url: `/dashboard/${otherUser.role}/chat/${roomId}`,
       })
-    } catch (_) {
-      // Notification failure must never break message sending
+    } catch (_) { /* notification failure must never break message sending */ }
+  }
+
+  // ── QUEUE: enqueue + background processor ──────────────────
+  // Sends never block the input — press send/attach and keep typing/tapping
+  // the next thing. Jobs run one at a time in the background; failures show
+  // a retry affordance instead of silently vanishing.
+  function enqueue(job: QueueJob) {
+    queueRef.current.push(job)
+    processQueue()
+  }
+
+  async function processQueue() {
+    if (processingRef.current) return
+    processingRef.current = true
+
+    while (queueRef.current.length > 0) {
+      const job = queueRef.current.shift()!
+      try {
+        if (job.kind === 'text') await runTextJob(job)
+        else await runFileJob(job)
+      } catch {
+        setMessages(prev => prev.map(m =>
+          m.id === job.tempId ? { ...m, _status: 'failed' } : m
+        ))
+      }
     }
+
+    processingRef.current = false
+  }
+
+  async function runTextJob(job: Extract<QueueJob, { kind: 'text' }>) {
+    const insertData: any = { room_id: roomId, sender_id: userId, content: job.content }
+    if (job.replyId) insertData.reply_to_id = job.replyId
+
+    const { data: newMsg, error } = await supabase
+      .from('chat_messages')
+      .insert(insertData)
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
+
+    if (error || !newMsg) {
+      setMessages(prev => prev.map(m => m.id === job.tempId ? { ...m, _status: 'failed' } : m))
+      return
+    }
+    setMessages(prev => prev.map(m => m.id === job.tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
+    pushNotification(job.content)
+  }
+
+  async function runFileJob(job: Extract<QueueJob, { kind: 'file' }>) {
+    const { file, tempId } = job
+    const ext      = file.name.split('.').pop()
+    const isImage  = file.type.startsWith('image/')
+    const isVideo  = file.type.startsWith('video/')
+    const bucket   = isImage ? 'chat-images' : isVideo ? 'chat-videos' : 'chat-files'
+    const fileType = isImage ? 'image' : isVideo ? 'video' : 'file'
+    const content  = isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`
+    const fname    = `files/${userId}/${Date.now()}.${ext}`
+
+    // Simulated progress while the upload is in flight — supabase-js's
+    // storage client doesn't expose real byte progress, so this gives
+    // the person visible motion instead of a frozen spinner.
+    let fakeProgress = 8
+    const tick = setInterval(() => {
+      fakeProgress = Math.min(fakeProgress + Math.random() * 18, 92)
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _progress: fakeProgress } : m))
+    }, 220)
+
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(fname, file)
+    let finalBucket = bucket
+    if (uploadError) {
+      const { error: fallbackError } = await supabase.storage.from('chat-files').upload(fname, file)
+      if (fallbackError) {
+        clearInterval(tick)
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _status: 'failed' } : m))
+        return
+      }
+      finalBucket = 'chat-files'
+    }
+
+    const { data: urlData } = supabase.storage.from(finalBucket).getPublicUrl(fname)
+
+    const { data: newMsg, error: insertError } = await supabase
+      .from('chat_messages')
+      .insert({ room_id: roomId, sender_id: userId, content, file_url: urlData.publicUrl, file_type: fileType })
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
+
+    clearInterval(tick)
+
+    if (insertError || !newMsg) {
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _status: 'failed', _progress: 100 } : m))
+      return
+    }
+    setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
+    pushNotification(content)
+  }
+
+  function retry(msg: Message) {
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: msg.file_url ? 'uploading' : 'sending', _progress: 0 } : m))
+    if (msg.file_url) return // failed uploads that already produced a url are effectively sent — nothing to retry
+    enqueue({ kind: 'text', tempId: msg.id, content: msg.content, replyId: msg.reply_to_id ?? null })
   }
 
   // ── Send text ────────────────────────────────────────────
-  async function sendText() {
-    if (!text.trim() || sending) return
-    setSending(true)
+  function sendText() {
+    if (!text.trim()) return
     const content = text.trim()
     const replyId = replyTo?.id ?? null
-    const tempId  = `temp-${Date.now()}`
+    const tempId  = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
     setText('')
     setReplyTo(null)
@@ -212,74 +352,33 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         content:     replyTo.is_deleted ? '🚫 Deleted' : replyTo.content,
         sender_name: replyTo.sender?.full_name ?? 'Unknown',
       } : null,
+      _status: 'sending',
     }
     setMessages(prev => [...prev, temp])
-
-    const insertData: any = { room_id: roomId, sender_id: userId, content }
-    if (replyId) insertData.reply_to_id = replyId
-
-    const { data: newMsg, error } = await supabase
-      .from('chat_messages')
-      .insert(insertData)
-      .select('*, sender:profiles(full_name, avatar_url)')
-      .single()
-
-    if (error) {
-      setMessages(prev => prev.filter(m => m.id !== tempId))
-      setText(content)
-    } else if (newMsg) {
-      setMessages(prev => prev.map(m => m.id === tempId ? newMsg as Message : m))
-      pushNotification(content)
-    }
-    setSending(false)
+    enqueue({ kind: 'text', tempId, content, replyId })
   }
 
-  // ── Send file ────────────────────────────────────────────
-  async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // ── Send file (queued, non-blocking) ────────────────────────
+  function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || sending) return
-    setSending(true)
+    e.target.value = ''
+    if (!file) return
 
-    const ext      = file.name.split('.').pop()
     const isImage  = file.type.startsWith('image/')
     const isVideo  = file.type.startsWith('video/')
-    const bucket   = isImage ? 'chat-images' : isVideo ? 'chat-videos' : 'chat-files'
     const fileType = isImage ? 'image' : isVideo ? 'video' : 'file'
-    const content  = isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`
-    const fname    = `files/${userId}/${Date.now()}.${ext}`
+    const tempId   = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const localUrl = (isImage || isVideo) ? URL.createObjectURL(file) : undefined
 
-    const { error: uploadError } = await supabase.storage.from(bucket).upload(fname, file)
-    if (uploadError) {
-      // Fallback: try chat-files bucket if specific bucket doesn't exist
-      const { error: fallbackError } = await supabase.storage
-        .from('chat-files')
-        .upload(fname, file)
-      if (fallbackError) { e.target.value = ''; setSending(false); return }
+    const temp: Message = {
+      id: tempId, content: isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`,
+      sender_id: userId, sent_at: new Date().toISOString(),
+      is_deleted: false, is_edited: false,
+      file_url: localUrl, file_type: fileType,
+      _status: 'uploading', _progress: 5,
     }
-
-    const { data: urlData } = supabase.storage.from(
-      uploadError ? 'chat-files' : bucket
-    ).getPublicUrl(fname)
-
-    const { data: newMsg, error: insertError } = await supabase
-      .from('chat_messages')
-      .insert({
-        room_id: roomId, sender_id: userId,
-        content, file_url: urlData.publicUrl, file_type: fileType,
-      })
-      .select('*, sender:profiles(full_name, avatar_url)')
-      .single()
-
-    if (!insertError && newMsg) {
-      setMessages(prev => {
-        if (prev.find(x => x.id === (newMsg as Message).id)) return prev
-        return [...prev, newMsg as Message]
-      })
-      pushNotification(content)
-    }
-
-    e.target.value = ''
-    setSending(false)
+    setMessages(prev => [...prev, temp])
+    enqueue({ kind: 'file', tempId, file })
   }
 
   // ── Reactions ────────────────────────────────────────────
@@ -294,24 +393,73 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     } else {
       reactions[emoji] = [...reactions[emoji], userId]
     }
-    await supabase.from('chat_messages').update({ reactions }).eq('id', msgId)
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m))
     setEmojiTarget(null)
+    await supabase.from('chat_messages').update({ reactions }).eq('id', msgId)
   }
 
   // ── Delete ───────────────────────────────────────────────
   async function deleteMessage(msgId: string) {
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, is_deleted: true, content: '🚫 This message was deleted' } : m
+    ))
     await supabase
       .from('chat_messages')
       .update({ is_deleted: true, content: '🚫 This message was deleted' })
       .eq('id', msgId).eq('sender_id', userId)
-    setMessages(prev => prev.map(m =>
-      m.id === msgId ? { ...m, is_deleted: true, content: '🚫 This message was deleted' } : m
-    ))
   }
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText() }
+  }
+
+  // ── Swipe-to-reply ───────────────────────────────────────
+  // The CSS already scaffolds this (.msgGroup has overflow:visible and a
+  // centered .replyIndicator) — this wires up the actual touch drag.
+  // Drag the row sideways — past SWIPE_TRIGGER, release to reply. Vertical
+  // scrolling is left untouched: the gesture only engages once horizontal
+  // movement clearly outpaces vertical movement.
+  function onTouchStart(msg: Message, e: React.TouchEvent) {
+    if (msg.is_deleted) return
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY, id: msg.id }
+    swipeLocked.current = null
+    setSwipeId(msg.id)
+    setSwipeX(0)
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current) return
+    const t = e.touches[0]
+    const dx = t.clientX - touchStart.current.x
+    const dy = t.clientY - touchStart.current.y
+
+    if (swipeLocked.current === null) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        swipeLocked.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+      }
+    }
+    if (swipeLocked.current !== 'h') return
+
+    e.preventDefault()
+    // Only reveal rightward (WhatsApp-style) — reads naturally for both
+    // sides since .msgGroupMe is row-reversed but translateX is absolute.
+    const clamped = Math.max(0, Math.min(SWIPE_MAX, dx))
+    setSwipeX(clamped)
+  }
+
+  function onTouchEnd() {
+    if (!touchStart.current) return
+    const msg = messages.find(m => m.id === touchStart.current!.id)
+    if (msg && swipeX >= SWIPE_TRIGGER) {
+      setReplyTo(msg)
+      setTimeout(() => inputRef.current?.focus(), 80)
+      if (navigator.vibrate) navigator.vibrate(12)
+    }
+    touchStart.current = null
+    swipeLocked.current = null
+    setSwipeId(null)
+    setSwipeX(0)
   }
 
   function formatTime(d: string) {
@@ -337,7 +485,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   // ── Render ───────────────────────────────────────────────
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
 
       {/* ── HEADER ─────────────────────────────────────── */}
       <header className={styles.header}>
@@ -398,11 +546,25 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
             {msgs.map((msg, i) => {
               const isMe       = msg.sender_id === userId
               const showAvatar = !isMe && (i === 0 || msgs[i-1]?.sender_id !== msg.sender_id)
+              const dragging    = swipeId === msg.id
+              const dragX       = dragging ? swipeX : 0
+              const showReplyCue = dragging && swipeX > 12
 
               return (
-                <div key={msg.id} className={`${styles.msgGroup} ${isMe ? styles.msgGroupMe : ''}`}>
+                <div
+                  key={msg.id}
+                  className={`${styles.msgGroup} ${isMe ? styles.msgGroupMe : ''} ${dragging ? styles.msgGroupDragging : ''}`}
+                  onTouchStart={e => onTouchStart(msg, e)}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
+                  {/* Centered swipe-to-reply cue — fades/scales in past the trigger distance */}
+                  <span className={`${styles.replyIndicator} ${showReplyCue ? styles.replyIndicatorVisible : ''}`}>
+                    ↩
+                  </span>
+
                   {!isMe && (
-                    <div className={styles.avatarCol}>
+                    <div className={styles.avatarCol} style={{ transform: dragX ? `translateX(${dragX}px)` : undefined }}>
                       {showAvatar && (
                         <div className={styles.senderAvatar} style={{ background: schoolColor }}>
                           {msg.sender?.avatar_url
@@ -414,7 +576,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     </div>
                   )}
 
-                  <div className={styles.bubbleCol}>
+                  <div className={styles.bubbleCol} style={{ transform: dragX ? `translateX(${dragX}px)` : undefined }}>
                     {showAvatar && !isMe && roomInfo?.is_group && (
                       <p className={styles.senderName}>{msg.sender?.full_name}</p>
                     )}
@@ -431,21 +593,32 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     )}
 
                     <div
-                      className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}
+                      className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem} ${msg._status === 'failed' ? styles.bubbleFailed : ''}`}
                       style={isMe ? { background: schoolColor } : undefined}
                       onDoubleClick={e => { e.stopPropagation(); setEmojiTarget(emojiTarget === msg.id ? null : msg.id) }}
                     >
                       {msg.file_type === 'image' && msg.file_url && (
-                        <img src={msg.file_url} alt="Image" className={styles.msgImage}
-                          onClick={() => window.open(msg.file_url!, '_blank')} />
+                        <div className={styles.mediaWrap}>
+                          <img src={msg.file_url} alt="Image" className={styles.msgImage}
+                            onClick={() => msg._status !== 'uploading' && window.open(msg.file_url!, '_blank')} />
+                          {msg._status === 'uploading' && (
+                            <div className={styles.mediaOverlay}>
+                              <div className={styles.spinner} />
+                              <span>{Math.round(msg._progress ?? 0)}%</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                       {msg.file_type === 'video' && msg.file_url && (
-                        <video
-                          src={msg.file_url}
-                          controls
-                          className={styles.msgVideo}
-                          playsInline
-                        />
+                        <div className={styles.mediaWrap}>
+                          <video src={msg.file_url} controls={msg._status !== 'uploading'} className={styles.msgVideo} playsInline />
+                          {msg._status === 'uploading' && (
+                            <div className={styles.mediaOverlay}>
+                              <div className={styles.spinner} />
+                              <span>{Math.round(msg._progress ?? 0)}%</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                       {msg.file_type === 'file' && msg.file_url && (
                         <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}>
@@ -460,7 +633,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       <div className={styles.msgFooter}>
                         {msg.is_edited && !msg.is_deleted && <span className={styles.edited}>edited</span>}
                         <span className={styles.msgTime}>{formatTime(msg.sent_at)}</span>
-                        {isMe && <span className={styles.msgCheck}>✓✓</span>}
+                        {isMe && msg._status === 'sending' && <span className={styles.msgClock}>🕐</span>}
+                        {isMe && msg._status === 'uploading' && <span className={styles.msgClock}>⬆</span>}
+                        {isMe && (msg._status === 'sent' || !msg._status) && <span className={styles.msgCheck}>✓✓</span>}
+                        {isMe && msg._status === 'failed' && (
+                          <button className={styles.retryBtn} onClick={e => { e.stopPropagation(); retry(msg) }}>
+                            ⚠ retry
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -480,7 +660,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       </div>
                     )}
 
-                    {/* Action buttons */}
+                    {/* Action buttons — always visible on touch, hover-reveal on desktop via CSS */}
                     <div className={`${styles.msgActions} ${isMe ? styles.msgActionsMe : ''}`}>
                       <button className={styles.actionBtn} title="Reply"
                         onClick={e => { e.stopPropagation(); setReplyTo(msg); setTimeout(() => inputRef.current?.focus(), 50) }}>
@@ -535,8 +715,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
-      {/* ── INPUT BAR ──────────────────────────────────── */}
-      <div className={styles.inputBar}>
+      {/* ── INPUT BAR — nudged above the keyboard via --kb-offset ── */}
+      <div className={styles.inputBar} style={{ transform: kbOffset ? `translateY(-${kbOffset}px)` : undefined }}>
         <input ref={fileRef} type="file" className={styles.fileInput} onChange={sendFile}
           accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
         <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
@@ -552,9 +732,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         />
         <button
           className={styles.sendBtn}
-          style={{ background: schoolColor, opacity: (!text.trim() || sending) ? 0.5 : 1 }}
+          style={{ background: schoolColor, opacity: !text.trim() ? 0.5 : 1 }}
           onClick={sendText}
-          disabled={!text.trim() || sending}
+          disabled={!text.trim()}
         >
           <SendIcon size={16} color="white" />
         </button>
