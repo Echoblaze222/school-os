@@ -14,6 +14,7 @@ interface School {
   tagline: string | null
   school_type: string
   is_platform_active: boolean
+  setup_status: string | null
   principal_name: string | null
 }
 
