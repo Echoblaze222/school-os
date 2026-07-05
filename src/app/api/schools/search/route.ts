@@ -1,13 +1,12 @@
 // src/app/api/schools/search/route.ts
 // Public, unauthenticated school lookup for the "Find Your School" page.
 //
-// SECURITY NOTE: this route is reachable by anyone, logged in or not.
-// It uses the admin client so we can attach the principal's name without
-// granting anonymous users a broader RLS read on `profiles` (which holds
-// emails, phones, and — critically — `default_code` / access codes used
-// to log in). We deliberately select ONLY `full_name` from `profiles` and
-// never forward `default_code`, `email`, `phone`, or any other field.
-// Do not widen the `.select()` below without re-checking this.
+// IMPORTANT: this MUST stay a server route using the admin/service-role
+// client. `schools` holds sensitive columns (bank_name, account_number,
+// account_name, notes) and is protected by RLS, so querying it from the
+// browser with the anon key will return nothing for anonymous visitors.
+// This route runs server-side, selects only the safe public fields below,
+// and never forwards default_code/email/phone/bank fields to the client.
 
 import { NextResponse }      from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -26,10 +25,9 @@ export async function GET(request: Request) {
     .from('schools')
     .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active, setup_status')
     .ilike('name', `%${q}%`)
-    // FIX: .not('setup_status', 'in', '(...)') silently drops rows where
-    // setup_status IS NULL — Postgres evaluates NOT (NULL IN (...)) as NULL,
-    // not true, so the WHERE clause excludes them. Using .or() to explicitly
-    // keep NULL alongside anything not in the excluded list.
+    // Only hide schools explicitly suspended/locked/expired. Trial schools
+    // (setup_status defaults to 'trial') and schools with is_platform_active
+    // still false (pre-payment) should still be findable/loggable-into.
     .or('setup_status.is.null,setup_status.not.in.(suspended,locked,expired)')
     .limit(8)
 
@@ -41,22 +39,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ schools: [] })
   }
 
-  // Look up each school's principal — full_name ONLY. Never select
-  // default_code/email/phone here; this response is public.
+  // Principal name ONLY (for parents to confirm they picked the right
+  // school) — never default_code, email, or phone.
   const { data: principals } = await supabase
     .from('profiles')
     .select('school_id, full_name')
     .in('school_id', schools.map(s => s.id))
     .eq('role', 'principal')
 
-  const principalByCwSchool = new Map<string, string>()
+  const principalBySchool = new Map<string, string>()
   for (const p of principals ?? []) {
-    if (p.school_id && p.full_name) principalByCwSchool.set(p.school_id, p.full_name)
+    if (p.school_id && p.full_name) principalBySchool.set(p.school_id, p.full_name)
   }
 
   const enriched = schools.map(s => ({
     ...s,
-    principal_name: principalByCwSchool.get(s.id) ?? null,
+    principal_name: principalBySchool.get(s.id) ?? null,
   }))
 
   return NextResponse.json({ schools: enriched })
