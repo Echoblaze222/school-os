@@ -6,17 +6,34 @@
 import { NextResponse } from 'next/server'
 import webpush from 'web-push'
 
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL ?? 'admin@schoolos.app'}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+let vapidConfigured = false
+function ensureVapidConfigured() {
+  if (vapidConfigured) return
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  const privateKey = process.env.VAPID_PRIVATE_KEY
+  if (!publicKey || !privateKey) {
+    throw new Error('VAPID keys are not configured')
+  }
+  webpush.setVapidDetails(
+    `mailto:${process.env.VAPID_EMAIL ?? 'admin@schoolos.app'}`,
+    publicKey,
+    privateKey
+  )
+  vapidConfigured = true
+}
 
 export async function POST(req: Request) {
   // Verify internal secret
   const secret = req.headers.get('x-internal-secret')
   if (secret !== process.env.INTERNAL_SECRET) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  try {
+    ensureVapidConfigured()
+  } catch (err: any) {
+    console.error('[push/send] VAPID config error:', err.message)
+    return NextResponse.json({ error: 'Push not configured' }, { status: 500 })
   }
 
   const { endpoint, p256dh, auth, title, body, url, tag } = await req.json()
