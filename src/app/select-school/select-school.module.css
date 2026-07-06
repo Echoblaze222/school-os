@@ -256,12 +256,6 @@
   margin: 2px 0 0;
 }
 
-.schoolPrincipal {
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.35);
-  margin: 2px 0 0;
-}
-
 /* ── No results ─────────────────────────────────────────────── */
 .noResults {
   margin-top: 10px;
@@ -349,12 +343,6 @@
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.5);
   margin: 0;
-}
-
-.selectedPrincipal {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 2px 0 0;
 }
 
 /* ── Submit button — identical to login ─────────────────────── */

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import styles from './select-school.module.css'
 
 interface School {
@@ -14,14 +15,13 @@ interface School {
   tagline: string | null
   school_type: string
   is_platform_active: boolean
-  setup_status: string | null
-  principal_name: string | null
 }
 
 const SCHOOL_KEY = 'schoolos_selected_school'
 
 export default function SelectSchoolPage() {
   const router   = useRouter()
+  const supabase = createClient()
 
   const [query,    setQuery]    = useState('')
   const [results,  setResults]  = useState<School[]>([])
@@ -49,13 +49,13 @@ export default function SelectSchoolPage() {
 
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
-      try {
-        const res  = await fetch(`/api/schools/search?q=${encodeURIComponent(value.trim())}`)
-        const data = await res.json()
-        setResults(data.schools ?? [])
-      } catch {
-        setResults([])
-      }
+      const { data } = await supabase
+        .from('schools')
+        .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active')
+        .ilike('name', `%${value.trim()}%`)
+        .eq('is_platform_active', true)
+        .limit(8)
+      setResults(data ?? [])
       setSearching(false)
     }, 350)
   }
@@ -152,9 +152,6 @@ export default function SelectSchoolPage() {
                       {' · '}
                       <span style={{ textTransform: 'capitalize' }}>{school.school_type}</span>
                     </p>
-                    {school.principal_name && (
-                      <p className={styles.schoolPrincipal}>Principal: {school.principal_name}</p>
-                    )}
                   </div>
                 </button>
               ))}
@@ -192,9 +189,6 @@ export default function SelectSchoolPage() {
                   <p className={styles.selectedLocation}>
                     📍 {[selected.city, selected.state].filter(Boolean).join(', ') || 'Nigeria'}
                   </p>
-                  {selected.principal_name && (
-                    <p className={styles.selectedPrincipal}>Principal: {selected.principal_name}</p>
-                  )}
                 </div>
               </div>
             </div>
