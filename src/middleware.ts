@@ -32,7 +32,8 @@ const PUBLIC_PATHS = [
   '/api/schools/register',
   '/api/schools/payment-callback',
   '/api/schools/paystack-webhook',
-  '/api/webhooks/paystack',             // Paystack payment webhook
+  '/api/webhooks/paystack',            // Paystack payment webhook
+  '/api/cron', 
   '/super-admin/login',                 // super admin login must be publicly reachable
   '/school-locked',                     // lock page itself must be reachable
 ]
