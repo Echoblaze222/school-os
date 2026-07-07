@@ -59,7 +59,6 @@ export default function GradeSubmissionsPage() {
   const [profile,  setProfile]  = useState<any>(null)
   const [school,   setSchool]   = useState<any>(null)
   const [loading,  setLoading]  = useState(true)
-  const [debugLog, setDebugLog] = useState<string[]>([])
   const [fetchErr, setFetchErr] = useState<string|null>(null)
 
   // Tab: 'assignments' | 'quizzes'
@@ -80,18 +79,16 @@ export default function GradeSubmissionsPage() {
   const [selectedQId,  setSelectedQId]  = useState<string|null>(null)
 
   const supabase = createClient()
-  function log(msg: string) { console.log('[grades]', msg); setDebugLog(p => [...p, msg]) }
 
   useEffect(() => { init() }, [])
 
   async function init() {
-    setLoading(true); setDebugLog([]); setFetchErr(null)
+    setLoading(true); setFetchErr(null)
 
     // ── Auth ──────────────────────────────────────────────────
     const { data: { user }, error: authErr } = await supabase.auth.getUser()
     if (authErr || !user) { setFetchErr(`Auth: ${authErr?.message ?? 'no user'}`); setLoading(false); return }
     setUserId(user.id)
-    log(`uid: ${user.id}`)
 
     // ── Profile ───────────────────────────────────────────────
     const { data: prof, error: profErr } = await supabase
@@ -100,7 +97,6 @@ export default function GradeSubmissionsPage() {
     setProfile(prof)
     const sc = (prof as any)?.schools ?? null
     setSchool(sc)
-    log(`school: ${sc?.id ?? 'NULL'}`)
 
     // ── Assignments ───────────────────────────────────────────
     const [r1, r2, r3] = await Promise.all([
@@ -108,13 +104,11 @@ export default function GradeSubmissionsPage() {
       supabase.from('assignments').select('id,title,class_id,due_date,max_score,subject,classes(name)').eq('school_id', sc?.id).eq('teacher_id', user.id),
       supabase.from('assignments').select('id,title,class_id,due_date,max_score,subject,classes(name)').eq('school_id', sc?.id).eq('created_by', user.id),
     ])
-    log(`asg posted_by:${r1.data?.length??0} teacher_id:${r2.data?.length??0} created_by:${r3.data?.length??0}`)
 
     const asgMap: Record<string,any> = {}
     for (const row of [...(r1.data??[]),...(r2.data??[]),...(r3.data??[])]) asgMap[row.id] = row
     const allAsg = Object.values(asgMap)
     const asgIds = allAsg.map((a:any) => a.id)
-    log(`assignments: ${allAsg.length}`)
 
     if (asgIds.length > 0) {
       const { data: subs, error: subErr } = await supabase
@@ -123,7 +117,6 @@ export default function GradeSubmissionsPage() {
         .in('assignment_id', asgIds)
         .not('submitted_at','is',null)
         .order('submitted_at', { ascending: false })
-      log(`submissions:${subs?.length??0} ${subErr?.message??'ok'}`)
       if (subErr) setFetchErr(`Submissions: ${subErr.message}`)
 
       // Student names
@@ -162,7 +155,6 @@ export default function GradeSubmissionsPage() {
         else groupMap[s.assignment_id].graded_count++
       })
       const groups = Object.values(groupMap).filter(g => g.pending_count+g.graded_count > 0).sort((a,b) => b.pending_count-a.pending_count)
-      log(`assignment groups with submissions: ${groups.length}`)
       setAssignmentGroups(groups)
       if (groups[0]) setSelectedAsgId(groups[0].assignment_id)
     }
@@ -173,7 +165,6 @@ export default function GradeSubmissionsPage() {
       .select('id,title,total_marks,class_id,classes(name)')
       .eq('school_id', sc?.id)
       .or(`created_by.eq.${user.id},teacher_id.eq.${user.id}`)
-    log(`quizzes:${myQuizzes?.length??0} ${qErr?.message??'ok'}`)
 
     const quizMap: Record<string,any> = {}
     ;(myQuizzes??[]).forEach((q:any) => { quizMap[q.id] = q })
@@ -186,7 +177,6 @@ export default function GradeSubmissionsPage() {
         .in('quiz_id', quizIds)
         .not('submitted_at','is',null)
         .order('submitted_at', { ascending: false })
-      log(`quiz attempts:${attempts?.length??0} ${aErr?.message??'ok'}`)
 
       // Student names for quiz attempts
       const qStudIds = [...new Set((attempts??[]).map((a:any) => a.student_id))]
@@ -229,7 +219,6 @@ export default function GradeSubmissionsPage() {
         g.avg_score = g.attempt_count > 0 ? Math.round(scoreSums[id]/g.attempt_count) : 0
       })
       const qGroups = Object.values(qGroupMap).filter(g => g.attempt_count > 0).sort((a,b) => b.attempt_count-a.attempt_count)
-      log(`quiz groups with attempts: ${qGroups.length}`)
       setQuizGroups(qGroups)
       if (qGroups[0]) setSelectedQId(qGroups[0].quiz_id)
     }
@@ -276,17 +265,14 @@ export default function GradeSubmissionsPage() {
     </div>
   )
 
-  // ── Empty with debug log ───────────────────────────────────────────────────
+  // ── Empty state ─────────────────────────────────────────────────────────────
   if (assignmentGroups.length === 0 && quizGroups.length === 0) return (
-    <div style={{padding:24,minHeight:'100dvh',background:'var(--bg-base)'}}>
-      <p style={{fontWeight:700,color:'var(--text-primary)',fontSize:'1rem',marginBottom:4}}>Grade Submissions</p>
-      <p style={{fontSize:'0.8rem',color:'var(--text-muted)',marginBottom:20}}>No submissions found yet.</p>
-      <div style={{background:'#0d0d0d',border:'1px solid #2a2a2a',borderRadius:12,padding:16}}>
-        <p style={{fontSize:'0.65rem',fontWeight:800,color:'#F59E0B',margin:'0 0 10px',textTransform:'uppercase',letterSpacing:'0.08em'}}>📋 Debug Log</p>
-        {debugLog.map((l,i)=><p key={i} style={{margin:'3px 0',fontSize:'0.75rem',color:'#10B981',fontFamily:'monospace'}}>{l}</p>)}
-        {fetchErr&&<p style={{margin:'6px 0 0',fontSize:'0.75rem',color:'#EF4444',fontFamily:'monospace'}}>ERR: {fetchErr}</p>}
+    <RolePageWrapper userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions">
+      <div style={{textAlign:'center' as const,padding:'60px 20px',color:'var(--text-muted)'}}>
+        <p style={{fontWeight:700,color:'var(--text-primary)',fontSize:'1rem',marginBottom:6}}>No submissions yet</p>
+        <p style={{fontSize:'0.85rem'}}>Once students submit assignments or quiz attempts, they'll show up here for grading.</p>
       </div>
-    </div>
+    </RolePageWrapper>
   )
 
   // ── Main UI ────────────────────────────────────────────────────────────────
