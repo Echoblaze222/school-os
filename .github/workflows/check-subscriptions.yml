@@ -1,0 +1,19 @@
+name: Check School Subscriptions
+
+on:
+  schedule:
+    # Runs every hour, on the hour. Adjust as needed — GitHub Actions cron
+    # can run as often as every 5 minutes if you want tighter enforcement.
+    - cron: '0 * * * *'
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+jobs:
+  check-subscriptions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call check-subscriptions endpoint
+        run: |
+          curl -sS -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://school-os-sphg.vercel.app/api/cron/check-subscriptions" \
+            --fail
