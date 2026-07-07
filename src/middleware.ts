@@ -3,8 +3,10 @@
 // 1. Protects all dashboard/private routes — redirects to /login if no session
 // 2. Redirects authenticated users away from auth pages
 // 3. Sets session timeout: user is logged out after INACTIVITY_MINUTES of no activity
-// 4. Enforces school lock — locked/expired schools redirect non-principal
-//    roles to /school-locked. Principal dashboard is always accessible.
+// 4. Enforces school lock:
+//    - Hard lock (super-admin suspended) → everyone, incl. principal, to /school-locked
+//    - Billing lock (expired/suspended)  → non-principals to /school-locked;
+//      principal confined to /dashboard/principal/subscriptions to renew
 // ─────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
@@ -137,18 +139,28 @@ export async function middleware(request: NextRequest) {
 
   // ── School lock enforcement ──────────────────────────────────
   // Only runs for authenticated users hitting /dashboard routes.
-  // Principals are ALWAYS allowed through — they need to see payment info.
-  // All other roles (teacher, student, parent, bursar, secretary) are
-  // blocked when the school is locked, expired, or suspended.
+  //
+  // Two lock tiers:
+  //  - HARD lock ('locked' status or is_platform_active=false): a super
+  //    admin manually suspended the school. Blocks EVERYONE, including
+  //    the principal, straight to /school-locked.
+  //  - BILLING lock ('expired' trial or 'suspended' subscription): all
+  //    non-principal roles go to /school-locked as before. The principal
+  //    is allowed to stay logged in, but is confined to
+  //    /dashboard/principal/subscriptions so they can renew — any other
+  //    /dashboard/principal/* route redirects them there instead.
+  //
+  // Previously principals were exempted from this check entirely, so an
+  // expired/suspended school kept working in full through the principal
+  // account with no way to force renewal.
   if (user && pathname.startsWith('/dashboard')) {
-    // Fetch the user's role and school_id from profiles
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, school_id')
       .eq('id', user.id)
       .single()
 
-    if (profile && profile.role !== 'principal' && profile.school_id) {
+    if (profile && profile.school_id) {
       const { data: school } = await supabase
         .from('schools')
         .select('setup_status, is_platform_active')
@@ -156,17 +168,39 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (school) {
-        const isLocked =
+        const isHardLocked =
           !school.is_platform_active ||
-          school.setup_status === 'locked'   ||
-          school.setup_status === 'expired'  ||
+          school.setup_status === 'locked'
+
+        const isBillingLocked =
+          school.setup_status === 'expired' ||
           school.setup_status === 'suspended'
 
-        if (isLocked) {
+        const isPrincipal = profile.role === 'principal'
+        const renewalPath = '/dashboard/principal/subscriptions'
+
+        if (isHardLocked) {
           const lockedUrl = new URL('/school-locked', request.url)
           lockedUrl.searchParams.set('status', school.setup_status)
           lockedUrl.searchParams.set('role',   profile.role)
           return NextResponse.redirect(lockedUrl)
+        }
+
+        if (isBillingLocked) {
+          if (!isPrincipal) {
+            const lockedUrl = new URL('/school-locked', request.url)
+            lockedUrl.searchParams.set('status', school.setup_status)
+            lockedUrl.searchParams.set('role',   profile.role)
+            return NextResponse.redirect(lockedUrl)
+          }
+
+          // Principal: allow only the renewal page itself; every other
+          // principal route bounces there.
+          if (pathname !== renewalPath && !pathname.startsWith(renewalPath + '/')) {
+            const renewUrl = new URL(renewalPath, request.url)
+            renewUrl.searchParams.set('status', school.setup_status)
+            return NextResponse.redirect(renewUrl)
+          }
         }
       }
     }
