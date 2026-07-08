@@ -6,6 +6,7 @@
 import DashboardHeader from './DashboardHeader'
 import RoleNav from './RoleNav'
 import TrialBanner from './TrialBanner'
+import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import styles from './RolePageWrapper.module.css'
 
 interface Props {
@@ -24,8 +25,13 @@ export default function RolePageWrapper({
 }: Props) {
   const schoolColor = school?.primary_color ?? '#7C3AED'
 
+  // Keeps the shell height honest when a mobile keyboard opens, so a
+  // sticky/floating input bar (used by fullHeight pages like AI & Chat)
+  // stays pinned above the keyboard instead of scrolling off with the page.
+  useVisualViewportHeight()
+
   return (
-    <div className={styles.shell}>
+    <div className={fullHeight ? `${styles.shell} ${styles.shellFullHeight}` : styles.shell}>
       {/* Sidebar (desktop) + mobile bottom nav */}
       <RoleNav
         userId={userId}

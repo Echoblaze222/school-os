@@ -190,6 +190,7 @@ const NAV: Record<string, {
     sidebar: [
       { label: 'Main', items: [
         { href: '/dashboard/parent',               Icon: HomeIcon,    label: 'Dashboard'      },
+        { href: '/dashboard/parent/ai',             Icon: AiIcon,      label: 'AI Assistant'   },
         { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Notifications'  },
         { href: '/dashboard/parent/chat',          Icon: MessageIcon, label: 'Message School' },
       ]},

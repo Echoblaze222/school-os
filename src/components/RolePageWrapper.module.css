@@ -6,6 +6,18 @@
   background: var(--bg-base);
 }
 
+/* Used only for fullHeight pages (AI, Chat). Regular pages keep the default
+   min-height above so long content still scrolls the whole page normally.
+   fullHeight pages instead clamp to the *true* visible viewport (tracked by
+   useVisualViewportHeight) and manage their own internal scroll region, so a
+   sticky input bar stays pinned above the mobile keyboard instead of the
+   whole shell growing taller than the screen and forcing a page scroll. */
+.shellFullHeight {
+  height: var(--app-vh, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}
+
 .content {
   flex: 1;
   display: flex;

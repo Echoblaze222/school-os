@@ -5,11 +5,27 @@
 
 import { useState, useEffect, useRef } from 'react'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { AiIcon, SendIcon, RefreshIcon } from '@/components/Icons'
+import { AiIcon, SendIcon, RefreshIcon, PaperclipIcon, XIcon } from '@/components/Icons'
+import { createClient } from '@/lib/supabase/client'
 import styles from '@/app/dashboard/student/ai/ai.module.css'
 
-interface Message { role: 'user' | 'assistant'; content: string; ts: number }
+interface Message { role: 'user' | 'assistant'; content: string; ts: number; imageUrl?: string | null }
 interface Props   { profile: any; school: any; userId: string; role: string }
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB — keeps rows small and uploads fast on mobile data
+
+function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const [, base64] = result.split(',')
+      resolve({ data: base64, mediaType: file.type })
+    }
+    reader.onerror = () => reject(new Error('Could not read image'))
+    reader.readAsDataURL(file)
+  })
+}
 
 const ROLE_CONFIG: Record<string, { title: string; subtitle: string; context: string; starters: string[] }> = {
   principal: {
@@ -94,24 +110,90 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
   const [input,    setInput]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [pendingImage, setPendingImage] = useState<{ data: string; mediaType: string; previewUrl: string } | null>(null)
+  const [imageError, setImageError] = useState('')
   const bottomRef  = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
+  // Instant paint from local cache, then reconcile with the server so
+  // history follows the person across devices/sessions like a normal AI app.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey)
       if (saved) setMessages(JSON.parse(saved))
     } catch {}
-  }, [storageKey])
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/ai/history?role=${encodeURIComponent(role)}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        setConversationId(data.conversation_id ?? null)
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          const restored: Message[] = data.messages.map((m: any) => ({
+            role:     m.role,
+            content:  m.content,
+            ts:       new Date(m.sent_at).getTime(),
+            imageUrl: m.image_url ?? null,
+          }))
+          setMessages(restored)
+          try { localStorage.setItem(storageKey, JSON.stringify(restored.slice(-30))) } catch {}
+        }
+      } catch {
+        // Offline or first load — the local cache (if any) already rendered above.
+      } finally {
+        if (!cancelled) setHistoryLoaded(true)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [storageKey, role])
+
+  function handleAttachClick() {
+    setImageError('')
+    fileInputRef.current?.click()
+  }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImageError('')
+    if (!file.type.startsWith('image/')) { setImageError('Please choose an image file.'); return }
+    if (file.size > MAX_IMAGE_BYTES) { setImageError('Image is too large (max 5MB).'); return }
+    try {
+      const { data, mediaType } = await fileToBase64(file)
+      setPendingImage({ data, mediaType, previewUrl: `data:${mediaType};base64,${data}` })
+    } catch {
+      setImageError('Could not read that image. Try another file.')
+    }
+  }
+
+  function removePendingImage() {
+    setPendingImage(null)
+    setImageError('')
+  }
 
   async function sendMessage(text: string) {
-    if (!text.trim() || loading) return
+    if ((!text.trim() && !pendingImage) || loading) return
     setError('')
-    const userMsg: Message = { role: 'user', content: text.trim(), ts: Date.now() }
+    const userMsg: Message = {
+      role: 'user',
+      content: text.trim() || '📷 Sent an image',
+      ts: Date.now(),
+      imageUrl: pendingImage?.previewUrl ?? null,
+    }
     const newHistory = [...messages, userMsg]
     setMessages(newHistory)
     setInput('')
+    const imageToSend = pendingImage
+    setPendingImage(null)
     setLoading(true)
     try {
       const res = await fetch('/api/ai/chat', {
@@ -122,10 +204,19 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
           userId,
           schoolId:      school?.id,
           systemContext: config.context,
+          conversationId,
+          image: imageToSend ? { data: imageToSend.data, mediaType: imageToSend.mediaType } : undefined,
         }),
       })
+      if (res.status === 429) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? 'You\'re sending messages too fast. Please wait a moment and try again.')
+        setLoading(false)
+        return
+      }
       if (!res.ok) throw new Error()
       const data  = await res.json()
+      if (data.conversation_id) setConversationId(data.conversation_id)
       const reply = data.content?.[0]?.text ?? data.content ?? 'Unable to respond.'
       const updated = [...newHistory, { role: 'assistant' as const, content: reply, ts: Date.now() }]
       setMessages(updated)
@@ -135,8 +226,17 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
   }
 
   function clearChat() {
+    const idToArchive = conversationId
     setMessages([])
+    setConversationId(null)
     try { localStorage.removeItem(storageKey) } catch {}
+    // Archive (don't delete) the old conversation server-side so a clean
+    // thread starts next message, while history is still recoverable.
+    if (idToArchive) {
+      const supabase = createClient()
+      supabase.from('ai_conversations').update({ is_archived: true }).eq('id', idToArchive)
+        .then(({ error }) => { if (error) console.warn('[AI] Failed to archive conversation:', error.message) })
+    }
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -145,6 +245,15 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
 
   function formatTime(ts: number) {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Escape before converting newlines to <br/> — msg.content can come from
+  // the model or from student/parent free text, neither of which is trusted HTML.
+  function safeContentHtml(content: string) {
+    const escaped = content
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+    return escaped.replace(/\n/g, '<br/>')
   }
 
   return (
@@ -164,7 +273,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
             paddingBottom: 'calc(64px + 76px + 8px)',
           }}
         >
-          {messages.length === 0 && (
+          {messages.length === 0 && historyLoaded && (
             <div className={styles.welcome}>
               <div className={styles.aiAvatar} style={{ background: schoolColor }}>
                 <AiIcon size={28} color="white"/>
@@ -192,8 +301,11 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
               )}
               <div className={`${styles.bubble} ${msg.role === 'user' ? styles.userBubble : styles.aiBubble}`}
                 style={msg.role === 'user' ? { background: schoolColor } : undefined}>
+                {msg.imageUrl && (
+                  <img src={msg.imageUrl} alt="Attached" className={styles.attachedImage}/>
+                )}
                 <div className={styles.bubbleText}
-                  dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }}/>
+                  dangerouslySetInnerHTML={{ __html: safeContentHtml(msg.content) }}/>
                 <span className={styles.bubbleTime}>{formatTime(msg.ts)}</span>
               </div>
             </div>
@@ -213,18 +325,34 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
           <div ref={bottomRef}/>
         </div>
 
+        {pendingImage && (
+          <div className={styles.imagePreviewBar}>
+            <img src={pendingImage.previewUrl} alt="Selected" className={styles.imagePreviewThumb}/>
+            <span className={styles.imagePreviewLabel}>Image attached</span>
+            <button className={styles.imagePreviewRemove} onClick={removePendingImage}>
+              <XIcon size={13} color="var(--text-muted)"/>
+            </button>
+          </div>
+        )}
+        {imageError && <p className={styles.errorMsg}>{imageError}</p>}
+
         <div className={`${styles.inputBar} ${styles.inputBarFloating}`}>
           {messages.length > 0 && (
-            <button className={styles.clearBtn} onClick={clearChat}>
+            <button className={styles.clearBtn} onClick={clearChat} title="Clear chat">
               <RefreshIcon size={16} color="var(--text-muted)"/>
             </button>
           )}
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={handleFileSelected}/>
+          <button className={styles.clearBtn} onClick={handleAttachClick} title="Attach an image">
+            <PaperclipIcon size={16} color="var(--text-muted)"/>
+          </button>
           <textarea className={styles.textarea} value={input}
             onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-            placeholder={`Ask ${config.title.toLowerCase()}…`}
+            placeholder={pendingImage ? 'Ask something about this image…' : `Ask ${config.title.toLowerCase()}…`}
             rows={1}/>
           <button className={styles.sendBtn} style={{ background: schoolColor }}
-            onClick={() => sendMessage(input)} disabled={!input.trim() || loading}>
+            onClick={() => sendMessage(input)} disabled={(!input.trim() && !pendingImage) || loading}>
             <SendIcon size={15} color="white"/>
           </button>
         </div>
