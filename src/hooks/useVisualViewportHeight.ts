@@ -22,10 +22,33 @@ import { useEffect } from 'react'
 export function useVisualViewportHeight() {
   useEffect(() => {
     const vv = window.visualViewport
+    // Captured once on mount — the "resting" height before any keyboard has
+    // ever opened. Used purely as a baseline to detect a keyboard opening;
+    // orientation changes are handled separately by re-reading it on resize.
+    let restingHeight = window.innerHeight
 
     function setHeight() {
       const height = vv?.height ?? window.innerHeight
       document.documentElement.style.setProperty('--app-vh', `${height}px`)
+
+      // If the window itself resized taller than our recorded resting
+      // height (e.g. rotated to landscape, or browser chrome changed),
+      // treat that as the new baseline instead of misreading it as a
+      // keyboard closing.
+      if (window.innerHeight > restingHeight) restingHeight = window.innerHeight
+
+      // Heuristic: no dedicated "is the keyboard open" browser API exists,
+      // so infer it from how much shorter the visible area is than resting.
+      // ~120px comfortably clears normal toolbar/URL-bar show/hide jitter
+      // while still catching every real on-screen keyboard.
+      const shrink = restingHeight - height
+      const keyboardOpen = shrink > 120
+
+      document.documentElement.classList.toggle('keyboard-open', keyboardOpen)
+      document.documentElement.style.setProperty(
+        '--keyboard-inset',
+        keyboardOpen ? `${Math.round(shrink)}px` : '0px'
+      )
     }
 
     setHeight()
@@ -39,6 +62,7 @@ export function useVisualViewportHeight() {
       vv?.removeEventListener('scroll', setHeight)
       window.removeEventListener('resize', setHeight)
       window.removeEventListener('orientationchange', setHeight)
+      document.documentElement.classList.remove('keyboard-open')
     }
   }, [])
 }
