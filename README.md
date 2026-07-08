@@ -42,6 +42,10 @@ src/
 │   │   ├── student/              Grades, attendance, fees owed
 │   │   └── parent/               Child(ren) overview, fee payments, attendance
 │   │
+│   │   Every role above also has an `ai/` route rendering the shared
+│   │   `UniversalAIPage` — role-aware chat with persistent history, image
+│   │   queries, and per-role rate limiting (see AI Assistant below).
+│   │
 │   ├── super-admin/              Platform-level dashboard (all schools)
 │   │   ├── schools/              Full schools list (search/filter by status)
 │   │   ├── school/[id]/          Per-school detail: overview, staff, payments, compliance, settings
@@ -57,15 +61,24 @@ src/
 │       ├── payments/, subscription/, trial/, currency/
 │       ├── push/, notifications/  Web push subscriptions + delivery
 │       ├── receipts/              PDF/receipt generation
-│       ├── ai/, study-plan/       AI-assisted features
+│       ├── ai/, study-plan/       AI assistant — chat (`ai/chat`, with persisted history + image
+│       │                          queries + rate limiting) and history (`ai/history`), plus study-plan
 │       └── cron/                 Scheduled jobs (trial reminders, etc.)
+│
+├── hooks/
+│   └── useVisualViewportHeight.ts  Tracks the true visible viewport height (mobile keyboard-aware);
+│                                    used by full-height layouts like AI/Chat so a sticky input bar
+│                                    stays pinned above the on-screen keyboard instead of scrolling off
 │
 ├── lib/
 │   ├── types.ts                  TypeScript types matching the DB schema
 │   └── supabase/
 │       ├── client.ts              Browser client
 │       ├── server.ts              Server client (cookie-based, respects RLS)
-│       └── admin.ts               Service-role client — server-only, bypasses RLS
+│       ├── admin.ts               Service-role client — server-only, bypasses RLS
+│       └── ai_upgrade.sql         Migration: image_url/model_used columns on ai_messages, a
+│                                   one-live-conversation-per-role index, RLS, and the
+│                                   ai_check_rate_limit() function used by /api/ai/chat
 └── middleware.ts                  Route guard — enforces onboarding stages + role-based routing (incl. /super-admin)
 ```
 
@@ -99,6 +112,13 @@ Schools never need their own Paystack account. A Paystack **subaccount** is crea
 ### Super Admin
 `/super-admin` — platform owner's view across all schools: subscription status, revenue, staff lists, compliance verification, and lock/unlock controls per school. Reached only by users present in `platform_admins`.
 
+### AI Assistant
+Every role's `ai/` page renders the same `UniversalAIPage` component (Claude, with a Gemini fallback on quota/overload):
+- **Persistent history** — `/api/ai/chat` finds-or-creates one live `ai_conversations` row per `(user, role)` and appends real rows to `ai_messages` each turn; `/api/ai/history` restores it on page load, so a conversation follows the person across devices/logins, not just one browser's `localStorage` (which is still used as an instant-paint cache).
+- **Image queries** — attach an image (5MB cap) alongside a question; it's sent to Claude as a vision content block (Gemini fallback gets it too via `inlineData`) and stored with the message so it reappears on reload.
+- **Rate limiting** — `ai_check_rate_limit()` (a Postgres function, atomic across serverless instances) caps requests per user per minute — 20/min for student & parent, 30/min for staff roles — returning a 429 with a friendly message instead of erroring out under traffic spikes.
+- **Migration** — run `lib/supabase/ai_upgrade.sql` once against your Supabase project before using any of the above; it's idempotent and safe to re-run.
+
 ---
 
 ## Setup Instructions
@@ -115,12 +135,14 @@ Copy your Supabase project keys, plus service keys for the integrations below, i
 - Resend API key
 - Web Push VAPID public/private keys
 - Dojah API credentials (NIN verification)
+- `ANTHROPIC_API_KEY` (AI assistant) and `GEMINI_API_KEY` (fallback)
 
 ### 3. Supabase setup
 - Create the schema (profiles, schools, school_payments, fee_payments, school_compliance_records, notifications, push_subscriptions, etc.)
 - Create **private** Storage buckets: `passports`, `nin-documents`
 - Add RLS policies scoping each table to `school_id` / `auth.uid()` as appropriate
 - Add a service-role-only policy for `school_compliance_records` and other platform-admin tables — accessed only via `lib/supabase/admin.ts` from server routes
+- Run `lib/supabase/ai_upgrade.sql` (SQL editor or `psql`) — adds image/model columns to `ai_messages`, RLS on `ai_conversations`/`ai_messages`, and the `ai_check_rate_limit()` function the AI assistant depends on
 
 ### 4. Run the dev server
 ```bash
