@@ -1,7 +1,7 @@
 // src/app/dashboard/bursar/ai/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import AIBursarClient from './AIBursarClient'
+import UniversalAIPage from '@/components/UniversalAIPage'
 
 export const metadata = { title: 'AI Assistant — Bursar | SchoolOS' }
 
@@ -13,13 +13,17 @@ export default async function BursarAIPage() {
 
   const [profileRes, schoolRes] = await Promise.all([
     supabase.from('staff_profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
-    supabase.from('school_settings').select('school_name').maybeSingle(),
+    supabase.from('school_settings').select('id, school_name, primary_color').maybeSingle(),
   ])
 
-  const bursarName = profileRes.data?.full_name ?? 'Bursar'
-  const schoolName = schoolRes.data?.school_name ?? 'this school'
+  // Bursar dashboard reads from staff_profiles/school_settings rather than
+  // profiles/schools — shim both into the shape UniversalAIPage expects.
+  const profile = { full_name: profileRes.data?.full_name ?? 'Bursar' }
+  const school  = {
+    id:            schoolRes.data?.id,
+    name:          schoolRes.data?.school_name ?? 'this school',
+    primary_color: schoolRes.data?.primary_color,
+  }
 
-  const systemPrompt = `You are a finance assistant for the Bursar of ${schoolName}. Help answer fee-related questions, explain payment summaries in plain language, identify students with long overdue fees, and help draft fee reminder messages. Be clear and precise with numbers. Always show figures in both NGN and USD equivalents when relevant (use approximate rate of ₦1,600 per $1 unless told otherwise). Format financial data in clear tables or lists.`
-
-  return <AIBursarClient bursarName={bursarName} schoolName={schoolName} systemPrompt={systemPrompt} />
+  return <UniversalAIPage profile={profile} school={school} userId={user.id} role="bursar" />
 }
