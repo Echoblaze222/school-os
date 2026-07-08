@@ -283,16 +283,48 @@ Your job is to help parents monitor their child's education and use SchoolOS eff
   return `${rolePrompt}\n\n---\n\n${platformKnowledge}`
 }
 
+// ─── Image attachment shape ───────────────────────────────────────────────────
+// Sent by the client as a base64 payload (no "data:...;base64," prefix) plus
+// its mime type. Kept optional everywhere so text-only chat is unaffected.
+interface ImageAttachment { mediaType: string; data: string }
+
+const SUPPORTED_IMAGE_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+])
+
 // ─── Claude call ─────────────────────────────────────────────────────────────
 async function callClaude(
   systemPrompt: string,
-  messages: Anthropic.MessageParam[]
+  messages: Anthropic.MessageParam[],
+  image?: ImageAttachment
 ): Promise<NormalisedResponse> {
+  let finalMessages = messages
+
+  // Attach the image to the last user turn as a vision content block.
+  if (image && SUPPORTED_IMAGE_TYPES.has(image.mediaType)) {
+    const last = messages[messages.length - 1]
+    if (last && last.role === 'user') {
+      finalMessages = [
+        ...messages.slice(0, -1),
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: image.mediaType as any, data: image.data },
+            },
+            { type: 'text', text: typeof last.content === 'string' ? last.content : '' },
+          ],
+        },
+      ]
+    }
+  }
+
   const response = await anthropic.messages.create({
     model:      'claude-sonnet-4-20250514',
     max_tokens: 1024,
     system:     systemPrompt,
-    messages,
+    messages:   finalMessages,
   })
   const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
@@ -304,7 +336,8 @@ async function callClaude(
 // ─── Gemini call ─────────────────────────────────────────────────────────────
 async function callGemini(
   systemPrompt: string,
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
+  image?: ImageAttachment
 ): Promise<NormalisedResponse> {
   const genai = getGemini()
   const model = genai.getGenerativeModel({
@@ -318,15 +351,30 @@ async function callGemini(
     parts: [{ text: m.content }],
   }))
 
-  const chat       = model.startChat({ history })
-  const lastMsg    = messages[messages.length - 1]
-  const result     = await chat.sendMessage(lastMsg.content)
-  const text       = result.response.text()
+  const chat    = model.startChat({ history })
+  const lastMsg = messages[messages.length - 1]
+
+  // Gemini also accepts inline image parts alongside the text prompt.
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> =
+    image && SUPPORTED_IMAGE_TYPES.has(image.mediaType)
+      ? [{ inlineData: { mimeType: image.mediaType, data: image.data } }, { text: lastMsg.content }]
+      : [{ text: lastMsg.content }]
+
+  const result = await chat.sendMessage(parts as any)
+  const text   = result.response.text()
 
   return { content: [{ type: 'text', text }], model_used: 'gemini' }
 }
 
 // ─── Route handler ───────────────────────────────────────────────────────────
+// Per-role request budget. Staff roles get a slightly higher ceiling than
+// students/parents since bursar/principal workflows can be message-heavy.
+const RATE_LIMIT_WINDOW_SECONDS = 60
+const RATE_LIMIT_PER_ROLE: Record<string, number> = {
+  principal: 30, teacher: 30, bursar: 30, secretary: 30,
+  student:   20, parent:  20,
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
@@ -335,10 +383,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { messages, userId, schoolId, systemContext, role } = await req.json()
+    const { messages, userId, schoolId, systemContext, role, image, conversationId } = await req.json()
 
     if (!messages?.length) {
       return NextResponse.json({ error: 'No messages provided' }, { status: 400 })
+    }
+
+    // The route only ever acts on behalf of the authenticated caller —
+    // never trust a userId the client might pass for someone else.
+    const effectiveUserId = user.id
+    if (userId && userId !== effectiveUserId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Resolve role — client may send it as `role` or `systemContext`
+    const resolvedRole = (role ?? systemContext ?? 'student').toLowerCase()
+
+    // ── High-traffic protection: atomic DB-backed rate limit ─────────────────
+    // Works correctly across every serverless instance (unlike an in-memory
+    // counter), since the check-and-increment happens inside one Postgres
+    // function call.
+    const perRoleLimit = RATE_LIMIT_PER_ROLE[resolvedRole] ?? 20
+    const { data: allowed, error: rateErr } = await supabase.rpc('ai_check_rate_limit', {
+      p_user_id:        effectiveUserId,
+      p_limit:          perRoleLimit,
+      p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+    })
+    if (rateErr) {
+      // Fail open — a rate-limit outage should never take the assistant down.
+      console.warn('[AI] Rate limit check failed, allowing request:', rateErr.message)
+    } else if (allowed === false) {
+      return NextResponse.json(
+        {
+          error:       'You\'re sending messages too fast. Please wait a moment and try again.',
+          retry_after: RATE_LIMIT_WINDOW_SECONDS,
+        },
+        { status: 429, headers: { 'Retry-After': String(RATE_LIMIT_WINDOW_SECONDS) } }
+      )
     }
 
     // Normalise message roles (handle legacy 'model' role from old client versions)
@@ -348,14 +429,14 @@ export async function POST(req: Request) {
         content: m.content,
       }))
 
-    // Resolve role — client may send it as `role` or `systemContext`
-    const resolvedRole = (role ?? systemContext ?? 'student').toLowerCase()
+    const imageAttachment: ImageAttachment | undefined =
+      image?.data && image?.mediaType ? { data: image.data, mediaType: image.mediaType } : undefined
 
     // Fetch user profile for personalisation
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, class_level, school_id, role')
-      .eq('id', userId)
+      .eq('id', effectiveUserId)
       .single()
 
     const systemPrompt = buildSystemPrompt(resolvedRole, profile)
@@ -365,13 +446,13 @@ export async function POST(req: Request) {
     let usedFallback = false
 
     try {
-      result = await callClaude(systemPrompt, formattedMessages)
+      result = await callClaude(systemPrompt, formattedMessages, imageAttachment)
     } catch (claudeErr: any) {
       if (isClaudeQuotaOrOverloadError(claudeErr)) {
         console.warn('[AI] Claude unavailable — falling back to Gemini. Reason:', claudeErr?.message)
         usedFallback = true
         try {
-          result = await callGemini(systemPrompt, formattedMessages)
+          result = await callGemini(systemPrompt, formattedMessages, imageAttachment)
         } catch (geminiErr: any) {
           console.error('[AI] Gemini fallback also failed:', geminiErr?.message)
           return NextResponse.json(
@@ -385,24 +466,71 @@ export async function POST(req: Request) {
       }
     }
 
-    // ── Persist conversation (best-effort, non-blocking) ─────────────────────
+    // ── Persist conversation + messages (real history, not just a cache) ────
     const resolvedSchoolId = schoolId ?? profile?.school_id
-    supabase.from('ai_conversations').upsert(
-      {
-        user_id:    userId,
-        school_id:  resolvedSchoolId,
-        messages:   formattedMessages,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    ).then(({ error }) => {
-      if (error) console.warn('[AI] Failed to persist conversation:', error.message)
-    })
+    const lastUserMessage  = formattedMessages[formattedMessages.length - 1]
+    let resolvedConversationId: string | null = conversationId ?? null
+
+    try {
+      if (!resolvedConversationId) {
+        // Find the live (non-archived) conversation for this user+role, or start one.
+        const { data: existing } = await supabase
+          .from('ai_conversations')
+          .select('id')
+          .eq('user_id', effectiveUserId)
+          .eq('role_context', resolvedRole)
+          .eq('is_archived', false)
+          .maybeSingle()
+
+        if (existing) {
+          resolvedConversationId = existing.id
+        } else {
+          const { data: created, error: createErr } = await supabase
+            .from('ai_conversations')
+            .insert({
+              user_id:      effectiveUserId,
+              school_id:    resolvedSchoolId,
+              role_context: resolvedRole,
+              title:        lastUserMessage?.content?.slice(0, 60) ?? 'New conversation',
+            })
+            .select('id')
+            .single()
+          if (createErr) throw createErr
+          resolvedConversationId = created?.id ?? null
+        }
+      }
+
+      if (resolvedConversationId) {
+        await supabase.from('ai_messages').insert([
+          {
+            conversation_id: resolvedConversationId,
+            role:            'user',
+            content:         lastUserMessage?.content ?? '',
+            image_url:       imageAttachment ? `data:${imageAttachment.mediaType};base64,${imageAttachment.data}` : null,
+          },
+          {
+            conversation_id: resolvedConversationId,
+            role:            'assistant',
+            content:         result.content[0].text,
+            model_used:      result.model_used,
+          },
+        ])
+
+        await supabase
+          .from('ai_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', resolvedConversationId)
+      }
+    } catch (persistErr: any) {
+      // Persistence issues should never block the reply reaching the user.
+      console.warn('[AI] Failed to persist conversation history:', persistErr?.message ?? persistErr)
+    }
 
     // Return normalised response — client reads data.content[0].text
     return NextResponse.json({
       ...result,
-      fallback_used: usedFallback,
+      fallback_used:   usedFallback,
+      conversation_id: resolvedConversationId,
     })
 
   } catch (err: any) {
