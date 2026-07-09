@@ -274,6 +274,19 @@ export default function PostResultsClient({
 
     const studentIds = studentsWithScores.map(s => s.student_id)
 
+    // Guard: this class/subject pair has no matching class_subjects row yet
+    // (usually means an admin hasn't assigned this subject to this class).
+    // Without this guard, .eq('class_subject_id', null) gets sent to
+    // PostgREST as `class_subject_id=eq.null`, which Postgres tries to
+    // cast the literal text "null" into a uuid and fails with a
+    // "Check failed: invalid input syntax for type uuid" error.
+    if (!selectedCS.class_subject_id) {
+      setIsSubmitting(false)
+      setSubmitStatus('error')
+      setErrorMsg('This class has no subject record yet — ask an admin to assign this subject to the class before posting results.')
+      return
+    }
+
     // 1) Check which rows already exist
     const { data: existing, error: fetchErr } = await supabase
       .from('results')
