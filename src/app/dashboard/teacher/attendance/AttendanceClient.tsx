@@ -128,7 +128,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   async function submit() {
     if (!selectedClass) return
     setSaving(true)
-    // FIXED: only columns that exist — no teacher_id, no subject
+    // teacher_id DOES exist on attendance — needed for RLS scoping on teacher reads (History tab, etc.)
     const rows = students.map((s: any) => ({
       school_id: school?.id,
       student_id: s.id,
@@ -137,6 +137,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       status: records[s.id] ?? 'present',
       is_present: (records[s.id] ?? 'present') === 'present',
       marked_by: userId,
+      teacher_id: userId,
     }))
     const { error } = await supabase
       .from('attendance')
