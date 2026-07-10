@@ -111,6 +111,39 @@ export default function PrincipalClassesClient({
       is_primary: assignIsPrimary,
     }, { onConflict: 'teacher_id,class_id,subject' })
 
+    // FIX: class_teachers only stores the subject as free text — it was
+    // never linked to `class_subjects`, which is the table quizzes,
+    // results, notes, live classes, assignments, timetable, and syllabus
+    // all actually read from to get class_subject_id. Without this, every
+    // one of those features fails with "no subject record"/"invalid uuid"
+    // errors, no matter how many subjects or teachers were assigned.
+    if (!err && !assignIsPrimary && assignSubject) {
+      const matchedSubject = subjects.find((s: any) => s.name === assignSubject)
+      if (matchedSubject) {
+        const { data: existingCS } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', activeClass.id)
+          .eq('subject_id', matchedSubject.id)
+          .maybeSingle()
+
+        if (existingCS) {
+          await supabase
+            .from('class_subjects')
+            .update({ teacher_id: assignTeacher })
+            .eq('id', existingCS.id)
+        } else {
+          await supabase
+            .from('class_subjects')
+            .insert({
+              class_id:   activeClass.id,
+              subject_id: matchedSubject.id,
+              teacher_id: assignTeacher,
+            })
+        }
+      }
+    }
+
     if (err) {
       setError(err.message)
     } else {
