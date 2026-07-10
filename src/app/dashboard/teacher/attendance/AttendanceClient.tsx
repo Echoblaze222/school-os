@@ -37,6 +37,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   // History
   const [history, setHistory] = useState<HistoryRecord[]>([])
@@ -128,6 +129,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   async function submit() {
     if (!selectedClass) return
     setSaving(true)
+    setSaveError(null)
     // teacher_id DOES exist on attendance — needed for RLS scoping on teacher reads (History tab, etc.)
     const rows = students.map((s: any) => ({
       school_id: school?.id,
@@ -149,7 +151,17 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         .eq('class_id', selectedClass.class_id)
         .eq('date', date)
         .in('student_id', students.map(s => s.id))
-      await supabase.from('attendance').insert(rows)
+      const { error: insertError } = await supabase.from('attendance').insert(rows)
+      if (insertError) {
+        // FIX: previously this failure was silently swallowed and the UI
+        // showed "Attendance Saved" regardless — meaning attendance could
+        // fail to write entirely (e.g. an RLS policy blocking the insert)
+        // with no indication anything was wrong.
+        setSaveError(insertError.message)
+        setSaved(false)
+        setSaving(false)
+        return
+      }
     }
     setSaved(true)
     setSaving(false)
@@ -266,6 +278,12 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
             </span>
           )}
         </div>
+
+        {saveError && (
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid #EF4444", borderRadius: 8, padding: "10px 14px", marginBottom: "var(--space-4)", color: "#EF4444", fontSize: "0.82rem" }}>
+            Failed to save attendance: {saveError}
+          </div>
+        )}
 
         {/* Summary */}
         {students.length > 0 && (
