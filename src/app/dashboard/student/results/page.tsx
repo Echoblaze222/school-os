@@ -53,6 +53,15 @@ export default async function ResultsPage() {
 
   const { data: results } = await resultsQuery
 
+  // Approved report cards for this student — used to show a "Download
+  // Report Card" button per term/year group. Only ever returns approved
+  // rows (RLS enforces that for the student role regardless of this filter).
+  const { data: reportCards } = await supabase
+    .from('report_cards')
+    .select('id, term, academic_year, status')
+    .eq('student_id', user.id)
+    .eq('status', 'approved')
+
   // Cast needed: Supabase infers FK joins as T[] but our interface uses T | null
   // (class_subjects is a many-to-one FK from results — always a single row)
   const typedResults = (results ?? []) as unknown as ResultRow[]
@@ -63,7 +72,8 @@ export default async function ResultsPage() {
       school={school}
       userId={user.id}
       results={typedResults}
+      reportCards={reportCards ?? []}
     />
   )
-                             }
+}
            

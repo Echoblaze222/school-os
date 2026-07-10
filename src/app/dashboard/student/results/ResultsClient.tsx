@@ -36,9 +36,22 @@ export interface ResultsClientProps {
   school:  any
   userId:  string
   results: ResultRow[]
+  reportCards?: { id: string; term: string; academic_year: string | null; status: string }[]
 }
 
 const TERMS = ['All Terms', 'First Term', 'Second Term', 'Third Term'] as const
+
+// FIX: results.term is stored in the DB as the raw enum 'first' | 'second' |
+// 'third' (confirmed in PostResultsClient.tsx), NOT as 'First Term' etc.
+// The filter tabs show the friendly label, but must compare against the
+// raw value — without this map, r.term === 'First Term' never matches
+// r.term === 'first', so every term tab except "All Terms" always came
+// back empty.
+const TERM_LABEL_TO_DB: Record<string, string> = {
+  'First Term':  'first',
+  'Second Term': 'second',
+  'Third Term':  'third',
+}
 
 const TYPE_LABELS: Record<string, string> = {
   day_test: 'Day Test',
@@ -79,7 +92,25 @@ function resolveClassName(r: ResultRow): string {
   return cls?.name ?? cls?.class_level ?? '—'
 }
 
-export default function ResultsClient({ profile, school, userId, results }: ResultsClientProps) {
+export default function ResultsClient({ profile, school, userId, results, reportCards = [] }: ResultsClientProps) {
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null)
+
+  async function downloadReportCard(term: string, academicYear: string | null) {
+    const rc = reportCards.find(r => r.term === term && r.academic_year === academicYear)
+    if (!rc) return
+    setDownloadingKey(rc.id)
+    try {
+      const res = await fetch('/api/report-card/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_card_id: rc.id }),
+      })
+      const data = await res.json()
+      if (data.url) window.open(data.url, '_blank')
+    } finally {
+      setDownloadingKey(null)
+    }
+  }
   const [termFilter, setTermFilter] = useState<string>('All Terms')
   const sc = school?.primary_color ?? '#7C3AED'
 
@@ -96,7 +127,7 @@ export default function ResultsClient({ profile, school, userId, results }: Resu
   const filtered = useMemo(() =>
     termFilter === 'All Terms'
       ? enriched
-      : enriched.filter(r => r.term === termFilter),
+      : enriched.filter(r => r.term === TERM_LABEL_TO_DB[termFilter]),
   [enriched, termFilter])
 
   // Summary stats (only over filtered set)
@@ -108,12 +139,18 @@ export default function ResultsClient({ profile, school, userId, results }: Resu
     : 0
   const passCount = filtered.filter(r => r.grade !== 'F' && r.grade !== '—').length
 
-  // Group by "year · term", sorted newest first
+const DB_TO_TERM_LABEL: Record<string, string> = {
+  first:  'First Term',
+  second: 'Second Term',
+  third:  'Third Term',
+}
+
+// Group by "year · term", sorted newest first
   const grouped = useMemo(() => {
     const map: Record<string, typeof enriched> = {}
     filtered.forEach(r => {
       const year = r.academic_year ?? 'Unknown Year'
-      const key  = `${year} · ${r.term}`
+      const key  = `${year} · ${DB_TO_TERM_LABEL[r.term] ?? r.term}`
       if (!map[key]) map[key] = []
       map[key].push(r)
     })
@@ -217,16 +254,36 @@ export default function ResultsClient({ profile, school, userId, results }: Resu
           <div key={groupKey} style={{ marginBottom: 'var(--space-5)' }}>
 
             {/* Group header */}
-            <p style={{
-              margin: '0 0 var(--space-2)',
-              fontSize: '0.65rem',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: 'var(--text-muted)',
-            }}>
-              {groupKey}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 var(--space-2)' }}>
+              <p style={{
+                margin: 0,
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'var(--text-muted)',
+              }}>
+                {groupKey}
+              </p>
+              {(() => {
+                const rc = reportCards.find(r => r.term === rows[0].term && r.academic_year === rows[0].academic_year)
+                if (!rc) return null
+                return (
+                  <button
+                    onClick={() => downloadReportCard(rows[0].term, rows[0].academic_year)}
+                    disabled={downloadingKey === rc.id}
+                    style={{
+                      fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 999,
+                      border: `1px solid ${school?.primary_color ?? '#7C3AED'}`,
+                      background: 'transparent', color: school?.primary_color ?? '#7C3AED',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {downloadingKey === rc.id ? 'Preparing…' : '📄 Download Report Card'}
+                  </button>
+                )
+              })()}
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {rows.map(r => {
