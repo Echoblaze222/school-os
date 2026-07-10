@@ -95,6 +95,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: schoolErr.message }, { status: 500 })
     }
 
+    // ── Seed default subjects ────────────────────────────────────────────────
+    // Without this, every admin-created school starts with an empty subject
+    // list — subjects dropdown, class-subject assignments, live classes,
+    // notes, and results all silently fail until subjects are added by hand.
+    // Copies Kings College's existing 74-subject curriculum as the default;
+    // does nothing if this school somehow already has subjects.
+    try {
+      await adminSupabase.rpc('seed_default_subjects', { target_school_id: school.id })
+    } catch (seedErr) {
+      console.error('[create-school] Subject seed failed (non-fatal):', seedErr)
+    }
+
     // ── Seed the subscriptions row ──────────────────────────────────────────
     // Without this, the principal's /dashboard/principal/subscription page
     // finds no subscriptions row at all (that page only ever reads
@@ -287,4 +299,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: err.message ?? 'Internal server error' }, { status: 500 })
   }
   }
-      
+
+          
