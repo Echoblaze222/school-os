@@ -39,6 +39,7 @@ export default async function PrincipalSettingsPage() {
         phone:     profile.phone ?? '',
         school_id: profile.school_id,
         role:      profile.role,
+        signature_url: profile.signature_url ?? null,
       }}
       school={{
         id:               school.id,

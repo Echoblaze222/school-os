@@ -19,6 +19,7 @@ interface Profile {
   phone:     string
   school_id: string
   role:      string
+  signature_url?: string | null
 }
 
 interface School {
@@ -84,6 +85,11 @@ export default function SettingsClient({ profile, school }: Props) {
   const [buildImagePreview, setBuildImagePreview] = useState<string | null>(school.build_image_url)
 
   const [logoUploading,       setLogoUploading]       = useState(false)
+  const [sigUrl,     setSigUrl]     = useState<string | null>(profile?.signature_url ?? null)
+  const [sigPreview, setSigPreview] = useState<string | null>(profile?.signature_url ?? null)
+  const [sigUploading, setSigUploading] = useState(false)
+  const [sigError,     setSigError]     = useState<string | null>(null)
+  const [sigOver,       setSigOver]     = useState(false)
   const [buildImageUploading, setBuildImageUploading] = useState(false)
   const [logoError,           setLogoError]           = useState<string | null>(null)
   const [buildImageError,     setBuildImageError]     = useState<string | null>(null)
@@ -94,6 +100,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const [saveErr, setSaveErr] = useState<string | null>(null)
 
   const logoInputRef       = useRef<HTMLInputElement>(null)
+  const sigInputRef        = useRef<HTMLInputElement>(null)
   const buildImageInputRef = useRef<HTMLInputElement>(null)
 
   // ── Upload helper ────────────────────────────────────────────────────────────
@@ -138,6 +145,40 @@ export default function SettingsClient({ profile, school }: Props) {
     } finally {
       onProgress(false)
     }
+  }
+
+  // ── Signature file pick ──────────────────────────────────────────────────────
+  async function onSigChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = ev => setSigPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+
+    await uploadImage(
+      file,
+      'school-assets',
+      'signatures',
+      setSigUploading,
+      setSigError,
+      async url => {
+        setSigUrl(url)
+        setSigPreview(url)
+        // Signature is a personal (profile) field, not part of the school
+        // branding form — save it immediately rather than waiting for the
+        // main "Save" button.
+        const { error } = await supabase.from('profiles').update({ signature_url: url }).eq('id', profile.id)
+        if (error) setSigError(error.message)
+      },
+    )
+  }
+
+  function removeSig() {
+    setSigUrl(null)
+    setSigPreview(null)
+    setSigError(null)
+    supabase.from('profiles').update({ signature_url: null }).eq('id', profile.id)
   }
 
   // ── Logo file pick ───────────────────────────────────────────────────────────
@@ -525,6 +566,70 @@ export default function SettingsClient({ profile, school }: Props) {
                 accept="image/*"
                 className={styles.hiddenInput}
                 onChange={onLogoChange}
+              />
+            </div>
+
+            {/* ── Principal's Signature ── */}
+            <p className={styles.sectionLabel}>Your Signature</p>
+            <div className={`glass-card ${styles.card}`}>
+              <p className={styles.imageHint}>
+                Appears on every report card you approve. Upload a photo or scan of your
+                signature on a plain background — PNG with a transparent background works best.
+              </p>
+
+              {sigPreview ? (
+                <div className={styles.imagePreviewWrapper}>
+                  <img src={sigPreview} alt="Signature preview" className={styles.logoPreview} />
+                  <div className={styles.imageActions}>
+                    <button
+                      className={styles.changeBtn}
+                      onClick={() => sigInputRef.current?.click()}
+                      disabled={sigUploading}
+                    >
+                      {sigUploading ? <><RefreshIcon size={14} /> Uploading…</> : <><RefreshIcon size={14} /> Change Signature</>}
+                    </button>
+                    <button className={styles.removeBtn} onClick={removeSig}>
+                      <TrashIcon size={14} /> Remove
+                    </button>
+                  </div>
+                  {sigError && <p className={styles.fileError}>{sigError}</p>}
+                </div>
+              ) : (
+                <div
+                  className={`${styles.dropZone} ${sigOver ? styles.dropZoneOver : ''} ${sigUploading ? styles.dropZoneLoading : ''}`}
+                  onClick={() => !sigUploading && sigInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setSigOver(true) }}
+                  onDragLeave={() => setSigOver(false)}
+                  onDrop={e => {
+                    setSigOver(false)
+                    handleDrop(e, onSigChange, sigInputRef as React.RefObject<HTMLInputElement>)
+                  }}
+                >
+                  {sigUploading ? (
+                    <>
+                      <RefreshIcon size={28} />
+                      <p className={styles.dropTitle}>Uploading signature…</p>
+                    </>
+                  ) : (
+                    <>
+                      <UploadIcon size={28} />
+                      <p className={styles.dropTitle}>Drop your signature here</p>
+                      <p className={styles.dropSub}>or click to browse — PNG, JPG · max 5 MB</p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {sigError && !sigPreview && (
+                <p className={styles.fileError}>{sigError}</p>
+              )}
+
+              <input
+                ref={sigInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.hiddenInput}
+                onChange={onSigChange}
               />
             </div>
 
