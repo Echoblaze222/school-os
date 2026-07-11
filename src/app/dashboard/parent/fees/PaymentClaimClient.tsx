@@ -54,11 +54,21 @@ export default function PaymentClaimClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    // Resolve child
+    // Resolve child via parent_student_links (source of truth) — NOT
+    // profiles.parent_id, which is a legacy column never populated by the
+    // current link-child flow.
+    const { data: links } = await supabase
+      .from('parent_student_links')
+      .select('student_id')
+      .eq('parent_id', userId)
+
+    const firstId = links?.[0]?.student_id
+    if (!firstId) { setLoading(false); return }
+
     const { data: childData } = await supabase
       .from('profiles')
       .select('id, full_name, class_level')
-      .eq('parent_id', userId)
+      .eq('id', firstId)
       .single()
 
     if (!childData) { setLoading(false); return }
