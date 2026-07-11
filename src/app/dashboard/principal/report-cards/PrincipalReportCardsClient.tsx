@@ -64,7 +64,7 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: 'var(--space-4)' }}>
-      <DashboardHeader profile={profile} school={school} title="Report Cards" />
+      <DashboardHeader profile={profile} school={school} userId={principalId} role="principal" title="Report Cards" />
 
       {!hasSignature && (
         <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid #F59E0B', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#F59E0B', fontSize: '0.85rem' }}>
