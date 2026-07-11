@@ -32,6 +32,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   const [timetable, setTimetable] = useState<any[]>([])
   const [subjectMap,setSubjectMap]= useState<Record<string, string>>({})
   const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState<string | null>(null)
   const [day,       setDay]       = useState<string>(() => {
     const d = new Date().getDay()
     return d === 0 || d === 6 ? 'Monday' : DAYS[d - 1]
@@ -45,12 +46,32 @@ export default function TimetableClient({ profile, school, userId }: Props) {
 
   async function loadChildren() {
     setLoading(true)
+    setError(null)
+    // Source of truth for parent->child linking is parent_student_links.
+    // profiles.parent_id is a legacy column never populated by the current
+    // link-child flow, so it must not be used to resolve children.
+    const { data: links, error: linksErr } = await supabase
+      .from('parent_student_links')
+      .select('student_id')
+      .eq('parent_id', userId)
+
+    if (linksErr) { setError(linksErr.message); setLoading(false); return }
+
+    const ids = (links ?? []).map((l: any) => l.student_id)
+    if (!ids.length) {
+      setChildren([])
+      setLoading(false)
+      return
+    }
+
     // A parent can have more than one linked child — never assume .single()
-    const { data: childData } = await supabase
+    const { data: childData, error: childErr } = await supabase
       .from('profiles')
       .select('id, full_name, class_level, class_id')
-      .eq('parent_id', userId)
+      .in('id', ids)
       .order('full_name')
+
+    if (childErr) { setError(childErr.message); setLoading(false); return }
 
     if (!childData || childData.length === 0) {
       setChildren([])
@@ -110,7 +131,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
         : children.length === 0
           ? <div className={styles.empty}>
               <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No child linked to your account.</p>
+              <p>{error ? `Couldn't load timetable: ${error}` : 'No child linked to your account.'}</p>
             </div>
           : <>
               {/* Child switcher — only shown when parent has more than one linked child */}
