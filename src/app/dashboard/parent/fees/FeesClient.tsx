@@ -108,11 +108,29 @@ export default function FeesClient({ profile, school, userId }: Props) {
   async function loadChildren() {
     setLoading(true)
     setError('')
+    // Source of truth for parent->child linking is parent_student_links.
+    // profiles.parent_id is a legacy column that is never populated by the
+    // current link-child flow (see /api/parent/link-child), so it must not
+    // be used to resolve children.
+    const { data: links, error: linksErr } = await supabase
+      .from('parent_student_links')
+      .select('student_id')
+      .eq('parent_id', userId)
+
+    if (linksErr) { setError(linksErr.message); setLoading(false); return }
+
+    const ids = (links ?? []).map((l: any) => l.student_id)
+    if (!ids.length) {
+      setChildren([])
+      setLoading(false)
+      return
+    }
+
     // A parent can have more than one linked child — never assume .single()
     const { data: childData, error: err } = await supabase
       .from('profiles')
       .select('id, full_name, class_level')
-      .eq('parent_id', userId)
+      .in('id', ids)
       .order('full_name')
 
     if (err) { setError(err.message); setLoading(false); return }
