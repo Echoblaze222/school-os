@@ -90,7 +90,7 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: 'var(--space-4)' }}>
-      <DashboardHeader profile={profile} school={school} title="Report Cards" />
+      <DashboardHeader profile={profile} school={school} userId={teacherId} role="teacher" title="Report Cards" />
 
       {classes.length > 1 && (
         <select value={classId} onChange={e => setClassId(e.target.value)} className="input" style={{ marginBottom: 12 }}>
