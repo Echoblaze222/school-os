@@ -30,25 +30,30 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
     if (!links?.length) { setLoading(false); return }
     const ids = links.map((l: any) => l.student_id as string)
 
-    const [{ data: pRows }, { data: spRows }] = await Promise.all([
-      supabase.from('profiles')
-        .select('id, full_name, default_code, avatar_url, email')
-        .in('id', ids),
-      supabase.from('student_profiles')
-        .select('id, class_id, classes(id, name, class_level)')
-        .in('id', ids),
-    ])
+    // profiles.class_id is the source of truth for a student's class —
+    // student_profiles is not reliably populated for every student, so it
+    // must not be relied on. Resolve the class's display name separately
+    // via the classes table instead.
+    const { data: pRows } = await supabase
+      .from('profiles')
+      .select('id, full_name, default_code, avatar_url, email, class_id')
+      .in('id', ids)
+
+    const classIds = [...new Set((pRows ?? []).map((r: any) => r.class_id).filter(Boolean))]
+    const { data: classRows } = classIds.length
+      ? await supabase.from('classes').select('id, name, class_level').in('id', classIds)
+      : { data: [] as any[] }
 
     const allChildren = ids.map((sid: string) => {
-      const p  = (pRows  ?? []).find((r: any) => r.id === sid)
-      const sp = (spRows ?? []).find((r: any) => r.id === sid)
+      const p  = (pRows ?? []).find((r: any) => r.id === sid)
+      const cl = (classRows ?? []).find((r: any) => r.id === p?.class_id)
       return {
         id:           sid,
         full_name:    p?.full_name    ?? null,
         default_code: p?.default_code ?? null,
         avatar_url:   p?.avatar_url   ?? null,
         email:        p?.email        ?? null,
-        class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+        class_level:  cl?.class_level ?? cl?.name ?? null,
       }
     }).filter((c: any) => !!c.full_name)
 
