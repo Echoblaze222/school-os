@@ -95,7 +95,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     // 1a. Students — plain query, no joins
     const { data: students, error: sErr } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url')
+      .select('id, full_name, avatar_url, class_id')
       .eq('school_id', school?.id)
       .eq('role', 'student')
 
@@ -108,18 +108,22 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
     const studentIds = students.map((s: any) => s.id)
 
-    // 1b. student_profiles — separate query, no FK join
-    const { data: spRows } = await supabase
-      .from('student_profiles')
-      .select('id, class_id, classes(name, class_level)')
-      .in('id', studentIds)
+    // profiles.class_id is the source of truth for a student's class —
+    // student_profiles is not reliably populated for every student (some
+    // rows don't exist there at all), so it's only used here to resolve
+    // the class's display name, not to determine class membership.
+    const classIds = [...new Set(students.map((s: any) => s.class_id).filter(Boolean))]
+    const { data: classRows } = classIds.length
+      ? await supabase.from('classes').select('id, name, class_level').in('id', classIds)
+      : { data: [] as any[] }
 
     // Build a lookup map: student_id -> { class_id, class_level }
     const spMap: Record<string, { class_id: string; class_level: string }> = {}
-    ;(spRows ?? []).forEach((sp: any) => {
-      spMap[sp.id] = {
-        class_id:    sp.class_id ?? null,
-        class_level: sp.classes?.class_level ?? sp.classes?.name ?? '—',
+    ;(students ?? []).forEach((s: any) => {
+      const cl = (classRows ?? []).find((c: any) => c.id === s.class_id)
+      spMap[s.id] = {
+        class_id:    s.class_id ?? null,
+        class_level: cl?.class_level ?? cl?.name ?? '—',
       }
     })
 
