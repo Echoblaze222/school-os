@@ -7,6 +7,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// FIX: Vercel's default function timeout (10s Hobby / 15s Pro) is often not
+// enough for a cold Chromium launch + page render. Without this, a slow
+// cold start gets killed mid-generation, which looks identical to Chromium
+// failing to launch — both end up silently falling back to HTML.
+export const maxDuration = 60
+
 const TERM_LABEL: Record<string, string> = {
   first: 'First Term', second: 'Second Term', third: 'Third Term',
 }
@@ -205,23 +211,27 @@ export async function POST(request: Request) {
 
     // ── HTML → PDF (same pipeline as receipts/generate) ──────────────────
     let pdfBuffer: Buffer | null = null
+    let pdfError: string | null = null
     try {
-      const puppeteer = await import('puppeteer-core').catch(() => null)
-      const chromium  = await import('@sparticuz/chromium').catch(() => null)
-      if (puppeteer && chromium) {
-        const browser = await (puppeteer as any).default.launch({
-          args: (chromium as any).default.args,
-          defaultViewport: (chromium as any).default.defaultViewport,
-          executablePath: await (chromium as any).default.executablePath(),
-          headless: true,
-        })
-        const page = await browser.newPage()
-        await page.setContent(html, { waitUntil: 'networkidle0' })
-        pdfBuffer = await page.pdf({ format: 'A4', printBackground: true })
-        await browser.close()
-      }
-    } catch (e) {
-      console.warn('Report card PDF generation unavailable, using HTML fallback:', e)
+      // FIX: previously these used `.catch(() => null)`, which swallowed
+      // import errors with ZERO trace anywhere — not even a console.warn.
+      // If puppeteer-core/@sparticuz/chromium failed to import at runtime,
+      // we'd never have known. Now the actual error is captured either way.
+      const puppeteer = await import('puppeteer-core')
+      const chromium  = await import('@sparticuz/chromium')
+      const browser = await (puppeteer as any).default.launch({
+        args: (chromium as any).default.args,
+        defaultViewport: (chromium as any).default.defaultViewport,
+        executablePath: await (chromium as any).default.executablePath(),
+        headless: true,
+      })
+      const page = await browser.newPage()
+      await page.setContent(html, { waitUntil: 'networkidle0' })
+      pdfBuffer = await page.pdf({ format: 'A4', printBackground: true })
+      await browser.close()
+    } catch (e: any) {
+      pdfError = e?.message ?? String(e)
+      console.error('Report card PDF generation failed, using HTML fallback:', e)
     }
 
     const fileName = `report-cards/${rc.student_id}-${rc.academic_year.replace('/', '-')}-${rc.term}.${pdfBuffer ? 'pdf' : 'html'}`
@@ -237,7 +247,11 @@ export async function POST(request: Request) {
       .from('pdf-exports')
       .createSignedUrl(fileName, 60 * 60 * 24) // 24h link
 
-    return NextResponse.json({ url: signed?.signedUrl ?? fileName })
+    // pdfError is included (only when generation actually failed) so the
+    // real cause is visible in the browser Network tab without needing
+    // Vercel log access — remove this once PDF generation is confirmed
+    // working reliably.
+    return NextResponse.json({ url: signed?.signedUrl ?? fileName, pdfError })
 
   } catch (err: any) {
     console.error('Report card generation error:', err)
