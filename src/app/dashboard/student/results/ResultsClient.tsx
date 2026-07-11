@@ -170,6 +170,43 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
       title="My Results"
     >
 
+      {/* ── Report Cards (independent of whether results exist for the term) ── */}
+      {reportCards.length > 0 && (
+        <div style={{ marginBottom: 'var(--space-5)' }}>
+          <p style={{
+            margin: '0 0 var(--space-2)', fontSize: '0.65rem', fontWeight: 800,
+            textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)',
+          }}>
+            Report Cards
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {reportCards.map(rc => (
+              <div key={rc.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 14px', background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)', borderRadius: 10,
+              }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                  {DB_TO_TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}
+                </span>
+                <button
+                  onClick={() => downloadReportCard(rc.term, rc.academic_year)}
+                  disabled={downloadingKey === rc.id}
+                  style={{
+                    fontSize: '0.7rem', fontWeight: 700, padding: '6px 12px', borderRadius: 999,
+                    border: `1px solid ${school?.primary_color ?? '#7C3AED'}`,
+                    background: 'transparent', color: school?.primary_color ?? '#7C3AED',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {downloadingKey === rc.id ? 'Preparing…' : '📄 Download'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Summary stats ── */}
       {filtered.length > 0 && (
         <div style={{
@@ -254,36 +291,16 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
           <div key={groupKey} style={{ marginBottom: 'var(--space-5)' }}>
 
             {/* Group header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 var(--space-2)' }}>
-              <p style={{
-                margin: 0,
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--text-muted)',
-              }}>
-                {groupKey}
-              </p>
-              {(() => {
-                const rc = reportCards.find(r => r.term === rows[0].term && r.academic_year === rows[0].academic_year)
-                if (!rc) return null
-                return (
-                  <button
-                    onClick={() => downloadReportCard(rows[0].term, rows[0].academic_year)}
-                    disabled={downloadingKey === rc.id}
-                    style={{
-                      fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 999,
-                      border: `1px solid ${school?.primary_color ?? '#7C3AED'}`,
-                      background: 'transparent', color: school?.primary_color ?? '#7C3AED',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {downloadingKey === rc.id ? 'Preparing…' : '📄 Download Report Card'}
-                  </button>
-                )
-              })()}
-            </div>
+            <p style={{
+              margin: '0 0 var(--space-2)',
+              fontSize: '0.65rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: 'var(--text-muted)',
+            }}>
+              {groupKey}
+            </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {rows.map(r => {
