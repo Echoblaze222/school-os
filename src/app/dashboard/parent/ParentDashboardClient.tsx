@@ -72,26 +72,33 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
       const ids = links.map((l: any) => l.student_id as string)
 
-      const [{ data: pRows }, { data: spRows }] = await Promise.all([
-        supabase.from('profiles')
-          .select('id, full_name, avatar_url, default_code, school_id')
-          .in('id', ids),
-        supabase.from('student_profiles')
-          .select('id, class_id, classes(id, name, class_level)')
-          .in('id', ids),
-      ])
+      // profiles.class_id is the source of truth for a student's class —
+      // matches every other parent-facing page (fees, assignments,
+      // timetable, results). student_profiles is NOT reliably populated
+      // for every student (some rows simply don't exist there), so it must
+      // not be relied on for class_id — only used here, separately, to
+      // resolve the class's display name.
+      const { data: pRows } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, default_code, school_id, class_id')
+        .in('id', ids)
+
+      const classIds = [...new Set((pRows ?? []).map((r: any) => r.class_id).filter(Boolean))]
+      const { data: classRows } = classIds.length
+        ? await supabase.from('classes').select('id, name, class_level').in('id', classIds)
+        : { data: [] as any[] }
 
       const resolved = ids.map((sid: string) => {
-        const p  = (pRows  ?? []).find((r: any) => r.id === sid)
-        const sp = (spRows ?? []).find((r: any) => r.id === sid)
+        const p  = (pRows ?? []).find((r: any) => r.id === sid)
+        const cl = (classRows ?? []).find((r: any) => r.id === p?.class_id)
         return {
           id:           sid,
           full_name:    p?.full_name    ?? null,
           avatar_url:   p?.avatar_url   ?? null,
           default_code: p?.default_code ?? null,
           school_id:    p?.school_id    ?? null,
-          class_id:     sp?.class_id    ?? null,
-          class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+          class_id:     p?.class_id     ?? null,
+          class_level:  cl?.class_level ?? cl?.name ?? null,
         }
       }).filter((c: any) => !!c.full_name)
 
