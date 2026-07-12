@@ -31,6 +31,7 @@ function styles(primary: string) {
     logo: { width: 44, height: 44, objectFit: 'contain', borderRadius: 6 },
     schoolName: { fontSize: 16, fontWeight: 700, color: primary },
     schoolSub: { fontSize: 8, color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 },
+    schoolMotto: { fontSize: 7.5, color: '#aaa', fontStyle: 'italic', marginTop: 1 },
     docTitleWrap: { alignItems: 'flex-end' },
     docTitle: { fontSize: 13, fontWeight: 700 },
     docSub: { fontSize: 9, color: '#888', marginTop: 2 },
@@ -87,6 +88,7 @@ function ReportCardDocument({ data }: { data: any }) {
             <View>
               <Text style={s.schoolName}>{data.schoolName}</Text>
               <Text style={s.schoolSub}>Term Report Card</Text>
+              {data.motto ? <Text style={s.schoolMotto}>"{data.motto}"</Text> : null}
             </View>
           </View>
           <View style={s.docTitleWrap}>
@@ -142,7 +144,9 @@ function ReportCardDocument({ data }: { data: any }) {
 
         <View style={s.signRow}>
           <View style={s.signBox}>
-            <Text style={s.signLine}>Class Teacher</Text>
+            {data.classTeacherSignatureUrl ? <Image src={data.classTeacherSignatureUrl} style={s.signImg} /> : null}
+            <Text style={s.signLine}>{data.classTeacherName}</Text>
+            <Text style={s.signRole}>Class Teacher</Text>
           </View>
           <View style={s.signBox}>
             {data.signatureUrl ? <Image src={data.signatureUrl} style={s.signImg} /> : null}
@@ -174,6 +178,7 @@ export async function POST(request: Request) {
         *,
         student:profiles!report_cards_student_id_fkey ( full_name, admission_number, student_number ),
         approver:profiles!report_cards_approved_by_fkey ( full_name, signature_url ),
+        class_teacher:profiles!report_cards_generated_by_fkey ( full_name, signature_url ),
         classes ( name, class_level, section )
       `)
       .eq('id', report_card_id)
@@ -187,9 +192,18 @@ export async function POST(request: Request) {
 
     const { data: branding } = await admin
       .from('school_branding')
-      .select('school_name, logo_url, primary_color')
+      .select('school_name, tagline, logo_url, primary_color')
       .eq('id', rc.school_id)
       .maybeSingle()
+
+    // FIX: if a school never went through branding setup, school_branding
+    // has no row at all — fall back to schools.name so the report card
+    // shows the real school name instead of the generic word "School".
+    let fallbackSchoolName: string | null = null
+    if (!branding) {
+      const { data: schoolRow } = await admin.from('schools').select('name').eq('id', rc.school_id).maybeSingle()
+      fallbackSchoolName = schoolRow?.name ?? null
+    }
 
     const { data: results } = await admin
       .from('results')
@@ -230,7 +244,8 @@ export async function POST(request: Request) {
     const docData = {
       primary: branding?.primary_color ?? '#800020',
       logoUrl: branding?.logo_url ?? null,
-      schoolName: branding?.school_name ?? 'School',
+      schoolName: branding?.school_name ?? fallbackSchoolName ?? 'School',
+      motto: branding?.tagline ?? null,
       termLabel: TERM_LABEL[rc.term] ?? rc.term,
       academicYear: rc.academic_year,
       studentName: rc.student?.full_name ?? '—',
@@ -244,6 +259,8 @@ export async function POST(request: Request) {
       principalRemark: rc.principal_remark,
       signatureUrl: rc.approver?.signature_url ?? null,
       principalName: rc.approver?.full_name ?? '—',
+      classTeacherSignatureUrl: rc.class_teacher?.signature_url ?? null,
+      classTeacherName: rc.class_teacher?.full_name ?? '—',
       generatedDate: new Date().toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }),
     }
 
