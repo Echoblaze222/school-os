@@ -190,20 +190,15 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
 
+    // FIX: branding (name, logo, colors, tagline) is written directly to
+    // the `schools` table by /api/principal/settings — school_branding is
+    // a separate, unused table in this app. Reading from the wrong table
+    // was why the logo and brand color never showed up.
     const { data: branding } = await admin
-      .from('school_branding')
-      .select('school_name, tagline, logo_url, primary_color')
+      .from('schools')
+      .select('name, tagline, logo_url, primary_color')
       .eq('id', rc.school_id)
       .maybeSingle()
-
-    // FIX: if a school never went through branding setup, school_branding
-    // has no row at all — fall back to schools.name so the report card
-    // shows the real school name instead of the generic word "School".
-    let fallbackSchoolName: string | null = null
-    if (!branding) {
-      const { data: schoolRow } = await admin.from('schools').select('name').eq('id', rc.school_id).maybeSingle()
-      fallbackSchoolName = schoolRow?.name ?? null
-    }
 
     const { data: results } = await admin
       .from('results')
@@ -244,7 +239,7 @@ export async function POST(request: Request) {
     const docData = {
       primary: branding?.primary_color ?? '#800020',
       logoUrl: branding?.logo_url ?? null,
-      schoolName: branding?.school_name ?? fallbackSchoolName ?? 'School',
+      schoolName: branding?.name ?? 'School',
       motto: branding?.tagline ?? null,
       termLabel: TERM_LABEL[rc.term] ?? rc.term,
       academicYear: rc.academic_year,
