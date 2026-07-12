@@ -72,26 +72,44 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
       const ids = links.map((l: any) => l.student_id as string)
 
+      // student_profiles.class_id is what every real write flow updates
+      // (student creation, the secretary edit modal, and promotion/transfer
+      // all write here) — it's the CURRENT value, especially after a
+      // student has been promoted. profiles.class_id is never updated by
+      // promotion, so it goes stale for any promoted student; it's used
+      // only as a fallback for the rare case where a student has no
+      // student_profiles row at all (e.g. incomplete/manually-seeded data).
       const [{ data: pRows }, { data: spRows }] = await Promise.all([
         supabase.from('profiles')
-          .select('id, full_name, avatar_url, default_code, school_id')
+          .select('id, full_name, avatar_url, default_code, school_id, class_id')
           .in('id', ids),
         supabase.from('student_profiles')
-          .select('id, class_id, classes(id, name, class_level)')
+          .select('id, class_id')
           .in('id', ids),
       ])
+
+      const classIds = [...new Set(ids.map((sid: string) => {
+        const sp = (spRows ?? []).find((r: any) => r.id === sid)
+        const p  = (pRows  ?? []).find((r: any) => r.id === sid)
+        return sp?.class_id ?? p?.class_id ?? null
+      }).filter(Boolean))]
+      const { data: classRows } = classIds.length
+        ? await supabase.from('classes').select('id, name, class_level').in('id', classIds)
+        : { data: [] as any[] }
 
       const resolved = ids.map((sid: string) => {
         const p  = (pRows  ?? []).find((r: any) => r.id === sid)
         const sp = (spRows ?? []).find((r: any) => r.id === sid)
+        const resolvedClassId = sp?.class_id ?? p?.class_id ?? null
+        const cl = (classRows ?? []).find((r: any) => r.id === resolvedClassId)
         return {
           id:           sid,
           full_name:    p?.full_name    ?? null,
           avatar_url:   p?.avatar_url   ?? null,
           default_code: p?.default_code ?? null,
           school_id:    p?.school_id    ?? null,
-          class_id:     sp?.class_id    ?? null,
-          class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+          class_id:     resolvedClassId,
+          class_level:  cl?.class_level ?? cl?.name ?? null,
         }
       }).filter((c: any) => !!c.full_name)
 
