@@ -89,7 +89,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       .in('id', ids)
 
     const merged = childData.map((c: any) => {
-      const sp = (spRows ?? []).find((r: any) => r.id === c.id)
+      const sp = ((spRows ?? []) as any[]).find((r: any) => r.id === c.id)
       return { ...c, class_id: sp?.class_id ?? c.class_id ?? null }
     })
 
