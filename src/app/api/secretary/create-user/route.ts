@@ -100,10 +100,14 @@ export async function POST(request: Request) {
 
     if (!userId) return NextResponse.json({ error: 'Failed to create auth user' }, { status: 500 })
 
-    // ✅ FIX: Set onboarding_stage using the canonical string enum.
-    // principal → stage_1_pending (they set their PIN on stage-1 page)
-    // all other roles → stage_2_pending (PIN setup on stage-2 page)
-    const onboardingStage = role === 'principal' ? 'stage_1_pending' : 'stage_2_pending'
+    // Every account created via access code — regardless of role — must
+    // start at 'stage_1_pending'. That's the ONLY stage /api/auth/first-login
+    // accepts for activation (see isFirstLogin there); anything else causes
+    // an immediate, permanent "Account already activated" error the very
+    // first time the person ever tries their code. Onboarding then advances
+    // them to stage 2 itself once activation succeeds — this route should
+    // never pre-skip that step for any role.
+    const onboardingStage = 'stage_1_pending'
 
     // If a classId was given, resolve the class name so we can write class_level to profiles
     let resolvedClassName: string | null = null
