@@ -95,18 +95,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: schoolErr.message }, { status: 500 })
     }
 
-    // ── Seed default subjects ────────────────────────────────────────────────
-    // Without this, every admin-created school starts with an empty subject
-    // list — subjects dropdown, class-subject assignments, live classes,
-    // notes, and results all silently fail until subjects are added by hand.
-    // Copies Kings College's existing 74-subject curriculum as the default;
-    // does nothing if this school somehow already has subjects.
-    try {
-      await adminSupabase.rpc('seed_default_subjects', { target_school_id: school.id })
-    } catch (seedErr) {
-      console.error('[create-school] Subject seed failed (non-fatal):', seedErr)
-    }
-
     // ── Seed the subscriptions row ──────────────────────────────────────────
     // Without this, the principal's /dashboard/principal/subscription page
     // finds no subscriptions row at all (that page only ever reads
@@ -147,7 +135,12 @@ export async function POST(req: Request) {
       console.error('[create-school] Subscription row seed failed (non-fatal):', subErr)
     }
 
-    const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+    // Supabase auth requires a password on user creation, but this account is
+    // never meant to be signed into with it — activation happens entirely via
+    // the access code + a password the principal sets themselves on first
+    // login (see /api/auth/first-login). So this is thrown away immediately:
+    // long, random, never logged, never emailed, never shown in any UI.
+    const throwawayPassword = crypto.randomUUID() + crypto.randomUUID()
     // PRIN-XXX-XXX — drawn from a charset with no 0/O or 1/I, since those
     // are nearly indistinguishable in most UI fonts and cause exactly the
     // kind of "Invalid access code" mistype this was built to prevent.
@@ -163,7 +156,7 @@ export async function POST(req: Request) {
 
     const { data: authUser, error: authErr } = await adminSupabase.auth.admin.createUser({
       email:         principalEmail,
-      password:      tempPassword,
+      password:      throwawayPassword,
       email_confirm: true,
     })
 
@@ -222,8 +215,8 @@ export async function POST(req: Request) {
     }
 
     const welcomeMsg = setupType === 'trial'
-      ? `Your school "${schoolName}" has been set up with a ${trialDays}-day free trial.\n\nLogin: ${principalEmail}\nAccess Code: ${defaultCode}\nTemp Password: ${tempPassword}\n\nPlease change your password after first login.`
-      : `Your school "${schoolName}" is now active with 1 month of free access.\n\nLogin: ${principalEmail}\nAccess Code: ${defaultCode}\nTemp Password: ${tempPassword}\n\nPlease change your password after first login.`
+      ? `Your school "${schoolName}" has been set up with a ${trialDays}-day free trial.\n\nLogin: ${principalEmail}\nAccess Code: ${defaultCode}\n\nUse "New User" on the login page with this access code to set your own password.`
+      : `Your school "${schoolName}" is now active with 1 month of free access.\n\nLogin: ${principalEmail}\nAccess Code: ${defaultCode}\n\nUse "New User" on the login page with this access code to set your own password.`
 
     await adminSupabase.from('notifications').insert({
       user_id: authUser.user.id,
@@ -262,11 +255,10 @@ export async function POST(req: Request) {
                   <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Plan</td><td style="color:#a78bfa;font-weight:600;font-size:14px;">${planLabel}</td></tr>
                   <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Email</td><td style="color:#fff;font-weight:600;font-size:14px;">${principalEmail}</td></tr>
                   <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Access Code</td><td style="color:#fff;font-weight:600;font-size:14px;font-family:monospace;">${defaultCode}</td></tr>
-                  <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Temp Password</td><td style="color:#fff;font-weight:600;font-size:14px;font-family:monospace;">${tempPassword}</td></tr>
                 </table>
               </div>
               <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
-                ⚠️ You will be asked to set a new PIN and password on first login. Keep this email safe until then.
+                ⚠️ Tap "New User" on the login page and enter this access code to set your own password and PIN. Keep this email safe until then.
               </p>
               <div style="text-align:center;margin:28px 0;">
                 <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
@@ -291,7 +283,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok:        true,
       school:    { id: school.id, slug: school.slug },
-      principal: { id: authUser.user.id, email: principalEmail, defaultCode, tempPassword },
+      principal: { id: authUser.user.id, email: principalEmail, defaultCode },
     })
 
   } catch (err: any) {
@@ -299,5 +291,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: err.message ?? 'Internal server error' }, { status: 500 })
   }
   }
-
-          
+      
