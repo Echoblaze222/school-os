@@ -108,14 +108,18 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
     const studentIds = students.map((s: any) => s.id)
 
-    // 1b. student_profiles — separate query, no FK join
+    // student_profiles.class_id is what every real write flow updates
+    // (creation, edit modal, promotion/transfer) — it's the CURRENT value.
+    // profiles.class_id is never touched by promotion, so it goes stale
+    // for any promoted student; used only as a fallback when a student has
+    // no student_profiles row at all.
     const { data: spRows } = await supabase
       .from('student_profiles')
-      .select('id, class_id, classes(name, class_level)')
+      .select('id, class_id')
       .in('id', studentIds)
 
     const resolvedClassIdFor = (studentId: string, fallback: any) => {
-      const sp = (spRows ?? []).find((r: any) => r.id === studentId)
+      const sp = ((spRows ?? []) as any[]).find((r: any) => r.id === studentId)
       return sp?.class_id ?? fallback ?? null
     }
 
@@ -128,10 +132,12 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
 
     // Build a lookup map: student_id -> { class_id, class_level }
     const spMap: Record<string, { class_id: string; class_level: string }> = {}
-    ;(spRows ?? []).forEach((sp: any) => {
-      spMap[sp.id] = {
-        class_id:    sp.class_id ?? null,
-        class_level: sp.classes?.class_level ?? sp.classes?.name ?? '—',
+    ;(students ?? []).forEach((s: any) => {
+      const resolvedClassId = resolvedClassIdFor(s.id, s.class_id)
+      const cl = (classRows ?? []).find((c: any) => c.id === resolvedClassId)
+      spMap[s.id] = {
+        class_id:    resolvedClassId ?? null,
+        class_level: cl?.class_level ?? cl?.name ?? '—',
       }
     })
 
