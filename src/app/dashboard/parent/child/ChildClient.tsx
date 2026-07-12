@@ -30,25 +30,41 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
     if (!links?.length) { setLoading(false); return }
     const ids = links.map((l: any) => l.student_id as string)
 
+    // student_profiles.class_id is what every real write flow updates
+    // (creation, edit modal, promotion/transfer) — it's the CURRENT value.
+    // profiles.class_id is never touched by promotion, so it goes stale
+    // for any promoted student; used only as a fallback when a student has
+    // no student_profiles row at all.
     const [{ data: pRows }, { data: spRows }] = await Promise.all([
       supabase.from('profiles')
-        .select('id, full_name, default_code, avatar_url, email')
+        .select('id, full_name, default_code, avatar_url, email, class_id')
         .in('id', ids),
       supabase.from('student_profiles')
-        .select('id, class_id, classes(id, name, class_level)')
+        .select('id, class_id')
         .in('id', ids),
     ])
+
+    const classIds = [...new Set(ids.map((sid: string) => {
+      const sp = (spRows ?? []).find((r: any) => r.id === sid)
+      const p  = (pRows  ?? []).find((r: any) => r.id === sid)
+      return sp?.class_id ?? p?.class_id ?? null
+    }).filter(Boolean))]
+    const { data: classRows } = classIds.length
+      ? await supabase.from('classes').select('id, name, class_level').in('id', classIds)
+      : { data: [] as any[] }
 
     const allChildren = ids.map((sid: string) => {
       const p  = (pRows  ?? []).find((r: any) => r.id === sid)
       const sp = (spRows ?? []).find((r: any) => r.id === sid)
+      const resolvedClassId = sp?.class_id ?? p?.class_id ?? null
+      const cl = (classRows ?? []).find((r: any) => r.id === resolvedClassId)
       return {
         id:           sid,
         full_name:    p?.full_name    ?? null,
         default_code: p?.default_code ?? null,
         avatar_url:   p?.avatar_url   ?? null,
         email:        p?.email        ?? null,
-        class_level:  (sp?.classes as any)?.class_level ?? (sp?.classes as any)?.name ?? null,
+        class_level:  cl?.class_level ?? cl?.name ?? null,
       }
     }).filter((c: any) => !!c.full_name)
 
