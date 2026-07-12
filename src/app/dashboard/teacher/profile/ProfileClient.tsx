@@ -29,6 +29,8 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   const [fullName,    setFullName]    = useState(profile?.full_name    ?? '')
   const [phone,       setPhone]       = useState(profile?.phone        ?? '')
   const [avatar,      setAvatar]      = useState(profile?.avatar_url   ?? '')
+  const [signature,   setSignature]   = useState(profile?.signature_url ?? '')
+  const [uploadingSig, setUploadingSig] = useState(false)
   const [qualification, setQualification] = useState(profile?.qualification ?? '')
   const [employeeId,  setEmployeeId]  = useState(profile?.employee_id  ?? '')
   const [yearsExp,    setYearsExp]    = useState(profile?.years_experience ?? '')
@@ -37,6 +39,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   const fileRef  = useRef<HTMLInputElement>(null)
+  const sigFileRef = useRef<HTMLInputElement>(null)
   const router   = useRouter()
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#7C3AED'
@@ -145,6 +148,59 @@ export default function ProfileClient({ profile, school, userId }: Props) {
     }
   }
 
+  async function uploadSignature(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (sigFileRef.current) sigFileRef.current.value = ''
+
+    if (!file.type.startsWith('image/')) {
+      setMsg('Please choose an image file.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setMsg('Image must be under 5 MB.')
+      return
+    }
+
+    setUploadingSig(true)
+    setMsg('Uploading signature…')
+
+    try {
+      const ext  = file.name.split('.').pop()
+      const path = `signatures/${userId}/${Date.now()}.${ext}`
+
+      const { error: uploadErr } = await supabase
+        .storage
+        .from('school-assets')
+        .upload(path, file, { upsert: true })
+
+      if (uploadErr) {
+        setMsg('Upload failed: ' + uploadErr.message)
+        return
+      }
+
+      const { data } = supabase.storage.from('school-assets').getPublicUrl(path)
+
+      const { error: dbErr } = await supabase
+        .from('profiles')
+        .update({ signature_url: data.publicUrl })
+        .eq('id', userId)
+
+      if (dbErr) {
+        setMsg('Signature uploaded but saving to profile failed: ' + dbErr.message)
+        return
+      }
+
+      setSignature(data.publicUrl + '?t=' + Date.now())
+      setMsg('Signature updated! It will now appear on report cards you submit.')
+    } catch (err: any) {
+      console.error('Signature upload error:', err)
+      setMsg('Upload failed: ' + (err?.message ?? 'Please check your connection and try again.'))
+    } finally {
+      setUploadingSig(false)
+    }
+  }
+
   async function logout() {
     await supabase.auth.signOut()
     router.push('/login')
@@ -218,6 +274,50 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           </p>
 
         </div>
+      </div>
+
+      {/* ── Signature (used on report cards you submit) ── */}
+      <div style={{
+        background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-xl)', padding: 'var(--space-4) var(--space-5)',
+        marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
+      }}>
+        <div style={{
+          width: 90, height: 44, borderRadius: 8, background: '#fff',
+          border: '1px solid var(--glass-border)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
+        }}>
+          {signature
+            ? <img src={signature} alt="Signature" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', opacity: uploadingSig ? 0.4 : 1 }} />
+            : <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>None</span>
+          }
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0 0 2px' }}>Your Signature</p>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+            Appears on report cards you submit for your class.
+          </p>
+        </div>
+        <button
+          onClick={() => sigFileRef.current?.click()}
+          disabled={uploadingSig}
+          style={{
+            padding: '7px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+            border: '1px solid var(--brand-border)', background: 'var(--brand-subtle)',
+            color: 'var(--brand-light)', cursor: uploadingSig ? 'default' : 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {uploadingSig ? 'Uploading…' : signature ? 'Change' : 'Upload'}
+        </button>
+        <input
+          ref={sigFileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={uploadSignature}
+          disabled={uploadingSig}
+        />
       </div>
 
       {/* ── Personal Info ── */}
