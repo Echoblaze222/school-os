@@ -33,7 +33,18 @@ export default async function StudentMeetingsPage() {
   if (profile?.role !== 'student') redirect('/dashboard')
 
   const schoolId = profile?.school_id ?? ''
-  const classId  = profile?.class_id  ?? null
+
+  // student_profiles.class_id is what promotion/transfer actually updates —
+  // it's the CURRENT class. profiles.class_id is never touched by
+  // promotion, so it goes stale after any promotion; only used as a
+  // fallback when a student has no student_profiles row at all.
+  const { data: sp } = await supabase
+    .from('student_profiles')
+    .select('class_id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const classId = sp?.class_id ?? profile?.class_id ?? null
   const school   = (profile as any)?.schools ?? null
 
   // Students see meetings specifically targeted at their class
