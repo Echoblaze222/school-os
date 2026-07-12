@@ -17,26 +17,13 @@ export default async function ResultsPage() {
   if (!profile) redirect('/login')
   const school = (profile as any)?.schools ?? null
 
-  // Resolve linked child via parent_student_links — the source of truth for
-  // parent->child linking. profiles.parent_id is a legacy column that is
-  // never populated by the current link-child flow (see
-  // /api/parent/link-child), so it must not be used here.
-  const { data: link } = await supabase
-    .from('parent_student_links')
-    .select('student_id')
+  // Resolve linked child — profiles.parent_id references the parent's profile id
+  const { data: child } = await supabase
+    .from('profiles')
+    .select('id, full_name, class_level, class_id, admission_number')
     .eq('parent_id', user.id)
-    .limit(1)
-    .maybeSingle()
-
-  let child: any = null
-  if (link?.student_id) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, class_level, class_id, admission_number')
-      .eq('id', link.student_id)
-      .single()
-    child = data ?? null
-  }
+    .eq('role', 'student')
+    .single()
 
   let results: any[] = []
   if (child) {
