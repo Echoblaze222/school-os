@@ -45,14 +45,18 @@ export default async function StudentDashboardPage() {
 
   const school = (profile as any)?.schools ?? null
 
-  // class_id lives in student_profiles, not profiles
+  // student_profiles.class_id is what every real write flow updates
+  // (creation, edit modal, promotion/transfer) — it's the CURRENT value,
+  // especially after a promotion. profiles.class_id is never touched by
+  // promotion, so it goes stale; used only as a fallback when a student
+  // has no student_profiles row at all.
   const { data: sp } = await supabase
     .from('student_profiles')
     .select('class_id')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
-  const classId     = sp?.class_id ?? null
+  const classId     = sp?.class_id ?? (profile as any)?.class_id ?? null
   const currentTerm = getCurrentTerm()
   const currentYear = getCurrentYear()
 
