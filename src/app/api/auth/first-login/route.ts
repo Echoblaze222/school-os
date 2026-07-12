@@ -80,9 +80,12 @@ export async function POST(request: Request) {
     }
 
     // Advance past the pending-activation stage now that the password is set.
-    // (Previously this kept accounts stuck at 'stage_1_pending' forever —
-    // the ternary condition was inverted, and 'start' wasn't handled either.)
-    const nextStage = (stage === 'stage_1_pending' || stage === 'start') ? 2 : stage
+    // onboarding_stage is a string enum ('stage_1_pending' | 'stage_2_pending' |
+    // 'stage_3_pending' | 'complete') everywhere else in the app — writing the
+    // integer 2 here broke every downstream check that compares against those
+    // string values (e.g. the login page's redirect, and stage-gating in
+    // middleware), silently routing people to /dashboard instead of onboarding.
+    const nextStage = (stage === 'stage_1_pending' || stage === 'start') ? 'stage_2_pending' : stage
 
     await adminClient
       .from('profiles')
