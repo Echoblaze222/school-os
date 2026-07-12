@@ -127,14 +127,18 @@ export default function StudentDashboardClient({ profile, school, userId, counts
     const currentTerm  = getCurrentTerm()
     const currentYear  = getCurrentYear()
 
-    // Need student's class_id from student_profiles
+    // student_profiles.class_id is what every real write flow updates
+    // (creation, edit modal, promotion/transfer) — it's the CURRENT value,
+    // especially after a promotion. profiles.class_id is never touched by
+    // promotion, so it goes stale; used only as a fallback when a student
+    // has no student_profiles row at all.
     const { data: sp } = await supabase
       .from('student_profiles')
       .select('class_id')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    const classId = sp?.class_id
+    const classId = sp?.class_id ?? (profile as any)?.class_id ?? null
 
     const [
       { data: attendanceRows },
