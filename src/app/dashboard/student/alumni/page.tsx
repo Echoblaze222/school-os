@@ -35,12 +35,24 @@ export default async function StudentAlumniArchivePage() {
 
   const school = (profile as any)?.schools ?? null
 
-  // student_profiles holds class_id / admission_number / lifecycle_stage
-  const { data: sp } = await supabase
+  // student_profiles is what the promotion/graduation flow actually
+  // updates (lifecycle_stage, graduation_year, class_id all get written
+  // there when a student graduates or is promoted) — it's the CURRENT
+  // value. profiles fields are never touched by that flow, so they go
+  // stale after a promotion/graduation; used only as a fallback when a
+  // student has no student_profiles row at all.
+  const { data: spRow } = await supabase
     .from('student_profiles')
     .select('class_id, admission_number, graduation_year, lifecycle_stage')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
+
+  const sp = {
+    class_id:         spRow?.class_id         ?? (profile as any)?.class_id         ?? null,
+    admission_number: spRow?.admission_number ?? (profile as any)?.admission_number ?? null,
+    graduation_year:  spRow?.graduation_year  ?? (profile as any)?.graduation_year  ?? null,
+    lifecycle_stage:  spRow?.lifecycle_stage  ?? (profile as any)?.lifecycle_stage  ?? null,
+  }
 
   const { data: classRow } = sp?.class_id
     ? await supabase.from('classes').select('name').eq('id', sp.class_id).single()
