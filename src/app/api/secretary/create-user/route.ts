@@ -56,11 +56,12 @@ export async function POST(request: Request) {
     const prefix = role.slice(0, 3).toUpperCase()
     const code   = `${prefix}-${year}-${rand}`
 
-    // Generate temp password
-    const chars   = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-    const special = '@#$!'
-    let tempPass  = special[Math.floor(Math.random() * special.length)]
-    for (let i = 0; i < 8; i++) tempPass += chars[Math.floor(Math.random() * chars.length)]
+    // Supabase auth requires a password on user creation, but this account is
+    // never meant to be signed into with it — activation happens entirely via
+    // the access code + a password the user sets themselves on first login
+    // (see /api/auth/first-login). So this is thrown away immediately: long,
+    // random, never logged, never emailed, never shown in any UI.
+    const tempPass = crypto.randomUUID() + crypto.randomUUID()
 
     // Create auth user
     let userId: string | null = null
@@ -158,7 +159,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // ✅ Send welcome email with access code + temp password
+    // ✅ Send welcome email with access code (activation is code-only — no password is ever surfaced)
     // Non-fatal — user is already created, email failure should not block the response
     try {
       const resendKey = process.env.RESEND_API_KEY
