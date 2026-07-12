@@ -78,8 +78,22 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       return
     }
 
-    setChildren(childData)
-    setChildId(childData[0].id)
+    // student_profiles.class_id is what promotion/transfer actually
+    // updates — it's the CURRENT class after any promotion. profiles.class_id
+    // is never touched by promotion, so it goes stale; used only as a
+    // fallback when a student has no student_profiles row at all.
+    const { data: spRows } = await supabase
+      .from('student_profiles')
+      .select('id, class_id')
+      .in('id', ids)
+
+    const merged = childData.map((c: any) => {
+      const sp = (spRows ?? []).find((r: any) => r.id === c.id)
+      return { ...c, class_id: sp?.class_id ?? c.class_id ?? null }
+    })
+
+    setChildren(merged)
+    setChildId(merged[0].id)
     // loadAssignments fires via the childId effect once childId is set
   }
 
