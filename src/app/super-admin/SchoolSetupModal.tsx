@@ -16,9 +16,8 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
   const [setupType,   setSetupType]   = useState<SetupType>('trial')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
-  const [credentials, setCredentials] = useState<{ defaultCode: string; tempPassword: string; email: string } | null>(null)
+  const [credentials, setCredentials] = useState<{ defaultCode: string; email: string } | null>(null)
   const [copiedCode,  setCopiedCode]  = useState(false)
-  const [copiedPwd,   setCopiedPwd]   = useState(false)
   const [copiedAll,   setCopiedAll]   = useState(false)
 
   const [form, setForm] = useState({
@@ -78,9 +77,8 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
       if (!json.ok) throw new Error(json.error ?? 'Server error')
 
       setCredentials({
-        defaultCode:  json.principal.defaultCode,
-        tempPassword: json.principal.tempPassword,
-        email:        json.principal.email,
+        defaultCode: json.principal.defaultCode,
+        email:       json.principal.email,
       })
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong. Try again.')
@@ -107,7 +105,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
               <h3 style={{ color: '#10B981', marginBottom: 4 }}>School Activated!</h3>
               <p className={styles.stepDesc} style={{ marginBottom: 16 }}>
-                Share these credentials with the principal manually — they must change the password on first login.
+                Share this access code with the principal. They'll tap "New User" on the login page and set their own password.
               </p>
 
               {/* Email */}
@@ -133,25 +131,10 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 </div>
               </div>
 
-              {/* Temp Password */}
-              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, textAlign: 'left' }}>
-                <p style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Temp Password</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <code style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.12em' }}>
-                    {credentials.tempPassword}
-                  </code>
-                  <button
-                    onClick={async () => { await navigator.clipboard.writeText(credentials!.tempPassword).catch(()=>{}); setCopiedPwd(true); setTimeout(()=>setCopiedPwd(false), 2000) }}
-                    style={{ padding: '6px 14px', borderRadius: 8, border: copiedPwd ? '1px solid #10B981' : '1px solid rgba(245,158,11,0.4)', background: copiedPwd ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', color: copiedPwd ? '#10B981' : '#f59e0b', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
-                    {copiedPwd ? '✓ Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
               {/* Copy All */}
               <button
                 onClick={async () => {
-                  const text = `School Login Credentials\nEmail: ${credentials!.email}\nAccess Code: ${credentials!.defaultCode}\nTemp Password: ${credentials!.tempPassword}`
+                  const text = `School Login Credentials\nEmail: ${credentials!.email}\nAccess Code: ${credentials!.defaultCode}\n\nUse "New User" on the login page with this access code to set your password.`
                   await navigator.clipboard.writeText(text).catch(()=>{})
                   setCopiedAll(true); setTimeout(()=>setCopiedAll(false), 2500)
                 }}
@@ -160,7 +143,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               </button>
 
               <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
-                ⚠️ The principal must change their password on first login. Keep this safe.
+                ⚠️ The principal sets their own password on first login using this access code. Keep it safe until then.
               </p>
             </div>
             <div className={styles.footer}>
