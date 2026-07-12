@@ -19,7 +19,6 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const [children, setChildren] = useState<any[]>([])
   const [child,    setChild]    = useState<any>(null)
   const [summary,  setSummary]  = useState({ present: 0, absent: 0, late: 0 })
-  const [error,    setError]    = useState<string | null>(null)
   const supabase = createClient()
   const sc = school?.primary_color ?? '#7C3AED'
 
@@ -27,31 +26,30 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
   async function load() {
     setLoading(true)
-    setError(null)
 
-    // parent_student_links is the source of truth for parent->child linking.
-    // profiles.parent_id is a legacy column that's never populated by the
-    // current link-child flow, so there is no meaningful fallback to it —
-    // if this query fails or returns nothing, surface it instead of
-    // silently pretending there's no linked child.
-    const { data: links, error: linksErr } = await supabase
+    // Resolve children via parent_student_links first, fallback to profiles.parent_id
+    const { data: links } = await supabase
       .from('parent_student_links')
       .select('student_id')
       .eq('parent_id', userId)
 
-    if (linksErr) { setError(linksErr.message); setLoading(false); return }
+    let resolvedChildren: any[] = []
 
-    const ids = (links ?? []).map(l => l.student_id)
-    if (!ids.length) { setLoading(false); return }
-
-    const { data: childProfiles, error: profErr } = await supabase
-      .from('profiles')
-      .select('id, full_name, class_level, school_id, class_id')
-      .in('id', ids)
-
-    if (profErr) { setError(profErr.message); setLoading(false); return }
-
-    const resolvedChildren = childProfiles ?? []
+    if (links?.length) {
+      const ids = links.map(l => l.student_id)
+      const { data: childProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_level, school_id, class_id')
+        .in('id', ids)
+      resolvedChildren = childProfiles ?? []
+    } else {
+      // Legacy fallback: profiles.parent_id
+      const { data: fallback } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_level, school_id, class_id')
+        .eq('parent_id', userId)
+      resolvedChildren = fallback ?? []
+    }
 
     if (!resolvedChildren.length) { setLoading(false); return }
 
@@ -106,7 +104,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         : !child
           ? <div className={styles.empty}>
               <CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>{error ? `Couldn't load attendance: ${error}` : 'No child linked to your account.'}</p>
+              <p>No child linked to your account.</p>
             </div>
           : <>
               {/* Child switcher — shown when parent has multiple children */}
