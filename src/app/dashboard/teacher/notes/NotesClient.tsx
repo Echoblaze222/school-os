@@ -14,6 +14,8 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BookIcon, PlusIcon, DownloadIcon } from '@/components/Icons'
+import NoteBook from '@/components/NoteBook'
+import DocumentViewer from '@/components/DocumentViewer'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -48,6 +50,8 @@ export default function NotesClient({ profile, school, userId }: Props) {
   const [uploadMode, setUploadMode] = useState<'type' | 'upload'>('type')
   const [error, setError] = useState<string | null>(null) // FIX: visible error state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [previewBook, setPreviewBook] = useState<any>(null) // typed note preview → 3D flip-book
+  const [previewDoc, setPreviewDoc] = useState<any>(null)   // uploaded file preview → in-portal viewer
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     title: '',
@@ -316,12 +320,26 @@ export default function NotesClient({ profile, school, userId }: Props) {
                     {item.description && (
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 'var(--space-3)' }}>{item.description}</p>
                     )}
-                    {item.file_url && (
-                      <a href={item.file_url} target="_blank" rel="noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 'var(--space-2)', padding: '6px 12px', background: sc + '20', color: sc, borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
-                        <DownloadIcon size={13} color={sc} /> Download File
-                      </a>
-                    )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 'var(--space-2)' }}>
+                      {item.description && (
+                        <button onClick={() => setPreviewBook(item)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                          📖 Preview as Flip-Book
+                        </button>
+                      )}
+                      {item.file_url && (
+                        <>
+                          <button onClick={() => setPreviewDoc(item)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc + '20', color: sc, border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                            📄 Preview In-App
+                          </button>
+                          <a href={item.file_url} target="_blank" rel="noreferrer"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
+                            <DownloadIcon size={13} color="var(--text-muted)" /> Download
+                          </a>
+                        </>
+                      )}
+                    </div>
                     <br />
                     <button onClick={() => deleteNote(item.id)}
                       style={{ marginTop: 6, padding: '5px 12px', background: 'transparent', border: '1px solid #EF444440', borderRadius: 999, fontWeight: 700, fontSize: '0.72rem', color: '#EF4444', cursor: 'pointer' }}>
@@ -334,6 +352,23 @@ export default function NotesClient({ profile, school, userId }: Props) {
           </div>
       }
       <div className={styles.spacer} />
+
+      {previewBook && (
+        <NoteBook
+          title={previewBook.title}
+          content={previewBook.description || ''}
+          accentColor={sc}
+          onClose={() => setPreviewBook(null)}
+        />
+      )}
+      {previewDoc && (
+        <DocumentViewer
+          fileUrl={previewDoc.file_url}
+          title={previewDoc.title}
+          accentColor={sc}
+          onClose={() => setPreviewDoc(null)}
+        />
+      )}
     </RolePageWrapper>
   )
 }
