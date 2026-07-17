@@ -4,6 +4,7 @@
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import DocumentViewer from '@/components/DocumentViewer'
 import styles from '../secretary.module.css'
 
 const DOC_CATS = ['General', 'Admissions', 'Academic', 'Finance', 'Legal', 'HR', 'Other']
@@ -34,8 +35,6 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
 
   function extOf(url: string | null) { return url?.split('.')?.pop()?.toLowerCase()?.split('?')[0] ?? '' }
   function isImage(url: string | null) { return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extOf(url)) }
-  function isPdf(url: string | null) { return extOf(url) === 'pdf' }
-
 
   const filtered = docs.filter(d => {
     const matchCat    = catTab === 'all' || d.category === catTab
@@ -130,30 +129,47 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
         ))
       )}
 
-      {/* Preview modal */}
-      {previewItem && (
+      {/* Preview modal — images stay inline (fastest, no extra chrome);
+          PDFs and Office docs (Word/Excel/PPT) open in the shared
+          in-portal DocumentViewer, same one used on the student Notes page,
+          so secretary staff get native PDF rendering plus Office Online
+          preview for .doc/.docx/.ppt/.pptx/.xls/.xlsx instead of just a
+          "no preview available" dead end. */}
+      {previewItem && isImage(previewItem.file_url) && (
         <div className={styles.modalOverlay} onClick={() => setPreviewItem(null)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: isPdf(previewItem.file_url) || isImage(previewItem.file_url) ? 680 : undefined }}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: 680 }}>
             <h2 className={styles.modalTitle}>{previewItem.title}</h2>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: -8, marginBottom: 'var(--space-4)' }}>{previewItem.category} · {formatSize(previewItem.file_size)}</p>
-
-            {previewItem.file_url && isImage(previewItem.file_url) ? (
-              <img src={previewItem.file_url} alt={previewItem.title} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)' }} />
-            ) : previewItem.file_url && isPdf(previewItem.file_url) ? (
-              <iframe src={previewItem.file_url} title={previewItem.title} style={{ width: '100%', height: '70vh', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }} />
-            ) : (
-              <div className={styles.emptyState} style={{ padding: 'var(--space-5) 0' }}>
-                <p className={styles.emptyEmoji}>{fileIcon(previewItem.file_url)}</p>
-                <p className={styles.emptyTitle}>No preview available</p>
-                <p className={styles.emptyHint}>This file type can't be previewed in-app. Download it to view the contents.</p>
-              </div>
-            )}
-
+            <img src={previewItem.file_url!} alt={previewItem.title} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)' }} />
             <div className={styles.modalActions} style={{ marginTop: 'var(--space-4)' }}>
               <button className={styles.btnGhost} onClick={() => setPreviewItem(null)}>Close</button>
-              {previewItem.file_url && (
-                <a href={previewItem.file_url} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ textDecoration: 'none', textAlign: 'center' }}>⬇️ Download</a>
-              )}
+              <a href={previewItem.file_url!} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ textDecoration: 'none', textAlign: 'center' }}>⬇️ Download</a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewItem && previewItem.file_url && !isImage(previewItem.file_url) && (
+        <DocumentViewer
+          fileUrl={previewItem.file_url}
+          title={previewItem.title}
+          accentColor={sc}
+          onClose={() => setPreviewItem(null)}
+        />
+      )}
+
+      {previewItem && !previewItem.file_url && (
+        <div className={styles.modalOverlay} onClick={() => setPreviewItem(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>{previewItem.title}</h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: -8, marginBottom: 'var(--space-4)' }}>{previewItem.category} · {formatSize(previewItem.file_size)}</p>
+            <div className={styles.emptyState} style={{ padding: 'var(--space-5) 0' }}>
+              <p className={styles.emptyEmoji}>{fileIcon(previewItem.file_url)}</p>
+              <p className={styles.emptyTitle}>No file attached</p>
+              <p className={styles.emptyHint}>This document record has no uploaded file.</p>
+            </div>
+            <div className={styles.modalActions} style={{ marginTop: 'var(--space-4)' }}>
+              <button className={styles.btnGhost} onClick={() => setPreviewItem(null)}>Close</button>
             </div>
           </div>
         </div>
