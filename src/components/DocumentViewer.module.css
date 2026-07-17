@@ -4,12 +4,12 @@
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgba(10, 8, 20, 0.82);
+  background: rgba(10, 8, 20, 0.92);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: var(--space-3, 12px);
+  padding: 0;
 }
 
 .stage {
@@ -17,9 +17,17 @@
   max-width: 720px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: auto;
-  height: min(88dvh, 900px);
+  gap: 0;
+  margin: 0 auto;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+}
+
+/* On larger screens, present it as a floating card instead of full-bleed */
+@media (min-width: 640px) {
+  .overlay { padding: var(--space-5, 24px); align-items: center; }
+  .stage { height: min(88dvh, 900px); padding: 0; gap: 10px; }
 }
 
 .header {
@@ -28,6 +36,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 4px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .title {
@@ -64,6 +74,9 @@
 .viewerWrap {
   position: relative;
   flex: 1;
+  min-height: 0; /* allow child flex scroll area to actually shrink */
+  display: flex;
+  flex-direction: column;
   border-radius: 16px;
   overflow: hidden;
   background: #1c1c1c;
@@ -76,6 +89,83 @@
   border: none;
   background: #fff;
 }
+
+.pdfScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pdfCanvas {
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  background: #fff;
+}
+
+.pdfControls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px calc(env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.navBtn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.navBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.navBtn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.pageIndicator {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  min-width: 52px;
+  text-align: center;
+}
+
+.zoomGroup {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.zoomBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zoomBtn:hover { background: rgba(255, 255, 255, 0.12); }
 
 .loading {
   position: absolute;
