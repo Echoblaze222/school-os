@@ -27,10 +27,12 @@ SchoolOS gives every school its own tenant with six role-based portals — **Pri
 ```
 src/
 ├── app/
-│   ├── login/                    Access-code + password login
+│   ├── splash/                    Cinematic 3D launch screen — plays once, then routes to select-school
+│   ├── login/                    Access-code + password login (requires a school already selected)
 │   ├── onboarding/stage-1..3/    3-stage onboarding (identity, password, NIN + docs)
 │   ├── register-school/          Self-service school signup (Paystack registration)
-│   ├── select-school/            Multi-school selector for shared accounts
+│   ├── select-school/            Required school picker — gates access to /login; offers a
+│   │                              "Continue with [school]" shortcut once one has been used before
 │   ├── forgot-password/, reset-password/
 │   ├── school-locked/            Shown when a school's subscription lapses
 │   │
@@ -72,6 +74,9 @@ src/
 │
 ├── lib/
 │   ├── types.ts                  TypeScript types matching the DB schema
+│   ├── signOutFlow.ts             Shared sign-out helper — snapshots the current school for the
+│   │                              select-school "Continue with" pill, clears the active-school key,
+│   │                              signs out of Supabase, and routes to /select-school (not /login)
 │   └── supabase/
 │       ├── client.ts              Browser client
 │       ├── server.ts              Server client (cookie-based, respects RLS)
@@ -89,8 +94,12 @@ src/
 ### Roles & Multi-Tenancy
 Every profile belongs to a `school_id` and a `role`. Middleware and RLS both enforce that a user can only reach their own role's dashboard and their own school's data — no authenticated user can browse another school's or another role's pages.
 
-### Onboarding Flow
+### App Entry & Session Flow
 ```
+/splash              (cinematic launch screen, plays once)
+  ↓
+/select-school        (required — search or "Continue with [school]"; blocks /login without one)
+  ↓
 /login  (access code + temp password)
   ↓
 /onboarding/stage-2   (identity confirmation + password change)
@@ -99,7 +108,9 @@ Every profile belongs to a `school_id` and a `role`. Middleware and RLS both enf
   ↓
 role dashboard
 ```
-The `onboarding_stage` enum on the profile drives this; the middleware won't let a user skip ahead by URL.
+The `onboarding_stage` enum on the profile drives the last two steps; the middleware won't let a user skip ahead by URL. Separately, `/login` itself checks `localStorage` for a selected school on mount and redirects to `/select-school` if none is present — so the school step can't be bypassed by a direct link, bookmark, or back button either.
+
+Signing out (from any dashboard) runs through `signOutFlow.ts`, which snapshots the just-used school before clearing the session, then sends the user back to `/select-school` rather than `/login` — so their next visit offers a one-tap "Continue with [school]" instead of making them search again. Auto sign-out from `useAutoLogout.ts` follows the same path, additionally carrying an inactivity reason through so `/select-school` and `/login` can both show the "you were signed out" message.
 
 ### Billing: Platform Subscriptions vs. Student Fees
 Two separate tables model two separate money flows:
@@ -148,12 +159,13 @@ Copy your Supabase project keys, plus service keys for the integrations below, i
 ```bash
 npm run dev
 ```
-Visit `http://localhost:3000` — you'll land on `/login`.
+Visit `http://localhost:3000` — you'll land on `/splash`, then `/select-school` once it finishes.
 
 ---
 
 ## Notes for Contributors
 - **Styling:** always use existing CSS variables (`var(--brand)`, `var(--glass-bg)`, `var(--text-primary)`, etc.) and wrap dashboard pages in `RolePageWrapper`. No Tailwind.
 - **Auth:** use `getUser()`, not `getSession()`, in server components/routes — `getSession()` doesn't re-verify the JWT server-side.
+- **Signing out:** always call `signOutFlow(supabase, router)` from `lib/signOutFlow.ts` rather than `supabase.auth.signOut()` directly — it also snapshots the school for the select-school "Continue with" pill and routes to `/select-school` instead of `/login`, keeping the school-required gate consistent everywhere.
 - **Admin operations:** anything that needs to bypass RLS (super-admin actions, compliance checks) must go through `lib/supabase/admin.ts` inside a server route — never expose the service role key to the client.
 - **Vercel builds:** avoid module-level side effects (e.g. initializing `web-push` VAPID keys at import time) — this breaks the build; initialize lazily inside the handler instead.
