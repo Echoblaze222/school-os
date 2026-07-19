@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import DashboardHeader from '@/components/DashboardHeader'
 import StudentNav from '@/components/StudentNav'
 import { UserIcon, EditIcon, CameraIcon, LogOutIcon, ShieldIcon, KeyIcon } from '@/components/Icons'
@@ -89,9 +90,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   }
 
   async function logout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await signOutFlow(supabase, router)
   }
 
   const fields = [
