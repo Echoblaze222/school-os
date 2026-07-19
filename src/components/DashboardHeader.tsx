@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import NotificationsBell from './NotificationsBell'
 import { SunIcon, MoonIcon, LogOutIcon, UserIcon, ArrowLeftIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
@@ -28,9 +29,7 @@ export default function DashboardHeader({
   const firstName = profile?.full_name?.split(' ')[0] ?? role
 
   async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await signOutFlow(supabase, router)
   }
 
   return (

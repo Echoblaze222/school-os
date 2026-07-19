@@ -12,6 +12,7 @@ import {
 } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import { useRouter } from 'next/navigation'
 import styles from './StudentNav.module.css'
 import React from 'react'
@@ -107,9 +108,7 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
 
   async function handleLogout() {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await signOutFlow(supabase, router)
   }
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'

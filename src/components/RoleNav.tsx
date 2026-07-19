@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import { useTheme } from '@/hooks/useTheme'
 import {
   HomeIcon, PeopleIcon, ClipboardIcon, BarChartIcon,
@@ -31,58 +32,24 @@ const drawerPanelStyle: React.CSSProperties = {
   borderRadius: '20px 20px 0 0', padding: '20px 20px 40px',
 }
 
-const MORE_ITEMS_BY_ROLE: Record<string, { href: string; Icon: any; label: string }[]> = {
-  teacher: [
-    { href: '/dashboard/teacher/assignments',   Icon: ClipboardIcon, label: 'Assignments'   },
-    { href: '/dashboard/teacher/grades',        Icon: BarChartIcon,  label: 'Grades'        },
-    { href: '/dashboard/teacher/results',       Icon: BarChartIcon,  label: 'Results'       },
-    { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
-    { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
-    { href: '/dashboard/teacher/submissions',   Icon: ClipboardIcon, label: 'Submissions'   },
-    { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Class'    },
-    { href: '/dashboard/teacher/messages',      Icon: MessageIcon,   label: 'Messages'      },
-    { href: '/dashboard/teacher/notes',         Icon: BookIcon,      label: 'Study Notes'   },
-    { href: '/dashboard/teacher/timetable',     Icon: ClockIcon,     label: 'Timetable'     },
-    { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
-    { href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
-    { href: '/dashboard/teacher/notifications', Icon: BellIcon,      label: 'Notifications' },
-    { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
-    { href: '/dashboard/teacher/audit',         Icon: ShieldIcon,    label: 'Audit Log'     },
-    { href: '/dashboard/teacher/ai',            Icon: AiIcon,        label: 'AI Assistant'  },
-    { href: '/dashboard/teacher/profile',       Icon: UserIcon,      label: 'My Profile'    },
-  ],
-  // FIX: principal's bottom bar (Staff/Stats/Home/Chat/AI) had no "More"
-  // option at all — on mobile (sidebar only shows ≥1024px), the principal
-  // had no way to reach Students, Alumni, Results, Report Cards, Fees,
-  // Reports, Notices, or their own Profile. Added a More drawer to match
-  // teacher's pattern.
-  principal: [
-    { href: '/dashboard/principal/students',    Icon: SchoolIcon,    label: 'Students'      },
-    { href: '/dashboard/principal/alumni',      Icon: AwardIcon,     label: 'Alumni'        },
-    { href: '/dashboard/principal/ai',          Icon: AiIcon,        label: 'AI Insights'   },
-    { href: '/dashboard/principal/results',     Icon: BarChartIcon,  label: 'Results'       },
-    { href: '/dashboard/principal/report-cards',Icon: FileTextIcon,  label: 'Report Cards'  },
-    { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'          },
-    { href: '/dashboard/principal/reports',     Icon: FileTextIcon,  label: 'Reports'       },
-    { href: '/dashboard/principal/notices',     Icon: BellIcon,      label: 'Notices'       },
-    { href: '/dashboard/principal/profile',     Icon: UserIcon,      label: 'My Profile'    },
-  ],
-  // FIX: parent's bottom bar (Child/Results/Home/Alerts/Chat) had no "More"
-  // option either — on mobile, a parent had no way to reach AI Assistant,
-  // Attendance, Assignments, Timetable, Leaderboard, Fee Status, Meetings,
-  // or their own Profile, since those only existed in the sidebar (hidden
-  // on mobile).
-  parent: [
-    { href: '/dashboard/parent/ai',          Icon: AiIcon,        label: 'AI Assistant' },
-    { href: '/dashboard/parent/attendance',  Icon: CalendarIcon,  label: 'Attendance'   },
-    { href: '/dashboard/parent/assignments', Icon: ClipboardIcon, label: 'Assignments'  },
-    { href: '/dashboard/parent/timetable',   Icon: ClockIcon,     label: 'Timetable'    },
-    { href: '/dashboard/parent/leaderboard', Icon: TrophyIcon,    label: 'Leaderboard'  },
-    { href: '/dashboard/parent/fees',        Icon: WalletIcon,    label: 'Fee Status'   },
-    { href: '/dashboard/parent/meetings',    Icon: CalendarIcon,  label: 'Meetings'     },
-    { href: '/dashboard/parent/profile',     Icon: UserIcon,      label: 'My Profile'   },
-  ],
-}
+const MORE_NAV_ITEMS = [
+  { href: '/dashboard/teacher/assignments',   Icon: ClipboardIcon, label: 'Assignments'   },
+  { href: '/dashboard/teacher/grades',        Icon: BarChartIcon,  label: 'Grades'        },
+  { href: '/dashboard/teacher/results',       Icon: BarChartIcon,  label: 'Results'       },
+  { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
+  { href: '/dashboard/teacher/submissions',   Icon: ClipboardIcon, label: 'Submissions'   },
+  { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Class'    },
+  { href: '/dashboard/teacher/messages',      Icon: MessageIcon,   label: 'Messages'      },
+  { href: '/dashboard/teacher/notes',         Icon: BookIcon,      label: 'Study Notes'   },
+  { href: '/dashboard/teacher/timetable',     Icon: ClockIcon,     label: 'Timetable'     },
+  { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
+  { href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
+  { href: '/dashboard/teacher/notifications', Icon: BellIcon,      label: 'Notifications' },
+  { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
+  { href: '/dashboard/teacher/audit',         Icon: ShieldIcon,    label: 'Audit Log'     },
+  { href: '/dashboard/teacher/ai',            Icon: AiIcon,        label: 'AI Assistant'  },
+  { href: '/dashboard/teacher/profile',       Icon: UserIcon,      label: 'My Profile'    },
+]
 
 const NAV: Record<string, {
   sidebar: { label: string; items: { href: string; Icon: any; label: string }[] }[]
@@ -103,7 +70,6 @@ const NAV: Record<string, {
         { href: '/dashboard/teacher/assignments',   Icon: ClipboardIcon, label: 'Assignments'   },
         { href: '/dashboard/teacher/grades',        Icon: BarChartIcon,  label: 'Grades'        },
         { href: '/dashboard/teacher/results',       Icon: BarChartIcon,  label: 'Results'       },
-        { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
         { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
         { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Classes'  },
         { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Staff Meetings'},
@@ -139,7 +105,6 @@ const NAV: Record<string, {
         { href: '/dashboard/principal/alumni',      Icon: AwardIcon,     label: 'Alumni'      },
         { href: '/dashboard/principal/analytics',   Icon: BarChartIcon,  label: 'Analytics'   },
         { href: '/dashboard/principal/results',     Icon: BarChartIcon,  label: 'Results'     },
-        { href: '/dashboard/principal/report-cards',Icon: FileTextIcon,  label: 'Report Cards'},
         { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'        },
         { href: '/dashboard/principal/reports',     Icon: FileTextIcon,  label: 'Reports'     },
         { href: '/dashboard/principal/profile',     Icon: UserIcon,      label: 'My Profile'  },
@@ -150,7 +115,7 @@ const NAV: Record<string, {
       { href: '/dashboard/principal/analytics', Icon: BarChartIcon, label: 'Stats' },
       { home: true },
       { href: '/dashboard/principal/chat',      Icon: MessageIcon,  label: 'Chat'  },
-      { more: true },
+      { href: '/dashboard/principal/ai',        Icon: AiIcon,       label: 'AI'    },
     ],
   },
 
@@ -226,7 +191,6 @@ const NAV: Record<string, {
     sidebar: [
       { label: 'Main', items: [
         { href: '/dashboard/parent',               Icon: HomeIcon,    label: 'Dashboard'      },
-        { href: '/dashboard/parent/ai',             Icon: AiIcon,      label: 'AI Assistant'   },
         { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Notifications'  },
         { href: '/dashboard/parent/chat',          Icon: MessageIcon, label: 'Message School' },
       ]},
@@ -248,7 +212,6 @@ const NAV: Record<string, {
       { home: true },
       { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Alerts' },
       { href: '/dashboard/parent/chat',         Icon: MessageIcon, label: 'Chat'   },
-      { more: true },
     ],
   },
 }
@@ -298,9 +261,7 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
   }
 
   async function logout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await signOutFlow(supabase, router)
   }
 
   return (
@@ -427,7 +388,7 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
               All Modules
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              {(MORE_ITEMS_BY_ROLE[role] ?? []).map(item => {
+              {MORE_NAV_ITEMS.map(item => {
                 const active = isActive(item.href)
                 return (
                   <Link key={item.href} href={item.href}
