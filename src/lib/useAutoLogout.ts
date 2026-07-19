@@ -7,6 +7,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 
 const INACTIVITY_LIMIT_MS = 5 * 60 * 1000   // 5 min no activity  → logout
 const WARNING_MS          = 4 * 60 * 1000   // 4 min              → warn
@@ -37,8 +38,12 @@ export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
     onLogout?.()
     sessionStorage.removeItem(LAST_ACTIVITY_KEY)
     sessionStorage.removeItem(HIDDEN_SINCE_KEY)
-    try { await supabase.current.auth.signOut() } catch (_) {}
-    router.current.replace('/login?reason=timeout')
+    try {
+      await signOutFlow(supabase.current, router.current, 'timeout')
+    } catch (_) {
+      // Fallback in case signOutFlow itself throws unexpectedly
+      router.current.replace('/select-school')
+    }
   }
 
   useEffect(() => {
