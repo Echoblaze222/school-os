@@ -4,6 +4,7 @@
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import { PhoneIcon } from '@/components/Icons'
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string; icon: string }> = {
@@ -31,8 +32,9 @@ function LockedContent() {
   const supabase = createClient()
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    await signOutFlow(supabase, {
+      push: (href: string) => { window.location.href = href },
+    })
   }
 
   return (
