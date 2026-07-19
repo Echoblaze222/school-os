@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '../secretary.module.css'
 
@@ -48,8 +49,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
   }
 
   async function logout() {
-    await supabase.auth.signOut()
-    router.push('/login'); router.refresh()
+    await signOutFlow(supabase, router)
   }
 
   function toggleTheme(t: 'dark' | 'light') {
