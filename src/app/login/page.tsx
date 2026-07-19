@@ -1,6 +1,10 @@
 'use client'
 // src/app/login/page.tsx
-// Splash overlay plays for 5s on first load, then fades out to reveal login form
+// The cinematic splash now lives solely at /splash — it plays once, then
+// routes to /select-school, which routes here only after a school is chosen.
+// This page enforces that a school must already be selected: if someone
+// lands here directly (deep link, back button, bookmark) with no school in
+// storage, they're bounced straight to /select-school before they can log in.
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -21,168 +25,13 @@ interface SelectedSchool {
   primaryColor: string | null
 }
 
-const SCHOOL_KEY    = 'schoolos_selected_school'
-const SPLASH_KEY    = 'schoolos_splash_shown'
-const SPLASH_MS     = 5000
+const SCHOOL_KEY = 'schoolos_selected_school'
 
 export default function LoginPage() {
   const router   = useRouter()
   const supabase = createClient()
 
-  // ── Splash state ──────────────────────────────────────────────────────────
-  const [splashVisible, setSplashVisible] = useState(true)
-  const [splashFading,  setSplashFading]  = useState(false)
-  const taglineRef  = useRef<HTMLSpanElement>(null)
-  const statsAnimated = useRef(false)
-
-  useEffect(() => {
-    // Show splash every time the app is opened fresh (session-based)
-    // Use sessionStorage so it shows once per app launch, not once ever
-    const shown = sessionStorage.getItem(SPLASH_KEY)
-    if (shown) {
-      setSplashVisible(false)
-      return
-    }
-    sessionStorage.setItem(SPLASH_KEY, '1')
-
-    // Start fade-out 400ms before hiding
-    const fadeTimer   = setTimeout(() => setSplashFading(true),  SPLASH_MS - 400)
-    const hideTimer   = setTimeout(() => setSplashVisible(false), SPLASH_MS)
-    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer) }
-  }, [])
-
-  // Typewriter
-  useEffect(() => {
-    if (!splashVisible) return
-    const phrases = [
-      'School Management Portal',
-      'Built for Nigerian Schools',
-      'Every Role. One Platform.',
-      'Secure · Smart · Simple',
-    ]
-    let pi = 0, ci = 0, deleting = false
-    let timer: ReturnType<typeof setTimeout>
-
-    const tick = () => {
-      const el = taglineRef.current
-      if (!el) return
-      const phrase = phrases[pi]
-      if (!deleting) {
-        ci++
-        el.textContent = phrase.slice(0, ci)
-        if (ci === phrase.length) { deleting = true; timer = setTimeout(tick, 1800); return }
-        timer = setTimeout(tick, 62)
-      } else {
-        ci--
-        el.textContent = phrase.slice(0, ci)
-        if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; timer = setTimeout(tick, 320); return }
-        timer = setTimeout(tick, 30)
-      }
-    }
-    const start = setTimeout(tick, 1300)
-    return () => { clearTimeout(start); clearTimeout(timer) }
-  }, [splashVisible])
-
-  // Counters
-  useEffect(() => {
-    if (!splashVisible || statsAnimated.current) return
-    statsAnimated.current = true
-
-    const countUp = (id: string, target: number, suffix: string, delay: number) => {
-      setTimeout(() => {
-        const el = document.getElementById(id)
-        if (!el) return
-        let start: number | null = null
-        const step = (ts: number) => {
-          if (!start) start = ts
-          const p    = Math.min((ts - start) / 1100, 1)
-          const ease = 1 - Math.pow(1 - p, 3)
-          el.textContent = Math.round(ease * target) + suffix
-          if (p < 1) requestAnimationFrame(step)
-        }
-        requestAnimationFrame(step)
-      }, delay)
-    }
-    countUp('sp-schools',  24,    '',  1900)
-    countUp('sp-students', 12400, '+', 1900)
-    countUp('sp-features', 40,    '',  1900)
-  }, [splashVisible])
-
-  // Loader labels
-  useEffect(() => {
-    if (!splashVisible) return
-    const steps = [
-      { t: 600,  label: 'Loading modules...' },
-      { t: 1400, label: 'Connecting database...' },
-      { t: 2400, label: 'Syncing school data...' },
-      { t: 3300, label: 'Applying permissions...' },
-      { t: 4300, label: 'Ready ✓' },
-    ]
-    const timers = steps.map(({ t, label }) =>
-      setTimeout(() => {
-        const el = document.getElementById('sp-loader-label')
-        if (el) el.textContent = label
-      }, t)
-    )
-    return () => timers.forEach(clearTimeout)
-  }, [splashVisible])
-
-  // Particles canvas
-  useEffect(() => {
-    if (!splashVisible) return
-    const canvas = document.getElementById('sp-canvas') as HTMLCanvasElement
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')!
-    let raf: number
-    let w = 0, h = 0
-
-    const resize = () => {
-      w = canvas.width  = window.innerWidth
-      h = canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const colors = ['rgba(124,58,237,', 'rgba(0,180,216,', 'rgba(245,158,11,']
-    const pts = Array.from({ length: 70 }, () => ({
-      x: Math.random() * (w || 400), y: Math.random() * (h || 800),
-      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
-      r: Math.random() * 1.6 + 0.4,
-      c: colors[Math.floor(Math.random() * colors.length)],
-    }))
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h)
-      for (const p of pts) {
-        p.x += p.vx; p.y += p.vy
-        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0
-        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0
-      }
-      for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y
-          const d  = Math.sqrt(dx * dx + dy * dy)
-          if (d < 90) {
-            ctx.beginPath()
-            ctx.strokeStyle = `rgba(124,58,237,${(1 - d / 90) * 0.07})`
-            ctx.lineWidth   = 0.5
-            ctx.moveTo(pts[i].x, pts[i].y)
-            ctx.lineTo(pts[j].x, pts[j].y)
-            ctx.stroke()
-          }
-        }
-      }
-      for (const p of pts) {
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = p.c + '0.5)'
-        ctx.fill()
-      }
-      raf = requestAnimationFrame(draw)
-    }
-    draw()
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
-  }, [splashVisible])
+  const [checkingSchool, setCheckingSchool] = useState(true)
 
   // ── Login form state ──────────────────────────────────────────────────────
   const [tab,       setTab]       = useState<Tab>('login')
@@ -217,12 +66,24 @@ export default function LoginPage() {
   })
 
   useEffect(() => {
-    setMounted(true)
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'timeout') setIsTimeout(true)
+
     const stored = localStorage.getItem(SCHOOL_KEY)
-    if (stored) { try { setSchool(JSON.parse(stored)) } catch {} }
-  }, [])
+    if (!stored) {
+      // No school selected — this page can't be reached without one.
+      // Send them to pick a school first (deep link, back button, bookmark, etc.)
+      router.replace('/select-school')
+      return
+    }
+    try { setSchool(JSON.parse(stored)) } catch {
+      router.replace('/select-school')
+      return
+    }
+
+    setCheckingSchool(false)
+    setMounted(true)
+  }, [router])
 
   async function handleExistingLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -340,80 +201,14 @@ export default function LoginPage() {
     'Yobe','Zamfara',
   ]
 
+  // Still resolving whether a school is selected — render nothing rather
+  // than flash the login form before a possible redirect to /select-school.
+  if (checkingSchool) {
+    return <div className={styles.schoolCheckGate} />
+  }
+
   return (
     <>
-      {/* ── SPLASH OVERLAY ─────────────────────────────────────────────────── */}
-      {splashVisible && (
-        <div className={`${styles.splashOverlay} ${splashFading ? styles.splashFading : ''}`}>
-
-          <canvas id="sp-canvas" className={styles.spCanvas} />
-          <div className={styles.spGlowViolet} />
-          <div className={styles.spGlowCyan} />
-          <div className={styles.spGrid} />
-          <div className={styles.spScanLine} />
-
-          {/* HUD corners */}
-          <div className={`${styles.spCorner} ${styles.spTL}`} />
-          <div className={`${styles.spCorner} ${styles.spTR}`} />
-          <div className={`${styles.spCorner} ${styles.spBL}`} />
-          <div className={`${styles.spCorner} ${styles.spBR}`} />
-
-          <div className={styles.spContent}>
-
-            {/* Logo */}
-            <div className={styles.spLogoArea}>
-              <div className={styles.spOrbitRing} />
-              <div className={styles.spRingOuter} />
-              <div className={styles.spRingMid} />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/logo.png" alt="SchoolOS" className={styles.spLogo} />
-            </div>
-
-            {/* Brand */}
-            <div className={styles.spBrandWrap}>
-              <h1 className={styles.spBrandName}>
-                School<span className={styles.spBrandAccent}>OS</span>
-              </h1>
-              <p className={styles.spTagline}>
-                <span ref={taglineRef} />
-                <span className={styles.spCursor} />
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className={styles.spStats}>
-              <div className={styles.spStat}>
-                <span id="sp-schools"  className={styles.spStatVal}>0</span>
-                <span className={styles.spStatLabel}>Schools</span>
-              </div>
-              <div className={styles.spStatDiv} />
-              <div className={styles.spStat}>
-                <span id="sp-students" className={styles.spStatVal}>0</span>
-                <span className={styles.spStatLabel}>Students</span>
-              </div>
-              <div className={styles.spStatDiv} />
-              <div className={styles.spStat}>
-                <span id="sp-features" className={styles.spStatVal}>0</span>
-                <span className={styles.spStatLabel}>Features</span>
-              </div>
-            </div>
-
-            {/* Loader */}
-            <div className={styles.spLoaderWrap}>
-              <div className={styles.spLoaderTrack}>
-                <div className={styles.spLoaderFill} />
-              </div>
-              <span id="sp-loader-label" className={styles.spLoaderLabel}>
-                Initialising SchoolOS...
-              </span>
-            </div>
-
-          </div>
-
-          <p className={styles.spVersion}>SchoolOS · Premium School Management · v1.0</p>
-        </div>
-      )}
-
       {/* ── LOGIN PAGE ─────────────────────────────────────────────────────── */}
       <div className={styles.page}>
         <div className={styles.bgGlow} />
