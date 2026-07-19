@@ -99,6 +99,11 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
       .eq('is_read', false)
 
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+
+    // They've caught up — reset the unread-digest backoff so a future
+    // quiet period starts the nudge schedule fresh rather than picking up
+    // at whatever stage they'd reached before.
+    supabase.rpc('clear_unread_digest_state').then(() => {}, () => {})
   }
 
   async function markOneRead(id: string) {
@@ -110,6 +115,20 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, is_read: true } : n)
     )
+
+    // Only reset the backoff if this was genuinely their last unread item
+    // system-wide — the loaded list here is capped at 20, so checking
+    // against it alone could reset the schedule while unread items still
+    // exist beyond that page.
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false)
+
+    if ((count ?? 0) === 0) {
+      supabase.rpc('clear_unread_digest_state').then(() => {}, () => {})
+    }
   }
 
   function formatTime(dateStr: string) {
