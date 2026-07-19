@@ -4,6 +4,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
 
 interface Props { profile: any; school: any; userId: string }
@@ -86,8 +87,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
   }
 
   async function logout() {
-    await supabase.auth.signOut()
-    router.push('/login'); router.refresh()
+    await signOutFlow(supabase, router)
   }
 
   const fields = [
