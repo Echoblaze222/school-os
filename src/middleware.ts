@@ -19,6 +19,10 @@ const INACTIVITY_MS = INACTIVITY_MINUTES * 60 * 1000
 
 // Routes that do NOT require authentication
 const PUBLIC_PATHS = [
+  '/',                                   // root — handled by its own redirect logic below;
+                                          // must NOT be caught by the generic route-protection
+                                          // check or it gets sent to /login before ever reaching
+                                          // the splash redirect
   '/splash',
   '/select-school',
   '/login',
