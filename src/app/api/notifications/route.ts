@@ -1,11 +1,13 @@
 // src/app/api/notifications/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Updated version: fires a Web Push after every successful notification insert.
-// Replace the existing file with this one.
+// Instant push is now handled by a database trigger on the notifications
+// table itself (see lib/supabase/notifications_push_trigger.sql), which
+// fires on EVERY insert regardless of where it comes from — this route no
+// longer calls pushNotify() manually, since doing both would send the
+// push twice.
 // ─────────────────────────────────────────────────────────────────────────────
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { pushNotify } from '@/lib/pushNotify'
 
 // GET - fetch notifications for current user
 export async function GET(req: Request) {
@@ -94,13 +96,8 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // 🔔 Fire Web Push — non-blocking, best-effort
-  pushNotify(user_id, {
-    title,
-    body,
-    url:  action_url ?? '/',
-    tag:  type ?? 'system',
-  })
+  // Push is fired automatically by the DB trigger on this insert —
+  // see lib/supabase/notifications_push_trigger.sql. No manual call needed.
 
   return NextResponse.json({ notification: data })
 }
