@@ -1,15 +1,23 @@
 'use client'
 // src/app/splash/page.tsx
-// Cinematic 5-second splash with 3D logo float, typewriter, counters, orbit ring, particles
+// Redesigned splash: glass-card hero, radial progress ring, typewriter tagline, live counters.
+// Keeps SchoolOS's own Violet × Gold tokens — structural cues (ring, glass, calm motion)
+// borrowed from the Trybe Focus reference, none of its literal colors.
 
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './splash.module.css'
 
+const RING_SIZE = 128
+const RING_STROKE = 6
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
+const RING_CIRC = 2 * Math.PI * RING_RADIUS
+
 export default function SplashPage() {
   const router = useRouter()
   const taglineRef = useRef<HTMLSpanElement>(null)
   const statsAnimated = useRef(false)
+  const ringRef = useRef<SVGCircleElement>(null)
 
   // ── Typewriter ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -49,7 +57,7 @@ export default function SplashPage() {
       }
     }
 
-    const startTimer = setTimeout(tick, 1400)
+    const startTimer = setTimeout(tick, 1200)
     return () => { clearTimeout(startTimer); clearTimeout(timer) }
   }, [])
 
@@ -74,19 +82,35 @@ export default function SplashPage() {
       }, delay)
     }
 
-    countUp('stat-schools',   24,    '',  1900)
-    countUp('stat-students',  12400, '+', 1900)
-    countUp('stat-features',  40,    '',  1900)
+    countUp('stat-schools',  24,    '',  1600)
+    countUp('stat-students', 12400, '+', 1600)
+    countUp('stat-features', 40,    '',  1600)
+  }, [])
+
+  // ── Radial ring progress (0 → 1 over the splash duration) ───────────────────
+  useEffect(() => {
+    const DURATION = 4800
+    const start = performance.now()
+    let raf: number
+
+    const step = (ts: number) => {
+      const p = Math.min((ts - start) / DURATION, 1)
+      const el = ringRef.current
+      if (el) el.style.strokeDashoffset = String(RING_CIRC - p * RING_CIRC)
+      if (p < 1) raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   // ── Loader label steps ───────────────────────────────────────────────────────
   useEffect(() => {
     const steps = [
-      { t: 600,  label: 'Loading modules...' },
-      { t: 1400, label: 'Connecting database...' },
-      { t: 2400, label: 'Syncing school data...' },
-      { t: 3300, label: 'Applying permissions...' },
-      { t: 4300, label: 'Ready ✓' },
+      { t: 500,  label: 'Loading modules…' },
+      { t: 1400, label: 'Connecting database…' },
+      { t: 2400, label: 'Syncing school data…' },
+      { t: 3300, label: 'Applying permissions…' },
+      { t: 4300, label: 'Ready' },
     ]
     const timers = steps.map(({ t, label }) =>
       setTimeout(() => {
@@ -97,13 +121,13 @@ export default function SplashPage() {
     return () => timers.forEach(clearTimeout)
   }, [])
 
-  // ── Redirect after 5 s ───────────────────────────────────────────────────────
+  // ── Redirect after splash ────────────────────────────────────────────────────
   useEffect(() => {
     const t = setTimeout(() => router.replace('/select-school'), 5000)
     return () => clearTimeout(t)
   }, [router])
 
-  // ── Particles canvas ────────────────────────────────────────────────────────
+  // ── Soft ambient particles (calmer, sparser than before) ─────────────────────
   useEffect(() => {
     const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement
     if (!canvas) return
@@ -118,15 +142,13 @@ export default function SplashPage() {
     resize()
     window.addEventListener('resize', resize)
 
-    const N = 80
-    const colors = ['rgba(124,58,237,', 'rgba(0,180,216,', 'rgba(245,158,11,']
+    const N = 34
     const pts = Array.from({ length: N }, () => ({
       x: Math.random() * (w || 400),
       y: Math.random() * (h || 800),
-      vx: (Math.random() - 0.5) * 0.45,
-      vy: (Math.random() - 0.5) * 0.45,
-      r: Math.random() * 1.8 + 0.5,
-      c: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: (Math.random() - 0.5) * 0.18,
+      r: Math.random() * 1.4 + 0.4,
     }))
 
     const draw = () => {
@@ -135,28 +157,9 @@ export default function SplashPage() {
         p.x += p.vx; p.y += p.vy
         if (p.x < 0) p.x = w; if (p.x > w) p.x = 0
         if (p.y < 0) p.y = h; if (p.y > h) p.y = 0
-      }
-      // connection lines
-      for (let i = 0; i < N; i++) {
-        for (let j = i + 1; j < N; j++) {
-          const dx = pts[i].x - pts[j].x
-          const dy = pts[i].y - pts[j].y
-          const d = Math.sqrt(dx * dx + dy * dy)
-          if (d < 90) {
-            ctx.beginPath()
-            ctx.strokeStyle = `rgba(124,58,237,${(1 - d / 90) * 0.08})`
-            ctx.lineWidth = 0.5
-            ctx.moveTo(pts[i].x, pts[i].y)
-            ctx.lineTo(pts[j].x, pts[j].y)
-            ctx.stroke()
-          }
-        }
-      }
-      // dots
-      for (const p of pts) {
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = p.c + '0.55)'
+        ctx.fillStyle = 'rgba(159, 103, 255, 0.35)'
         ctx.fill()
       }
       raf = requestAnimationFrame(draw)
@@ -172,39 +175,42 @@ export default function SplashPage() {
   return (
     <div className={styles.splash}>
 
-      {/* Particle layer */}
+      {/* Soft particle layer */}
       <canvas id="particle-canvas" className={styles.particles} />
 
-      {/* Ambient glows */}
+      {/* Ambient glow */}
       <div className={styles.glowViolet} />
-      <div className={styles.glowCyan} />
-
-      {/* Circuit grid */}
-      <div className={styles.circuitGrid} />
-
-      {/* Scan line */}
-      <div className={styles.scanLine} />
-
-      {/* HUD corners */}
-      <div className={`${styles.corner} ${styles.tl}`} />
-      <div className={`${styles.corner} ${styles.tr}`} />
-      <div className={`${styles.corner} ${styles.bl}`} />
-      <div className={`${styles.corner} ${styles.br}`} />
+      <div className={styles.glowGold} />
 
       {/* ── Main content ── */}
       <div className={styles.content}>
 
-        {/* Logo */}
+        {/* Logo inside radial progress ring */}
         <div className={styles.logoArea}>
-          <div className={styles.orbitRing} />
-          <div className={styles.ringOuter} />
-          <div className={styles.ringMid} />
+          <svg className={styles.ringSvg} width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
+            <circle
+              cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS}
+              stroke="rgba(255,255,255,0.08)" strokeWidth={RING_STROKE} fill="none"
+            />
+            <circle
+              ref={ringRef}
+              cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS}
+              stroke="url(#ringGradient)" strokeWidth={RING_STROKE} fill="none"
+              strokeLinecap="round"
+              strokeDasharray={RING_CIRC}
+              strokeDashoffset={RING_CIRC}
+              transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
+              className={styles.ringProgress}
+            />
+            <defs>
+              <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#7C3AED" />
+                <stop offset="100%" stopColor="#F59E0B" />
+              </linearGradient>
+            </defs>
+          </svg>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/icons/logo.png"
-            alt="SchoolOS"
-            className={styles.logo}
-          />
+          <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
         </div>
 
         {/* Brand + typewriter */}
@@ -218,8 +224,8 @@ export default function SplashPage() {
           </p>
         </div>
 
-        {/* Live stats */}
-        <div className={styles.stats}>
+        {/* Live stats — glass card */}
+        <div className={`${styles.stats} glass-card`}>
           <div className={styles.stat}>
             <span id="stat-schools"  className={styles.statVal}>0</span>
             <span className={styles.statLabel}>Schools</span>
@@ -236,15 +242,10 @@ export default function SplashPage() {
           </div>
         </div>
 
-        {/* Loader */}
-        <div className={styles.loaderWrap}>
-          <div className={styles.loaderTrack}>
-            <div className={styles.loaderFill} />
-          </div>
-          <span id="loader-label" className={styles.loaderLabel}>
-            Initialising SchoolOS...
-          </span>
-        </div>
+        {/* Loader label */}
+        <span id="loader-label" className={styles.loaderLabel}>
+          Initialising SchoolOS…
+        </span>
 
       </div>
 
