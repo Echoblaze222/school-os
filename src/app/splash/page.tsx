@@ -1,256 +1,213 @@
 'use client'
 // src/app/splash/page.tsx
-// Redesigned splash: glass-card hero, radial progress ring, typewriter tagline, live counters.
-// Keeps SchoolOS's own Violet × Gold tokens — structural cues (ring, glass, calm motion)
-// borrowed from the Trybe Focus reference, none of its literal colors.
+// "Signature Reveal" splash — same technique as the Trybe Focus reference:
+// pen-stroke SVG text draw → chrome/gradient fill crossfade → shine sweep →
+// glow pulse → wordmark steps back → second word slides out from behind it →
+// tagline fades in → hold → cross-fade out. Re-colored to SchoolOS's own
+// Violet × Gold tokens, re-worded to School / OS, no logo (Trybe has none).
 
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import styles from './splash.module.css'
 
-const RING_SIZE = 128
-const RING_STROKE = 6
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
-const RING_CIRC = 2 * Math.PI * RING_RADIUS
+// SchoolOS's own tokens — not Trybe's blue/purple
+const VIOLET        = '#7C3AED'
+const VIOLET_SOFT    = 'rgba(124,58,237,0.14)'
+const GOLD           = '#F59E0B'
+const CHROME         = '#D8CCFB'   // pale violet-white, plays the "chrome" role
+const CHROME_BRIGHT  = '#FFFFFF'
+const BG_DEEP        = '#060608'
+const BG_PRIMARY     = '#0D0E16'
+const TEXT_SECONDARY = '#8A94B8'
+
+const DISPLAY_FONT = "'Inter', sans-serif"
+
+type Stage = 'draw' | 'chrome' | 'shine' | 'glow' | 'shift' | 'tag' | 'out'
 
 export default function SplashPage() {
   const router = useRouter()
-  const taglineRef = useRef<HTMLSpanElement>(null)
-  const statsAnimated = useRef(false)
-  const ringRef = useRef<SVGCircleElement>(null)
+  const [stage, setStage] = useState<Stage>('draw')
+  const reducedMotion = useRef(
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  )
+  const strokeTextRef = useRef<SVGTextElement>(null)
+  const flourishRef   = useRef<SVGPathElement>(null)
+  const [strokeLen, setStrokeLen]     = useState(420)
+  const [flourishLen, setFlourishLen] = useState(160)
 
-  // ── Typewriter ──────────────────────────────────────────────────────────────
+  const measure = useCallback(() => {
+    if (strokeTextRef.current?.getComputedTextLength) {
+      // A glyph's stroked outline is longer than its flat advance width —
+      // 1.8x approximates the full pen-path length for a bold sans face.
+      setStrokeLen(strokeTextRef.current.getComputedTextLength() * 1.8)
+    }
+    if (flourishRef.current?.getTotalLength) {
+      setFlourishLen(flourishRef.current.getTotalLength())
+    }
+  }, [])
+
   useEffect(() => {
-    const phrases = [
-      'School Management Portal',
-      'Built for Nigerian Schools',
-      'Every Role. One Platform.',
-      'Secure · Smart · Simple',
+    measure()
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(measure)
+    }
+  }, [measure])
+
+  useEffect(() => {
+    if (reducedMotion.current) {
+      const t = setTimeout(() => router.replace('/select-school'), 450)
+      return () => clearTimeout(t)
+    }
+    const timers = [
+      setTimeout(() => setStage('chrome'), 1750), // stroke finishes, crossfades to gradient fill + flourish draws
+      setTimeout(() => setStage('shine'),  2150), // shine sweep passes across the letters
+      setTimeout(() => setStage('glow'),   2650), // soft glow pulse breathes once
+      setTimeout(() => setStage('shift'),  3000), // "School" steps back to make room
+      setTimeout(() => setStage('tag'),    3100), // "OS" slides out from behind it
+      setTimeout(() => setStage('out'),    4600), // hold, then cross-fade out
+      setTimeout(() => router.replace('/select-school'), 5000),
     ]
-    let pi = 0, ci = 0, deleting = false
-    let timer: ReturnType<typeof setTimeout>
-
-    const tick = () => {
-      const el = taglineRef.current
-      if (!el) return
-      const phrase = phrases[pi]
-
-      if (!deleting) {
-        ci++
-        el.textContent = phrase.slice(0, ci)
-        if (ci === phrase.length) {
-          deleting = true
-          timer = setTimeout(tick, 2000)
-          return
-        }
-        timer = setTimeout(tick, 65)
-      } else {
-        ci--
-        el.textContent = phrase.slice(0, ci)
-        if (ci === 0) {
-          deleting = false
-          pi = (pi + 1) % phrases.length
-          timer = setTimeout(tick, 350)
-          return
-        }
-        timer = setTimeout(tick, 32)
-      }
-    }
-
-    const startTimer = setTimeout(tick, 1200)
-    return () => { clearTimeout(startTimer); clearTimeout(timer) }
-  }, [])
-
-  // ── Counters ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (statsAnimated.current) return
-    statsAnimated.current = true
-
-    const countUp = (id: string, target: number, suffix: string, delay: number) => {
-      setTimeout(() => {
-        const el = document.getElementById(id)
-        if (!el) return
-        let start: number | null = null
-        const step = (ts: number) => {
-          if (!start) start = ts
-          const p = Math.min((ts - start) / 1200, 1)
-          const ease = 1 - Math.pow(1 - p, 3)
-          el.textContent = Math.round(ease * target) + suffix
-          if (p < 1) requestAnimationFrame(step)
-        }
-        requestAnimationFrame(step)
-      }, delay)
-    }
-
-    countUp('stat-schools',  24,    '',  1600)
-    countUp('stat-students', 12400, '+', 1600)
-    countUp('stat-features', 40,    '',  1600)
-  }, [])
-
-  // ── Radial ring progress (0 → 1 over the splash duration) ───────────────────
-  useEffect(() => {
-    const DURATION = 4800
-    const start = performance.now()
-    let raf: number
-
-    const step = (ts: number) => {
-      const p = Math.min((ts - start) / DURATION, 1)
-      const el = ringRef.current
-      if (el) el.style.strokeDashoffset = String(RING_CIRC - p * RING_CIRC)
-      if (p < 1) raf = requestAnimationFrame(step)
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
-  // ── Loader label steps ───────────────────────────────────────────────────────
-  useEffect(() => {
-    const steps = [
-      { t: 500,  label: 'Loading modules…' },
-      { t: 1400, label: 'Connecting database…' },
-      { t: 2400, label: 'Syncing school data…' },
-      { t: 3300, label: 'Applying permissions…' },
-      { t: 4300, label: 'Ready' },
-    ]
-    const timers = steps.map(({ t, label }) =>
-      setTimeout(() => {
-        const el = document.getElementById('loader-label')
-        if (el) el.textContent = label
-      }, t)
-    )
     return () => timers.forEach(clearTimeout)
-  }, [])
-
-  // ── Redirect after splash ────────────────────────────────────────────────────
-  useEffect(() => {
-    const t = setTimeout(() => router.replace('/select-school'), 5000)
-    return () => clearTimeout(t)
   }, [router])
 
-  // ── Soft ambient particles (calmer, sparser than before) ─────────────────────
-  useEffect(() => {
-    const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')!
-    let raf: number
-    let w = 0, h = 0
-
-    const resize = () => {
-      w = canvas.width  = window.innerWidth
-      h = canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const N = 34
-    const pts = Array.from({ length: N }, () => ({
-      x: Math.random() * (w || 400),
-      y: Math.random() * (h || 800),
-      vx: (Math.random() - 0.5) * 0.18,
-      vy: (Math.random() - 0.5) * 0.18,
-      r: Math.random() * 1.4 + 0.4,
-    }))
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h)
-      for (const p of pts) {
-        p.x += p.vx; p.y += p.vy
-        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0
-        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(159, 103, 255, 0.35)'
-        ctx.fill()
-      }
-      raf = requestAnimationFrame(draw)
-    }
-    draw()
-
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
+  const reduced        = reducedMotion.current
+  const drawing         = stage === 'draw' && !reduced
+  const chromeVisible   = reduced || stage !== 'draw'
+  const shifted         = reduced || (['shift', 'tag', 'out'] as Stage[]).includes(stage)
+  const osVisible       = reduced || (['tag', 'out'] as Stage[]).includes(stage)
 
   return (
-    <div className={styles.splash}>
+    <div
+      style={{
+        width: '100%', height: '100vh',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        background: `linear-gradient(180deg, ${BG_DEEP} 0%, ${BG_PRIMARY} 100%)`,
+        opacity: stage === 'out' ? 0 : 1,
+        transition: 'opacity 300ms',
+        position: 'fixed', inset: 0, overflow: 'hidden', zIndex: 9999,
+      }}
+    >
+      <div style={{ position: 'relative', display: 'inline-block', zIndex: 2 }}>
+        <svg width={280} height={92} viewBox="0 0 280 92" style={{ overflow: 'visible', position: 'relative', zIndex: 2 }}>
+          <defs>
+            <linearGradient id="schoolosChrome" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stopColor={CHROME} />
+              <stop offset="100%" stopColor={CHROME_BRIGHT} />
+            </linearGradient>
+            <linearGradient id="schoolosShine" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0" />
+              <stop offset="50%"  stopColor="#FFFFFF" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+            <mask id="schoolosTextMask">
+              <rect x="0" y="0" width="280" height="92" fill="black" />
+              <text x="42%" y="56" textAnchor="middle" style={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 42, letterSpacing: 1 }} fill="white">
+                School
+              </text>
+            </mask>
+          </defs>
 
-      {/* Soft particle layer */}
-      <canvas id="particle-canvas" className={styles.particles} />
+          {/* "School" — stroke draw, chrome fill, shine sweep — shifts left as a
+              rigid unit once landed. The flourish below is NOT part of this
+              group: it stays fixed the whole time. */}
+          <g
+            style={{
+              transform: shifted ? 'translateX(-34px)' : 'translateX(0)',
+              transition: reduced ? 'none' : 'transform 0.5s cubic-bezier(0.65,0,0.35,1)',
+            }}
+          >
+            {/* Stroke layer — the actual pen line, measured and traced */}
+            <text
+              ref={strokeTextRef}
+              x="42%" y="56" textAnchor="middle"
+              style={{
+                fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 42, letterSpacing: 1,
+                fill: 'none', stroke: VIOLET, strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
+                strokeDasharray: strokeLen,
+                strokeDashoffset: drawing ? strokeLen : 0,
+                transition: reduced ? 'none' : 'stroke-dashoffset 1.4s 0.15s cubic-bezier(0.5,0,0.4,1)',
+                opacity: chromeVisible ? 0 : 1,
+              } as React.CSSProperties}
+            >
+              School
+            </text>
 
-      {/* Ambient glow */}
-      <div className={styles.glowViolet} />
-      <div className={styles.glowGold} />
+            {/* Gradient fill layer — crossfades in once the stroke completes */}
+            <text
+              x="42%" y="56" textAnchor="middle"
+              style={{
+                fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 42, letterSpacing: 1,
+                fill: 'url(#schoolosChrome)',
+                opacity: chromeVisible ? 1 : 0,
+                transition: 'opacity 0.4s',
+                filter: stage === 'glow' ? `drop-shadow(0 0 18px ${VIOLET_SOFT})` : 'none',
+                animation: stage === 'glow' && !reduced ? 'schoolosGlowPulse 0.9s ease-in-out' : 'none',
+              } as React.CSSProperties}
+            >
+              School
+            </text>
 
-      {/* ── Main content ── */}
-      <div className={styles.content}>
-
-        {/* Logo inside radial progress ring */}
-        <div className={styles.logoArea}>
-          <svg className={styles.ringSvg} width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
-            <circle
-              cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS}
-              stroke="rgba(255,255,255,0.08)" strokeWidth={RING_STROKE} fill="none"
+            {/* Shine sweep — moving highlight clipped to the letterforms via the mask above */}
+            <rect
+              x={(['shine', 'glow', 'out'] as Stage[]).includes(stage) ? 260 : -80}
+              y="0" width="60" height="92"
+              mask="url(#schoolosTextMask)"
+              fill="url(#schoolosShine)"
+              style={{ transition: reduced ? 'none' : 'x 0.45s cubic-bezier(0.3,0,0.2,1)' }}
             />
-            <circle
-              ref={ringRef}
-              cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS}
-              stroke="url(#ringGradient)" strokeWidth={RING_STROKE} fill="none"
-              strokeLinecap="round"
-              strokeDasharray={RING_CIRC}
-              strokeDashoffset={RING_CIRC}
-              transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
-              className={styles.ringProgress}
-            />
-            <defs>
-              <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#7C3AED" />
-                <stop offset="100%" stopColor="#F59E0B" />
-              </linearGradient>
-            </defs>
-          </svg>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
-        </div>
+          </g>
 
-        {/* Brand + typewriter */}
-        <div className={styles.brandWrap}>
-          <h1 className={styles.brandName}>
-            School<span className={styles.brandAccent}>OS</span>
-          </h1>
-          <p className={styles.tagline}>
-            <span ref={taglineRef} />
-            <span className={styles.cursor} />
-          </p>
-        </div>
+          {/* Flourish — the hand-signed underline. Fixed in place at all times. */}
+          <path
+            ref={flourishRef}
+            d="M28,70 C74,80 176,80 220,68"
+            fill="none"
+            stroke={GOLD}
+            strokeWidth={2}
+            strokeLinecap="round"
+            style={{
+              strokeDasharray: flourishLen,
+              strokeDashoffset: stage === 'draw' || reduced ? flourishLen : 0,
+              transition: reduced ? 'none' : 'stroke-dashoffset 0.5s 0.05s cubic-bezier(0.4,0,0.2,1)',
+              opacity: chromeVisible ? 1 : 0,
+            }}
+          />
 
-        {/* Live stats — glass card */}
-        <div className={`${styles.stats} glass-card`}>
-          <div className={styles.stat}>
-            <span id="stat-schools"  className={styles.statVal}>0</span>
-            <span className={styles.statLabel}>Schools</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.stat}>
-            <span id="stat-students" className={styles.statVal}>0</span>
-            <span className={styles.statLabel}>Students</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.stat}>
-            <span id="stat-features" className={styles.statVal}>0</span>
-            <span className={styles.statLabel}>Features</span>
-          </div>
-        </div>
-
-        {/* Loader label */}
-        <span id="loader-label" className={styles.loaderLabel}>
-          Initialising SchoolOS…
-        </span>
-
+          {/* "OS" — sits on the same baseline as "School", tucked behind its
+              trailing edge, sliding out once "School" steps back. Reads as
+              one wordmark, not a second line of type. */}
+          <text
+            x={178} y={56} textAnchor="start"
+            style={{
+              fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 42, letterSpacing: 1,
+              fill: GOLD,
+              opacity: osVisible ? 1 : 0,
+              transform: osVisible ? 'translateX(0)' : 'translateX(-24px)',
+              transition: reduced ? 'none' : 'transform 0.9s cubic-bezier(0.34,1.56,0.64,1), opacity 0.7s ease-out',
+            } as React.CSSProperties}
+          >
+            OS
+          </text>
+        </svg>
       </div>
 
-      {/* Version */}
-      <p className={styles.version}>SchoolOS · Premium School Management · v1.0</p>
+      <span
+        style={{
+          fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 12,
+          color: TEXT_SECONDARY, marginTop: 10, letterSpacing: 2,
+          opacity: stage === 'draw' ? 0 : 0.8,
+          transition: 'opacity 0.4s 0.2s',
+        }}
+      >
+        SCHOOL MANAGEMENT
+      </span>
+
+      <style>{`
+        @keyframes schoolosGlowPulse {
+          0%, 100% { filter: drop-shadow(0 0 6px ${VIOLET_SOFT}); }
+          50%      { filter: drop-shadow(0 0 22px ${VIOLET_SOFT}); }
+        }
+      `}</style>
     </div>
   )
 }
