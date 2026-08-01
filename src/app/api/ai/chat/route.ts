@@ -156,6 +156,149 @@ Each role has its own dashboard with a bottom navigation bar and the following p
 - Expired subscription restricts access to most features until renewed.
 `.trim()
 
+  // ── Step-by-step response format ──────────────────────────────────────────
+  // Applies to every role. When answering a "how do I..." / navigation
+  // question, the assistant should reply with a numbered walkthrough where
+  // each step that corresponds to a real screen ends with a deep-link marker
+  // in the form [[Button label|/exact/route]]. The client
+  // (UniversalAIPage.tsx) parses this marker and renders a tappable button
+  // that navigates straight to that screen — instead of the person having to
+  // find it themselves. Only use routes from the map below; never invent one.
+  const stepFormatInstruction = `
+## Response format for "how do I..." / navigation questions
+When the question is about how to do something in the app, answer as a
+numbered list of short steps. For any step where the action happens on a
+specific SchoolOS screen, end that step's line with a deep-link marker:
+  1. Open Settings [[Go to Settings|/dashboard/principal/settings]]
+  2. Click "Academic Setup" and select the current term
+Only use exact routes from "Your available routes" below — never invent a
+route. Steps that are actions within a screen (e.g. "click Save") don't need
+a marker. Keep each step to one short sentence. For questions that aren't
+about navigating the app (explanations, drafting text, general advice),
+respond normally in prose — don't force the numbered/link format.
+`.trim()
+
+  const ROUTE_MAP: Record<string, Record<string, string>> = {
+    principal: {
+      'Staff':           '/dashboard/principal/staff',
+      'Students':        '/dashboard/principal/students',
+      'Teachers':        '/dashboard/principal/teachers',
+      'Classes':         '/dashboard/principal/classes',
+      'Access Codes':    '/dashboard/principal/codes',
+      'Analytics':       '/dashboard/principal/analytics',
+      'Results':         '/dashboard/principal/results',
+      'Fees':            '/dashboard/principal/fees',
+      'Assignments':     '/dashboard/principal/assignments',
+      'Live Classes':    '/dashboard/principal/live',
+      'Meetings':        '/dashboard/principal/meetings',
+      'Announcements':   '/dashboard/principal/announcements',
+      'Notices':         '/dashboard/principal/notices',
+      'Notifications':   '/dashboard/principal/notifications',
+      'Reports':         '/dashboard/principal/reports',
+      'Subscriptions':   '/dashboard/principal/subscriptions',
+      'Alumni':          '/dashboard/principal/alumni',
+      'Transfers':       '/dashboard/principal/transfers',
+      'Messages':        '/dashboard/principal/chat',
+      'Profile':         '/dashboard/principal/profile',
+      'AI Insights':     '/dashboard/principal/ai',
+      'Settings':        '/dashboard/principal/settings',
+    },
+    teacher: {
+      'My Classes':      '/dashboard/teacher/classes',
+      'Attendance':      '/dashboard/teacher/attendance',
+      'Assignments':     '/dashboard/teacher/assignments',
+      'Grades':          '/dashboard/teacher/grades',
+      'Messages':        '/dashboard/teacher/chat',
+      'AI Assistant':    '/dashboard/teacher/ai',
+      'Live Class':      '/dashboard/teacher/live',
+      'Quizzes':         '/dashboard/teacher/quizzes',
+      'Results':         '/dashboard/teacher/results',
+      'Study Notes':     '/dashboard/teacher/notes',
+      'Timetable':       '/dashboard/teacher/timetable',
+      'Syllabus':        '/dashboard/teacher/syllabus',
+      'Announcements':   '/dashboard/teacher/announcements',
+      'Audit Log':       '/dashboard/teacher/audit',
+      'Meetings':        '/dashboard/teacher/meetings',
+      'My Profile':      '/dashboard/teacher/profile',
+      'Notifications':   '/dashboard/teacher/notifications',
+      'Submissions':     '/dashboard/teacher/submissions',
+    },
+    bursar: {
+      'Fee Records':      '/dashboard/bursar/fees',
+      'Record Payment':   '/dashboard/bursar/record-payment',
+      'Payment Claims':   '/dashboard/bursar/claims',
+      'Payments':         '/dashboard/bursar/payments',
+      'Invoices':         '/dashboard/bursar/invoices',
+      'Receipts':         '/dashboard/bursar/receipts',
+      'Expenses':         '/dashboard/bursar/expenses',
+      'Reports':          '/dashboard/bursar/reports',
+      'Debtors':          '/dashboard/bursar/debtors',
+      'Reminders':        '/dashboard/bursar/reminders',
+      'Export Data':      '/dashboard/bursar/export',
+      'History':          '/dashboard/bursar/history',
+      'Messages':         '/dashboard/bursar/chat',
+      'Notifications':    '/dashboard/bursar/notifications',
+      'AI Assistant':     '/dashboard/bursar/ai',
+      'Meetings':         '/dashboard/bursar/meetings',
+      'Settings':         '/dashboard/bursar/settings',
+    },
+    secretary: {
+      'Students':        '/dashboard/secretary/students',
+      'Admissions':      '/dashboard/secretary/admissions',
+      'Applications':    '/dashboard/secretary/applications',
+      'Transfers':       '/dashboard/secretary/transfers',
+      'Users':           '/dashboard/secretary/users',
+      'Records':         '/dashboard/secretary/records',
+      'Documents':       '/dashboard/secretary/documents',
+      'Notices':         '/dashboard/secretary/notices',
+      'Notifications':   '/dashboard/secretary/notifications',
+      'Calendar':        '/dashboard/secretary/calendar',
+      'Access Codes':    '/dashboard/secretary/codes',
+      'Messages':        '/dashboard/secretary/chat',
+      'AI Assistant':    '/dashboard/secretary/ai',
+      'Meetings':        '/dashboard/secretary/meetings',
+      'Settings':        '/dashboard/secretary/settings',
+    },
+    student: {
+      'Assignments':     '/dashboard/student/assignments',
+      'Timetable':       '/dashboard/student/timetable',
+      'Live Classes':    '/dashboard/student/classes',
+      'Results':         '/dashboard/student/results',
+      'Quizzes':         '/dashboard/student/quizzes',
+      'Notes':           '/dashboard/student/notes',
+      'AI Tutor':        '/dashboard/student/ai',
+      'Messages':        '/dashboard/student/chat',
+      'Study Plan':      '/dashboard/student/schedule',
+      'Meetings':        '/dashboard/student/meetings',
+      'Records':         '/dashboard/student/records',
+      'Syllabus':        '/dashboard/student/syllabus',
+      'Alumni':          '/dashboard/student/alumni',
+      'My ID Card':      '/dashboard/student/id-card',
+      'Leaderboard':     '/dashboard/student/leaderboard',
+      'Notice Board':    '/dashboard/student/announcements',
+      'Notifications':   '/dashboard/student/notifications',
+    },
+    parent: {
+      "Child's Profile": '/dashboard/parent/child',
+      'Results':         '/dashboard/parent/results',
+      'Fee Status':      '/dashboard/parent/fees',
+      'Attendance':      '/dashboard/parent/attendance',
+      'Assignments':     '/dashboard/parent/assignments',
+      'Timetable':       '/dashboard/parent/timetable',
+      'Leaderboard':     '/dashboard/parent/leaderboard',
+      'Meetings':        '/dashboard/parent/meetings',
+      'Message School':  '/dashboard/parent/chat',
+      'AI Assistant':    '/dashboard/parent/ai',
+      'Notifications':   '/dashboard/parent/notifications',
+    },
+  }
+
+  function formatRouteMap(role: string): string {
+    const routes = ROUTE_MAP[role] ?? {}
+    const lines = Object.entries(routes).map(([label, href]) => `- ${label}: ${href}`)
+    return `## Your available routes (use these exact paths in [[label|route]] markers)\n${lines.join('\n')}`
+  }
+
   // ── Role-specific prompt ──────────────────────────────────────────────────
   const rolePrompts: Record<string, string> = {
 
@@ -280,7 +423,7 @@ Your job is to help parents monitor their child's education and use SchoolOS eff
 
   const rolePrompt = rolePrompts[role] ?? rolePrompts['student']
 
-  return `${rolePrompt}\n\n---\n\n${platformKnowledge}`
+  return `${rolePrompt}\n\n---\n\n${stepFormatInstruction}\n\n${formatRouteMap(role)}\n\n---\n\n${platformKnowledge}`
 }
 
 // ─── Image attachment shape ───────────────────────────────────────────────────
