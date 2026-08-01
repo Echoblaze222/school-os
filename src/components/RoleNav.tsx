@@ -82,12 +82,14 @@ const NAV: Record<string, {
         { href: '/dashboard/teacher/profile',       Icon: UserIcon,      label: 'My Profile'    },
       ]},
     ],
+    // Matches the pattern already shipped for Principal/Bursar/Secretary:
+    // role item / role item / home (center, raised) / role item / AI.
     bottom: [
       { href: '/dashboard/teacher/classes',    Icon: PeopleIcon,   label: 'Classes' },
       { href: '/dashboard/teacher/attendance', Icon: CalendarIcon, label: 'Attend'  },
       { home: true },
       { href: '/dashboard/teacher/chat',       Icon: MessageIcon,  label: 'Chat'    },
-      { more: true },
+      { href: '/dashboard/teacher/ai',         Icon: AiIcon,       label: 'AI'      },
     ],
   },
 
@@ -191,6 +193,7 @@ const NAV: Record<string, {
     sidebar: [
       { label: 'Main', items: [
         { href: '/dashboard/parent',               Icon: HomeIcon,    label: 'Dashboard'      },
+        { href: '/dashboard/parent/ai',            Icon: AiIcon,      label: 'AI Assistant'   },
         { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Notifications'  },
         { href: '/dashboard/parent/chat',          Icon: MessageIcon, label: 'Message School' },
       ]},
@@ -206,12 +209,14 @@ const NAV: Record<string, {
         { href: '/dashboard/parent/profile',     Icon: UserIcon,      label: 'My Profile'     },
       ]},
     ],
+    // Matches the pattern already shipped for Principal/Bursar/Secretary:
+    // role item / role item / home (center, raised) / role item / AI.
     bottom: [
       { href: '/dashboard/parent/child',   Icon: UserIcon,     label: 'Child'   },
       { href: '/dashboard/parent/results', Icon: BarChartIcon, label: 'Results' },
       { home: true },
-      { href: '/dashboard/parent/notifications', Icon: BellIcon,    label: 'Alerts' },
-      { href: '/dashboard/parent/chat',         Icon: MessageIcon, label: 'Chat'   },
+      { href: '/dashboard/parent/notifications', Icon: BellIcon, label: 'Alerts' },
+      { href: '/dashboard/parent/ai',      Icon: AiIcon,       label: 'AI'      },
     ],
   },
 }
@@ -327,14 +332,15 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
       {/* ── Mobile bottom nav ────────────────────────────── */}
       <nav className={styles.bottomNav}>
         {config.bottom.map((item, i) => {
-          // Home button
+          // Home button — matches the pattern already shipped for
+          // Principal/Bursar/Secretary: centered, raised, brand-colored.
           if (item.home) return (
             <Link key="home" href={homePath} className={styles.homeBtn} style={{ background: schoolColor }}>
               <HomeIcon size={20} color="white" strokeWidth={2}/>
             </Link>
           )
 
-          // More drawer button (teacher only)
+          // More drawer button — role-aware (pulls remaining items from that role's sidebar)
           if ((item as any).more) return (
             <button key="more" onClick={() => setShowMore(true)}
               className={styles.pill}
