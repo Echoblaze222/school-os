@@ -25,6 +25,9 @@ export default async function PrincipalDashboardPage() {
     { count: teacherCount },
     { count: classCount },
     { data: results },
+    { data: feeRows },
+    { data: notifRows },
+    { count: unreadNotifCount },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true })
       .eq('school_id', schoolId).eq('role', 'student'),
@@ -34,12 +37,41 @@ export default async function PrincipalDashboardPage() {
       .eq('school_id', schoolId),
     supabase.from('results').select('score')
       .eq('school_id', schoolId).limit(200),
+    supabase.from('school_fees').select('amount_ngn, paid_ngn')
+      .eq('school_id', schoolId),
+    supabase.from('notifications').select('id, title, body, type, created_at, action_url, link_url')
+      .eq('user_id', user.id).eq('is_read', false)
+      .order('created_at', { ascending: false }).limit(3),
+    supabase.from('notifications').select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('is_read', false),
   ])
 
   const scores   = (results ?? []).map((r: any) => r.score).filter((s: any) => s != null)
   const avgScore = scores.length
     ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
     : 0
+
+  // Fee collection rate: sum(paid_ngn) / sum(amount_ngn) across the school
+  const feeTotals = (feeRows ?? []).reduce(
+    (acc: { due: number; paid: number }, r: any) => {
+      acc.due  += Number(r.amount_ngn) || 0
+      acc.paid += Number(r.paid_ngn)   || 0
+      return acc
+    },
+    { due: 0, paid: 0 }
+  )
+  const feeCollectionRate = feeTotals.due > 0
+    ? Math.round((feeTotals.paid / feeTotals.due) * 100)
+    : 0
+
+  const pendingNotifications = (notifRows ?? []).map((n: any) => ({
+    id:         n.id,
+    title:      n.title,
+    body:       n.body,
+    type:       n.type,
+    created_at: n.created_at,
+    href:       n.action_url ?? n.link_url ?? '/dashboard/principal/notifications',
+  }))
 
   // Health score: weighted from presence of students/teachers/classes + avg score
   const hasAll      = studentCount && teacherCount && classCount
@@ -79,9 +111,12 @@ export default async function PrincipalDashboardPage() {
         classCount:     classCount    ?? 0,
         avgScore,
         healthScore,
-        pendingActions: 0,
+        feeCollectionRate,
+        pendingActions: (unreadNotifCount ?? 0),
       }}
       activities={activities}
+      pendingNotifications={pendingNotifications}
+      unreadNotifCount={unreadNotifCount ?? 0}
     />
   )
 }

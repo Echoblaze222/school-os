@@ -42,9 +42,26 @@ const MODULES = [
   { id: 'settings',      label: 'Settings',       Icon: SettingsIcon,  href: '/dashboard/principal/settings',           accent: '#6B7280', bg: '#1e2a38' },
 ]
 
-interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
+interface PendingNotif { id: string; title: string; body: string; type: string; created_at: string; href: string }
+interface Props {
+  profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[]
+  pendingNotifications?: PendingNotif[]
+  unreadNotifCount?: number
+}
 
-export default function PrincipalDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
+function notifRelTime(iso: string) {
+  const d = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(d / 60000)
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
+export default function PrincipalDashboardClient({
+  profile, school, userId, counts = {}, activities,
+  pendingNotifications = [], unreadNotifCount = 0,
+}: Props) {
   const pathname = usePathname()
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Principal'
@@ -59,6 +76,7 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
     { label: 'Teachers',  value: counts.teacherCount  ?? 0, color: '#3B82F6' },
     { label: 'Classes',   value: counts.classCount    ?? 0, color: '#8B5CF6' },
     { label: 'Avg Score', value: `${counts.avgScore   ?? 0}%`, color: '#F59E0B' },
+    { label: 'Fees Collected', value: `${counts.feeCollectionRate ?? 0}%`, color: '#EC4899' },
   ]
 
   // ── NEW: delete handler wired to Supabase ──────────────────────────────
@@ -96,6 +114,44 @@ export default function PrincipalDashboardClient({ profile, school, userId, coun
             </p>
           </div>
         </div>
+
+        {/* AI Insights — prominent, not buried in the module grid */}
+        <Link
+          href="/dashboard/principal/ai"
+          className={`${styles.aiCard} ${motion.riseIn}`}
+          style={{ animationDelay: '160ms', borderColor: `${schoolColor}55` }}
+        >
+          <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
+            <AiIcon size={22} color={schoolColor} />
+          </div>
+          <div className={styles.aiCardBody}>
+            <p className={styles.aiCardTitle}>AI Assistant</p>
+            <p className={styles.aiCardSub}>Ask how to create access codes, review school health, or get a summary of this week</p>
+          </div>
+          <span className={styles.aiCardArrow}>→</span>
+        </Link>
+
+        {/* Pending notifications preview */}
+        {pendingNotifications.length > 0 && (
+          <div className={`${styles.notifCard} ${motion.riseIn}`} style={{ animationDelay: '200ms' }}>
+            <div className={styles.notifCardHeader}>
+              <p className={styles.sectionLabel} style={{ marginBottom: 0 }}>
+                Pending Notifications {unreadNotifCount > 0 && <span className={styles.notifCountBadge}>{unreadNotifCount}</span>}
+              </p>
+              <Link href="/dashboard/principal/notifications" className={styles.notifViewAll}>View All</Link>
+            </div>
+            {pendingNotifications.map(n => (
+              <Link key={n.id} href={n.href} className={styles.notifRow}>
+                <span className={styles.notifDot} style={{ background: schoolColor }} />
+                <div className={styles.notifBody}>
+                  <p className={styles.notifTitle}>{n.title}</p>
+                  <p className={styles.notifText}>{n.body}</p>
+                </div>
+                <span className={styles.notifTime}>{notifRelTime(n.created_at)}</span>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Stats row — staggered */}
         <div className={styles.statsRow}>
