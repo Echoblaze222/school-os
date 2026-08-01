@@ -244,6 +244,22 @@ export default function StudentDashboardClient({ profile, school, userId, counts
             )}
           </section>
 
+          {/* AI Tutor — prominent, matches Principal/Bursar/Secretary placement */}
+          <Link
+            href="/dashboard/student/ai"
+            className={`${styles.aiCard} ${motion.riseIn}`}
+            style={{ animationDelay: '120ms', borderColor: `${schoolColor}55` }}
+          >
+            <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
+              <AiIcon size={22} color={schoolColor} />
+            </div>
+            <div className={styles.aiCardBody}>
+              <p className={styles.aiCardTitle}>AI Tutor</p>
+              <p className={styles.aiCardSub}>Ask for help with homework, exam prep, or explaining a topic you're stuck on</p>
+            </div>
+            <span className={styles.aiCardArrow}>→</span>
+          </Link>
+
           {/* Stats row — each card staggers in */}
           <div className={styles.statsGrid}>
             {[
