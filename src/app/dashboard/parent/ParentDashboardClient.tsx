@@ -11,7 +11,7 @@ import TrialBanner from '@/components/TrialBanner'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
 import {
   UserIcon, BarChartIcon, WalletIcon, MessageIcon,
-  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon,
+  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, AiIcon,
 } from '@/components/Icons'
 import styles from './parent.module.css'
 import motion from '@/components/dashboard-motion.module.css'               // ← NEW
@@ -26,6 +26,7 @@ const MODULES = [
   { id: 'leaderboard', label: 'Leaderboard',      Icon: TrophyIcon,    href: '/dashboard/parent/leaderboard', accent: '#F97316', bg: '#4a2810' },
   { id: 'meetings',    label: 'Meetings',         Icon: CalendarIcon,  href: '/dashboard/parent/meetings',    accent: '#06B6D4', bg: '#0a3040' },
   { id: 'chat',        label: 'Message School',   Icon: MessageIcon,   href: '/dashboard/parent/chat',        accent: '#7C3AED', bg: '#2d1060' },
+  { id: 'ai',          label: 'AI Assistant',     Icon: AiIcon,        href: '/dashboard/parent/ai',          accent: '#F59E0B', bg: '#4a3510' },
 ]
 
 function getCurrentTerm(): string {
@@ -230,6 +231,22 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
             <h1 className={styles.greetName}>{profile?.full_name?.split(' ')[0] ?? 'Parent'} <span className={motion.waveEmoji}>👋</span></h1>
           </div>
 
+          {/* AI Assistant — prominent, matches Principal/Bursar/Secretary placement */}
+          <Link
+            href="/dashboard/parent/ai"
+            className={`${styles.aiCard} ${motion.riseIn}`}
+            style={{ animationDelay: '80ms', borderColor: `${sc}55` }}
+          >
+            <div className={styles.aiCardIcon} style={{ background: `${sc}22`, color: sc }}>
+              <AiIcon size={22} color={sc} />
+            </div>
+            <div className={styles.aiCardBody}>
+              <p className={styles.aiCardTitle}>AI Assistant</p>
+              <p className={styles.aiCardSub}>Ask about your child's attendance, results, or fee status</p>
+            </div>
+            <span className={styles.aiCardArrow}>→</span>
+          </Link>
+
           {/* Child selector tabs */}
           {children.length > 1 && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
@@ -272,9 +289,9 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
             </div>
           )}
 
-          {/* Stats grid — staggered */}
+          {/* Stats grid — staggered, shares Teacher/Student's .statCard styling */}
           {activeChild && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+            <div className={styles.statsRow}>
               {[
                 { label: 'Attendance', value: statsLoading ? '…' : childStats.attendance != null ? `${childStats.attendance}%` : '—', color: '#10B981' },
                 { label: 'Term GPA',   value: statsLoading ? '…' : childStats.gpa        != null ? childStats.gpa.toFixed(1)       : '—', color: sc       },
@@ -283,11 +300,11 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
               ].map((s, i) => (
                 <div
                   key={s.label}
-                  className={`${motion.staggerItem} ${motion.pressable}`}
-                  style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 14px', animationDelay: `${160 + i * 50}ms` }}
+                  className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
+                  style={{ animationDelay: `${160 + i * 50}ms` }}
                 >
-                  <p style={{ margin: '0 0 2px', fontSize: '1.1rem', fontWeight: 800, color: s.color }} className={statsLoading ? motion.shimmer : ''}>{s.value}</p>
-                  <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
+                  <p className={`${styles.statVal} ${statsLoading ? motion.shimmer : ''}`} style={{ color: s.color }}>{s.value}</p>
+                  <p className={styles.statLbl}>{s.label}</p>
                 </div>
               ))}
             </div>
