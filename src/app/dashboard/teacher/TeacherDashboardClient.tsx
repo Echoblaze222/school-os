@@ -106,6 +106,22 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           </p>
         </div>
 
+        {/* AI Assistant — prominent, matches Principal/Bursar/Secretary placement */}
+        <Link
+          href="/dashboard/teacher/ai"
+          className={`${styles.aiCard} ${motion.riseIn}`}
+          style={{ animationDelay: '120ms', borderColor: `${schoolColor}55` }}
+        >
+          <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
+            <AiIcon size={22} color={schoolColor} />
+          </div>
+          <div className={styles.aiCardBody}>
+            <p className={styles.aiCardTitle}>AI Assistant</p>
+            <p className={styles.aiCardSub}>Ask how to mark attendance, upload results, or get a summary of today's classes</p>
+          </div>
+          <span className={styles.aiCardArrow}>→</span>
+        </Link>
+
         {/* Stats — staggered entrance */}
         <div className={styles.statsRow}>
           {[

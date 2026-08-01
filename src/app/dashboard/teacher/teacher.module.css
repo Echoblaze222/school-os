@@ -28,3 +28,30 @@
 .navItem:hover { transform: translateY(-2px); }
 .homeBtn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: var(--radius-full); box-shadow: 0 4px 20px rgba(124,58,237,0.4); margin: 0 var(--space-1); text-decoration: none; transition: transform var(--transition-fast); }
 .homeBtn:hover { transform: translateY(-3px) scale(1.06); }
+
+/* ── AI Assistant card (prominent, above the module grid) ──
+   Matches Principal/Bursar/Secretary's .aiCard exactly for visual parity. */
+.aiCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(12px);
+  margin-bottom: var(--space-4);
+  text-decoration: none;
+  transition: transform var(--transition-fast);
+}
+.aiCard:hover { transform: translateY(-2px); }
+.aiCardIcon {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+}
+.aiCardBody { flex: 1; min-width: 0; }
+.aiCardTitle { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
+.aiCardSub { font-size: 0.72rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
+.aiCardArrow { flex-shrink: 0; font-size: 1.1rem; color: var(--text-muted); }
