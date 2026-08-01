@@ -4,6 +4,7 @@
 // Each role gets its own starters, system context, and local-storage key.
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { AiIcon, SendIcon, RefreshIcon, PaperclipIcon, XIcon } from '@/components/Icons'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +26,109 @@ function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> 
     reader.onerror = () => reject(new Error('Could not read image'))
     reader.readAsDataURL(file)
   })
+}
+
+// Escape before rendering as text — msg.content can come from the model
+// or from student/parent free text, neither of which is trusted HTML.
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+// Parses [[Button label|/route]] markers the AI emits (see the step-format
+// instruction in api/ai/chat/route.ts) out of numbered-list lines and turns
+// consecutive numbered steps into a walkthrough with tappable deep-link
+// buttons, e.g.:
+//   1. Open Settings [[Go to Settings|/dashboard/principal/settings]]
+// Falls back to plain paragraph rendering for everything else.
+const MARKER_RE = /\[\[([^\|\]]+)\|([^\]]+)\]\]/
+const STEP_RE   = /^\s*(\d+)[.)]\s+(.*)$/
+
+type StepItem = { num: string; text: string; label?: string; href?: string }
+type ContentBlock =
+  | { kind: 'steps'; items: StepItem[] }
+  | { kind: 'text'; lines: string[] }
+
+function parseContentBlocks(content: string): ContentBlock[] {
+  const lines  = content.split('\n')
+  const blocks: ContentBlock[] = []
+  let current: ContentBlock | null = null
+
+  for (const rawLine of lines) {
+    const stepMatch = rawLine.match(STEP_RE)
+    if (stepMatch) {
+      let [, num, text] = stepMatch
+      let label: string | undefined
+      let href:  string | undefined
+      const markerMatch = text.match(MARKER_RE)
+      if (markerMatch) {
+        label = markerMatch[1].trim()
+        href  = markerMatch[2].trim()
+        text  = text.replace(MARKER_RE, '').trim()
+      }
+      if (!current || current.kind !== 'steps') {
+        current = { kind: 'steps', items: [] }
+        blocks.push(current)
+      }
+      current.items.push({ num, text, label, href })
+    } else {
+      if (!current || current.kind !== 'text') {
+        current = { kind: 'text', lines: [] }
+        blocks.push(current)
+      }
+      current.lines.push(rawLine)
+    }
+  }
+  return blocks
+}
+
+// Renders one message's content: numbered steps become a walkthrough with
+// deep-link buttons, everything else stays plain escaped paragraphs.
+function StepWalkthrough({ content, accent }: { content: string; accent: string }) {
+  const router = useRouter()
+  const blocks = parseContentBlocks(content)
+
+  return (
+    <>
+      {blocks.map((block, bi) => {
+        if (block.kind === 'steps') {
+          return (
+            <ol key={bi} className={styles.stepList}>
+              {block.items.map((item, ii) => (
+                <li key={ii} className={styles.stepRow}>
+                  <span className={styles.stepNum} style={{ background: accent }}>{item.num}</span>
+                  <span className={styles.stepText}>
+                    <span dangerouslySetInnerHTML={{ __html: escapeHtml(item.text) }} />
+                    {item.href && (
+                      <button
+                        type="button"
+                        className={styles.stepLinkBtn}
+                        style={{ borderColor: `${accent}55`, color: accent }}
+                        onClick={() => router.push(item.href!)}
+                      >
+                        {item.label ?? 'Go there'} →
+                      </button>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )
+        }
+        const nonEmpty = block.lines.filter(l => l.trim().length > 0)
+        if (nonEmpty.length === 0) return null
+        return (
+          <div key={bi}>
+            {nonEmpty.map((l, li) => (
+              <p key={li} className={styles.plainLine}
+                dangerouslySetInnerHTML={{ __html: escapeHtml(l) }} />
+            ))}
+          </div>
+        )
+      })}
+    </>
+  )
 }
 
 const ROLE_CONFIG: Record<string, { title: string; subtitle: string; context: string; starters: string[] }> = {
@@ -247,14 +351,8 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  // Escape before converting newlines to <br/> — msg.content can come from
-  // the model or from student/parent free text, neither of which is trusted HTML.
-  function safeContentHtml(content: string) {
-    const escaped = content
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-    return escaped.replace(/\n/g, '<br/>')
-  }
+  // Escape before rendering as text — msg.content can come from the model
+  // or from student/parent free text, neither of which is trusted HTML.
 
   return (
     <RolePageWrapper userId={userId} role={role} profile={profile} school={school} title={config.title} fullHeight>
@@ -304,8 +402,9 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
                 {msg.imageUrl && (
                   <img src={msg.imageUrl} alt="Attached" className={styles.attachedImage}/>
                 )}
-                <div className={styles.bubbleText}
-                  dangerouslySetInnerHTML={{ __html: safeContentHtml(msg.content) }}/>
+                <div className={styles.bubbleText}>
+                  <StepWalkthrough content={msg.content} accent={schoolColor} />
+                </div>
                 <span className={styles.bubbleTime}>{formatTime(msg.ts)}</span>
               </div>
             </div>
