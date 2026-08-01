@@ -53,6 +53,16 @@
 .imagePreviewRemove{width:24px;height:24px;border-radius:50%;background:var(--glass-bg-hover);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 .attachedImage{display:block;max-width:100%;width:220px;border-radius:var(--radius-lg);margin-bottom:var(--space-2);object-fit:cover;}
 
+/* ── Step-by-step walkthrough (parsed from numbered lists + [[label|href]] markers) ── */
+.stepList{display:flex;flex-direction:column;gap:var(--space-3);margin:0;padding:0;}
+.stepRow{display:flex;align-items:flex-start;gap:var(--space-3);}
+.stepNum{flex-shrink:0;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:800;color:#fff;margin-top:1px;}
+.stepText{flex:1;min-width:0;font-size:0.875rem;line-height:1.5;}
+.stepLinkBtn{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:5px 12px;border-radius:var(--radius-full);border:1px solid;font-size:0.72rem;font-weight:700;cursor:pointer;background:transparent;text-decoration:none;transition:all var(--transition-fast);}
+.stepLinkBtn:hover{transform:translateY(-1px);}
+.plainLine{margin:0 0 4px;}
+.plainLine:last-child{margin-bottom:0;}
+
 /* ── inputBar bottom clearance for mobile floating nav ── */
 .inputBarFloating {
   position: sticky;
