@@ -59,6 +59,151 @@
   padding: 20px 20px 0;
 }
 
+.needHelpBtn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.28);
+  color: #C9AFFF;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.needHelpBtn:active { transform: scale(0.96); }
+
+.needHelpBtn:hover {
+  background: rgba(124, 58, 237, 0.2);
+}
+
+/* ── Need Help panel ── */
+.helpOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 6, 8, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 200;
+  animation: helpFadeIn 0.18s ease both;
+}
+
+@keyframes helpFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.helpPanel {
+  width: 100%;
+  max-width: 440px;
+  background: #0E1220;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-bottom: none;
+  border-radius: 22px 22px 0 0;
+  padding: 18px 18px 26px;
+  animation: helpSlideUp 0.22s ease both;
+}
+
+@keyframes helpSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.helpHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.helpHeaderText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #F0F4FF;
+}
+
+.helpCloseBtn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+}
+
+.helpBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.helpItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.helpItem:hover { background: rgba(124, 58, 237, 0.1); }
+
+.helpItemIcon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 58, 237, 0.16);
+  color: #C9AFFF;
+}
+
+.helpItemText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.helpItemText strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #F0F4FF;
+}
+
+.helpItemText em {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.helpFootnote {
+  margin-top: 14px;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+}
+
 .logo {
   width: 44px;
   height: 44px;
@@ -75,7 +220,7 @@
 }
 
 .appName {
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-sans, 'Inter', sans-serif);
   font-size: 1.1rem;
   font-weight: 700;
   color: #fff;
@@ -96,7 +241,7 @@
 .changeSchoolBtn {
   background: none;
   border: none;
-  color: #00b4d8;
+  color: #9F67FF;
   cursor: pointer;
   font-size: 0.7rem;
   padding: 0;
@@ -185,7 +330,7 @@
 .modeBtnActive {
   background: rgba(0, 180, 216, 0.1);
   border-color: rgba(0, 180, 216, 0.4);
-  color: #00b4d8;
+  color: #9F67FF;
 }
 
 /* ── Form elements ── */
@@ -288,7 +433,7 @@
 .forgotLink {
   background: none;
   border: none;
-  color: #00b4d8;
+  color: #9F67FF;
   font-size: 0.78rem;
   cursor: pointer;
   text-align: right;
@@ -961,7 +1106,7 @@
 .spLoaderFill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #800020, #7C3AED, #00b4d8);
+  background: linear-gradient(90deg, #7C3AED, #9F67FF, #F59E0B);
   border-radius: 9999px;
   position: relative;
   animation: spLoadProgress 4.2s cubic-bezier(0.4,0,0.2,1) 2.1s forwards;
@@ -1093,7 +1238,7 @@
 }
 
 .footerLogo {
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-sans, 'Inter', sans-serif);
   font-size: 0.9rem;
   font-weight: 700;
   color: #fff;
@@ -1166,7 +1311,7 @@
 }
 
 .footerContactLink:hover {
-  color: #00b4d8;
+  color: #9F67FF;
 }
 
 /* ── Dot separator ── */
@@ -1216,4 +1361,54 @@
 @media (max-width: 390px) {
   .footerBadge   { font-size: 0.6rem; padding: 3px 9px; }
   .footerTagline { font-size: 0.67rem; }
+}
+
+/* ── Collapsible footer (mobile-first: essentials only by default) ── */
+.footerDetails {
+  width: 100%;
+  max-width: 340px;
+}
+
+.footerSummary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.footerSummary::-webkit-details-marker { display: none; }
+
+.footerDetails[open] .footerSummary svg {
+  transform: rotate(180deg);
+}
+
+.footerSummary svg {
+  transition: transform 0.15s ease;
+}
+
+.footerDetails .footerAbout,
+.footerDetails .footerBadges,
+.footerDetails .footerContact,
+.footerDetails .footerLinks {
+  margin-top: 12px;
+  animation: footerFadeIn 0.2s ease both;
+}
+
+@keyframes footerFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.footerEssentials {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
 }

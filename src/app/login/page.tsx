@@ -14,6 +14,7 @@ import styles from './login.module.css'
 import {
   MailIcon, GlobeIcon, SchoolIcon, UsersIcon, SparklesIcon,
   CreditCardIcon, PhoneIcon, ShieldIcon, EyeIcon, EyeOffIcon,
+  XIcon, ChevronRightIcon, ChevronDownIcon, KeyIcon, LockIcon,
 } from '@/components/Icons'
 
 type Tab       = 'login' | 'register'
@@ -39,6 +40,7 @@ export default function LoginPage() {
   const [school,    setSchool]    = useState<SelectedSchool | null>(null)
   const [loginMode, setLoginMode] = useState<LoginMode>('existing')
   const [isTimeout, setIsTimeout] = useState(false)
+  const [helpOpen,  setHelpOpen]  = useState(false)
 
   const [identifier,   setIdentifier]   = useState('')
   const [password,     setPassword]     = useState('')
@@ -236,6 +238,15 @@ export default function LoginPage() {
                 </button>
               )}
             </div>
+            <button
+              type="button"
+              className={styles.needHelpBtn}
+              onClick={() => setHelpOpen(true)}
+              aria-label="Need help?"
+            >
+              <SparklesIcon size={14} />
+              <span>Need help?</span>
+            </button>
           </div>
 
           {isTimeout && (
@@ -556,62 +567,60 @@ export default function LoginPage() {
           )}
         </div>{/* end .card */}
 
-        {/* ── SITE FOOTER ──────────────────────────────────────────────────── */}
+        {/* ── APP FOOTER (compact by default — full marketing info collapses) ── */}
         <footer className={styles.siteFooter}>
 
-          {/* About */}
-          <div className={styles.footerAbout}>
-            <p className={styles.footerLogo}>
-              School<span className={styles.footerLogoAccent}>OS</span>
-            </p>
-            <p className={styles.footerTagline}>
-              Nigeria's most comprehensive multi-role school management platform — built for principals,
-              teachers, bursars, secretaries, students, and parents. Every role. One platform.
-            </p>
-          </div>
+          <details className={styles.footerDetails}>
+            <summary className={styles.footerSummary}>
+              About SchoolOS <ChevronDownIcon size={12} />
+            </summary>
 
-          {/* Feature badges */}
-          <div className={styles.footerBadges}>
-            <span className={styles.footerBadge}><SchoolIcon size={11} /> Built for Nigeria</span>
-            <span className={styles.footerBadge}><UsersIcon size={11} /> 6 Role Dashboards</span>
-            <span className={styles.footerBadge}><SparklesIcon size={11} /> AI-Powered</span>
-            <span className={styles.footerBadge}><CreditCardIcon size={11} /> Paystack Payments</span>
-            <span className={styles.footerBadge}><PhoneIcon size={11} /> Mobile-First</span>
-            <span className={styles.footerBadge}><ShieldIcon size={11} /> Bank-Grade Security</span>
-          </div>
+            <div className={styles.footerAbout}>
+              <p className={styles.footerTagline}>
+                Nigeria's most comprehensive multi-role school management platform — built for principals,
+                teachers, bursars, secretaries, students, and parents. Every role. One platform.
+              </p>
+            </div>
 
-          <div className={styles.footerDivider} />
+            <div className={styles.footerBadges}>
+              <span className={styles.footerBadge}><SchoolIcon size={11} /> Built for Nigeria</span>
+              <span className={styles.footerBadge}><UsersIcon size={11} /> 6 Role Dashboards</span>
+              <span className={styles.footerBadge}><SparklesIcon size={11} /> AI-Powered</span>
+              <span className={styles.footerBadge}><CreditCardIcon size={11} /> Paystack Payments</span>
+              <span className={styles.footerBadge}><PhoneIcon size={11} /> Mobile-First</span>
+              <span className={styles.footerBadge}><ShieldIcon size={11} /> Bank-Grade Security</span>
+            </div>
 
-          {/* Contact */}
-          <div className={styles.footerContact}>
-            <a href="mailto:piussimon717@gmail.com" className={styles.footerContactLink}>
-              <MailIcon size={13} /> piussimon717@gmail.com
-            </a>
-            <div className={styles.footerDotSep} />
-            <a
-              href="https://school-os-j4bn.vercel.app"
-              className={styles.footerContactLink}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <GlobeIcon size={13} /> school-os-j4bn.vercel.app
-            </a>
-          </div>
+            <div className={styles.footerContact}>
+              <a href="mailto:piussimon717@gmail.com" className={styles.footerContactLink}>
+                <MailIcon size={13} /> piussimon717@gmail.com
+              </a>
+              <div className={styles.footerDotSep} />
+              <a
+                href="https://school-os-j4bn.vercel.app"
+                className={styles.footerContactLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <GlobeIcon size={13} /> school-os-j4bn.vercel.app
+              </a>
+            </div>
 
-          {/* Nav links */}
-          <div className={styles.footerLinks}>
-            <Link href="/about" className={styles.footerLink}>About</Link>
-            <div className={styles.footerDotSep} />
-            <Link href="/pricing" className={styles.footerLink}>Pricing</Link>
-            <div className={styles.footerDotSep} />
+            <div className={styles.footerLinks}>
+              <Link href="/about" className={styles.footerLink}>About</Link>
+              <div className={styles.footerDotSep} />
+              <Link href="/pricing" className={styles.footerLink}>Pricing</Link>
+              <div className={styles.footerDotSep} />
+              <a href="mailto:piussimon717@gmail.com" className={styles.footerLink}>Contact Us</a>
+            </div>
+          </details>
+
+          {/* Always-visible essentials */}
+          <div className={styles.footerEssentials}>
             <Link href="/terms" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>Terms</Link>
             <div className={styles.footerDotSep} />
             <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>Privacy</Link>
-            <div className={styles.footerDotSep} />
-            <a href="mailto:piussimon717@gmail.com" className={styles.footerLink}>Contact Us</a>
           </div>
-
-          {/* Copyright */}
           <p className={styles.footerCopy}>
             © 2026 SchoolOS by Echoblaze · Built in Nigeria for Nigerian Schools
           </p>
@@ -619,6 +628,78 @@ export default function LoginPage() {
         </footer>
 
         </div>{/* end .pageContent */}
+
+        {/* ── NEED HELP PANEL ── */}
+        {helpOpen && (
+          <div className={styles.helpOverlay} onClick={() => setHelpOpen(false)}>
+            <div className={styles.helpPanel} onClick={e => e.stopPropagation()}>
+              <div className={styles.helpHeader}>
+                <div className={styles.helpHeaderText}>
+                  <SparklesIcon size={16} />
+                  <span>Need a hand?</span>
+                </div>
+                <button className={styles.helpCloseBtn} onClick={() => setHelpOpen(false)} aria-label="Close">
+                  <XIcon size={16} />
+                </button>
+              </div>
+
+              <div className={styles.helpBody}>
+                <button
+                  type="button"
+                  className={styles.helpItem}
+                  onClick={() => { setHelpOpen(false); setTab('login'); setLoginMode('new-user') }}
+                >
+                  <span className={styles.helpItemIcon}><KeyIcon size={15} /></span>
+                  <span className={styles.helpItemText}>
+                    <strong>I have an access code but haven't signed in before</strong>
+                    <em>Use the "New User" tab to set your password.</em>
+                  </span>
+                  <ChevronRightIcon size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.helpItem}
+                  onClick={() => { setHelpOpen(false); router.push('/forgot-password') }}
+                >
+                  <span className={styles.helpItemIcon}><LockIcon size={15} /></span>
+                  <span className={styles.helpItemText}>
+                    <strong>I forgot my password</strong>
+                    <em>Reset it with your email in a couple of taps.</em>
+                  </span>
+                  <ChevronRightIcon size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.helpItem}
+                  onClick={() => { setHelpOpen(false); router.push('/select-school') }}
+                >
+                  <span className={styles.helpItemIcon}><SchoolIcon size={15} /></span>
+                  <span className={styles.helpItemText}>
+                    <strong>My school isn't in the list</strong>
+                    <em>Search again, or register a new school.</em>
+                  </span>
+                  <ChevronRightIcon size={14} />
+                </button>
+
+                <a href="mailto:piussimon717@gmail.com" className={styles.helpItem}>
+                  <span className={styles.helpItemIcon}><MailIcon size={15} /></span>
+                  <span className={styles.helpItemText}>
+                    <strong>Still stuck? Contact support</strong>
+                    <em>piussimon717@gmail.com</em>
+                  </span>
+                  <ChevronRightIcon size={14} />
+                </a>
+              </div>
+
+              <p className={styles.helpFootnote}>
+                Once you're signed in, the full AI Assistant can walk you through anything in SchoolOS step by step.
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>{/* end .page */}
     </>
   )
