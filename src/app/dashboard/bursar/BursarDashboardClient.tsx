@@ -37,9 +37,15 @@ const MODULES = [
   { id: 'settings',       label: 'Settings',         Icon: SettingsIcon,    href: '/dashboard/bursar/settings',       accent: '#6B7280', bg: '#1e2a38' },
 ]
 
-interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
+interface Debtor { id: string; name: string; outstanding: number; term: string | null }
+interface Props {
+  profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[]
+  topDebtors?: Debtor[]
+}
 
-export default function BursarDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
+export default function BursarDashboardClient({
+  profile, school, userId, counts = {}, activities, topDebtors = [],
+}: Props) {
   const pathname    = usePathname()
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Bursar'
@@ -171,6 +177,42 @@ export default function BursarDashboardClient({ profile, school, userId, counts 
               <p className={styles.colSub}>of expected revenue collected this term</p>
             </div>
           </div>
+
+          {/* AI Assistant — prominent, not buried in the module grid */}
+          <Link
+            href="/dashboard/bursar/ai"
+            className={`${styles.aiCard} ${motion.riseIn}`}
+            style={{ animationDelay: '180ms', borderColor: `${schoolColor}55` }}
+          >
+            <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
+              <AiIcon size={22} color={schoolColor} />
+            </div>
+            <div className={styles.aiCardBody}>
+              <p className={styles.aiCardTitle}>AI Assistant</p>
+              <p className={styles.aiCardSub}>Ask about outstanding balances, how to record a payment, or generate a collection summary</p>
+            </div>
+            <span className={styles.aiCardArrow}>→</span>
+          </Link>
+
+          {/* Top debtors preview */}
+          {topDebtors.length > 0 && (
+            <div className={`${styles.debtorsCard} ${motion.riseIn}`} style={{ animationDelay: '220ms' }}>
+              <div className={styles.debtorsHeader}>
+                <p className={styles.sectionLabel} style={{ marginBottom: 0 }}>Top Debtors</p>
+                <Link href="/dashboard/bursar/debtors" className={styles.debtorsViewAll}>View All</Link>
+              </div>
+              {topDebtors.map(d => (
+                <div key={d.id} className={styles.debtorRow}>
+                  <div className={styles.debtorAvatar}>{d.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
+                  <div className={styles.debtorBody}>
+                    <p className={styles.debtorName}>{d.name}</p>
+                    <p className={styles.debtorTerm}>{d.term ?? 'Current term'}</p>
+                  </div>
+                  <span className={styles.debtorAmount}>₦{d.outstanding.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ── Stats Row — staggered ───────────────────────────── */}
           <div className={styles.statsRow}>
