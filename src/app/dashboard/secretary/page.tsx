@@ -38,7 +38,7 @@ export default async function SecretaryPage() {
 
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [students, transfers, weekly, activeUsers] = await Promise.all([
+  const [students, transfers, weekly, activeUsers, pendingAdmissions, notifRows, unreadNotifCount] = await Promise.all([
     supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
@@ -60,14 +60,38 @@ export default async function SecretaryPage() {
       .select('id', { count: 'exact', head: true })
       .eq('school_id', schoolId)
       .eq('is_active', true),
+    supabase
+      .from('admissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId)
+      .eq('status', 'pending'),
+    supabase
+      .from('notifications')
+      .select('id, title, body, type, created_at, action_url, link_url')
+      .eq('user_id', user.id).eq('is_read', false)
+      .order('created_at', { ascending: false }).limit(3),
+    supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('is_read', false),
   ])
 
   const counts = {
-    totalStudents: students.count    ?? 0,
-    pendingApps:   transfers.count   ?? 0,
-    newThisWeek:   weekly.count      ?? 0,
-    activeUsers:   activeUsers.count ?? 0,
+    totalStudents:     students.count          ?? 0,
+    pendingApps:        transfers.count         ?? 0,
+    newThisWeek:        weekly.count            ?? 0,
+    activeUsers:        activeUsers.count       ?? 0,
+    pendingAdmissions:  pendingAdmissions.count ?? 0,
   }
+
+  const pendingNotifications = (notifRows.data ?? []).map((n: any) => ({
+    id:         n.id,
+    title:      n.title,
+    body:       n.body,
+    type:       n.type,
+    created_at: n.created_at,
+    href:       n.action_url ?? n.link_url ?? '/dashboard/secretary/notifications',
+  }))
 
   // ── Recent activities (last 15, most recent first) ─────────────────────────
   const { data: activityRows } = await supabase
@@ -99,6 +123,8 @@ export default async function SecretaryPage() {
       userId={user.id}
       counts={counts}
       activities={activities}
+      pendingNotifications={pendingNotifications}
+      unreadNotifCount={unreadNotifCount.count ?? 0}
     />
   )
 }
