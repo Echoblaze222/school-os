@@ -4,7 +4,7 @@
    IMPORTANT: This file must be imported in layout.tsx
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ── Reset ─────────────────────────────────────────── */
 *, *::before, *::after {
@@ -13,44 +13,44 @@
   padding: 0;
 }
 
-/* ── Design Tokens: DARK MODE (default) ─────────────── */
+/* ── Design Tokens: DARK MODE (default) — SchoolOS Violet × Gold ─── */
 :root {
-  --burgundy:           #800020;
-  --burgundy-light:     #A0002A;
-  --burgundy-glow:      rgba(128, 0, 32, 0.35);
-  --burgundy-subtle:    rgba(128, 0, 32, 0.12);
-  --silver:             #C8C8D0;
-  --silver-light:       #E8E8F0;
+  --burgundy:           #7C3AED;  /* kept var name for compatibility — value is SchoolOS violet */
+  --burgundy-light:     #9F67FF;
+  --burgundy-glow:      rgba(124, 58, 237, 0.35);
+  --burgundy-subtle:    rgba(124, 58, 237, 0.12);
+  --silver:             #F59E0B;  /* kept var name for compatibility — value is SchoolOS gold */
+  --silver-light:       #FBBF24;
 
-  --bg-base:            #0A0609;
-  --bg-surface:         #120B0E;
-  --bg-elevated:        #1A1015;
-  --bg-overlay:         rgba(10, 6, 9, 0.85);
+  --bg-base:            #080C14;
+  --bg-surface:         #0D1220;
+  --bg-elevated:        #141A2A;
+  --bg-overlay:         rgba(8, 12, 20, 0.85);
 
   --glass-bg:           rgba(255, 255, 255, 0.04);
   --glass-bg-hover:     rgba(255, 255, 255, 0.07);
   --glass-border:       rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(128, 0, 32, 0.4);
+  --glass-border-hover: rgba(124, 58, 237, 0.4);
   --glass-shadow:       0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
-  --glass-shadow-hover: 0 16px 48px rgba(128, 0, 32, 0.2), 0 0 0 1px rgba(128,0,32,0.3);
+  --glass-shadow-hover: 0 16px 48px rgba(124, 58, 237, 0.2), 0 0 0 1px rgba(124,58,237,0.3);
 
-  --text-primary:       #F0EBE8;
-  --text-secondary:     #A89FA0;
-  --text-muted:         #6B6065;
-  --text-inverse:       #0A0609;
-  --text-accent:        #C8415A;
+  --text-primary:       #F0F4FF;
+  --text-secondary:     #A8B4CC;
+  --text-muted:         #5A6580;
+  --text-inverse:       #080C14;
+  --text-accent:        #9F67FF;
 
   --input-bg:           rgba(255, 255, 255, 0.05);
   --input-border:       rgba(255, 255, 255, 0.1);
-  --input-border-focus: rgba(128, 0, 32, 0.6);
-  --input-text:         #F0EBE8;
-  --input-placeholder:  #6B6065;
+  --input-border-focus: rgba(124, 58, 237, 0.6);
+  --input-text:         #F0F4FF;
+  --input-placeholder:  #5A6580;
 
-  --nav-bg:             rgba(18, 11, 14, 0.92);
+  --nav-bg:             rgba(13, 18, 32, 0.92);
   --nav-border:         rgba(255, 255, 255, 0.07);
-  --nav-icon:           #6B6065;
-  --nav-icon-active:    #800020;
-  --nav-home-bg:        linear-gradient(135deg, #800020, #A0002A);
+  --nav-icon:           #5A6580;
+  --nav-icon-active:    #7C3AED;
+  --nav-home-bg:        linear-gradient(135deg, #7C3AED, #9F67FF);
 
   --success:            #2D8B55;
   --success-bg:         rgba(45, 139, 85, 0.12);
@@ -61,7 +61,7 @@
   --info:               #2471A3;
   --info-bg:            rgba(36, 113, 163, 0.12);
 
-  --font-display:       'Cormorant Garamond', Georgia, serif;
+  --font-display:       'Inter', -apple-system, sans-serif;
   --font-body:          'DM Sans', system-ui, sans-serif;
 
   --space-1:  4px;  --space-2:  8px;  --space-3:  12px; --space-4:  16px;
@@ -80,34 +80,34 @@
 
 /* ── Design Tokens: LIGHT MODE ──────────────────────── */
 [data-theme="light"] {
-  --bg-base:            #F7F3F0;
-  --bg-surface:         #F0EBE6;
+  --bg-base:            #F7F7FB;
+  --bg-surface:         #F0F0F8;
   --bg-elevated:        #FFFFFF;
-  --bg-overlay:         rgba(247, 243, 240, 0.92);
+  --bg-overlay:         rgba(247, 247, 251, 0.92);
 
   --glass-bg:           rgba(255, 255, 255, 0.65);
   --glass-bg-hover:     rgba(255, 255, 255, 0.80);
-  --glass-border:       rgba(128, 0, 32, 0.12);
-  --glass-border-hover: rgba(128, 0, 32, 0.35);
-  --glass-shadow:       0 8px 32px rgba(128, 0, 32, 0.08), 0 0 0 1px rgba(128,0,32,0.08);
-  --glass-shadow-hover: 0 16px 48px rgba(128, 0, 32, 0.15), 0 0 0 1px rgba(128,0,32,0.25);
+  --glass-border:       rgba(124, 58, 237, 0.12);
+  --glass-border-hover: rgba(124, 58, 237, 0.35);
+  --glass-shadow:       0 8px 32px rgba(124, 58, 237, 0.08), 0 0 0 1px rgba(124,58,237,0.08);
+  --glass-shadow-hover: 0 16px 48px rgba(124, 58, 237, 0.15), 0 0 0 1px rgba(124,58,237,0.25);
 
-  --text-primary:       #1A1015;
-  --text-secondary:     #5A4850;
-  --text-muted:         #9A8890;
-  --text-inverse:       #F7F3F0;
-  --text-accent:        #800020;
+  --text-primary:       #14101A;
+  --text-secondary:     #574F60;
+  --text-muted:         #948C9A;
+  --text-inverse:       #F7F7FB;
+  --text-accent:        #7C3AED;
 
   --input-bg:           rgba(255, 255, 255, 0.8);
-  --input-border:       rgba(128, 0, 32, 0.15);
-  --input-border-focus: rgba(128, 0, 32, 0.5);
-  --input-text:         #1A1015;
-  --input-placeholder:  #9A8890;
+  --input-border:       rgba(124, 58, 237, 0.15);
+  --input-border-focus: rgba(124, 58, 237, 0.5);
+  --input-text:         #14101A;
+  --input-placeholder:  #948C9A;
 
   --nav-bg:             rgba(255, 255, 255, 0.9);
-  --nav-border:         rgba(128, 0, 32, 0.1);
-  --nav-icon:           #9A8890;
-  --nav-icon-active:    #800020;
+  --nav-border:         rgba(124, 58, 237, 0.1);
+  --nav-icon:           #948C9A;
+  --nav-icon-active:    #7C3AED;
 }
 
 /* ── Base Styles ────────────────────────────────────── */

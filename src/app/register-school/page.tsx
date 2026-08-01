@@ -22,7 +22,7 @@ const PLANS = [
     price:    120000,
     students: 'Up to 500 students',
     features: ['Everything in Basic', 'AI Tutor for all roles', 'Bulk SMS reminders', 'Live online classes', 'WhatsApp notifications'],
-    color:    '#800020',
+    color:    '#7C3AED',
     popular:  true,
   },
   {
@@ -55,7 +55,7 @@ export default function RegisterSchoolPage() {
   const [tagline,       setTagline]       = useState('')
 
   // Step 2: Branding
-  const [primaryColor,  setPrimaryColor]  = useState('#800020')
+  const [primaryColor,  setPrimaryColor]  = useState('#7C3AED')
   const [logoFile,      setLogoFile]      = useState<File | null>(null)
   const [logoPreview,   setLogoPreview]   = useState<string | null>(null)
   const [bgFile,        setBgFile]        = useState<File | null>(null)
@@ -334,7 +334,7 @@ export default function RegisterSchoolPage() {
 
             {/* Quick color presets */}
             <div className={styles.colorPresets}>
-              {['#800020', '#1A3C6B', '#2D6A2D', '#8B4513', '#4A148C', '#006064', '#B71C1C', '#1B5E20'].map(color => (
+              {['#7C3AED', '#1A3C6B', '#2D6A2D', '#8B4513', '#4A148C', '#006064', '#B71C1C', '#1B5E20'].map(color => (
                 <button
                   key={color}
                   className={`${styles.colorPreset} ${primaryColor === color ? styles.colorPresetActive : ''}`}
