@@ -11,7 +11,7 @@ import {
   UserIcon, UsersIcon, CalendarIcon,
   MessageIcon, BellIcon, SettingsIcon, FolderIcon,
   ClipboardIcon, CheckCircleIcon, BookOpenIcon, SparklesIcon,
-  RefreshIcon, GraduationCapIcon, FileTextIcon,
+  RefreshIcon, GraduationCapIcon, FileTextIcon, BookIcon, ActivityIcon,
 } from '@/components/Icons'
 import styles from './secretary.module.css'
 import motion from '@/components/dashboard-motion.module.css'               // ← NEW
@@ -24,6 +24,8 @@ const MODULES = [
   { id: 'users',       label: 'Users',         Icon: UserIcon,           href: '/dashboard/secretary/users',        accent: '#8B5CF6', bg: '#2e1f5e' },
   { id: 'records',     label: 'Records',       Icon: FolderIcon,         href: '/dashboard/secretary/records',      accent: '#EC4899', bg: '#5a1a40' },
   { id: 'documents',   label: 'Documents',     Icon: BookOpenIcon,       href: '/dashboard/secretary/documents',    accent: '#06B6D4', bg: '#0a3040' },
+  { id: 'library',     label: 'Library',       Icon: BookIcon,           href: '/dashboard/secretary/library',      accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'clinic',      label: 'Clinic',        Icon: ActivityIcon,       href: '/dashboard/secretary/clinic',       accent: '#EF4444', bg: '#5f1e1e' },
   { id: 'notices',     label: 'Notices',       Icon: BellIcon,           href: '/dashboard/secretary/notices',      accent: '#EF4444', bg: '#5f1e1e' },
   { id: 'notifications',label:'Notifications', Icon: BellIcon,           href: '/dashboard/secretary/notifications',accent: '#3B82F6', bg: '#1e3a5f' },
   { id: 'calendar',    label: 'Calendar',      Icon: CalendarIcon,       href: '/dashboard/secretary/calendar',     accent: '#F97316', bg: '#4a2810' },
