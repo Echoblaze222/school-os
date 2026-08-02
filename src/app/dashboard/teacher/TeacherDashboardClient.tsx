@@ -11,7 +11,7 @@ import {
   HomeIcon, PeopleIcon, ClipboardIcon, BarChartIcon,
   VideoIcon, BookIcon, BellIcon, CalendarIcon,
   AwardIcon, MessageIcon, BookOpenIcon, ClockIcon,
-  AiIcon, MegaphoneIcon, ShieldIcon, UserIcon,
+  AiIcon, MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon,
 } from '@/components/Icons'
 import RoleNav from '@/components/RoleNav'
 import styles from './teacher.module.css'
@@ -34,6 +34,7 @@ const MORE_MODULES = [
   { id: 'timetable',     label: 'Timetable',     Icon: ClockIcon,     href: '/dashboard/teacher/timetable',     accent: '#06B6D4', bg: '#0a3040' },
   { id: 'syllabus',      label: 'Syllabus',      Icon: BookOpenIcon,  href: '/dashboard/teacher/syllabus',      accent: '#F97316', bg: '#4a2810' },
   { id: 'announcements', label: 'Announcements', Icon: MegaphoneIcon, href: '/dashboard/teacher/announcements', accent: '#EC4899', bg: '#5a1a40' },
+  { id: 'clinic',        label: 'Clinic',        Icon: ActivityIcon,  href: '/dashboard/teacher/clinic',        accent: '#EF4444', bg: '#5f1e1e' },
   { id: 'audit',         label: 'Audit Log',     Icon: ShieldIcon,    href: '/dashboard/teacher/audit',         accent: '#64748B', bg: '#1a2030' },
   { id: 'meetings',      label: 'Meetings',      Icon: CalendarIcon,  href: '/dashboard/teacher/meetings',      accent: '#06B6D4', bg: '#0a3040' },
   { id: 'profile',       label: 'My Profile',    Icon: UserIcon,      href: '/dashboard/teacher/profile',       accent: '#94A3B8', bg: '#1a2030' },
