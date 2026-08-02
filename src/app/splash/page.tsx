@@ -12,9 +12,7 @@ import { useRouter } from 'next/navigation'
 // SchoolOS's own tokens — not Trybe's blue/purple
 const VIOLET        = '#7C3AED'
 const VIOLET_SOFT    = 'rgba(124,58,237,0.14)'
-const GOLD           = '#F59E0B'
-const CHROME         = '#D8CCFB'   // pale violet-white, plays the "chrome" role
-const CHROME_BRIGHT  = '#FFFFFF'
+const VIOLET_LIGHT   = '#A78BFA'   // fill gradient start — still clearly violet, not washed to white
 const BG_DEEP        = '#060608'
 const BG_PRIMARY     = '#0D0E16'
 const TEXT_SECONDARY = '#8A94B8'
@@ -91,8 +89,8 @@ export default function SplashPage() {
         <svg width={280} height={92} viewBox="0 0 280 92" style={{ overflow: 'visible', position: 'relative', zIndex: 2 }}>
           <defs>
             <linearGradient id="schoolosChrome" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%"   stopColor={CHROME} />
-              <stop offset="100%" stopColor={CHROME_BRIGHT} />
+              <stop offset="0%"   stopColor={VIOLET_LIGHT} />
+              <stop offset="100%" stopColor={VIOLET} />
             </linearGradient>
             <linearGradient id="schoolosShine" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0" />
@@ -162,7 +160,7 @@ export default function SplashPage() {
             ref={flourishRef}
             d="M28,70 C74,80 176,80 220,68"
             fill="none"
-            stroke={GOLD}
+            stroke={VIOLET_LIGHT}
             strokeWidth={2}
             strokeLinecap="round"
             style={{
@@ -180,7 +178,7 @@ export default function SplashPage() {
             x={178} y={56} textAnchor="start"
             style={{
               fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 42, letterSpacing: 1,
-              fill: GOLD,
+              fill: VIOLET_LIGHT,
               opacity: osVisible ? 1 : 0,
               transform: osVisible ? 'translateX(0)' : 'translateX(-24px)',
               transition: reduced ? 'none' : 'transform 0.9s cubic-bezier(0.34,1.56,0.64,1), opacity 0.7s ease-out',
