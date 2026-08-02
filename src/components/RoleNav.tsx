@@ -12,7 +12,7 @@ import {
   BellIcon, UserIcon, LogOutIcon, WalletIcon, FileTextIcon,
   MegaphoneIcon, ClockIcon, BookOpenIcon, AwardIcon, SchoolIcon,
   CheckCircleIcon, DownloadIcon, TrophyIcon, SunIcon, MoonIcon,
-  SettingsIcon, CreditCardIcon, ShieldIcon, UploadIcon,
+  SettingsIcon, CreditCardIcon, ShieldIcon, UploadIcon, ActivityIcon,
 } from './Icons'
 import styles from './RoleNav.module.css'
 
@@ -173,6 +173,8 @@ const NAV: Record<string, {
         { href: '/dashboard/secretary/users',         Icon: UserIcon,      label: 'Users'         },
         { href: '/dashboard/secretary/records',       Icon: FileTextIcon,  label: 'Records'       },
         { href: '/dashboard/secretary/documents',     Icon: FileTextIcon,  label: 'Documents'     },
+        { href: '/dashboard/secretary/library',       Icon: BookIcon,      label: 'Library'       },
+        { href: '/dashboard/secretary/clinic',        Icon: ActivityIcon,  label: 'Clinic'        },
         { href: '/dashboard/secretary/notices',       Icon: MegaphoneIcon, label: 'Notices'       },
         { href: '/dashboard/secretary/codes',         Icon: ShieldIcon,    label: 'Access Codes'  },
         { href: '/dashboard/secretary/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
