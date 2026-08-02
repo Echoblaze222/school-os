@@ -11,7 +11,7 @@ import TrialBanner from '@/components/TrialBanner'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
 import {
   UserIcon, BarChartIcon, WalletIcon, MessageIcon,
-  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, AiIcon,
+  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, AiIcon, BookIcon, ActivityIcon,
 } from '@/components/Icons'
 import styles from './parent.module.css'
 import motion from '@/components/dashboard-motion.module.css'               // ← NEW
@@ -21,6 +21,8 @@ const MODULES = [
   { id: 'results',     label: 'Results',          Icon: BarChartIcon,  href: '/dashboard/parent/results',     accent: '#10B981', bg: '#1a4a3a' },
   { id: 'fees',        label: 'Fee Status',       Icon: WalletIcon,    href: '/dashboard/parent/fees',        accent: '#F59E0B', bg: '#4a3510' },
   { id: 'attendance',  label: 'Attendance',       Icon: CalendarIcon,  href: '/dashboard/parent/attendance',  accent: '#8B5CF6', bg: '#2e1f5e' },
+  { id: 'library',     label: 'Library',          Icon: BookIcon,      href: '/dashboard/parent/library',     accent: '#10B981', bg: '#1a4a3a' },
+  { id: 'clinic',      label: 'Clinic',           Icon: ActivityIcon,  href: '/dashboard/parent/clinic',      accent: '#EF4444', bg: '#5f1e1e' },
   { id: 'assignments', label: 'Assignments',      Icon: ClipboardIcon, href: '/dashboard/parent/assignments', accent: '#EC4899', bg: '#5a1a40' },
   { id: 'timetable',   label: 'Timetable',        Icon: ClockIcon,     href: '/dashboard/parent/timetable',   accent: '#06B6D4', bg: '#0a3040' },
   { id: 'leaderboard', label: 'Leaderboard',      Icon: TrophyIcon,    href: '/dashboard/parent/leaderboard', accent: '#F97316', bg: '#4a2810' },
