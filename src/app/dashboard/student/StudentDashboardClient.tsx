@@ -23,6 +23,7 @@ const MODULES = [
   { id: 'results',     label: 'Results',      Icon: BarChartIcon,  href: '/dashboard/student/results',     accent: '#10B981', bg: '#1a4a3a' },
   { id: 'quizzes',     label: 'Quizzes',      Icon: AwardIcon,     href: '/dashboard/student/quizzes',     accent: '#F59E0B', bg: '#4a3510' },
   { id: 'notes',       label: 'Notes',        Icon: BookIcon,      href: '/dashboard/student/notes',       accent: '#6366F1', bg: '#1e2060' },
+  { id: 'library',     label: 'Library',      Icon: BookIcon,      href: '/dashboard/student/library',     accent: '#10B981', bg: '#1a4a3a' },
   { id: 'ai',          label: 'AI Tutor',     Icon: AiIcon,        href: '/dashboard/student/ai',          accent: '#EC4899', bg: '#5a1a40' },
   { id: 'chat',        label: 'Messages',     Icon: MessageIcon,   href: '/dashboard/student/chat',        accent: '#14B8A6', bg: '#0f3d38' },
   { id: 'schedule',    label: 'Study Plan',   Icon: CalendarIcon,  href: '/dashboard/student/schedule',    accent: '#F97316', bg: '#4a2810' },
