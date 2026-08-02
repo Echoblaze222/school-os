@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/generate-sw-precache.js",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "node scripts/copy-pdfjs-assets.mjs"
