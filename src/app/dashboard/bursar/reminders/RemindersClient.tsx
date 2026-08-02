@@ -283,21 +283,53 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         continue
       }
 
-      // Insert one fee_reminder per invoice for this student
+      // Insert one fee_reminder per invoice for this student — now with a REAL
+      // outbound send via /api/notifications/send (WhatsApp first, SMS fallback)
+      // instead of the previous 'email' placeholder.
       let invoiceErrors = 0
       for (const invoiceId of debtor.invoiceIds) {
+        let sentChannel: 'sms' | 'whatsapp' | 'email' = 'email'
+        let sentStatus: 'sent' | 'pending' = 'pending'
+
+        try {
+          const res = await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipientIds:     [parentId],
+              title:            'Fee Reminder',
+              notificationBody: msgBody,
+              type:             'fee_reminder',
+              channels:         ['whatsapp', 'sms'],
+              referenceId:      invoiceId,
+              referenceTable:   'payment_invoices',
+              actionUrl:        '/dashboard/parent/fees',
+            }),
+          })
+          const json = await res.json()
+          const delivery = json?.results?.[0]?.deliveries?.find((d: any) => d.status === 'sent')
+          if (delivery) {
+            sentChannel = delivery.channel
+            sentStatus  = 'sent'
+          } else {
+            // Nothing delivered (no phone on file, both channels failed/disabled) —
+            // the in-app notification still went out via notifyUser regardless.
+            sentStatus = 'pending'
+          }
+        } catch (sendErr: any) {
+          console.error('Notification send request failed:', sendErr?.message)
+          sentStatus = 'pending'
+        }
+
         const { error: remErr } = await supabase
           .from('fee_reminders')
           .insert({
             invoice_id:   invoiceId,
             parent_id:    parentId,
-            // reminder_channel enum only allows 'sms' | 'whatsapp' | 'email' — no real
-            // outbound channel is wired up yet, so we record 'email' as a placeholder.
-            // Actual delivery right now is the in-app notification inserted below.
-            channel:      'email',
-            status:       'sent',
+            channel:      sentChannel,
+            status:       sentStatus,
             message_body: msgBody,
-            sent_at:      new Date().toISOString(),
+            sent_at:      sentStatus === 'sent' ? new Date().toISOString() : null,
             triggered_by: userId,
           })
 
@@ -311,15 +343,6 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           invoiceErrors++
           continue
         }
-
-        // Push instant in-app notification to parent
-        await supabase.from('notifications').insert({
-          user_id:   parentId,
-          school_id: school?.id,
-          title:     'Fee Reminder',
-          body:      `Outstanding balance reminder for ${debtor.full_name} — ${term} ${year}`,
-          type:      'fee_reminder',
-        })
       }
 
       if (invoiceErrors > 0) {
