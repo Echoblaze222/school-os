@@ -164,7 +164,7 @@ export default function OnboardingStage3() {
   const ninIndicator = () => {
     if (ninStatus === 'verifying') return (
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-        <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#7C3AED', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+        <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#800020', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
         Verifying with NIMC...
       </span>
     )
