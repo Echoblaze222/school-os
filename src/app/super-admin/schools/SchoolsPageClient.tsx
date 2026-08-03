@@ -57,7 +57,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
       {/* Stats row */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'var(--space-3)', marginBottom:'var(--space-6)' }}>
         {[
-          { label:'Total',     value:counts.all,       color:'#7C3AED' },
+          { label:'Total',     value:counts.all,       color:'#800020' },
           { label:'Trial',     value:counts.trial,     color:'#F59E0B' },
           { label:'Active',    value:counts.active,    color:'#10B981' },
           { label:'Expired',   value:counts.expired,   color:'#EF4444' },
