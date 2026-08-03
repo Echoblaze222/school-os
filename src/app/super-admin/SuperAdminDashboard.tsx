@@ -145,7 +145,7 @@ export default function SuperAdminDashboard() {
         {/* Stats */}
         <div className={styles.statsGrid}>
           {[
-            { label: 'Total Schools',  value: stats.total,                         color: '#7C3AED', icon: SchoolIcon },
+            { label: 'Total Schools',  value: stats.total,                         color: '#800020', icon: SchoolIcon },
             { label: 'On Trial',       value: stats.trial,                         color: '#F59E0B', icon: FlameIcon  },
             { label: 'Active',         value: stats.active,                        color: '#10B981', icon: CheckCircleIcon },
             { label: 'Expired',        value: stats.expired,                       color: '#EF4444', icon: ClockIcon  },
