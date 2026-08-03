@@ -59,14 +59,14 @@ export default function OnboardingStage1() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: 20, position: 'relative', overflow: 'hidden' }}>
       {/* Background orbs */}
-      <div style={{ position: 'absolute', top: -100, left: -80, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,58,237,0.2) 0%,transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -100, left: -80, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(128,0,32,0.2) 0%,transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: -80, right: -60, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 420, background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: 24, padding: '40px 36px', position: 'relative', zIndex: 1, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}>🎓</div>
+          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#800020,#5C0018)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(128,0,32,0.3)' }}>🎓</div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3 — Set up your profile</p>
         </div>
@@ -74,7 +74,7 @@ export default function OnboardingStage1() {
         {/* Progress dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
           {[1, 2, 3].map(n => (
-            <div key={n} style={{ width: n === 1 ? 24 : 8, height: 8, borderRadius: 99, background: n === 1 ? '#7C3AED' : 'var(--glass-border)', transition: 'all 0.3s' }} />
+            <div key={n} style={{ width: n === 1 ? 24 : 8, height: 8, borderRadius: 99, background: n === 1 ? '#800020' : 'var(--glass-border)', transition: 'all 0.3s' }} />
           ))}
         </div>
 
@@ -114,7 +114,7 @@ export default function OnboardingStage1() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', height: 50, background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(124,58,237,0.3)', opacity: loading ? 0.7 : 1 }}
+            style={{ width: '100%', height: 50, background: 'linear-gradient(135deg,#800020,#5C0018)', color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(128,0,32,0.3)', opacity: loading ? 0.7 : 1 }}
           >
             {loading
               ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
