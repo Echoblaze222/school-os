@@ -10,9 +10,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // SchoolOS's own tokens — not Trybe's blue/purple
-const VIOLET        = '#7C3AED'
-const VIOLET_SOFT    = 'rgba(124,58,237,0.14)'
-const WHITE          = '#F5F3FF'   // "School" fill — soft white, not violet
+const CYAN           = '#00B4D8'   // shield/linework color — the dominant logo color
+const CYAN_SOFT       = 'rgba(0,180,216,0.16)'
+const BURGUNDY        = '#800020'   // glow accent color from the logo
+const WHITE          = '#F5F3FF'   // "School" fill — soft white, not a brand hue
 const BG_DEEP        = '#060608'
 const BG_PRIMARY     = '#0D0E16'
 const TEXT_SECONDARY = '#8A94B8'
@@ -120,7 +121,7 @@ export default function SplashPage() {
               x="42%" y="56" textAnchor="middle"
               style={{
                 fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 42, letterSpacing: 1,
-                fill: 'none', stroke: VIOLET, strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
+                fill: 'none', stroke: CYAN, strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
                 strokeDasharray: strokeLen,
                 strokeDashoffset: drawing ? strokeLen : 0,
                 transition: reduced ? 'none' : 'stroke-dashoffset 1.4s 0.15s cubic-bezier(0.5,0,0.4,1)',
@@ -138,7 +139,7 @@ export default function SplashPage() {
                 fill: 'url(#schoolosChrome)',
                 opacity: chromeVisible ? 1 : 0,
                 transition: 'opacity 0.4s',
-                filter: stage === 'glow' ? `drop-shadow(0 0 18px ${VIOLET_SOFT})` : 'none',
+                filter: stage === 'glow' ? `drop-shadow(0 0 18px ${CYAN_SOFT})` : 'none',
                 animation: stage === 'glow' && !reduced ? 'schoolosGlowPulse 0.9s ease-in-out' : 'none',
               } as React.CSSProperties}
             >
@@ -160,7 +161,7 @@ export default function SplashPage() {
             ref={flourishRef}
             d="M28,70 C74,80 176,80 220,68"
             fill="none"
-            stroke={VIOLET}
+            stroke={BURGUNDY}
             strokeWidth={2}
             strokeLinecap="round"
             style={{
@@ -178,7 +179,7 @@ export default function SplashPage() {
             x={178} y={56} textAnchor="start"
             style={{
               fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 42, letterSpacing: 1,
-              fill: VIOLET,
+              fill: BURGUNDY,
               opacity: osVisible ? 1 : 0,
               transform: osVisible ? 'translateX(0)' : 'translateX(-24px)',
               transition: reduced ? 'none' : 'transform 0.9s cubic-bezier(0.34,1.56,0.64,1), opacity 0.7s ease-out',
@@ -202,8 +203,8 @@ export default function SplashPage() {
 
       <style>{`
         @keyframes schoolosGlowPulse {
-          0%, 100% { filter: drop-shadow(0 0 6px ${VIOLET_SOFT}); }
-          50%      { filter: drop-shadow(0 0 22px ${VIOLET_SOFT}); }
+          0%, 100% { filter: drop-shadow(0 0 6px ${CYAN_SOFT}); }
+          50%      { filter: drop-shadow(0 0 22px ${CYAN_SOFT}); }
         }
       `}</style>
     </div>
