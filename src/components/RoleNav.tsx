@@ -45,6 +45,7 @@ const MORE_NAV_ITEMS = [
   { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
   { href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
   { href: '/dashboard/teacher/clinic',        Icon: ActivityIcon,  label: 'Clinic'        },
+  { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
   { href: '/dashboard/teacher/notifications', Icon: BellIcon,      label: 'Notifications' },
   { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
   { href: '/dashboard/teacher/audit',         Icon: ShieldIcon,    label: 'Audit Log'     },
@@ -74,6 +75,7 @@ const NAV: Record<string, {
         { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
         { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Classes'  },
         { href: '/dashboard/teacher/clinic',        Icon: ActivityIcon,  label: 'Clinic'        },
+        { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
         { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Staff Meetings'},
       ]},
       { label: 'Resources', items: [
@@ -109,6 +111,7 @@ const NAV: Record<string, {
         { href: '/dashboard/principal/alumni',      Icon: AwardIcon,     label: 'Alumni'      },
         { href: '/dashboard/principal/analytics',   Icon: BarChartIcon,  label: 'Analytics'   },
         { href: '/dashboard/principal/results',     Icon: BarChartIcon,  label: 'Results'     },
+        { href: '/dashboard/principal/report-cards',Icon: FileTextIcon,  label: 'Report Cards'},
         { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'        },
         { href: '/dashboard/principal/reports',     Icon: FileTextIcon,  label: 'Reports'     },
         { href: '/dashboard/principal/profile',     Icon: UserIcon,      label: 'My Profile'  },
