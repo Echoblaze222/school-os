@@ -199,7 +199,7 @@ export default function SettingsPage() {
     price_ngn: 500, price_per_user_ngn: 0,
     billing_cycle: 'monthly', features: [''],
     student_limit: 0, is_active: true, is_popular: false,
-    color: '#7C3AED', sort_order: plans.length + 1,
+    color: '#800020', sort_order: plans.length + 1,
   }
 
   return (
