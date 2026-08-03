@@ -184,7 +184,7 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
         )}
         {/* Active free month → confirm subscription */}
         {school.setup_status === 'active' && school.subscription_plan === 'free_month' && (
-          <button className={styles.actionBtn} style={{ background: '#7C3AED' }}
+          <button className={styles.actionBtn} style={{ background: '#800020' }}
             onClick={() => { setShowPay(true); setPayAmount('') }}>
             💳 Activate Subscription
           </button>
