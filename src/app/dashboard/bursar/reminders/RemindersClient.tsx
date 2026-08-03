@@ -157,33 +157,32 @@ export default function RemindersClient({ profile, school, userId }: Props) {
     const result = Array.from(studentMap.values())
       .sort((a, b) => b.outstanding - a.outstanding)
 
-    // ── Resolve parent_id via parent_student_links (the correct join table) ──
-    // LinkChildPrompt writes here: { parent_id, student_id }
-    // profiles.parent_id is on the parent's OWN row, not the student's
+    // ── Resolve parent_id via /api/bursar/resolve-parents ──────────────────
+    // NOT a direct query on parent_student_links: that table's RLS only lets
+    // a parent read their OWN link row (auth.uid() = parent_id), so querying
+    // it here as the bursar silently returned 0 rows even for students who
+    // WERE linked. The API route uses the service role, scoped to this
+    // school, to read across that boundary correctly.
     if (result.length > 0) {
       const studentIds = result.map((s: any) => s.id)
 
-      const { data: links } = await supabase
-        .from('parent_student_links')
-        .select('student_id, parent_id')
-        .in('student_id', studentIds)
+      try {
+        const res = await fetch('/api/bursar/resolve-parents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentIds }),
+        })
+        const { links } = await res.json()
 
-      if (links && links.length > 0) {
-        // Collect unique parent IDs to fetch names in one shot
-        const parentIds = [...new Set(links.map((l: any) => l.parent_id))]
-        const { data: parents } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', parentIds)
-
-        const parentMap = new Map((parents ?? []).map((p: any) => [p.id, p.full_name]))
-        const linkMap   = new Map(links.map((l: any) => [l.student_id, l.parent_id]))
-
+        const linkMap = new Map((links ?? []).map((l: any) => [l.student_id, l]))
         for (const debtor of result) {
-          const pid = linkMap.get(debtor.id) ?? null
-          debtor.parent_id   = pid
-          debtor.parent_name = pid ? (parentMap.get(pid) ?? null) : null
+          const link = linkMap.get(debtor.id)
+          debtor.parent_id   = link?.parent_id ?? null
+          debtor.parent_name = link?.parent_name ?? null
         }
+      } catch {
+        // Leave parent_id/parent_name as null — UI already handles that case
+        // by flagging "No parent linked" rather than crashing.
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
