@@ -111,7 +111,7 @@ export default function SplashPage() {
               group: it stays fixed the whole time. */}
           <g
             style={{
-              transform: shifted ? 'translateX(-34px)' : 'translateX(0)',
+              transform: shifted ? 'translateX(-44px)' : 'translateX(0)',
               transition: reduced ? 'none' : 'transform 0.5s cubic-bezier(0.65,0,0.35,1)',
             }}
           >
@@ -172,16 +172,16 @@ export default function SplashPage() {
             }}
           />
 
-          {/* "OS" — sits on the same baseline as "School", tucked behind its
-              trailing edge, sliding out once "School" steps back. Reads as
-              one wordmark, not a second line of type. */}
+          {/* "OS" — sits on the same baseline as "School", tucked tight behind
+              its trailing edge, sliding out once "School" steps back. Reads
+              as one wordmark, not a second line of type. */}
           <text
-            x={178} y={56} textAnchor="start"
+            x={162} y={56} textAnchor="start"
             style={{
               fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 42, letterSpacing: 1,
               fill: BURGUNDY,
               opacity: osVisible ? 1 : 0,
-              transform: osVisible ? 'translateX(0)' : 'translateX(-24px)',
+              transform: osVisible ? 'translateX(0)' : 'translateX(-16px)',
               transition: reduced ? 'none' : 'transform 0.9s cubic-bezier(0.34,1.56,0.64,1), opacity 0.7s ease-out',
             } as React.CSSProperties}
           >
