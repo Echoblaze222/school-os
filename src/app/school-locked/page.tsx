@@ -40,7 +40,7 @@ function LockedContent() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'radial-gradient(ellipse at 50% 20%, rgba(124,58,237,0.16) 0%, #080C14 55%, #060608 100%)',
+      background: 'radial-gradient(ellipse at 50% 20%, rgba(128,0,32,0.16) 0%, #080C14 55%, #060608 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
