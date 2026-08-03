@@ -59,151 +59,6 @@
   padding: 20px 20px 0;
 }
 
-.needHelpBtn {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 11px;
-  border-radius: 999px;
-  background: rgba(124, 58, 237, 0.12);
-  border: 1px solid rgba(124, 58, 237, 0.28);
-  color: #C9AFFF;
-  font-size: 0.72rem;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-.needHelpBtn:active { transform: scale(0.96); }
-
-.needHelpBtn:hover {
-  background: rgba(124, 58, 237, 0.2);
-}
-
-/* ── Need Help panel ── */
-.helpOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(6, 6, 8, 0.72);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 200;
-  animation: helpFadeIn 0.18s ease both;
-}
-
-@keyframes helpFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.helpPanel {
-  width: 100%;
-  max-width: 440px;
-  background: #0E1220;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-bottom: none;
-  border-radius: 22px 22px 0 0;
-  padding: 18px 18px 26px;
-  animation: helpSlideUp 0.22s ease both;
-}
-
-@keyframes helpSlideUp {
-  from { transform: translateY(24px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-
-.helpHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.helpHeaderText {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #F0F4FF;
-}
-
-.helpCloseBtn {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.6);
-}
-
-.helpBody {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.helpItem {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 12px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  text-align: left;
-  transition: background 0.15s ease;
-}
-
-.helpItem:hover { background: rgba(124, 58, 237, 0.1); }
-
-.helpItemIcon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(124, 58, 237, 0.16);
-  color: #C9AFFF;
-}
-
-.helpItemText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.helpItemText strong {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #F0F4FF;
-}
-
-.helpItemText em {
-  font-style: normal;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
-}
-
-.helpFootnote {
-  margin-top: 14px;
-  font-size: 0.68rem;
-  line-height: 1.4;
-  color: rgba(255,255,255,0.35);
-  text-align: center;
-}
-
 .logo {
   width: 44px;
   height: 44px;
@@ -220,7 +75,7 @@
 }
 
 .appName {
-  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-family: 'Orbitron', sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   color: #fff;
@@ -241,7 +96,7 @@
 .changeSchoolBtn {
   background: none;
   border: none;
-  color: #9F67FF;
+  color: #00b4d8;
   cursor: pointer;
   font-size: 0.7rem;
   padding: 0;
@@ -330,7 +185,7 @@
 .modeBtnActive {
   background: rgba(0, 180, 216, 0.1);
   border-color: rgba(0, 180, 216, 0.4);
-  color: #9F67FF;
+  color: #00b4d8;
 }
 
 /* ── Form elements ── */
@@ -433,7 +288,7 @@
 .forgotLink {
   background: none;
   border: none;
-  color: #9F67FF;
+  color: #00b4d8;
   font-size: 0.78rem;
   cursor: pointer;
   text-align: right;
@@ -824,7 +679,7 @@
   width: 520px; height: 520px;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse, rgba(124,58,237,0.13) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(128,0,32,0.13) 0%, transparent 70%);
   border-radius: 50%;
   animation: spGlowBreath 4s ease-in-out infinite;
   pointer-events: none;
@@ -850,8 +705,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px);
+    linear-gradient(rgba(128,0,32,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128,0,32,0.05) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(ellipse 68% 68% at 50% 50%, black 30%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 68% 68% at 50% 50%, black 30%, transparent 100%);
@@ -869,7 +724,7 @@
 .spScanLine {
   position: absolute;
   left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(128,0,32,0.15), transparent);
   animation: spScanMove 6s linear infinite;
   pointer-events: none;
   z-index: 1;
@@ -886,10 +741,10 @@
 
 @keyframes spCornerIn { to { opacity: 0.22; } }
 
-.spTL { top: 20px;    left: 20px;  border-top:    1.5px solid #7C3AED; border-left:  1.5px solid #7C3AED; }
-.spTR { top: 20px;    right: 20px; border-top:    1.5px solid #7C3AED; border-right: 1.5px solid #7C3AED; }
-.spBL { bottom: 20px; left: 20px;  border-bottom: 1.5px solid #7C3AED; border-left:  1.5px solid #7C3AED; }
-.spBR { bottom: 20px; right: 20px; border-bottom: 1.5px solid #7C3AED; border-right: 1.5px solid #7C3AED; }
+.spTL { top: 20px;    left: 20px;  border-top:    1.5px solid #800020; border-left:  1.5px solid #800020; }
+.spTR { top: 20px;    right: 20px; border-top:    1.5px solid #800020; border-right: 1.5px solid #800020; }
+.spBL { bottom: 20px; left: 20px;  border-bottom: 1.5px solid #800020; border-left:  1.5px solid #800020; }
+.spBR { bottom: 20px; right: 20px; border-bottom: 1.5px solid #800020; border-right: 1.5px solid #800020; }
 
 .spContent {
   position: relative;
@@ -923,7 +778,7 @@
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    rgba(124,58,237,0.65) 25%,
+    rgba(128,0,32,0.65) 25%,
     rgba(0,180,216,0.55)  50%,
     rgba(245,158,11,0.45) 75%,
     transparent 100%
@@ -948,7 +803,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 36px;
-  border: 1px solid rgba(124,58,237,0.22);
+  border: 1px solid rgba(128,0,32,0.22);
   animation: spRingPulse 2.8s ease-in-out 0.5s infinite;
 }
 
@@ -975,7 +830,7 @@
 
 @keyframes spLogoGlow {
   0%,100% { filter: drop-shadow(0 0 16px rgba(0,180,216,0.45)); }
-  50%      { filter: drop-shadow(0 0 34px rgba(0,180,216,0.8)) drop-shadow(0 0 10px rgba(124,58,237,0.5)); }
+  50%      { filter: drop-shadow(0 0 34px rgba(0,180,216,0.8)) drop-shadow(0 0 10px rgba(128,0,32,0.5)); }
 }
 
 /* Brand */
@@ -1018,7 +873,7 @@
   100%{ left: 160%; }
 }
 
-.spBrandAccent { color: #9F67FF; }
+.spBrandAccent { color: #A0002A; }
 
 .spTagline {
   margin: 6px 0 0;
@@ -1036,7 +891,7 @@
 .spCursor {
   display: inline-block;
   width: 2px; height: 0.72em;
-  background: #9F67FF;
+  background: #A0002A;
   margin-left: 3px;
   vertical-align: middle;
   animation: spBlink 0.75s step-end infinite;
@@ -1064,9 +919,9 @@
 .spStatVal {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #9F67FF;
+  color: #A0002A;
   letter-spacing: -0.02em;
-  text-shadow: 0 0 18px rgba(124,58,237,0.55);
+  text-shadow: 0 0 18px rgba(128,0,32,0.55);
 }
 
 .spStatLabel {
@@ -1106,7 +961,7 @@
 .spLoaderFill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #7C3AED, #9F67FF, #F59E0B);
+  background: linear-gradient(90deg, #800020, #800020, #00b4d8);
   border-radius: 9999px;
   position: relative;
   animation: spLoadProgress 4.2s cubic-bezier(0.4,0,0.2,1) 2.1s forwards;
@@ -1119,7 +974,7 @@
   width: 6px; height: 10px;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 0 8px 4px rgba(124,58,237,0.7);
+  box-shadow: 0 0 8px 4px rgba(128,0,32,0.7);
   opacity: 0.9;
 }
 
@@ -1238,7 +1093,7 @@
 }
 
 .footerLogo {
-  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-family: 'Orbitron', sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   color: #fff;
@@ -1248,7 +1103,7 @@
 }
 
 .footerLogoAccent {
-  color: #9F67FF;
+  color: #A0002A;
 }
 
 .footerTagline {
@@ -1311,7 +1166,7 @@
 }
 
 .footerContactLink:hover {
-  color: #9F67FF;
+  color: #00b4d8;
 }
 
 /* ── Dot separator ── */
@@ -1361,54 +1216,4 @@
 @media (max-width: 390px) {
   .footerBadge   { font-size: 0.6rem; padding: 3px 9px; }
   .footerTagline { font-size: 0.67rem; }
-}
-
-/* ── Collapsible footer (mobile-first: essentials only by default) ── */
-.footerDetails {
-  width: 100%;
-  max-width: 340px;
-}
-
-.footerSummary {
-  list-style: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.4);
-  text-align: center;
-  cursor: pointer;
-  padding: 6px 0;
-}
-
-.footerSummary::-webkit-details-marker { display: none; }
-
-.footerDetails[open] .footerSummary svg {
-  transform: rotate(180deg);
-}
-
-.footerSummary svg {
-  transition: transform 0.15s ease;
-}
-
-.footerDetails .footerAbout,
-.footerDetails .footerBadges,
-.footerDetails .footerContact,
-.footerDetails .footerLinks {
-  margin-top: 12px;
-  animation: footerFadeIn 0.2s ease both;
-}
-
-@keyframes footerFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.footerEssentials {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.68rem;
 }
