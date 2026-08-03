@@ -78,7 +78,7 @@ export default function RevenuePage() {
       <div className={styles.statsGrid}>
         {[
           { label:'Total Revenue',   value: formatNGN(summary.total),     color:'#10B981', Icon: WalletIcon   },
-          { label:'This Month',      value: formatNGN(summary.thisMonth),  color:'#7C3AED', Icon: BarChartIcon },
+          { label:'This Month',      value: formatNGN(summary.thisMonth),  color:'#800020', Icon: BarChartIcon },
           { label:'Last Month',      value: formatNGN(summary.lastMonth),  color:'#3B82F6', Icon: BarChartIcon },
           { label:'Paying Schools',  value: summary.schools,               color:'#F59E0B', Icon: SchoolIcon   },
         ].map(s => (
