@@ -30,7 +30,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
     tagline:         '',
     logoUrl:         '',
     schoolType:      'private',
-    primaryColor:    '#7C3AED',
+    primaryColor:    '#800020',
     principalName:   '',
     principalEmail:  '',
     principalPhone:  '',
@@ -309,7 +309,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                       onChange={e => update('primaryColor', e.target.value)} />
                     <input className={styles.input} value={form.primaryColor}
                       onChange={e => update('primaryColor', e.target.value)}
-                      placeholder="#7C3AED" />
+                      placeholder="#800020" />
                   </div>
                 </div>
                 <div className={styles.fieldFull}>
