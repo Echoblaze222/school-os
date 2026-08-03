@@ -159,7 +159,7 @@ export default function SelectSchoolPage() {
             <button className={styles.continuePill} onClick={continueWithRecent} type="button">
               <span
                 className={styles.continueIcon}
-                style={{ background: recent.primaryColor || '#7C3AED' }}
+                style={{ background: recent.primaryColor || '#800020' }}
               >
                 {recent.logoUrl
                   ? <img src={recent.logoUrl} alt={recent.name} />
