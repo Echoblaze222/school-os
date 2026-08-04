@@ -174,7 +174,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         })
         const { links } = await res.json()
 
-        const linkMap = new Map((links ?? []).map((l: any) => [l.student_id, l]))
+        const linkMap = new Map<string, any>(
+          (links ?? []).map((l: any) => [l.student_id, l] as [string, any])
+        )
         for (const debtor of result) {
           const link = linkMap.get(debtor.id)
           debtor.parent_id   = link?.parent_id ?? null
