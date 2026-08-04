@@ -61,7 +61,9 @@ export async function POST(req: NextRequest) {
     ? await admin.from('profiles').select('id, full_name').in('id', parentIds)
     : { data: [] }
 
-  const parentMap = new Map((parents ?? []).map((p: any) => [p.id, p.full_name]))
+  const parentMap = new Map<string, string>(
+    (parents ?? []).map((p: any) => [p.id, p.full_name] as [string, string])
+  )
   const result = (links ?? []).map((l: any) => ({
     student_id: l.student_id,
     parent_id: l.parent_id,
