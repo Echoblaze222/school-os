@@ -154,8 +154,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       entry.invoiceIds.push(inv.id)
     }
 
-    const result = Array.from(studentMap.values())
-      .sort((a, b) => b.outstanding - a.outstanding)
+    const result: any[] = Array.from(studentMap.values())
+      .sort((a: any, b: any) => b.outstanding - a.outstanding)
 
     // ── Resolve parent_id via /api/bursar/resolve-parents ──────────────────
     // NOT a direct query on parent_student_links: that table's RLS only lets
