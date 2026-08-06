@@ -1,11 +1,16 @@
 'use client'
 // src/app/dashboard/student/live/LiveClient.tsx
+//
+// REDESIGN PASS (Lane 3 — Student): emoji → Icons, hardcoded status hex →
+// design tokens, glass-card/motion treatment. Chrome was already on
+// RolePageWrapper, so no chrome change needed here.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
-import { VideoIcon } from '@/components/Icons'
+import { VideoIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon, AlertIcon, XIcon } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -19,15 +24,14 @@ function deriveStatus(s: any): Tab {
 }
 
 const STATUS_COLOR: Record<Tab, string> = {
-  live:      '#10B981',
-  scheduled: '#F59E0B',
-  ended:     '#6B7280',
+  live:      'var(--success)',
+  scheduled: 'var(--warning)',
+  ended:     'var(--text-muted)',
 }
-
-const STATUS_LABEL: Record<Tab, string> = {
-  live:      '🔴 LIVE',
-  scheduled: 'Upcoming',
-  ended:     'Ended',
+const STATUS_BG: Record<Tab, string> = {
+  live:      'var(--success-subtle)',
+  scheduled: 'var(--warning-subtle)',
+  ended:     'var(--glass-bg)',
 }
 
 export default function LiveClient({ profile, school, userId }: Props) {
@@ -37,7 +41,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   const [tab,      setTab]      = useState<Tab>('scheduled')
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [])
 
@@ -72,17 +76,20 @@ export default function LiveClient({ profile, school, userId }: Props) {
   return (
     <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Live Classes">
 
-      <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
+      <div className={`${styles.tabs} ${motion.riseIn}`} style={{ marginBottom: 'var(--space-4)' }}>
         {(['live', 'scheduled', 'ended'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+          <button key={t} onClick={() => setTab(t)} className={`${styles.tab} ${tab === t ? styles.tabActive : ''} ${motion.pressable}`}
             style={tab === t ? { background: STATUS_COLOR[t], color: '#fff', borderColor: STATUS_COLOR[t] } : {}}>
-            {t === 'live' ? '🔴 Live' : t === 'scheduled' ? '📅 Upcoming' : '✅ Ended'}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {t === 'live' ? <><span style={{ width: 8, height: 8, borderRadius: 999, background: tab === t ? '#fff' : 'var(--success)', display: 'inline-block' }} className={motion.pulseDot} /> Live</>
+                : t === 'scheduled' ? <><CalendarIcon size={13} /> Upcoming</>
+                : <><CheckCircleIcon size={13} /> Ended</>}
+            </span>
             {counts[t] > 0 && (
               <span style={{
                 marginLeft: 5, padding: '1px 6px', borderRadius: 999,
                 fontSize: '0.65rem', fontWeight: 800,
-                background: tab === t ? 'rgba(255,255,255,0.25)' : STATUS_COLOR[t] + '20',
+                background: tab === t ? 'rgba(255,255,255,0.25)' : STATUS_BG[t],
                 color: tab === t ? '#fff' : STATUS_COLOR[t],
               }}>
                 {counts[t]}
@@ -93,9 +100,14 @@ export default function LiveClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
+          <AlertIcon size={16} color="var(--danger)" />
+          <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
+          <button onClick={() => setError(null)} className={motion.pressable}
+            style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'flex', padding: 4 }}>
+            <XIcon size={14} />
+          </button>
         </div>
       )}
 
@@ -103,7 +115,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
         ? <div className={styles.loading}><span /><span /><span /></div>
         : visibleSessions.length === 0
           ? (
-            <div className={styles.empty}>
+            <div className={`${styles.empty} ${motion.riseIn}`}>
               <VideoIcon size={40} color="var(--text-faint)" strokeWidth={1} />
               <p>
                 {tab === 'live'      ? 'No class is live right now'    :
@@ -114,15 +126,15 @@ export default function LiveClient({ profile, school, userId }: Props) {
           )
           : (
             <div className={styles.list}>
-              {visibleSessions.map(s => {
+              {visibleSessions.map((s, i) => {
                 const status   = deriveStatus(s)
                 const isFuture = s.scheduled_at && new Date(s.scheduled_at) > new Date()
                 return (
-                  <div key={s.id} className={styles.card}
-                    style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default' }}>
+                  <div key={s.id} className={`glass-card ${styles.card} ${motion.staggerItem}`}
+                    style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default', animationDelay: `${i * 40}ms` }}>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)' }}>
-                      <div className={styles.cardIcon} style={{ background: STATUS_COLOR[status] + '20', flexShrink: 0 }}>
+                      <div className={styles.cardIcon} style={{ background: STATUS_BG[status], flexShrink: 0 }}>
                         <VideoIcon size={16} color={STATUS_COLOR[status]} />
                       </div>
                       <div className={styles.cardBody} style={{ flex: 1, minWidth: 0 }}>
@@ -134,22 +146,27 @@ export default function LiveClient({ profile, school, userId }: Props) {
                           </p>
                         )}
                       </div>
-                      <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, flexShrink: 0, background: STATUS_COLOR[status] + '20', color: STATUS_COLOR[status] }}>
-                        {STATUS_LABEL[status]}
+                      <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
+                        background: STATUS_BG[status], color: STATUS_COLOR[status], display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {status === 'live' && <StatusDotIcon size={8} color="var(--success)" />}
+                        {status === 'live' ? 'LIVE' : status === 'scheduled' ? 'Upcoming' : 'Ended'}
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', gap: 8, marginTop: 10, marginLeft: 52, flexWrap: 'wrap', alignItems: 'center' }}>
                       {status === 'live' && s.meeting_url && (
-                        <a href={s.meeting_url} target="_blank" rel="noreferrer"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: '#10B981', color: '#fff', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
-                          🔴 Join Now
+                        <a href={s.meeting_url} target="_blank" rel="noreferrer" className={motion.pressable}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                            background: 'var(--success)', color: '#fff', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
+                          <StatusDotIcon size={8} color="#fff" /> Join Now
                         </a>
                       )}
                       {status === 'ended' && s.recording_url && (
-                        <a href={s.recording_url} target="_blank" rel="noreferrer"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
-                          🎬 Watch Recording
+                        <a href={s.recording_url} target="_blank" rel="noreferrer" className={motion.pressable}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)',
+                            borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
+                          <VideoIcon size={14} /> Watch Recording
                         </a>
                       )}
                       {(status === 'scheduled' || status === 'live') && isFuture && s.scheduled_at && (
@@ -174,4 +191,4 @@ export default function LiveClient({ profile, school, userId }: Props) {
       <div className={styles.spacer} />
     </RolePageWrapper>
   )
-                            }
+}
