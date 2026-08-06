@@ -7,6 +7,7 @@ import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DOBPicker from '@/components/DOBPicker'
 import styles from './students.module.css'
+import { CheckIcon, XIcon, AlertIcon, TransferIcon } from '@/components/Icons'
 
 const GENDER_OPTS = ['Male', 'Female', 'Other']
 
