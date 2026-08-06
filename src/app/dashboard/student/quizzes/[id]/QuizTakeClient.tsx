@@ -11,11 +11,18 @@
 // themed progress ring instead of a flat bar, larger touch targets on options,
 // softer haptic-feeling transitions between questions, refined results screen
 // with a radial score ring instead of a flat bar.
+//
+// REDESIGN PASS (Lane 3 — Student): emoji → Icons, hardcoded status hex →
+// design tokens, glass-card + motion touches. This page is intentionally a
+// standalone full-screen experience (own sticky header/timer, no
+// RolePageWrapper) — same pattern as the AI/Chat pages — so chrome is
+// untouched, only content styling changed.
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ClockIcon, ArrowLeftIcon } from '@/components/Icons'
+import { ClockIcon, ArrowLeftIcon, AlertIcon, XIcon, PartyPopperIcon, CheckCircleIcon, BookOpenIcon, AwardIcon } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface DbQuestion {
   id: string
@@ -47,7 +54,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   const router      = useRouter()
   const supabase    = createClient()
   const timerRef    = useRef<NodeJS.Timeout | null>(null)
-  const sc          = school?.primary_color ?? '#7C3AED'
+  const sc          = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadQuiz() }, [quizId])
 
@@ -151,7 +158,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   const answered = Object.keys(answers).length
   const pct      = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
   const q        = questions[current]
-  const resultColor = pct >= 70 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'
+  const resultColor = pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)'
 
   // ── Loading ──────────────────────────────────────────────
   if (loading) return (
@@ -166,11 +173,11 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
   // ── Error state (only when there are truly no questions AND an error occurred) ──
   if (error && questions.length === 0) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
-      <p style={{ fontSize: '2rem' }}>⚠️</p>
+    <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
+      <AlertIcon size={40} color="var(--danger)" strokeWidth={1.5} />
       <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem' }}>Couldn't load this quiz</p>
-      <p style={{ color: '#EF4444', fontSize: '0.82rem', textAlign: 'center', maxWidth: 320 }}>{error}</p>
-      <button onClick={() => router.push('/dashboard/student/quizzes')}
+      <p style={{ color: 'var(--danger)', fontSize: '0.82rem', textAlign: 'center', maxWidth: 320 }}>{error}</p>
+      <button onClick={() => router.push('/dashboard/student/quizzes')} className={motion.pressable}
         style={{ padding: '10px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
         Back to Quizzes
       </button>
@@ -179,8 +186,10 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
   // ── Already attempted ────────────────────────────────────
   if (alreadyDone && !submitted) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 18, background: 'var(--bg-base)', padding: 24 }}>
-      <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#10B98120', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.2rem' }}>✅</div>
+    <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 18, background: 'var(--bg-base)', padding: 24 }}>
+      <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--success-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CheckCircleIcon size={36} color="var(--success)" />
+      </div>
       <p style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.15rem' }}>Already submitted</p>
       {priorScore && (
         <div style={{ textAlign: 'center' as const }}>
@@ -193,7 +202,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
           </p>
         </div>
       )}
-      <button onClick={() => router.push('/dashboard/student/quizzes')}
+      <button onClick={() => router.push('/dashboard/student/quizzes')} className={motion.pressable}
         style={{ padding: '12px 28px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
         Back to Quizzes
       </button>
@@ -202,13 +211,15 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
   // ── No questions yet (no error — genuinely empty) ────────
   if (questions.length === 0) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
-      <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--glass-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>📭</div>
+    <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--glass-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <AwardIcon size={28} color="var(--text-faint)" strokeWidth={1.5} />
+      </div>
       <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem' }}>No questions yet</p>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: 280 }}>
         The teacher hasn't added questions to this quiz yet. Check back soon.
       </p>
-      <button onClick={() => router.push('/dashboard/student/quizzes')}
+      <button onClick={() => router.push('/dashboard/student/quizzes')} className={motion.pressable}
         style={{ padding: '10px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
         Back to Quizzes
       </button>
@@ -220,8 +231,8 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     const circumference = 2 * Math.PI * 54
     const dashoffset = circumference * (1 - pct / 100)
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ width: '100%', maxWidth: 380, background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: 24, padding: '36px 28px', textAlign: 'center' as const }}>
+      <div className={motion.riseIn} style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div className="glass-card" style={{ width: '100%', maxWidth: 380, flexDirection: 'column', padding: '36px 28px', textAlign: 'center' as const }}>
 
           {/* Radial score ring */}
           <div style={{ position: 'relative' as const, width: 132, height: 132, margin: '0 auto 20px' }}>
@@ -233,7 +244,9 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.7rem', fontWeight: 800, color: resultColor }}>{pct}%</span>
-              <span style={{ fontSize: '2rem' }}>{pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '📚'}</span>
+              {pct >= 70 ? <PartyPopperIcon size={26} color={resultColor} />
+                : pct >= 50 ? <CheckCircleIcon size={24} color={resultColor} />
+                : <BookOpenIcon size={24} color={resultColor} />}
             </div>
           </div>
 
@@ -248,13 +261,13 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
           </p>
 
           {error && (
-            <p style={{ fontSize: '0.75rem', color: '#F59E0B', marginBottom: 16 }}>
-              ⚠️ Your answers were scored locally — saving may have had an issue: {error}
+            <p style={{ fontSize: '0.75rem', color: 'var(--warning)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+              <AlertIcon size={13} color="var(--warning)" /> Your answers were scored locally — saving may have had an issue: {error}
             </p>
           )}
 
-          <button onClick={() => router.push('/dashboard/student/quizzes')}
-            style={{ width: '100%', height: 48, background: sc, color: '#fff', border: 'none', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer' }}>
+          <button onClick={() => router.push('/dashboard/student/quizzes')} className={`btn btn-primary ${motion.pressable}`}
+            style={{ width: '100%', height: 48, borderRadius: 14, fontSize: '0.92rem' }}>
             Back to Quizzes
           </button>
         </div>
@@ -263,14 +276,14 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   }
 
   // ── Quiz-taking screen ────────────────────────────────────
-  const timerColor = timeLeft < 60 ? '#EF4444' : timeLeft < 180 ? '#F59E0B' : sc
+  const timerColor = timeLeft < 60 ? 'var(--danger)' : timeLeft < 180 ? 'var(--warning)' : sc
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
       <header style={{ position: 'sticky' as const, top: 0, zIndex: 10, background: 'var(--bg-base)', borderBottom: '1px solid var(--glass-border)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => router.back()}
+        <button onClick={() => router.back()} className={motion.pressable}
           style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           <ArrowLeftIcon size={16} color="var(--text-secondary)" />
         </button>
@@ -291,15 +304,17 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
       {/* Error banner, if a non-blocking error happened mid-quiz */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#EF444415', borderBottom: '1px solid #EF444440' }}>
-          <span style={{ fontSize: '0.75rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 800 }}>✕</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--danger-subtle)', borderBottom: '1px solid rgba(239,68,68,0.3)' }}>
+          <AlertIcon size={14} color="var(--danger)" />
+          <span style={{ fontSize: '0.75rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
+          <button onClick={() => setError(null)} className={motion.pressable}
+            style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'flex', padding: 2 }}><XIcon size={13} /></button>
         </div>
       )}
 
       {/* Question card */}
       {q && (
-        <div style={{ flex: 1, padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
+        <div className={motion.riseIn} style={{ flex: 1, padding: '24px 16px', display: 'flex', flexDirection: 'column' }} key={q.id}>
           <span style={{ fontSize: '0.7rem', fontWeight: 800, color: sc, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 10 }}>
             Question {current + 1} of {questions.length}
           </span>
@@ -313,6 +328,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
               return (
                 <button key={opt.label}
                   onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt.label }))}
+                  className={motion.pressable}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '14px 16px', borderRadius: 14, textAlign: 'left' as const,
@@ -342,7 +358,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
       {/* Bottom nav */}
       <div style={{ position: 'sticky' as const, bottom: 0, background: 'var(--bg-base)', borderTop: '1px solid var(--glass-border)', padding: '12px 16px calc(12px + env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button disabled={current === 0} onClick={() => setCurrent(c => c - 1)}
+        <button disabled={current === 0} onClick={() => setCurrent(c => c - 1)} className={motion.pressable}
           style={{ height: 44, padding: '0 16px', borderRadius: 12, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: current === 0 ? 'var(--text-faint)' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: current === 0 ? 'default' : 'pointer' }}>
           ← Prev
         </button>
@@ -363,13 +379,13 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
         </div>
 
         {current < questions.length - 1
-          ? <button onClick={() => setCurrent(c => c + 1)}
+          ? <button onClick={() => setCurrent(c => c + 1)} className={motion.pressable}
               style={{ height: 44, padding: '0 20px', borderRadius: 12, background: sc, color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
               Next →
             </button>
-          : <button onClick={handleSubmit} disabled={submitting}
-              style={{ height: 44, padding: '0 20px', borderRadius: 12, background: '#10B981', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
-              {submitting ? '...' : 'Submit ✓'}
+          : <button onClick={handleSubmit} disabled={submitting} className={motion.pressable}
+              style={{ height: 44, padding: '0 20px', borderRadius: 12, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {submitting ? '...' : <>Submit <CheckCircleIcon size={14} color="#fff" /></>}
             </button>
         }
       </div>
