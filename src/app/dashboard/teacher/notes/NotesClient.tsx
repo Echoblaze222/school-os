@@ -256,8 +256,8 @@ export default function NotesClient({ profile, school, userId }: Props) {
               <button key={mode} onClick={() => setUploadMode(mode)}
                 style={{ flex: 1, height: 36, borderRadius: 8, border: `1px solid ${uploadMode === mode ? sc : 'var(--glass-border)'}`, background: uploadMode === mode ? sc + '20' : 'transparent', color: uploadMode === mode ? sc : 'var(--text-muted)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
                 {mode === 'type'
-                  ? <><EditIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Type Note</>
-                  : <><FileTextIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Upload PDF</>}
+                  ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><EditIcon size={14} /></span>Type Note</>
+                  : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><FileTextIcon size={14} /></span>Upload PDF</>}
               </button>
             ))}
           </div>
@@ -275,7 +275,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
               <button onClick={() => fileRef.current?.click()}
                 style={{ width: '100%', height: 80, border: `2px dashed ${uploadedFile ? sc : 'var(--glass-border)'}`, borderRadius: 10, background: uploadedFile ? sc + '10' : 'transparent', color: uploadedFile ? sc : 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
                 {uploadedFile
-                  ? <><PaperclipIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />{uploadedFile.name}</>
+                  ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={14} /></span>{uploadedFile.name}</>
                   : 'Tap to select PDF or document'}
               </button>
               {uploading && <p style={{ fontSize: '0.75rem', color: sc, marginTop: 6 }}>Uploading...</p>}
