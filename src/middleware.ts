@@ -26,7 +26,7 @@ const PUBLIC_PATHS = [
   '/splash',
   '/select-school',
   '/login',
-  '/register',
+  '/register-school',
   '/forgot-password',
   '/reset-password',
   '/terms',
@@ -47,7 +47,7 @@ const AUTH_ONLY_PATHS = [
   '/splash',
   '/select-school',
   '/login',
-  '/register',
+  '/register-school',
   '/forgot-password',
   '/super-admin/login',                 // logged-in super admins go straight to dashboard
 ]
