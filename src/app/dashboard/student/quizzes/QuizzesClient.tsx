@@ -5,13 +5,16 @@
 // id, title, total_marks, attempt_limit, starts_at, ends_at, class_id.
 // Status is now derived from starts_at/ends_at (same logic as teacher side).
 // Also: no error handling on load — added error banner.
+//
+// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// glass-card/motion treatment, hardcoded status hex → design tokens.
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
-import { AwardIcon, ClockIcon } from '@/components/Icons'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import { AwardIcon, ClockIcon, AlertIcon, XIcon } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -23,7 +26,8 @@ function deriveStatus(q: any): 'upcoming' | 'live' | 'ended' {
   return 'ended'
 }
 
-const STATUS_COLOR = { live: '#10B981', upcoming: '#F59E0B', ended: '#6B7280' }
+const STATUS_COLOR = { live: 'var(--success)', upcoming: 'var(--warning)', ended: 'var(--text-muted)' }
+const STATUS_BG    = { live: 'var(--success-subtle)', upcoming: 'var(--warning-subtle)', ended: 'var(--glass-bg)' }
 const STATUS_LABEL = { live: 'Available now', upcoming: 'Upcoming', ended: 'Ended' }
 
 export default function QuizzesClient({ profile, school, userId }: Props) {
@@ -32,7 +36,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
   const supabase    = createClient()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   const router      = useRouter()
 
   useEffect(() => { load() }, [])
@@ -79,28 +83,29 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-      <div className={styles.content}>
-        <DashboardHeader userId={userId} role="student" profile={profile} school={school}
-          schoolColor={schoolColor} title="Quizzes" showBack />
-        <main className={styles.main}>
+    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Quizzes">
+        <>
 
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-              <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+            <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
+              <AlertIcon size={16} color="var(--danger)" />
+              <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
+              <button onClick={() => setError(null)} className={motion.pressable}
+                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'flex', padding: 4 }}>
+                <XIcon size={14} />
+              </button>
             </div>
           )}
 
           {loading ? <div className={styles.loading}><span /><span /><span /></div>
             : quizzes.length === 0
-              ? <div className={styles.empty}>
+              ? <div className={`${styles.empty} ${motion.riseIn}`}>
                   <AwardIcon size={40} color="var(--text-faint)" strokeWidth={1} />
                   <p>No quizzes available yet</p>
                 </div>
               : <div className={styles.list}>
-                  {quizzes.map(q => {
+                  {quizzes.map((q, idx) => {
                     const status  = deriveStatus(q)
                     const attempt = attempts[q.id]
                     const done    = !!attempt
@@ -109,12 +114,12 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                       : null
 
                     return (
-                      <div key={q.id} style={{
-                        background: 'var(--glass-bg)', border: `1px solid ${done ? '#10B98130' : 'var(--glass-border)'}`,
-                        borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10,
+                      <div key={q.id} className={`glass-card ${motion.staggerItem}`} style={{
+                        borderColor: done ? 'rgba(16,185,129,0.3)' : undefined,
+                        flexDirection: 'column', alignItems: 'stretch', gap: 10, animationDelay: `${idx * 40}ms`,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                          <div style={{ width: 40, height: 40, borderRadius: 10, background: STATUS_COLOR[status] + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: STATUS_BG[status], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <AwardIcon size={18} color={STATUS_COLOR[status]} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -126,16 +131,16 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                               {q.attempt_limit > 1 && ` · ${q.attempt_limit} attempts`}
                             </p>
                           </div>
-                          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0, background: STATUS_COLOR[status] + '20', color: STATUS_COLOR[status] }}>
+                          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0, background: STATUS_BG[status], color: STATUS_COLOR[status] }}>
                             {done ? (pct !== null ? `${pct}%` : 'Done') : STATUS_LABEL[status]}
                           </span>
                         </div>
 
                         {/* Score display if graded */}
                         {done && attempt.score !== null && (
-                          <div style={{ background: '#10B98110', border: '1px solid #10B98130', borderRadius: 10, padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ background: 'var(--success-subtle)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Your score</span>
-                            <span style={{ fontWeight: 800, color: '#10B981', fontSize: '0.92rem' }}>
+                            <span style={{ fontWeight: 800, color: 'var(--success)', fontSize: '0.92rem' }}>
                               {attempt.score}/{attempt.max_score}
                             </span>
                           </div>
@@ -156,8 +161,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
                         {/* Start button */}
                         {canStart(q) && (
-                          <button onClick={() => router.push(`/dashboard/student/quizzes/${q.id}`)}
-                            style={{ width: '100%', height: 42, background: schoolColor, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+                          <button onClick={() => router.push(`/dashboard/student/quizzes/${q.id}`)} className={`btn btn-primary ${motion.pressable}`}>
                             {done ? 'Retake Quiz' : 'Start Quiz'}
                           </button>
                         )}
@@ -172,9 +176,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                 </div>
           }
           <div className={styles.spacer} />
-        </main>
-      </div>
-    </div>
+        </>
+    </RolePageWrapper>
   )
 }
-  
