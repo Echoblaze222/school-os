@@ -289,7 +289,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                   </div>
                   <div className={styles.periodBody} style={{ borderLeftColor: sc }}>
                     <p className={styles.periodSubject}>{subjectName}</p>
-                    <p className={styles.periodMeta}>{p.room ? <><MapPinIcon size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />{p.room}</> : ''}</p>
+                    <p className={styles.periodMeta}>{p.room ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><MapPinIcon size={11} /></span>{p.room}</> : ''}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                       <div className={styles.periodDuration}>
                         <ClockIcon size={11} color="var(--text-muted)" />
