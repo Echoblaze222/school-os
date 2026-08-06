@@ -8,10 +8,15 @@
 // ADDED: per-type breakdown within each term group (Day Test / Mid-Term / Exam rows)
 // ADDED: percentage label on progress bar
 // ADDED: graceful fallback when class_subjects join is null (data posted without class link)
+//
+// REDESIGN PASS (Lane 3 — Student): emoji → Icons, hardcoded grade hex →
+// design tokens where a matching token exists, glass-card/motion treatment.
+// Chrome was already on RolePageWrapper, so no chrome change needed here.
 
 import { useState, useMemo } from 'react'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { BarChartIcon } from '@/components/Icons'
+import { BarChartIcon, FileTextIcon } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 export interface ResultRow {
@@ -65,21 +70,24 @@ const TYPE_ORDER: Record<string, number> = {
   exam:     2,
 }
 
+// A/B/C/F map cleanly onto the shared status tokens (success/info/warning/danger).
+// D sits between warning and danger with no matching token, so it keeps a
+// distinct literal orange rather than reusing warning's amber for two grades.
 function gradeColor(g: string) {
   if (!g || g === '—') return 'var(--text-muted)'
-  if (g === 'A') return '#10B981'
-  if (g === 'B') return '#3B82F6'
-  if (g === 'C') return '#F59E0B'
+  if (g === 'A') return 'var(--success)'
+  if (g === 'B') return 'var(--info)'
+  if (g === 'C') return 'var(--warning)'
   if (g === 'D') return '#F97316'
-  return '#EF4444'
+  return 'var(--danger)'
 }
 
 function gradeBg(g: string) {
-  if (g === 'A') return '#10B98118'
-  if (g === 'B') return '#3B82F618'
-  if (g === 'C') return '#F59E0B18'
-  if (g === 'D') return '#F9731618'
-  return '#EF444418'
+  if (g === 'A') return 'var(--success-subtle)'
+  if (g === 'B') return 'var(--info-subtle)'
+  if (g === 'C') return 'var(--warning-subtle)'
+  if (g === 'D') return 'rgba(249,115,22,0.12)'
+  return 'var(--danger-subtle)'
 }
 
 // Resolve the display name of a result row
@@ -112,7 +120,7 @@ export default function ResultsClient({ profile, school, userId, results, report
     }
   }
   const [termFilter, setTermFilter] = useState<string>('All Terms')
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   // Enrich with resolved names
   const enriched = useMemo(() =>
@@ -172,7 +180,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
 
       {/* ── Report Cards (independent of whether results exist for the term) ── */}
       {reportCards.length > 0 && (
-        <div style={{ marginBottom: 'var(--space-5)' }}>
+        <div className={motion.riseIn} style={{ marginBottom: 'var(--space-5)' }}>
           <p style={{
             margin: '0 0 var(--space-2)', fontSize: '0.65rem', fontWeight: 800,
             textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)',
@@ -181,10 +189,9 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {reportCards.map(rc => (
-              <div key={rc.id} style={{
+              <div key={rc.id} className="glass-card" style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '10px 14px', background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)', borderRadius: 10,
+                padding: '10px 14px',
               }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                   {DB_TO_TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}
@@ -192,14 +199,15 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                 <button
                   onClick={() => downloadReportCard(rc.term, rc.academic_year)}
                   disabled={downloadingKey === rc.id}
+                  className={motion.pressable}
                   style={{
                     fontSize: '0.7rem', fontWeight: 700, padding: '6px 12px', borderRadius: 999,
-                    border: `1px solid ${school?.primary_color ?? '#7C3AED'}`,
-                    background: 'transparent', color: school?.primary_color ?? '#7C3AED',
-                    cursor: 'pointer',
+                    border: `1px solid ${sc}`,
+                    background: 'transparent', color: sc,
+                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
                   }}
                 >
-                  {downloadingKey === rc.id ? 'Preparing…' : '📄 Download'}
+                  {downloadingKey === rc.id ? 'Preparing…' : <><FileTextIcon size={12} /> Download</>}
                 </button>
               </div>
             ))}
@@ -209,7 +217,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
 
       {/* ── Summary stats ── */}
       {filtered.length > 0 && (
-        <div style={{
+        <div className={motion.riseIn} style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: 8,
@@ -217,15 +225,13 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
         }}>
           {[
             { label: 'Results',   value: filtered.length, color: sc },
-            { label: 'Avg Score', value: `${avg}%`,        color: avg >= 50 ? '#10B981' : '#EF4444' },
-            { label: 'Passes',    value: passCount,         color: '#10B981' },
+            { label: 'Avg Score', value: `${avg}%`,        color: avg >= 50 ? 'var(--success)' : 'var(--danger)' },
+            { label: 'Passes',    value: passCount,         color: 'var(--success)' },
           ].map(s => (
-            <div key={s.label} style={{
+            <div key={s.label} className="glass-card" style={{
               textAlign: 'center',
               padding: '12px 8px',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 12,
+              flexDirection: 'column',
             }}>
               <p style={{ margin: '0 0 2px', fontSize: '1.4rem', fontWeight: 800, color: s.color }}>
                 {s.value}
@@ -246,7 +252,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
       )}
 
       {/* ── Term filter tabs ── */}
-      <div style={{
+      <div className={motion.riseIn} style={{
         display: 'flex',
         gap: 8,
         marginBottom: 'var(--space-5)',
@@ -258,6 +264,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
           <button
             key={t}
             onClick={() => setTermFilter(t)}
+            className={motion.pressable}
             style={{
               padding:    '6px 14px',
               borderRadius: 999,
@@ -278,7 +285,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
 
       {/* ── Results list ── */}
       {filtered.length === 0 ? (
-        <div className={styles.empty}>
+        <div className={`${styles.empty} ${motion.riseIn}`}>
           <BarChartIcon size={40} color="var(--text-faint)" strokeWidth={1} />
           <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.85rem' }}>
             {termFilter !== 'All Terms'
@@ -303,7 +310,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {rows.map(r => {
+              {rows.map((r, i) => {
                 const pct = r.max_score > 0
                   ? Math.round((r.score / r.max_score) * 100)
                   : 0
@@ -311,14 +318,13 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                 return (
                   <div
                     key={r.id}
+                    className={`glass-card ${motion.staggerItem}`}
                     style={{
                       display:    'flex',
                       alignItems: 'center',
                       gap:        14,
                       padding:    '12px 16px',
-                      background: 'var(--glass-bg)',
-                      border:     '1px solid var(--glass-border)',
-                      borderRadius: 12,
+                      animationDelay: `${i * 30}ms`,
                     }}
                   >
                     {/* Subject + type */}
