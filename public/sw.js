@@ -21,7 +21,7 @@
 //       stale API response offline would be actively misleading, not helpful.
 //     - Everything else: stale-while-revalidate
 
-const CACHE_VERSION      = 'v2'
+const CACHE_VERSION      = 'v3' // bumped: new logo/icon set replaced old cached PNGs at the same filenames
 const APP_SHELL_CACHE    = `schoolos-shell-${CACHE_VERSION}`
 const RUNTIME_CACHE      = `schoolos-runtime-${CACHE_VERSION}`
 
