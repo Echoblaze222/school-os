@@ -137,7 +137,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
                 <div style={{ display:'flex', gap:'var(--space-2)', paddingLeft:56 }}>
                   <button onClick={() => togglePin(item.id, item.is_pinned)}
                     style={{ padding:'5px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--text-muted)', cursor:'pointer' }}>
-                    {item.is_pinned ? 'Unpin' : <><MapPinIcon size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />Pin</>}
+                    {item.is_pinned ? 'Unpin' : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><MapPinIcon size={11} /></span>Pin</>}
                   </button>
                   {item.author?.id === userId || !item.author ? (
                     <button onClick={() => deleteRow(item.id)}
