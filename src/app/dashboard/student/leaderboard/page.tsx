@@ -23,7 +23,6 @@ export default async function LeaderboardPage() {
       .from('parent_student_links')
       .select('student_id')
       .eq('parent_id', user.id)
-      .eq('status', 'active')   // only approved links
     childIds = (links ?? []).map((l: any) => l.student_id)
   }
 

@@ -110,14 +110,39 @@ export default function FeesClient({ profile, school, userId }: Props) {
   async function loadChildren() {
     setLoading(true)
     setError('')
-    // A parent can have more than one linked child — never assume .single()
-    const { data: childData, error: err } = await supabase
-      .from('profiles')
-      .select('id, full_name, class_level')
+    // Source of truth for parent->child linking is parent_student_links —
+    // NOT profiles.parent_id. That column is a legacy field never populated
+    // by the current /api/parent/link-child flow, so querying it directly
+    // (as this used to) returns zero children for any parent linked the
+    // normal way, even though the same parent sees their child fine on
+    // Attendance, Clinic, Assignments, etc. Falls back to profiles.parent_id
+    // only for any old accounts that predate the parent_student_links flow.
+    const { data: links, error: linksErr } = await supabase
+      .from('parent_student_links')
+      .select('student_id')
       .eq('parent_id', userId)
-      .order('full_name')
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (linksErr) { setError(linksErr.message); setLoading(false); return }
+
+    let childData: any[] | null = null
+    if (links && links.length > 0) {
+      const ids = links.map((l: any) => l.student_id)
+      const { data, error: err } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_level')
+        .in('id', ids)
+        .order('full_name')
+      if (err) { setError(err.message); setLoading(false); return }
+      childData = data
+    } else {
+      const { data, error: err } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_level')
+        .eq('parent_id', userId)
+        .order('full_name')
+      if (err) { setError(err.message); setLoading(false); return }
+      childData = data
+    }
 
     if (!childData || childData.length === 0) {
       setChildren([])
