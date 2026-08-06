@@ -420,10 +420,10 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                   color: attachFile ? sc : 'var(--text-muted)',
                   fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
                 {attachFile
-                  ? <><PaperclipIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{attachFile.name}</>
+                  ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={13} /></span>{attachFile.name}</>
                   : editingId
-                  ? <><PaperclipIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Replace file (optional)</>
-                  : <><PaperclipIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Attach file (optional)</>}
+                  ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={13} /></span>Replace file (optional)</>
+                  : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={13} /></span>Attach file (optional)</>}
               </button>
               {attachFile && (
                 <button onClick={() => setAttachFile(null)}
@@ -488,7 +488,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     {item.subject ? ` · ${item.subject}` : ''}
                     {' · Due '}
                     {new Date(item.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                    {item.file_url ? <> · <PaperclipIcon size={11} style={{ verticalAlign: 'middle' }} /></> : ''}
+                    {item.file_url ? <> · <span style={{ display:'inline-flex', verticalAlign: 'middle' }}><PaperclipIcon size={11} /></span></> : ''}
                   </p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
@@ -522,7 +522,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     style={{ padding: '5px 12px', background: 'var(--glass-bg)', color: 'var(--text-muted)',
                       border: '1px solid var(--glass-border)', borderRadius: 8,
                       fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none' }}>
-                    <PaperclipIcon size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} /> View File
+                    <span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={12} /></span> View File
                   </a>
                 )}
               </div>
