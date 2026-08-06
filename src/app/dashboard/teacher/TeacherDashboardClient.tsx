@@ -108,15 +108,15 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="To grade" value={counts.pendingGrading ?? 0}
               color="var(--status-warn, #E4572E)" caption="submissions" />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Open assignments" value={counts.assignmentCount ?? 0}
               color="var(--status-ok, #3FA66B)" caption="across your classes" delayMs={80} />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Published quizzes" value={counts.quizCount ?? 0}
               color="var(--brand-2, var(--brand))" caption="live now" delayMs={160} />
           </div>
