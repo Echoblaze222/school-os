@@ -64,7 +64,7 @@ function buildInsight(counts: any, pendingClaims: number): string {
 export default function BursarDashboardClient({
   profile, school, userId, counts = {}, activities, topDebtors = [],
 }: Props) {
-  const schoolColor = school?.primary_color ?? '#800020'
+  const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'there'
   const supabase    = createClient()
 
@@ -120,7 +120,7 @@ export default function BursarDashboardClient({
       <main className={styles.main}>
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
           <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
