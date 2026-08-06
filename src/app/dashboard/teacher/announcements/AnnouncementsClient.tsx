@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { MegaphoneIcon, PlusIcon } from '@/components/Icons'
+import { MegaphoneIcon, PlusIcon, MapPinIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -14,7 +14,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
   const [saving,   setSaving]   = useState(false)
   const [form,     setForm]     = useState({ title: '', body: '', audience: 'students' })
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [])
 
@@ -57,7 +57,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
   }
 
   const AUDIENCE_COLOR: Record<string, string> = {
-    all: '#10B981', teachers: '#3B82F6', students: '#F59E0B', parents: '#8B5CF6', staff: '#EC4899',
+    all: 'var(--success)', teachers: 'var(--info)', students: 'var(--warning)', parents: '#8B5CF6', staff: '#EC4899',
   }
 
   return (
@@ -122,7 +122,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
                   </div>
                   <div className={styles.cardBody}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3, flexWrap:'wrap' }}>
-                      {item.is_pinned && <span style={{ fontSize:'0.65rem', fontWeight:800, color:sc }}>📌 PINNED</span>}
+                      {item.is_pinned && <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.65rem', fontWeight:800, color:sc }}><MapPinIcon size={11} color={sc} />PINNED</span>}
                       <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'0.65rem', fontWeight:700, background:(AUDIENCE_COLOR[item.audience]??'#6B7280')+'20', color:AUDIENCE_COLOR[item.audience]??'#6B7280' }}>
                         {item.audience}
                       </span>
@@ -137,11 +137,11 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
                 <div style={{ display:'flex', gap:'var(--space-2)', paddingLeft:56 }}>
                   <button onClick={() => togglePin(item.id, item.is_pinned)}
                     style={{ padding:'5px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--text-muted)', cursor:'pointer' }}>
-                    {item.is_pinned ? 'Unpin' : '📌 Pin'}
+                    {item.is_pinned ? 'Unpin' : <><MapPinIcon size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />Pin</>}
                   </button>
                   {item.author?.id === userId || !item.author ? (
                     <button onClick={() => deleteRow(item.id)}
-                      style={{ padding:'5px 12px', background:'transparent', border:'1px solid #EF444440', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'#EF4444', cursor:'pointer' }}>
+                      style={{ padding:'5px 12px', background:'transparent', border:'1px solid rgba(239,68,68,0.2)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--danger)', cursor:'pointer' }}>
                       Delete
                     </button>
                   ) : null}

@@ -9,9 +9,11 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { PeopleIcon } from '@/components/Icons'
+import GaugeStat from '@/components/GaugeStat'
+import { PeopleIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -38,7 +40,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
   const [term,    setTerm]    = useState(currentTerm())
   const [year,    setYear]    = useState(CUR_YEAR)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { compute() }, [term, year])
 
@@ -109,6 +111,9 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
   }
 
   const totalOutstanding = debtors.reduce((s, d) => s + d.outstanding, 0)
+  const totalExpected    = debtors.reduce((s, d) => s + (d.expected ?? 0), 0)
+  const totalPaid        = debtors.reduce((s, d) => s + (d.paid ?? 0), 0)
+  const collectionPct    = totalExpected > 0 ? Math.round((totalPaid / totalExpected) * 100) : 0
 
   return (
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Debtors">
@@ -130,22 +135,21 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
-          ⚠️ {error}
+        <div style={{ padding:'10px 14px', background:'var(--danger-subtle)', border:'1px solid rgba(239,68,68,0.3)',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600,
+          display:'flex', alignItems:'center', gap:6 }}>
+          <AlertIcon size={14} /> {error}
         </div>
       )}
 
       {!loading && debtors.length > 0 && (
-        <div style={{ padding:'var(--space-4)', background:'#EF444415',
-          border:'1px solid #EF444430', borderRadius:10, marginBottom:'var(--space-4)' }}>
-          <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)',
-            letterSpacing:'0.05em', margin:'0 0 4px' }}>
-            TOTAL OUTSTANDING — {debtors.length} STUDENT{debtors.length !== 1 ? 'S' : ''}
-          </p>
-          <p style={{ fontSize:'1.2rem', fontWeight:800, color:'#EF4444', margin:0 }}>
-            {fmtAmt(totalOutstanding)}
-          </p>
+        <div className={`glass-card ${motion.riseIn}`} style={{ padding:'var(--space-4)', marginBottom:'var(--space-4)' }}>
+          <GaugeStat
+            label={`Collected — ${term} ${year}`}
+            value={collectionPct} isPercent
+            color="var(--brand-2, var(--brand))"
+            caption={`${fmtAmt(totalOutstanding)} outstanding across ${debtors.length} student${debtors.length !== 1 ? 's' : ''}`}
+          />
         </div>
       )}
 

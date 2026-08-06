@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { EditIcon, CheckCircleIcon, XIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 
 // `applications.status` is constrained in the DB to exactly these 3 values —
@@ -24,7 +25,7 @@ export default function ApplicationsClient({ applications: init, profile, school
   const [form,     setForm]     = useState({ applicant_name: '', class_applying_for: 'Enrollment', notes: '' })
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   const filtered = apps.filter(a => tab === 'all' || a.status === tab)
 
@@ -75,11 +76,11 @@ export default function ApplicationsClient({ applications: init, profile, school
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.emptyState}><p className={styles.emptyEmoji}>📝</p><p className={styles.emptyTitle}>No applications</p><p className={styles.emptyHint}>Track enrollment and transfer applications here</p></div>
+        <div className={styles.emptyState}><EditIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No applications</p><p className={styles.emptyHint}>Track enrollment and transfer applications here</p></div>
       ) : (
         filtered.map(a => (
           <div key={a.id} className={styles.listItem} onClick={() => setViewItem(a)}>
-            <div className={styles.listIconBox} style={{ background: sc + '22' }}><span style={{ fontSize: '1.1rem' }}>📝</span></div>
+            <div className={styles.listIconBox} style={{ background: sc + '22' }}><EditIcon size={17} color={sc} /></div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{a.applicant_name}</p>
               <p className={styles.listSub}>{a.class_applying_for} · {new Date(a.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
@@ -100,11 +101,11 @@ export default function ApplicationsClient({ applications: init, profile, school
             ))}
             {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: 'var(--space-3) 0 0' }}>{msg}</p>}
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
-              {viewItem.status !== 'admitted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'admitted')} disabled={saving} style={{ flex: 1 }}>✅ Admit</button>}
-              {viewItem.status !== 'rejected' && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1 }}>✕ Reject</button>}
+              {viewItem.status !== 'admitted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'admitted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><CheckCircleIcon size={14} color="#fff" /> Admit</button>}
+              {viewItem.status !== 'rejected' && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
               {viewItem.status !== 'pending'  && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'pending')}  disabled={saving} style={{ flex: 1 }}>↺ Back to Pending</button>}
             </div>
-            <button onClick={() => deleteApp(viewItem.id)} style={{ width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>🗑️ Delete application</button>
+            <button onClick={() => deleteApp(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} /> Delete application</button>
           </div>
         </div>
       )}

@@ -1,15 +1,15 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { AiIcon, SendIcon, RefreshIcon } from '@/components/Icons'
+import { AiIcon, SendIcon, RefreshIcon, WaveIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/ai/ai.module.css'
 
 const STARTERS = [
-  '📝 Write a lesson plan for JSS2 Mathematics — Quadratic Equations',
-  '📋 Generate 10 multiple choice questions on photosynthesis for SSS1',
-  '✏️ Create a marking scheme for an essay on Nigerian Independence',
-  '📊 Suggest ways to improve student engagement in my class',
-  '🗓️ Write a term scheme of work for English Language JSS3',
+  'Write a lesson plan for JSS2 Mathematics — Quadratic Equations',
+  'Generate 10 multiple choice questions on photosynthesis for SSS1',
+  'Create a marking scheme for an essay on Nigerian Independence',
+  'Suggest ways to improve student engagement in my class',
+  'Write a term scheme of work for English Language JSS3',
 ]
 
 interface Message { role: 'user' | 'assistant'; content: string; ts: number }
@@ -20,7 +20,7 @@ export default function AiClient({ profile, school, userId }: Props) {
   const [input,     setInput]     = useState('')
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   const bottomRef   = useRef<HTMLDivElement>(null)
   const inputRef    = useRef<HTMLTextAreaElement>(null)
 
@@ -83,7 +83,7 @@ export default function AiClient({ profile, school, userId }: Props) {
               <div className={styles.aiAvatar} style={{ background:schoolColor }}>
                 <AiIcon size={28} color="white"/>
               </div>
-              <h2>Hi {profile?.full_name?.split(' ')[0] ?? 'Teacher'} 👋</h2>
+              <h2>Hi {profile?.full_name?.split(' ')[0] ?? 'Teacher'} <WaveIcon size={20} /></h2>
               <p>I can help with lesson plans, quiz generation, marking schemes, and more.</p>
               <div className={styles.starters}>
                 {STARTERS.map(s => (

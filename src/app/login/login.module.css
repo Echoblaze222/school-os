@@ -18,7 +18,7 @@
   top: -160px;
   left: 50%;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.14) 0%, transparent 70%);
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--login-brand, #800020) 14%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -105,51 +105,36 @@
 
 .changeSchoolBtn:hover { color: #fff; }
 
-/* ── Tabs ── */
-.tabs {
-  position: relative;
-  display: flex;
-  margin: 20px 20px 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: 12px;
-  padding: 4px;
-}
-
-.tabBtn {
-  flex: 1;
-  height: 38px;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.45);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: color 0.2s;
-  position: relative;
-  z-index: 1;
-  font-family: 'Inter', sans-serif;
-}
-
-.tabBtn.tabActive {
+/* ── Sign-in heading (replaces the old Login/Register tab toggle —
+   registration now lives at its own route, /register-school) ── */
+.signInHeading {
+  margin: 20px 20px 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: #fff;
 }
 
-.tabIndicator {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  height: calc(100% - 8px);
-  background: rgba(128, 0, 32, 0.7);
-  border-radius: 9px;
-  transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
-  border: 1px solid rgba(128, 0, 32, 0.3);
+/* ── Register link ── */
+.registerRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
 }
-
-.tabIndicator.tabRight {
-  transform: translateX(100%);
+.registerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--login-brand-2, var(--login-brand));
+  font-weight: 700;
+  text-decoration: none;
 }
+.registerLink:hover { text-decoration: underline; }
 
 /* ── Form wrap ── */
 .formWrap {
@@ -314,7 +299,7 @@
 .submitBtn {
   width: 100%;
   height: 50px;
-  background: linear-gradient(135deg, #800020, #a00028);
+  background: linear-gradient(135deg, var(--login-brand), var(--login-brand-2, var(--login-brand)));
   border: none;
   border-radius: 14px;
   color: #fff;
@@ -328,7 +313,7 @@
   align-items: center;
   justify-content: center;
   font-family: 'Inter', sans-serif;
-  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.3);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--login-brand) 30%, transparent);
 }
 
 .submitBtn:hover:not(:disabled) {
@@ -379,7 +364,7 @@
   transition: background 0.4s;
 }
 
-.stepLine.stepLineDone { background: #800020; }
+.stepLine.stepLineDone { background: var(--login-brand); }
 
 .step {
   display: flex;
@@ -404,8 +389,8 @@
 }
 
 .step.stepActive .stepDot {
-  border-color: #800020;
-  background: #800020;
+  border-color: var(--login-brand);
+  background: var(--login-brand);
   color: #fff;
 }
 
@@ -444,7 +429,7 @@
 }
 
 .planCard.planActive {
-  border-color: #800020;
+  border-color: var(--login-brand);
   background: rgba(128, 0, 32, 0.12);
 }
 
@@ -741,10 +726,10 @@
 
 @keyframes spCornerIn { to { opacity: 0.22; } }
 
-.spTL { top: 20px;    left: 20px;  border-top:    1.5px solid #800020; border-left:  1.5px solid #800020; }
-.spTR { top: 20px;    right: 20px; border-top:    1.5px solid #800020; border-right: 1.5px solid #800020; }
-.spBL { bottom: 20px; left: 20px;  border-bottom: 1.5px solid #800020; border-left:  1.5px solid #800020; }
-.spBR { bottom: 20px; right: 20px; border-bottom: 1.5px solid #800020; border-right: 1.5px solid #800020; }
+.spTL { top: 20px;    left: 20px;  border-top:    1.5px solid var(--login-brand); border-left:  1.5px solid var(--login-brand); }
+.spTR { top: 20px;    right: 20px; border-top:    1.5px solid var(--login-brand); border-right: 1.5px solid var(--login-brand); }
+.spBL { bottom: 20px; left: 20px;  border-bottom: 1.5px solid var(--login-brand); border-left:  1.5px solid var(--login-brand); }
+.spBR { bottom: 20px; right: 20px; border-bottom: 1.5px solid var(--login-brand); border-right: 1.5px solid var(--login-brand); }
 
 .spContent {
   position: relative;

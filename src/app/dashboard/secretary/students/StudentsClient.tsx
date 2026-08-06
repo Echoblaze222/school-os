@@ -9,6 +9,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DOBPicker from '@/components/DOBPicker'
+import { GraduationCapIcon, EditIcon, TrashIcon } from '@/components/Icons'
+import GaugeStat from '@/components/GaugeStat'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
 
 interface Student {
@@ -83,7 +86,7 @@ export default function StudentsClient({ students: init, profile, school, userId
   const [copiedAll, setCopiedAll] = useState(false)
 
   const supabase  = createClient()
-  const sc        = school?.primary_color ?? '#7C3AED'
+  const sc        = school?.primary_color ?? '#800020'
   const schoolId  = school?.id
 
   // ── Warn before navigating away if bulk results haven't been copied ──
@@ -271,6 +274,22 @@ export default function StudentsClient({ students: init, profile, school, userId
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Students">
 
+      {/* ── Snapshot ── */}
+      <div className={motion.riseIn} style={{
+        display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 'var(--space-5)',
+      }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
+          <GaugeStat label="Total students" value={students.length} color={sc} />
+        </div>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
+          <GaugeStat
+            label="New this month"
+            value={students.filter(s => Date.now() - new Date(s.created_at).getTime() < 30 * 24 * 60 * 60 * 1000).length}
+            color="var(--status-ok, #3FA66B)" delayMs={80}
+          />
+        </div>
+      </div>
+
       {/* ── Tabs ── */}
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', borderBottom: '1px solid var(--glass-border)', paddingBottom: 4, overflowX: 'auto' }}>
         {(['list', 'bulk'] as const).map(t => (
@@ -300,7 +319,7 @@ export default function StudentsClient({ students: init, profile, school, userId
 
           {filtered.length === 0 ? (
             <div className={styles.emptyState}>
-              <p className={styles.emptyEmoji}>🎓</p>
+              <GraduationCapIcon size={32} color="var(--text-muted)" />
               <p className={styles.emptyTitle}>No students found</p>
               <p className={styles.emptyHint}>{search ? 'Try a different search' : 'Add your first student to get started'}</p>
             </div>
@@ -309,7 +328,7 @@ export default function StudentsClient({ students: init, profile, school, userId
               {filtered.map(s => (
                 <div key={s.id} className={styles.listItem}>
                   <div className={styles.listIconBox} style={{ background: sc + '22' }}>
-                    <span style={{ fontSize: '1.2rem' }}>🎓</span>
+                    <GraduationCapIcon size={18} color={sc} />
                   </div>
                   <div className={styles.listContent}>
                     <p className={styles.listTitle}>{s.full_name}</p>
@@ -319,8 +338,8 @@ export default function StudentsClient({ students: init, profile, school, userId
                     {s.onboarding_stage === 'complete' ? 'Active' : 'Pending'}
                   </span>
                   <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                    <button onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>✏️</button>
-                    <button onClick={() => setDelItem(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+                    <button onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EditIcon size={14} /></button>
+                    <button onClick={() => setDelItem(s)} style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
                   </div>
                 </div>
               ))}
@@ -479,7 +498,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                     }}>
                     {copiedAll ? 'All Copied' : 'Copy All'}
                   </button>
-                  {bSaved && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>All Saved ✓</span>}
+                  {bSaved && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>All Saved</span>}
                 </div>
               </div>
 
@@ -493,7 +512,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                     {r.code || (bLoading ? '…' : '—')}
                   </code>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)' }}>
-                    {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : bLoading ? 'Saving…' : 'Pending'}
+                    {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved' : bLoading ? 'Saving…' : 'Pending'}
                   </span>
                 </div>
               ))}

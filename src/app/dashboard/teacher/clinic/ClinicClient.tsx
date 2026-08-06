@@ -20,7 +20,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
   const [rows,    setRows]    = useState<any[]>([])
   const [search,  setSearch]  = useState('')
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [])
 
@@ -66,7 +66,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
           {withAllergies.length > 0 && (
             <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
               <div className={styles.statCard}>
-                <p className={styles.statVal} style={{ color: '#EF4444' }}>{withAllergies.length}</p>
+                <p className={styles.statVal} style={{ color: 'var(--danger)' }}>{withAllergies.length}</p>
                 <p className={styles.statLbl}>With allergies noted</p>
               </div>
               <div className={styles.statCard}>
@@ -87,7 +87,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
           <div className={styles.list}>
             {filtered.map(r => (
               <div key={r.id} className={styles.card} style={{ cursor: 'default' }}>
-                <div className={styles.cardIcon} style={{ background: (r.record?.allergies ? '#EF4444' : sc) + '22', color: r.record?.allergies ? '#EF4444' : sc }}>
+                <div className={styles.cardIcon} style={{ background: (r.record?.allergies ? 'var(--danger)' : sc) + '22', color: r.record?.allergies ? 'var(--danger)' : sc }}>
                   <ActivityIcon size={18} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -95,7 +95,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
                   <p className={styles.cardMeta}>
                     {r.record
                       ? (r.record.allergies
-                          ? <span style={{ color: '#EF4444', fontWeight: 700 }}>Allergies: {r.record.allergies}</span>
+                          ? <span style={{ color: 'var(--danger)', fontWeight: 700 }}>Allergies: {r.record.allergies}</span>
                           : 'No allergies noted')
                       : 'No medical record on file'}
                     {r.record?.chronic_conditions ? ` · ${r.record.chronic_conditions}` : ''}

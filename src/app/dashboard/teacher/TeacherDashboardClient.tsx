@@ -1,43 +1,49 @@
 'use client'
 // src/app/dashboard/teacher/TeacherDashboardClient.tsx
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import DashboardHeader from '@/components/DashboardHeader'
 import ChatWidget from '@/components/ChatWidget'
-import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
+import RoleHeroHeader from '@/components/RoleHeroHeader'
+import GaugeStat from '@/components/GaugeStat'
+import AiInsightBanner from '@/components/AiInsightBanner'
+import BottomDock from '@/components/BottomDock'
+import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  HomeIcon, PeopleIcon, ClipboardIcon, BarChartIcon,
+  PeopleIcon, ClipboardIcon, BarChartIcon,
   VideoIcon, BookIcon, BellIcon, CalendarIcon,
   AwardIcon, MessageIcon, BookOpenIcon, ClockIcon,
-  AiIcon, MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon,
+  MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon,
 } from '@/components/Icons'
-import RoleNav from '@/components/RoleNav'
 import styles from './teacher.module.css'
-import motion from '@/components/dashboard-motion.module.css'               // ← NEW
+import motion from '@/components/dashboard-motion.module.css'
 
-const DAILY_MODULES = [
-  { id: 'classes',    label: 'My Classes',  Icon: PeopleIcon,    href: '/dashboard/teacher/classes',    accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'attendance', label: 'Attendance',  Icon: CalendarIcon,  href: '/dashboard/teacher/attendance', accent: '#14B8A6', bg: '#0f3d38' },
-  { id: 'assignments',label: 'Assignments', Icon: ClipboardIcon, href: '/dashboard/teacher/assignments',accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'grades',     label: 'Grades',      Icon: BarChartIcon,  href: '/dashboard/teacher/grades',     accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'chat',       label: 'Messages',    Icon: MessageIcon,   href: '/dashboard/teacher/chat',       accent: '#7C3AED', bg: '#2d1060' },
-  { id: 'ai',         label: 'AI Assistant',Icon: AiIcon,        href: '/dashboard/teacher/ai',         accent: '#F59E0B', bg: '#4a3510' },
-]
-
-const MORE_MODULES = [
-  { id: 'live',          label: 'Live Class',    Icon: VideoIcon,     href: '/dashboard/teacher/live',          accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'quizzes',       label: 'Quizzes',       Icon: AwardIcon,     href: '/dashboard/teacher/quizzes',       accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'results',       label: 'Results',       Icon: BarChartIcon,  href: '/dashboard/teacher/results',       accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'notes',         label: 'Study Notes',   Icon: BookIcon,      href: '/dashboard/teacher/notes',         accent: '#6366F1', bg: '#1e2060' },
-  { id: 'timetable',     label: 'Timetable',     Icon: ClockIcon,     href: '/dashboard/teacher/timetable',     accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'syllabus',      label: 'Syllabus',      Icon: BookOpenIcon,  href: '/dashboard/teacher/syllabus',      accent: '#F97316', bg: '#4a2810' },
-  { id: 'announcements', label: 'Announcements', Icon: MegaphoneIcon, href: '/dashboard/teacher/announcements', accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'clinic',        label: 'Clinic',        Icon: ActivityIcon,  href: '/dashboard/teacher/clinic',        accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'audit',         label: 'Audit Log',     Icon: ShieldIcon,    href: '/dashboard/teacher/audit',         accent: '#64748B', bg: '#1a2030' },
-  { id: 'meetings',      label: 'Meetings',      Icon: CalendarIcon,  href: '/dashboard/teacher/meetings',      accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'profile',       label: 'My Profile',    Icon: UserIcon,      href: '/dashboard/teacher/profile',       accent: '#94A3B8', bg: '#1a2030' },
+const FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'Teaching', items: [
+    { id: 'classes',     label: 'My classes',  href: '/dashboard/teacher/classes',     Icon: PeopleIcon },
+    { id: 'attendance',  label: 'Attendance',  href: '/dashboard/teacher/attendance',  Icon: CalendarIcon },
+    { id: 'assignments', label: 'Assignments', href: '/dashboard/teacher/assignments', Icon: ClipboardIcon },
+    { id: 'grades',      label: 'Grades',      href: '/dashboard/teacher/grades',      Icon: BarChartIcon },
+    { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/teacher/quizzes',     Icon: AwardIcon },
+    { id: 'results',     label: 'Results',     href: '/dashboard/teacher/results',     Icon: BarChartIcon },
+  ]},
+  { name: 'Around school', items: [
+    { id: 'live',      label: 'Live class', href: '/dashboard/teacher/live',      Icon: VideoIcon },
+    { id: 'notes',     label: 'Study notes',href: '/dashboard/teacher/notes',     Icon: BookIcon },
+    { id: 'timetable', label: 'Timetable',  href: '/dashboard/teacher/timetable', Icon: ClockIcon },
+    { id: 'syllabus',  label: 'Syllabus',   href: '/dashboard/teacher/syllabus',  Icon: BookOpenIcon },
+    { id: 'clinic',    label: 'Clinic',     href: '/dashboard/teacher/clinic',    Icon: ActivityIcon },
+  ]},
+  { name: 'Communication', items: [
+    { id: 'chat',          label: 'Messages',      href: '/dashboard/teacher/chat',          Icon: MessageIcon },
+    { id: 'announcements', label: 'Announcements', href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon },
+    { id: 'meetings',      label: 'Staff meetings',href: '/dashboard/teacher/meetings',      Icon: CalendarIcon },
+    { id: 'notices',       label: 'Notices',       href: '/dashboard/teacher/notifications', Icon: BellIcon },
+  ]},
+  { name: 'Account', items: [
+    { id: 'audit',   label: 'Audit log', href: '/dashboard/teacher/audit',   Icon: ShieldIcon },
+    { id: 'profile', label: 'Profile',   href: '/dashboard/teacher/profile', Icon: UserIcon },
+  ]},
 ]
 
 interface Props {
@@ -51,30 +57,31 @@ interface Props {
     pendingGrading:  number
     quizCount:       number
   }
-  activities: ActivityItem[]   // ← NEW
+  activities: ActivityItem[]
+}
+
+function buildInsight(counts: any): string {
+  if ((counts.pendingGrading ?? 0) > 5) {
+    return `${counts.pendingGrading} submissions are waiting to be graded — the oldest ones are starting to pile up. Clearing these keeps feedback useful for students.`
+  }
+  if ((counts.pendingGrading ?? 0) > 0) {
+    return `${counts.pendingGrading} submission${counts.pendingGrading === 1 ? '' : 's'} waiting to be graded across your classes.`
+  }
+  return `You're fully caught up on grading. ${counts.assignmentCount ?? 0} assignments are currently open across your classes.`
 }
 
 export default function TeacherDashboardClient({ profile, school, userId, counts = {} as any, activities }: Props) {
-  const pathname    = usePathname()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Teacher'
-  const [showMore,  setShowMore] = useState(false)
 
   const teacherRoleLabel =
-    profile?.teacher_role_type === 'class_teacher'   ? '• Class Teacher' :
-    profile?.teacher_role_type === 'subject_teacher' ? '• Subject Teacher' :
-    profile?.teacher_role_type === 'both'            ? '• Class + Subject Teacher' : ''
-
-  function isActive(href: string, home?: boolean) {
-    if (home) return pathname === '/dashboard/teacher'
-    if (href === '/dashboard/teacher') return pathname === href
-    return pathname.startsWith(href)
-  }
+    profile?.teacher_role_type === 'class_teacher'   ? 'Class Teacher' :
+    profile?.teacher_role_type === 'subject_teacher' ? 'Subject Teacher' :
+    profile?.teacher_role_type === 'both'            ? 'Class + Subject Teacher' : 'Teacher'
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  // ── NEW: delete handler wired to Supabase ──────────────────────────────
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
@@ -82,153 +89,63 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
   }
 
   return (
-    <div className={styles.page}>
-      <DashboardHeader
+    <div className={styles.page} style={{ background: 'color-mix(in srgb, var(--brand) 6%, var(--bg-base))' }}>
+      <RoleHeroHeader
         userId={userId}
         role="teacher"
+        roleLabel={teacherRoleLabel}
         profile={profile}
         school={school}
-        schoolColor={schoolColor}
+        greeting={`${greeting}, ${firstName}`}
+        headline="Your classroom, today."
+        sub={`${counts.studentCount ?? 0} students across ${counts.classCount ?? 0} classes`}
+        featureGroups={FEATURE_GROUPS}
       />
 
       <main className={styles.main}>
-        {/* Greeting — now animates in, emoji waves once */}
-        <div className={`${styles.greeting} ${motion.riseIn}`}>
-          <h1 className={styles.greetingName}>
-            {greeting}, {firstName} <span className={motion.waveEmoji}>👋</span>
-          </h1>
-          <p className={styles.greetingSub}>
-            Here's your teaching overview
-            {teacherRoleLabel && (
-              <span style={{ color: schoolColor, marginLeft: 6, fontWeight: 600 }}>
-                {teacherRoleLabel}
-              </span>
-            )}
-          </p>
+
+        <div className={motion.riseIn} style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
+        }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="To grade" value={counts.pendingGrading ?? 0}
+              color="var(--status-warn, #E4572E)" caption="submissions" />
+          </div>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Open assignments" value={counts.assignmentCount ?? 0}
+              color="var(--status-ok, #3FA66B)" caption="across your classes" delayMs={80} />
+          </div>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Published quizzes" value={counts.quizCount ?? 0}
+              color="var(--brand-2, var(--brand))" caption="live now" delayMs={160} />
+          </div>
         </div>
 
-        {/* AI Assistant — prominent, matches Principal/Bursar/Secretary placement */}
-        <Link
-          href="/dashboard/teacher/ai"
-          className={`${styles.aiCard} ${motion.riseIn}`}
-          style={{ animationDelay: '120ms', borderColor: `${schoolColor}55` }}
-        >
-          <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
-            <AiIcon size={22} color={schoolColor} />
-          </div>
-          <div className={styles.aiCardBody}>
-            <p className={styles.aiCardTitle}>AI Assistant</p>
-            <p className={styles.aiCardSub}>Ask how to mark attendance, upload results, or get a summary of today's classes</p>
-          </div>
-          <span className={styles.aiCardArrow}>→</span>
-        </Link>
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <AiInsightBanner
+            insight={buildInsight(counts)}
+            actionLabel="Open grading →"
+            actionHref="/dashboard/teacher/grades"
+          />
+        </div>
 
-        {/* Stats — staggered entrance */}
-        <div className={styles.statsRow}>
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
           {[
-            { label: 'Classes',    value: counts.classCount      ?? 0, color: '#3B82F6' },
-            { label: 'Students',   value: counts.studentCount    ?? 0, color: '#10B981' },
-            { label: 'Active',     value: counts.assignmentCount ?? 0, color: '#F59E0B' },
-            { label: 'To Grade',   value: counts.pendingGrading  ?? 0, color: '#EF4444' },
+            { label: 'Classes',  value: counts.classCount   ?? 0 },
+            { label: 'Students', value: counts.studentCount ?? 0 },
           ].map((s, i) => (
             <div
               key={s.label}
               className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
+              <p className={styles.statVal}>{s.value}</p>
               <p className={styles.statLbl}>{s.label}</p>
             </div>
           ))}
         </div>
 
-        {/* Pending grading alert */}
-        {(counts.pendingGrading ?? 0) > 0 && (
-          <Link
-            href="/dashboard/teacher/grades"
-            className={`${motion.riseIn} ${motion.pressable}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '10px 14px',
-              background: '#EF444415',
-              border: '1px solid #EF444440',
-              borderRadius: 10,
-              marginBottom: 'var(--space-5)',
-              textDecoration: 'none',
-              color: '#EF4444',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              animationDelay: '150ms',
-            }}
-          >
-            <span style={{ fontSize: 16 }}>⚠️</span>
-            {counts.pendingGrading} submission{counts.pendingGrading === 1 ? '' : 's'} waiting to be graded
-            <span style={{ marginLeft: 'auto', opacity: 0.6 }}>→</span>
-          </Link>
-        )}
-
-        {/* Daily modules — staggered */}
-        <p className={styles.sectionLabel}>Daily</p>
-        <div className={styles.moduleGrid} style={{ marginBottom: 'var(--space-5)' }}>
-          {DAILY_MODULES.map((mod, i) => (
-            <Link
-              key={mod.id}
-              href={mod.href}
-              className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.moduleActive : ''}`}
-              style={{ animationDelay: `${200 + i * 40}ms` }}
-            >
-              <div className={styles.modIcon} style={{ background: mod.bg }}>
-                <mod.Icon size={22} color={mod.accent} />
-              </div>
-              <span className={styles.modLabel}>{mod.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* More Tools toggle */}
-        <button
-          onClick={() => setShowMore(prev => !prev)}
-          className={motion.pressable}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '0 0 var(--space-3)',
-            marginBottom: 'var(--space-2)',
-          }}
-        >
-          <p className={styles.sectionLabel} style={{ margin: 0 }}>
-            More Tools
-          </p>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 1, transition: 'transform 0.2s ease', transform: showMore ? 'rotate(180deg)' : 'none' }}>
-            ▼
-          </span>
-        </button>
-
-        {showMore && (
-          <div className={styles.moduleGrid} style={{ marginBottom: 'var(--space-6)' }}>
-            {MORE_MODULES.map((mod, i) => (
-              <Link
-                key={mod.id}
-                href={mod.href}
-                className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.moduleActive : ''}`}
-                style={{ animationDelay: `${i * 35}ms` }}
-              >
-                <div className={styles.modIcon} style={{ background: mod.bg }}>
-                  <mod.Icon size={22} color={mod.accent} />
-                </div>
-                <span className={styles.modLabel}>{mod.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* NEW: Recent Activity feed */}
         <RecentActivity
           items={activities}
           accentColor={schoolColor}
@@ -239,14 +156,7 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
         <div className={styles.spacer} />
       </main>
 
-      <RoleNav
-        userId={userId}
-        profile={profile}
-        school={school}
-        role="teacher"
-        schoolColor={schoolColor}
-      />
-
+      <BottomDock homeHref="/dashboard/teacher" aiHref="/dashboard/teacher/ai" />
       <ChatWidget userId={userId} role="teacher" schoolColor={schoolColor} />
     </div>
   )

@@ -37,7 +37,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { ClipboardIcon, PlusIcon } from '@/components/Icons'
+import { ClipboardIcon, PlusIcon, AlertIcon, XIcon, PaperclipIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -68,7 +68,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   })
   const searchParams = useSearchParams()
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => { loadAssignments() }, [tab])
@@ -313,7 +313,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
       {/* Create / Edit form */}
       {showForm && (
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+        <div className="glass-card" style={{
           borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
 
           <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>
@@ -323,12 +323,12 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           {/* BUG 1 FIX: error banner inside form */}
           {saveError && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-              background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10,
+              background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10,
               marginBottom: 'var(--space-4)' }}>
-              <span style={{ fontSize: '0.78rem', color: '#EF4444', flex: 1 }}>⚠️ {saveError}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={13} color="var(--danger)" /> {saveError}</span>
               <button onClick={() => setSaveError(null)}
-                style={{ background: 'none', border: 'none', color: '#EF4444',
-                  cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+                style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)',
+                  cursor: 'pointer' }}><XIcon size={15} color="var(--danger)" /></button>
             </div>
           )}
 
@@ -368,7 +368,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 ))}
               </select>
               {teacherClasses.length === 0 && (
-                <span style={{ fontSize: '0.68rem', color: '#F59E0B' }}>
+                <span style={{ fontSize: '0.68rem', color: 'var(--warning)' }}>
                   No classes assigned yet — ask admin to assign you to a class.
                 </span>
               )}
@@ -419,13 +419,17 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                   borderRadius: 8, background: attachFile ? sc + '10' : 'transparent',
                   color: attachFile ? sc : 'var(--text-muted)',
                   fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
-                {attachFile ? `📎 ${attachFile.name}` : editingId ? '📎 Replace file (optional)' : '📎 Attach file (optional)'}
+                {attachFile
+                  ? <><PaperclipIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{attachFile.name}</>
+                  : editingId
+                  ? <><PaperclipIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Replace file (optional)</>
+                  : <><PaperclipIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Attach file (optional)</>}
               </button>
               {attachFile && (
                 <button onClick={() => setAttachFile(null)}
-                  style={{ fontSize: '0.68rem', color: '#EF4444', background: 'none',
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', color: 'var(--danger)', background: 'none',
                     border: 'none', cursor: 'pointer', marginTop: 4, padding: 0 }}>
-                  ✕ Remove file
+                  <XIcon size={11} color="var(--danger)" /> Remove file
                 </button>
               )}
               {uploading && <p style={{ fontSize: '0.72rem', color: sc, marginTop: 4 }}>Uploading file...</p>}
@@ -484,7 +488,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     {item.subject ? ` · ${item.subject}` : ''}
                     {' · Due '}
                     {new Date(item.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                    {item.file_url ? ' · 📎' : ''}
+                    {item.file_url ? <> · <PaperclipIcon size={11} style={{ verticalAlign: 'middle' }} /></> : ''}
                   </p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
@@ -518,7 +522,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     style={{ padding: '5px 12px', background: 'var(--glass-bg)', color: 'var(--text-muted)',
                       border: '1px solid var(--glass-border)', borderRadius: 8,
                       fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none' }}>
-                    📎 View File
+                    <PaperclipIcon size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} /> View File
                   </a>
                 )}
               </div>

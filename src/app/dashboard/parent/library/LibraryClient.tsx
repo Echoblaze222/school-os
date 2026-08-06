@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { BookIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -68,7 +69,7 @@ export default function LibraryClient({ profile, school, userId }: Props) {
   const activeLoans = loans.filter(l => l.status === 'borrowed')
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Library">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Library" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading
         ? <div className={styles.loading}><span/><span/><span/></div>
         : !child
@@ -139,6 +140,6 @@ export default function LibraryClient({ profile, school, userId }: Props) {
             </>
       }
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

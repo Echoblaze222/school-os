@@ -13,10 +13,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import GaugeStat from '@/components/GaugeStat'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import {
   WalletIcon, FileTextIcon, BellIcon, UploadIcon,
-  XIcon, CameraIcon, ImageIcon,
+  XIcon, CameraIcon, ImageIcon, AlertIcon, CheckIcon, ReceiptIcon,
 } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -85,7 +87,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
   const child = children.find(c => c.id === childId) ?? null
 
   useEffect(() => { loadChildren() }, [])
@@ -454,7 +456,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Fee Status">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Fee Status" featureGroups={PARENT_FEATURE_GROUPS}>
 
       {/* Toast */}
       {toast && (
@@ -585,23 +587,26 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
               {error && (
                 <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-                  borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
-                  ⚠️ {error}
+                  borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600,
+                  display:'flex', alignItems:'center', gap:6 }}>
+                  <AlertIcon size={14} /> {error}
                 </div>
               )}
 
               {/* Sub-tabs */}
               <div className={styles.tabs} style={{ marginBottom:'var(--space-4)' }}>
                 {([
-                  ['overview', '💰 Overview'],
-                  ['receipts', `🧾 Receipts${flatPayments.length ? ` (${flatPayments.length})` : ''}`],
-                  ['submit', `📤 Submit Payment${claims.filter(c=>c.status==='pending').length ? ` (${claims.filter(c=>c.status==='pending').length})` : ''}`],
-                  ['reminders', `🔔 Reminders${unreadReminderCount ? ` (${unreadReminderCount})` : ''}`],
-                ] as [Tab, string][]).map(([t, label]) => (
+                  ['overview', WalletIcon, 'Overview'],
+                  ['receipts', ReceiptIcon, `Receipts${flatPayments.length ? ` (${flatPayments.length})` : ''}`],
+                  ['submit', UploadIcon, `Submit Payment${claims.filter(c=>c.status==='pending').length ? ` (${claims.filter(c=>c.status==='pending').length})` : ''}`],
+                  ['reminders', BellIcon, `Reminders${unreadReminderCount ? ` (${unreadReminderCount})` : ''}`],
+                ] as [Tab, typeof WalletIcon, string][]).map(([t, TabIcon, label]) => (
                   <button key={t} onClick={() => setTab(t)}
                     className={`${styles.tab} ${tab===t ? styles.tabActive : ''}`}
-                    style={tab===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
-                    {label}
+                    style={tab===t
+                      ? { background:sc, color:'#fff', borderColor:sc, display:'flex', alignItems:'center', gap:6 }
+                      : { display:'flex', alignItems:'center', gap:6 }}>
+                    <TabIcon size={14} /> {label}
                   </button>
                 ))}
               </div>
@@ -617,30 +622,38 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             <p>No fee structure set for {term} {year} yet.</p>
                           </div>
                         : <>
-                            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'var(--space-3)', marginBottom:'var(--space-4)' }}>
-                              <div style={{ background:sc+'15', border:`1px solid ${sc}30`, borderRadius:12, padding:'14px 16px' }}>
-                                <p style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 4px' }}>
-                                  TOTAL EXPECTED
-                                </p>
-                                <p style={{ fontSize:'1.05rem', fontWeight:800, color:sc, margin:0 }}>
-                                  {fmtAmt(totalDue)}
-                                </p>
-                              </div>
-                              <div style={{ background: totalOwed > 0 ? '#EF444415' : '#10B98115',
-                                border:`1px solid ${totalOwed > 0 ? '#EF4444' : '#10B981'}30`, borderRadius:12, padding:'14px 16px' }}>
-                                <p style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 4px' }}>
-                                  BALANCE OWED
-                                </p>
-                                <p style={{ fontSize:'1.05rem', fontWeight:800, color: totalOwed > 0 ? '#EF4444' : '#10B981', margin:0 }}>
-                                  {totalOwed > 0 ? fmtAmt(totalOwed) : '✓ Cleared'}
-                                </p>
+                            <div className="glass-card-flat" style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', padding:'16px 18px', marginBottom:'var(--space-4)', flexWrap:'wrap' }}>
+                              <GaugeStat
+                                label="Paid"
+                                value={totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0}
+                                isPercent
+                                color={totalOwed > 0 ? '#F59E0B' : 'var(--status-ok, #10B981)'}
+                                size={68}
+                              />
+                              <div style={{ display:'flex', gap:'var(--space-3)', flex:1, minWidth:200 }}>
+                                <div style={{ flex:1 }}>
+                                  <p style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 4px' }}>
+                                    TOTAL EXPECTED
+                                  </p>
+                                  <p style={{ fontSize:'1.05rem', fontWeight:800, color:sc, margin:0 }}>
+                                    {fmtAmt(totalDue)}
+                                  </p>
+                                </div>
+                                <div style={{ flex:1 }}>
+                                  <p style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 4px' }}>
+                                    BALANCE OWED
+                                  </p>
+                                  <p style={{ fontSize:'1.05rem', fontWeight:800, color: totalOwed > 0 ? '#EF4444' : 'var(--status-ok, #10B981)', margin:0 }}>
+                                    {totalOwed > 0 ? fmtAmt(totalOwed) : (<span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><CheckIcon size={14} /> Cleared</span>)}
+                                  </p>
+                                </div>
                               </div>
                             </div>
 
-                            <div style={{ background:'#10B98112', border:'1px solid #10B98130', borderRadius:10,
+                            <div className="glass-card-flat" style={{
                               padding:'10px 16px', marginBottom:'var(--space-4)', display:'flex', justifyContent:'space-between' }}>
                               <span style={{ fontSize:'0.8rem', color:'var(--text-secondary)', fontWeight:600 }}>Total Paid</span>
-                              <span style={{ fontSize:'0.9rem', fontWeight:800, color:'#10B981' }}>{fmtAmt(totalPaid)}</span>
+                              <span style={{ fontSize:'0.9rem', fontWeight:800, color:'var(--status-ok, #10B981)' }}>{fmtAmt(totalPaid)}</span>
                             </div>
 
                             <p style={{ fontSize:'0.72rem', fontWeight:800, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 var(--space-3)' }}>
@@ -698,7 +711,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                                 border: '1px solid var(--border, rgba(255,255,255,0.15))',
                                                 borderRadius: 8, color: 'inherit', cursor: 'pointer',
                                               }}
-                                            >✕</button>
+                                            ><XIcon size={16} /></button>
                                           </div>
                                           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0' }}>
                                             Balance owed: {fmtAmt(inv.balance_ngn)} — you can pay part or all of it.
@@ -890,15 +903,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>
                               <button onClick={handleSubmitClaim}
                                 disabled={saving || !claimAmount || !proofFile}
-                                style={{ flex:1, height:44, background:sc, color:'#fff', border:'none',
-                                  borderRadius:9, fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
-                                  opacity: (saving || !claimAmount || !proofFile) ? 0.5 : 1 }}>
+                                className="btn-primary"
+                                style={{ flex:1, height:44, border:'none', borderRadius:9, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
                                 {saving ? 'Submitting…' : 'Submit for Confirmation'}
                               </button>
                               <button onClick={() => { setShowForm(false); resetForm() }}
-                                style={{ padding:'0 18px', height:44, background:'var(--input-bg)',
-                                  color:'var(--text-muted)', border:'1px solid var(--input-border)',
-                                  borderRadius:9, fontWeight:700, cursor:'pointer' }}>
+                                className="btn-secondary"
+                                style={{ padding:'0 18px', height:44, borderRadius:9, fontWeight:700, cursor:'pointer' }}>
                                 Cancel
                               </button>
                             </div>
@@ -956,7 +967,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                         <div style={{ background:'#10B98115', border:'1px solid #10B98130',
                                           borderRadius:8, padding:'8px 12px', width:'100%' }}>
                                           <p style={{ fontSize:'0.75rem', color:'#10B981', margin:0, fontWeight:600 }}>
-                                            ✓ Payment confirmed. See Receipts tab.
+                                            <CheckIcon size={13} /> Payment confirmed. See Receipts tab.
                                           </p>
                                         </div>
                                       )}
@@ -1001,6 +1012,6 @@ export default function FeesClient({ profile, school, userId }: Props) {
             </>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

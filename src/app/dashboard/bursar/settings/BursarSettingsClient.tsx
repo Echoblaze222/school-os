@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { SaveIcon } from '@/components/Icons'
+import { SaveIcon, CheckIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -15,7 +15,7 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   async function save() {
     setSaving(true); setSaved(false)
@@ -88,8 +88,8 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
           cursor:'pointer', marginTop:'var(--space-6)',
           display:'flex', alignItems:'center', justifyContent:'center', gap:8,
           opacity:saving ? 0.7 : 1, transition:'background 0.2s' }}>
-        <SaveIcon size={16} color="#fff"/>
-        {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save Changes'}
+        {saved ? <CheckIcon size={16} color="#fff"/> : <SaveIcon size={16} color="#fff"/>}
+        {saving ? 'Saving…' : saved ? 'Saved' : 'Save Changes'}
       </button>
       <div className={styles.spacer}/>
     </RolePageWrapper>

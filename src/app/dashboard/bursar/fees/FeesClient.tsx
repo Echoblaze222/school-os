@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { WalletIcon, PlusIcon, TrashIcon } from '@/components/Icons'
+import { WalletIcon, PlusIcon, TrashIcon, AlertIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -34,7 +34,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   const [year,     setYear]     = useState(CUR_YEAR)
   const [error,    setError]    = useState('')
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadClasses() }, [])
   useEffect(() => { load() }, [term, year])
@@ -196,8 +196,9 @@ export default function FeesClient({ profile, school, userId }: Props) {
               padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
               borderRadius: 8, marginBottom: 'var(--space-3)',
               fontSize: '0.8rem', color: '#EF4444', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              ⚠️ {error}
+              <AlertIcon size={14} /> {error}
             </div>
           )}
 

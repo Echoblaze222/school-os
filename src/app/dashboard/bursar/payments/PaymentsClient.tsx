@@ -1,28 +1,68 @@
 'use client'
+// src/app/dashboard/bursar/payments/PaymentsClient.tsx
+//
+// Fixed: was reading from `fee_payments`, a table nothing writes to
+// anymore. Now reads from `payments` joined through payment_invoices ->
+// fee_structures (for term/fee description) and profiles (for student
+// name) — same pattern already proven in HistoryClient.tsx.
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { WalletIcon } from '@/components/Icons'
 import { getCurrentAcademicYear } from '@/lib/utils/term'
+import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
 const CUR_YEAR = getCurrentAcademicYear()
 
+function flatten(row: any) {
+  // Embedded relations from Supabase can come back as either an object
+  // or a 1-element array depending on inferred cardinality — unwrap both
+  // shapes safely instead of assuming one or the other.
+  const inv     = unwrapEmbed(row.payment_invoices)
+  const fs      = unwrapEmbed(inv?.fee_structures)
+  const student = unwrapEmbed(row.profiles)
+  return {
+    id:             row.id,
+    receipt_number: row.receipt_number,
+    student_name:   student?.full_name ?? 'Unknown',
+    term:           fs?.term === 'first' ? 'First Term'
+                   : fs?.term === 'second' ? 'Second Term'
+                   : fs?.term === 'third' ? 'Third Term'
+                   : fs?.term ?? '',
+    fee_type:       fs?.description ?? 'School Fees',
+    payment_method: row.payment_method,
+    reference:      row.payment_reference,
+    created_at:     row.paid_at ?? row.created_at,
+    amount:         row.currency_used === 'USD' ? row.amount_paid_usd : row.amount_paid_ngn,
+  }
+}
+
 export default function PaymentsClient({ profile, school, userId }: Props) {
   const [history,     setHistory]     = useState<any[]>([])
   const [histLoading, setHistLoading] = useState(true)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadHistory() }, [])
 
   async function loadHistory() {
     setHistLoading(true)
-    const { data } = await supabase.from('fee_payments').select('*')
-      .eq('school_id', school?.id).order('created_at', { ascending:false }).limit(60)
-    if (data) setHistory(data)
+    const { data } = await supabase
+      .from('payments')
+      .select(`
+        id, receipt_number, paid_at, created_at, amount_paid_ngn, amount_paid_usd,
+        currency_used, payment_method, payment_reference,
+        payment_invoices ( fee_structures ( description, term, academic_year ) ),
+        profiles!student_id ( full_name )
+      `)
+      .eq('school_id', school?.id)
+      .order('created_at', { ascending: false })
+      .limit(60)
+    if (data) setHistory(data.map(flatten))
     setHistLoading(false)
   }
 

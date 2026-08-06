@@ -13,7 +13,7 @@ const TERMS = [
 
 export default function ReportCardsClient({ profile, school, teacherId, classes, students }: any) {
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   const [classId, setClassId] = useState(classes?.[0]?.id ?? '')
   const [term, setTerm] = useState('first')
@@ -126,7 +126,7 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #EF4444', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#EF4444', fontSize: '0.82rem' }}>
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: 'var(--danger)', fontSize: '0.82rem' }}>
           {error}
         </div>
       )}
@@ -145,8 +145,8 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
                 <strong>{s.full_name}</strong>
                 <span style={{
                   fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 999,
-                  background: locked ? '#10B98122' : status === 'pending_approval' ? '#F59E0B22' : 'var(--glass-border)',
-                  color: locked ? '#10B981' : status === 'pending_approval' ? '#F59E0B' : 'var(--text-muted)',
+                  background: locked ? 'color-mix(in srgb, var(--success) 13%, transparent)' : status === 'pending_approval' ? 'color-mix(in srgb, var(--warning) 13%, transparent)' : 'var(--glass-border)',
+                  color: locked ? 'var(--success)' : status === 'pending_approval' ? 'var(--warning)' : 'var(--text-muted)',
                 }}>
                   {locked ? 'Approved' : status === 'pending_approval' ? 'Pending Principal Approval' : 'Draft'}
                 </span>

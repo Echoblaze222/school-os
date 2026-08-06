@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './notices.module.css'
+import { CheckIcon, XIcon } from '@/components/Icons'
 
 type Priority = 'low' | 'normal' | 'urgent'
 type Audience = 'all' | 'students' | 'teachers' | 'parents' | 'staff'
@@ -29,7 +30,7 @@ interface Props { profile: any; school: any; userId: string }
 
 export default function NoticesClient({ profile, school, userId }: Props) {
   const supabase    = createClient()
-  const sc          = school?.primary_color ?? '#7C3AED'
+  const sc          = school?.primary_color ?? '#800020'
   const [notices,   setNotices]   = useState<Notice[]>([])
   const [loading,   setLoading]   = useState(true)
   const [showForm,  setShowForm]  = useState(false)
@@ -112,7 +113,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Notices">
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
-          {toast.ok ? '✓' : '✕'} {toast.msg}
+          {toast.ok ? <CheckIcon size={14} /> : <XIcon size={14} />} {toast.msg}
         </div>
       )}
 
@@ -165,7 +166,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
             ))}
           </div>
           <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
-            {showForm ? '✕ Close' : '+ New Notice'}
+            {showForm ? <><XIcon size={14} /> Close</> : '+ New Notice'}
           </button>
         </div>
 

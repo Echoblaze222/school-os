@@ -4,6 +4,9 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { ActivityIcon, UserIcon, AlertIcon } from '@/components/Icons'
+import GaugeStat from '@/components/GaugeStat'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
 
 interface StudentOpt { id: string; full_name: string; default_code: string | null }
@@ -43,12 +46,24 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
 
   const [visitForm,  setVisitForm]  = useState(emptyVisitForm)
   const [recordForm, setRecordForm] = useState(emptyRecordForm)
+  const [visitSearch, setVisitSearch] = useState('')
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   const recordByStudent = new Map(records.map(r => [r.student_id, r]))
   const filteredStudents = students.filter(s => s.full_name.toLowerCase().includes(search.toLowerCase()))
+
+  // Search by name OR access code — lets the secretary find a student fast
+  // even in a 500+ roster, instead of scrolling a giant dropdown.
+  const visitSearchQ = visitSearch.trim().toLowerCase()
+  const visitMatches = visitSearchQ
+    ? students.filter(s =>
+        s.full_name.toLowerCase().includes(visitSearchQ) ||
+        (s.default_code ?? '').toLowerCase().includes(visitSearchQ)
+      ).slice(0, 8)
+    : []
+  const selectedVisitStudent = students.find(s => s.id === visitForm.student_id) ?? null
 
   async function logVisit() {
     if (!visitForm.student_id || !visitForm.reason.trim()) { setMsg('Student and reason are required.'); return }
@@ -71,6 +86,7 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
       setVisits(p => [data, ...p])
       setVisitModal(false)
       setVisitForm(emptyVisitForm)
+      setVisitSearch('')
     } else {
       setMsg(error?.message ?? 'Could not log visit')
     }
@@ -128,18 +144,15 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Clinic">
       {/* Stats */}
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <p className={styles.statVal} style={{ color: sc }}>{visits.length}</p>
-          <p className={styles.statLbl}>Total visits</p>
+      <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+          <GaugeStat label="Total visits" value={visits.length} color={sc} size={56} />
         </div>
-        <div className={styles.statCard}>
-          <p className={styles.statVal} style={{ color: '#F59E0B' }}>{visits.filter(v => v.sent_home).length}</p>
-          <p className={styles.statLbl}>Sent home</p>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+          <GaugeStat label="Sent home" value={visits.filter(v => v.sent_home).length} color="var(--status-warn, #F59E0B)" size={56} delayMs={80} />
         </div>
-        <div className={styles.statCard}>
-          <p className={styles.statVal} style={{ color: '#10B981' }}>{records.length}</p>
-          <p className={styles.statLbl}>Records on file</p>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+          <GaugeStat label="Records on file" value={records.length} color="var(--status-ok, #10B981)" size={56} delayMs={160} />
         </div>
       </div>
 
@@ -159,16 +172,16 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
       {tab === 'visits' && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
-            <button className={styles.btnPrimary} onClick={() => { setMsg(''); setVisitModal(true) }} style={{ height: 44, padding: '0 var(--space-4)' }}>+ Log visit</button>
+            <button className={styles.btnPrimary} onClick={() => { setMsg(''); setVisitSearch(''); setVisitModal(true) }} style={{ height: 44, padding: '0 var(--space-4)' }}>+ Log visit</button>
           </div>
 
           {visits.length === 0 ? (
-            <div className={styles.emptyState}><p className={styles.emptyEmoji}>🩺</p><p className={styles.emptyTitle}>No visits logged</p><p className={styles.emptyHint}>Clinic visits will show up here</p></div>
+            <div className={styles.emptyState}><ActivityIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No visits logged</p><p className={styles.emptyHint}>Clinic visits will show up here</p></div>
           ) : (
             visits.map(v => (
               <div key={v.id} className={styles.listItem}>
                 <div className={styles.listIconBox} style={{ background: (v.sent_home ? '#F59E0B' : sc) + '22' }}>
-                  <span style={{ fontSize: '1.3rem' }}>🩺</span>
+                  <ActivityIcon size={18} color={v.sent_home ? '#F59E0B' : sc} />
                 </div>
                 <div className={styles.listContent}>
                   <p className={styles.listTitle}>{v.profiles?.full_name ?? 'Unknown student'}</p>
@@ -193,14 +206,14 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
           </div>
 
           {filteredStudents.length === 0 ? (
-            <div className={styles.emptyState}><p className={styles.emptyEmoji}>👤</p><p className={styles.emptyTitle}>No students found</p></div>
+            <div className={styles.emptyState}><UserIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No students found</p></div>
           ) : (
             filteredStudents.map(s => {
               const rec = recordByStudent.get(s.id)
               return (
                 <div key={s.id} className={styles.listItem} onClick={() => openRecordModal(s)} style={{ cursor: 'pointer' }}>
                   <div className={styles.listIconBox} style={{ background: (rec?.allergies ? '#EF4444' : sc) + '22' }}>
-                    <span style={{ fontSize: '1.3rem' }}>{rec?.allergies ? '⚠️' : '👤'}</span>
+                    {rec?.allergies ? <AlertIcon size={18} color="#EF4444" /> : <UserIcon size={18} color={sc} />}
                   </div>
                   <div className={styles.listContent}>
                     <p className={styles.listTitle}>{s.full_name}</p>
@@ -220,10 +233,42 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Log Clinic Visit</h2>
             <div className={styles.formGroup}><label className={styles.formLabel}>Student *</label>
-              <select className={styles.formSelect} value={visitForm.student_id} onChange={e => setVisitForm(p => ({ ...p, student_id: e.target.value }))}>
-                <option value="">Select a student…</option>
-                {students.map(s => <option key={s.id} value={s.id}>{s.full_name}{s.default_code ? ` (${s.default_code})` : ''}</option>)}
-              </select>
+              {selectedVisitStudent ? (
+                <div className={styles.listItem} style={{ marginBottom: 0 }}>
+                  <div className={styles.listContent}>
+                    <p className={styles.listTitle}>{selectedVisitStudent.full_name}</p>
+                    {selectedVisitStudent.default_code && <p className={styles.listSub}>Code: {selectedVisitStudent.default_code}</p>}
+                  </div>
+                  <button type="button" className={styles.btnGhost} style={{ height: 32, padding: '0 var(--space-3)' }}
+                    onClick={() => { setVisitForm(p => ({ ...p, student_id: '' })); setVisitSearch('') }}>
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.searchBar}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input className={styles.searchInput} placeholder="Search by name or access code…" value={visitSearch} onChange={e => setVisitSearch(e.target.value)} autoFocus />
+                  </div>
+                  {visitSearchQ && (
+                    visitMatches.length === 0 ? (
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 'var(--space-2) 0 0' }}>No student matches "{visitSearch}"</p>
+                    ) : (
+                      <div style={{ maxHeight: 220, overflowY: 'auto', marginTop: 'var(--space-2)' }}>
+                        {visitMatches.map(s => (
+                          <div key={s.id} className={styles.listItem} style={{ cursor: 'pointer' }}
+                            onClick={() => { setVisitForm(p => ({ ...p, student_id: s.id })); setVisitSearch('') }}>
+                            <div className={styles.listContent}>
+                              <p className={styles.listTitle}>{s.full_name}</p>
+                              {s.default_code && <p className={styles.listSub}>Code: {s.default_code}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  )}
+                </>
+              )}
             </div>
             <div className={styles.formGroup}><label className={styles.formLabel}>Reason *</label><input className={styles.formInput} value={visitForm.reason} onChange={e => setVisitForm(p => ({ ...p, reason: e.target.value }))} placeholder="e.g. Headache, minor cut" /></div>
             <div className={styles.formGroup}><label className={styles.formLabel}>Symptoms</label><textarea className={styles.formTextarea} value={visitForm.symptoms} onChange={e => setVisitForm(p => ({ ...p, symptoms: e.target.value }))} rows={2} /></div>

@@ -25,5 +25,23 @@ export default async function CodesPage() {
     .order('role')
     .order('full_name')
 
-  return <CodesClient entries={entries ?? []} profile={profile} school={school} userId={user.id} />
+  // Student roster for the "New Parent Code" form — lets the secretary link
+  // a freshly-created parent account to the right child without typing an ID.
+  const { data: studentRows } = await supabase
+    .from('profiles')
+    .select('id, full_name, class_level, admission_number')
+    .eq('school_id', profile.school_id)
+    .eq('role', 'student')
+    .eq('is_active', true)
+    .order('full_name')
+
+  return (
+    <CodesClient
+      entries={entries ?? []}
+      students={studentRows ?? []}
+      profile={profile}
+      school={school}
+      userId={user.id}
+    />
+  )
 }

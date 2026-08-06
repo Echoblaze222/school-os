@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   UserIcon, BookOpenIcon, PeopleIcon, ArrowLeftIcon,
   SunIcon, MoonIcon, PlusIcon, XIcon, ChevronRightIcon,
-  SchoolIcon, SearchIcon,
+  SchoolIcon, SearchIcon, CrownIcon, AlertIcon,
 } from '@/components/Icons'
 import styles from './classes.module.css'
 
@@ -198,7 +198,7 @@ export default function PrincipalClassesClient({
           <button className={styles.iconBtn} onClick={toggleTheme}>
             {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
           </button>
-          <button className={styles.addBtn} onClick={() => setShowCreate(true)} style={{ background: 'var(--burgundy)' }}>
+          <button className={styles.addBtn} onClick={() => setShowCreate(true)} style={{ background: 'var(--brand)' }}>
             <PlusIcon size={16} color="white" />
             <span>New Class</span>
           </button>
@@ -208,7 +208,7 @@ export default function PrincipalClassesClient({
       {/* Stats */}
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
-          <SchoolIcon size={16} color="var(--burgundy)" />
+          <SchoolIcon size={16} color="var(--brand)" />
           <span className={styles.statNum}>{classes.length}</span>
           <span className={styles.statLabel}>Total Classes</span>
         </div>
@@ -265,19 +265,19 @@ export default function PrincipalClassesClient({
 
                     {/* FIX: Show class teacher name on card */}
                     {cls.class_teacher ? (
-                      <p style={{ fontSize: '0.65rem', color: '#F59E0B', margin: '2px 0 4px', fontWeight: 600 }}>
-                        👑 {cls.class_teacher.full_name.split(' ')[0]}
+                      <p style={{ fontSize: '0.65rem', color: '#F59E0B', margin: '2px 0 4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <CrownIcon size={11} /> {cls.class_teacher.full_name.split(' ')[0]}
                       </p>
                     ) : (
-                      <p style={{ fontSize: '0.65rem', color: '#EF4444', margin: '2px 0 4px', fontWeight: 600 }}>
-                        ⚠ No class teacher
+                      <p style={{ fontSize: '0.65rem', color: '#EF4444', margin: '2px 0 4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <AlertIcon size={11} /> No class teacher
                       </p>
                     )}
 
                     <div className={styles.classCapacityBar}>
                       <div className={styles.classCapacityFill} style={{
                         width:      `${fillPercent}%`,
-                        background: fillPercent >= 90 ? '#EF4444' : fillPercent >= 70 ? '#F59E0B' : 'var(--burgundy)',
+                        background: fillPercent >= 90 ? '#EF4444' : fillPercent >= 70 ? '#F59E0B' : 'var(--brand)',
                       }} />
                     </div>
 
@@ -339,8 +339,8 @@ export default function PrincipalClassesClient({
                 marginBottom: 12,
               }}>
                 <div>
-                  <p style={{ margin: '0 0 1px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem' }}>
-                    👑 {activeClass.class_teacher.full_name}
+                  <p style={{ margin: '0 0 1px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <CrownIcon size={13} /> {activeClass.class_teacher.full_name}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.7rem', color: '#F59E0B' }}>All subjects · Class admin</p>
                 </div>
@@ -360,8 +360,11 @@ export default function PrincipalClassesClient({
                 fontSize: '0.8rem',
                 color: '#EF4444',
                 fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
               }}>
-                ⚠ No class teacher assigned
+                <AlertIcon size={13} /> No class teacher assigned
               </div>
             )}
 
@@ -374,7 +377,7 @@ export default function PrincipalClassesClient({
                 {activeClass.subject_teachers.map((st: any, i: number) => (
                   <div key={i} className={styles.subjectRow}>
                     <div className={styles.subjectIconBox}>
-                      <BookOpenIcon size={14} color="var(--burgundy)" />
+                      <BookOpenIcon size={14} color="var(--brand)" />
                     </div>
                     <div className={styles.subjectInfo}>
                       <p className={styles.subjectName}>{st.subject}</p>
@@ -383,7 +386,7 @@ export default function PrincipalClassesClient({
                     <button
                       onClick={() => removeTeacher(activeClass.id, st.teacher_id, st.subject)}
                       style={{ fontSize: '0.68rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, marginLeft: 'auto', flexShrink: 0 }}>
-                      ✕
+                      <XIcon size={11} />
                     </button>
                   </div>
                 ))}
@@ -395,7 +398,7 @@ export default function PrincipalClassesClient({
               onClick={() => { setShowAssign(true); setAssignTeacher(''); setAssignSubject(''); setAssignIsPrimary(false); setError(null) }}
               style={{
                 width: '100%', padding: '10px',
-                background: 'var(--burgundy)', color: '#fff',
+                background: 'var(--brand)', color: '#fff',
                 border: 'none', borderRadius: 8,
                 fontWeight: 700, fontSize: '0.82rem',
                 cursor: 'pointer', marginBottom: 12,
@@ -444,7 +447,7 @@ export default function PrincipalClassesClient({
                 <div style={{ display: 'flex', gap: 8 }}>
                   {[
                     { v: false, label: 'Subject Teacher', color: '#3B82F6' },
-                    { v: true,  label: '👑 Class Teacher', color: '#F59E0B' },
+                    { v: true,  label: 'Class Teacher', color: '#F59E0B' },
                   ].map(opt => (
                     <button
                       key={String(opt.v)}

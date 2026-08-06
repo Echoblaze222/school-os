@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import type { SchoolInfo } from './page'
+import { ArrowLeftIcon, SunIcon, MoonIcon, XIcon, CheckIcon, AlertIcon, PrinterIcon } from '@/components/Icons'
 
 interface Props {
   userId:        string
@@ -78,9 +79,10 @@ function fmtCurrency(amount: number, currency: 'NGN' | 'USD'): string {
 }
 
 const PAYMENT_METHODS = [
-  { value: 'cash',          label: '💵 Cash' },
-  { value: 'bank_transfer', label: '🏦 Bank Transfer' },
-  { value: 'pos',           label: '💳 POS / Card' },
+  // native <select><option> can't render SVG icons — text-only by necessity
+  { value: 'cash',          label: 'Cash' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'pos',           label: 'POS / Card' },
 ]
 
 const TERM_LABELS: Record<string, string> = {
@@ -372,7 +374,7 @@ export default function RecordPaymentClient({
           maxWidth: 480, margin: '0 auto', background: 'var(--glass-bg)',
           border: '1px solid var(--glass-border)', borderRadius: 16, overflow: 'hidden',
         }}>
-          <div style={{ background: '#7C3AED', padding: '20px 24px', textAlign: 'center' }}>
+          <div style={{ background: 'var(--brand)', padding: '20px 24px', textAlign: 'center' }}>
             <p style={{ color: '#ffffff99', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', margin: 0 }}>
               PAYMENT RECEIPT
             </p>
@@ -415,12 +417,9 @@ export default function RecordPaymentClient({
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               <button
                 onClick={() => window.print()}
-                style={{
-                  flex: 1, height: 44, background: '#7C3AED', color: '#fff',
-                  border: 'none', borderRadius: 10, fontWeight: 700,
-                  fontSize: '0.85rem', cursor: 'pointer',
-                }}>
-                🖨️ Print Receipt
+                className="btn btn-primary"
+                style={{ flex: 1, fontSize: '0.85rem' }}>
+                <PrinterIcon size={15} color="#fff" /> Print Receipt
               </button>
               <button
                 onClick={() => { setReceipt(null); clearStudent() }}
@@ -454,8 +453,9 @@ export default function RecordPaymentClient({
       }}>
         <button onClick={() => router.back()} style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--text-primary)', fontSize: '1.4rem', lineHeight: 1, padding: 0,
-        }}>←</button>
+          color: 'var(--text-primary)', lineHeight: 1, padding: 0,
+          display: 'flex', alignItems: 'center',
+        }}><ArrowLeftIcon size={20} /></button>
         <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, flex: 1 }}>
           Record Payment
         </h1>
@@ -464,8 +464,8 @@ export default function RecordPaymentClient({
           setIsDark(!isDark)
           localStorage.setItem('schoolos_theme', next)
           document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '')
-        }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
-          {isDark ? '☀️' : '🌙'}
+        }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          {isDark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
         </button>
       </div>
 
@@ -483,12 +483,12 @@ export default function RecordPaymentClient({
           {selectedStudent ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 14px', background: '#7C3AED15',
-              border: '1px solid #7C3AED40', borderRadius: 10,
+              padding: '10px 14px', background: 'var(--brand-subtle)',
+              border: '1px solid var(--brand-border)', borderRadius: 10,
             }}>
               <div style={{
                 width: 38, height: 38, borderRadius: '50%',
-                background: '#7C3AED', display: 'flex', alignItems: 'center',
+                background: 'var(--brand)', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.9rem', flexShrink: 0,
               }}>
                 {selectedStudent.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
@@ -504,8 +504,8 @@ export default function RecordPaymentClient({
               </div>
               <button onClick={clearStudent} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--text-muted)', fontSize: '1.1rem',
-              }}>✕</button>
+                color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
+              }}><XIcon size={16} /></button>
             </div>
           ) : (
             <div style={{ position: 'relative' }}>
@@ -535,7 +535,7 @@ export default function RecordPaymentClient({
                         padding: '10px 14px', cursor: 'pointer',
                         borderBottom: '1px solid var(--glass-border)',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#7C3AED15')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-subtle)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                         {s.full_name}
@@ -575,8 +575,9 @@ export default function RecordPaymentClient({
                 padding: '16px', background: '#10B98110', border: '1px solid #10B98130',
                 borderRadius: 10, textAlign: 'center',
               }}>
-                <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981', margin: 0 }}>
-                  ✓ No outstanding invoices
+                <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981', margin: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <CheckIcon size={14} /> No outstanding invoices
                 </p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
                   This student has no pending fees.
@@ -594,17 +595,17 @@ export default function RecordPaymentClient({
                       style={{
                         display: 'flex', flexDirection: 'column', gap: 0,
                         padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-                        border: `1px solid ${selected ? '#7C3AED60' : 'var(--glass-border)'}`,
-                        background: selected ? '#7C3AED10' : 'var(--input-bg)',
+                        border: `1px solid ${selected ? 'var(--brand-border)' : 'var(--glass-border)'}`,
+                        background: selected ? 'var(--brand-subtle)' : 'var(--input-bg)',
                       }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
                           width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                          border: `2px solid ${selected ? '#7C3AED' : 'var(--input-border)'}`,
-                          background: selected ? '#7C3AED' : 'transparent',
+                          border: `2px solid ${selected ? 'var(--brand)' : 'var(--input-border)'}`,
+                          background: selected ? 'var(--brand)' : 'transparent',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          {selected && <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: 900 }}>✓</span>}
+                          {selected && <CheckIcon size={12} color="#fff" />}
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -670,13 +671,13 @@ export default function RecordPaymentClient({
             </p>
 
             <div style={{
-              padding: '10px 14px', background: '#7C3AED10',
-              border: '1px solid #7C3AED30', borderRadius: 10, marginBottom: 14, textAlign: 'center',
+              padding: '10px 14px', background: 'var(--brand-subtle)',
+              border: '1px solid var(--brand-border)', borderRadius: 10, marginBottom: 14, textAlign: 'center',
             }}>
               <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: 0 }}>
                 TOTAL SELECTED BALANCE
               </p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#7C3AED', margin: '4px 0 0' }}>
+              <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--brand)', margin: '4px 0 0' }}>
                 {fmtCurrency(totalBalanceDisplay, currency)}
               </p>
               {currency === 'USD' && (
@@ -707,8 +708,9 @@ export default function RecordPaymentClient({
                   </select>
                 </div>
                 {amountInNgn > totalBalanceNgn + 0.5 && (
-                  <p style={{ fontSize: '0.72rem', color: '#EF4444', margin: '4px 0 0', padding: '0 4px' }}>
-                    ⚠ Amount exceeds selected balance of {fmtCurrency(totalBalanceDisplay, currency)}
+                  <p style={{ fontSize: '0.72rem', color: '#EF4444', margin: '4px 0 0', padding: '0 4px',
+                    display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <AlertIcon size={12} /> Amount exceeds selected balance of {fmtCurrency(totalBalanceDisplay, currency)}
                   </p>
                 )}
               </div>
@@ -725,9 +727,9 @@ export default function RecordPaymentClient({
                       style={{
                         padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontWeight: 700,
                         fontSize: '0.75rem', textAlign: 'center',
-                        border: `1.5px solid ${paymentMethod === m.value ? '#7C3AED' : 'var(--input-border)'}`,
-                        background: paymentMethod === m.value ? '#7C3AED15' : 'var(--input-bg)',
-                        color: paymentMethod === m.value ? '#7C3AED' : 'var(--text-muted)',
+                        border: `1.5px solid ${paymentMethod === m.value ? 'var(--brand)' : 'var(--input-border)'}`,
+                        background: paymentMethod === m.value ? 'var(--brand-subtle)' : 'var(--input-bg)',
+                        color: paymentMethod === m.value ? 'var(--brand)' : 'var(--text-muted)',
                       }}>
                       {m.label}
                     </button>
@@ -768,25 +770,19 @@ export default function RecordPaymentClient({
             {errorMsg && (
               <div style={{
                 marginTop: 12, padding: '10px 14px',
-                background: '#EF444415', border: '1px solid #EF444440',
-                borderRadius: 8, fontSize: '0.8rem', color: '#EF4444', fontWeight: 600,
+                background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 8, fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                ⚠️ {errorMsg}
+                <AlertIcon size={14} /> {errorMsg}
               </div>
             )}
 
             <button
               onClick={handleSubmit}
               disabled={!canSubmit || isSubmitting}
-              style={{
-                width: '100%', height: 48, marginTop: 16,
-                background: canSubmit ? '#7C3AED' : 'var(--input-bg)',
-                color: canSubmit ? '#fff' : 'var(--text-muted)',
-                border: canSubmit ? 'none' : '1px solid var(--input-border)',
-                borderRadius: 12, fontWeight: 800, fontSize: '0.95rem',
-                cursor: canSubmit ? 'pointer' : 'not-allowed',
-                opacity: isSubmitting ? 0.7 : 1,
-              }}>
+              className={canSubmit ? 'btn btn-primary' : 'btn btn-secondary'}
+              style={{ width: '100%', height: 48, marginTop: 16, fontSize: '0.95rem', fontWeight: 800 }}>
               {isSubmitting
                 ? 'Recording…'
                 : canSubmit

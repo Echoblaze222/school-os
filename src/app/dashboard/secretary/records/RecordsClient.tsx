@@ -4,6 +4,7 @@
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { CheckCircleIcon, AlertIcon, FileTextIcon, FolderIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 
 // Matches the real `behaviour_records` table:
@@ -47,10 +48,10 @@ const TYPE_COLORS: Record<string, string> = {
   neutral:  '#6B7280',
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  positive: '✅',
-  negative: '⚠️',
-  neutral:  '📄',
+const TYPE_ICONS: Record<string, any> = {
+  positive: CheckCircleIcon,
+  negative: AlertIcon,
+  neutral:  FileTextIcon,
 }
 
 export default function RecordsClient({ records: init, profile, school, userId, students, allProfiles }: Props) {
@@ -66,7 +67,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
   })
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   // Quick lookup so we can resolve student_id / recorded_by -> a display name
   const personMap = useMemo(() => {
@@ -151,12 +152,12 @@ export default function RecordsClient({ records: init, profile, school, userId, 
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.emptyState}><p className={styles.emptyEmoji}>📂</p><p className={styles.emptyTitle}>No records found</p><p className={styles.emptyHint}>Student behaviour records appear here</p></div>
+        <div className={styles.emptyState}><FolderIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No records found</p><p className={styles.emptyHint}>Student behaviour records appear here</p></div>
       ) : (
         filtered.map(r => (
           <div key={r.id} className={styles.listItem} onClick={() => setViewItem(r)}>
             <div className={styles.listIconBox} style={{ background: TYPE_COLORS[r.type] + '22' }}>
-              <span style={{ fontSize: '1.1rem' }}>{TYPE_ICONS[r.type]}</span>
+              {(() => { const TIcon = TYPE_ICONS[r.type]; return <TIcon size={16} color={TYPE_COLORS[r.type]} /> })()}
             </div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{nameFor(r.student_id)}</p>
@@ -182,7 +183,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
               </div>
             ))}
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)', lineHeight: 1.6 }}>{viewItem.description}</p>
-            <button onClick={() => deleteRecord(viewItem.id)} style={{ width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}>🗑️ Delete record</button>
+            <button onClick={() => deleteRecord(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} color="var(--danger)" /> Delete record</button>
           </div>
         </div>
       )}

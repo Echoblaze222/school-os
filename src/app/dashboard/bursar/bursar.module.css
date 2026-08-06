@@ -28,7 +28,7 @@
 .navActive { color: var(--brand) !important; }
 .navActive span { color: var(--brand) !important; }
 .navItem:hover { transform: translateY(-2px); }
-.homeBtn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: var(--radius-full); box-shadow: 0 4px 20px rgba(124,58,237,0.4); margin: 0 var(--space-1); text-decoration: none; transition: transform var(--transition-fast); }
+.homeBtn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: var(--radius-full); box-shadow: 0 4px 20px var(--brand-glow); margin: 0 var(--space-1); text-decoration: none; transition: transform var(--transition-fast); }
 .homeBtn:hover { transform: translateY(-3px) scale(1.06); }
 
 /* ── Collection Card ─────────────────────────────────────── */

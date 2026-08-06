@@ -5,10 +5,10 @@
 // Status is derived (not a stored column): is_live→live, ended_at→ended, else→scheduled
 // teacher_name/subject/duration_mins/student_count do not exist — removed.
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { VideoIcon, ClockIcon, BarChartIcon } from '@/components/Icons'
+import { VideoIcon, ClockIcon, BarChartIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 type Status = 'live' | 'scheduled' | 'ended'
@@ -28,7 +28,7 @@ const STATUS_COLOR: Record<Status, string> = {
   ended:     '#6B7280',
 }
 const STATUS_LABEL: Record<Status, string> = {
-  live:      '● LIVE',
+  live:      'LIVE',
   scheduled: 'Scheduled',
   ended:     'Ended',
 }
@@ -40,7 +40,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   const [counts,  setCounts]  = useState({ live: 0, today: 0, total: 0 })
   const pollRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   // ── fetch rows for active tab ────────────────────────────
   async function load(t: Tab = tab) {
@@ -118,10 +118,10 @@ export default function LiveClient({ profile, school, userId }: Props) {
     return mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`
   }
 
-  const TABS: { key: Tab; label: string; badge?: number }[] = [
-    { key: 'live',     label: '🔴 Live Now',  badge: counts.live || undefined },
-    { key: 'upcoming', label: '📅 Upcoming' },
-    { key: 'history',  label: '✅ History'  },
+  const TABS: { key: Tab; label: ReactNode; badge?: number }[] = [
+    { key: 'live',     label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><StatusDotIcon size={9} color="#EF4444" /> Live Now</span>,  badge: counts.live || undefined },
+    { key: 'upcoming', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CalendarIcon size={13} /> Upcoming</span> },
+    { key: 'history',  label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CheckCircleIcon size={13} /> History</span>  },
   ]
 
   const stats = [
@@ -199,8 +199,9 @@ export default function LiveClient({ profile, school, userId }: Props) {
                         <span style={{
                           fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.04em',
                           background: color + '20', color, padding: '2px 8px', borderRadius: 999,
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
                         }}>
-                          {STATUS_LABEL[status]}
+                          {status === 'live' && <StatusDotIcon size={8} color={color} />} {STATUS_LABEL[status]}
                         </span>
                       </div>
 
@@ -210,8 +211,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
                       {/* Live: show elapsed time */}
                       {status === 'live' && item.started_at && (
-                        <span style={{ fontSize: '0.68rem', color: '#10B981', fontWeight: 700, marginTop: 4, display: 'block' }}>
-                          ⏱ {elapsed(item.started_at)}
+                        <span style={{ fontSize: '0.68rem', color: '#10B981', fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <ClockIcon size={12} /> {elapsed(item.started_at)}
                         </span>
                       )}
 
@@ -225,8 +226,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
                       {/* Recording link if available */}
                       {status === 'ended' && item.recording_url && (
                         <a href={item.recording_url} target="_blank" rel="noreferrer"
-                          style={{ fontSize: '0.72rem', color: sc, fontWeight: 700, marginTop: 4, display: 'inline-block', textDecoration: 'none' }}>
-                          🎬 View Recording
+                          style={{ fontSize: '0.72rem', color: sc, fontWeight: 700, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
+                          <VideoIcon size={13} /> View Recording
                         </a>
                       )}
                     </div>

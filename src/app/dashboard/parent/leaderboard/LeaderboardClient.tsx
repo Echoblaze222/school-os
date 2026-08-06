@@ -1,9 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
-import { TrophyIcon } from '@/components/Icons'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
+// NOTE: this file is shared with the student role (see isParent below).
+// There's no equivalent STUDENT_FEATURE_GROUPS list in scope for this lane yet --
+// students viewing this page will see an empty "All features" sheet until
+// the student lane supplies its own list here.
+import { TrophyIcon, AwardIcon } from '@/components/Icons'
 import styles from './page.module.css'
 
 interface LeaderboardEntry {
@@ -54,7 +58,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
   const [debugMsg, setDebugMsg] = useState('')
 
   const supabase    = createClient()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   const isParent    = profile?.role === 'parent'
 
   const isHighlighted = (e: LeaderboardEntry) =>
@@ -228,7 +232,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     setLoading(false)
   }
 
-  const medals   = ['🥇', '🥈', '🥉']
+  const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'] // gold, silver, bronze
   const topThree = board.slice(0, 3)
   const rest     = board.slice(3)
   const pct      = (score: number) => Math.min(100, Math.round((score / 1000) * 100))
@@ -238,18 +242,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     .filter(({ entry, rank }) => isHighlighted(entry) && rank > 3)
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-      <div className={styles.content}>
-        <DashboardHeader
-          userId={userId}
-          role={isParent ? 'parent' : 'student'}
-          profile={profile} school={school}
-          schoolColor={schoolColor}
-          title="Leaderboard"
-          showBack
-        />
-        <main className={styles.main}>
+    <RoleSubHeader userId={userId} role={isParent ? 'parent' : 'student'} profile={profile} school={school} title="Leaderboard" featureGroups={isParent ? PARENT_FEATURE_GROUPS : []}>
           {loading ? (
             <div className={styles.loading}><span /><span /><span /></div>
           ) : board.length === 0 ? (
@@ -292,7 +285,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                         style={hl ? { borderColor: schoolColor, background: schoolColor + '10' } : {}}
                         onClick={() => setExpanded(expanded === entry.student_id ? null : entry.student_id)}
                       >
-                        <div className={styles.podiumMedal}>{medals[i]}</div>
+                        <div className={styles.podiumMedal}><AwardIcon size={22} color={medalColors[i]} /></div>
                         <div className={styles.podiumAvatar} style={{ background: schoolColor + '30', color: schoolColor }}>
                           {entry.avatar_url
                             ? <img src={entry.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
@@ -374,9 +367,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
               <div className={styles.spacer} />
             </>
           )}
-        </main>
-      </div>
-    </div>
+    </RoleSubHeader>
   )
 }
 

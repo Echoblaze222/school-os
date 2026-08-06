@@ -6,16 +6,20 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import {
+  UserIcon, SchoolIcon, BellIcon, LockIcon, SparkleIcon, KeyIcon, LogOutIcon,
+  MoonIcon, SunIcon,
+} from '@/components/Icons'
 import styles from '../secretary.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
 const SECTIONS = [
-  { id: 'profile',    label: 'Personal Info',       emoji: '👤' },
-  { id: 'school',     label: 'School Settings',     emoji: '🏫' },
-  { id: 'notifs',     label: 'Notifications',       emoji: '🔔' },
-  { id: 'security',   label: 'Security',            emoji: '🔐' },
-  { id: 'appearance', label: 'Appearance',          emoji: '🎨' },
+  { id: 'profile',    label: 'Personal Info',       Icon: UserIcon },
+  { id: 'school',     label: 'School Settings',     Icon: SchoolIcon },
+  { id: 'notifs',     label: 'Notifications',       Icon: BellIcon },
+  { id: 'security',   label: 'Security',            Icon: LockIcon },
+  { id: 'appearance', label: 'Appearance',          Icon: SparkleIcon },
 ]
 
 export default function SettingsClient({ profile, school, userId }: Props) {
@@ -39,7 +43,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
 
   const supabase = createClient()
   const router   = useRouter()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   async function saveProfile() {
     setSaving(true); setMsg('')
@@ -65,7 +69,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
         {SECTIONS.map(s => (
           <button key={s.id} onClick={() => { setSection(s.id); setMsg('') }}
             style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)', background: section === s.id ? sc + '18' : 'var(--glass-bg)', border: `1px solid ${section === s.id ? sc + '50' : 'var(--glass-border)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.15s ease', textAlign: 'left', color: section === s.id ? sc : 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>
-            <span style={{ fontSize: '1.1rem' }}>{s.emoji}</span>
+            <s.Icon size={17} color={section === s.id ? sc : 'var(--text-secondary)'} />
             <span>{s.label}</span>
             <svg style={{ marginLeft: 'auto', opacity: 0.5 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
@@ -74,7 +78,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
 
       {/* Content */}
       {section === 'profile' && (
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
+        <div className="glass-card" style={{ padding: 'var(--space-5)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>Personal Info</p>
           {[['Full Name', fullName, setFullName, 'text', 'Your full name'],
             ['Phone',     phone,    setPhone,    'tel',  '+234 000 000 0000'],
@@ -96,7 +100,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       )}
 
       {section === 'school' && (
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
+        <div className="glass-card" style={{ padding: 'var(--space-5)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>School Information</p>
           {[['School Name', school?.name ?? '—'], ['School ID', school?.id ?? '—'], ['Address', school?.address ?? '—'], ['Phone', school?.phone ?? '—'], ['Email', school?.email ?? '—']].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
@@ -109,7 +113,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       )}
 
       {section === 'notifs' && (
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', padding: 'var(--space-4) var(--space-5)' }}>Notification Preferences</p>
           {([
             ['newStudents', 'New Student Registrations', 'Alert when a new student is added'],
@@ -134,7 +138,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       {section === 'security' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <a href="/forgot-password" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none' }}>
-            🔑 Change Password
+            <KeyIcon size={16} /> Change Password
           </a>
           <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Login Code</p>
@@ -142,19 +146,19 @@ export default function SettingsClient({ profile, school, userId }: Props) {
             <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', letterSpacing: '0.08em' }}>{profile?.default_code ?? '—'}</p>
           </div>
           <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-            🚪 Sign Out
+            <LogOutIcon size={16} color="var(--danger)" /> Sign Out
           </button>
         </div>
       )}
 
       {section === 'appearance' && (
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
+        <div className="glass-card" style={{ padding: 'var(--space-5)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>Theme</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-            {[['dark', '🌙', 'Dark Mode'], ['light', '☀️', 'Light Mode']].map(([t, emoji, label]) => (
+            {[['dark', MoonIcon, 'Dark Mode'], ['light', SunIcon, 'Light Mode']].map(([t, ThemeIcon, label]: any) => (
               <button key={t} onClick={() => toggleTheme(t as any)}
                 style={{ padding: 'var(--space-5)', background: theme === t ? sc + '18' : 'var(--glass-bg)', border: `2px solid ${theme === t ? sc : 'var(--glass-border)'}`, borderRadius: 'var(--radius-xl)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <span style={{ fontSize: '2rem' }}>{emoji}</span>
+                <ThemeIcon size={28} color={theme === t ? sc : 'var(--text-secondary)'} />
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: theme === t ? sc : 'var(--text-secondary)' }}>{label}</span>
               </button>
             ))}

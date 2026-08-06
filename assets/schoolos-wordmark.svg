@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100">
+  <g transform="translate(6,6) rotate(45 44 44)">
+    <rect x="12" y="12" width="24" height="24" rx="5" fill="#4A0012"/>
+    <rect x="44" y="12" width="24" height="24" rx="5" fill="#4A0012"/>
+    <rect x="12" y="44" width="24" height="24" rx="5" fill="#4A0012"/>
+    <rect x="44" y="44" width="24" height="24" rx="5" fill="#006B85"/>
+  </g>
+  <text x="112" y="62" font-family="'Space Grotesk', 'Inter', sans-serif" font-weight="700" font-size="42" fill="#14161A">school<tspan fill="#4A0012" font-weight="800">OS</tspan></text>
+</svg>

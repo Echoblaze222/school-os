@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import RoleNav from '@/components/RoleNav'
 import styles from './promote.module.css'
+import { GraduationCapIcon, BookIcon, CheckIcon } from '@/components/Icons'
 
 interface ClassOption { id: string; label: string; likelyFinal: boolean }
 interface StudentRow  { id: string; full_name: string; admission_number: string; selected: boolean }
@@ -164,7 +165,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
       const notifications = selected.map(s => ({
         user_id: s.id,
         type: 'system_alert' as const,
-        title: 'Congratulations, graduate! 🎓',
+        title: 'Congratulations, graduate!',
         body: `You have officially graduated from ${finalClassLabel}. Welcome to the alumni network!`,
       }))
       await supabase.from('notifications').insert(notifications)
@@ -235,7 +236,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
         {result ? (
           <div className={styles.successBox}>
             <div className={`${styles.successIcon} ${result.mode === 'graduate' ? styles.successIconGraduate : ''}`}>
-              {result.mode === 'graduate' ? '🎓' : '📘'}
+              {result.mode === 'graduate' ? <GraduationCapIcon size={28} /> : <BookIcon size={28} />}
             </div>
             <p className={styles.successTitle}>
               {result.count} student{result.count !== 1 ? 's' : ''} {result.mode === 'graduate' ? 'graduated' : 'promoted'}!
@@ -289,7 +290,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                     className={`${styles.destOption} ${destination === 'promote' ? styles.destOptionActive : ''}`}
                     onClick={() => setDestination('promote')}
                   >
-                    <span className={styles.destIcon}>📘</span>
+                    <span className={styles.destIcon}><BookIcon size={20} /></span>
                     <span className={styles.destLabel}>Promote to class</span>
                     <span className={styles.destSub}>Move up within the school</span>
                   </button>
@@ -298,7 +299,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                     className={`${styles.destOption} ${destination === 'graduate' ? styles.destOptionActive : ''}`}
                     onClick={() => setDestination('graduate')}
                   >
-                    <span className={styles.destIcon}>🎓</span>
+                    <span className={styles.destIcon}><GraduationCapIcon size={20} /></span>
                     <span className={styles.destLabel}>Graduate to Alumni</span>
                     <span className={styles.destSub}>Ends their enrollment</span>
                   </button>
@@ -359,7 +360,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                         <p className={styles.studentName}>{s.full_name}</p>
                         <p className={styles.studentAdm}>{s.admission_number}</p>
                       </div>
-                      {s.selected && <span className={styles.selectedCheck}>✓</span>}
+                      {s.selected && <span className={styles.selectedCheck}><CheckIcon size={14} /></span>}
                     </label>
                   ))}
                 </div>
@@ -381,8 +382,8 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                   {promoting
                     ? <><span className={styles.spinner} /> {destination === 'graduate' ? 'Graduating…' : 'Promoting…'}</>
                     : destination === 'graduate'
-                      ? `🎓 Graduate ${selectedCount} Student${selectedCount !== 1 ? 's' : ''} to Alumni`
-                      : `📘 Promote ${selectedCount} Student${selectedCount !== 1 ? 's' : ''}`}
+                      ? <><GraduationCapIcon size={16} /> Graduate {selectedCount} Student{selectedCount !== 1 ? 's' : ''} to Alumni</>
+                      : <><BookIcon size={16} /> Promote {selectedCount} Student{selectedCount !== 1 ? 's' : ''}</>}
                 </button>
               </div>
             )}

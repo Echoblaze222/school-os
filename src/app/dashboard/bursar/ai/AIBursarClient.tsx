@@ -4,17 +4,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { WalletIcon, AlertIcon, FileTextIcon, BarChartIcon, ReceiptIcon, RefreshIcon } from '@/components/Icons'
 
 interface Props { bursarName: string; schoolName: string; systemPrompt: string }
 interface Message { id: string; role: 'user' | 'assistant'; content: string }
 
 const QUICK_PROMPTS = [
-  { emoji: '💰', label: 'How much has been collected this term' },
-  { emoji: '⚠️', label: 'Show all overdue payments' },
-  { emoji: '📄', label: 'Draft a fee reminder message' },
-  { emoji: '📊', label: 'Break down fees by class' },
-  { emoji: '🧾', label: 'Generate payment summary' },
-  { emoji: '💱', label: 'Convert outstanding fees to USD' },
+  { Icon: WalletIcon,    label: 'How much has been collected this term' },
+  { Icon: AlertIcon,     label: 'Show all overdue payments' },
+  { Icon: FileTextIcon,  label: 'Draft a fee reminder message' },
+  { Icon: BarChartIcon,  label: 'Break down fees by class' },
+  { Icon: ReceiptIcon,   label: 'Generate payment summary' },
+  { Icon: RefreshIcon,   label: 'Convert outstanding fees to USD' },
 ]
 
 function MD({ text }: { text: string }) {
@@ -63,7 +64,10 @@ export default function AIBursarClient({ bursarName, schoolName, systemPrompt }:
 
   return (
     <div style={{minHeight:'100dvh',background:'var(--bg-base)',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden'}}>
-      <div className="burgundy-glow-orb" style={{width:340,height:340,top:-80,right:-80,opacity:0.45}} aria-hidden/>
+      <div style={{
+        position: 'absolute', width:340, height:340, top:-80, right:-80, opacity:0.45,
+        borderRadius: '50%', background: 'var(--brand)', filter: 'blur(90px)', pointerEvents: 'none',
+      }} aria-hidden/>
 
       <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'var(--space-6) var(--space-5) var(--space-4)',position:'sticky',top:0,zIndex:'var(--z-card)',background:'var(--bg-overlay)',backdropFilter:'blur(20px)',borderBottom:'1px solid var(--glass-border)'}}>
         <button onClick={()=>router.push('/dashboard/bursar')} style={{display:'flex',alignItems:'center',justifyContent:'center',width:38,height:38,borderRadius:'var(--radius-md)',background:'var(--glass-bg)',border:'1px solid var(--glass-border)',color:'var(--text-primary)',cursor:'pointer'}} aria-label="Back">
@@ -81,7 +85,7 @@ export default function AIBursarClient({ bursarName, schoolName, systemPrompt }:
 
       <main style={{flex:1,overflowY:'auto',padding:'var(--space-4) var(--space-5)',display:'flex',flexDirection:'column',gap:'var(--space-4)',paddingBottom:200}}>
         {isEmpty&&<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'var(--space-5)',paddingTop:'var(--space-8)',animation:'fade-up 0.5s ease'}}>
-          <div style={{width:72,height:72,borderRadius:'50%',background:'var(--burgundy-subtle)',border:'2px solid rgba(128,0,32,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{width:72,height:72,borderRadius:'50%',background:'var(--brand-subtle)',border:'2px solid var(--brand-border)',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </div>
           <div style={{textAlign:'center'}}>
@@ -92,21 +96,21 @@ export default function AIBursarClient({ bursarName, schoolName, systemPrompt }:
             {QUICK_PROMPTS.map((qp,i)=><button key={i} onClick={()=>send(qp.label)} style={{display:'flex',alignItems:'center',gap:'var(--space-2)',padding:'var(--space-3) var(--space-4)',background:'var(--glass-bg)',border:'1px solid var(--glass-border)',borderRadius:'var(--radius-lg)',cursor:'pointer',fontFamily:'var(--font-body)',fontSize:'0.78rem',fontWeight:500,color:'var(--text-secondary)',textAlign:'left',transition:'all 0.2s'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='var(--glass-bg-hover)';(e.currentTarget as HTMLElement).style.transform='translateY(-1px)'}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='var(--glass-bg)';(e.currentTarget as HTMLElement).style.transform='translateY(0)'}}>
-              <span style={{fontSize:'1rem',flexShrink:0}}>{qp.emoji}</span><span>{qp.label}</span></button>)}
+              <span style={{display:'inline-flex',flexShrink:0}}><qp.Icon size={16} /></span><span>{qp.label}</span></button>)}
           </div>
         </div>}
 
         {messages.map(m=>(
           <div key={m.id} style={{display:'flex',flexDirection:m.role==='user'?'row-reverse':'row',gap:'var(--space-3)',alignItems:'flex-start',animation:'fade-up 0.3s ease'}}>
-            {m.role==='assistant'&&<div style={{width:34,height:34,borderRadius:'50%',background:'var(--burgundy-subtle)',border:'1px solid rgba(128,0,32,0.25)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>}
-            <div style={{...S,padding:'var(--space-4) var(--space-5)',borderRadius:m.role==='user'?'var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl)':'var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm)',background:m.role==='user'?'linear-gradient(135deg, var(--burgundy), var(--burgundy-light))':'var(--glass-bg)',border:m.role==='user'?'none':'1px solid var(--glass-border)',boxShadow:m.role==='user'?'0 4px 20px var(--burgundy-glow)':'var(--glass-shadow)'}}>
+            {m.role==='assistant'&&<div style={{width:34,height:34,borderRadius:'50%',background:'var(--brand-subtle)',border:'1px solid var(--brand-border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>}
+            <div style={{...S,padding:'var(--space-4) var(--space-5)',borderRadius:m.role==='user'?'var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl)':'var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm)',background:m.role==='user'?'linear-gradient(135deg, var(--brand), var(--brand-light))':'var(--glass-bg)',border:m.role==='user'?'none':'1px solid var(--glass-border)',boxShadow:m.role==='user'?'0 4px 20px var(--brand-glow)':'var(--glass-shadow)'}}>
               {m.role==='user'?<p style={{fontFamily:'var(--font-body)',fontSize:'0.9rem',color:'#fff',lineHeight:1.6,margin:0}}>{m.content}</p>:<MD text={m.content}/>}
             </div>
           </div>
         ))}
 
         {loading&&<div style={{display:'flex',gap:'var(--space-3)',alignItems:'flex-start'}}>
-          <div style={{width:34,height:34,borderRadius:'50%',background:'var(--burgundy-subtle)',border:'1px solid rgba(128,0,32,0.25)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+          <div style={{width:34,height:34,borderRadius:'50%',background:'var(--brand-subtle)',border:'1px solid var(--brand-border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
           <div style={{padding:'var(--space-4) var(--space-5)',background:'var(--glass-bg)',border:'1px solid var(--glass-border)',borderRadius:'var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm)',display:'flex',gap:6,alignItems:'center'}}>
             {[0,1,2].map(i=><span key={i} style={{width:7,height:7,borderRadius:'50%',background:'var(--text-muted)',display:'inline-block',animation:`pulse-dot 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}
           </div>
@@ -117,7 +121,7 @@ export default function AIBursarClient({ bursarName, schoolName, systemPrompt }:
 
       <div style={{position:'fixed',bottom:90,left:'50%',transform:'translateX(-50%)',width:'min(560px, calc(100vw - 32px))',background:'var(--nav-bg)',border:'1px solid var(--glass-border)',borderRadius:'var(--radius-xl)',backdropFilter:'blur(24px)',padding:'var(--space-3) var(--space-3) var(--space-3) var(--space-4)',display:'flex',alignItems:'flex-end',gap:'var(--space-2)',boxShadow:'0 8px 32px rgba(0,0,0,0.3)',zIndex:200}}>
         <textarea ref={taRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input)}}} placeholder="Ask about fees, payments, or reports…" rows={1} disabled={loading} style={{flex:1,background:'none',border:'none',outline:'none',resize:'none',fontFamily:'var(--font-body)',fontSize:'0.9rem',color:'var(--text-primary)',lineHeight:1.5,maxHeight:120,overflowY:'auto',scrollbarWidth:'none'}} aria-label="Message"/>
-        <button onClick={()=>send(input)} disabled={!input.trim()||loading} style={{display:'flex',alignItems:'center',justifyContent:'center',width:38,height:38,borderRadius:'50%',flexShrink:0,background:input.trim()&&!loading?'linear-gradient(135deg, var(--burgundy), var(--burgundy-light))':'var(--glass-bg)',border:'1px solid var(--glass-border)',color:input.trim()&&!loading?'#fff':'var(--text-muted)',cursor:input.trim()&&!loading?'pointer':'not-allowed',transition:'all 0.2s',boxShadow:input.trim()&&!loading?'0 4px 12px var(--burgundy-glow)':'none'}} aria-label="Send">
+        <button onClick={()=>send(input)} disabled={!input.trim()||loading} style={{display:'flex',alignItems:'center',justifyContent:'center',width:38,height:38,borderRadius:'50%',flexShrink:0,background:input.trim()&&!loading?'linear-gradient(135deg, var(--brand), var(--brand-light))':'var(--glass-bg)',border:'1px solid var(--glass-border)',color:input.trim()&&!loading?'#fff':'var(--text-muted)',cursor:input.trim()&&!loading?'pointer':'not-allowed',transition:'all 0.2s',boxShadow:input.trim()&&!loading?'0 4px 12px var(--brand-glow)':'none'}} aria-label="Send">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>

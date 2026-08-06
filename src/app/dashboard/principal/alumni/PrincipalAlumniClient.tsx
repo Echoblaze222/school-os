@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import RoleNav from '@/components/RoleNav'
 import styles from './alumni.module.css'
 import type { AlumniStudent } from './page'
+import { GraduationCapIcon, StarIcon } from '@/components/Icons'
 
 interface Props {
   alumni: AlumniStudent[]
@@ -160,8 +161,8 @@ export default function PrincipalAlumniClient({ alumni, userId, profile, school,
                 <div className={styles.cardInfo}>
                   <div className={styles.cardNameRow}>
                     <h3 className={styles.cardName}>{a.full_name}</h3>
-                    <span className={`${styles.stageBadge} ${a.lifecycle_stage === 'graduated' ? styles.stageBadgeGrad : styles.stageBadgeAlumni}`}>
-                      {a.lifecycle_stage === 'graduated' ? '🎓 Graduated' : '⭐ Alumni'}
+                    <span className={`${styles.stageBadge} ${a.lifecycle_stage === 'graduated' ? styles.stageBadgeGrad : styles.stageBadgeAlumni}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {a.lifecycle_stage === 'graduated' ? <><GraduationCapIcon size={12} /> Graduated</> : <><StarIcon size={12} /> Alumni</>}
                     </span>
                   </div>
                   <div className={styles.cardMeta}>

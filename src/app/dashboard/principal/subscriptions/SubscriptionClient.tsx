@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   CreditCardIcon, CalendarIcon, UsersIcon, CheckCircleIcon,
   AlertCircleIcon, RefreshIcon, BarChartIcon, FileTextIcon,
-  ArrowLeftIcon, SunIcon, MoonIcon,
+  ArrowLeftIcon, SunIcon, MoonIcon, XIcon,
 } from '@/components/Icons'
 import styles from './subscription.module.css'
 
@@ -236,7 +236,7 @@ export default function SubscriptionClient({
           <button
             onClick={() => setToast(null)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '4px', opacity: 0.7, color: 'inherit' }}
-          >✕</button>
+          ><XIcon size={13} /></button>
         </div>
       )}
 

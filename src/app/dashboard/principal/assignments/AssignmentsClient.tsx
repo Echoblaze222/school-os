@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './assignments.module.css'
+import { AlertIcon, CheckIcon, XIcon, CalendarIcon, UserIcon, RefreshIcon } from '@/components/Icons'
 
 type Status = 'active' | 'draft' | 'closed'
 const STATUS_COLOR: Record<Status, string> = { active: '#10B981', draft: '#F59E0B', closed: '#6B7280' }
@@ -24,7 +25,7 @@ interface Props { profile: any; school: any; userId: string }
 
 export default function AssignmentsClient({ profile, school, userId }: Props) {
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
   const [assignments, setAssignments] = useState<any[]>([])
   const [classes,     setClasses]     = useState<any[]>([])
   const [classRoster,  setClassRoster] = useState<Record<string, number>>({})
@@ -158,13 +159,13 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Assignments">
       {subsError && (
         <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
-          borderRadius: 8, marginBottom: 16, fontSize: '0.78rem', color: '#EF4444', fontFamily: 'monospace' }}>
-          ⚠️ Submissions query failed: {subsError}
+          borderRadius: 8, marginBottom: 16, fontSize: '0.78rem', color: '#EF4444', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <AlertIcon size={14} /> Submissions query failed: {subsError}
         </div>
       )}
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
-          {toast.ok ? '✓' : '✕'} {toast.msg}
+          {toast.ok ? <CheckIcon size={14} /> : <XIcon size={14} />} {toast.msg}
         </div>
       )}
 
@@ -215,7 +216,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
             ))}
           </div>
           <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
-            {showForm ? '✕ Close' : '+ New Assignment'}
+            {showForm ? <><XIcon size={14} /> Close</> : '+ New Assignment'}
           </button>
         </div>
 
@@ -295,12 +296,12 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                       {asgn.description && <p className={styles.assignmentDesc}>{asgn.description}</p>}
                       <div className={styles.cardMeta}>
                         {asgn.due_date && (
-                          <span className={`${styles.dueDate} ${overdue ? styles.dueDateOverdue : ''}`}>
-                            📅 {relTime(asgn.due_date)} · {new Date(asgn.due_date).toLocaleDateString('en-NG',{day:'numeric',month:'short'})}
+                          <span className={`${styles.dueDate} ${overdue ? styles.dueDateOverdue : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <CalendarIcon size={12} /> {relTime(asgn.due_date)} · {new Date(asgn.due_date).toLocaleDateString('en-NG',{day:'numeric',month:'short'})}
                           </span>
                         )}
                         {asgn.max_score && <span className={styles.scoreTag}>/{asgn.max_score} pts</span>}
-                        {asgn.teacher?.full_name && <span className={styles.teacherTag}>👤 {asgn.teacher.full_name}</span>}
+                        {asgn.teacher?.full_name && <span className={styles.teacherTag} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserIcon size={12} /> {asgn.teacher.full_name}</span>}
                       </div>
 
                       {/* Submission completion bar */}
@@ -328,7 +329,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                         title={`Change status (currently ${asgn.status})`}
                         style={{ color: sc2 }}
                       >
-                        ↻
+                        <RefreshIcon size={14} />
                       </button>
                       <button className={styles.delBtn} onClick={() => setConfirmDel(asgn)} title="Delete">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>

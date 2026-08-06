@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon } from '@/components/Icons'
+import { ripple } from '@/lib/ripple'
+import motion from '@/components/dashboard-motion.module.css'
+import AnimatedLogo from '@/components/AnimatedLogo'
 import styles from './select-school.module.css'
 
 interface School {
@@ -141,8 +145,7 @@ export default function SelectSchoolPage() {
 
         {/* SchoolOS logo — top, centered, ChatGPT-style */}
         <div className={styles.brandBlock}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/logo.png" alt="SchoolOS" className={styles.brandLogo} />
+          <AnimatedLogo size={64} variant="dark-bg" className={styles.brandLogo} />
           <h1 className={styles.brandName}>School<span className={styles.brandAccent}>OS</span></h1>
         </div>
 
@@ -170,7 +173,7 @@ export default function SelectSchoolPage() {
                 <span className={styles.continueTitle}>Continue with {recent.name}</span>
                 <span className={styles.continueSub}>Your last school portal</span>
               </span>
-              <span className={styles.continueArrow}>→</span>
+              <span className={styles.continueArrow}><ArrowRightIcon size={16} /></span>
             </button>
           )}
 
@@ -188,7 +191,7 @@ export default function SelectSchoolPage() {
 
               <div className={`${styles.searchBox} ${selected ? styles.searchBoxSelected : ''}`}>
                 <span className={styles.searchIcon}>
-                  {searching ? '⏳' : selected ? '✅' : '🔍'}
+                  {searching ? <ClockIcon size={16} /> : selected ? <CheckCircleIcon size={16} /> : <SearchIcon size={16} />}
                 </span>
                 <input
                   ref={searchRef}
@@ -200,17 +203,18 @@ export default function SelectSchoolPage() {
                   autoComplete="off"
                 />
                 {query && (
-                  <button className={styles.clearBtn} onClick={clearSelection} type="button">✕</button>
+                  <button className={styles.clearBtn} onClick={clearSelection} type="button"><XIcon size={13} /></button>
                 )}
               </div>
 
               {/* Dropdown results */}
               {results.length > 0 && (
-                <div className={styles.dropdown}>
-                  {results.map(school => (
+                <div className={`${styles.dropdown} ${motion.riseIn}`}>
+                  {results.map((school, i) => (
                     <button
                       key={school.id}
-                      className={styles.schoolResult}
+                      className={`${styles.schoolResult} ${motion.staggerItem} ${motion.pressable}`}
+                      style={{ animationDelay: `${i * 40}ms` }}
                       onClick={() => selectSchool(school)}
                       type="button"
                     >
@@ -265,7 +269,7 @@ export default function SelectSchoolPage() {
                         <p className={styles.selectedTagline}>{selected.tagline}</p>
                       )}
                       <p className={styles.selectedLocation}>
-                        📍 {[selected.city, selected.state].filter(Boolean).join(', ') || 'Nigeria'}
+                        <MapPinIcon size={12} /> {[selected.city, selected.state].filter(Boolean).join(', ') || 'Nigeria'}
                       </p>
                     </div>
                   </div>
@@ -273,12 +277,13 @@ export default function SelectSchoolPage() {
               )}
 
               <button
-                className={styles.submitBtn}
+                className={`${styles.submitBtn} ${motion.rippleHost} ${motion.focusable}`}
                 onClick={proceedToLogin}
                 disabled={!selected}
                 type="button"
+                onMouseDown={ripple(motion)}
               >
-                {selected ? `Enter ${selected.name} Portal →` : 'Select a school first'}
+                {selected ? <>Enter {selected.name} Portal <ArrowRightIcon size={14} /></> : 'Select a school first'}
               </button>
             </div>
           )}
@@ -287,7 +292,7 @@ export default function SelectSchoolPage() {
           <div className={styles.registerRow}>
             <span>Are you a school administrator?</span>
             <a href="/register-school" className={styles.registerLink}>
-              Register school →
+              Register school <ArrowRightIcon size={13} />
             </a>
           </div>
         </div>

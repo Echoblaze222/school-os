@@ -18,7 +18,7 @@
   top: -100px;
   right: -100px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--burgundy-glow) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%);
   filter: blur(50px);
   pointer-events: none;
   opacity: 0.45;
@@ -170,7 +170,7 @@
   color: var(--text-primary);
 }
 .filterToggleBtnOpen {
-  background: var(--burgundy-subtle);
+  background: var(--brand-subtle);
   border-color: rgba(128, 0, 32, 0.35);
   color: var(--text-accent);
 }
@@ -183,7 +183,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--burgundy);
+  background: var(--brand);
   border: 1.5px solid var(--bg-base);
 }
 
@@ -376,7 +376,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--burgundy-subtle);
+  background: var(--brand-subtle);
   border: 1px solid rgba(128, 0, 32, 0.2);
   display: flex;
   align-items: center;
@@ -495,7 +495,7 @@
   color: var(--text-primary);
 }
 .pageNumActive {
-  background: var(--burgundy-subtle) !important;
+  background: var(--brand-subtle) !important;
   border-color: rgba(128, 0, 32, 0.4) !important;
   color: var(--text-accent) !important;
 }

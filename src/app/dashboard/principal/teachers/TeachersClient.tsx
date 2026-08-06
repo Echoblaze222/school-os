@@ -8,6 +8,7 @@ import { useRouter }                    from 'next/navigation'
 import RolePageWrapper                  from '@/components/RolePageWrapper'
 import type { TeacherRow }              from './page'
 import styles                           from './teachers.module.css'
+import { CrownIcon }                    from '@/components/Icons'
 
 interface Props {
   teachers: TeacherRow[]
@@ -75,7 +76,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
   const subjectTeacherCount = teachers.filter(t => !t.class_assignments.some(a => a.is_primary) && t.class_assignments.length > 0).length
   const unassignedCount     = teachers.filter(t => t.class_assignments.length === 0).length
 
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   const pills: { key: typeof roleFilter; label: string; count: number }[] = [
     { key: 'all',        label: 'All',              count: teachers.length        },
@@ -309,7 +310,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
                             color:      a.is_primary ? '#F59E0B'   : '#3B82F6',
                           }}
                         >
-                          {a.is_primary ? '👑 Class' : 'Subject'}
+                          {a.is_primary ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><CrownIcon size={11} /> Class</span> : 'Subject'}
                         </span>
                       </div>
                     ))}

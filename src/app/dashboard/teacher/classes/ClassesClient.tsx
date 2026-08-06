@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import {
   PeopleIcon, CalendarIcon, ClipboardIcon,
-  BarChartIcon, AwardIcon,
+  BarChartIcon, AwardIcon, CrownIcon,
 } from '@/components/Icons'
 
 interface Props { profile: any; school: any; userId: string }
@@ -31,7 +31,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   const [loading,  setLoading]  = useState(true)
   const router   = useRouter()
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [])
   useEffect(() => { if (selected) loadStudents(selected.class_id) }, [selected])
@@ -97,13 +97,13 @@ export default function ClassesClient({ profile, school, userId }: Props) {
     {
       label: 'New Assignment',
       Icon: ClipboardIcon,
-      color: '#F59E0B',
+      color: 'var(--warning)',
       onClick: () => goTo('/dashboard/teacher/assignments'),
     },
     {
       label: 'View Results',
       Icon: BarChartIcon,
-      color: '#10B981',
+      color: 'var(--success)',
       onClick: () => goTo('/dashboard/teacher/results'),
     },
     {
@@ -147,7 +147,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 }}
               >
                 {cls.class_name}
-                {cls.is_primary ? ' 👑' : ''}
+                {cls.is_primary && <CrownIcon size={11} style={{ verticalAlign: 'middle', marginLeft: 3 }} />}
                 {cls.subject ? ` (${cls.subject})` : ''}
               </button>
             ))}
@@ -179,15 +179,15 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                   <span style={{
                     padding: '4px 10px',
                     borderRadius: 999,
-                    background: selected.is_primary ? '#F59E0B20' : '#3B82F620',
-                    border: `1px solid ${selected.is_primary ? '#F59E0B50' : '#3B82F650'}`,
-                    color: selected.is_primary ? '#F59E0B' : '#3B82F6',
+                    background: selected.is_primary ? 'color-mix(in srgb, var(--warning) 13%, transparent)' : 'color-mix(in srgb, var(--info) 13%, transparent)',
+                    border: `1px solid ${selected.is_primary ? 'color-mix(in srgb, var(--warning) 31%, transparent)' : 'color-mix(in srgb, var(--info) 31%, transparent)'}`,
+                    color: selected.is_primary ? 'var(--warning)' : 'var(--info)',
                     fontSize: '0.65rem',
                     fontWeight: 700,
                     textTransform: 'uppercase' as const,
                     letterSpacing: '0.06em',
                   }}>
-                    {selected.is_primary ? '👑 Class Teacher' : 'Subject Teacher'}
+                    {selected.is_primary ? <><CrownIcon size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Class Teacher</> : 'Subject Teacher'}
                   </span>
                   <p style={{ margin: '4px 0 0', color: sc, fontWeight: 700, fontSize: '0.82rem' }}>
                     {students.length} student{students.length !== 1 ? 's' : ''}

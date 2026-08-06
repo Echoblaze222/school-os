@@ -13,7 +13,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { BookIcon, PlusIcon, DownloadIcon } from '@/components/Icons'
+import { BookIcon, PlusIcon, DownloadIcon, AlertIcon, XIcon, EditIcon, FileTextIcon, BookOpenIcon, PaperclipIcon } from '@/components/Icons'
 import NoteBook from '@/components/NoteBook'
 import DocumentViewer from '@/components/DocumentViewer'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -63,7 +63,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   })
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadTeacherClasses(); loadNotes() }, [])
 
@@ -207,9 +207,9 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
       {/* FIX: visible error banner, dismissible */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
+          <button onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
@@ -255,7 +255,9 @@ export default function NotesClient({ profile, school, userId }: Props) {
             {(['type', 'upload'] as const).map(mode => (
               <button key={mode} onClick={() => setUploadMode(mode)}
                 style={{ flex: 1, height: 36, borderRadius: 8, border: `1px solid ${uploadMode === mode ? sc : 'var(--glass-border)'}`, background: uploadMode === mode ? sc + '20' : 'transparent', color: uploadMode === mode ? sc : 'var(--text-muted)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
-                {mode === 'type' ? '✏️ Type Note' : '📄 Upload PDF'}
+                {mode === 'type'
+                  ? <><EditIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Type Note</>
+                  : <><FileTextIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Upload PDF</>}
               </button>
             ))}
           </div>
@@ -272,7 +274,9 @@ export default function NotesClient({ profile, school, userId }: Props) {
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" onChange={handleFileChange} style={{ display: 'none' }} />
               <button onClick={() => fileRef.current?.click()}
                 style={{ width: '100%', height: 80, border: `2px dashed ${uploadedFile ? sc : 'var(--glass-border)'}`, borderRadius: 10, background: uploadedFile ? sc + '10' : 'transparent', color: uploadedFile ? sc : 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
-                {uploadedFile ? `📎 ${uploadedFile.name}` : 'Tap to select PDF or document'}
+                {uploadedFile
+                  ? <><PaperclipIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />{uploadedFile.name}</>
+                  : 'Tap to select PDF or document'}
               </button>
               {uploading && <p style={{ fontSize: '0.75rem', color: sc, marginTop: 6 }}>Uploading...</p>}
             </div>
@@ -311,7 +315,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                       {new Date(item.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                  <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, background: item.file_url ? '#3B82F620' : '#10B98120', color: item.file_url ? '#3B82F6' : '#10B981', flexShrink: 0 }}>
+                  <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, background: item.file_url ? 'color-mix(in srgb, var(--info) 13%, transparent)' : 'color-mix(in srgb, var(--success) 13%, transparent)', color: item.file_url ? 'var(--info)' : 'var(--success)', flexShrink: 0 }}>
                     {item.file_url ? 'PDF' : 'TEXT'}
                   </span>
                 </div>
@@ -324,14 +328,14 @@ export default function NotesClient({ profile, school, userId }: Props) {
                       {item.description && (
                         <button onClick={() => setPreviewBook(item)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                          📖 Preview as Flip-Book
+                          <BookOpenIcon size={13} color="#fff" /> Preview as Flip-Book
                         </button>
                       )}
                       {item.file_url && (
                         <>
                           <button onClick={() => setPreviewDoc(item)}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc + '20', color: sc, border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                            📄 Preview In-App
+                            <FileTextIcon size={13} color={sc} /> Preview In-App
                           </button>
                           <a href={item.file_url} target="_blank" rel="noreferrer"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
@@ -342,7 +346,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                     </div>
                     <br />
                     <button onClick={() => deleteNote(item.id)}
-                      style={{ marginTop: 6, padding: '5px 12px', background: 'transparent', border: '1px solid #EF444440', borderRadius: 999, fontWeight: 700, fontSize: '0.72rem', color: '#EF4444', cursor: 'pointer' }}>
+                      style={{ marginTop: 6, padding: '5px 12px', background: 'transparent', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.72rem', color: 'var(--danger)', cursor: 'pointer' }}>
                       Delete Note
                     </button>
                   </div>

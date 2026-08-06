@@ -1,0 +1,22 @@
+.mark { display: block; overflow: visible; }
+
+@keyframes tilePulse {
+  0%    { transform: scale(1); }
+  12.5% { transform: scale(1.28); }
+  25%   { transform: scale(1); }
+  100%  { transform: scale(1); }
+}
+
+.tile {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tilePulse 2s ease-in-out infinite;
+}
+.t1 { animation-delay: 0s;   }
+.t2 { animation-delay: 0.5s; }
+.t3 { animation-delay: 1s;   }
+.t4 { animation-delay: 1.5s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tile { animation: none; }
+}

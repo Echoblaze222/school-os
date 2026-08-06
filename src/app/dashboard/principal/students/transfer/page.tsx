@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './transfer.module.css'
+import { TransferIcon, MoonIcon, SunIcon, AlertIcon } from '@/components/Icons'
 
 interface Student { id: string; full_name: string; admission_number: string; class_label: string; outstanding_fees: number }
 interface School   { id: string; name: string; city: string }
@@ -157,7 +158,7 @@ function TransferPageContent() {
           <div style={{ width: 36 }} />
         </header>
         <div className={styles.successBox}>
-          <p className={styles.successIcon}>✈️</p>
+          <p className={styles.successIcon}><TransferIcon size={40} /></p>
           <p className={styles.successTitle}>Transfer Initiated</p>
           <p className={styles.successSub}>
             The Principal of <strong>{selectedSchool?.name}</strong> has been notified.
@@ -182,7 +183,7 @@ function TransferPageContent() {
           const next = theme === 'light' ? 'dark' : 'light'
           setTheme(next); localStorage.setItem('schoolos_theme', next)
           document.documentElement.setAttribute('data-theme', next)
-        }}>{theme === 'light' ? '🌙' : '☀️'}</button>
+        }}>{theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}</button>
       </header>
 
       <main className={styles.main}>
@@ -217,14 +218,14 @@ function TransferPageContent() {
             {preselected && (
               <button
                 onClick={() => { setPreselected(false); setSelectedStudent(null); setStudentResults([]); setAcknowledged(false) }}
-                style={{ background: 'none', border: 'none', padding: 0, color: 'var(--color-brand)', fontSize: 'var(--font-size-xs)', fontWeight: 700, cursor: 'pointer', marginBottom: 'var(--space-2)' }}
+                style={{ background: 'none', border: 'none', padding: 0, color: 'var(--brand)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', marginBottom: 'var(--space-2)' }}
               >
                 Change student
               </button>
             )}
             {hasDebt && (
               <div className={styles.warningBox}>
-                <p className={styles.warningTitle}>⚠️ Outstanding Fees</p>
+                <p className={styles.warningTitle} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><AlertIcon size={15} /> Outstanding Fees</p>
                 <p className={styles.warningText}>
                   This student has ₦{selectedStudent.outstanding_fees.toLocaleString()} in unpaid fees.
                   You must acknowledge this debt before initiating transfer.
@@ -267,7 +268,7 @@ function TransferPageContent() {
             <p className={styles.confirmSub}>The destination school principal will need to approve this transfer.</p>
             {error && <p className={styles.errorMsg}>{error}</p>}
             <button className={styles.transferBtn} onClick={initiateTransfer} disabled={transferring}>
-              {transferring ? <><span className={styles.spinner}/> Initiating...</> : '✈️ Initiate Transfer'}
+              {transferring ? <><span className={styles.spinner}/> Initiating...</> : <><TransferIcon size={14} /> Initiate Transfer</>}
             </button>
           </div>
         )}

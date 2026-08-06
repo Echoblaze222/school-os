@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
-import { ClockIcon, PlusIcon } from '@/components/Icons'
+import { ClockIcon, PlusIcon, AlertIcon, XIcon, MapPinIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -52,7 +52,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   })
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => { if (school?.id) load() }, [day, school?.id])
@@ -209,9 +209,9 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
+          <button onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
@@ -289,7 +289,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                   </div>
                   <div className={styles.periodBody} style={{ borderLeftColor: sc }}>
                     <p className={styles.periodSubject}>{subjectName}</p>
-                    <p className={styles.periodMeta}>{p.room ? `📍 ${p.room}` : ''}</p>
+                    <p className={styles.periodMeta}>{p.room ? <><MapPinIcon size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />{p.room}</> : ''}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                       <div className={styles.periodDuration}>
                         <ClockIcon size={11} color="var(--text-muted)" />
@@ -310,7 +310,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                           />
                         )}
                         <button onClick={() => deletePeriod(p.id)}
-                          style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                          style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
                           Remove
                         </button>
                       </div>

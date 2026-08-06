@@ -76,19 +76,19 @@ function computeGrade(score: number, maxScore: number): string {
 }
 
 function gradeColor(g: string) {
-  if (g === 'A') return '#10B981'
-  if (g === 'B') return '#3B82F6'
-  if (g === 'C') return '#F59E0B'
+  if (g === 'A') return 'var(--success)'
+  if (g === 'B') return 'var(--info)'
+  if (g === 'C') return 'var(--warning)'
   if (g === 'D') return '#F97316'
-  return '#EF4444'
+  return 'var(--danger)'
 }
 
 function gradeBg(g: string) {
-  if (g === 'A') return '#10B98120'
-  if (g === 'B') return '#3B82F620'
-  if (g === 'C') return '#F59E0B20'
+  if (g === 'A') return 'color-mix(in srgb, var(--success) 13%, transparent)'
+  if (g === 'B') return 'color-mix(in srgb, var(--info) 13%, transparent)'
+  if (g === 'C') return 'color-mix(in srgb, var(--warning) 13%, transparent)'
   if (g === 'D') return '#F9731620'
-  return '#EF444420'
+  return 'color-mix(in srgb, var(--danger) 13%, transparent)'
 }
 
 function initials(n: string) {
@@ -113,7 +113,7 @@ export default function PostResultsClient({
   teacherId,
   schoolId,
   academicYear,
-  primaryColor = '#7C3AED',
+  primaryColor = '#800020',
   teacherName,
   profile,
   school,
@@ -522,7 +522,7 @@ export default function PostResultsClient({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
           {[
             { label: 'Students', value: previewGroup.count },
-            { label: 'Avg Score', value: `${avgPct}%`, color: avgPct >= 50 ? '#10B981' : '#EF4444' },
+            { label: 'Avg Score', value: `${avgPct}%`, color: avgPct >= 50 ? 'var(--success)' : 'var(--danger)' },
             { label: 'Max Score', value: previewGroup.maxScore },
           ].map(s => (
             <div key={s.label} style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10 }}>
@@ -734,12 +734,12 @@ export default function PostResultsClient({
 
           {/* Status banners */}
           {submitStatus === 'success' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: '#10B98120', border: '1px solid #10B981', color: '#10B981', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--success) 13%, transparent)', border: '1px solid var(--success)', color: 'var(--success)', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
               <IcCheck /> Saved {savedCount} result{savedCount !== 1 ? 's' : ''} successfully!
             </div>
           )}
           {submitStatus === 'error' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: '#EF444420', border: '1px solid #EF4444', color: '#EF4444', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 13%, transparent)', border: '1px solid var(--danger)', color: 'var(--danger)', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
               <IcAlert /> {errorMsg || 'Failed to save results.'}
             </div>
           )}
@@ -760,7 +760,7 @@ export default function PostResultsClient({
                   <div key={s.student_id} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '10px 14px', background: 'var(--glass-bg)',
-                    border: `1px solid ${isOver ? '#EF4444' : 'var(--glass-border)'}`,
+                    border: `1px solid ${isOver ? 'var(--danger)' : 'var(--glass-border)'}`,
                     borderRadius: 12,
                   }}>
                     {/* Avatar */}
@@ -781,8 +781,8 @@ export default function PostResultsClient({
                       style={{
                         width: 68, padding: '8px 10px', borderRadius: 8, textAlign: 'center',
                         background: 'var(--glass-bg)', fontWeight: 700, fontSize: '0.95rem',
-                        color: isOver ? '#EF4444' : 'var(--text-primary)',
-                        border: `1px solid ${isOver ? '#EF4444' : 'var(--glass-border)'}`,
+                        color: isOver ? 'var(--danger)' : 'var(--text-primary)',
+                        border: `1px solid ${isOver ? 'var(--danger)' : 'var(--glass-border)'}`,
                         flexShrink: 0,
                       }}
                     />

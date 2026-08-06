@@ -54,7 +54,7 @@ function actionColor(action: string): { bg: string; text: string } {
 function roleColor(role: string): { bg: string; text: string } {
   switch (role.toLowerCase()) {
     case 'teacher':   return { bg: 'var(--success-bg)', text: 'var(--success)' }
-    case 'principal': return { bg: 'var(--burgundy-subtle)', text: 'var(--text-accent)' }
+    case 'principal': return { bg: 'var(--brand-subtle)', text: 'var(--text-accent)' }
     case 'bursar':    return { bg: 'rgba(155,89,182,0.12)', text: '#9B59B6' }
     case 'parent':    return { bg: 'var(--warning-bg)', text: 'var(--warning)' }
     case 'secretary': return { bg: 'rgba(26,188,156,0.12)', text: '#1ABC9C' }

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchoolOS — Logo System: The System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#4A0012; --maroon-dk:#33000C; --maroon-lt:#7A1030;
+    --cyan:#006B85; --cyan-dk:#00566A; --cyan-lt:#1C93AC;
+    --ink:#14161A; --paper:#F7F7F8; --muted:#6b6f76; --line:rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  header{max-width:1040px;margin:0 auto;padding:48px 24px 8px;}
+  header .eyebrow{font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--maroon);font-weight:700;}
+  header h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.6rem,3.4vw,2.3rem);margin:10px 0 8px;}
+  header p{color:var(--muted);max-width:680px;line-height:1.6;font-size:0.95rem;}
+
+  main{max-width:1040px;margin:0 auto;padding:20px 24px 90px;}
+  section{background:#fff;border-radius:20px;border:1px solid var(--line);margin-bottom:22px;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden;}
+  .sec-head{padding:20px 26px 0;}
+  .sec-head .tag{font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--cyan-dk);font-weight:700;}
+  .sec-head h2{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;margin:6px 0 6px;}
+  .sec-head p{margin:0 0 6px;font-size:0.85rem;color:var(--muted);line-height:1.6;max-width:640px;}
+  .sec-body{padding:22px 26px 28px;}
+
+  /* ── hero ── */
+  .hero-body{display:grid;grid-template-columns:1fr 1fr;}
+  .hero-pane{aspect-ratio:16/11;display:flex;align-items:center;justify-content:center;}
+  .hero-pane.light{background:#fdfdfd;border-right:1px solid var(--line);}
+  .hero-pane.dark{background:var(--ink);}
+  .hero-pane svg{width:130px;height:130px;}
+  @media (max-width:640px){ .hero-body{grid-template-columns:1fr;} .hero-pane.light{border-right:none;border-bottom:1px solid var(--line);} }
+
+  /* ── construction grid ── */
+  .construct-row{display:flex;gap:36px;align-items:center;flex-wrap:wrap;}
+  .construct-diagram{flex-shrink:0;}
+  .construct-notes{flex:1;min-width:220px;}
+  .construct-notes ul{margin:0;padding-left:18px;font-size:0.84rem;color:var(--ink);line-height:1.9;}
+  .construct-notes li b{color:var(--maroon);}
+
+  /* ── clear space ── */
+  .clearspace-row{display:flex;gap:40px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  .cs-box{text-align:center;}
+  .cs-box p{margin-top:10px;font-size:0.78rem;color:var(--muted);}
+
+  /* ── minimum sizes ── */
+  .size-row{display:flex;gap:36px;align-items:flex-end;flex-wrap:wrap;}
+  .size-item{text-align:center;}
+  .size-item .swatch{background:#fdfdfd;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
+  .size-item p{margin:0;font-size:0.76rem;color:var(--muted);}
+  .size-item .px{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink);font-size:0.8rem;}
+
+  /* ── monochrome ── */
+  .mono-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
+  .mono-pane{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--line);}
+  .mono-pane:last-child{border-right:none;}
+  .mono-pane svg{width:64px;height:64px;}
+  .mono-pane.p1{background:#fff;}
+  .mono-pane.p2{background:var(--ink);}
+  .mono-pane.p3{background:var(--maroon);}
+  .mono-pane.p4{background:var(--cyan);}
+  .mono-labels{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;padding:10px 0;border-top:1px solid var(--line);}
+  .mono-labels span{font-size:0.7rem;color:var(--muted);font-weight:600;}
+
+  /* ── lockup ── */
+  .lockup-pane{aspect-ratio:3/1;display:flex;align-items:center;justify-content:center;gap:14px;}
+  .lockup-pane.light{background:#fdfdfd;border-bottom:1px solid var(--line);}
+  .lockup-pane.dark{background:var(--ink);}
+  .lockup-icon{width:46px;height:46px;}
+  .lockup-word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.6rem;}
+
+  /* ── outline / stroke variant ── */
+  .stroke-row{display:flex;gap:36px;align-items:center;flex-wrap:wrap;}
+  .stroke-pane{width:220px;height:220px;border:1px solid var(--line);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .stroke-pane.dark{background:var(--ink);border-color:var(--ink);}
+  .stroke-pane svg{width:130px;height:130px;}
+  .stroke-notes ul{margin:0;padding-left:18px;font-size:0.84rem;color:var(--ink);line-height:1.9;}
+  .stroke-notes li b{color:var(--maroon);}
+
+  /* ── app icon with depth ── */
+  .icon-row{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;}
+  .icon-tile{
+    width:120px;height:120px;border-radius:26px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 2px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.12);
+    position:relative; overflow:hidden;
+  }
+  .icon-tile::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 40%);
+    pointer-events:none;
+  }
+  .icon-tile svg{width:64px;height:64px;position:relative;z-index:1;}
+  .icon-caption{margin-top:10px;font-size:0.76rem;color:var(--muted);text-align:center;}
+  .icon-item{display:flex;flex-direction:column;align-items:center;}
+
+  /* ── color ref ── */
+  .colors{display:flex;gap:14px;flex-wrap:wrap;}
+  .color-chip{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px;}
+  .color-chip i{width:26px;height:26px;border-radius:7px;display:block;flex-shrink:0;}
+  .color-chip .name{font-size:0.78rem;font-weight:700;}
+  .color-chip .hex{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Logo system — final direction</div>
+  <h1>The System, developed</h1>
+  <p>Four modules on a diamond axis, taken from a single sketch concept to a mark that can actually ship: a stated construction grid, clear space, tested minimum sizes, monochrome versions for when two colors aren't available, and a wordmark lockup for contexts that need the name spelled out.</p>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section>
+    <div class="hero-body">
+      <div class="hero-pane light">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+            <rect x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+            <rect x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+            <rect x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+          </g>
+        </svg>
+      </div>
+      <div class="hero-pane dark">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="#7A1030"/>
+            <rect x="54" y="18" width="28" height="28" rx="6" fill="#7A1030"/>
+            <rect x="18" y="54" width="28" height="28" rx="6" fill="#7A1030"/>
+            <rect x="54" y="54" width="28" height="28" rx="6" fill="#1C93AC"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONSTRUCTION -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">01 — Construction</div>
+      <h2>Built from one module, repeated</h2>
+      <p>Everything here derives from a single 28×28 tile with a 6-unit corner radius, placed on a 4-unit gap grid, then rotated 45° as one group. Nothing is sized or placed by eye.</p>
+    </div>
+    <div class="sec-body">
+      <div class="construct-row">
+        <div class="construct-diagram">
+          <svg width="200" height="200" viewBox="0 0 100 100">
+            <!-- guide grid -->
+            <g stroke="#006B85" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.5">
+              <line x1="0" y1="50" x2="100" y2="50"/>
+              <line x1="50" y1="0" x2="50" y2="100"/>
+            </g>
+            <g transform="rotate(45 50 50)">
+              <rect x="18" y="18" width="28" height="28" rx="6" fill="none" stroke="#4A0012" stroke-width="1"/>
+              <rect x="54" y="18" width="28" height="28" rx="6" fill="none" stroke="#4A0012" stroke-width="1"/>
+              <rect x="18" y="54" width="28" height="28" rx="6" fill="none" stroke="#4A0012" stroke-width="1"/>
+              <rect x="54" y="54" width="28" height="28" rx="6" fill="none" stroke="#006B85" stroke-width="1"/>
+              <!-- dimension marks -->
+              <line x1="18" y1="14" x2="46" y2="14" stroke="#6b6f76" stroke-width="0.6"/>
+              <text x="32" y="11" font-size="4" fill="#6b6f76" text-anchor="middle" font-family="JetBrains Mono, monospace">28</text>
+              <line x1="46" y1="18" x2="54" y2="18" stroke="#6b6f76" stroke-width="0.6"/>
+              <text x="50" y="15" font-size="3.5" fill="#6b6f76" text-anchor="middle" font-family="JetBrains Mono, monospace">4</text>
+            </g>
+          </svg>
+        </div>
+        <div class="construct-notes">
+          <ul>
+            <li><b>Module:</b> 28 × 28 units, 6-unit corner radius (≈21% of the tile — soft, not sharp, not pill-shaped)</li>
+            <li><b>Gap:</b> exactly 4 units between every tile, both axes</li>
+            <li><b>Rotation:</b> the full group turns 45° around its own center — the tiles never move independently</li>
+            <li><b>Color rule:</b> three tiles maroon, one tile cyan — always the same tile (bottom-right before rotation), never rotating which one is the accent</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLEAR SPACE -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">02 — Clear space</div>
+      <h2>Minimum breathing room</h2>
+      <p>Keep at least one tile-width of clear space around the mark on every side — nothing else (text, edges, other UI) should enter that zone.</p>
+    </div>
+    <div class="sec-body">
+      <div class="clearspace-row">
+        <div class="cs-box">
+          <svg width="180" height="180" viewBox="0 0 140 140">
+            <rect x="0" y="0" width="140" height="140" fill="none" stroke="#006B85" stroke-width="1" stroke-dasharray="3 3"/>
+            <g transform="translate(20,20)">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+              </g>
+            </g>
+          </svg>
+          <p>Clear space = 1 tile-width (28 units) on every edge, measured from the outer points of the rotated diamond.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MINIMUM SIZE -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">03 — Minimum size</div>
+      <h2>Tested down to favicon scale</h2>
+      <p>Below 24px the 4-unit gap starts to disappear — at that point, switch to the single-tile favicon variant instead of forcing the full mark smaller.</p>
+    </div>
+    <div class="sec-body">
+      <div class="size-row">
+        <div class="size-item">
+          <div class="swatch" style="width:96px;height:96px;">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+              </g>
+            </svg>
+          </div>
+          <p class="px">64px</p>
+          <p>App icon, standard UI</p>
+        </div>
+        <div class="size-item">
+          <div class="swatch" style="width:56px;height:56px;">
+            <svg width="32" height="32" viewBox="0 0 100 100">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+              </g>
+            </svg>
+          </div>
+          <p class="px">32px</p>
+          <p>Browser tab, small UI</p>
+        </div>
+        <div class="size-item">
+          <div class="swatch" style="width:40px;height:40px;">
+            <svg width="24" height="24" viewBox="0 0 100 100">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+                <rect x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+              </g>
+            </svg>
+          </div>
+          <p class="px">24px</p>
+          <p>Lower limit for the full mark</p>
+        </div>
+        <div class="size-item">
+          <div class="swatch" style="width:40px;height:40px;">
+            <svg width="24" height="24" viewBox="0 0 100 100">
+              <rect x="14" y="14" width="72" height="72" rx="16" fill="#4A0012"/>
+              <rect x="38" y="38" width="24" height="24" rx="5" fill="#006B85"/>
+            </svg>
+          </div>
+          <p class="px">16px</p>
+          <p><b>Favicon variant</b> — single tile, not the full grid</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MONOCHROME -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">04 — Monochrome</div>
+      <h2>For contexts where two colors aren't available</h2>
+      <p>Stamps, single-color print, faxes, watermarks, engraving — the mark has to survive one flat color too.</p>
+    </div>
+    <div class="mono-row">
+      <div class="mono-pane p1">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="#14161A"/>
+            <rect x="54" y="18" width="28" height="28" rx="6" fill="#14161A"/>
+            <rect x="18" y="54" width="28" height="28" rx="6" fill="#14161A"/>
+            <rect x="54" y="54" width="28" height="28" rx="6" fill="#14161A"/>
+          </g>
+        </svg>
+      </div>
+      <div class="mono-pane p2">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="#fff"/>
+            <rect x="54" y="18" width="28" height="28" rx="6" fill="#fff"/>
+            <rect x="18" y="54" width="28" height="28" rx="6" fill="#fff"/>
+            <rect x="54" y="54" width="28" height="28" rx="6" fill="#fff"/>
+          </g>
+        </svg>
+      </div>
+      <div class="mono-pane p3">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="#fff"/>
+            <rect x="54" y="18" width="28" height="28" rx="6" fill="#fff"/>
+            <rect x="18" y="54" width="28" height="28" rx="6" fill="#fff"/>
+            <rect x="54" y="54" width="28" height="28" rx="6" fill="#fff"/>
+          </g>
+        </svg>
+      </div>
+      <div class="mono-pane p4">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="#14161A"/>
+            <rect x="54" y="18" width="28" height="28" rx="6" fill="#14161A"/>
+            <rect x="18" y="54" width="28" height="28" rx="6" fill="#14161A"/>
+            <rect x="54" y="54" width="28" height="28" rx="6" fill="#14161A"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="mono-labels">
+      <span>Ink on white</span>
+      <span>White on ink</span>
+      <span>White on maroon</span>
+      <span>Ink on cyan</span>
+    </div>
+  </section>
+
+  <!-- LOCKUP -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">05 — Wordmark lockup</div>
+      <h2>Icon + name, for headers and login screens</h2>
+      <p>The icon never resizes independently of the wordmark, and the gap between them is fixed at half a tile-width.</p>
+    </div>
+    <div class="lockup-pane light">
+      <svg class="lockup-icon" viewBox="0 0 100 100">
+        <g transform="rotate(45 50 50)">
+          <rect x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+          <rect x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+          <rect x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+          <rect x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+        </g>
+      </svg>
+      <span class="lockup-word" style="color:#14161A;">school<span style="color:#4A0012;">OS</span></span>
+    </div>
+    <div class="lockup-pane dark">
+      <svg class="lockup-icon" viewBox="0 0 100 100">
+        <g transform="rotate(45 50 50)">
+          <rect x="18" y="18" width="28" height="28" rx="6" fill="#7A1030"/>
+          <rect x="54" y="18" width="28" height="28" rx="6" fill="#7A1030"/>
+          <rect x="18" y="54" width="28" height="28" rx="6" fill="#7A1030"/>
+          <rect x="54" y="54" width="28" height="28" rx="6" fill="#1C93AC"/>
+        </g>
+      </svg>
+      <span class="lockup-word" style="color:#F7F7F8;">school<span style="color:#D97A92;">OS</span></span>
+    </div>
+  </section>
+
+  <!-- STROKE / OUTLINE VARIANT -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">06 — Outline variant</div>
+      <h2>The same grid, in line form</h2>
+      <p>For contexts where a solid fill is too heavy — letterheads, engraving, watermarks, thin-weight UI, or layering over a busy photo — the identical construction, stroked instead of filled.</p>
+    </div>
+    <div class="sec-body">
+      <div class="stroke-row">
+        <div class="stroke-pane light">
+          <svg viewBox="0 0 100 100">
+            <g transform="rotate(45 50 50)" fill="none" stroke-linejoin="round">
+              <rect x="18" y="18" width="28" height="28" rx="6" stroke="#4A0012" stroke-width="3.5"/>
+              <rect x="54" y="18" width="28" height="28" rx="6" stroke="#4A0012" stroke-width="3.5"/>
+              <rect x="18" y="54" width="28" height="28" rx="6" stroke="#4A0012" stroke-width="3.5"/>
+              <rect x="54" y="54" width="28" height="28" rx="6" stroke="#006B85" stroke-width="3.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="stroke-pane dark">
+          <svg viewBox="0 0 100 100">
+            <g transform="rotate(45 50 50)" fill="none" stroke-linejoin="round">
+              <rect x="18" y="18" width="28" height="28" rx="6" stroke="#7A1030" stroke-width="3.5"/>
+              <rect x="54" y="18" width="28" height="28" rx="6" stroke="#7A1030" stroke-width="3.5"/>
+              <rect x="18" y="54" width="28" height="28" rx="6" stroke="#7A1030" stroke-width="3.5"/>
+              <rect x="54" y="54" width="28" height="28" rx="6" stroke="#1C93AC" stroke-width="3.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="stroke-notes">
+          <ul>
+            <li><b>Stroke weight:</b> 3.5 units — 12.5% of the 28-unit tile, kept proportional so the line reads at the same visual weight as the 4-unit gaps in the filled version</li>
+            <li><b>Join:</b> rounded corners on the stroke itself (<span class="mono">stroke-linejoin: round</span>), matching the 6-unit corner radius of the filled tiles rather than fighting it</li>
+            <li><b>Same color rule carries over:</b> three tiles in the primary color, one in the accent — the outline version is a treatment of the same mark, not a separate design</li>
+            <li><b>Don't</b> mix filled and outlined tiles in one lockup — pick one treatment per placement</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP ICON WITH DEPTH -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">07 — App icon treatment</div>
+      <h2>Real elevation, not the old glass-and-glow style</h2>
+      <p>App stores and home screens need a filled tile with a little depth — restrained, the way Slack, Linear, or Notion do it: one soft shadow and a faint top highlight, not a gradient sphere or bevel.</p>
+    </div>
+    <div class="sec-body">
+      <div class="icon-row">
+        <div class="icon-item">
+          <div class="icon-tile" style="background:linear-gradient(180deg, #4A0012, #33000C);">
+            <svg viewBox="0 0 100 100">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="7" fill="#F7F7F8"/>
+                <rect x="54" y="18" width="28" height="28" rx="7" fill="#F7F7F8"/>
+                <rect x="18" y="54" width="28" height="28" rx="7" fill="#F7F7F8"/>
+                <rect x="54" y="54" width="28" height="28" rx="7" fill="#006B85"/>
+              </g>
+            </svg>
+          </div>
+          <p class="icon-caption">Maroon tile, white + cyan mark<br>— primary app icon</p>
+        </div>
+        <div class="icon-item">
+          <div class="icon-tile" style="background:linear-gradient(180deg, #1c1f26, #101216);">
+            <svg viewBox="0 0 100 100">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="7" fill="#7A1030"/>
+                <rect x="54" y="18" width="28" height="28" rx="7" fill="#7A1030"/>
+                <rect x="18" y="54" width="28" height="28" rx="7" fill="#7A1030"/>
+                <rect x="54" y="54" width="28" height="28" rx="7" fill="#006B85"/>
+              </g>
+            </svg>
+          </div>
+          <p class="icon-caption">Ink tile, maroon + cyan mark<br>— dark-mode / alternate icon</p>
+        </div>
+        <div class="icon-item">
+          <div class="icon-tile" style="background:linear-gradient(180deg, #fdfdfd, #eef0f3);">
+            <svg viewBox="0 0 100 100">
+              <g transform="rotate(45 50 50)">
+                <rect x="18" y="18" width="28" height="28" rx="7" fill="#4A0012"/>
+                <rect x="54" y="18" width="28" height="28" rx="7" fill="#4A0012"/>
+                <rect x="18" y="54" width="28" height="28" rx="7" fill="#4A0012"/>
+                <rect x="54" y="54" width="28" height="28" rx="7" fill="#006B85"/>
+              </g>
+            </svg>
+          </div>
+          <p class="icon-caption">Light tile, maroon + cyan mark<br>— light-mode / alternate icon</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLOR REFERENCE -->
+  <section>
+    <div class="sec-head">
+      <div class="tag">08 — Color reference</div>
+      <h2>Exact values</h2>
+    </div>
+    <div class="sec-body">
+      <div class="colors">
+        <div class="color-chip"><i style="background:#4A0012;"></i><div><div class="name">Maroon</div><div class="hex">#4A0012</div></div></div>
+        <div class="color-chip"><i style="background:#006B85;"></i><div><div class="name">Cyan</div><div class="hex">#006B85</div></div></div>
+        <div class="color-chip"><i style="background:#14161A;"></i><div><div class="name">Ink</div><div class="hex">#14161A</div></div></div>
+        <div class="color-chip"><i style="background:#7A1030;border:1px solid #eee;"></i><div><div class="name">Maroon (dark bg)</div><div class="hex">#7A1030</div></div></div>
+        <div class="color-chip"><i style="background:#1C93AC;border:1px solid #eee;"></i><div><div class="name">Cyan (dark bg)</div><div class="hex">#1C93AC</div></div></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

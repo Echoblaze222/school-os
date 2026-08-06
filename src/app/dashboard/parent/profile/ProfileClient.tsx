@@ -3,7 +3,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { UserIcon, CameraIcon, KeyIcon, LogOutIcon, EditIcon } from '@/components/Icons'
 
 interface Props { profile: any; school: any; userId: string }
@@ -67,7 +68,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
       setAvatar(freshUrl)
       setMsg('Photo updated!')
-      // Refresh server component so DashboardHeader picks up the new avatar_url
+      // Refresh server component so RoleSubHeader picks up the new avatar_url
       router.refresh()
     } catch (err: any) {
       console.error('Avatar upload error:', err)
@@ -91,7 +92,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   ]
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="My Profile">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="My Profile" featureGroups={PARENT_FEATURE_GROUPS}>
       {/* ── Avatar ── */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-7)' }}>
         <div style={{ position: 'relative' }}>
@@ -184,7 +185,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
   }
       

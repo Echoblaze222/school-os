@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { ArrowLeftIcon, WalletIcon, BankIcon, CreditCardIcon, PhoneIcon, SunIcon, MoonIcon, DownloadIcon, ReceiptIcon, SearchIcon } from '@/components/Icons'
 import styles from './payments.module.css'
 
 interface Payment {
@@ -23,11 +24,11 @@ interface Props {
   userId: string
 }
 
-const METHOD_ICONS: Record<string, string> = {
-  cash:          '💵',
-  bank_transfer: '🏦',
-  card:          '💳',
-  online:        '📱',
+const METHOD_ICONS: Record<string, any> = {
+  cash:          WalletIcon,
+  bank_transfer: BankIcon,
+  card:          CreditCardIcon,
+  online:        PhoneIcon,
 }
 
 export default function AllPaymentsClient({ payments, schoolId, userId }: Props) {
@@ -122,14 +123,14 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
 
       {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/bursar')}>←</button>
+        <button className={styles.backBtn} onClick={() => router.push('/dashboard/bursar')}><ArrowLeftIcon size={18} /></button>
         <h1 className={styles.headerTitle}>All Payments</h1>
         <div className={styles.headerRight}>
           <button className={styles.iconBtn} onClick={toggleTheme}>
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
           </button>
-          <button className={styles.exportBtn} onClick={exportCSV}>
-            📥 CSV
+          <button className={styles.exportBtn} onClick={exportCSV} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <DownloadIcon size={14} /> CSV
           </button>
         </div>
       </header>
@@ -137,14 +138,14 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
       {/* Summary bar */}
       <div className={styles.summaryBar}>
         <div className={styles.summaryItem}>
-          <span className={styles.summaryEmoji}>💰</span>
+          <span className={styles.summaryEmoji}><WalletIcon size={18} /></span>
           <div>
             <p className={styles.summaryValue}>{formatAmount(totalNGN)}</p>
             <p className={styles.summaryLabel}>Total Shown</p>
           </div>
         </div>
         <div className={styles.summaryItem}>
-          <span className={styles.summaryEmoji}>📄</span>
+          <span className={styles.summaryEmoji}><ReceiptIcon size={18} /></span>
           <div>
             <p className={styles.summaryValue}>{filtered.length}</p>
             <p className={styles.summaryLabel}>Payments</p>
@@ -158,7 +159,7 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
       {/* Filters */}
       <div className={styles.filters}>
         <div className={styles.searchBar}>
-          <span>🔍</span>
+          <span><SearchIcon size={15} /></span>
           <input
             type="text"
             placeholder="Search student, receipt..."
@@ -175,10 +176,11 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
             onChange={e => setMethodFilter(e.target.value)}
           >
             <option value="all">All Methods</option>
-            <option value="cash">💵 Cash</option>
-            <option value="bank_transfer">🏦 Bank Transfer</option>
-            <option value="card">💳 Card</option>
-            <option value="online">📱 Online</option>
+            {/* native <select><option> can't render SVG icons — text-only here by necessity */}
+            <option value="cash">Cash</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="card">Card</option>
+            <option value="online">Online</option>
           </select>
 
           <input
@@ -212,7 +214,7 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
       <div className={styles.paymentsList}>
         {filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            <p className={styles.emptyEmoji}>💳</p>
+            <p className={styles.emptyEmoji}><CreditCardIcon size={36} /></p>
             <p className={styles.emptyTitle}>No payments found</p>
             <p className={styles.emptyHint}>Try adjusting your filters</p>
           </div>
@@ -226,7 +228,7 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
               <div key={payment.id} className={`glass-card ${styles.paymentCard}`}>
                 <div className={styles.cardLeft}>
                   <div className={styles.methodIcon}>
-                    {METHOD_ICONS[method] ?? '💳'}
+                    {(() => { const Icon = METHOD_ICONS[method] ?? CreditCardIcon; return <Icon size={17} /> })()}
                   </div>
                   <div className={styles.paymentInfo}>
                     <p className={styles.studentName}>
@@ -235,8 +237,8 @@ export default function AllPaymentsClient({ payments, schoolId, userId }: Props)
                     <p className={styles.admNo}>
                       {student?.permanent_student_id ?? '—'}
                     </p>
-                    <p className={styles.receiptNo}>
-                      🧾 {payment.receipt_number ?? 'No receipt'}
+                    <p className={styles.receiptNo} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <ReceiptIcon size={12} /> {payment.receipt_number ?? 'No receipt'}
                     </p>
                   </div>
                 </div>

@@ -33,6 +33,7 @@ interface School {
   email:           string | null
   school_type:     string | null
   primary_color:   string | null
+  secondary_color: string | null
   font_family:     string | null
   logo_url:        string | null
   build_image_url: string | null
@@ -66,6 +67,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const [email,       setEmail]       = useState(school.email       ?? '')
   const [schoolType,  setSchoolType]  = useState(school.school_type ?? '')
   const [primaryColor,setPrimaryColor]= useState(school.primary_color ?? '#800020')
+  const [secondaryColor,setSecondaryColor]= useState(school.secondary_color ?? '#C99A3B')
   const [fontFamily,  setFontFamily]  = useState(school.font_family ?? 'Inter')
 
   // ── Banking fields ───────────────────────────────────────────────────────────
@@ -292,6 +294,7 @@ export default function SettingsClient({ profile, school }: Props) {
             email,
             school_type:     schoolType,
             primary_color:   primaryColor,
+            secondary_color: secondaryColor,
             font_family:     fontFamily,
             logo_url:        logoUrl,
             build_image_url: buildImageUrl,
@@ -732,6 +735,35 @@ export default function SettingsClient({ profile, school }: Props) {
                 </div>
                 <p className={styles.fieldHint}>
                   Used for accents, buttons, and highlights across the portal.
+                </p>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Secondary Brand Colour</label>
+                <div className={styles.colorRow}>
+                  <input
+                    type="color"
+                    className={styles.colorPicker}
+                    value={secondaryColor}
+                    onChange={e => setSecondaryColor(e.target.value)}
+                  />
+                  <input
+                    className={`${styles.input} ${styles.colorHex}`}
+                    value={secondaryColor}
+                    onChange={e => {
+                      const v = e.target.value
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setSecondaryColor(v)
+                    }}
+                    placeholder="#C99A3B"
+                    maxLength={7}
+                  />
+                  <div
+                    className={styles.colorSwatch}
+                    style={{ background: secondaryColor }}
+                  />
+                </div>
+                <p className={styles.fieldHint}>
+                  Most schools have two brand colours — this pairs with the primary colour on nav buttons, gauges, and the login screen once your school is selected.
                 </p>
               </div>
 

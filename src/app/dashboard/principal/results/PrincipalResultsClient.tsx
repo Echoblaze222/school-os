@@ -84,7 +84,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
     const supabase = createClient()
     const { error } = await supabase.from('results').update({ approved: true }).eq('id', id)
     setApproving(p => { const n = new Set(p); n.delete(id); return n })
-    if (!error) { setApprovedIds(p => new Set(p).add(id)); showToast('Result approved ✓') }
+    if (!error) { setApprovedIds(p => new Set(p).add(id)); showToast('Result approved') }
     else showToast('Approval failed')
   }
 
@@ -93,7 +93,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
     if (!ids.length) return
     const supabase = createClient()
     const { error } = await supabase.from('results').update({ approved: true }).in('id', ids)
-    if (!error) { setApprovedIds(p => new Set([...p, ...ids])); showToast(`${ids.length} results approved ✓`) }
+    if (!error) { setApprovedIds(p => new Set([...p, ...ids])); showToast(`${ids.length} results approved`) }
     else showToast('Bulk approval failed')
   }
 
@@ -120,14 +120,14 @@ export default function PrincipalResultsClient({ results: initialResults, classO
   const currentTermLabel = TERM_OPTIONS.find(t => t.value === termFilter)?.label ?? 'First Term'
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', paddingBottom: 100 }}>
 
       {/* ── Header ── */}
       <div style={{
         padding: '16px 16px 0',
         borderBottom: '1px solid var(--glass-border)',
         paddingBottom: 16,
-        background: 'var(--bg-primary)',
+        background: 'var(--bg-base)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>

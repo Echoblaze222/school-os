@@ -12,7 +12,7 @@ export default async function SecretaryLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  let primaryColor = '#7C3AED'
+  let primaryColor = '#800020'
   let fontFamily   = 'Inter'
 
   if (user) {

@@ -33,7 +33,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
   const [toast,     setToast]     = useState('')
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [tab])
 
@@ -77,7 +77,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
       const result = await res.json()
       if (!res.ok) throw new Error(result.error ?? 'Confirm failed')
 
-      showToast('Payment confirmed and balance updated ✓')
+      showToast('Payment confirmed and balance updated')
       load()
     } catch (err: any) {
       showToast(err.message)
@@ -220,8 +220,9 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                   {/* Confirmed note */}
                   {c.status === 'confirmed' && (
                     <div style={{ background:'#10B98115', borderRadius:8, padding:'7px 12px' }}>
-                      <p style={{ fontSize:'0.75rem', color:'#10B981', margin:0, fontWeight:700 }}>
-                        ✓ Confirmed — balance auto-deducted
+                      <p style={{ fontSize:'0.75rem', color:'#10B981', margin:0, fontWeight:700,
+                        display:'flex', alignItems:'center', gap:5 }}>
+                        <CheckIcon size={12} /> Confirmed — balance auto-deducted
                       </p>
                     </div>
                   )}

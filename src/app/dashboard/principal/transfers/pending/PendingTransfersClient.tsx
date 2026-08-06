@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '@/app/dashboard/secretary/secretary.module.css'
 import type { PendingTransferRow } from '../../types'
+import { TransferIcon } from '@/components/Icons'
 
 interface Props {
   transfers: PendingTransferRow[]
@@ -35,7 +36,7 @@ export default function PendingTransfersClient({
   const [toast, setToast] = useState<string | null>(null)
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   function showToast(m: string) {
     setToast(m)
@@ -104,7 +105,7 @@ export default function PendingTransfersClient({
     >
       {transfers.length === 0 ? (
         <div className={styles.emptyState}>
-          <p className={styles.emptyEmoji}>✈️</p>
+          <p className={styles.emptyEmoji}><TransferIcon size={32} /></p>
           <p className={styles.emptyTitle}>No pending requests</p>
           <p className={styles.emptyHint}>Transfer requests from other schools will appear here for your review.</p>
         </div>

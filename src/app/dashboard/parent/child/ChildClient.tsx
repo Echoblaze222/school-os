@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { UserIcon, BarChartIcon, CalendarIcon, TrophyIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -105,7 +106,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
     : 0
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Child's Profile">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Child's Profile" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading
         ? <div className={styles.loading}><span/><span/><span/></div>
         : !child
@@ -192,6 +193,6 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
               <div className={styles.spacer}/>
             </>
       }
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

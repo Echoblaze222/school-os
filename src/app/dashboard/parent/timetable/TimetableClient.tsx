@@ -14,7 +14,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { ClockIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -139,7 +140,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   const daySlots = timetable.filter(t => t.day_of_week === DAY_TO_NUM[day])
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Timetable">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Timetable" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading && children.length === 0
         ? <div className={styles.loading}><span/><span/><span/></div>
         : children.length === 0
@@ -241,6 +242,6 @@ export default function TimetableClient({ profile, school, userId }: Props) {
             </>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

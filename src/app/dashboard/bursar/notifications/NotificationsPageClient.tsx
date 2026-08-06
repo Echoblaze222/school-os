@@ -30,6 +30,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import RoleNav from '@/components/RoleNav'
+import {
+  BellIcon, BellOffIcon, StatusDotIcon, BarChartIcon, WalletIcon, MegaphoneIcon,
+  EditIcon, SettingsIcon, GraduationCapIcon, RefreshIcon, CalendarIcon, MessageIcon,
+  ClockIcon, CheckIcon, CheckCircleIcon, XIcon, AlertIcon, UploadIcon, ArrowLeftIcon,
+} from '@/components/Icons'
 import styles from './notifications.module.css'
 
 interface Notification {
@@ -54,26 +59,26 @@ interface Props {
 }
 
 const FILTERS = [
-  { key: 'all',          label: 'All',         emoji: '🔔' },
-  { key: 'unread',       label: 'Unread',      emoji: '🔵' },
-  { key: 'result',       label: 'Results',     emoji: '📊' },
-  { key: 'payment',      label: 'Payments',    emoji: '💰' },
-  { key: 'announcement', label: 'News',        emoji: '📣' },
-  { key: 'assignment',   label: 'Assignments', emoji: '📝' },
-  { key: 'system',       label: 'System',      emoji: '⚙️' },
+  { key: 'all',          label: 'All',         Icon: BellIcon },
+  { key: 'unread',       label: 'Unread',      Icon: StatusDotIcon },
+  { key: 'result',       label: 'Results',     Icon: BarChartIcon },
+  { key: 'payment',      label: 'Payments',    Icon: WalletIcon },
+  { key: 'announcement', label: 'News',        Icon: MegaphoneIcon },
+  { key: 'assignment',   label: 'Assignments', Icon: EditIcon },
+  { key: 'system',       label: 'System',      Icon: SettingsIcon },
 ]
 
-const TYPE_EMOJIS: Record<string, string> = {
-  result:       '📊',
-  assignment:   '📝',
-  payment:      '💰',
-  announcement: '📣',
-  promotion:    '🎓',
-  transfer:     '🔄',
-  meeting:      '📅',
-  chat:         '💬',
-  system:       '⚙️',
-  reminder:     '⏰',
+const TYPE_ICONS: Record<string, any> = {
+  result:       BarChartIcon,
+  assignment:   EditIcon,
+  payment:      WalletIcon,
+  announcement: MegaphoneIcon,
+  promotion:    GraduationCapIcon,
+  transfer:     RefreshIcon,
+  meeting:      CalendarIcon,
+  chat:         MessageIcon,
+  system:       SettingsIcon,
+  reminder:     ClockIcon,
 }
 
 const ROLE_DASHBOARDS: Record<string, string> = {
@@ -96,7 +101,7 @@ export default function NotificationsPageClient({
   schoolId,
   profile,
   school,
-  schoolColor = '#7C3AED',
+  schoolColor = '#800020',
 }: Props) {
   const router   = useRouter()
   const supabase = createClient()
@@ -271,10 +276,17 @@ export default function NotificationsPageClient({
 
   function PushBtn() {
     if (!push.supported) return null
-    if (push.loading) return <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>🔔…</span>
+    if (push.loading) return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', opacity: 0.5 }}>
+        <BellIcon size={14} />…
+      </span>
+    )
     if (push.permission === 'denied') return (
-      <span style={{ fontSize: '0.75rem', opacity: 0.5 }} title="Notifications blocked in browser settings">
-        🔕 Blocked
+      <span
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', opacity: 0.5 }}
+        title="Notifications blocked in browser settings"
+      >
+        <BellOffIcon size={14} /> Blocked
       </span>
     )
     return (
@@ -284,11 +296,12 @@ export default function NotificationsPageClient({
           background:  push.subscribed ? 'rgba(34,197,94,0.15)' : 'var(--card-bg)',
           color:       push.subscribed ? '#4ade80' : 'var(--text)',
           borderColor: push.subscribed ? 'rgba(34,197,94,0.4)' : 'var(--border)',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
         }}
         onClick={push.subscribed ? push.unsubscribe : push.subscribe}
         title={push.subscribed ? 'Tap to disable push alerts' : 'Tap to enable push alerts on this device'}
       >
-        {push.subscribed ? '🔔 Alerts On' : '🔕 Enable Alerts'}
+        {push.subscribed ? <><BellIcon size={14} /> Alerts On</> : <><BellOffIcon size={14} /> Enable Alerts</>}
       </button>
     )
   }
@@ -298,7 +311,7 @@ export default function NotificationsPageClient({
 
       {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push(dashboardPath)}>←</button>
+        <button className={styles.backBtn} onClick={() => router.push(dashboardPath)}><ArrowLeftIcon size={18} /></button>
         <div className={styles.headerCenter}>
           <h1 className={styles.headerTitle}>Notifications</h1>
           {localUnread > 0 && <span className={styles.unreadBadge}>{localUnread}</span>}
@@ -306,15 +319,17 @@ export default function NotificationsPageClient({
         <div className={styles.headerRight}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead}>✓ All read</button>
+            <button className={styles.markAllBtn} onClick={markAllRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <CheckIcon size={14} /> All read
+            </button>
           )}
           {isPrincipal && (
             <button
               className={styles.markAllBtn}
-              style={{ background: 'var(--burgundy)', color: '#fff', borderColor: 'transparent' }}
+              style={{ background: 'var(--brand)', color: '#fff', borderColor: 'transparent', display: 'inline-flex', alignItems: 'center', gap: 6 }}
               onClick={() => setShowSend(v => !v)}
             >
-              📤 Send
+              <UploadIcon size={14} /> Send
             </button>
           )}
         </div>
@@ -326,17 +341,28 @@ export default function NotificationsPageClient({
           margin: '8px 16px', padding: '10px 14px', borderRadius: 10,
           background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           color: '#f87171', fontSize: '0.8rem',
+          display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          ⚠️ {push.error}
+          <AlertIcon size={14} /> {push.error}
         </div>
       )}
 
       {/* Principal broadcast panel */}
       {isPrincipal && showSend && (
         <div className={styles.broadcastPanel}>
-          <p className={styles.broadcastTitle}>📢 Send Notification to School</p>
-          {sendResult === 'success' && <div className={styles.sendSuccess}>✓ Notification sent!</div>}
-          {sendResult === 'error'   && <div className={styles.sendError}>✕ {sendError || 'Failed to send'}</div>}
+          <p className={styles.broadcastTitle} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <MegaphoneIcon size={15} /> Send Notification to School
+          </p>
+          {sendResult === 'success' && (
+            <div className={styles.sendSuccess} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircleIcon size={14} /> Notification sent!
+            </div>
+          )}
+          {sendResult === 'error' && (
+            <div className={styles.sendError} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <XIcon size={14} /> {sendError || 'Failed to send'}
+            </div>
+          )}
           <div className={styles.broadcastGrid}>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Title *</label>
@@ -368,8 +394,9 @@ export default function NotificationsPageClient({
           <div className={styles.broadcastActions}>
             <button className={styles.cancelBroadcast} onClick={() => setShowSend(false)}>Cancel</button>
             <button className={styles.sendBroadcast} onClick={sendBroadcast}
-              disabled={sending || !sendTitle.trim() || !sendBody.trim()}>
-              {sending ? 'Sending…' : `📤 Send to ${sendTarget === 'all' ? 'Everyone' : sendTarget}`}
+              disabled={sending || !sendTitle.trim() || !sendBody.trim()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {sending ? 'Sending…' : <><UploadIcon size={14} /> Send to {sendTarget === 'all' ? 'Everyone' : sendTarget}</>}
             </button>
           </div>
         </div>
@@ -389,7 +416,7 @@ export default function NotificationsPageClient({
               className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''}`}
               onClick={() => setFilter(f.key)}
             >
-              <span>{f.emoji}</span>
+              <f.Icon size={15} />
               <span>{f.label}</span>
               {count > 0 && <span className={styles.filterCount}>{count}</span>}
             </button>
@@ -401,7 +428,7 @@ export default function NotificationsPageClient({
       <div className={styles.list}>
         {filtered.length === 0 ? (
           <div className={styles.empty}>
-            <p className={styles.emptyEmoji}>🔔</p>
+            <p className={styles.emptyEmoji}><BellIcon size={40} /></p>
             <p className={styles.emptyTitle}>
               {filter === 'all' ? 'No notifications yet' : `No ${filter} notifications`}
             </p>
@@ -425,7 +452,7 @@ export default function NotificationsPageClient({
                     onClick={() => handleClick(notif)}
                   >
                     <div className={`${styles.notifIcon} ${!notif.is_read ? styles.notifIconUnread : ''}`}>
-                      {TYPE_EMOJIS[notif.type] ?? '🔔'}
+                      {(() => { const Icon = TYPE_ICONS[notif.type] ?? BellIcon; return <Icon size={16} /> })()}
                     </div>
                     <div className={styles.notifContent}>
                       <p className={styles.notifTitle}>{notif.title}</p>
@@ -438,7 +465,7 @@ export default function NotificationsPageClient({
                         className={styles.deleteBtn}
                         onClick={e => deleteNotif(notif.id, e)}
                         title="Delete"
-                      >✕</button>
+                      ><XIcon size={13} /></button>
                     </div>
                   </button>
                 ))}
@@ -448,8 +475,8 @@ export default function NotificationsPageClient({
         )}
 
         {filtered.length >= 50 && (
-          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading}>
-            {loading ? '⏳ Loading...' : 'Load more notifications'}
+          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {loading ? <><RefreshIcon size={14} /> Loading...</> : 'Load more notifications'}
           </button>
         )}
 
@@ -483,16 +510,17 @@ export default function NotificationsPageClient({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: '1.4rem' }}>{TYPE_EMOJIS[selected.type] ?? '🔔'}</span>
+                {(() => { const Icon = TYPE_ICONS[selected.type] ?? BellIcon; return <Icon size={22} /> })()}
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>{selected.title}</h2>
               </div>
               <button
                 onClick={closeModal}
                 style={{
                   background: 'transparent', border: 'none', color: 'inherit',
-                  fontSize: '1.1rem', cursor: 'pointer', opacity: 0.6, lineHeight: 1,
+                  cursor: 'pointer', opacity: 0.6, lineHeight: 1,
+                  display: 'flex', alignItems: 'center',
                 }}
-              >✕</button>
+              ><XIcon size={17} /></button>
             </div>
 
             <p style={{
@@ -512,7 +540,7 @@ export default function NotificationsPageClient({
                 style={{
                   marginTop: 12, width: '100%', padding: '10px 16px',
                   borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: 'var(--burgundy, #800020)', color: '#fff',
+                  background: 'var(--brand)', color: '#fff',
                   fontWeight: 600, fontSize: '0.9rem',
                 }}
               >

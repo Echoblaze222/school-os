@@ -6,6 +6,7 @@ import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '@/app/dashboard/secretary/secretary.module.css'
+import { GraduationCapIcon, TransferIcon, ClockIcon, AlertIcon } from '@/components/Icons'
 
 type TransferStatus = 'requested' | 'approved' | 'rejected' | 'completed'
 
@@ -87,7 +88,7 @@ export default function PrincipalTransfersClient({
   const [formError,       setFormError]       = useState<string | null>(null)
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   const studentMap = useMemo(() => {
     const m = new Map<string, StudentLite>()
@@ -220,14 +221,16 @@ export default function PrincipalTransfersClient({
               borderColor: mainTab === t ? sc : 'var(--glass-border)',
               color: mainTab === t ? sc : 'var(--text-muted)',
             }}>
-            {t === 'students' ? `🎓 Students (${allStudents.length})` : `✈️ Transfers (${sent.length + received.length})`}
+            {t === 'students'
+              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GraduationCapIcon size={15} /> Students ({allStudents.length})</span>
+              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><TransferIcon size={15} /> Transfers ({sent.length + received.length})</span>}
           </button>
         ))}
         <div style={{ flex: 1 }} />
         <a href="/dashboard/principal/transfers/pending"
           className={styles.btnGhost}
-          style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
-          ⏳ Pending
+          style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+          <ClockIcon size={14} /> Pending
         </a>
         <button className={styles.btnPrimary}
           onClick={() => setModal(true)}
@@ -262,7 +265,7 @@ export default function PrincipalTransfersClient({
 
           {filteredStudents.length === 0 ? (
             <div className={styles.emptyState}>
-              <p className={styles.emptyEmoji}>🎓</p>
+              <p className={styles.emptyEmoji}><GraduationCapIcon size={32} /></p>
               <p className={styles.emptyTitle}>No students found</p>
               <p className={styles.emptyHint}>{search ? 'Try a different search' : 'Students enrolled in this school appear here'}</p>
             </div>
@@ -323,7 +326,7 @@ export default function PrincipalTransfersClient({
 
           {filteredTransfers.length === 0 ? (
             <div className={styles.emptyState}>
-              <p className={styles.emptyEmoji}>✈️</p>
+              <p className={styles.emptyEmoji}><TransferIcon size={32} /></p>
               <p className={styles.emptyTitle}>No {direction} transfers</p>
               <p className={styles.emptyHint}>
                 {direction === 'sent'
@@ -335,7 +338,7 @@ export default function PrincipalTransfersClient({
             filteredTransfers.map(r => (
               <div key={r.id} className={styles.listItem} onClick={() => setViewItem(r)} style={{ cursor: 'pointer' }}>
                 <div className={styles.listIconBox} style={{ background: STATUS_COLORS[r.status] + '22' }}>
-                  <span style={{ fontSize: '1.1rem' }}>✈️</span>
+                  <TransferIcon size={18} color={STATUS_COLORS[r.status]} />
                 </div>
                 <div className={styles.listContent}>
                   <p className={styles.listTitle}>{studentName(r.student_id)}</p>
@@ -386,8 +389,8 @@ export default function PrincipalTransfersClient({
             <button
               onClick={() => { setViewStudent(null); setStudentSearch(viewStudent.full_name); setModal(true) }}
               className={styles.btnPrimary}
-              style={{ width: '100%', marginTop: 'var(--space-5)' }}>
-              ✈️ Initiate Transfer for this Student
+              style={{ width: '100%', marginTop: 'var(--space-5)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <TransferIcon size={16} /> Initiate Transfer for this Student
             </button>
           </div>
         </div>
@@ -437,7 +440,7 @@ export default function PrincipalTransfersClient({
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             {success ? (
               <div style={{ textAlign: 'center', padding: 'var(--space-8) var(--space-4)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <p style={{ fontSize: '3rem' }}>✈️</p>
+                <TransferIcon size={48} color={sc} />
                 <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: sc }}>Transfer Initiated</p>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: 280, lineHeight: 1.7 }}>
                   The principal of <strong>{selectedSchool?.name}</strong> has been notified and will review this request.
@@ -473,7 +476,7 @@ export default function PrincipalTransfersClient({
 
                 {selectedStudent && hasDebt && (
                   <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginTop: 'var(--space-3)' }}>
-                    <p style={{ fontWeight: 800, color: '#F59E0B', marginBottom: 'var(--space-2)', fontSize: '0.85rem' }}>⚠️ Outstanding Fees</p>
+                    <p style={{ fontWeight: 800, color: '#F59E0B', marginBottom: 'var(--space-2)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}><AlertIcon size={16} /> Outstanding Fees</p>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', lineHeight: 1.6 }}>
                       This student has ₦{selectedStudent.outstanding_fees.toLocaleString()} in unpaid fees. This debt will follow the student to the new school.
                     </p>
@@ -517,8 +520,8 @@ export default function PrincipalTransfersClient({
                       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>The destination school's principal will approve or reject this request.</p>
                     </div>
                     {formError && <p style={{ fontSize: '0.78rem', color: '#EF4444', marginBottom: 'var(--space-3)' }}>{formError}</p>}
-                    <button className={styles.btnPrimary} onClick={submitTransfer} disabled={submitting} style={{ width: '100%' }}>
-                      {submitting ? 'Sending…' : '✈️ Send Transfer Request'}
+                    <button className={styles.btnPrimary} onClick={submitTransfer} disabled={submitting} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      {submitting ? 'Sending…' : <><TransferIcon size={16} /> Send Transfer Request</>}
                     </button>
                   </>
                 )}

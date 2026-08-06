@@ -28,7 +28,7 @@ export default async function TeacherResultsPage() {
 
   const school       = (profile as any).schools ?? null
   const schoolId     = school?.id ?? ''
-  const primaryColor = school?.primary_color ?? '#7C3AED'
+  const primaryColor = school?.primary_color ?? '#800020'
 
   // 2) Teacher's class assignments via class_teachers
   //    (same table AttendanceClient uses — has school_id, is_primary, subject text)

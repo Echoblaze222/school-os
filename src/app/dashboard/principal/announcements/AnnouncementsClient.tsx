@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import type { AnnouncementRow, AudienceType, ClassOption } from './page'
 import styles from './announcements.module.css'
+import { CheckIcon } from '@/components/Icons'
 
 interface Props {
   announcements: AnnouncementRow[]
@@ -141,7 +142,7 @@ export default function AnnouncementsClient({
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Announcements">
       {/* Toast */}
       {toast && (
-        <div className={`${styles.toast} ${styles.toastOk}`}>✓ {toast}</div>
+        <div className={`${styles.toast} ${styles.toastOk}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CheckIcon size={14} /> {toast}</div>
       )}
 
       {/* Delete confirm */}

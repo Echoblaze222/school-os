@@ -19,8 +19,8 @@
 
 /* ── Urgency colors ──────────────────────────────────────── */
 .info {
-  background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(124,58,237,0.08));
-  border-bottom: 1px solid rgba(124,58,237,0.25);
+  background: linear-gradient(135deg, rgba(128,0,32,0.15), rgba(128,0,32,0.08));
+  border-bottom: 1px solid rgba(128,0,32,0.25);
 }
 .warning {
   background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.08));

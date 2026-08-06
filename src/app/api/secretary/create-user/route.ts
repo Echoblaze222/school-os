@@ -12,6 +12,8 @@ export async function POST(request: Request) {
       phone, gender, dateOfBirth, address, state,
       admissionNumber, guardianName, guardianPhone,
       qualification, subjectSpecialty,
+      // Parent-specific fields
+      studentId, relationship, occupation,
     } = await request.json()
 
     if (!fullName || !email || !role) {
@@ -154,12 +156,29 @@ export async function POST(request: Request) {
     }
 
     // Staff extra fields
-    if (role !== 'student') {
+    if (role !== 'student' && role !== 'parent') {
       const staffUpdate: Record<string, any> = {}
       if (qualification)    staffUpdate.qualification     = qualification
       if (subjectSpecialty) staffUpdate.subject_specialty = subjectSpecialty
       if (Object.keys(staffUpdate).length > 0) {
         await adminClient.from('profiles').update(staffUpdate).eq('id', userId)
+      }
+    }
+
+    // Parent profile row + link to the child this code was generated for.
+    // studentId is optional (a parent code can be generated before the link
+    // is known), but relationship/occupation only matter alongside it.
+    if (role === 'parent') {
+      const parentRow: Record<string, any> = { id: userId }
+      if (occupation)   parentRow.occupation   = occupation
+      if (relationship) parentRow.relationship = relationship
+      await adminClient.from('parent_profiles').insert(parentRow)
+
+      if (studentId) {
+        await adminClient.from('parent_student_links').insert({
+          parent_id:  userId,
+          student_id: studentId,
+        })
       }
     }
 

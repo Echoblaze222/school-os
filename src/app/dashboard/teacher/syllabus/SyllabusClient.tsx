@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { BookOpenIcon, PlusIcon, CheckCircleIcon, DownloadIcon } from '@/components/Icons'
+import { BookOpenIcon, PlusIcon, CheckCircleIcon, DownloadIcon, ClipboardIcon, FileTextIcon, AlertIcon, XIcon, EditIcon } from '@/components/Icons'
 import styles from './syllabus.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -61,7 +61,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   const [error,           setError]           = useState<string | null>(null)
   const pdfRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => {
@@ -286,7 +286,9 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
               background: tab === m ? sc + '20' : 'transparent',
               color: tab === m ? sc : 'var(--text-muted)',
             }}>
-            {m === 'topics' ? '📋 Topic Tracker' : '📄 Syllabus PDF'}
+            {m === 'topics'
+              ? <><ClipboardIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Topic Tracker</>
+              : <><FileTextIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Syllabus PDF</>}
           </button>
         ))}
       </div>
@@ -294,8 +296,8 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       {/* Error banner */}
       {error && (
         <div className={styles.errorBanner}>
-          ⚠️ {error}
-          <button onClick={() => setError(null)} className={styles.errorClose}>✕</button>
+          <AlertIcon size={14} /> {error}
+          <button onClick={() => setError(null)} className={styles.errorClose}><XIcon size={14} /></button>
         </div>
       )}
 
@@ -312,7 +314,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
               </div>
               <div className={styles.progressTrack}>
                 <div className={styles.progressFill}
-                  style={{ width: `${pct}%`, background: pct >= 80 ? '#10B981' : pct >= 50 ? sc : '#F59E0B' }} />
+                  style={{ width: `${pct}%`, background: pct >= 80 ? 'var(--success)' : pct >= 50 ? sc : 'var(--warning)' }} />
               </div>
             </div>
           )}
@@ -403,7 +405,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
           {/* Topics list */}
           {!selectedClass?.class_subject_id ? (
             <div className={styles.noSubjectMsg}>
-              ⚠️ No subject assigned to this class yet. Ask the principal to set up class subjects.
+              <AlertIcon size={14} /> No subject assigned to this class yet. Ask the principal to set up class subjects.
             </div>
           ) : topics.length === 0 ? (
             <div className={styles.empty}>
@@ -416,15 +418,15 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                 <div key={topic.id}
                   className={styles.topicRow}
                   style={{
-                    background: topic.is_covered ? '#10B98108' : 'var(--glass-bg)',
-                    border: `1px solid ${topic.is_covered ? '#10B98130' : 'var(--glass-border)'}`,
+                    background: topic.is_covered ? 'color-mix(in srgb, var(--success) 3%, transparent)' : 'var(--glass-bg)',
+                    border: `1px solid ${topic.is_covered ? 'color-mix(in srgb, var(--success) 19%, transparent)' : 'var(--glass-border)'}`,
                   }}>
                   {/* Covered toggle */}
                   <button onClick={() => toggleCovered(topic.id, topic.is_covered)}
                     className={styles.coverBtn}
                     style={{
-                      border: `2px solid ${topic.is_covered ? '#10B981' : 'var(--glass-border)'}`,
-                      background: topic.is_covered ? '#10B981' : 'transparent',
+                      border: `2px solid ${topic.is_covered ? 'var(--success)' : 'var(--glass-border)'}`,
+                      background: topic.is_covered ? 'var(--success)' : 'transparent',
                     }}>
                     {topic.is_covered && <CheckCircleIcon size={12} color="white" />}
                   </button>
@@ -459,11 +461,11 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                     className={styles.editTopicBtn}
                     style={{ color: sc }}
                     title="Edit topic">
-                    ✏️
+                    <EditIcon size={14} />
                   </button>
 
                   {/* Delete */}
-                  <button onClick={() => deleteTopic(topic.id)} className={styles.deleteTopicBtn}>✕</button>
+                  <button onClick={() => deleteTopic(topic.id)} className={styles.deleteTopicBtn}><XIcon size={14} /></button>
                 </div>
               ))}
             </div>
@@ -507,7 +509,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
             <button onClick={() => pdfRef.current?.click()} disabled={uploadingPdf}
               className={styles.uploadDropzone}
               style={{ borderColor: sc + '50', background: sc + '08', color: sc }}>
-              {uploadingPdf ? 'Uploading...' : `📄 Upload ${TERM_LABEL[term] ?? term} Syllabus PDF`}
+              {uploadingPdf ? 'Uploading...' : <><FileTextIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Upload {TERM_LABEL[term] ?? term} Syllabus PDF</>}
             </button>
           )}
         </div>

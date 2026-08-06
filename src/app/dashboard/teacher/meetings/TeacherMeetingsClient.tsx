@@ -145,7 +145,7 @@ function MeetingCard({
             ? 'var(--text-muted)'
             : meeting.meeting_url
               ? 'linear-gradient(180deg,#7B2FBE,#9B59B6)'
-              : 'linear-gradient(180deg,var(--burgundy),var(--burgundy-light,#a0002a))',
+              : 'linear-gradient(180deg,var(--brand),var(--brand-light,#a0002a))',
         }}
       />
       <div className={styles.listCardBody}>

@@ -45,6 +45,7 @@ const MORE_NAV_ITEMS = [
   { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
   { href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
   { href: '/dashboard/teacher/clinic',        Icon: ActivityIcon,  label: 'Clinic'        },
+  { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
   { href: '/dashboard/teacher/notifications', Icon: BellIcon,      label: 'Notifications' },
   { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
   { href: '/dashboard/teacher/audit',         Icon: ShieldIcon,    label: 'Audit Log'     },
@@ -74,6 +75,7 @@ const NAV: Record<string, {
         { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
         { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Classes'  },
         { href: '/dashboard/teacher/clinic',        Icon: ActivityIcon,  label: 'Clinic'        },
+        { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
         { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Staff Meetings'},
       ]},
       { label: 'Resources', items: [
@@ -109,6 +111,7 @@ const NAV: Record<string, {
         { href: '/dashboard/principal/alumni',      Icon: AwardIcon,     label: 'Alumni'      },
         { href: '/dashboard/principal/analytics',   Icon: BarChartIcon,  label: 'Analytics'   },
         { href: '/dashboard/principal/results',     Icon: BarChartIcon,  label: 'Results'     },
+        { href: '/dashboard/principal/report-cards',Icon: FileTextIcon,  label: 'Report Cards'},
         { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'        },
         { href: '/dashboard/principal/reports',     Icon: FileTextIcon,  label: 'Reports'     },
         { href: '/dashboard/principal/profile',     Icon: UserIcon,      label: 'My Profile'  },
@@ -232,7 +235,7 @@ interface Props {
   role: string; schoolColor?: string
 }
 
-export default function RoleNav({ userId, profile, school, role, schoolColor = '#7C3AED' }: Props) {
+export default function RoleNav({ userId, profile, school, role, schoolColor = '#800020' }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -341,8 +344,11 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
           // Home button — matches the pattern already shipped for
           // Principal/Bursar/Secretary: centered, raised, brand-colored.
           if (item.home) return (
-            <Link key="home" href={homePath} className={styles.homeBtn} style={{ background: schoolColor }}>
-              <HomeIcon size={20} color="white" strokeWidth={2}/>
+            // brand-2 (accent), not schoolColor — the dock itself is now a
+            // schoolColor gradient bar, so the FAB needs the accent colour
+            // to stand out instead of blending into its own background.
+            <Link key="home" href={homePath} className={styles.homeBtn}>
+              <HomeIcon size={20} color="var(--brand-dark)" strokeWidth={2}/>
             </Link>
           )
 
@@ -359,12 +365,14 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
           const active     = isActive(item.href!)
           const isChatItem = item.href?.endsWith('/chat')
           return (
+            // Active state uses brand-2 (accent), not schoolColor — same
+            // reasoning as the home FAB: this pill sits on a schoolColor
+            // gradient bar now, so it needs the accent to read as "active".
             <Link key={item.href} href={item.href!}
-              className={`${styles.pill} ${active ? styles.pillActive : ''}`}
-              style={active ? { color: schoolColor } : undefined}>
+              className={`${styles.pill} ${active ? styles.pillActive : ''}`}>
               {/* Unread badge on Chat bottom item */}
               <div style={{ position: 'relative', display: 'inline-flex' }}>
-                <item.Icon size={20} color={active ? schoolColor : undefined}/>
+                <item.Icon size={20} color={active ? 'var(--brand-2)' : undefined}/>
                 {isChatItem && unreadCount > 0 && (
                   <span style={{
                     position: 'absolute', top: -4, right: -4,

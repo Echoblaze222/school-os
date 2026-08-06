@@ -5,6 +5,10 @@ import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DocumentViewer from '@/components/DocumentViewer'
+import {
+  UploadIcon, FolderIcon, DownloadIcon, TrashIcon, PaperclipIcon,
+  FileTextIcon, ImageIcon,
+} from '@/components/Icons'
 import styles from '../secretary.module.css'
 
 const DOC_CATS = ['General', 'Admissions', 'Academic', 'Finance', 'Legal', 'HR', 'Other']
@@ -12,7 +16,7 @@ const CAT_COLORS: Record<string, string> = {
   General: '#6B7280', Admissions: '#3B82F6', Academic: '#10B981',
   Finance: '#F59E0B', Legal: '#EF4444', HR: '#8B5CF6', Other: '#EC4899',
 }
-const FILE_ICONS: Record<string, string> = { pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', ppt: '📙', pptx: '📙', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', default: '📄' }
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']
 
 // schema: id, school_id, title, content, category, created_by, created_at, file_url, file_size
 interface Doc { id: string; title: string; category: string; file_url: string | null; file_size: number | null; created_at: string; created_by?: string }
@@ -31,7 +35,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
 
   const fileRef  = useRef<HTMLInputElement>(null)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   function extOf(url: string | null) { return url?.split('.')?.pop()?.toLowerCase()?.split('?')[0] ?? '' }
   function isImage(url: string | null) { return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extOf(url)) }
@@ -73,9 +77,10 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
     setDocs(p => p.filter(d => d.id !== id))
   }
 
-  function fileIcon(url: string | null) {
-    const ext = url?.split('.')?.pop()?.toLowerCase() ?? ''
-    return FILE_ICONS[ext] ?? FILE_ICONS.default
+  function fileIcon(url: string | null, size = 20, color?: string) {
+    return IMAGE_EXTS.includes(extOf(url))
+      ? <ImageIcon size={size} color={color} />
+      : <FileTextIcon size={size} color={color} />
   }
 
   function formatSize(bytes: number | null) {
@@ -92,7 +97,9 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input className={styles.searchInput} placeholder="Search documents…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ title: '', category: 'General' }); setModal(true) }} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>⬆ Upload</button>
+        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ title: '', category: 'General' }); setModal(true) }} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>
+          <UploadIcon size={15} color="#fff" /> Upload
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
@@ -107,12 +114,12 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.emptyState}><p className={styles.emptyEmoji}>📁</p><p className={styles.emptyTitle}>No documents</p><p className={styles.emptyHint}>Upload school documents, forms, and policies</p></div>
+        <div className={styles.emptyState}><FolderIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No documents</p><p className={styles.emptyHint}>Upload school documents, forms, and policies</p></div>
       ) : (
         filtered.map(d => (
           <div key={d.id} className={styles.listItem} onClick={() => setPreviewItem(d)} style={{ cursor: 'pointer' }}>
             <div className={styles.listIconBox} style={{ background: (CAT_COLORS[d.category] ?? sc) + '22' }}>
-              <span style={{ fontSize: '1.3rem' }}>{fileIcon(d.file_url)}</span>
+              {fileIcon(d.file_url, 19, CAT_COLORS[d.category] ?? sc)}
             </div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{d.title}</p>
@@ -121,9 +128,13 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
             <span className={styles.listBadge} style={{ background: (CAT_COLORS[d.category] ?? '#6B7280') + '22', color: CAT_COLORS[d.category] ?? '#6B7280' }}>{d.category}</span>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               {d.file_url && (
-                <a href={d.file_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇️</a>
+                <a href={d.file_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                  <DownloadIcon size={14} />
+                </a>
               )}
-              <button onClick={e => { e.stopPropagation(); deleteDoc(d.id) }} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+              <button onClick={e => { e.stopPropagation(); deleteDoc(d.id) }} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrashIcon size={14} color="var(--danger)" />
+              </button>
             </div>
           </div>
         ))
@@ -143,7 +154,9 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
             <img src={previewItem.file_url!} alt={previewItem.title} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)' }} />
             <div className={styles.modalActions} style={{ marginTop: 'var(--space-4)' }}>
               <button className={styles.btnGhost} onClick={() => setPreviewItem(null)}>Close</button>
-              <a href={previewItem.file_url!} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ textDecoration: 'none', textAlign: 'center' }}>⬇️ Download</a>
+              <a href={previewItem.file_url!} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none', textAlign: 'center' }}>
+                <DownloadIcon size={14} color="#fff" /> Download
+              </a>
             </div>
           </div>
         </div>
@@ -164,7 +177,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
             <h2 className={styles.modalTitle}>{previewItem.title}</h2>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: -8, marginBottom: 'var(--space-4)' }}>{previewItem.category} · {formatSize(previewItem.file_size)}</p>
             <div className={styles.emptyState} style={{ padding: 'var(--space-5) 0' }}>
-              <p className={styles.emptyEmoji}>{fileIcon(previewItem.file_url)}</p>
+              {fileIcon(previewItem.file_url, 32, 'var(--text-muted)')}
               <p className={styles.emptyTitle}>No file attached</p>
               <p className={styles.emptyHint}>This document record has no uploaded file.</p>
             </div>
@@ -190,7 +203,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
               <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
               <button onClick={() => fileRef.current?.click()}
                 style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', width: '100%', height: 48, padding: '0 var(--space-4)', background: 'var(--glass-bg)', border: '2px dashed var(--glass-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                📎 {file ? file.name : 'Choose file…'}
+                <PaperclipIcon size={16} /> {file ? file.name : 'Choose file…'}
               </button>
               {file && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>{formatSize(file.size)}</p>}
             </div>

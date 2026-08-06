@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import type { Submission } from './page'
 import styles from './submissions.module.css'
+import { CheckIcon, EditIcon } from '@/components/Icons'
 
 interface Props {
   submissions: Submission[]
@@ -37,7 +38,7 @@ function SubjectBadge({ subject, color }: { subject: string; color: string }) {
 
 export default function SubmissionsClient({ submissions: initial, graderId, school, profile }: Props) {
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   const [submissions, setSubmissions] = useState(initial)
   const [filter,      setFilter]      = useState<'all' | 'ungraded' | 'graded'>('ungraded')
@@ -99,7 +100,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
       <div style={{ marginBottom: 'var(--space-3)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
         {ungradedCount > 0
           ? <span style={{ color: sc, fontWeight: 700 }}>{ungradedCount} awaiting review</span>
-          : <span style={{ color: '#10B981', fontWeight: 700 }}>✓ All submissions graded</span>
+          : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--success)', fontWeight: 700 }}><CheckIcon size={13} color="var(--success)" /> All submissions graded</span>
         }
       </div>
 
@@ -156,7 +157,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                     {isGraded
                       ? (
                         <div className={styles.scoreDisplay}>
-                          <span className={styles.scoreNum} style={{ color: pct! >= 50 ? '#10B981' : '#EF4444' }}>
+                          <span className={styles.scoreNum} style={{ color: pct! >= 50 ? 'var(--success)' : 'var(--danger)' }}>
                             {sub.score}/{sub.max_score}
                           </span>
                           <span className={styles.scoreLabel}>Graded</span>
@@ -198,7 +199,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                             value={scores[sub.id] ?? (sub.score !== null ? String(sub.score) : '')}
                             onChange={e => setScores(s => ({ ...s, [sub.id]: e.target.value }))}
                             placeholder={`0–${sub.max_score}`}
-                            style={{ borderColor: saveErrors[sub.id] ? '#EF4444' : undefined }}
+                            style={{ borderColor: saveErrors[sub.id] ? 'var(--danger)' : undefined }}
                           />
                           <span className={styles.maxScore}>/ {sub.max_score}</span>
                         </div>
@@ -226,8 +227,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                       style={{ background: sc }}>
                       {saving === sub.id
                         ? <><span className={styles.spinnerSm} />Saving…</>
-                        : <>{isGraded ? '✏️ Update Grade' : 'Mark as Graded'}</>
-                      }
+                        : <>{isGraded ? <><EditIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Update Grade</> : 'Mark as Graded'}</>}
                     </button>
                   </div>
                 )}

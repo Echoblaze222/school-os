@@ -9,7 +9,7 @@ export default async function ChatPage() {
   const { data: profile } = await supabase
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   return (
     <UniversalChatPage
       profile={profile} school={school}

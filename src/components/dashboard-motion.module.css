@@ -137,3 +137,40 @@
     transition: none;
   }
 }
+
+/* ── Phase 1 polish, ported from the approved static prototypes ───────── */
+
+/* Accessible focus ring — visible on keyboard nav, silent on mouse click */
+.focusable:focus-visible {
+  outline: 2.5px solid var(--brand-2, var(--brand));
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Ripple micro-interaction for icon/pill buttons — call attachRipple(el) in a useEffect,
+   or spread {onMouseDown: rippleHandler} where imported from '@/lib/ripple' */
+.rippleHost {
+  position: relative;
+  overflow: hidden;
+}
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  background: rgba(255,255,255,0.5);
+  pointer-events: none;
+  animation: rippleFx 0.55s ease-out;
+}
+@keyframes rippleFx {
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+/* Minimum touch target — apply to any icon-only button */
+.touchTarget {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rippleHost .ripple { display: none; }
+}

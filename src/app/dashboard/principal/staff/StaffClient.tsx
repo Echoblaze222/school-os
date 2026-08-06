@@ -5,6 +5,7 @@ import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './staff.module.css'
+import { CheckIcon, XIcon, AlertIcon, EditIcon } from '@/components/Icons'
 
 const ROLES = ['teacher', 'bursar', 'secretary', 'librarian', 'counselor', 'nurse', 'admin']
 const ROLE_COLORS: Record<string, string> = {
@@ -103,7 +104,7 @@ function StaffSuccessModal({
                 color: copiedCode ? '#10B981' : roleColor,
               }}
             >
-              {copiedCode ? '✓ Copied' : 'Copy'}
+              {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
             </button>
           </div>
         </div>
@@ -130,11 +131,11 @@ function StaffSuccessModal({
                 color: copiedPwd ? '#10B981' : '#F59E0B',
               }}
             >
-              {copiedPwd ? '✓ Copied' : 'Copy'}
+              {copiedPwd ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
             </button>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85 }}>
-            ⚠️ Staff must change this password on first login.
+          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <AlertIcon size={13} /> Staff must change this password on first login.
           </p>
         </div>
 
@@ -149,7 +150,7 @@ function StaffSuccessModal({
             color: copiedAll ? '#10B981' : 'var(--text-base)',
           }}
         >
-          {copiedAll ? '✓ All Details Copied' : 'Copy All Details'}
+          {copiedAll ? <><CheckIcon size={13} /> All Details Copied</> : 'Copy All Details'}
         </button>
         <button
           onClick={onClose}
@@ -165,7 +166,7 @@ function StaffSuccessModal({
 
 export default function StaffClient({ profile, school, userId }: Props) {
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   const [staff, setStaff] = useRealtimeTable<any>({
     table:   'profiles',
@@ -320,7 +321,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Staff">
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
-          {toast.ok ? '✓' : '✕'} {toast.msg}
+          {toast.ok ? <CheckIcon size={14} /> : <XIcon size={14} />} {toast.msg}
         </div>
       )}
 
@@ -394,7 +395,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
             ))}
           </select>
           <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
-            {showForm ? '✕ Close' : '+ Add Staff'}
+            {showForm ? <><XIcon size={14} /> Close</> : '+ Add Staff'}
           </button>
         </div>
 
@@ -598,7 +599,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
             <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
               <button className={styles.saveBtn} style={{ flex:1, background:sc }}
                 onClick={() => { setEditMember(previewMember); setEditForm({}) }}>
-                ✏️ Edit Details
+                <EditIcon size={14} /> Edit Details
               </button>
               <button className={styles.cancelBtn} onClick={() => setPreviewMember(null)}>Close</button>
             </div>

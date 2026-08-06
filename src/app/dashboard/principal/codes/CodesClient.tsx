@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DOBPicker from '@/components/DOBPicker'
 import styles from './codes.module.css'
+import { CheckIcon, BulbIcon } from '@/components/Icons'
 
 interface CodeEntry {
   id: string
@@ -172,11 +173,11 @@ function CodeSuccessScreen({
             className={styles.credCopy}
             style={copiedCode ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: sc + '55', color: sc }}
           >
-            {copiedCode ? '✓ Copied' : 'Copy'}
+            {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
           </button>
         </div>
-        <p className={styles.credWarning}>
-          💡 The user enters this code on the <strong>New User</strong> tab at login to set their own password.
+        <p className={styles.credWarning} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+          <BulbIcon size={14} /> The user enters this code on the <strong>New User</strong> tab at login to set their own password.
         </p>
       </div>
 
@@ -842,7 +843,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                     style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
                     {copiedAll ? 'All Copied' : 'Copy All'}
                   </button>
-                  {bSaved && <span className={styles.savedBadge}>All Saved ✓</span>}
+                  {bSaved && <span className={styles.savedBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>All Saved <CheckIcon size={13} /></span>}
                 </div>
               </div>
               <div className={styles.bulkTableHead}>
@@ -862,8 +863,8 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                       </div>
                       <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
                       <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : '—')}</code>
-                      <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
-                        {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved ✓' : bLoading ? 'Saving…' : 'Pending'}
+                      <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? <>Saved <CheckIcon size={12} /></> : bLoading ? 'Saving…' : 'Pending'}
                       </span>
                     </div>
                   )

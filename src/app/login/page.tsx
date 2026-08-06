@@ -14,9 +14,9 @@ import styles from './login.module.css'
 import {
   MailIcon, GlobeIcon, SchoolIcon, UsersIcon, SparklesIcon,
   CreditCardIcon, PhoneIcon, ShieldIcon, EyeIcon, EyeOffIcon,
+  LockIcon, ArrowRightIcon, PlusIcon,
 } from '@/components/Icons'
 
-type Tab       = 'login' | 'register'
 type LoginMode = 'existing' | 'new-user'
 
 interface SelectedSchool {
@@ -34,9 +34,9 @@ export default function LoginPage() {
   const [checkingSchool, setCheckingSchool] = useState(true)
 
   // ── Login form state ──────────────────────────────────────────────────────
-  const [tab,       setTab]       = useState<Tab>('login')
   const [mounted,   setMounted]   = useState(false)
   const [school,    setSchool]    = useState<SelectedSchool | null>(null)
+  const [secondaryColor, setSecondaryColor] = useState<string | null>(null)
   const [loginMode, setLoginMode] = useState<LoginMode>('existing')
   const [isTimeout, setIsTimeout] = useState(false)
 
@@ -53,18 +53,6 @@ export default function LoginPage() {
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [newUserError,   setNewUserError]   = useState('')
 
-  const [regStep,        setRegStep]        = useState(1)
-  const [regLoading,     setRegLoading]     = useState(false)
-  const [regError,       setRegError]       = useState('')
-  const [regSuccess,     setRegSuccess]     = useState(false)
-  const [paymentMode,    setPaymentMode]    = useState<'full' | 'installment'>('full')
-  const [termsAccepted,  setTermsAccepted]  = useState(false)
-  const [reg, setReg] = useState({
-    schoolName: '', schoolType: 'Secondary', address: '', city: '', state: '',
-    phone: '', email: '', tagline: '',
-    principalName: '', principalEmail: '', principalPhone: '', principalPassword: '',
-  })
-
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'timeout') setIsTimeout(true)
@@ -76,10 +64,24 @@ export default function LoginPage() {
       router.replace('/select-school')
       return
     }
-    try { setSchool(JSON.parse(stored)) } catch {
+    let parsedSchool: SelectedSchool
+    try {
+      parsedSchool = JSON.parse(stored)
+      setSchool(parsedSchool)
+    } catch {
       router.replace('/select-school')
       return
     }
+
+    // secondary_color only lives on school_branding — best-effort fetch so
+    // the login screen can use the school's full two-colour brand, not just
+    // the one colour already cached in localStorage from /select-school.
+    supabase
+      .from('school_branding')
+      .select('secondary_color')
+      .eq('id', parsedSchool.id)
+      .single()
+      .then(({ data }) => { if (data?.secondary_color) setSecondaryColor(data.secondary_color) })
 
     setCheckingSchool(false)
     setMounted(true)
@@ -157,50 +159,6 @@ export default function LoginPage() {
     } finally { setNewUserLoading(false) }
   }
 
-  function updateReg(field: string, value: string) {
-    setReg(prev => ({ ...prev, [field]: value }))
-  }
-
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
-    setRegError('')
-    if (!termsAccepted) { setRegError('Please accept the Terms & Conditions and Privacy Policy to continue.'); return }
-    setRegLoading(true)
-    try {
-      const res = await fetch('/api/schools/register', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          school: {
-            name: reg.schoolName, school_type: reg.schoolType,
-            address: reg.address, city: reg.city, state: reg.state,
-            phone: reg.phone, email: reg.email, tagline: reg.tagline,
-          },
-          paymentMode,
-          principal: {
-            name: reg.principalName, full_name: reg.principalName,
-            email: reg.principalEmail, phone: reg.principalPhone, password: reg.principalPassword,
-          },
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setRegError(data.error || 'Registration failed.'); return }
-      if (data.paymentUrl) { window.location.href = data.paymentUrl } else { setRegSuccess(true) }
-    } catch { setRegError('Registration failed. Please try again.')
-    } finally { setRegLoading(false) }
-  }
-
-  const SETUP_FEE         = 150000
-  const SETUP_INSTALLMENT = 50000
-  const amountDueNow      = paymentMode === 'installment' ? SETUP_INSTALLMENT : SETUP_FEE
-
-  const STATES = [
-    'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
-    'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo',
-    'Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa',
-    'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba',
-    'Yobe','Zamfara',
-  ]
-
   // Still resolving whether a school is selected — render nothing rather
   // than flash the login form before a possible redirect to /select-school.
   if (checkingSchool) {
@@ -210,7 +168,13 @@ export default function LoginPage() {
   return (
     <>
       {/* ── LOGIN PAGE ─────────────────────────────────────────────────────── */}
-      <div className={styles.page}>
+      <div
+        className={styles.page}
+        style={{
+          '--login-brand': school?.primaryColor || '#800020',
+          '--login-brand-2': secondaryColor || school?.primaryColor || '#800020',
+        } as React.CSSProperties}
+      >
         <div className={styles.bgGlow} />
         <div className={styles.bgGrid} />
 
@@ -240,34 +204,22 @@ export default function LoginPage() {
 
           {isTimeout && (
             <div className={styles.timeoutBanner}>
-              🔒 You were logged out due to inactivity. Please sign in again.
+              <LockIcon size={14} /> You were logged out due to inactivity. Please sign in again.
             </div>
           )}
 
-          <div className={styles.tabs}>
-            <button
-              className={`${styles.tabBtn} ${tab === 'login' ? styles.tabActive : ''}`}
-              onClick={() => setTab('login')}
-            >Sign In</button>
-            <button
-              className={`${styles.tabBtn} ${tab === 'register' ? styles.tabActive : ''}`}
-              onClick={() => setTab('register')}
-            >Register School</button>
-            <div className={`${styles.tabIndicator} ${tab === 'register' ? styles.tabRight : ''}`} />
-          </div>
+          <h2 className={styles.signInHeading}>Sign in</h2>
 
-          {/* ── SIGN IN TAB ── */}
-          {tab === 'login' && (
-            <div className={styles.formWrap}>
+          <div className={styles.formWrap}>
               <div className={styles.modeToggle}>
                 <button
                   className={`${styles.modeBtn} ${loginMode === 'existing' ? styles.modeBtnActive : ''}`}
                   onClick={() => { setLoginMode('existing'); setLoginError(''); setNewUserError('') }}
-                >📧 Email / Access Code</button>
+                ><MailIcon size={14} /> Email / Access Code</button>
                 <button
                   className={`${styles.modeBtn} ${loginMode === 'new-user' ? styles.modeBtnActive : ''}`}
                   onClick={() => { setLoginMode('new-user'); setLoginError(''); setNewUserError('') }}
-                >🆕 New User</button>
+                ><PlusIcon size={14} /> New User</button>
               </div>
 
               {loginMode === 'existing' && (
@@ -278,7 +230,15 @@ export default function LoginPage() {
                   {loginError && <div className={styles.errorBanner}>{loginError}</div>}
                   <label className={styles.label}>Email or Access Code</label>
                   <input
-                    type="text" value={identifier} onChange={e => setIdentifier(e.target.value)}
+                    type="text" value={identifier}
+                    onChange={e => {
+                      const v = e.target.value
+                      // Access codes read better uppercase (PRIN-528-F0A); emails
+                      // must stay exactly as typed, case matters for some mail
+                      // servers on the local part. Only auto-caps when it's
+                      // clearly not an email in progress.
+                      setIdentifier(v.includes('@') ? v : v.toUpperCase())
+                    }}
                     className={styles.input} placeholder="you@school.edu.ng or PRIN-528-F0A"
                     required autoComplete="off" autoCapitalize="off"
                   />
@@ -345,215 +305,14 @@ export default function LoginPage() {
                 {' '}and{' '}
                 <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Privacy Policy</Link>
               </p>
-            </div>
-          )}
 
-          {/* ── REGISTER TAB ── */}
-          {tab === 'register' && (
-            <div className={styles.formWrap}>
-              {regSuccess ? (
-                <div className={styles.successState}>
-                  <div className={styles.successIcon}>✅</div>
-                  <h3 className={styles.successTitle}>Registration Submitted!</h3>
-                  <p className={styles.successMsg}>
-                    Your school registration is being processed. Check your email for next steps.
-                  </p>
-                  <button className={styles.submitBtn} onClick={() => { setRegSuccess(false); setTab('login') }}>
-                    Back to Sign In
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className={styles.stepBar}>
-                    {[1,2].map(s => (
-                      <div
-                        key={s}
-                        className={`${styles.step} ${regStep >= s ? styles.stepActive : ''}`}
-                        onClick={() => s < regStep && setRegStep(s)}
-                      >
-                        <div className={styles.stepDot}>{regStep > s ? '✓' : s}</div>
-                        <span className={styles.stepLabel}>{s === 1 ? 'School Info' : 'Principal'}</span>
-                      </div>
-                    ))}
-                    <div className={`${styles.stepLine} ${regStep > 1 ? styles.stepLineDone : ''}`} />
-                  </div>
-
-                  {regError && <div className={styles.errorBanner}>{regError}</div>}
-
-                  <form
-                    onSubmit={regStep === 1 ? (e) => { e.preventDefault(); setRegStep(2) } : handleRegister}
-                    className={styles.form}
-                  >
-                    {regStep === 1 && (
-                      <>
-                        <label className={styles.label}>School Name *</label>
-                        <input className={styles.input} required value={reg.schoolName}
-                          onChange={e => updateReg('schoolName', e.target.value)} placeholder="e.g. Greenfield Academy" />
-
-                        <label className={styles.label}>School Type</label>
-                        <select className={styles.select} value={reg.schoolType} onChange={e => updateReg('schoolType', e.target.value)}>
-                          <option>Primary</option><option>Secondary</option>
-                          <option>Tertiary</option><option>Vocational</option><option>International</option>
-                        </select>
-
-                        <label className={styles.label}>Address *</label>
-                        <input className={styles.input} required value={reg.address}
-                          onChange={e => updateReg('address', e.target.value)} placeholder="Street address" />
-
-                        <div className={styles.row}>
-                          <div className={styles.col}>
-                            <label className={styles.label}>City *</label>
-                            <input className={styles.input} required value={reg.city}
-                              onChange={e => updateReg('city', e.target.value)} placeholder="City" />
-                          </div>
-                          <div className={styles.col}>
-                            <label className={styles.label}>State *</label>
-                            <select className={styles.select} required value={reg.state}
-                              onChange={e => updateReg('state', e.target.value)}>
-                              <option value="">— State —</option>
-                              {STATES.map(s => <option key={s}>{s}</option>)}
-                            </select>
-                          </div>
-                        </div>
-
-                        <label className={styles.label}>School Email *</label>
-                        <input className={styles.input} type="email" required value={reg.email}
-                          onChange={e => updateReg('email', e.target.value)} placeholder="school@domain.com" />
-
-                        <label className={styles.label}>Phone *</label>
-                        <input className={styles.input} type="tel" required value={reg.phone}
-                          onChange={e => updateReg('phone', e.target.value)} placeholder="+234 800 0000 000" />
-
-                        <label className={styles.label}>Platform Setup Fee</label>
-                        <div className={styles.setupFeeNote}>
-                          One-time fee to onboard your school: <strong>₦150,000</strong>.
-                          Recurring billing is <strong>per-student per term</strong> (₦500–₦2,000 depending on plan).
-                        </div>
-
-                        <label className={styles.label}>Payment Option</label>
-                        <div className={styles.planGrid}>
-                          <div
-                            className={`${styles.planCard} ${paymentMode === 'full' ? styles.planActive : ''}`}
-                            onClick={() => setPaymentMode('full')}
-                          >
-                            <span className={styles.planName}>Pay in Full</span>
-                            <span className={styles.planPrice}>₦150,000</span>
-                            <span className={styles.planSub}>Pay once now</span>
-                          </div>
-                          <div
-                            className={`${styles.planCard} ${paymentMode === 'installment' ? styles.planActive : ''}`}
-                            onClick={() => setPaymentMode('installment')}
-                          >
-                            <span className={styles.planName}>Installmental</span>
-                            <span className={styles.planPrice}>₦50,000 × 3</span>
-                            <span className={styles.planSub}>Monthly, 3 months</span>
-                          </div>
-                        </div>
-
-                        {paymentMode === 'installment' && (
-                          <div className={styles.installmentTimeline}>
-                            <div className={styles.installmentStep}>
-                              <span className={styles.installDot} style={{ background: '#800020' }}>1</span>
-                              <div>
-                                <p className={styles.installLabel}>Today — ₦50,000</p>
-                                <p className={styles.installDesc}>Pay now to activate your portal</p>
-                              </div>
-                            </div>
-                            <div className={styles.installmentStep}>
-                              <span className={styles.installDot}>2</span>
-                              <div>
-                                <p className={styles.installLabel}>Month 2 — ₦50,000</p>
-                                <p className={styles.installDesc}>Auto-reminder will be sent</p>
-                              </div>
-                            </div>
-                            <div className={styles.installmentStep}>
-                              <span className={styles.installDot}>3</span>
-                              <div>
-                                <p className={styles.installLabel}>Month 3 — ₦50,000</p>
-                                <p className={styles.installDesc}>Setup fee fully cleared</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        <button type="submit" className={styles.submitBtn}>Next: Principal Details →</button>
-                      </>
-                    )}
-
-                    {regStep === 2 && (
-                      <>
-                        <label className={styles.label}>Principal Full Name *</label>
-                        <input className={styles.input} required value={reg.principalName}
-                          onChange={e => updateReg('principalName', e.target.value)} placeholder="Full name" />
-
-                        <label className={styles.label}>Principal Email *</label>
-                        <input className={styles.input} type="email" required value={reg.principalEmail}
-                          onChange={e => updateReg('principalEmail', e.target.value)} placeholder="principal@school.edu" />
-
-                        <label className={styles.label}>Principal Phone *</label>
-                        <input className={styles.input} type="tel" required value={reg.principalPhone}
-                          onChange={e => updateReg('principalPhone', e.target.value)} placeholder="+234 800 0000 000" />
-
-                        <label className={styles.label}>Set Password *</label>
-                        <div className={styles.passWrap}>
-                          <input
-                            type={showPass ? 'text' : 'password'} className={styles.input}
-                            required minLength={8} value={reg.principalPassword}
-                            onChange={e => updateReg('principalPassword', e.target.value)}
-                            placeholder="Min. 8 characters"
-                          />
-                          <button type="button" className={styles.eyeBtn}
-                            onClick={() => setShowPass(!showPass)} tabIndex={-1}>
-                            {showPass ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-                          </button>
-                        </div>
-
-                        <div className={styles.termsRow}>
-                          <input
-                            id="terms-checkbox"
-                            type="checkbox"
-                            checked={termsAccepted}
-                            onChange={e => setTermsAccepted(e.target.checked)}
-                            className={styles.termsCheckbox}
-                          />
-                          <label htmlFor="terms-checkbox" className={styles.termsText}>
-                            I have read and agree to the{' '}
-                            <Link href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}
-                              onClick={e => e.stopPropagation()}>
-                              Terms &amp; Conditions
-                            </Link>{' '}
-                            and{' '}
-                            <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}
-                              onClick={e => e.stopPropagation()}>
-                              Privacy Policy
-                            </Link>
-                          </label>
-                        </div>
-
-                        <div className={styles.summaryBox}>
-                          <p className={styles.summaryLine}><span>School:</span> {reg.schoolName}</p>
-                          <p className={styles.summaryLine}><span>Payment:</span> {paymentMode === 'full' ? 'Full payment' : '3-month installment'}</p>
-                          <p className={styles.summaryLine}><span>Due today:</span> ₦{amountDueNow.toLocaleString()}</p>
-                          {paymentMode === 'installment' && (
-                            <p className={styles.summaryLine}><span>Remaining:</span> ₦{(150000 - amountDueNow).toLocaleString()} over 2 months</p>
-                          )}
-                          <p className={styles.summaryLine} style={{ fontSize: '0.7rem', marginTop: 4 }}>
-                            <span style={{ fontStyle: 'italic' }}>Term billing (per-student) configured after onboarding</span>
-                          </p>
-                        </div>
-
-                        <div className={styles.regBtnRow}>
-                          <button type="button" className={styles.backBtn} onClick={() => setRegStep(1)}>← Back</button>
-                          <button type="submit" className={styles.submitBtn} disabled={regLoading}>
-                            {regLoading ? <span className={styles.btnSpinner} /> : `Pay ₦${amountDueNow.toLocaleString()} →`}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </form>
-                </>
-              )}
-            </div>
-          )}
+              <div className={styles.registerRow}>
+                <span>Setting up a new school?</span>
+                <Link href="/register-school" className={styles.registerLink}>
+                  Register your school <ArrowRightIcon size={13} />
+                </Link>
+              </div>
+          </div>
         </div>{/* end .card */}
 
         {/* ── SITE FOOTER ──────────────────────────────────────────────────── */}

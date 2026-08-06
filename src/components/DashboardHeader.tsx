@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import NotificationsBell from './NotificationsBell'
-import { SunIcon, MoonIcon, LogOutIcon, UserIcon, ArrowLeftIcon } from './Icons'
+import { SunIcon, MoonIcon, UserIcon, ArrowLeftIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
+import { ripple } from '@/lib/ripple'
+import motion from './dashboard-motion.module.css'
 import styles from './DashboardHeader.module.css'
 
 interface Props {
@@ -19,9 +21,14 @@ interface Props {
   schoolColor?: string
 }
 
+// Sub-page header — same prop API as before, but now the compact sibling
+// of RoleHeroHeader: same brand gradient band, same crest/pill treatment,
+// same icon set, just shorter (no greeting/headline copy, since a sub-page
+// needs a title bar, not a hero). Consuming pages need zero changes —
+// this only replaces what RolePageWrapper renders internally.
 export default function DashboardHeader({
   userId, role, profile, school,
-  title, showBack = false, schoolColor = '#7C3AED',
+  title, showBack = false, schoolColor = '#800020',
 }: Props) {
   const { theme, toggleTheme } = useTheme()
   const router  = useRouter()
@@ -36,10 +43,15 @@ export default function DashboardHeader({
     <header className={styles.header}>
       <div className={styles.left}>
         {showBack
-          ? <button className={styles.iconBtn} onClick={() => router.back()}>
-              <ArrowLeftIcon size={18} />
+          ? <button
+              className={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`}
+              onClick={() => router.back()}
+              onMouseDown={ripple(motion)}
+              aria-label="Back"
+            >
+              <ArrowLeftIcon size={17} />
             </button>
-          : <div className={styles.schoolBadge} style={{ background: schoolColor }}>
+          : <div className={styles.schoolBadge}>
               {school?.logo_url
                 ? <img src={school.logo_url} alt="" className={styles.schoolLogo} />
                 : <span>{school?.name?.[0] ?? 'S'}</span>
@@ -60,7 +72,12 @@ export default function DashboardHeader({
       </div>
 
       <div className={styles.right}>
-        <button className={styles.iconBtn} onClick={toggleTheme} aria-label="Toggle theme">
+        <button
+          className={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`}
+          onClick={toggleTheme}
+          onMouseDown={ripple(motion)}
+          aria-label="Toggle theme"
+        >
           {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
         </button>
 
@@ -68,12 +85,12 @@ export default function DashboardHeader({
 
         <Link
           href={`/dashboard/${role}/profile`}
-          className={styles.avatar}
-          style={{ background: schoolColor }}
+          className={`${styles.avatar} ${motion.focusable}`}
+          aria-label="Account"
         >
           {profile?.avatar_url
             ? <img src={profile.avatar_url} alt={firstName} className={styles.avatarImg} />
-            : <UserIcon size={14} color="white" />
+            : <UserIcon size={14} color="#F6F1E4" />
           }
         </Link>
       </div>

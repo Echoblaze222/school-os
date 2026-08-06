@@ -3,7 +3,8 @@
 // src/app/dashboard/parent/meetings/ParentMeetingsClient.tsx
 
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import styles from './parent-meetings.module.css'
 import type { MeetingRow } from './page'
 
@@ -64,12 +65,13 @@ export default function ParentMeetingsClient({
   const past     = relevant.filter(m =>  isPast(m.scheduled_at))
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="parent"
       profile={profile}
       school={school}
       title="Meetings"
+      featureGroups={PARENT_FEATURE_GROUPS}
     >
       <div className={styles.listMain}>
 
@@ -122,7 +124,7 @@ export default function ParentMeetingsClient({
       </div>
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

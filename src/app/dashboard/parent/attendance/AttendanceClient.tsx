@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { CalendarIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -98,7 +99,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const rate  = total > 0 ? Math.round((summary.present / total) * 100) : 0
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Attendance">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Attendance" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading
         ? <div className={styles.loading}><span/><span/><span/></div>
         : !child
@@ -168,6 +169,6 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
             </>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

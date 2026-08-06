@@ -31,7 +31,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { AwardIcon, PlusIcon } from '@/components/Icons'
+import { AwardIcon, PlusIcon, AlertIcon } from '@/components/Icons'
+import GaugeStat from '@/components/GaugeStat'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -77,9 +78,9 @@ function QuestionBuilder({
   return (
     <>
       {saveError && (
-        <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
-          borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: '#EF4444' }}>
-          ⚠️ {saveError}
+        <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
+          borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--danger)' }}>
+          <AlertIcon size={13} style={{verticalAlign:"middle",marginRight:4}} />{saveError}
         </div>
       )}
 
@@ -90,7 +91,7 @@ function QuestionBuilder({
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: sc }}>Q{qi + 1}</span>
               {questions.length > 1 && (
                 <button onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
-                  style={{ fontSize: '0.72rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                  style={{ fontSize: '0.72rem', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
                   Remove
                 </button>
               )}
@@ -102,7 +103,7 @@ function QuestionBuilder({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
               {q.options.map((opt, oi) => (
                 <div key={opt.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: q.answer === opt.label ? '#10B981' : 'var(--text-muted)', width: 16, flexShrink: 0 }}>
+                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: q.answer === opt.label ? 'var(--success)' : 'var(--text-muted)', width: 16, flexShrink: 0 }}>
                     {opt.label}
                   </span>
                   <input value={opt.text}
@@ -110,7 +111,7 @@ function QuestionBuilder({
                       ? { ...x, options: x.options.map((o, j) => j === oi ? { ...o, text: e.target.value } : o) }
                       : x))}
                     placeholder={`Option ${opt.label}`}
-                    style={{ flex: 1, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? '#10B981' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
+                    style={{ flex: 1, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? 'var(--success)' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
                 </div>
               ))}
             </div>
@@ -119,7 +120,7 @@ function QuestionBuilder({
                 <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Correct Answer</label>
                 <select value={q.answer}
                   onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, answer: e.target.value } : x))}
-                  style={{ height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: '#10B981', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
+                  style={{ height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--success)', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
                   {q.options.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </div>
@@ -170,7 +171,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   })
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadTeacherClasses(); loadQuizzes() }, [])
 
@@ -477,9 +478,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       </button>
 
       {saveError && (
-        <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
-          borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: '#EF4444' }}>
-          ⚠️ {saveError}
+        <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
+          borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--danger)' }}>
+          <AlertIcon size={13} style={{verticalAlign:"middle",marginRight:4}} />{saveError}
         </div>
       )}
 
@@ -509,8 +510,8 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
             </select>
             {/* BUG 1 FIX: warning instead of hard block — principal needs to fix class_subjects */}
             {form.class_id && !teacherClasses.find(c => c.class_id === form.class_id)?.class_subject_id && (
-              <p style={{ fontSize: '0.7rem', color: '#F59E0B', margin: 0 }}>
-                ⚠️ No subject mapping for this class. Ask principal to assign subjects to this class — otherwise quiz creation will fail.
+              <p style={{ fontSize: '0.7rem', color: 'var(--warning)', margin: 0 }}>
+                <AlertIcon size={12} style={{verticalAlign:"middle",marginRight:4}} />No subject mapping for this class. Ask principal to assign subjects to this class — otherwise quiz creation will fail.
               </p>
             )}
           </div>
@@ -563,9 +564,22 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     </RolePageWrapper>
   )
 
+  const liveCount = quizzes.filter(q => quizStatus(q) === 'live').length
+  const totalAttempts = Object.values(attemptCounts).reduce((s: number, n: any) => s + n, 0)
+
   // ── Quiz list (default) ───────────────────────────────────────────────────
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Quizzes" showBack={false}>
+      {quizzes.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 'var(--space-4)' }}>
+          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Live now" value={liveCount} color="var(--success)" caption={`of ${quizzes.length} quizzes`} />
+          </div>
+          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Total attempts" value={totalAttempts} color={sc} caption="across all quizzes" delayMs={80} />
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
         <button onClick={() => setStep('create')}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
@@ -584,10 +598,10 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {quizzes.map(q => {
             const status     = quizStatus(q)
-            const statusCol  = status === 'live' ? '#10B981' : status === 'scheduled' ? '#F59E0B' : '#6B7280'
+            const statusCol  = status === 'live' ? 'var(--success)' : status === 'scheduled' ? 'var(--warning)' : '#6B7280'
             const statusLabel = status === 'live' ? 'Live' : status === 'scheduled' ? 'Scheduled' : 'Closed'
             return (
-              <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12 }}>
+              <div key={q.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 8, background: sc + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <AwardIcon size={18} color={sc} />
                 </div>
@@ -607,11 +621,11 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                       Edit
                     </button>
                     <button onClick={() => togglePublish(q.id, q.ends_at)}
-                      style={{ fontSize: '0.7rem', fontWeight: 700, color: status === 'live' ? '#F59E0B' : sc, background: 'none', border: 'none', cursor: 'pointer' }}>
+                      style={{ fontSize: '0.7rem', fontWeight: 700, color: status === 'live' ? 'var(--warning)' : sc, background: 'none', border: 'none', cursor: 'pointer' }}>
                       {status === 'live' ? 'Close' : 'Open'}
                     </button>
                     <button onClick={() => deleteQuiz(q.id)}
-                      style={{ fontSize: '0.7rem', fontWeight: 700, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
                       Delete
                     </button>
                   </div>

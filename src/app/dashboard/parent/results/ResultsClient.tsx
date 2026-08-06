@@ -6,7 +6,9 @@
 // FIXED: term filter against real DB term values
 
 import { useState, useMemo } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import GaugeStat from '@/components/GaugeStat'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { BarChartIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -35,7 +37,7 @@ function gradeColor(g: string) {
 
 export default function ResultsClient({ profile, school, userId, child, results }: Props) {
   const [termFilter, setTermFilter] = useState('All Terms')
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   const enriched = useMemo(() => results.map((r: any) => ({
     ...r,
@@ -54,19 +56,19 @@ export default function ResultsClient({ profile, school, userId, child, results 
     : 0
 
   if (!child) return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Child's Results">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Child's Results" featureGroups={PARENT_FEATURE_GROUPS}>
       <div className={styles.empty}>
         <BarChartIcon size={40} color="var(--text-faint)" strokeWidth={1} />
         <p>No child linked to your account yet. Contact the school secretary.</p>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Child's Results">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Child's Results" featureGroups={PARENT_FEATURE_GROUPS}>
 
       {/* Child info banner */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: sc + '15', border: `1px solid ${sc}30`, borderRadius: 12, marginBottom: 'var(--space-5)' }}>
+      <div className="glass-card-flat" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
         <div style={{ width: 40, height: 40, borderRadius: 10, background: sc + '30', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: sc, fontSize: '1rem', flexShrink: 0 }}>
           {child.full_name.slice(0, 2).toUpperCase()}
         </div>
@@ -77,9 +79,14 @@ export default function ResultsClient({ profile, school, userId, child, results 
           </p>
         </div>
         {filtered.length > 0 && (
-          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: avg >= 60 ? '#10B981' : '#EF4444' }}>{avg}%</p>
-            <p style={{ margin: 0, fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 600 }}>AVG</p>
+          <div style={{ marginLeft: 'auto' }}>
+            <GaugeStat
+              label="Average"
+              value={avg}
+              isPercent
+              color={avg >= 60 ? 'var(--status-ok, #10B981)' : '#EF4444'}
+              size={56}
+            />
           </div>
         )}
       </div>
@@ -87,13 +94,9 @@ export default function ResultsClient({ profile, school, userId, child, results 
       {/* Term filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
         {TERMS.map(t => (
-          <button key={t} onClick={() => setTermFilter(t)} style={{
-            padding: '6px 14px', borderRadius: 999, cursor: 'pointer', flexShrink: 0,
-            border:     `1px solid ${termFilter === t ? sc : 'var(--glass-border)'}`,
-            background: termFilter === t ? sc : 'transparent',
-            color:      termFilter === t ? '#fff' : 'var(--text-muted)',
-            fontSize: '0.75rem', fontWeight: 700,
-          }}>
+          <button key={t} onClick={() => setTermFilter(t)}
+            className={termFilter === t ? 'btn-primary' : 'btn-secondary'}
+            style={{ padding: '6px 14px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, fontSize: '0.75rem', fontWeight: 700 }}>
             {t}
           </button>
         ))}
@@ -106,7 +109,7 @@ export default function ResultsClient({ profile, school, userId, child, results 
           <p>No results found{termFilter !== 'All Terms' ? ` for ${termFilter}` : ''} yet.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="glass-card-flat" style={{ overflowX: 'auto', padding: '4px 8px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
@@ -141,6 +144,6 @@ export default function ResultsClient({ profile, school, userId, child, results 
       )}
 
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -96,7 +96,7 @@ function EnrolSuccessModal({
                 color: copiedCode ? '#10B981' : sc,
               }}
             >
-              {copiedCode ? '✓ Copied' : 'Copy'}
+              {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
             </button>
           </div>
         </div>
@@ -123,11 +123,11 @@ function EnrolSuccessModal({
                 color: copiedPwd ? '#10B981' : '#F59E0B',
               }}
             >
-              {copiedPwd ? '✓ Copied' : 'Copy'}
+              {copiedPwd ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
             </button>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85 }}>
-            ⚠️ Student must change this password on first login.
+          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <AlertIcon size={13} /> Student must change this password on first login.
           </p>
         </div>
 
@@ -142,7 +142,7 @@ function EnrolSuccessModal({
             color: copiedAll ? '#10B981' : 'var(--text-base)',
           }}
         >
-          {copiedAll ? '✓ All Details Copied' : 'Copy All Details'}
+          {copiedAll ? <><CheckIcon size={13} /> All Details Copied</> : 'Copy All Details'}
         </button>
         <button
           onClick={onClose}
@@ -158,7 +158,7 @@ function EnrolSuccessModal({
 
 export default function StudentsClient({ profile, school, userId }: Props) {
   const supabase      = createClient()
-  const sc            = school?.primary_color ?? '#7C3AED'
+  const sc            = school?.primary_color ?? '#800020'
 
   // ── Realtime: students list stays live without any manual refresh ──────────
   const [students, setStudents] = useRealtimeTable<any>({
@@ -317,7 +317,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Students">
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
-          {toast.ok ? '✓' : '✕'} {toast.msg}
+          {toast.ok ? <CheckIcon size={14} /> : <XIcon size={14} />} {toast.msg}
         </div>
       )}
 
@@ -452,10 +452,10 @@ export default function StudentsClient({ profile, school, userId }: Props) {
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
-            {showForm ? '✕ Close' : '+ Enrol Student'}
+            {showForm ? <><XIcon size={14} /> Close</> : '+ Enrol Student'}
           </button>
           <Link href="/dashboard/principal/students/transfer" className={styles.addBtn} style={{ background: '#F59E0B', textDecoration: 'none' }}>
-            ⇄ Transfer Student
+            <TransferIcon size={14} /> Transfer Student
           </Link>
         </div>
 

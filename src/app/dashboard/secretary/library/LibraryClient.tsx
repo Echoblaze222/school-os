@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { BookIcon, BookOpenIcon, ClipboardIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 
 const CATEGORIES = ['General', 'Fiction', 'Non-Fiction', 'Textbook', 'Reference', 'Periodical']
@@ -44,7 +45,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
   const [loanForm, setLoanForm] = useState({ book_id: '', student_id: '', due_at: '' })
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   const filteredBooks = books.filter(b => {
     const matchCat = catTab === 'all' || b.category === catTab
@@ -182,19 +183,19 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
           </div>
 
           {filteredBooks.length === 0 ? (
-            <div className={styles.emptyState}><p className={styles.emptyEmoji}>📚</p><p className={styles.emptyTitle}>No books yet</p><p className={styles.emptyHint}>Add your first title to the catalog</p></div>
+            <div className={styles.emptyState}><BookIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No books yet</p><p className={styles.emptyHint}>Add your first title to the catalog</p></div>
           ) : (
             filteredBooks.map(b => (
               <div key={b.id} className={styles.listItem}>
                 <div className={styles.listIconBox} style={{ background: (CAT_COLORS[b.category] ?? sc) + '22' }}>
-                  <span style={{ fontSize: '1.3rem' }}>📖</span>
+                  <BookOpenIcon size={19} color={CAT_COLORS[b.category] ?? sc} />
                 </div>
                 <div className={styles.listContent}>
                   <p className={styles.listTitle}>{b.title}</p>
                   <p className={styles.listSub}>{b.author ?? 'Unknown author'} · {b.available_copies}/{b.total_copies} available{b.shelf_location ? ` · Shelf ${b.shelf_location}` : ''}</p>
                 </div>
                 <span className={styles.listBadge} style={{ background: (CAT_COLORS[b.category] ?? '#6B7280') + '22', color: CAT_COLORS[b.category] ?? '#6B7280' }}>{b.category}</span>
-                <button onClick={() => deleteBook(b.id)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+                <button onClick={() => deleteBook(b.id)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
               </div>
             ))
           )}
@@ -208,14 +209,14 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
           </div>
 
           {loans.length === 0 ? (
-            <div className={styles.emptyState}><p className={styles.emptyEmoji}>📋</p><p className={styles.emptyTitle}>No loans yet</p><p className={styles.emptyHint}>Issue a book to a student to get started</p></div>
+            <div className={styles.emptyState}><ClipboardIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No loans yet</p><p className={styles.emptyHint}>Issue a book to a student to get started</p></div>
           ) : (
             loans.map(l => {
               const dl = daysLabel(l.due_at, l.status)
               return (
                 <div key={l.id} className={styles.listItem}>
                   <div className={styles.listIconBox} style={{ background: (STATUS_COLORS[l.status] ?? sc) + '22' }}>
-                    <span style={{ fontSize: '1.3rem' }}>📖</span>
+                    <BookOpenIcon size={19} color={STATUS_COLORS[l.status] ?? sc} />
                   </div>
                   <div className={styles.listContent}>
                     <p className={styles.listTitle}>{l.library_books?.title ?? 'Unknown title'}</p>

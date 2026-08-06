@@ -2,7 +2,7 @@
    Matches alumni.module.css / principal-meetings.module.css exactly */
 
 .page{min-height:100dvh;background:var(--bg-base);display:flex;flex-direction:column;position:relative;overflow-x:hidden;padding-bottom:120px;}
-.bgOrb{position:absolute;width:340px;height:340px;top:-80px;right:-80px;border-radius:50%;background:radial-gradient(circle,var(--burgundy-glow,rgba(124,58,237,0.25)) 0%,transparent 70%);filter:blur(48px);pointer-events:none;opacity:0.5;}
+.bgOrb{position:absolute;width:340px;height:340px;top:-80px;right:-80px;border-radius:50%;background:radial-gradient(circle,rgba(128,0,32,0.25) 0%,transparent 70%);filter:blur(48px);pointer-events:none;opacity:0.5;}
 
 /* Header */
 .header{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-6) var(--space-5) var(--space-4);position:sticky;top:0;z-index:var(--z-card,10);background:var(--bg-overlay);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);}
@@ -33,7 +33,7 @@
 .teacherCard{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-5);border-radius:var(--radius-xl);text-align:left;cursor:pointer;width:100%;transition:all var(--transition-normal);}
 .teacherCard:hover{box-shadow:var(--glass-shadow-hover);transform:translateY(-2px);}
 
-.avatar{width:48px;height:48px;border-radius:50%;background:var(--brand-subtle,rgba(124,58,237,0.12));border:2px solid var(--brand-border,rgba(124,58,237,0.3));display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--brand-light,#9F67FF);flex-shrink:0;}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--brand-subtle);border:2px solid var(--brand-border);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--brand-light,#C9748A);flex-shrink:0;}
 
 .cardInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
 .cardTop{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;}
@@ -60,7 +60,7 @@
 .drawer{position:fixed;bottom:0;left:0;right:0;max-height:85dvh;overflow-y:auto;background:var(--bg-elevated,#161D2E);border-top:1px solid var(--glass-border);border-radius:var(--radius-2xl) var(--radius-2xl) 0 0;z-index:160;padding-bottom:env(safe-area-inset-bottom,20px);}
 
 .drawerHeader{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-5) var(--space-5) var(--space-4);border-bottom:1px solid var(--glass-border);}
-.drawerAvatar{width:52px;height:52px;border-radius:50%;background:var(--brand-subtle,rgba(124,58,237,0.12));border:2px solid var(--brand-border,rgba(124,58,237,0.3));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--brand-light,#9F67FF);flex-shrink:0;}
+.drawerAvatar{width:52px;height:52px;border-radius:50%;background:var(--brand-subtle);border:2px solid var(--brand-border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--brand-light,#C9748A);flex-shrink:0;}
 .drawerMeta{flex:1;min-width:0;}
 .drawerName{font-size:1.05rem;font-weight:600;color:var(--text-primary);}
 .drawerEmail{font-size:0.78rem;color:var(--text-muted);margin-top:2px;}

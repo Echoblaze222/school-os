@@ -19,8 +19,10 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
-import { ClipboardIcon } from '@/components/Icons'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import GaugeStat from '@/components/GaugeStat'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
+import { ClipboardIcon, AlertIcon, XIcon, PaperclipIcon, UploadIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -36,7 +38,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const [error,    setError]    = useState<string | null>(null)
 
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
   const child = children.find(c => c.id === childId) ?? null
 
   useEffect(() => { loadChildren() }, [])
@@ -150,16 +152,16 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   function isOverdue(due: string) { return new Date(due) < new Date() }
 
   return (
-    <RolePageWrapper userId={userId} role="parent" profile={profile} school={school} title="Assignments">
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Assignments" featureGroups={PARENT_FEATURE_GROUPS}>
 
       {/* Error banner */}
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
           background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10,
           marginBottom: 'var(--space-4)' }}>
-          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#EF4444', flex: 1 }}><AlertIcon size={14} /> {error}</span>
           <button onClick={() => setError(null)} style={{ background: 'none', border: 'none',
-            color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+            color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><XIcon size={16} /></button>
         </div>
       )}
 
@@ -188,18 +190,28 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 </div>
               )}
 
-              <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginBottom:'var(--space-4)' }}>
+              <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginBottom:'var(--space-3)' }}>
                 Assignments for <strong style={{ color:'var(--text-primary)' }}>{child?.full_name}</strong> · {child?.class_level}
               </p>
+
+              {items.length > 0 && (
+                <div className="glass-card-flat" style={{ display:'flex', alignItems:'center', padding:'14px 18px', marginBottom:'var(--space-4)' }}>
+                  <GaugeStat
+                    label="Submitted"
+                    value={Math.round((items.filter(i => ['submitted','graded','late'].includes(i.submission?.status)).length / items.length) * 100)}
+                    isPercent
+                    color="var(--status-ok, #10B981)"
+                    size={60}
+                  />
+                </div>
+              )}
 
               {/* Tab bar */}
               <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
                 {([['pending', 'Pending'], ['submitted', 'Submitted'], ['all', 'All']] as const).map(([v, l]) => (
                   <button key={v} onClick={() => setTab(v)}
-                    style={{ padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
-                      background: tab === v ? sc : 'var(--glass-bg)',
-                      color:      tab === v ? '#fff' : 'var(--text-muted)',
-                      border:    `1px solid ${tab === v ? sc : 'var(--glass-border)'}`, cursor: 'pointer' }}>
+                    className={tab === v ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                     {l}
                   </button>
                 ))}
@@ -269,7 +281,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem',
                                     fontWeight: 700, color: sc, textDecoration: 'none',
                                     padding: '5px 12px', background: sc + '15', borderRadius: 8 }}>
-                                  📎 View Assignment Brief
+                                  <PaperclipIcon size={14} /> View Assignment Brief
                                 </a>
                               </div>
                             )}
@@ -294,7 +306,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                     style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.72rem',
                                       fontWeight: 600, color: '#10B981', textDecoration: 'none',
                                       padding: '5px 10px', background: '#10B98115', borderRadius: 8, alignSelf: 'flex-start' }}>
-                                    📤 Submitted File
+                                    <UploadIcon size={14} /> Submitted File
                                   </a>
                                 )}
                                 {sub?.feedback && (
@@ -329,6 +341,6 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
             </>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

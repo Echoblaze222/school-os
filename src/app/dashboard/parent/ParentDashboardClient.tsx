@@ -1,35 +1,18 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import RoleNav from '@/components/RoleNav'
-import ChatWidget from '@/components/ChatWidget'
 import LinkChildPrompt from '@/components/LinkChildPrompt'
 import TrialBanner from '@/components/TrialBanner'
-import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
-import {
-  UserIcon, BarChartIcon, WalletIcon, MessageIcon,
-  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, AiIcon, BookIcon, ActivityIcon,
-} from '@/components/Icons'
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
+import RoleHeroHeader from '@/components/RoleHeroHeader'
+import GaugeStat from '@/components/GaugeStat'
+import AiInsightBanner from '@/components/AiInsightBanner'
+import BottomDock from '@/components/BottomDock'
+import ChatWidget from '@/components/ChatWidget'
 import styles from './parent.module.css'
-import motion from '@/components/dashboard-motion.module.css'               // ← NEW
-
-const MODULES = [
-  { id: 'child',       label: "Child's Profile", Icon: UserIcon,      href: '/dashboard/parent/child',       accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'results',     label: 'Results',          Icon: BarChartIcon,  href: '/dashboard/parent/results',     accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'fees',        label: 'Fee Status',       Icon: WalletIcon,    href: '/dashboard/parent/fees',        accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'attendance',  label: 'Attendance',       Icon: CalendarIcon,  href: '/dashboard/parent/attendance',  accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'library',     label: 'Library',          Icon: BookIcon,      href: '/dashboard/parent/library',     accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'clinic',      label: 'Clinic',           Icon: ActivityIcon,  href: '/dashboard/parent/clinic',      accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'assignments', label: 'Assignments',      Icon: ClipboardIcon, href: '/dashboard/parent/assignments', accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'timetable',   label: 'Timetable',        Icon: ClockIcon,     href: '/dashboard/parent/timetable',   accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'leaderboard', label: 'Leaderboard',      Icon: TrophyIcon,    href: '/dashboard/parent/leaderboard', accent: '#F97316', bg: '#4a2810' },
-  { id: 'meetings',    label: 'Meetings',         Icon: CalendarIcon,  href: '/dashboard/parent/meetings',    accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'chat',        label: 'Message School',   Icon: MessageIcon,   href: '/dashboard/parent/chat',        accent: '#7C3AED', bg: '#2d1060' },
-  { id: 'ai',          label: 'AI Assistant',     Icon: AiIcon,        href: '/dashboard/parent/ai',          accent: '#F59E0B', bg: '#4a3510' },
-]
+import motion from '@/components/dashboard-motion.module.css'
+import { PARENT_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
 
 function getCurrentTerm(): string {
   const m = new Date().getMonth() + 1
@@ -45,8 +28,17 @@ function getCurrentYear(): string {
 interface ChildStats { attendance: number | null; gpa: number | null; rank: number | null; pendingTasks: number }
 interface Props { profile: any; school: any; userId: string; counts?: any; activities: ActivityItem[] }
 
+function buildInsight(stats: ChildStats, childName: string): string {
+  if (stats.attendance != null && stats.attendance < 80) {
+    return `${childName}'s attendance is at ${stats.attendance}% this term — below where it usually sits. Worth checking in about what's been keeping them out.`
+  }
+  if (stats.pendingTasks > 0) {
+    return `${childName} has ${stats.pendingTasks} assignment${stats.pendingTasks === 1 ? '' : 's'} due. Attendance and results are both looking normal.`
+  }
+  return `${childName} is tracking well this term — attendance and assignments are both on pace.`
+}
+
 export default function ParentDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
-  const pathname = usePathname()
   const [children,      setChildren]      = useState<any[]>([])
   const [checking,      setChecking]      = useState(true)
   const [showLinkForm,  setShowLinkForm]  = useState(false)
@@ -55,7 +47,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   const [statsLoading,  setStatsLoading]  = useState(false)
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { fetchChildren() }, [userId])
   useEffect(() => { if (activeChildId && children.length) loadChildStats(activeChildId) }, [activeChildId, children])
@@ -193,9 +185,6 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
     }
   }
 
-  function isActive(href: string) { return pathname.startsWith(href) }
-
-  // ── NEW: delete handler wired to Supabase ──────────────────────────────
   async function handleDeleteActivity(id: string) {
     await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
   }
@@ -216,152 +205,141 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   }
 
   const activeChild = children.find((c: any) => c.id === activeChildId) ?? children[0]
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className={styles.page}>
-      <RoleNav userId={userId} profile={profile} school={school} role="parent" schoolColor={sc} />
-      <div className={styles.content}>
-        <DashboardHeader userId={userId} role="parent" profile={profile} school={school} schoolColor={sc} />
-        {school?.setup_status === 'trial' && school?.trial_ends_at && (
-          <TrialBanner trialEndsAt={school.trial_ends_at} schoolId={school.id} setupStatus={school.setup_status} schoolColor={sc} />
-        )}
+    <div className={styles.page} style={{ background: 'color-mix(in srgb, var(--brand) 6%, var(--bg-base))' }}>
+      <RoleHeroHeader
+        userId={userId}
+        role="parent"
+        roleLabel="Parent"
+        profile={profile}
+        school={school}
+        greeting={`${greeting}, ${firstName}`}
+        headline={activeChild ? `How ${activeChild.full_name?.split(' ')[0]} is doing.` : 'Your children, at a glance.'}
+        sub={activeChild ? `${activeChild.class_level ?? 'No class'} · ${getCurrentTerm()}` : ''}
+        featureGroups={FEATURE_GROUPS}
+      />
 
-        <main className={styles.main}>
+      {school?.setup_status === 'trial' && school?.trial_ends_at && (
+        <TrialBanner trialEndsAt={school.trial_ends_at} schoolId={school.id} setupStatus={school.setup_status} schoolColor={sc} />
+      )}
 
-          <div className={`${styles.greeting} ${motion.riseIn}`}>
-            <p className={styles.greetLabel}>Hello,</p>
-            <h1 className={styles.greetName}>{profile?.full_name?.split(' ')[0] ?? 'Parent'} <span className={motion.waveEmoji}>👋</span></h1>
-          </div>
+      <main className={styles.main}>
 
-          {/* AI Assistant — prominent, matches Principal/Bursar/Secretary placement */}
-          <Link
-            href="/dashboard/parent/ai"
-            className={`${styles.aiCard} ${motion.riseIn}`}
-            style={{ animationDelay: '80ms', borderColor: `${sc}55` }}
-          >
-            <div className={styles.aiCardIcon} style={{ background: `${sc}22`, color: sc }}>
-              <AiIcon size={22} color={sc} />
-            </div>
-            <div className={styles.aiCardBody}>
-              <p className={styles.aiCardTitle}>AI Assistant</p>
-              <p className={styles.aiCardSub}>Ask about your child's attendance, results, or fee status</p>
-            </div>
-            <span className={styles.aiCardArrow}>→</span>
-          </Link>
-
-          {/* Child selector tabs */}
-          {children.length > 1 && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              {children.map((c: any) => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveChildId(c.id)}
-                  className={motion.pressable}
-                  style={{
-                    padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
-                    background: activeChildId === c.id ? sc : 'var(--glass-bg)',
-                    color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
-                    border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
-                    cursor: 'pointer', flexShrink: 0,
-                  }}>
-                  {c.full_name?.split(' ')[0]}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Active child card */}
-          {activeChild && (
-            <div className={`${styles.childCard} ${motion.riseIn}`} style={{ borderColor: sc + '40', animationDelay: '100ms' }}>
-              <div className={styles.childAvatar} style={{ background: sc }}>
-                {activeChild.avatar_url
-                  ? <img src={activeChild.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                  : <span style={{ fontWeight: 800, color: '#fff', fontSize: '1.1rem' }}>{activeChild.full_name?.[0]}</span>
-                }
-              </div>
-              <div className={styles.childInfo}>
-                <p className={styles.childName}>{activeChild.full_name}</p>
-                <p className={styles.childMeta}>
-                  {activeChild.class_level ?? 'No class'} · {activeChild.default_code ?? ''} · {school?.name}
-                </p>
-              </div>
-              <Link href={`/dashboard/parent/child?id=${activeChild.id}`} className={`${styles.viewChildBtn} ${motion.pressable}`} style={{ borderColor: sc + '40', color: sc }}>
-                View →
-              </Link>
-            </div>
-          )}
-
-          {/* Stats grid — staggered, shares Teacher/Student's .statCard styling */}
-          {activeChild && (
-            <div className={styles.statsRow}>
-              {[
-                { label: 'Attendance', value: statsLoading ? '…' : childStats.attendance != null ? `${childStats.attendance}%` : '—', color: '#10B981' },
-                { label: 'Term GPA',   value: statsLoading ? '…' : childStats.gpa        != null ? childStats.gpa.toFixed(1)       : '—', color: sc       },
-                { label: 'Class Rank', value: statsLoading ? '…' : childStats.rank       != null ? `#${childStats.rank}`           : '—', color: '#8B5CF6' },
-                { label: 'Tasks Due',  value: statsLoading ? '…' : childStats.pendingTasks,                                              color: '#F59E0B' },
-              ].map((s, i) => (
-                <div
-                  key={s.label}
-                  className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-                  style={{ animationDelay: `${160 + i * 50}ms` }}
-                >
-                  <p className={`${styles.statVal} ${statsLoading ? motion.shimmer : ''}`} style={{ color: s.color }}>{s.value}</p>
-                  <p className={styles.statLbl}>{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Link another child */}
-          <button
-            onClick={() => setShowLinkForm(true)}
-            className={motion.pressable}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', marginBottom: 20,
-              background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
-              borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
-            }}>
-            + Link Another Child
-          </button>
-
-          {showLinkForm && (
-            <div style={{ marginBottom: 16 }}>
-              <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} />
-              <button onClick={() => setShowLinkForm(false)}
-                style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                Cancel
+        {/* Child selector chips */}
+        {children.length > 1 && (
+          <div className={motion.riseIn} style={{ display: 'flex', gap: 8, marginTop: 'var(--space-6)', marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
+            {children.map((c: any) => (
+              <button
+                key={c.id}
+                onClick={() => setActiveChildId(c.id)}
+                className={motion.pressable}
+                style={{
+                  padding: '7px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
+                  background: activeChildId === c.id ? sc : 'var(--glass-bg)',
+                  color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
+                  border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
+                  cursor: 'pointer', flexShrink: 0,
+                }}>
+                {c.full_name?.split(' ')[0]}
               </button>
-            </div>
-          )}
-
-          <p className={styles.sectionLabel}>Parent Portal</p>
-          <div className={styles.moduleGrid}>
-            {MODULES.map((m, i) => (
-              <Link
-                key={m.id}
-                href={m.href}
-                className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(m.href) ? styles.modActive : ''}`}
-                style={{ animationDelay: `${260 + i * 35}ms` }}
-              >
-                <div className={styles.modIcon} style={{ background: m.bg }}>
-                  <m.Icon size={20} color={m.accent} />
-                </div>
-                <span className={styles.modLabel}>{m.label}</span>
-              </Link>
             ))}
           </div>
+        )}
 
-          {/* NEW: Recent Activity feed */}
-          <RecentActivity
-            items={activities}
-            accentColor={sc}
-            onDelete={handleDeleteActivity}
-            emptyLabel="Nothing yet — updates about your child will show up here"
-          />
+        {/* Animated graphical stats for the active child */}
+        {activeChild && (
+          <div className={motion.riseIn} style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+            marginTop: children.length > 1 ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
+          }}>
+            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+              <GaugeStat label="Attendance" value={statsLoading ? 0 : (childStats.attendance ?? 0)} isPercent
+                color="var(--status-ok, #3FA66B)" caption={getCurrentTerm()} />
+            </div>
+            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+              <GaugeStat
+                label="Term GPA"
+                value={statsLoading ? 0 : (childStats.gpa != null ? Math.round((childStats.gpa / 5) * 100) : 0)}
+                isPercent
+                displayValue={statsLoading ? '…' : (childStats.gpa != null ? childStats.gpa.toFixed(1) : '—')}
+                color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
+              />
+            </div>
+            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+              <GaugeStat label="Tasks due" value={statsLoading ? 0 : childStats.pendingTasks}
+                color="var(--status-warn, #E4572E)" caption="this week" delayMs={160} />
+            </div>
+          </div>
+        )}
 
-          <div className={styles.mobileSpace} />
-        </main>
-      </div>
+        {activeChild && (
+          <div style={{ marginBottom: 'var(--space-4)' }}>
+            <AiInsightBanner
+              insight={buildInsight(childStats, activeChild.full_name?.split(' ')[0] ?? 'Your child')}
+              actionLabel="Ask AI →"
+              actionHref="/dashboard/parent/ai"
+            />
+          </div>
+        )}
+
+        {/* Active child card */}
+        {activeChild && (
+          <div className={`${styles.childCard} ${motion.riseIn}`} style={{ borderColor: sc + '40' }}>
+            <div className={styles.childAvatar} style={{ background: sc }}>
+              {activeChild.avatar_url
+                ? <img src={activeChild.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                : <span style={{ fontWeight: 800, color: '#fff', fontSize: '1.1rem' }}>{activeChild.full_name?.[0]}</span>
+              }
+            </div>
+            <div className={styles.childInfo}>
+              <p className={styles.childName}>{activeChild.full_name}</p>
+              <p className={styles.childMeta}>
+                {activeChild.class_level ?? 'No class'} · {activeChild.default_code ?? ''} · {school?.name}
+              </p>
+            </div>
+            <Link href={`/dashboard/parent/child?id=${activeChild.id}`} className={`${styles.viewChildBtn} ${motion.pressable}`} style={{ borderColor: sc + '40', color: sc }}>
+              View →
+            </Link>
+          </div>
+        )}
+
+        {/* Link another child */}
+        <button
+          onClick={() => setShowLinkForm(true)}
+          className={motion.pressable}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', margin: '14px 0 20px',
+            background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
+            borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+          }}>
+          + Link Another Child
+        </button>
+
+        {showLinkForm && (
+          <div style={{ marginBottom: 16 }}>
+            <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} />
+            <button onClick={() => setShowLinkForm(false)}
+              style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        )}
+
+        <RecentActivity
+          items={activities}
+          accentColor={sc}
+          onDelete={handleDeleteActivity}
+          emptyLabel="Nothing yet — updates about your child will show up here"
+        />
+
+        <div className={styles.mobileSpace} />
+      </main>
+
+      <BottomDock homeHref="/dashboard/parent" aiHref="/dashboard/parent/ai" />
       <ChatWidget userId={userId} role="parent" schoolColor={sc} />
     </div>
   )

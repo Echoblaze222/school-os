@@ -67,7 +67,7 @@
   height: 88px;
   border-radius: 22px;
   object-fit: contain;
-  filter: drop-shadow(0 0 22px rgba(0, 180, 216, 0.35));
+  filter: drop-shadow(0 0 22px rgba(28, 147, 172, 0.4));
 }
 
 .brandName {

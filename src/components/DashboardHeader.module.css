@@ -1,50 +1,67 @@
-/* DashboardHeader.module.css */
+/* DashboardHeader.module.css — compact sibling of RoleHeroHeader.module.css.
+   Same gradient band + pill button language, shrunk to a sticky title bar
+   for sub-pages. Keeping structure separate from the hero (rather than
+   reusing it directly) because sub-pages need sticky positioning and a
+   back button slot that the home hero doesn't. */
+
 .header {
-  position: sticky; top: 0; z-index: var(--z-raised);
+  position: sticky; top: 0; z-index: var(--z-nav);
   display: flex; align-items: center; justify-content: space-between;
-  padding: var(--space-3) var(--space-5);
-  background: var(--nav-bg);
-  border-bottom: 1px solid var(--glass-border);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  gap: var(--space-3);
+  padding: 12px 16px;
+  background: linear-gradient(180deg, var(--brand), var(--brand-dark));
+  color: #F6F1E4;
+  border-bottom: 3px solid var(--brand-2);
   min-height: 60px;
 }
-.left, .right { display: flex; align-items: center; gap: var(--space-3); }
+
+.left, .right { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+
 .schoolBadge {
   width: 36px; height: 36px;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
+  background: conic-gradient(var(--brand-2-light), var(--brand-2), var(--brand-2-light));
   display: flex; align-items: center; justify-content: center;
   overflow: hidden; flex-shrink: 0;
-  font-weight: 700; font-size: 0.9rem; color: #fff;
+  font-weight: 700; font-size: 0.9rem; color: var(--brand-dark);
+  border: 2px solid rgba(0,0,0,0.15);
 }
 .schoolLogo { width: 100%; height: 100%; object-fit: cover; }
+
 .pageTitle {
-  font-size: 0.9rem; font-weight: 700; color: var(--text-primary);
+  font-size: 0.92rem; font-weight: 700; color: #F6F1E4;
   margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: 160px;
+  max-width: 200px;
 }
 .pageSubtitle {
-  font-size: 0.62rem; color: var(--text-muted); font-weight: 500;
-  letter-spacing: 0.05em; text-transform: uppercase; margin: 1px 0 0;
+  font-size: 0.62rem; color: rgba(246,241,228,0.65); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; margin: 1px 0 0;
 }
+
 .iconBtn {
   width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--text-secondary); cursor: pointer;
-  transition: all var(--transition-fast);
+  border-radius: 50%;
+  background: rgba(246,241,228,0.10);
+  border: 1px solid rgba(246,241,228,0.18);
+  color: #F6F1E4; cursor: pointer;
+  transition: background 0.15s;
 }
-.iconBtn:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
+.iconBtn:hover { background: rgba(246,241,228,0.2); }
+
 .avatar {
   width: 36px; height: 36px;
-  border-radius: var(--radius-full);
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid var(--brand-2);
+  background: rgba(246,241,228,0.15);
   flex-shrink: 0; text-decoration: none;
-  transition: transform var(--transition-fast);
+  transition: transform 0.15s;
 }
 .avatar:hover { transform: scale(1.05); }
 .avatarImg { width: 100%; height: 100%; object-fit: cover; }
+
+@media (max-width: 480px) {
+  .pageTitle { max-width: 140px; }
+}

@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import {
-  UserIcon, CameraIcon, KeyIcon, LogOutIcon, EditIcon,
+  UserIcon, CameraIcon, KeyIcon, LogOutIcon, EditIcon, CrownIcon,
 } from '@/components/Icons'
 
 interface Props {
@@ -40,7 +40,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   const fileRef  = useRef<HTMLInputElement>(null)
   const router   = useRouter()
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadMyClasses() }, [])
 
@@ -269,7 +269,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             </div>
 
             {msg && (
-              <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin: 0 }}>
+              <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? 'var(--success)' : 'var(--danger)', margin: 0 }}>
                 {msg}
               </p>
             )}
@@ -348,13 +348,13 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                 </div>
                 <span style={{
                   padding: '3px 10px', borderRadius: 999,
-                  background: cls.is_primary ? '#F59E0B20' : sc + '15',
-                  border: `1px solid ${cls.is_primary ? '#F59E0B40' : sc + '30'}`,
-                  color: cls.is_primary ? '#F59E0B' : sc,
+                  background: cls.is_primary ? 'color-mix(in srgb, var(--warning) 13%, transparent)' : sc + '15',
+                  border: `1px solid ${cls.is_primary ? 'color-mix(in srgb, var(--warning) 25%, transparent)' : sc + '30'}`,
+                  color: cls.is_primary ? 'var(--warning)' : sc,
                   fontSize: '0.65rem', fontWeight: 700,
                   textTransform: 'uppercase' as const,
                 }}>
-                  {cls.is_primary ? '👑 Class Teacher' : 'Subject Teacher'}
+                  {cls.is_primary ? <><CrownIcon size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Class Teacher</> : 'Subject Teacher'}
                 </span>
               </div>
             ))}

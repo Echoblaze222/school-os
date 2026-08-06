@@ -7,7 +7,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { CalendarIcon, CheckCircleIcon, ClockIcon } from '@/components/Icons'
+import { CalendarIcon, CheckCircleIcon, ClockIcon, CrownIcon } from '@/components/Icons'
+import GaugeStat from '@/components/GaugeStat'
 import styles from './attendance.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -46,7 +47,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const [expandedStudents, setExpandedStudents] = useState<any[]>([])
   const [expandedLoading, setExpandedLoading] = useState(false)
   const supabase = createClient()
-  const sc = school?.primary_color ?? '#7C3AED'
+  const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => { if (selectedClass) loadStudents(selectedClass.class_id) }, [selectedClass])
@@ -219,9 +220,9 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   }
 
   const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-    present: { bg: '#10B98115', color: '#10B981' },
-    absent: { bg: '#EF444415', color: '#EF4444' },
-    late: { bg: '#F59E0B15', color: '#F59E0B' },
+    present: { bg: 'color-mix(in srgb, var(--success) 8%, transparent)', color: 'var(--success)' },
+    absent: { bg: 'var(--danger-subtle)', color: 'var(--danger)' },
+    late: { bg: 'color-mix(in srgb, var(--warning) 8%, transparent)', color: 'var(--warning)' },
   }
 
   const presentCount = Object.values(records).filter(v => v === 'present').length
@@ -252,7 +253,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
           <button key={cls.class_id + (cls.subject ?? "")}
             onClick={() => { setSelectedClass(cls); setSaved(false) }}
             style={{ flexShrink: 0, padding: "6px 14px", borderRadius: 999, border: "1px solid " + (selectedClass?.class_id === cls.class_id ? sc : sc + "40"), background: selectedClass?.class_id === cls.class_id ? sc : "transparent", color: selectedClass?.class_id === cls.class_id ? "#fff" : sc, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-            {cls.class_name}{cls.subject ? " · " + cls.subject : ""}{cls.is_primary ? " 👑" : ""}
+            {cls.class_name}{cls.subject ? " · " + cls.subject : ""}{cls.is_primary && <CrownIcon size={12} style={{ marginLeft: 4, verticalAlign: "middle" }} />}
           </button>
         ))}
       </div>
@@ -273,29 +274,29 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setSaved(false) }}
             style={{ height: 38, padding: "0 12px", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: 8, color: "var(--text-primary)", fontSize: "0.85rem", outline: "none" }} />
           {saved && (
-            <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#10B981", fontSize: "0.8rem", fontWeight: 600 }}>
-              <CheckCircleIcon size={14} color="#10B981" /> Saved
+            <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--success)", fontSize: "0.8rem", fontWeight: 600 }}>
+              <CheckCircleIcon size={14} color="var(--success)" /> Saved
             </span>
           )}
         </div>
 
         {saveError && (
-          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid #EF4444", borderRadius: 8, padding: "10px 14px", marginBottom: "var(--space-4)", color: "#EF4444", fontSize: "0.82rem" }}>
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid var(--danger)", borderRadius: 8, padding: "10px 14px", marginBottom: "var(--space-4)", color: "var(--danger)", fontSize: "0.82rem" }}>
             Failed to save attendance: {saveError}
           </div>
         )}
 
-        {/* Summary */}
+        {/* Summary — GaugeStat ring row matches dashboard treatment */}
         {students.length > 0 && (
           <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-4)" }}>
             {[
-              { label: "Present", count: presentCount, color: "#10B981" },
-              { label: "Absent",  count: absentCount,  color: "#EF4444" },
-              { label: "Late",    count: lateCount,    color: "#F59E0B" },
-            ].map(s => (
-              <div key={s.label} style={{ flex: 1, textAlign: "center", padding: 8, background: s.color + "12", border: "1px solid " + s.color + "30", borderRadius: 8 }}>
-                <p style={{ fontSize: "1.1rem", fontWeight: 800, color: s.color, margin: "0 0 2px" }}>{s.count}</p>
-                <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{s.label}</p>
+              { label: "Present", count: presentCount, color: "var(--success)" },
+              { label: "Absent",  count: absentCount,  color: "var(--danger)" },
+              { label: "Late",    count: lateCount,    color: "var(--warning)" },
+            ].map((s, i) => (
+              <div key={s.label} className="glass-card" style={{ flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: "var(--radius-lg)" }}>
+                <GaugeStat label={s.label} value={students.length ? Math.round((s.count / students.length) * 100) : 0}
+                  isPercent displayValue={String(s.count)} color={s.color} size={52} delayMs={i * 80} />
               </div>
             ))}
           </div>
@@ -335,9 +336,9 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
         {students.length > 0 && (
           <button onClick={submit} disabled={saving || saved}
-            style={{ width: "100%", height: 46, background: saved ? "#10B98120" : sc, border: "1px solid " + (saved ? "#10B981" : "transparent"), borderRadius: 10, color: saved ? "#10B981" : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            style={{ width: "100%", height: 46, background: saved ? "color-mix(in srgb, var(--success) 13%, transparent)" : sc, border: "1px solid " + (saved ? "var(--success)" : "transparent"), borderRadius: 10, color: saved ? "var(--success)" : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {saved
-              ? <><CheckCircleIcon size={16} color="#10B981" /> Attendance Saved</>
+              ? <><CheckCircleIcon size={16} color="var(--success)" /> Attendance Saved</>
               : saving ? "Saving..."
               : "Submit Attendance for " + selectedClass?.class_name
             }
@@ -358,12 +359,12 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {history.map(h => {
                 const rate = h.total ? Math.round((h.present / h.total) * 100) : 0
-                const rateColor = rate >= 90 ? "#10B981" : rate >= 70 ? "#F59E0B" : "#EF4444"
+                const rateColor = rate >= 90 ? "var(--success)" : rate >= 70 ? "var(--warning)" : "var(--danger)"
                 const isOpen = expandedDate === h.date
                 const d = new Date(h.date + "T00:00:00")
                 const label = d.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
                 return (
-                  <div key={h.date} style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 10, overflow: "hidden" }}>
+                  <div key={h.date} className="glass-card" style={{ borderRadius: 10, overflow: "hidden" }}>
                     <button onClick={() => loadExpandedDay(h.date)}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                       {/* Rate circle */}
@@ -374,11 +375,11 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                       <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{label}</p>
                         <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "0.7rem" }}>
-                          <span style={{ color: "#10B981", fontWeight: 700 }}>{h.present}P</span>
+                          <span style={{ color: "var(--success)", fontWeight: 700 }}>{h.present}P</span>
                           {" · "}
-                          <span style={{ color: "#EF4444", fontWeight: 700 }}>{h.absent}A</span>
+                          <span style={{ color: "var(--danger)", fontWeight: 700 }}>{h.absent}A</span>
                           {" · "}
-                          <span style={{ color: "#F59E0B", fontWeight: 700 }}>{h.late}L</span>
+                          <span style={{ color: "var(--warning)", fontWeight: 700 }}>{h.late}L</span>
                           {" · "}{h.total} students
                         </p>
                       </div>

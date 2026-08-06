@@ -7,7 +7,7 @@ import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import {
   ZapIcon, SunIcon, MoonIcon, ClipboardIcon, CheckCircleIcon,
   AlertCircleIcon, WalletIcon, SearchIcon, CreditCardIcon,
-  ReceiptIcon, ClockIcon, AlertIcon, CheckIcon,
+  ReceiptIcon, ClockIcon, AlertIcon, CheckIcon, ArrowLeftIcon,
 } from '@/components/Icons'
 import styles from './invoices.module.css'
 
@@ -264,7 +264,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
       })()}
 
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/bursar')}>←</button>
+        <button className={styles.backBtn} onClick={() => router.push('/dashboard/bursar')}><ArrowLeftIcon size={18} /></button>
         <h1 className={styles.headerTitle}>Invoices</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <button

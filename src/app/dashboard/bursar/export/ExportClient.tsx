@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { DownloadIcon } from '@/components/Icons'
+import { DownloadIcon, AlertIcon, CheckCircleIcon, EyeIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -40,7 +40,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
   const [preview,   setPreview]   = useState<{ cols: string[]; rows: any[] } | null>(null)
   const [previewing, setPreviewing] = useState(false)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   function toCSV(rows: any[], headers: string[]) {
     const esc  = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
@@ -361,8 +361,9 @@ export default function ExportClient({ profile, school, userId }: Props) {
       {error && (
         <div style={{ padding:'var(--space-4)', marginTop:'var(--space-5)',
           background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:10, fontSize:'0.85rem', fontWeight:700, color:'#EF4444' }}>
-          ⚠️ {error}
+          borderRadius:10, fontSize:'0.85rem', fontWeight:700, color:'#EF4444',
+          display:'flex', alignItems:'center', gap:6 }}>
+          <AlertIcon size={15} /> {error}
         </div>
       )}
 
@@ -371,9 +372,10 @@ export default function ExportClient({ profile, school, userId }: Props) {
           background: result.count > 0 ? '#10B98115' : '#F59E0B15',
           border: `1px solid ${result.count > 0 ? '#10B98140' : '#F59E0B40'}`,
           borderRadius:10, fontSize:'0.85rem', fontWeight:700,
-          color: result.count > 0 ? '#10B981' : '#F59E0B' }}>
+          color: result.count > 0 ? '#10B981' : '#F59E0B',
+          display:'flex', alignItems:'center', gap:6 }}>
           {result.count > 0
-            ? `✓ Downloaded ${result.count} record${result.count !== 1 ? 's' : ''}`
+            ? <><CheckCircleIcon size={15} /> {`Downloaded ${result.count} record${result.count !== 1 ? 's' : ''}`}</>
             : 'No records found for this selection'}
         </div>
       )}
@@ -420,8 +422,9 @@ export default function ExportClient({ profile, school, userId }: Props) {
           style={{ flex:1, height:50, background:'var(--input-bg)',
             color:'var(--text-primary)', border:'1px solid var(--input-border)',
             borderRadius:10, fontWeight:700, fontSize:'0.88rem',
-            cursor:'pointer', opacity:previewing ? 0.7 : 1 }}>
-          {previewing ? 'Loading…' : '👁 Preview'}
+            cursor:'pointer', opacity:previewing ? 0.7 : 1,
+            display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+          {previewing ? 'Loading…' : <><EyeIcon size={16} /> Preview</>}
         </button>
 
         <button onClick={exportData} disabled={exporting}

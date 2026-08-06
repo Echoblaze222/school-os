@@ -185,7 +185,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
   if (success) {
     return (
       <div className={styles.successPage}>
-        <div className={`burgundy-glow-orb ${styles.successOrb}`} aria-hidden />
+        <div className={styles.successOrb} aria-hidden />
         <div className={`glass-card ${styles.successCard} animate-scale-in`}>
           <div className={styles.successIcon}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -204,7 +204,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
 
   return (
     <div className={styles.page}>
-      <div className={`burgundy-glow-orb ${styles.orb1}`} aria-hidden />
+      <div className={styles.orb1} aria-hidden />
 
       {/* ── Header ── */}
       <header className={styles.header}>

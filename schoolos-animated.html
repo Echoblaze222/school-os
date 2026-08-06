@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchoolOS — Animated Mark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#4A0012; --maroon-lt:#7A1030;
+    --cyan:#006B85; --cyan-lt:#1C93AC;
+    --ink:#14161A; --paper:#F7F7F8; --muted:#6b6f76; --line:rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  header{max-width:900px;margin:0 auto;padding:48px 24px 8px;}
+  header .eyebrow{font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--maroon);font-weight:700;}
+  header h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:10px 0 8px;}
+  header p{color:var(--muted);max-width:620px;line-height:1.6;font-size:0.92rem;}
+
+  main{max-width:900px;margin:0 auto;padding:20px 24px 80px;}
+  section{background:#fff;border-radius:20px;border:1px solid var(--line);margin-bottom:22px;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden;}
+
+  .stage{display:grid;grid-template-columns:1fr 1fr;}
+  .pane{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;}
+  .pane.light{background:#fdfdfd;border-right:1px solid var(--line);}
+  .pane.dark{background:var(--ink);}
+  .pane svg{width:150px;height:150px;overflow:visible;}
+  @media (max-width:640px){ .stage{grid-template-columns:1fr;} .pane.light{border-right:none;border-bottom:1px solid var(--line);} }
+
+  /* ── the animation ──
+     Each tile scales up then back down during the FIRST QUARTER of its own
+     2s cycle, then holds still for the remaining three quarters. Staggering
+     each tile's start by 0.5s (one quarter of the loop) means tile 2 begins
+     its pulse exactly when tile 1 finishes, and so on — a continuous
+     round-robin with only one tile ever moving at a time. */
+  @keyframes tilePulse {
+    0%   { transform: scale(1); }
+    12.5%{ transform: scale(1.28); }
+    25%  { transform: scale(1); }
+    100% { transform: scale(1); }
+  }
+  .tile{
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tilePulse 2s ease-in-out infinite;
+  }
+  .t1{ animation-delay: 0s;    }
+  .t2{ animation-delay: 0.5s;  }
+  .t3{ animation-delay: 1s;    }
+  .t4{ animation-delay: 1.5s;  }
+
+  .caption{padding:16px 22px 20px;border-top:1px solid var(--line);font-size:0.82rem;color:var(--muted);line-height:1.6;}
+  .caption b{color:var(--ink);}
+
+  .sec-head{padding:22px 26px 0;}
+  .sec-head .tag{font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--cyan);font-weight:700;}
+  .sec-head h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;margin:6px 0 6px;}
+  .sec-head p{margin:0 0 14px;font-size:0.85rem;color:var(--muted);line-height:1.6;max-width:600px;}
+  .sec-body{padding:0 26px 24px;}
+  pre{background:var(--ink);color:#e8e8ea;border-radius:12px;padding:16px 18px;font-size:0.78rem;overflow-x:auto;line-height:1.6;margin:0;}
+  pre .c1{color:#4dd0e8;} pre .c2{color:#e88ba0;} pre .c3{color:#8a8f9a;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Logo system — motion</div>
+  <h1>The mark, in motion</h1>
+  <p>Each of the four tiles zooms out and back in, one after another, looping continuously — a simple round-robin pulse rather than all four moving together. Reads as a loading state, an "always on" system, or a splash-screen moment.</p>
+</header>
+
+<main>
+
+  <section>
+    <div class="stage">
+      <div class="pane light">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect class="tile t1" x="18" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+            <rect class="tile t2" x="54" y="18" width="28" height="28" rx="6" fill="#4A0012"/>
+            <rect class="tile t3" x="18" y="54" width="28" height="28" rx="6" fill="#4A0012"/>
+            <rect class="tile t4" x="54" y="54" width="28" height="28" rx="6" fill="#006B85"/>
+          </g>
+        </svg>
+      </div>
+      <div class="pane dark">
+        <svg viewBox="0 0 100 100">
+          <g transform="rotate(45 50 50)">
+            <rect class="tile t1" x="18" y="18" width="28" height="28" rx="6" fill="#7A1030"/>
+            <rect class="tile t2" x="54" y="18" width="28" height="28" rx="6" fill="#7A1030"/>
+            <rect class="tile t3" x="18" y="54" width="28" height="28" rx="6" fill="#7A1030"/>
+            <rect class="tile t4" x="54" y="54" width="28" height="28" rx="6" fill="#1C93AC"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="caption"><b>Loop length:</b> 2 seconds total, 0.5s per tile — each tile's own "zoom out, zoom in" takes 0.5s (0.25s growing, 0.25s shrinking), then it holds still for 1.5s while the other three take their turn.</div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="tag">Implementation</div>
+      <h2>Drop-in CSS</h2>
+      <p>Same structure as the static mark — just add these classes to the four tiles and this stylesheet. No JavaScript required.</p>
+    </div>
+    <div class="sec-body">
+      <pre><span class="c3">/* apply .tile to all four &lt;rect&gt; elements, plus .t1 .t2 .t3 .t4 in order */</span>
+<span class="c1">@keyframes</span> tilePulse {
+  0%   { transform: scale(1); }
+  12.5%{ transform: scale(1.28); }
+  25%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+.tile {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tilePulse <span class="c2">2s</span> ease-in-out infinite;
+}
+.t1 { animation-delay: <span class="c2">0s</span>;   }
+.t2 { animation-delay: <span class="c2">0.5s</span>; }
+.t3 { animation-delay: <span class="c2">1s</span>;   }
+.t4 { animation-delay: <span class="c2">1.5s</span>; }</pre>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

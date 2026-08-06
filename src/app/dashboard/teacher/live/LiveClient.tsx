@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
-import { VideoIcon, PlusIcon } from '@/components/Icons'
+import { VideoIcon, PlusIcon, CalendarIcon, StatusDotIcon, CheckCircleIcon, AlertIcon, XIcon, PlayIcon, StopIcon, LinkIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -38,7 +38,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
     class_id: '', class_subject_id: '',
   })
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   const classLookup: Record<string, { className: string; subject: string | null }> = {}
   teacherClasses.forEach(c => {
@@ -151,7 +151,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   }
 
   const STATUS_COLOR: Record<Tab, string> = {
-    scheduled: '#F59E0B', live: '#10B981', ended: '#6B7280',
+    scheduled: 'var(--warning)', live: 'var(--success)', ended: '#6B7280',
   }
 
   return (
@@ -162,7 +162,11 @@ export default function LiveClient({ profile, school, userId }: Props) {
           <button key={t} onClick={() => setTab(t)}
             className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
             style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
-            {t === 'scheduled' ? '📅 Upcoming' : t === 'live' ? '🔴 Live' : '✅ Ended'}
+            {t === 'scheduled'
+              ? <><CalendarIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Upcoming</>
+              : t === 'live'
+              ? <><StatusDotIcon size={10} color="var(--danger)" style={{ marginRight: 4 }} />Live</>
+              : <><CheckCircleIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Ended</>}
           </button>
         ))}
         <button onClick={() => setShowForm(!showForm)}
@@ -172,14 +176,14 @@ export default function LiveClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
+          <button onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
       {teacherClasses.length === 0 && !loading && (
-        <div style={{ padding: '10px 14px', background: '#F59E0B15', border: '1px solid #F59E0B40', borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: '#F59E0B' }}>
+        <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)', borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--warning)' }}>
           No classes assigned yet. Ask the principal to assign you a class before scheduling live classes.
         </div>
       )}
@@ -278,33 +282,33 @@ export default function LiveClient({ profile, school, userId }: Props) {
                       )}
                     </div>
                     <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, background: (STATUS_COLOR[status] ?? '#6B7280') + '20', color: STATUS_COLOR[status] ?? '#6B7280', flexShrink: 0 }}>
-                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? '🔴 LIVE' : 'Ended'}
+                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? <><StatusDotIcon size={9} color="#fff" style={{ marginRight: 3 }} />LIVE</> : 'Ended'}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', gap: 'var(--space-2)', paddingLeft: 56, flexWrap: 'wrap', alignItems: 'center' }}>
                     {status === 'scheduled' && (
                       <button onClick={() => startClass(s.id)}
-                        style={{ padding: '6px 14px', background: '#10B981', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
-                        🔴 Start Now
+                        style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        <PlayIcon size={13} color="#fff" /> Start Now
                       </button>
                     )}
                     {status === 'live' && (
                       <button onClick={() => endClass(s.id)}
-                        style={{ padding: '6px 14px', background: '#EF4444', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
-                        ⏹ End Class
+                        style={{ padding: '6px 14px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        <StopIcon size={13} color="#fff" /> End Class
                       </button>
                     )}
                     {s.meeting_url && (
                       <a href={s.meeting_url} target="_blank" rel="noreferrer"
                         style={{ padding: '6px 14px', background: sc + '20', color: sc, border: `1px solid ${sc}40`, borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
-                        🔗 Open Meeting
+                        <LinkIcon size={13} color={sc} /> Open Meeting
                       </a>
                     )}
                     {s.recording_url && status === 'ended' && (
                       <a href={s.recording_url} target="_blank" rel="noreferrer"
                         style={{ padding: '6px 14px', background: 'var(--glass-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
-                        🎬 Recording
+                        <VideoIcon size={13} color="var(--text-secondary)" /> Recording
                       </a>
                     )}
 
@@ -323,7 +327,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
                     {status !== 'live' && (
                       <button onClick={() => deleteSession(s.id)}
-                        style={{ padding: '6px 14px', background: 'transparent', color: '#EF4444', border: '1px solid #EF444440', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        style={{ padding: '6px 14px', background: 'transparent', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                         Delete
                       </button>
                     )}

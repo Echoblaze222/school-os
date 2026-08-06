@@ -1,13 +1,15 @@
 // src/app/dashboard/parent/notifications/NotificationsPageClient.tsx
 // Parent-specific variant — no broadcast panel (parents can't send to school)
-// Uses the same RoleNav as every other parent page
+// Uses the same RoleSubHeader + BottomDock as every other parent page
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
-import RoleNav from '@/components/RoleNav'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
+import { AlertIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './notifications.module.css'
 
 interface Notification {
@@ -62,7 +64,7 @@ export default function ParentNotificationsPageClient({
   schoolId,
   profile,
   school,
-  schoolColor = '#7C3AED',
+  schoolColor = '#800020',
 }: Props) {
   const router   = useRouter()
   const supabase = createClient()
@@ -206,22 +208,21 @@ export default function ParentNotificationsPageClient({
   }
 
   return (
-    <div className={styles.page}>
+    <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Notifications" featureGroups={PARENT_FEATURE_GROUPS}>
 
-      {/* Header */}
-      <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/parent')}>←</button>
-        <div className={styles.headerCenter}>
-          <h1 className={styles.headerTitle}>Notifications</h1>
+      {/* Controls row — unread badge, push toggle, mark-all-read */}
+      <div className="glass-card-flat" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 14px', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Notifications</span>
           {localUnread > 0 && <span className={styles.unreadBadge}>{localUnread}</span>}
         </div>
-        <div className={styles.headerRight}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead}>✓ All read</button>
+            <button className={styles.markAllBtn} onClick={markAllRead}><CheckCircleIcon size={13} /> All read</button>
           )}
         </div>
-      </header>
+      </div>
 
       {/* Push error banner */}
       {push.error && (
@@ -230,7 +231,7 @@ export default function ParentNotificationsPageClient({
           background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           color: '#f87171', fontSize: '0.8rem',
         }}>
-          ⚠️ {push.error}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertIcon size={14} /> {push.error}</span>
         </div>
       )}
 
@@ -381,15 +382,6 @@ export default function ParentNotificationsPageClient({
           </div>
         </div>
       )}
-
-      {/* Canonical RoleNav — same as ParentDashboardClient */}
-      <RoleNav
-        userId={userId}
-        profile={profile}
-        school={school}
-        role="parent"
-        schoolColor={schoolColor}
-      />
-    </div>
+    </RoleSubHeader>
   )
 }

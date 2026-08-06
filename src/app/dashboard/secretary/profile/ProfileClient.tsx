@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { UserIcon, CameraIcon, EditIcon, KeyIcon, LogOutIcon } from '@/components/Icons'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -21,7 +22,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
   const fileRef  = useRef<HTMLInputElement>(null)
   const router   = useRouter()
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   async function save() {
     setSaving(true); setMsg('')
@@ -106,7 +107,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
           <div style={{ width: 84, height: 84, borderRadius: '50%', background: sc, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '3px solid ' + sc + '40' }}>
             {avatar
               ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: uploadingPhoto ? 0.4 : 1 }} />
-              : <span style={{ fontSize: '2rem', color: 'white', opacity: uploadingPhoto ? 0.4 : 1 }}>👤</span>
+              : <UserIcon size={34} color="white" />
             }
             {uploadingPhoto && (
               <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -114,7 +115,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
               </div>
             )}
           </div>
-          <button onClick={() => fileRef.current?.click()} disabled={uploadingPhoto} style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: sc, border: '2px solid var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', opacity: uploadingPhoto ? 0.6 : 1, fontSize: '0.75rem' }}>📷</button>
+          <button onClick={() => fileRef.current?.click()} disabled={uploadingPhoto} style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: sc, border: '2px solid var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', opacity: uploadingPhoto ? 0.6 : 1 }}><CameraIcon size={14} color="white" /></button>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadAvatar} disabled={uploadingPhoto} />
           <style>{`@keyframes profile-spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -125,11 +126,11 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
       </div>
 
       {/* Info card */}
-      <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', marginBottom: 'var(--space-5)' }}>
+      <div className="glass-card" style={{ overflow: 'hidden', marginBottom: 'var(--space-5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--glass-border)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>Personal Info</p>
           <button onClick={() => setEditing(!editing)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: `1px solid ${editing ? 'var(--glass-border)' : 'var(--brand-border)'}`, borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
-            ✏️ {editing ? 'Cancel' : 'Edit'}
+            <EditIcon size={12} color={editing ? 'var(--text-muted)' : 'var(--brand-light)'} /> {editing ? 'Cancel' : 'Edit'}
           </button>
         </div>
 
@@ -159,10 +160,10 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
       {/* Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <a href="/forgot-password" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500, textDecoration: 'none' }}>
-          🔑 Change Password
+          <KeyIcon size={16} /> Change Password
         </a>
         <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-          🚪 Sign Out
+          <LogOutIcon size={16} color="var(--danger)" /> Sign Out
         </button>
       </div>
       <div style={{ height: 110 }} />

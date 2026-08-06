@@ -4,6 +4,9 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { ClipboardIcon, CheckCircleIcon, ClockIcon, XIcon, TrashIcon } from '@/components/Icons'
+import GaugeStat from '@/components/GaugeStat'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
 
 const STATUS_COLORS = { pending: styles.badgeYellow, approved: styles.badgeGreen, rejected: styles.badgeRed, waitlisted: styles.badgeBlue }
@@ -24,7 +27,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
   const [form,       setForm]       = useState({ applicant_name: '', applicant_email: '', class_applied: '', notes: '' })
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   const filtered = admissions.filter(a => tab === 'all' || a.status === tab)
 
@@ -61,6 +64,19 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Admissions">
+      {/* Snapshot */}
+      <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+          <GaugeStat label="Pending" value={admissions.filter(a => a.status === 'pending').length} color="var(--status-warn, #F59E0B)" size={56} />
+        </div>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+          <GaugeStat label="Approved" value={admissions.filter(a => a.status === 'approved').length} color="var(--status-ok, #10B981)" size={56} delayMs={80} />
+        </div>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+          <GaugeStat label="Total" value={admissions.length} color={sc} size={56} delayMs={160} />
+        </div>
+      </div>
+
       {/* Tabs + Add */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1, overflowX: 'auto' }}>
@@ -78,7 +94,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
 
       {filtered.length === 0 ? (
         <div className={styles.emptyState}>
-          <p className={styles.emptyEmoji}>📋</p>
+          <ClipboardIcon size={32} color="var(--text-muted)" />
           <p className={styles.emptyTitle}>No {tab} applications</p>
           <p className={styles.emptyHint}>Applications submitted to this school appear here</p>
         </div>
@@ -86,7 +102,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
         filtered.map(a => (
           <div key={a.id} className={styles.listItem} onClick={() => setViewItem(a)}>
             <div className={styles.listIconBox} style={{ background: sc + '22' }}>
-              <span style={{ fontSize: '1.2rem' }}>📋</span>
+              <ClipboardIcon size={17} color={sc} />
             </div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{a.applicant_name}</p>
@@ -115,12 +131,12 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
               </div>
             ))}
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
-              {viewItem.status !== 'approved'   && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'approved')}   disabled={saving} style={{ flex: 1 }}>✅ Approve</button>}
-              {viewItem.status !== 'waitlisted' && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'waitlisted')} disabled={saving} style={{ flex: 1 }}>⏳ Waitlist</button>}
-              {viewItem.status !== 'rejected'   && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')}   disabled={saving} style={{ flex: 1 }}>✕ Reject</button>}
+              {viewItem.status !== 'approved'   && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'approved')}   disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><CheckCircleIcon size={14} color="#fff" /> Approve</button>}
+              {viewItem.status !== 'waitlisted' && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'waitlisted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><ClockIcon size={14} /> Waitlist</button>}
+              {viewItem.status !== 'rejected'   && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')}   disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
             </div>
-            <button onClick={() => deleteAdmission(viewItem.id)} style={{ width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>
-              🗑️ Delete application
+            <button onClick={() => deleteAdmission(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>
+              <TrashIcon size={13} /> Delete application
             </button>
           </div>
         </div>

@@ -1,208 +1,72 @@
 'use client'
-import { useState, useEffect } from 'react'
+// src/app/dashboard/student/StudentDashboardClient.tsx
+
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import StudentNav from '@/components/StudentNav'
-import DashboardHeader from '@/components/DashboardHeader'
-import TrialBanner from '@/components/TrialBanner'
 import ChatWidget from '@/components/ChatWidget'
-import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
+import RoleHeroHeader from '@/components/RoleHeroHeader'
+import GaugeStat from '@/components/GaugeStat'
+import AiInsightBanner from '@/components/AiInsightBanner'
+import BottomDock from '@/components/BottomDock'
+import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  ClipboardIcon, BarChartIcon, AwardIcon, TrophyIcon,
-  VideoIcon, BookIcon, AiIcon, MessageIcon, CalendarIcon,
-  FileTextIcon, BookOpenIcon, GlobeIcon, IdCardIcon,
-  MegaphoneIcon, ClockIcon, FlameIcon,
+  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon,
+  BookIcon, MessageIcon, CalendarIcon, FileTextIcon, BookOpenIcon,
+  GlobeIcon, TrophyIcon, IdCardIcon,
 } from '@/components/Icons'
 import styles from './student-dashboard.module.css'
-import motion from '@/components/dashboard-motion.module.css'               // ← NEW
+import motion from '@/components/dashboard-motion.module.css'
 
-const MODULES = [
-  { id: 'assignments', label: 'Assignments',  Icon: ClipboardIcon, href: '/dashboard/student/assignments', accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'timetable',   label: 'Timetable',    Icon: ClockIcon,     href: '/dashboard/student/timetable',   accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'classes',     label: 'Live Classes', Icon: VideoIcon,     href: '/dashboard/student/classes',     accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'results',     label: 'Results',      Icon: BarChartIcon,  href: '/dashboard/student/results',     accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'quizzes',     label: 'Quizzes',      Icon: AwardIcon,     href: '/dashboard/student/quizzes',     accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'notes',       label: 'Notes',        Icon: BookIcon,      href: '/dashboard/student/notes',       accent: '#6366F1', bg: '#1e2060' },
-  { id: 'library',     label: 'Library',      Icon: BookIcon,      href: '/dashboard/student/library',     accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'ai',          label: 'AI Tutor',     Icon: AiIcon,        href: '/dashboard/student/ai',          accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'chat',        label: 'Messages',     Icon: MessageIcon,   href: '/dashboard/student/chat',        accent: '#14B8A6', bg: '#0f3d38' },
-  { id: 'schedule',    label: 'Study Plan',   Icon: CalendarIcon,  href: '/dashboard/student/schedule',    accent: '#F97316', bg: '#4a2810' },
-  { id: 'meetings',    label: 'Meetings',     Icon: CalendarIcon,  href: '/dashboard/student/meetings',    accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'records',     label: 'Records',      Icon: FileTextIcon,  href: '/dashboard/student/records',     accent: '#64748B', bg: '#1e2a38' },
-  { id: 'syllabus',    label: 'Syllabus',     Icon: BookOpenIcon,  href: '/dashboard/student/syllabus',    accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'alumni',      label: 'Alumni',       Icon: GlobeIcon,     href: '/dashboard/student/alumni',     accent: '#A855F7', bg: '#2d1060' },
+const FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'Learning', items: [
+    { id: 'assignments', label: 'Assignments', href: '/dashboard/student/assignments', Icon: ClipboardIcon },
+    { id: 'results',     label: 'Results',     href: '/dashboard/student/results',     Icon: BarChartIcon },
+    { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/student/quizzes',     Icon: AwardIcon },
+    { id: 'classes',     label: 'Live classes',href: '/dashboard/student/classes',     Icon: VideoIcon },
+    { id: 'notes',       label: 'Notes',       href: '/dashboard/student/notes',       Icon: BookIcon },
+    { id: 'syllabus',    label: 'Syllabus',    href: '/dashboard/student/syllabus',    Icon: BookOpenIcon },
+  ]},
+  { name: 'Around school', items: [
+    { id: 'timetable',   label: 'Timetable',   href: '/dashboard/student/timetable',   Icon: ClockIcon },
+    { id: 'library',     label: 'Library',     href: '/dashboard/student/library',     Icon: BookIcon },
+    { id: 'leaderboard', label: 'Leaderboard', href: '/dashboard/student/leaderboard', Icon: TrophyIcon },
+    { id: 'id-card',     label: 'My ID card',  href: '/dashboard/student/id-card',     Icon: IdCardIcon },
+    { id: 'records',     label: 'Records',     href: '/dashboard/student/records',     Icon: FileTextIcon },
+    { id: 'alumni',      label: 'Alumni',      href: '/dashboard/student/alumni',      Icon: GlobeIcon },
+  ]},
+  { name: 'Communication', items: [
+    { id: 'chat',     label: 'Messages', href: '/dashboard/student/chat',     Icon: MessageIcon },
+    { id: 'meetings', label: 'Meetings', href: '/dashboard/student/meetings', Icon: CalendarIcon },
+    { id: 'schedule', label: 'Study plan',href: '/dashboard/student/schedule',Icon: CalendarIcon },
+  ]},
 ]
 
-const QUICK_LINKS = [
-  { label: 'My ID Card',   Icon: IdCardIcon,    href: '/dashboard/student/id-card'       },
-  { label: 'Leaderboard',  Icon: TrophyIcon,    href: '/dashboard/student/leaderboard'   },
-  { label: 'Study Plan',   Icon: CalendarIcon,  href: '/dashboard/student/schedule'      },
-  { label: 'Notice Board', Icon: MegaphoneIcon, href: '/dashboard/student/announcements' },
-]
-
-function getStreak() {
-  try {
-    const raw = localStorage.getItem('schoolos_streak')
-    if (!raw) return 0
-    const { count, lastDate } = JSON.parse(raw)
-    const today     = new Date().toDateString()
-    const yesterday = new Date(Date.now() - 86400000).toDateString()
-    if (lastDate === today || lastDate === yesterday) return count
-    return 0
-  } catch { return 0 }
+interface Counts {
+  pendingTasks: number; upcomingQuizzes: number; isLive: boolean
+  notifications: number; attendance: number | null; gpa: number | null; rank: number | null
 }
+interface Props { profile: any; school: any; userId: string; counts?: Counts; activities: ActivityItem[] }
 
-function updateStreak() {
-  try {
-    const today     = new Date().toDateString()
-    const yesterday = new Date(Date.now() - 86400000).toDateString()
-    const raw = localStorage.getItem('schoolos_streak')
-    if (raw) {
-      const { count, lastDate } = JSON.parse(raw)
-      if (lastDate === today) return
-      localStorage.setItem('schoolos_streak', JSON.stringify({
-        count: lastDate === yesterday ? count + 1 : 1,
-        lastDate: today,
-      }))
-    } else {
-      localStorage.setItem('schoolos_streak', JSON.stringify({ count: 1, lastDate: today }))
-    }
-  } catch {}
-}
-
-// FIX: term values match DB enum
-function getCurrentTerm(): string {
-  const month = new Date().getMonth() + 1
-  if (month >= 9 || month <= 1) return 'First Term'
-  if (month >= 5)               return 'Third Term'
-  return 'Second Term'
-}
-function getCurrentYear(): string {
-  const now = new Date(); const month = now.getMonth() + 1; const y = now.getFullYear()
-  return month >= 9 ? `${y}/${y + 1}` : `${y - 1}/${y}`
-}
-
-interface Props {
-  profile: any; school: any; userId: string
-  counts: {
-    pendingTasks:    number
-    upcomingQuizzes: number
-    isLive:          boolean
-    notifications:   number
-    attendance:      number | null
-    rank:            number | null
-    gpa:             number | null
+function buildInsight(counts: Counts, firstName: string): string {
+  if (counts.isLive) {
+    return `A live class is happening right now — join before it wraps up.`
   }
-  activities: ActivityItem[]   // ← NEW — passed from page.tsx (server-fetched)
+  if ((counts.attendance ?? 100) < 80) {
+    return `Your attendance is at ${counts.attendance}% this term — a bit below where it usually sits. Missing more could start affecting your standing.`
+  }
+  if (counts.pendingTasks > 0) {
+    return `You have ${counts.pendingTasks} assignment${counts.pendingTasks === 1 ? '' : 's'} due, and ${counts.upcomingQuizzes} quiz${counts.upcomingQuizzes === 1 ? '' : 'zes'} open right now.`
+  }
+  return `You're all caught up on assignments${counts.rank ? `, sitting at #${counts.rank} in your class` : ''}. Nice work.`
 }
 
 export default function StudentDashboardClient({ profile, school, userId, counts, activities }: Props) {
-  const pathname  = usePathname()
-  const [streak,   setStreak]   = useState(0)
-  const [greeting, setGreeting] = useState('')
-
-  // Live stats loaded client-side so the server page stays fast
-  const [attendance,  setAttendance]  = useState<number | null>(counts.attendance)
-  const [rank,        setRank]        = useState<number | null>(counts.rank)
-  const [gpa,         setGpa]         = useState<number | null>(counts.gpa)
-  const [statsReady,  setStatsReady]  = useState(
-    counts.attendance !== null || counts.rank !== null || counts.gpa !== null
-  )
-
+  const c = counts ?? { pendingTasks: 0, upcomingQuizzes: 0, isLive: false, notifications: 0, attendance: null, gpa: null, rank: null }
   const schoolColor = school?.primary_color ?? '#7C3AED'
-  const firstName   = profile?.full_name?.split(' ')[0] ?? 'Student'
+  const firstName   = profile?.full_name?.split(' ')[0] ?? 'there'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  useEffect(() => {
-    updateStreak()
-    setStreak(getStreak())
-    const h = new Date().getHours()
-    setGreeting(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
-
-    // If server didn't pre-compute stats, load them client-side
-    if (!statsReady) loadStats()
-  }, [])
-
-  async function loadStats() {
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase     = createClient()
-    const currentTerm  = getCurrentTerm()
-    const currentYear  = getCurrentYear()
-
-    // student_profiles.class_id is what every real write flow updates
-    // (creation, edit modal, promotion/transfer) — it's the CURRENT value,
-    // especially after a promotion. profiles.class_id is never touched by
-    // promotion, so it goes stale; used only as a fallback when a student
-    // has no student_profiles row at all.
-    const { data: sp } = await supabase
-      .from('student_profiles')
-      .select('class_id')
-      .eq('id', userId)
-      .maybeSingle()
-
-    const classId = sp?.class_id ?? (profile as any)?.class_id ?? null
-
-    const [
-      { data: attendanceRows },
-      { data: resultRows },
-      { data: leaderboardRows },
-    ] = await Promise.all([
-      // Attendance
-      supabase
-        .from('attendance')
-        .select('status, is_present')
-        .eq('student_id', userId)
-        .eq('school_id', school?.id),
-
-      // Results — approved, current term
-      supabase
-        .from('results')
-        .select('score, max_score')
-        .eq('student_id', userId)
-        .eq('school_id', school?.id)
-        .eq('term', currentTerm)
-        .eq('academic_year', currentYear)
-        .eq('approved', true),
-
-      // Leaderboard rank
-      classId
-        ? supabase
-            .from('student_leaderboard')
-            .select('student_id, total_points')
-            .eq('class_id', classId)
-            .eq('school_id', school?.id)
-            .eq('term', currentTerm)
-            .eq('academic_year', currentYear)
-            .order('total_points', { ascending: false })
-        : Promise.resolve({ data: [] }),
-    ])
-
-    // Attendance %
-    const totalDays   = attendanceRows?.length ?? 0
-    const presentDays = attendanceRows?.filter(r =>
-      r.status === 'present' || (!r.status && r.is_present === true)
-    ).length ?? 0
-    setAttendance(totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : null)
-
-    // GPA on 5.0 scale
-    const valid = resultRows?.filter(r => r.score != null && (r.max_score ?? 0) > 0) ?? []
-    setGpa(valid.length > 0
-      ? Math.round(((valid.reduce((s, r) => s + (r.score! / r.max_score), 0) / valid.length) * 5) * 10) / 10
-      : null
-    )
-
-    // Rank
-    const pos = leaderboardRows?.findIndex(r => r.student_id === userId) ?? -1
-    setRank(pos >= 0 ? pos + 1 : null)
-
-    setStatsReady(true)
-  }
-
-  function isActive(href: string) {
-    if (href === '/dashboard/student') return pathname === href
-    return pathname.startsWith(href)
-  }
-
-  // ── NEW: delete handler wired to Supabase ──────────────────────────────
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
@@ -210,158 +74,90 @@ export default function StudentDashboardClient({ profile, school, userId, counts
   }
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
+    <div className={styles.page} style={{ background: 'color-mix(in srgb, var(--brand) 6%, var(--bg-base))' }}>
+      <RoleHeroHeader
+        userId={userId}
+        role="student"
+        roleLabel="Student"
+        profile={profile}
+        school={school}
+        greeting={`${greeting}, ${firstName}`}
+        headline="Your day, at a glance."
+        sub={c.rank ? `Rank #${c.rank} in class this term` : school?.name ?? ''}
+        featureGroups={FEATURE_GROUPS}
+      />
 
-      <div className={styles.content}>
-        <DashboardHeader
-          userId={userId} role="student"
-          profile={profile} school={school}
-          schoolColor={schoolColor}
-        />
+      <main className={styles.main}>
 
-        {school?.setup_status === 'trial' && school?.trial_ends_at && (
-          <TrialBanner
-            trialEndsAt={school.trial_ends_at}
-            schoolId={school.id}
-            setupStatus={school.setup_status}
-            schoolColor={schoolColor}
-          />
+        {c.isLive && (
+          <Link href="/dashboard/student/classes" className={`glass-card ${motion.riseIn} ${motion.pressable}`} style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 'var(--radius-xl)',
+            marginTop: 'var(--space-6)', marginBottom: 'var(--space-3)',
+            border: '1px solid var(--status-warn, #E4572E)', textDecoration: 'none',
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--status-warn, #E4572E)' }} className={motion.pulseDot} />
+            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>A class is live right now — tap to join</span>
+          </Link>
         )}
 
-        <main className={styles.main}>
-
-          {/* Greeting — now animates in, emoji waves once */}
-          <section className={`${styles.greeting} ${motion.riseIn}`}>
-            <p className={styles.greetLabel}>{greeting},</p>
-            <h1 className={styles.greetName}>
-              {firstName} <span className={motion.waveEmoji}>👋</span>
-            </h1>
-            {streak > 0 && (
-              <div className={styles.streakBadge}>
-                <FlameIcon size={13} color="#F59E0B" />
-                {streak}-day study streak — keep it up!
-              </div>
-            )}
-          </section>
-
-          {/* AI Tutor — prominent, matches Principal/Bursar/Secretary placement */}
-          <Link
-            href="/dashboard/student/ai"
-            className={`${styles.aiCard} ${motion.riseIn}`}
-            style={{ animationDelay: '120ms', borderColor: `${schoolColor}55` }}
-          >
-            <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
-              <AiIcon size={22} color={schoolColor} />
-            </div>
-            <div className={styles.aiCardBody}>
-              <p className={styles.aiCardTitle}>AI Tutor</p>
-              <p className={styles.aiCardSub}>Ask for help with homework, exam prep, or explaining a topic you're stuck on</p>
-            </div>
-            <span className={styles.aiCardArrow}>→</span>
-          </Link>
-
-          {/* Stats row — each card staggers in */}
-          <div className={styles.statsGrid}>
-            {[
-              { label: 'Pending',    value: counts.pendingTasks,                                       color: '#3B82F6', bg: '#1e3a5f', Icon: ClipboardIcon },
-              { label: 'Quizzes',    value: counts.upcomingQuizzes,                                    color: '#F59E0B', bg: '#4a3510', Icon: AwardIcon     },
-              { label: 'Attendance', value: !statsReady ? '…' : attendance != null ? `${attendance}%` : '—', color: '#10B981', bg: '#1a4a3a', Icon: BarChartIcon  },
-              { label: 'Class Rank', value: !statsReady ? '…' : rank       != null ? `#${rank}`       : '—', color: '#8B5CF6', bg: '#2e1f5e', Icon: TrophyIcon    },
-            ].map((s, i) => (
-              <div
-                key={s.label}
-                className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <div className={styles.statIcon} style={{ background: s.bg }}>
-                  <s.Icon size={15} color={s.color} />
-                </div>
-                <div>
-                  <p className={`${styles.statVal} ${!statsReady ? motion.shimmer : ''}`}>{s.value}</p>
-                  <p className={styles.statLbl}>{s.label}</p>
-                </div>
-              </div>
-            ))}
+        <div className={motion.riseIn} style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          marginTop: c.isLive ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
+        }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="My attendance" value={c.attendance ?? 0} isPercent
+              color="var(--status-ok, #3FA66B)" caption="this term" />
           </div>
-
-          {/* GPA bar — fill animates in on mount */}
-          <div className={`${styles.gpaCard} ${motion.riseIn}`} style={{ animationDelay: '180ms' }}>
-            <div className={styles.gpaLeft}>
-              <p className={styles.gpaLabel}>Term GPA</p>
-              <p className={styles.gpaValue}>{!statsReady ? '…' : gpa != null ? gpa.toFixed(1) : '—'}</p>
-              <p className={styles.gpaSub}>/ 5.0</p>
-            </div>
-            <div className={styles.gpaRight}>
-              <div className={styles.gpaTrack}>
-                <div
-                  className={`${styles.gpaFill} ${motion.barFillIn}`}
-                  style={{
-                    width: `${gpa != null ? (gpa / 5) * 100 : 0}%`,
-                    background: `linear-gradient(90deg,${schoolColor},#EC4899)`,
-                    transformOrigin: 'left',
-                  }}
-                />
-              </div>
-              <div className={styles.liveRow}>
-                {counts.isLive
-                  ? <><span className={`${styles.liveDot} ${motion.pulseDot}`} /> Live class now</>
-                  : <><span className={styles.noLiveDot} /> No live class</>
-                }
-              </div>
-            </div>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat
+              label="Term GPA"
+              value={c.gpa != null ? Math.round((c.gpa / 5) * 100) : 0}
+              isPercent
+              displayValue={c.gpa != null ? c.gpa.toFixed(1) : '—'}
+              color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
+            />
           </div>
-
-          {/* Module grid — staggered entrance + tap feedback */}
-          <p className={styles.sectionLabel}>Your Modules</p>
-          <div className={styles.moduleGrid}>
-            {MODULES.map((mod, i) => (
-              <Link
-                key={mod.id}
-                href={mod.href}
-                className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.modActive : ''}`}
-                style={{ animationDelay: `${220 + i * 35}ms` }}
-              >
-                <div className={styles.modIcon} style={{ background: mod.bg }}>
-                  <mod.Icon size={20} color={mod.accent} />
-                </div>
-                <span className={styles.modLabel}>{mod.label}</span>
-                {mod.id === 'classes' && counts.isLive &&
-                  <span className={styles.livePill}>LIVE</span>}
-                {mod.id === 'assignments' && counts.pendingTasks > 0 &&
-                  <span className={styles.countPill}>{counts.pendingTasks}</span>}
-              </Link>
-            ))}
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Tasks due" value={c.pendingTasks}
+              color="var(--status-warn, #E4572E)" caption="this week" delayMs={160} />
           </div>
+        </div>
 
-          {/* NEW: Recent Activity feed */}
-          <RecentActivity
-            items={activities}
-            accentColor={schoolColor}
-            onDelete={handleDeleteActivity}
-            emptyLabel="Nothing yet — your recent actions will show up here"
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <AiInsightBanner
+            insight={buildInsight(c, firstName)}
+            actionLabel="Ask AI Tutor →"
+            actionHref="/dashboard/student/ai"
           />
+        </div>
 
-          {/* Quick links */}
-          <p className={styles.sectionLabel}>Quick Access</p>
-          <div className={styles.quickGrid}>
-            {QUICK_LINKS.map((q, i) => (
-              <Link
-                key={q.href}
-                href={q.href}
-                className={`${styles.quickCard} ${motion.staggerItem} ${motion.pressable}`}
-                style={{ animationDelay: `${400 + i * 40}ms` }}
-              >
-                <q.Icon size={16} color={schoolColor} />
-                <span>{q.label}</span>
-              </Link>
-            ))}
-          </div>
+        <div className={styles.statsGrid} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+          {[
+            { label: 'Open quizzes', value: c.upcomingQuizzes },
+            { label: 'Class rank',   value: c.rank ? `#${c.rank}` : '—' },
+          ].map((s, i) => (
+            <div
+              key={s.label}
+              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <p className={styles.statVal}>{s.value}</p>
+              <p className={styles.statLbl}>{s.label}</p>
+            </div>
+          ))}
+        </div>
 
-          <div className={styles.mobileSpace} />
-        </main>
-      </div>
+        <RecentActivity
+          items={activities}
+          accentColor={schoolColor}
+          onDelete={handleDeleteActivity}
+          emptyLabel="Nothing yet — assignments, grades, and messages will show up here"
+        />
 
+        <div className={styles.mobileSpace} />
+      </main>
+
+      <BottomDock homeHref="/dashboard/student" aiHref="/dashboard/student/ai" />
       <ChatWidget userId={userId} role="student" schoolColor={schoolColor} />
     </div>
   )

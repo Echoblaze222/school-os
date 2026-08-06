@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { FileTextIcon } from '@/components/Icons'
+import { FileTextIcon, AlertIcon, DownloadIcon } from '@/components/Icons'
 import { getCurrentAcademicYear, getCurrentTerm } from '@/lib/utils/term'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -69,7 +69,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
   const [year,     setYear]     = useState(CUR_YEAR)
   const [error,    setError]    = useState('')
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [term, year])
 
@@ -258,8 +258,9 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
             {/* Actions */}
             <div style={{ display:'flex', gap:10, marginTop:16 }}>
               <button onClick={() => downloadReceipt(selected)}
-                style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
-                ↓ Download / Print
+                style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                <DownloadIcon size={15} color="#fff" /> Download / Print
               </button>
               <button onClick={() => setSelected(null)}
                 style={{ flex:1, height:44, background:'var(--input-bg)', color:'var(--text-primary)', border:'1px solid var(--input-border)', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
@@ -288,8 +289,9 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
 
       {error && (
         <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
-          ⚠️ {error}
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600,
+          display:'flex', alignItems:'center', gap:6 }}>
+          <AlertIcon size={14} /> {error}
         </div>
       )}
 
@@ -332,8 +334,9 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
                     <button onClick={e => { e.stopPropagation(); downloadReceipt(p) }}
                       style={{ fontSize:'0.65rem', fontWeight:700, color:sc,
                         background:sc+'15', border:`1px solid ${sc}40`,
-                        borderRadius:5, padding:'2px 7px', cursor:'pointer' }}>
-                      ↓ PDF
+                        borderRadius:5, padding:'2px 7px', cursor:'pointer',
+                        display:'inline-flex', alignItems:'center', gap:4 }}>
+                      <DownloadIcon size={11} /> PDF
                     </button>
                   </div>
                 </div>

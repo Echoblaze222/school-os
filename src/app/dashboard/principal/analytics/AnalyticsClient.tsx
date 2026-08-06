@@ -65,7 +65,7 @@ function Section({ title, color, children }: { title: string; color: string; chi
 
 export default function AnalyticsClient({ profile, school, userId }: Props) {
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   // term stores the DB enum value ('first' | 'second' | 'third')
   const [term,    setTerm]    = useState('first')

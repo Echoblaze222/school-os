@@ -1,0 +1,64 @@
+{
+  "name": "SchoolOS Brand Tokens",
+  "mark": "The System",
+  "colors": {
+    "maroon":            "#4A0012",
+    "maroonDark":         "#33000C",
+    "maroonLightOnDark":  "#7A1030",
+    "cyan":              "#006B85",
+    "cyanDark":           "#00566A",
+    "cyanLightOnDark":    "#1C93AC",
+    "ink":               "#14161A",
+    "paper":             "#F7F7F8"
+  },
+  "construction": {
+    "tileSize": 28,
+    "cornerRadius": 6,
+    "gap": 4,
+    "rotationDegrees": 45,
+    "viewBox": "0 0 100 100",
+    "accentTile": "bottom-right (before rotation)"
+  },
+  "clearSpace": {
+    "unit": "tileWidth",
+    "value": 1
+  },
+  "minimumSize": {
+    "fullMarkPx": 24,
+    "belowThisUseFavicon": true
+  },
+  "outlineVariant": {
+    "strokeWidth": 3.5,
+    "strokeLinejoin": "round"
+  },
+  "animation": {
+    "name": "tilePulse",
+    "loopDurationMs": 2000,
+    "perTileDurationMs": 500,
+    "staggerMs": 500,
+    "scale": 1.28,
+    "easing": "ease-in-out",
+    "respectsReducedMotion": true,
+    "delays": { "t1": "0s", "t2": "0.5s", "t3": "1s", "t4": "1.5s" }
+  },
+  "iconSet": [
+    "logo.png (500x500)",
+    "favicon-16x16.png",
+    "favicon-32x32.png",
+    "icon-72x72.png",
+    "icon-96x96.png",
+    "icon-128x128.png",
+    "icon-144x144.png",
+    "icon-152x152.png",
+    "icon-180x180.png",
+    "apple-touch-icon.png (180x180)",
+    "icon-192x192.png",
+    "icon-384x384.png",
+    "icon-512x512.png"
+  ],
+  "manifestColorsVerified": {
+    "themeColor": "#080C14",
+    "backgroundColor": "#080C14",
+    "note": "Already matches the app's real dark-mode background — not tied to the old logo, no change needed."
+  }
+}

@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { CalendarIcon, EditIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 
 const EVENT_TYPES = ['Academic', 'Holiday', 'Exam', 'Meeting', 'Sports', 'Cultural', 'Other']
@@ -31,7 +32,7 @@ export default function CalendarClient({ events: init, profile, school, userId }
   const [form,    setForm]    = useState({ title: '', event_type: 'Academic', start_date: today.toISOString().slice(0,10), end_date: '', description: '', all_day: true })
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   // Build calendar grid
   const firstDay  = new Date(curYear, curMonth, 1).getDay()
@@ -135,12 +136,12 @@ export default function CalendarClient({ events: init, profile, school, userId }
       </div>
 
       {upcoming.length === 0 ? (
-        <div className={styles.emptyState} style={{ paddingTop: 'var(--space-6)' }}><p className={styles.emptyEmoji}>📅</p><p className={styles.emptyTitle}>No upcoming events</p></div>
+        <div className={styles.emptyState} style={{ paddingTop: 'var(--space-6)' }}><CalendarIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No upcoming events</p></div>
       ) : (
         upcoming.map(e => (
           <div key={e.id} className={styles.listItem}>
             <div className={styles.listIconBox} style={{ background: (TYPE_COLORS[e.event_type] ?? sc) + '22' }}>
-              <span style={{ fontSize: '1.1rem' }}>📅</span>
+              <CalendarIcon size={16} color={TYPE_COLORS[e.event_type] ?? sc} />
             </div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{e.title}</p>
@@ -148,8 +149,8 @@ export default function CalendarClient({ events: init, profile, school, userId }
             </div>
             <span className={styles.listBadge} style={{ background: (TYPE_COLORS[e.event_type] ?? '#6B7280') + '22', color: TYPE_COLORS[e.event_type] ?? '#6B7280' }}>{e.event_type}</span>
             <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-              <button onClick={() => openEdit(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.75rem' }}>✏️</button>
-              <button onClick={() => setDelItem(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', fontSize: '0.75rem' }}>🗑️</button>
+              <button onClick={() => openEdit(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EditIcon size={14} /></button>
+              <button onClick={() => setDelItem(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
             </div>
           </div>
         ))

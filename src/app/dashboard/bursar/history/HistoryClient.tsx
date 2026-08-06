@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { ClockIcon } from '@/components/Icons'
+import { ClockIcon, CreditCardIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -66,7 +66,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
   const [error,    setError]    = useState('')
   const [preview,  setPreview]  = useState<any | null>(null)
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
+  const sc       = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [year, term])
 
@@ -137,8 +137,9 @@ export default function HistoryClient({ profile, school, userId }: Props) {
           <div style={SHEET} onClick={e => e.stopPropagation()}>
             <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
 
-            <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 12px' }}>
-              💳 PAYMENT RECORD
+            <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 12px',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              <CreditCardIcon size={13} /> PAYMENT RECORD
             </p>
 
             {/* Amount hero */}
@@ -204,8 +205,9 @@ export default function HistoryClient({ profile, school, userId }: Props) {
 
       {error && (
         <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
-          ⚠️ {error}
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600,
+          display:'flex', alignItems:'center', gap:6 }}>
+          <AlertIcon size={14} /> {error}
         </div>
       )}
 

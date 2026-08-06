@@ -1,45 +1,59 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import DashboardHeader from '@/components/DashboardHeader'
 import ChatWidget from '@/components/ChatWidget'
-import RecentActivity, { ActivityItem } from '@/components/RecentActivity'   // ← NEW
+import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
+import RoleHeroHeader from '@/components/RoleHeroHeader'
+import GaugeStat from '@/components/GaugeStat'
+import AiInsightBanner from '@/components/AiInsightBanner'
+import BottomDock from '@/components/BottomDock'
+import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  HomeIcon, PeopleIcon, BarChartIcon, SchoolIcon,
-  MessageIcon, BellIcon, WalletIcon, ClipboardIcon,
-  SettingsIcon, AiIcon, MegaphoneIcon, VideoIcon,
+  PeopleIcon, SchoolIcon, WalletIcon,
+  MessageIcon, BellIcon, ClipboardIcon,
+  SettingsIcon, MegaphoneIcon, VideoIcon,
   FileTextIcon, TrophyIcon, KeyIcon, UserIcon,
   LayersIcon, CalendarIcon, GlobeIcon, RefreshIcon,
-  ShieldIcon,
+  ShieldIcon, TagIcon, BarChartIcon,
 } from '@/components/Icons'
-import RoleNav from '@/components/RoleNav'
 import styles from './principal.module.css'
-import motion from '@/components/dashboard-motion.module.css'               // ← NEW
+import motion from '@/components/dashboard-motion.module.css'
 
-const MODULES = [
-  { id: 'staff',         label: 'Staff',          Icon: PeopleIcon,    href: '/dashboard/principal/staff',              accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'students',      label: 'Students',       Icon: SchoolIcon,    href: '/dashboard/principal/students',           accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'teachers',      label: 'Teachers',       Icon: UserIcon,      href: '/dashboard/principal/teachers',           accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'classes',       label: 'Classes',        Icon: LayersIcon,    href: '/dashboard/principal/classes',            accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'codes',         label: 'Access Codes',   Icon: KeyIcon,       href: '/dashboard/principal/codes',              accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'analytics',     label: 'Analytics',      Icon: BarChartIcon,  href: '/dashboard/principal/analytics',          accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'results',       label: 'Results',        Icon: TrophyIcon,    href: '/dashboard/principal/results',            accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'fees',          label: 'Fees',           Icon: WalletIcon,    href: '/dashboard/principal/fees',               accent: '#EF4444', bg: '#5f1e1e' },
-  { id: 'assignments',   label: 'Assignments',    Icon: ClipboardIcon, href: '/dashboard/principal/assignments',        accent: '#06B6D4', bg: '#0a3040' },
-  { id: 'live',          label: 'Live Classes',   Icon: VideoIcon,     href: '/dashboard/principal/live',               accent: '#EC4899', bg: '#5a1a40' },
-  { id: 'meetings',      label: 'Meetings',       Icon: CalendarIcon,  href: '/dashboard/principal/meetings',           accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'announcements', label: 'Announcements',  Icon: MegaphoneIcon, href: '/dashboard/principal/announcements',      accent: '#F97316', bg: '#4a2810' },
-  { id: 'notices',       label: 'Notices',        Icon: BellIcon,      href: '/dashboard/principal/notices',            accent: '#14B8A6', bg: '#0f3d38' },
-  { id: 'notifications', label: 'Notifications',  Icon: BellIcon,      href: '/dashboard/principal/notifications',      accent: '#3B82F6', bg: '#1e3a5f' },
-  { id: 'reports',       label: 'Reports',        Icon: FileTextIcon,  href: '/dashboard/principal/reports',            accent: '#F97316', bg: '#4a2810' },
-  { id: 'subscriptions', label: 'Subscriptions',  Icon: ShieldIcon,    href: '/dashboard/principal/subscriptions',      accent: '#10B981', bg: '#1a4a3a' },
-  { id: 'alumni',        label: 'Alumni',         Icon: GlobeIcon,     href: '/dashboard/principal/alumni',             accent: '#8B5CF6', bg: '#2e1f5e' },
-  { id: 'transfers',     label: 'Transfers',      Icon: RefreshIcon,   href: '/dashboard/principal/transfers',  accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'chat',          label: 'Messages',       Icon: MessageIcon,   href: '/dashboard/principal/chat',               accent: '#7C3AED', bg: '#2d1060' },
-  { id: 'profile',       label: 'Profile',        Icon: UserIcon,      href: '/dashboard/principal/profile',            accent: '#6B7280', bg: '#1e2a38' },
-  { id: 'ai',            label: 'AI Insights',    Icon: AiIcon,        href: '/dashboard/principal/ai',                 accent: '#F59E0B', bg: '#4a3510' },
-  { id: 'settings',      label: 'Settings',       Icon: SettingsIcon,  href: '/dashboard/principal/settings',           accent: '#6B7280', bg: '#1e2a38' },
+// Real routes for this role — grouped for the All-features sheet.
+// Kept in one place so the sheet can never drift from what actually exists.
+const FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'People', items: [
+    { id: 'staff',    label: 'Staff',    href: '/dashboard/principal/staff',    Icon: PeopleIcon },
+    { id: 'teachers', label: 'Teachers', href: '/dashboard/principal/teachers', Icon: UserIcon },
+    { id: 'students', label: 'Students', href: '/dashboard/principal/students', Icon: SchoolIcon },
+    { id: 'alumni',   label: 'Alumni',   href: '/dashboard/principal/alumni',   Icon: GlobeIcon },
+    { id: 'transfers',label: 'Transfers',href: '/dashboard/principal/transfers',Icon: RefreshIcon },
+  ]},
+  { name: 'Academics', items: [
+    { id: 'classes',     label: 'Classes',     href: '/dashboard/principal/classes',     Icon: LayersIcon },
+    { id: 'results',     label: 'Results',     href: '/dashboard/principal/results',     Icon: TrophyIcon },
+    { id: 'report-cards',label: 'Report cards',href: '/dashboard/principal/report-cards',Icon: FileTextIcon },
+    { id: 'analytics',   label: 'Analytics',   href: '/dashboard/principal/analytics',   Icon: BarChartIcon },
+    { id: 'assignments', label: 'Assignments', href: '/dashboard/principal/assignments', Icon: ClipboardIcon },
+    { id: 'codes',       label: 'Access codes',href: '/dashboard/principal/codes',       Icon: KeyIcon },
+  ]},
+  { name: 'Finance', items: [
+    { id: 'fees',          label: 'Fees',          href: '/dashboard/principal/fees',          Icon: WalletIcon },
+    { id: 'reports',       label: 'Reports',       href: '/dashboard/principal/reports',       Icon: FileTextIcon },
+    { id: 'subscriptions', label: 'Subscriptions', href: '/dashboard/principal/subscriptions', Icon: ShieldIcon },
+  ]},
+  { name: 'Communication', items: [
+    { id: 'chat',          label: 'Messages',      href: '/dashboard/principal/chat',          Icon: MessageIcon },
+    { id: 'notices',       label: 'Notices',       href: '/dashboard/principal/notices',       Icon: BellIcon },
+    { id: 'announcements', label: 'Announcements', href: '/dashboard/principal/announcements', Icon: MegaphoneIcon },
+    { id: 'meetings',      label: 'Meetings',      href: '/dashboard/principal/meetings',      Icon: CalendarIcon },
+    { id: 'live',          label: 'Live classes',  href: '/dashboard/principal/live',          Icon: VideoIcon },
+  ]},
+  { name: 'Account', items: [
+    { id: 'profile',  label: 'Profile',  href: '/dashboard/principal/profile',  Icon: UserIcon },
+    { id: 'branding', label: 'Branding', href: '/dashboard/principal/settings', Icon: TagIcon },
+    { id: 'settings', label: 'Settings', href: '/dashboard/principal/settings', Icon: SettingsIcon },
+  ]},
 ]
 
 interface PendingNotif { id: string; title: string; body: string; type: string; created_at: string; href: string }
@@ -58,28 +72,31 @@ function notifRelTime(iso: string) {
   return `${Math.floor(h / 24)}d ago`
 }
 
+// Picks the lowest-scoring class-relevant signal we actually have to
+// surface as the AI insight, instead of a generic static line.
+function buildInsight(counts: any): string {
+  if ((counts.feeCollectionRate ?? 0) < 60) {
+    return `Fee collection is at ${counts.feeCollectionRate}% this term — below the usual pace by this point. Worth a reminder push to outstanding families.`
+  }
+  if ((counts.avgScore ?? 0) < 50) {
+    return `Average score across recent results is ${counts.avgScore}% — worth a look at which classes are pulling this down.`
+  }
+  return `Fee collection is at ${counts.feeCollectionRate ?? 0}% and average score is ${counts.avgScore ?? 0}% this term — both tracking normally. ${counts.pendingActions ?? 0} items are waiting on your review.`
+}
+
 export default function PrincipalDashboardClient({
   profile, school, userId, counts = {}, activities,
   pendingNotifications = [], unreadNotifCount = 0,
 }: Props) {
-  const pathname = usePathname()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Principal'
 
-  function isActive(href: string, home?: boolean) {
-    if (home) return pathname === '/dashboard/principal'
-    return pathname.startsWith(href)
-  }
-
-  const stats = [
-    { label: 'Students',  value: counts.studentCount  ?? 0, color: '#10B981' },
-    { label: 'Teachers',  value: counts.teacherCount  ?? 0, color: '#3B82F6' },
-    { label: 'Classes',   value: counts.classCount    ?? 0, color: '#8B5CF6' },
-    { label: 'Avg Score', value: `${counts.avgScore   ?? 0}%`, color: '#F59E0B' },
-    { label: 'Fees Collected', value: `${counts.feeCollectionRate ?? 0}%`, color: '#EC4899' },
+  const miniStats = [
+    { label: 'Students', value: counts.studentCount ?? 0 },
+    { label: 'Teachers', value: counts.teacherCount ?? 0 },
+    { label: 'Classes',  value: counts.classCount   ?? 0 },
   ]
 
-  // ── NEW: delete handler wired to Supabase ──────────────────────────────
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
@@ -87,53 +104,56 @@ export default function PrincipalDashboardClient({
   }
 
   return (
-    <div className={styles.page}>
-      <DashboardHeader userId={userId} role="principal" profile={profile} school={school} schoolColor={schoolColor} />
+    <div
+      className={styles.page}
+      style={{ background: 'color-mix(in srgb, var(--brand) 6%, var(--bg-base))' }}
+    >
+      <RoleHeroHeader
+        userId={userId}
+        role="principal"
+        roleLabel="Principal's Desk"
+        profile={profile}
+        school={school}
+        greeting={`Good day, ${firstName}`}
+        headline="Here's how the school stands today."
+        sub={`${counts.studentCount ?? 0} students on roll · ${counts.teacherCount ?? 0} staff`}
+        featureGroups={FEATURE_GROUPS}
+        showBranding
+      />
 
-      <main className={styles.main}>
-        <div className={`${styles.greeting} ${motion.riseIn}`}>
-          <h1 className={styles.greetingName}>Welcome, {firstName} <span className={motion.waveEmoji}>👋</span></h1>
-          <p className={styles.greetingSub}>School overview at a glance</p>
+      <main className={styles.main} style={{ maxWidth: 880 }}>
+
+        {/* Animated graphical stats — the numbers that matter most, as gauges */}
+        <div className={motion.riseIn} style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
+        }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Fee collection" value={counts.feeCollectionRate ?? 0} isPercent
+              color="var(--brand-2, var(--brand))" caption="this term" />
+          </div>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Average score" value={counts.avgScore ?? 0} isPercent
+              color="var(--status-ok, #3FA66B)" caption="recent results" delayMs={80} />
+          </div>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+            <GaugeStat label="Waiting on you" value={counts.pendingActions ?? 0}
+              color="var(--status-warn, #E4572E)" caption="unread items" delayMs={160} />
+          </div>
         </div>
 
-        {/* School health banner — animates in, bar fills */}
-        <div className={`${styles.healthBanner} ${motion.riseIn}`} style={{ borderColor: schoolColor, animationDelay: '120ms' }}>
-          <div className={styles.healthLeft}>
-            <p className={styles.healthTitle}>School Health Score</p>
-            <p className={styles.healthScore} style={{ color: schoolColor }}>
-              {counts.healthScore ?? 87}<span className={styles.healthMax}>/100</span>
-            </p>
-          </div>
-          <div className={styles.healthRight}>
-            <div className={styles.healthBar}>
-              <div className={`${styles.healthFill} ${motion.barFillIn}`}
-                style={{ width: `${counts.healthScore ?? 87}%`, background: schoolColor, transformOrigin: 'left' }} />
-            </div>
-            <p className={styles.healthSub}>
-              {counts.pendingActions ?? 3} actions need your attention
-            </p>
-          </div>
+        {/* AI Insight — one concrete, current observation, not a static blurb */}
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <AiInsightBanner
+            insight={buildInsight(counts)}
+            actionLabel="Open AI Insights →"
+            actionHref="/dashboard/principal/ai"
+          />
         </div>
-
-        {/* AI Insights — prominent, not buried in the module grid */}
-        <Link
-          href="/dashboard/principal/ai"
-          className={`${styles.aiCard} ${motion.riseIn}`}
-          style={{ animationDelay: '160ms', borderColor: `${schoolColor}55` }}
-        >
-          <div className={styles.aiCardIcon} style={{ background: `${schoolColor}22`, color: schoolColor }}>
-            <AiIcon size={22} color={schoolColor} />
-          </div>
-          <div className={styles.aiCardBody}>
-            <p className={styles.aiCardTitle}>AI Assistant</p>
-            <p className={styles.aiCardSub}>Ask how to create access codes, review school health, or get a summary of this week</p>
-          </div>
-          <span className={styles.aiCardArrow}>→</span>
-        </Link>
 
         {/* Pending notifications preview */}
         {pendingNotifications.length > 0 && (
-          <div className={`${styles.notifCard} ${motion.riseIn}`} style={{ animationDelay: '200ms' }}>
+          <div className={`${styles.notifCard} ${motion.riseIn}`} style={{ animationDelay: '160ms' }}>
             <div className={styles.notifCardHeader}>
               <p className={styles.sectionLabel} style={{ marginBottom: 0 }}>
                 Pending Notifications {unreadNotifCount > 0 && <span className={styles.notifCountBadge}>{unreadNotifCount}</span>}
@@ -153,38 +173,20 @@ export default function PrincipalDashboardClient({
           </div>
         )}
 
-        {/* Stats row — staggered */}
-        <div className={styles.statsRow}>
-          {stats.map((s, i) => (
+        {/* Light-weight roll counts — plain, since these are just counts, not rates */}
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          {miniStats.map((s, i) => (
             <div
               key={s.label}
               className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
+              <p className={styles.statVal}>{s.value}</p>
               <p className={styles.statLbl}>{s.label}</p>
             </div>
           ))}
         </div>
 
-        <p className={styles.sectionLabel}>Management Tools</p>
-        <div className={styles.moduleGrid}>
-          {MODULES.map((mod, i) => (
-            <Link
-              key={mod.id}
-              href={mod.href}
-              className={`${styles.moduleCard} ${motion.staggerItem} ${motion.pressable} ${isActive(mod.href) ? styles.moduleActive : ''}`}
-              style={{ animationDelay: `${220 + i * 25}ms` }}
-            >
-              <div className={styles.modIcon} style={{ background: mod.bg }}>
-                <mod.Icon size={22} color={mod.accent} />
-              </div>
-              <span className={styles.modLabel}>{mod.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* NEW: Recent Activity feed */}
         <RecentActivity
           items={activities}
           accentColor={schoolColor}
@@ -194,14 +196,8 @@ export default function PrincipalDashboardClient({
 
         <div className={styles.spacer} />
       </main>
-      <RoleNav
-        userId={userId}
-        profile={profile}
-        school={school}
-        role="principal"
-        schoolColor={schoolColor}
-      />
 
+      <BottomDock homeHref="/dashboard/principal" aiHref="/dashboard/principal/ai" />
       <ChatWidget userId={userId} role="principal" schoolColor={schoolColor} />
     </div>
   )

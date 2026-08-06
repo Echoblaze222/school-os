@@ -122,7 +122,7 @@ export default function PrincipalFeesClient({
             <div style={OVERLAY} onClick={closeItemPreview}>
               <div style={SHEET} onClick={e => e.stopPropagation()}>
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
-                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', letterSpacing: '0.07em', margin: '0 0 10px' }}>⚠️ OVERDUE INVOICE</p>
+                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', letterSpacing: '0.07em', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><AlertCircleIcon size={13} /> OVERDUE INVOICE</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                   <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EF444420', border: '1px solid #EF444440', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#EF4444', flexShrink: 0 }}>
                     {student?.full_name?.[0]?.toUpperCase() ?? '?'}
@@ -147,8 +147,8 @@ export default function PrincipalFeesClient({
                 </div>
                 <a
                   href={`/dashboard/bursar/record-payment?invoice=${previewItem.id}&student=${encodeURIComponent(student?.full_name ?? '')}`}
-                  style={{ display: 'block', width: '100%', height: 44, background: '#EF4444', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'center', lineHeight: '44px', textDecoration: 'none', boxSizing: 'border-box' }}>
-                  💳 Record Payment
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 44, background: '#EF4444', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>
+                  <CreditCardIcon size={15} /> Record Payment
                 </a>
               </div>
             </div>
@@ -165,7 +165,7 @@ export default function PrincipalFeesClient({
             <div style={OVERLAY} onClick={closeItemPreview}>
               <div style={SHEET} onClick={e => e.stopPropagation()}>
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
-                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.07em', margin: '0 0 10px' }}>💳 PAYMENT RECEIPT</p>
+                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.07em', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><CreditCardIcon size={13} /> PAYMENT RECEIPT</p>
                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
                   <p style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>{display}</p>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>#{previewItem.receipt_number}</p>
@@ -223,8 +223,8 @@ export default function PrincipalFeesClient({
               style={{
                 flex: 1, height: 38, borderRadius: 8, fontWeight: 700, fontSize: '0.78rem',
                 cursor: 'pointer', transition: 'all 0.15s',
-                border: `1px solid ${currentTerm === t.key ? 'var(--burgundy)' : 'var(--input-border)'}`,
-                background: currentTerm === t.key ? 'var(--burgundy)' : 'var(--input-bg)',
+                border: `1px solid ${currentTerm === t.key ? 'var(--brand)' : 'var(--input-border)'}`,
+                background: currentTerm === t.key ? 'var(--brand)' : 'var(--input-bg)',
                 color: currentTerm === t.key ? '#fff' : 'var(--text-muted)',
               }}>
               {t.label}
@@ -432,7 +432,7 @@ export default function PrincipalFeesClient({
               return (
                 <div key={p.id} className={styles.recentCard} onClick={() => openRecentPreview(p)} style={{ cursor: 'pointer' }}>
                   <div className={styles.recentIcon}>
-                    <CreditCardIcon size={15} color="var(--burgundy)" />
+                    <CreditCardIcon size={15} color="var(--brand)" />
                   </div>
                   <div className={styles.recentInfo}>
                     <p className={styles.recentName}>{student?.full_name ?? 'Student'}</p>
