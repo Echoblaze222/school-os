@@ -1,29 +1,39 @@
 'use client'
 
-// src/app/dashboard/student/alumni-archive/StudentAlumniClient.tsx
+// src/app/dashboard/student/alumni/StudentAlumniClient.tsx
 //
-// FIX: this page previously rendered its own hardcoded bottom nav
-// (bottom-nav / nav-item / nav-home classes — none of which exist in
-// globals.css, so it rendered unstyled) instead of the canonical
-// <StudentNav> + <DashboardHeader> pair every other student page uses.
-// Also replaced the leftover --burgundy-* / --error inline styles with
-// the real tokens (--brand-*, --danger) now that alumni-student.module.css
-// has been rebuilt on the actual design system.
+// FIX (carried over): this page previously rendered its own hardcoded
+// bottom nav (bottom-nav / nav-item / nav-home classes — none of which
+// exist in globals.css, so it rendered unstyled) instead of the canonical
+// nav pair every other student page uses. Also replaced the leftover
+// --burgundy-* / --error inline styles with the real tokens (--brand-*,
+// --danger) now that alumni-student.module.css has been rebuilt on the
+// actual design system.
+//
+// REDESIGN PASS (Lane 3 — Student):
+//   - StudentNav + DashboardHeader → RolePageWrapper (matches every other
+//     converted sub-page; also fixes the same "nested <main>" mistake by
+//     rendering content as direct children, not another <main> wrapper)
+//   - 🎓 / ⭐ emoji → GraduationCapIcon / AwardIcon
+//   - FIX: `gradeColor(r.grade)+'1A'` concatenated a hex-alpha suffix onto
+//     a var(--success)-style CSS variable reference, producing invalid CSS
+//     (`var(--success)1A`) — the grade badge background was silently
+//     falling back to transparent. Now uses gradeColorSubtle() instead.
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import StudentNav from '@/components/StudentNav'
-import DashboardHeader from '@/components/DashboardHeader'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import { GraduationCapIcon, AwardIcon } from '@/components/Icons'
 import styles from './alumni-student.module.css'
 import type { AlumniProfile, AlumniResult, AlumniReceipt } from './types'
 
 interface Props {
-  userId:           string   // ← NEW — needed by StudentNav / DashboardHeader
-  profile:          any      // ← NEW — full profile row, not the display-only AlumniProfile
-  school:           any      // ← NEW — for schoolColor + logo
+  userId:           string
+  profile:          any
+  school:           any
   studentId:        string
-  alumniProfile:    AlumniProfile   // ← renamed from `profile` to avoid clashing with the full profile above
+  alumniProfile:    AlumniProfile
   results:          AlumniResult[]
   receipts:         AlumniReceipt[]
   transcriptStatus: string | null
@@ -38,7 +48,15 @@ function gradeColor(g: string) {
   if (g === 'B') return 'var(--info)'
   if (g === 'C') return 'var(--warning)'
   if (g === 'D') return 'var(--warning)'
-  return 'var(--danger)'   // FIX: was var(--error), which doesn't exist
+  return 'var(--danger)'
+}
+// FIX: matching -subtle token instead of concatenating alpha onto a var() reference
+function gradeColorSubtle(g: string) {
+  if (g === 'A') return 'var(--success-subtle)'
+  if (g === 'B') return 'var(--info-subtle)'
+  if (g === 'C') return 'var(--warning-subtle)'
+  if (g === 'D') return 'var(--warning-subtle)'
+  return 'var(--danger-subtle)'
 }
 
 export default function StudentAlumniClient({
@@ -47,7 +65,7 @@ export default function StudentAlumniClient({
 }: Props) {
   const router   = useRouter()
   const supabase = createClient()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
 
   const [transcriptStatus,   setTranscriptStatus]   = useState(initialStatus)
   const [requestingTranscript, setRequestingTranscript] = useState(false)
@@ -79,17 +97,7 @@ export default function StudentAlumniClient({
   }, {})
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-
-      <div className={styles.content}>
-        <DashboardHeader
-          userId={userId} role="student"
-          profile={profile} school={school}
-          schoolColor={schoolColor}
-          title="My Records" showBack
-        />
-
+    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="My Records">
         <div className={styles.orb1} aria-hidden />
 
         {/* Hero banner */}
@@ -99,7 +107,7 @@ export default function StudentAlumniClient({
               ? <img src={alumniProfile.avatar_url} alt={alumniProfile.full_name} className={styles.heroAvatarImg} />
               : <span className={styles.heroAvatarText}>{initials(alumniProfile.full_name)}</span>
             }
-            <div className={styles.heroCapBadge}>🎓</div>
+            <div className={styles.heroCapBadge}><GraduationCapIcon size={14} color="#fff" /></div>
           </div>
           <div className={styles.heroInfo}>
             <h2 className={styles.heroName}>{alumniProfile.full_name}</h2>
@@ -110,7 +118,8 @@ export default function StudentAlumniClient({
                 {alumniProfile.admission_number}
               </span>
               <span className={`${styles.heroBadge} ${styles.heroBadgeAlumni}`}>
-                ⭐ {alumniProfile.lifecycle_stage === 'graduated' ? 'Graduated' : 'Alumni'}
+                <AwardIcon size={11} />
+                {alumniProfile.lifecycle_stage === 'graduated' ? 'Graduated' : 'Alumni'}
               </span>
             </div>
           </div>
@@ -174,7 +183,7 @@ export default function StudentAlumniClient({
 
         {/* Results tab */}
         {activeTab === 'results' && (
-          <main className={styles.main} role="tabpanel">
+          <div role="tabpanel">
             {results.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>
@@ -203,7 +212,7 @@ export default function StudentAlumniClient({
                           </span>
                           <span
                             className={styles.resultGrade}
-                            style={{ background: gradeColor(r.grade)+'1A', color: gradeColor(r.grade) }}
+                            style={{ background: gradeColorSubtle(r.grade), color: gradeColor(r.grade) }}
                           >
                             Grade {r.grade}
                           </span>
@@ -214,12 +223,12 @@ export default function StudentAlumniClient({
                 </section>
               ))
             )}
-          </main>
+          </div>
         )}
 
         {/* Fees tab */}
         {activeTab === 'fees' && (
-          <main className={styles.main} role="tabpanel">
+          <div role="tabpanel">
             {receipts.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>
@@ -259,11 +268,10 @@ export default function StudentAlumniClient({
                 ))}
               </div>
             )}
-          </main>
+          </div>
         )}
 
         <div className={styles.spacer} />
-      </div>
-    </div>
+    </RolePageWrapper>
   )
 }
