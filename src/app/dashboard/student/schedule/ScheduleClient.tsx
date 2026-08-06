@@ -21,18 +21,22 @@
 // No other DB changes needed — study_plans has RLS disabled or open
 // INSERT for authenticated users already, since the old code was
 // successfully creating rows (just hitting the unique constraint).
+//
+// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// glass-card/motion treatment, hardcoded status hex → design tokens.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
-import { CalendarIcon, PlusIcon } from '@/components/Icons'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import { CalendarIcon, PlusIcon, SparkleIcon, AlertIcon, XIcon } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+// Categorical per-session tag palette — unrelated to brand color, intentionally varied
 const COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
 
 export default function ScheduleClient({ profile, school, userId }: Props) {
@@ -46,7 +50,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
     day: 'Monday', subject: '', time: '08:00', duration_mins: 60, color: COLORS[0],
   })
   const supabase    = createClient()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [])
 
@@ -147,34 +151,28 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-      <div className={styles.content}>
-        <DashboardHeader
-          userId={userId} role="student" profile={profile} school={school}
-          schoolColor={schoolColor} title="Study Plan" showBack
-        />
-        <main className={styles.main}>
+    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Study Plan">
+        <>
 
           {error && (
-            <div style={{
+            <div className={`glass-card ${motion.riseIn}`} style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', background: '#EF444415',
-              border: '1px solid #EF444440', borderRadius: 10,
+              padding: '10px 14px', background: 'var(--danger-subtle)',
+              borderColor: 'rgba(239,68,68,0.3)',
               marginBottom: 'var(--space-4)',
             }}>
-              <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-              <button
-                onClick={() => setError(null)}
-                style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}
-              >✕</button>
+              <AlertIcon size={16} color="var(--danger)" />
+              <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
+              <button onClick={() => setError(null)} className={motion.pressable}
+                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'flex', padding: 4 }}
+              ><XIcon size={14} /></button>
             </div>
           )}
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
+          <div className={motion.riseIn} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
             <button
-              onClick={() => setShowAdd(!showAdd)}
+              onClick={() => setShowAdd(!showAdd)} className={motion.pressable}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '9px 18px', background: schoolColor, color: '#fff',
@@ -186,7 +184,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
             </button>
             <button
               onClick={generateAIPlan}
-              disabled={generating}
+              disabled={generating} className={motion.pressable}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '9px 18px', background: 'rgba(236,72,153,0.12)',
@@ -195,15 +193,15 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                 cursor: 'pointer', opacity: generating ? 0.6 : 1,
               }}
             >
-              ✨ {generating ? 'Generating...' : 'AI Generate'}
+              <SparkleIcon size={14} color="#EC4899" /> {generating ? 'Generating...' : 'AI Generate'}
             </button>
           </div>
 
           {/* Add session form */}
           {showAdd && (
-            <div style={{
-              background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-              borderRadius: 14, padding: 'var(--space-5)', marginBottom: 'var(--space-5)',
+            <div className={`glass-card ${motion.riseIn}`} style={{
+              flexDirection: 'column', alignItems: 'stretch',
+              padding: 'var(--space-5)', marginBottom: 'var(--space-5)',
             }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
 
@@ -214,11 +212,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                     value={newItem.subject}
                     onChange={e => setNewItem(p => ({ ...p, subject: e.target.value }))}
                     placeholder="e.g. Mathematics"
-                    style={{
-                      height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)', borderRadius: 8,
-                      color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none',
-                    }}
+                    className="input"
                   />
                 </div>
 
@@ -228,11 +222,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                   <select
                     value={newItem.day}
                     onChange={e => setNewItem(p => ({ ...p, day: e.target.value }))}
-                    style={{
-                      height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)', borderRadius: 8,
-                      color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none',
-                    }}
+                    className="input"
                   >
                     {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
@@ -245,11 +235,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                     type="time"
                     value={newItem.time}
                     onChange={e => setNewItem(p => ({ ...p, time: e.target.value }))}
-                    style={{
-                      height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)', borderRadius: 8,
-                      color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none',
-                    }}
+                    className="input"
                   />
                 </div>
 
@@ -259,11 +245,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                   <select
                     value={newItem.duration_mins}
                     onChange={e => setNewItem(p => ({ ...p, duration_mins: Number(e.target.value) }))}
-                    style={{
-                      height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)', borderRadius: 8,
-                      color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none',
-                    }}
+                    className="input"
                   >
                     {[30, 45, 60, 90, 120].map(d => <option key={d} value={d}>{d} min</option>)}
                   </select>
@@ -277,6 +259,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                       <button
                         key={c}
                         onClick={() => setNewItem(p => ({ ...p, color: c }))}
+                        className={motion.pressable}
                         style={{
                           width: 28, height: 28, borderRadius: '50%', background: c,
                           border: newItem.color === c ? '3px solid var(--text-primary)' : '2px solid transparent',
@@ -292,21 +275,15 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                 <button
                   onClick={addSession}
                   disabled={saving || !newItem.subject.trim()}
-                  style={{
-                    flex: 1, height: 40, background: schoolColor, color: '#fff',
-                    border: 'none', borderRadius: 8, fontWeight: 700,
-                    fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1,
-                  }}
+                  className={`btn btn-primary ${motion.pressable}`}
+                  style={{ flex: 1, opacity: saving ? 0.6 : 1 }}
                 >
                   {saving ? 'Adding...' : 'Add'}
                 </button>
                 <button
                   onClick={() => setShowAdd(false)}
-                  style={{
-                    flex: 1, height: 40, background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)', borderRadius: 8,
-                    color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer',
-                  }}
+                  className={`btn btn-secondary ${motion.pressable}`}
+                  style={{ flex: 1 }}
                 >
                   Cancel
                 </button>
@@ -319,7 +296,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
             ? <div className={styles.loading}><span /><span /><span /></div>
             : plan.length === 0
               ? (
-                <div className={styles.empty}>
+                <div className={`${styles.empty} ${motion.riseIn}`}>
                   <CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1} />
                   <p>No study plan yet. Add sessions or let AI build one for you.</p>
                 </div>
@@ -332,11 +309,11 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                       .sort((a, b) => a.time.localeCompare(b.time))
                     if (dayItems.length === 0) return null
                     return (
-                      <div key={d} style={{ marginBottom: 'var(--space-5)' }}>
+                      <div key={d} className={motion.riseIn} style={{ marginBottom: 'var(--space-5)' }}>
                         <p className={styles.sectionLabel}>{d.toUpperCase()}</p>
                         <div className={styles.list}>
-                          {dayItems.map(item => (
-                            <div key={item.id} className={styles.card}>
+                          {dayItems.map((item, i) => (
+                            <div key={item.id} className={`glass-card ${styles.card} ${motion.staggerItem}`} style={{ animationDelay: `${i * 30}ms` }}>
                               <div
                                 className={styles.cardIcon}
                                 style={{ background: (item.color ?? schoolColor) + '25' }}
@@ -349,15 +326,16 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                               </div>
                               <button
                                 onClick={() => deleteSession(item.id)}
+                                className={motion.pressable}
                                 style={{
                                   width: 30, height: 30, display: 'flex',
                                   alignItems: 'center', justifyContent: 'center',
-                                  background: '#EF444415', border: '1px solid #EF444430',
+                                  background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.3)',
                                   borderRadius: 8, cursor: 'pointer', flexShrink: 0,
-                                  color: '#EF4444', fontWeight: 800, fontSize: '0.85rem',
+                                  color: 'var(--danger)',
                                 }}
                               >
-                                ✕
+                                <XIcon size={14} />
                               </button>
                             </div>
                           ))}
@@ -369,8 +347,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
               )
           }
           <div className={styles.spacer} />
-        </main>
-      </div>
-    </div>
+        </>
+    </RolePageWrapper>
   )
 }
