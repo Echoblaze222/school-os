@@ -24,12 +24,28 @@
 //   (submission_status enum: pending|submitted|graded|late),
 //   score, feedback, submitted_at, graded_at, graded_by, answer_text
 //   NO school_id column on this table.
+//
+// REDESIGN PASS (Lane 3 — Student):
+//   - emoji swapped for Icons.tsx per EMOJI-ICON-MAP.md
+//   - hardcoded status hex (#10B981/#EF4444/#F59E0B) → var(--success)/
+//     var(--danger)/var(--warning) design tokens, so theme + future
+//     brand changes propagate automatically
+//   - stale `?? '#7C3AED'` brand fallback → '#800020' (the real default)
+//   - buttons/badges now use the shared .btn / .badge utility classes
+//     from globals.css instead of one-off inline styles
+//   - riseIn / staggerItem / pressable motion added to match the
+//     hero-dashboard's entrance + press feel
+//   - NOTE: StudentNav + DashboardHeader chrome intentionally left as-is —
+//     the RolePageWrapper migration question is still open, tracked
+//     separately so it can be applied once across all sub-pages at once
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
-import { ClipboardIcon } from '@/components/Icons'
+import RolePageWrapper from '@/components/RolePageWrapper'
+import {
+  ClipboardIcon, AlertIcon, XIcon, EditIcon, PaperclipIcon, CheckIcon, UploadIcon,
+} from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -45,7 +61,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   const [error,     setError]     = useState<string | null>(null)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const supabase    = createClient()
-  const sc          = school?.primary_color ?? '#7C3AED'
+  const sc          = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [])
 
@@ -191,29 +207,29 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   function isOverdue(due: string) { return new Date(due) < new Date() }
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={sc} />
-      <div className={styles.content}>
-        <DashboardHeader userId={userId} role="student" profile={profile} school={school}
-          schoolColor={sc} title="Assignments" showBack />
-        <main className={styles.main}>
+    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Assignments">
+        <>
 
           {/* Error banner */}
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-              background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10,
+            <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 14px', borderColor: 'rgba(239,68,68,0.3)', background: 'var(--danger-subtle)',
               marginBottom: 'var(--space-4)' }}>
-              <span style={{ fontSize: '0.8rem', color: '#EF4444', flex: 1 }}>⚠️ {error}</span>
-              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none',
-                color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 800 }}>✕</button>
+              <AlertIcon size={16} color="var(--danger)" />
+              <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
+              <button onClick={() => setError(null)} className={motion.pressable}
+                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer',
+                  display: 'flex', padding: 4 }}>
+                <XIcon size={14} />
+              </button>
             </div>
           )}
 
           {/* Tab bar */}
-          <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
+          <div className={motion.riseIn} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
             {([['pending', 'Pending'], ['submitted', 'Submitted'], ['all', 'All']] as const).map(([v, l]) => (
-              <button key={v} onClick={() => setTab(v)}
-                style={{ padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+              <button key={v} onClick={() => setTab(v)} className={motion.pressable}
+                style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700,
                   background: tab === v ? sc : 'var(--glass-bg)',
                   color:      tab === v ? '#fff' : 'var(--text-muted)',
                   border:    `1px solid ${tab === v ? sc : 'var(--glass-border)'}`, cursor: 'pointer' }}>
@@ -225,12 +241,12 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           {loading
             ? <div className={styles.loading}><span/><span/><span/></div>
             : filtered.length === 0
-              ? <div className={styles.empty}>
+              ? <div className={`${styles.empty} ${motion.riseIn}`}>
                   <ClipboardIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
                   <p>No {tab} assignments</p>
                 </div>
               : <div className={styles.list}>
-                  {filtered.map(item => {
+                  {filtered.map((item, i) => {
                     const sub        = item.submission
                     const submitted  = ['submitted', 'graded', 'late'].includes(sub?.status)
                     const graded     = sub?.score != null
@@ -240,15 +256,17 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     const chosenFile = subFiles[item.id]
                     const textVal    = subText[item.id] ?? ''
 
+                    const statusColor = submitted ? 'var(--success)' : overdue ? 'var(--danger)' : 'var(--warning)'
+                    const statusBg    = submitted ? 'var(--success-subtle)' : overdue ? 'var(--danger-subtle)' : 'var(--warning-subtle)'
+
                     return (
-                      <div key={item.id} className={styles.card}
-                        style={{ flexDirection: 'column', gap: 10, cursor: 'default' }}>
+                      <div key={item.id} className={`glass-card ${styles.card} ${motion.staggerItem} ${motion.pressable}`}
+                        style={{ flexDirection: 'column', gap: 10, cursor: 'default', animationDelay: `${i * 40}ms` }}>
 
                         {/* Header row */}
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%' }}>
-                          <div className={styles.cardIcon}
-                            style={{ background: submitted ? '#10B98120' : overdue ? '#EF444420' : sc + '20', flexShrink: 0 }}>
-                            <ClipboardIcon size={16} color={submitted ? '#10B981' : overdue ? '#EF4444' : sc}/>
+                          <div className={styles.cardIcon} style={{ background: statusBg, flexShrink: 0 }}>
+                            <ClipboardIcon size={16} color={statusColor}/>
                           </div>
                           <div className={styles.cardBody} style={{ flex: 1, minWidth: 0 }}>
                             <p className={styles.cardTitle}>{item.title}</p>
@@ -267,18 +285,16 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                               {item.due_date
                                 ? `Due ${new Date(item.due_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}`
                                 : 'No due date'}
-                              {overdue && <span style={{ color: '#EF4444', marginLeft: 6, fontWeight: 700 }}>· Overdue</span>}
+                              {overdue && <span style={{ color: 'var(--danger)', marginLeft: 6, fontWeight: 700 }}>· Overdue</span>}
                               {graded && (
-                                <span style={{ color: '#10B981', marginLeft: 6, fontWeight: 700 }}>
+                                <span style={{ color: 'var(--success)', marginLeft: 6, fontWeight: 700 }}>
                                   · Score: {sub.score}/{item.max_score}
                                 </span>
                               )}
                             </p>
                           </div>
-                          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700,
-                            flexShrink: 0, whiteSpace: 'nowrap',
-                            background: submitted ? '#10B98120' : overdue ? '#EF444420' : '#F59E0B20',
-                            color:      submitted ? '#10B981'   : overdue ? '#EF4444'   : '#F59E0B' }}>
+                          <span className={styles.badge} style={{ flexShrink: 0, whiteSpace: 'nowrap',
+                            background: statusBg, color: statusColor }}>
                             {submitted ? (graded ? 'Graded' : 'Submitted') : overdue ? 'Overdue' : 'Pending'}
                           </span>
                         </div>
@@ -286,11 +302,11 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                         {/* Teacher brief attachment */}
                         {item.file_url && (
                           <div style={{ paddingLeft: 52 }}>
-                            <a href={item.file_url} target="_blank" rel="noreferrer"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem',
+                            <a href={item.file_url} target="_blank" rel="noreferrer" className={motion.pressable}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.75rem',
                                 fontWeight: 700, color: sc, textDecoration: 'none',
-                                padding: '5px 12px', background: sc + '15', borderRadius: 8 }}>
-                              📎 View Assignment Brief
+                                padding: '5px 12px', background: 'var(--brand-subtle)', borderRadius: 'var(--radius-sm)' }}>
+                              <PaperclipIcon size={13} /> View Assignment Brief
                             </a>
                           </div>
                         )}
@@ -311,15 +327,15 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                               </div>
                             )}
                             {sub?.file_url && (
-                              <a href={sub.file_url} target="_blank" rel="noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.72rem',
-                                  fontWeight: 600, color: '#10B981', textDecoration: 'none',
-                                  padding: '5px 10px', background: '#10B98115', borderRadius: 8, alignSelf: 'flex-start' }}>
-                                📤 Your Submitted File
+                              <a href={sub.file_url} target="_blank" rel="noreferrer" className={motion.pressable}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.72rem',
+                                  fontWeight: 600, color: 'var(--success)', textDecoration: 'none',
+                                  padding: '5px 10px', background: 'var(--success-subtle)', borderRadius: 8, alignSelf: 'flex-start' }}>
+                                <UploadIcon size={13} /> Your Submitted File
                               </a>
                             )}
                             {sub?.feedback && (
-                              <div style={{ background: sc + '10', border: `1px solid ${sc}30`,
+                              <div style={{ background: 'var(--brand-subtle)', border: '1px solid var(--brand-border)',
                                 borderRadius: 10, padding: '10px 14px' }}>
                                 <p style={{ fontSize: '0.65rem', fontWeight: 700, color: sc,
                                   textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
@@ -337,35 +353,30 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                         {!submitted && (
                           <div style={{ paddingLeft: 52 }}>
                             {!isOpen ? (
-                              <button onClick={() => setExpanded(item.id)}
-                                style={{ padding: '8px 20px', background: sc, color: '#fff', border: 'none',
-                                  borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                              <button onClick={() => setExpanded(item.id)} className={`btn btn-primary btn-sm ${motion.pressable}`}>
                                 Submit Assignment
                               </button>
                             ) : (
-                              <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-                                borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                              <div className="glass-card-flat" style={{ borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
                                 {/* Written answer */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                   <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)',
                                     display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    ✏️ Your Written Answer
+                                    <EditIcon size={13} /> Your Written Answer
                                     {!chosenFile && (
-                                      <span style={{ fontSize: '0.65rem', color: '#EF4444', fontWeight: 600 }}>
+                                      <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 600 }}>
                                         * required if no file
                                       </span>
                                     )}
                                   </label>
                                   <textarea
                                     rows={5}
+                                    className="input"
                                     placeholder="Type your answer here... Be detailed and clear. Your teacher will read this."
                                     value={textVal}
                                     onChange={e => setSubText(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                    style={{ padding: '10px 14px', background: 'var(--input-bg)',
-                                      border: `1.5px solid ${textVal ? sc : 'var(--input-border)'}`,
-                                      borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.85rem',
-                                      lineHeight: 1.6, outline: 'none', resize: 'vertical', transition: 'border-color 0.2s' }}
+                                    style={{ borderColor: textVal ? sc : undefined, resize: 'vertical', lineHeight: 1.6 }}
                                   />
                                   <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'right' }}>
                                     {textVal.length} characters
@@ -381,8 +392,9 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
                                 {/* File attachment */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                                    📎 Attach a File <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)',
+                                    display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <PaperclipIcon size={13} /> Attach a File <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
                                   </label>
                                   <input
                                     ref={el => { fileRefs.current[item.id] = el }}
@@ -391,18 +403,21 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                     style={{ display: 'none' }}
                                     onChange={e => setSubFiles(prev => ({ ...prev, [item.id]: e.target.files?.[0] ?? null }))}
                                   />
-                                  <button onClick={() => fileRefs.current[item.id]?.click()}
+                                  <button onClick={() => fileRefs.current[item.id]?.click()} className={motion.pressable}
                                     style={{ height: 44, border: `1.5px dashed ${chosenFile ? sc : 'var(--glass-border)'}`,
-                                      borderRadius: 10, background: chosenFile ? sc + '10' : 'transparent',
+                                      borderRadius: 10, background: chosenFile ? 'var(--brand-subtle)' : 'transparent',
                                       color: chosenFile ? sc : 'var(--text-muted)',
-                                      fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.2s' }}>
-                                    {chosenFile ? `✓ ${chosenFile.name}` : '+ Choose file (PDF, Word, image…)'}
+                                      fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                                    {chosenFile ? <><CheckIcon size={14} /> {chosenFile.name}</> : '+ Choose file (PDF, Word, image…)'}
                                   </button>
                                   {chosenFile && (
                                     <button onClick={() => setSubFiles(prev => ({ ...prev, [item.id]: null }))}
-                                      style={{ fontSize: '0.68rem', color: '#EF4444', background: 'none',
-                                        border: 'none', cursor: 'pointer', alignSelf: 'flex-start', padding: 0 }}>
-                                      ✕ Remove file
+                                      className={motion.pressable}
+                                      style={{ fontSize: '0.68rem', color: 'var(--danger)', background: 'none',
+                                        border: 'none', cursor: 'pointer', alignSelf: 'flex-start', padding: 0,
+                                        display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                      <XIcon size={11} /> Remove file
                                     </button>
                                   )}
                                 </div>
@@ -412,16 +427,11 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                   <button
                                     onClick={() => submitAssignment(item.id)}
                                     disabled={busy || (!textVal.trim() && !chosenFile)}
-                                    style={{ flex: 1, height: 42, background: sc, color: '#fff', border: 'none',
-                                      borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-                                      opacity: (busy || (!textVal.trim() && !chosenFile)) ? 0.5 : 1,
-                                      transition: 'opacity 0.2s' }}>
-                                    {busy ? 'Submitting...' : '✓ Submit'}
+                                    className={`btn btn-primary ${motion.pressable}`}
+                                    style={{ flex: 1 }}>
+                                    {busy ? 'Submitting...' : <><CheckIcon size={15} /> Submit</>}
                                   </button>
-                                  <button onClick={() => setExpanded(null)}
-                                    style={{ height: 42, padding: '0 18px', background: 'transparent',
-                                      border: '1px solid var(--glass-border)', borderRadius: 10,
-                                      color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer' }}>
+                                  <button onClick={() => setExpanded(null)} className={`btn btn-secondary ${motion.pressable}`}>
                                     Cancel
                                   </button>
                                 </div>
@@ -435,8 +445,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 </div>
           }
           <div className={styles.spacer}/>
-        </main>
-      </div>
-    </div>
+        </>
+    </RolePageWrapper>
   )
 }
