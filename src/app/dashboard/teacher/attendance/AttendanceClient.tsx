@@ -253,7 +253,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
           <button key={cls.class_id + (cls.subject ?? "")}
             onClick={() => { setSelectedClass(cls); setSaved(false) }}
             style={{ flexShrink: 0, padding: "6px 14px", borderRadius: 999, border: "1px solid " + (selectedClass?.class_id === cls.class_id ? sc : sc + "40"), background: selectedClass?.class_id === cls.class_id ? sc : "transparent", color: selectedClass?.class_id === cls.class_id ? "#fff" : sc, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-            {cls.class_name}{cls.subject ? " · " + cls.subject : ""}{cls.is_primary && <CrownIcon size={12} style={{ marginLeft: 4, verticalAlign: "middle" }} />}
+            {cls.class_name}{cls.subject ? " · " + cls.subject : ""}{cls.is_primary && <span style={{ display:'inline-flex', marginLeft: 4, verticalAlign: "middle" }}><CrownIcon size={12} /></span>}
           </button>
         ))}
       </div>
