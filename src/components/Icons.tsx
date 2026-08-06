@@ -1037,15 +1037,6 @@ export function StethoscopeIcon({ size = 24, color = 'currentColor', strokeWidth
   )
 }
 
-// Folder — replaces 📁 / 📂 (documents, records)
-export function FolderIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
-  return (
-    <svg {...ic(size, color, strokeWidth)}>
-      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
-    </svg>
-  )
-}
-
 // Sparkle — replaces ✨ (highlight / new / AI-touch accents)
 export function SparkleIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75 }: IconProps) {
   return (
