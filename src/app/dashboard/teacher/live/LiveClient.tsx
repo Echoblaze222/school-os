@@ -163,10 +163,10 @@ export default function LiveClient({ profile, school, userId }: Props) {
             className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
             style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
             {t === 'scheduled'
-              ? <><CalendarIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Upcoming</>
+              ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CalendarIcon size={13} /></span>Upcoming</>
               : t === 'live'
-              ? <><StatusDotIcon size={10} color="var(--danger)" style={{ marginRight: 4 }} />Live</>
-              : <><CheckCircleIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Ended</>}
+              ? <><span style={{ display:'inline-flex', marginRight: 4 }}><StatusDotIcon size={10} color="var(--danger)" /></span>Live</>
+              : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CheckCircleIcon size={13} /></span>Ended</>}
           </button>
         ))}
         <button onClick={() => setShowForm(!showForm)}
@@ -282,7 +282,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
                       )}
                     </div>
                     <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, background: (STATUS_COLOR[status] ?? '#6B7280') + '20', color: STATUS_COLOR[status] ?? '#6B7280', flexShrink: 0 }}>
-                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? <><StatusDotIcon size={9} color="#fff" style={{ marginRight: 3 }} />LIVE</> : 'Ended'}
+                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? <><span style={{ display:'inline-flex', marginRight: 3 }}><StatusDotIcon size={9} color="#fff" /></span>LIVE</> : 'Ended'}
                     </span>
                   </div>
 
