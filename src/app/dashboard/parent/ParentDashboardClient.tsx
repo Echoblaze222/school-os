@@ -10,9 +10,36 @@ import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ChatWidget from '@/components/ChatWidget'
+import { FeatureGroup } from '@/components/AllFeaturesSheet'
+import {
+  UserIcon, BarChartIcon, WalletIcon, MessageIcon,
+  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, BookIcon, ActivityIcon,
+} from '@/components/Icons'
 import styles from './parent.module.css'
 import motion from '@/components/dashboard-motion.module.css'
-import { PARENT_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
+
+const FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'My children', items: [
+    { id: 'child',       label: "Child's profile", href: '/dashboard/parent/child',       Icon: UserIcon },
+    { id: 'attendance',  label: 'Attendance',       href: '/dashboard/parent/attendance',  Icon: CalendarIcon },
+    { id: 'timetable',   label: 'Timetable',        href: '/dashboard/parent/timetable',   Icon: ClockIcon },
+    { id: 'assignments', label: 'Assignments',      href: '/dashboard/parent/assignments', Icon: ClipboardIcon },
+  ]},
+  { name: 'Progress', items: [
+    { id: 'results',     label: 'Results',     href: '/dashboard/parent/results',     Icon: BarChartIcon },
+    { id: 'fees',        label: 'Fees',        href: '/dashboard/parent/fees',        Icon: WalletIcon },
+    { id: 'leaderboard', label: 'Leaderboard', href: '/dashboard/parent/leaderboard', Icon: TrophyIcon },
+    { id: 'library',     label: 'Library',     href: '/dashboard/parent/library',     Icon: BookIcon },
+    { id: 'clinic',      label: 'Clinic',      href: '/dashboard/parent/clinic',      Icon: ActivityIcon },
+  ]},
+  { name: 'Communication', items: [
+    { id: 'chat',     label: 'Messages', href: '/dashboard/parent/chat',     Icon: MessageIcon },
+    { id: 'meetings', label: 'Meetings', href: '/dashboard/parent/meetings', Icon: CalendarIcon },
+  ]},
+  { name: 'Account', items: [
+    { id: 'profile', label: 'Profile', href: '/dashboard/parent/profile', Icon: UserIcon },
+  ]},
+]
 
 function getCurrentTerm(): string {
   const m = new Date().getMonth() + 1
@@ -47,7 +74,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   const [statsLoading,  setStatsLoading]  = useState(false)
 
   const supabase = createClient()
-  const sc       = school?.primary_color ?? '#800020'
+  const sc       = school?.primary_color ?? '#7C3AED'
 
   useEffect(() => { fetchChildren() }, [userId])
   useEffect(() => { if (activeChildId && children.length) loadChildStats(activeChildId) }, [activeChildId, children])
@@ -253,7 +280,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         {/* Animated graphical stats for the active child */}
         {activeChild && (
           <div className={motion.riseIn} style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
             marginTop: children.length > 1 ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
           }}>
             <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
