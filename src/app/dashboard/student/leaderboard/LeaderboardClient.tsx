@@ -1,9 +1,15 @@
 'use client'
+// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, medal emoji →
+// TrophyIcon with CSS-driven gold/silver/bronze color (per EMOJI-ICON-MAP.md
+// rule: rank badges use icon + color, not medal glyphs), glass-card/motion.
+// The Quiz/Assignment/Results legend colors are an intentional 3-item
+// categorical palette, not brand or status colors, so they're left literal.
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
+import RolePageWrapper from '@/components/RolePageWrapper'
 import { TrophyIcon } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
 
 interface LeaderboardEntry {
@@ -47,6 +53,9 @@ function safePct(score: number | null, max: number | null): number {
   return Math.min(100, (s / m) * 100)
 }
 
+// Medal rank colors — gold / silver / bronze
+const MEDAL_COLORS = ['#F59E0B', '#94A3B8', '#B45309']
+
 export default function LeaderboardClient({ profile, school, userId, childIds = [] }: Props) {
   const [board, setBoard]       = useState<LeaderboardEntry[]>([])
   const [loading, setLoading]   = useState(true)
@@ -54,7 +63,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
   const [debugMsg, setDebugMsg] = useState('')
 
   const supabase    = createClient()
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
   const isParent    = profile?.role === 'parent'
 
   const isHighlighted = (e: LeaderboardEntry) =>
@@ -228,7 +237,6 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     setLoading(false)
   }
 
-  const medals   = ['🥇', '🥈', '🥉']
   const topThree = board.slice(0, 3)
   const rest     = board.slice(3)
   const pct      = (score: number) => Math.min(100, Math.round((score / 1000) * 100))
@@ -238,29 +246,19 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     .filter(({ entry, rank }) => isHighlighted(entry) && rank > 3)
 
   return (
-    <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
-      <div className={styles.content}>
-        <DashboardHeader
-          userId={userId}
-          role={isParent ? 'parent' : 'student'}
-          profile={profile} school={school}
-          schoolColor={schoolColor}
-          title="Leaderboard"
-          showBack
-        />
-        <main className={styles.main}>
+    <RolePageWrapper userId={userId} role={isParent ? 'parent' : 'student'} profile={profile} school={school} title="Leaderboard">
+        <>
           {loading ? (
             <div className={styles.loading}><span /><span /><span /></div>
           ) : board.length === 0 ? (
-            <div className={styles.empty}>
+            <div className={`${styles.empty} ${motion.riseIn}`}>
               <TrophyIcon size={40} color="var(--text-faint)" strokeWidth={1} />
               <p>{debugMsg || 'No scores yet — complete quizzes, assignments, or exams to appear here.'}</p>
             </div>
           ) : (
             <>
               {pinnedEntries.map(({ entry, rank }) => (
-                <div key={entry.student_id} className={styles.myRankBanner} style={{ borderColor: schoolColor }}>
+                <div key={entry.student_id} className={`glass-card ${styles.myRankBanner} ${motion.riseIn}`} style={{ borderColor: schoolColor }}>
                   <span style={{ color: schoolColor, fontWeight: 800, fontSize: '1.1rem' }}>#{rank}</span>
                   <div style={{ flex: 1, marginLeft: 10 }}>
                     <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem', margin: 0 }}>
@@ -275,7 +273,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                 </div>
               ))}
 
-              <div className={styles.legend}>
+              <div className={`${styles.legend} ${motion.riseIn}`}>
                 <span><span className={styles.dot} style={{ background: '#6366f1' }} />Quiz 40%</span>
                 <span><span className={styles.dot} style={{ background: '#f59e0b' }} />Assign. 35%</span>
                 <span><span className={styles.dot} style={{ background: '#10b981' }} />Results 25%</span>
@@ -288,11 +286,13 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                     return (
                       <div
                         key={entry.student_id}
-                        className={`${styles.podiumCard} ${i === 0 ? styles.podiumFirst : ''}`}
-                        style={hl ? { borderColor: schoolColor, background: schoolColor + '10' } : {}}
+                        className={`glass-card ${styles.podiumCard} ${i === 0 ? styles.podiumFirst : ''} ${motion.staggerItem} ${motion.pressable}`}
+                        style={{ ...(hl ? { borderColor: schoolColor, background: schoolColor + '10' } : {}), animationDelay: `${i * 60}ms` }}
                         onClick={() => setExpanded(expanded === entry.student_id ? null : entry.student_id)}
                       >
-                        <div className={styles.podiumMedal}>{medals[i]}</div>
+                        <div className={styles.podiumMedal}>
+                          <TrophyIcon size={i === 0 ? 26 : 22} color={MEDAL_COLORS[i]} />
+                        </div>
                         <div className={styles.podiumAvatar} style={{ background: schoolColor + '30', color: schoolColor }}>
                           {entry.avatar_url
                             ? <img src={entry.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
@@ -339,8 +339,8 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                   const hl   = isHighlighted(entry)
                   const open = expanded === entry.student_id
                   return (
-                    <div key={entry.student_id} className={styles.card}
-                      style={hl ? { borderColor: schoolColor, background: schoolColor + '0D' } : {}}
+                    <div key={entry.student_id} className={`glass-card ${styles.card} ${motion.staggerItem} ${motion.pressable}`}
+                      style={{ ...(hl ? { borderColor: schoolColor, background: schoolColor + '0D' } : {}), animationDelay: `${i * 25}ms` }}
                       onClick={() => setExpanded(open ? null : entry.student_id)}
                     >
                       <div className={styles.rankBadge}>#{rank}</div>
@@ -374,9 +374,8 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
               <div className={styles.spacer} />
             </>
           )}
-        </main>
-      </div>
-    </div>
+        </>
+    </RolePageWrapper>
   )
 }
 
