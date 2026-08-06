@@ -128,15 +128,15 @@ export default function PrincipalDashboardClient({
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Fee collection" value={counts.feeCollectionRate ?? 0} isPercent
               color="var(--brand-2, var(--brand))" caption="this term" />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Average score" value={counts.avgScore ?? 0} isPercent
               color="var(--status-ok, #3FA66B)" caption="recent results" delayMs={80} />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Waiting on you" value={counts.pendingActions ?? 0}
               color="var(--status-warn, #E4572E)" caption="unread items" delayMs={160} />
           </div>
