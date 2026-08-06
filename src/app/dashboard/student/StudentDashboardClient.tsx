@@ -104,11 +104,11 @@ export default function StudentDashboardClient({ profile, school, userId, counts
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: c.isLive ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="My attendance" value={c.attendance ?? 0} isPercent
               color="var(--status-ok, #3FA66B)" caption="this term" />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat
               label="Term GPA"
               value={c.gpa != null ? Math.round((c.gpa / 5) * 100) : 0}
@@ -117,7 +117,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
               color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
             />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Tasks due" value={c.pendingTasks}
               color="var(--status-warn, #E4572E)" caption="this week" delayMs={160} />
           </div>
