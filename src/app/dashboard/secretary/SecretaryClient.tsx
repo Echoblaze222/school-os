@@ -103,15 +103,15 @@ export default function SecretaryClient({
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Pending admissions" value={counts.pendingAdmissions ?? 0}
               color="var(--status-warn, #E4572E)" caption="need review" />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Transfer requests" value={counts.pendingApps ?? 0}
               color="var(--status-warn, #E4572E)" caption="awaiting action" delayMs={80} />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="New this week" value={counts.newThisWeek ?? 0}
               color="var(--status-ok, #3FA66B)" caption="admissions" delayMs={160} />
           </div>
