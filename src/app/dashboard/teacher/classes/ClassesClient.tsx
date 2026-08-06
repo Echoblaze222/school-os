@@ -147,7 +147,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 }}
               >
                 {cls.class_name}
-                {cls.is_primary && <CrownIcon size={11} style={{ verticalAlign: 'middle', marginLeft: 3 }} />}
+                {cls.is_primary && <span style={{ display:'inline-flex', verticalAlign: 'middle', marginLeft: 3 }}><CrownIcon size={11} /></span>}
                 {cls.subject ? ` (${cls.subject})` : ''}
               </button>
             ))}
@@ -187,7 +187,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                     textTransform: 'uppercase' as const,
                     letterSpacing: '0.06em',
                   }}>
-                    {selected.is_primary ? <><CrownIcon size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Class Teacher</> : 'Subject Teacher'}
+                    {selected.is_primary ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><CrownIcon size={12} /></span>Class Teacher</> : 'Subject Teacher'}
                   </span>
                   <p style={{ margin: '4px 0 0', color: sc, fontWeight: 700, fontSize: '0.82rem' }}>
                     {students.length} student{students.length !== 1 ? 's' : ''}
