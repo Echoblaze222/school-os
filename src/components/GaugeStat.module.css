@@ -1,12 +1,21 @@
 .wrap {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: 8px 14px;
+  max-width: 100%;
 }
 .ring {
   transition: stroke-dashoffset 1.1s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.text { min-width: 0; }
+.wrap svg {
+  flex-shrink: 0;
+}
+.text {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: break-word;
+}
 .num {
   font-weight: 700;
   font-size: 1.6rem;
@@ -23,4 +32,27 @@
   font-size: 0.68rem;
   color: var(--text-faint);
   margin: 2px 0 0;
+}
+
+/* On narrow cards (small phones, 3-up grids) the ring plus text no longer
+   fit on one line — let the text wrap onto its own line under the ring
+   instead of spilling past the card edge, and shrink both a touch so the
+   card doesn't need to grow tall to compensate. */
+@media (max-width: 420px) {
+  .wrap {
+    gap: 6px 10px;
+  }
+  .wrap svg {
+    width: 48px;
+    height: 48px;
+  }
+  .num {
+    font-size: 1.25rem;
+  }
+  .label {
+    font-size: 0.66rem;
+  }
+  .caption {
+    font-size: 0.6rem;
+  }
 }
