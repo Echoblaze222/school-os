@@ -287,8 +287,8 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
               color: tab === m ? sc : 'var(--text-muted)',
             }}>
             {m === 'topics'
-              ? <><ClipboardIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Topic Tracker</>
-              : <><FileTextIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Syllabus PDF</>}
+              ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><ClipboardIcon size={14} /></span>Topic Tracker</>
+              : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><FileTextIcon size={14} /></span>Syllabus PDF</>}
           </button>
         ))}
       </div>
@@ -509,7 +509,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
             <button onClick={() => pdfRef.current?.click()} disabled={uploadingPdf}
               className={styles.uploadDropzone}
               style={{ borderColor: sc + '50', background: sc + '08', color: sc }}>
-              {uploadingPdf ? 'Uploading...' : <><FileTextIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Upload {TERM_LABEL[term] ?? term} Syllabus PDF</>}
+              {uploadingPdf ? 'Uploading...' : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><FileTextIcon size={14} /></span>Upload {TERM_LABEL[term] ?? term} Syllabus PDF</>}
             </button>
           )}
         </div>
