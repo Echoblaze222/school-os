@@ -440,6 +440,12 @@
   line-height: 1.6;
 }
 
+.brandPreviewBtnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .brandPreviewBtn {
   align-self: flex-start;
   font-size: 0.82rem;
