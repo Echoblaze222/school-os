@@ -227,7 +227,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                       style={{ background: sc }}>
                       {saving === sub.id
                         ? <><span className={styles.spinnerSm} />Saving…</>
-                        : <>{isGraded ? <><EditIcon size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Update Grade</> : 'Mark as Graded'}</>}
+                        : <>{isGraded ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><EditIcon size={13} /></span>Update Grade</> : 'Mark as Graded'}</>}
                     </button>
                   </div>
                 )}
