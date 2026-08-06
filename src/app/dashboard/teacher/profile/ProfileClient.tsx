@@ -354,7 +354,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                   fontSize: '0.65rem', fontWeight: 700,
                   textTransform: 'uppercase' as const,
                 }}>
-                  {cls.is_primary ? <><CrownIcon size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Class Teacher</> : 'Subject Teacher'}
+                  {cls.is_primary ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><CrownIcon size={12} /></span>Class Teacher</> : 'Subject Teacher'}
                 </span>
               </div>
             ))}
