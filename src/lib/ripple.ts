@@ -5,7 +5,7 @@
 // Mirrors the ripple behaviour already approved in the static prototypes,
 // without repeating the DOM code in every component that wants it.
 
-export function ripple(motionStyles: { ripple: string }) {
+export function ripple(motionStyles: { readonly [key: string]: string }) {
   return (e: React.MouseEvent<HTMLElement>) => {
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
