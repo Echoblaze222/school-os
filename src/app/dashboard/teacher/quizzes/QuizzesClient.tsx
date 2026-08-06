@@ -80,7 +80,7 @@ function QuestionBuilder({
       {saveError && (
         <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
           borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--danger)' }}>
-          <AlertIcon size={13} style={{verticalAlign:"middle",marginRight:4}} />{saveError}
+          <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={13} /></span>{saveError}
         </div>
       )}
 
@@ -480,7 +480,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       {saveError && (
         <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
           borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--danger)' }}>
-          <AlertIcon size={13} style={{verticalAlign:"middle",marginRight:4}} />{saveError}
+          <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={13} /></span>{saveError}
         </div>
       )}
 
@@ -511,7 +511,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
             {/* BUG 1 FIX: warning instead of hard block — principal needs to fix class_subjects */}
             {form.class_id && !teacherClasses.find(c => c.class_id === form.class_id)?.class_subject_id && (
               <p style={{ fontSize: '0.7rem', color: 'var(--warning)', margin: 0 }}>
-                <AlertIcon size={12} style={{verticalAlign:"middle",marginRight:4}} />No subject mapping for this class. Ask principal to assign subjects to this class — otherwise quiz creation will fail.
+                <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={12} /></span>No subject mapping for this class. Ask principal to assign subjects to this class — otherwise quiz creation will fail.
               </p>
             )}
           </div>
