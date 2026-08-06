@@ -29,15 +29,41 @@ export default function SplashPage() {
     typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   )
   const strokeTextRef = useRef<SVGTextElement>(null)
+  const osTextRef      = useRef<SVGTextElement>(null)
   const flourishRef   = useRef<SVGPathElement>(null)
   const [strokeLen, setStrokeLen]     = useState(420)
   const [flourishLen, setFlourishLen] = useState(160)
+  // Where "OS" starts, and how far "School" shifts left to meet it — both
+  // computed together so the COMBINED word "SchoolOS" ends up centered in
+  // the 280-wide viewBox, not just "School" alone. Fixing "OS" at a flat
+  // x=140 (dead center of the viewBox) was the actual bug: once "School"
+  // butts up against it, the word extends further right, past center, and
+  // the last thing you see isn't centered on screen. Defaults below match
+  // the old fixed values so there's no flash of wrong position before the
+  // first measurement runs.
+  const [shiftPx, setShiftPx]   = useState(62)
+  const [osStartX, setOsStartX] = useState(140)
 
   const measure = useCallback(() => {
-    if (strokeTextRef.current?.getComputedTextLength) {
-      // A glyph's stroked outline is longer than its flat advance width —
-      // 1.8x approximates the full pen-path length for a bold sans face.
-      setStrokeLen(strokeTextRef.current.getComputedTextLength() * 1.8)
+    if (strokeTextRef.current?.getComputedTextLength && osTextRef.current?.getComputedTextLength) {
+      const schoolWidth = strokeTextRef.current.getComputedTextLength()
+      const osWidth     = osTextRef.current.getComputedTextLength()
+      setStrokeLen(schoolWidth * 1.8)
+
+      // Center "School"+"OS" together as one word inside the 280 viewBox.
+      const viewBoxWidth = 280
+      const totalWidth   = schoolWidth + osWidth
+      const wordLeftEdge = (viewBoxWidth - totalWidth) / 2
+      const newOsStartX  = wordLeftEdge + schoolWidth
+      setOsStartX(newOsStartX)
+
+      // "School" is centered at x=42% of the viewBox with textAnchor="middle";
+      // shift it left by exactly enough that its right edge lands on the new
+      // (centered) OS start point — same zero-gap logic as before, just
+      // targeting a computed point instead of a hardcoded one.
+      const schoolCenterX = 0.42 * viewBoxWidth
+      const schoolRightEdge = schoolCenterX + schoolWidth / 2
+      setShiftPx(schoolRightEdge - newOsStartX)
     }
     if (flourishRef.current?.getTotalLength) {
       setFlourishLen(flourishRef.current.getTotalLength())
@@ -111,7 +137,7 @@ export default function SplashPage() {
               group: it stays fixed the whole time. */}
           <g
             style={{
-              transform: shifted ? 'translateX(-62px)' : 'translateX(0)',
+              transform: shifted ? `translateX(-${shiftPx}px)` : 'translateX(0)',
               transition: reduced ? 'none' : 'transform 0.5s cubic-bezier(0.65,0,0.35,1)',
             }}
           >
@@ -172,11 +198,14 @@ export default function SplashPage() {
             }}
           />
 
-          {/* "OS" — butted directly against "School"'s trailing edge, no
-              gap, sliding out once "School" steps back. Reads as one
-              wordmark, not a second line of type. */}
+          {/* "OS" — starts at the computed osStartX (not a fixed x=140),
+              so the combined "SchoolOS" word is centered in the viewBox as
+              a whole, not just "School" on its own. "School"'s shift
+              distance (shiftPx) is computed the same way, so the two still
+              meet with zero gap. */}
           <text
-            x={140} y={56} textAnchor="start"
+            ref={osTextRef}
+            x={osStartX} y={56} textAnchor="start"
             style={{
               fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 42, letterSpacing: 1,
               fill: BURGUNDY,
