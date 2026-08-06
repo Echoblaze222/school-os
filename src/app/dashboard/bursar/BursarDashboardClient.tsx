@@ -123,15 +123,15 @@ export default function BursarDashboardClient({
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Collection rate" value={counts.collectionRate ?? 0} isPercent
               color="var(--brand-2, var(--brand))" caption={counts.currentTerm ?? 'this term'} />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Claims pending" value={pendingClaims}
               color="var(--status-warn, #E4572E)" caption="awaiting review" delayMs={80} />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
+          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
             <GaugeStat label="Overdue" value={counts.overdueCount ?? 0}
               color="var(--status-warn, #E4572E)" caption="students" delayMs={160} />
           </div>
