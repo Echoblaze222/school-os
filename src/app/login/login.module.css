@@ -133,6 +133,10 @@
   color: var(--login-brand-2, var(--login-brand));
   font-weight: 700;
   text-decoration: none;
+  padding: 10px 6px;
+  margin: -10px -6px;
+  min-height: 44px;
+  border-radius: 8px;
 }
 .registerLink:hover { text-decoration: underline; }
 

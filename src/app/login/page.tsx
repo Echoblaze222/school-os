@@ -233,11 +233,21 @@ export default function LoginPage() {
                     type="text" value={identifier}
                     onChange={e => {
                       const v = e.target.value
-                      // Access codes read better uppercase (PRIN-528-F0A); emails
-                      // must stay exactly as typed, case matters for some mail
-                      // servers on the local part. Only auto-caps when it's
-                      // clearly not an email in progress.
-                      setIdentifier(v.includes('@') ? v : v.toUpperCase())
+                      // Access codes always contain a hyphen (PRIN-528-F0A);
+                      // emails don't, in the overwhelming majority of cases.
+                      // Checking for "-" instead of "@" fixes a real bug the
+                      // old check had: checking for @ ABSENCE meant every
+                      // character typed before the @ got force-uppercased,
+                      // and that stuck permanently once @ was typed, since
+                      // the old logic only stopped transforming going
+                      // forward — it never fixed what was already wrong.
+                      // Checking the whole current value on every keystroke
+                      // avoids that: nothing gets uppercased until a hyphen
+                      // actually appears, and once it does, the full value
+                      // (including what was typed before the hyphen) is
+                      // transformed together, so there's no stuck partial
+                      // state either way.
+                      setIdentifier(v.includes('-') ? v.toUpperCase() : v)
                     }}
                     className={styles.input} placeholder="you@school.edu.ng or PRIN-528-F0A"
                     required autoComplete="off" autoCapitalize="off"
