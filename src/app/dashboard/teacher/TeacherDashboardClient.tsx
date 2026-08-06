@@ -71,7 +71,7 @@ function buildInsight(counts: any): string {
 }
 
 export default function TeacherDashboardClient({ profile, school, userId, counts = {} as any, activities }: Props) {
-  const schoolColor = school?.primary_color ?? '#800020'
+  const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Teacher'
 
   const teacherRoleLabel =
@@ -105,7 +105,7 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
       <main className={styles.main}>
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
           <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
