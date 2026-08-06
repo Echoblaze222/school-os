@@ -76,6 +76,27 @@ export default function LoginPage() {
     // secondary_color only lives on school_branding — best-effort fetch so
     // the login screen can use the school's full two-colour brand, not just
     // the one colour already cached in localStorage from /select-school.
+    //
+    // primary_color IS cached in localStorage (set when the school was
+    // originally picked on /select-school), but that cache goes stale the
+    // moment a principal changes their brand colour in Settings — this page
+    // would otherwise keep showing whatever colour was current back when
+    // the school was first selected, potentially sessions/days earlier. So
+    // re-fetch it fresh here too and let it override the cached value.
+    supabase
+      .from('schools')
+      .select('primary_color')
+      .eq('id', parsedSchool.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.primary_color) {
+          setSchool(s => s ? { ...s, primaryColor: data.primary_color } : s)
+          // Keep the cache in step so the next visit starts from the
+          // right colour even before this fetch resolves.
+          localStorage.setItem(SCHOOL_KEY, JSON.stringify({ ...parsedSchool, primaryColor: data.primary_color }))
+        }
+      })
+
     supabase
       .from('school_branding')
       .select('secondary_color')
