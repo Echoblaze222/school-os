@@ -52,6 +52,23 @@ const AUTH_ONLY_PATHS = [
   '/super-admin/login',                 // logged-in super admins go straight to dashboard
 ]
 
+// ── Role-based dashboard access ────────────────────────────────
+// Each dashboard route is scoped to exactly one role. Without this,
+// any authenticated user who knows/guesses another role's URL (e.g.
+// a secretary typing /dashboard/principal/staff) can open that role's
+// pages. This must stay in sync with ROLE_ROUTES in
+// src/app/dashboard/page.tsx.
+const DASHBOARD_ROLE_SEGMENTS = ['principal', 'teacher', 'secretary', 'bursar', 'parent', 'student']
+const ROLE_HOME: Record<string, string> = {
+  student:     '/dashboard/student',
+  teacher:     '/dashboard/teacher',
+  principal:   '/dashboard/principal',
+  bursar:      '/dashboard/bursar',
+  secretary:   '/dashboard/secretary',
+  parent:      '/dashboard/parent',
+  super_admin: '/admin',
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -164,6 +181,20 @@ export async function middleware(request: NextRequest) {
       .select('role, school_id')
       .eq('id', user.id)
       .single()
+
+    // ── Enforce role boundary ────────────────────────────────
+    // '/dashboard/principal/...' -> 'principal'. If the segment is a
+    // known role dashboard and doesn't match this user's own role,
+    // redirect them to wherever they actually belong instead of
+    // letting the page render (or fail half-rendered from RLS).
+    const roleSegment = pathname.split('/')[2]
+    if (roleSegment && DASHBOARD_ROLE_SEGMENTS.includes(roleSegment)) {
+      const userRole = profile?.role
+      if (userRole !== roleSegment) {
+        const home = ROLE_HOME[userRole ?? ''] ?? '/login'
+        return NextResponse.redirect(new URL(home, request.url))
+      }
+    }
 
     if (profile && profile.school_id) {
       const { data: school } = await supabase
