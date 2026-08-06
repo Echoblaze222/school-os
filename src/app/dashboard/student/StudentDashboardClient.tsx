@@ -101,7 +101,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
         )}
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: c.isLive ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
           <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
