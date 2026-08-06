@@ -78,14 +78,16 @@ export async function POST(req: Request) {
   }
 
   // ── 5. Build update payload (only fields provided) ────────────────────────
-  // NOTE: secondary_color is deliberately excluded here — the `schools` table
-  // has no such column (only school_branding does). It's handled separately
-  // in step 6b so this update never sends a column `schools` doesn't have.
+  // secondary_color now lives directly on the `schools` table (see the
+  // schools-branding-columns migration referenced in dashboard/principal/layout.tsx),
+  // which is also what SchoolBrandInjector reads via each role's layout — so it's
+  // written here just like primary_color. Step 6b additionally mirrors it into
+  // school_branding for older readers that still query that table.
   const update: Record<string, unknown> = {}
 
   const allowed: (keyof SettingsBody)[] = [
     'name', 'tagline', 'address', 'city', 'state',
-    'phone', 'email', 'school_type', 'primary_color',
+    'phone', 'email', 'school_type', 'primary_color', 'secondary_color',
     'font_family', 'logo_url', 'build_image_url',
   ]
 
@@ -97,7 +99,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (Object.keys(update).length === 0 && body.secondary_color === undefined) {
+  if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'No fields to update.' }, { status: 400 })
   }
 
@@ -115,15 +117,15 @@ export async function POST(req: Request) {
   }
 
   // ── 6b. Mirror branding fields into school_branding ────────────────────────
-  // `schools` has no secondary_color column at all — and the theme injector
-  // (SchoolBrandInjector, via each role's layout.tsx) reads primary_color and
-  // secondary_color from school_branding, not from schools. Without this,
-  // saving a colour here would succeed silently while the actual on-screen
-  // theme never changed, because the two tables were never kept in sync.
+  // The live theme (SchoolBrandInjector, via each role's layout.tsx) reads
+  // primary_color/secondary_color/font_family straight off `schools` now,
+  // which step 6 above already wrote. This mirror just keeps the older
+  // school_branding table (still read by report-card generation for
+  // primary_color/logo_url) in sync so it doesn't drift out of date.
   const brandingUpdate: Record<string, unknown> = {}
-  if (update.primary_color !== undefined) brandingUpdate.primary_color = update.primary_color
-  if (body.secondary_color !== undefined) brandingUpdate.secondary_color = body.secondary_color.trim()
-  if (update.font_family   !== undefined) brandingUpdate.font_family   = update.font_family
+  if (update.primary_color   !== undefined) brandingUpdate.primary_color   = update.primary_color
+  if (update.secondary_color !== undefined) brandingUpdate.secondary_color = update.secondary_color
+  if (update.font_family     !== undefined) brandingUpdate.font_family     = update.font_family
 
   if (Object.keys(brandingUpdate).length > 0) {
     // school_branding.school_name is NOT NULL with no default — if this
