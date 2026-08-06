@@ -281,7 +281,7 @@ export default function GradeSubmissionsPage() {
   return (
     <RolePageWrapper userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions">
 
-      {fetchErr&&<div className="alert-error" style={{padding:'8px 14px',borderRadius:8,marginBottom:16,fontSize:'0.75rem'}}><AlertIcon size={13} style={{verticalAlign:'middle',marginRight:4}} />{fetchErr}</div>}
+      {fetchErr&&<div className="alert-error" style={{padding:'8px 14px',borderRadius:8,marginBottom:16,fontSize:'0.75rem'}}><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><AlertIcon size={13} /></span>{fetchErr}</div>}
 
       {/* ── Stat summary — matches dashboard GaugeStat treatment ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
@@ -299,12 +299,12 @@ export default function GradeSubmissionsPage() {
       <div style={{display:'flex',gap:8,marginBottom:20}}>
         <button onClick={()=>setMainTab('assignments')} className="glass-card"
           style={{flex:1,padding:'10px 0',borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',border:`1.5px solid ${mainTab==='assignments'?color:'var(--glass-border)'}`,background:mainTab==='assignments'?color+'18':'var(--glass-bg)',color:mainTab==='assignments'?color:'var(--text-muted)'}}>
-          <ClipboardIcon size={14} style={{verticalAlign:'middle',marginRight:4}} />Assignments
+          <span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><ClipboardIcon size={14} /></span>Assignments
           {totalPending>0&&<span style={{marginLeft:6,padding:'1px 6px',borderRadius:999,background:'var(--danger)',color:'#fff',fontSize:'0.65rem',fontWeight:800}}>{totalPending}</span>}
         </button>
         <button onClick={()=>setMainTab('quizzes')} className="glass-card"
           style={{flex:1,padding:'10px 0',borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',border:`1.5px solid ${mainTab==='quizzes'?color:'var(--glass-border)'}`,background:mainTab==='quizzes'?color+'18':'var(--glass-bg)',color:mainTab==='quizzes'?color:'var(--text-muted)'}}>
-          <TrophyIcon size={14} style={{verticalAlign:'middle',marginRight:4}} />Quizzes
+          <span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><TrophyIcon size={14} /></span>Quizzes
           {totalQuizAttempts>0&&<span style={{marginLeft:6,padding:'1px 6px',borderRadius:999,background:color,color:'#fff',fontSize:'0.65rem',fontWeight:800}}>{totalQuizAttempts}</span>}
         </button>
       </div>
@@ -350,7 +350,7 @@ export default function GradeSubmissionsPage() {
                     </div>
 
                     {visibleSubs.length===0
-                      ? <div style={{textAlign:'center' as const,padding:'28px 0',color:'var(--text-muted)'}}>{filterTab==='pending'?<><CheckCircleIcon size={13} style={{verticalAlign:'middle',marginRight:4}} />All caught up!</>:'No submissions here.'}</div>
+                      ? <div style={{textAlign:'center' as const,padding:'28px 0',color:'var(--text-muted)'}}>{filterTab==='pending'?<><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><CheckCircleIcon size={13} /></span>All caught up!</>:'No submissions here.'}</div>
                       : <div style={{display:'flex',flexDirection:'column',gap:10}}>
                           {visibleSubs.map(sub=>{
                             const isGraded=sub.status==='graded', isSaving=savingIds.has(sub.id)
@@ -384,7 +384,7 @@ export default function GradeSubmissionsPage() {
                                     </div>
                                     <textarea placeholder="Feedback (optional)..." value={feedbackInputs[sub.id]??sub.feedback??''} onChange={e=>setFeedbackInputs(p=>({...p,[sub.id]:e.target.value}))} rows={2} style={{width:'100%',padding:'8px 12px',background:'var(--input-bg)',border:'1px solid var(--input-border)',borderRadius:8,color:'var(--text-primary)',fontSize:'0.82rem',outline:'none',resize:'vertical',boxSizing:'border-box' as const}}/>
                                     <div style={{display:'flex',gap:6}}>
-                                      <button onClick={()=>saveGrade(sub)} disabled={isSaving||scoreStr===''} style={{flex:1,height:38,background:scoreStr!==''?color:'var(--glass-bg)',color:scoreStr!==''?'#fff':'var(--text-muted)',border:'none',borderRadius:8,fontWeight:700,fontSize:'0.82rem',cursor:scoreStr!==''?'pointer':'default',opacity:isSaving?0.6:1}}>{isSaving?'Saving...':isGraded?<><EditIcon size={12} style={{verticalAlign:'middle',marginRight:4}} />Update</>:'Save Grade'}</button>
+                                      <button onClick={()=>saveGrade(sub)} disabled={isSaving||scoreStr===''} style={{flex:1,height:38,background:scoreStr!==''?color:'var(--glass-bg)',color:scoreStr!==''?'#fff':'var(--text-muted)',border:'none',borderRadius:8,fontWeight:700,fontSize:'0.82rem',cursor:scoreStr!==''?'pointer':'default',opacity:isSaving?0.6:1}}>{isSaving?'Saving...':isGraded?<><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><EditIcon size={12} /></span>Update</>:'Save Grade'}</button>
                                       {editing&&<button onClick={()=>{setScoreInputs(p=>{const n={...p};delete n[sub.id];return n});setFeedbackInputs(p=>{const n={...p};delete n[sub.id];return n})}} style={{height:38,padding:'0 12px',background:'transparent',border:'1px solid var(--glass-border)',borderRadius:8,color:'var(--text-muted)',fontSize:'0.78rem',cursor:'pointer'}}>Cancel</button>}
                                     </div>
                                   </div>
