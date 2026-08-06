@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
@@ -291,9 +292,9 @@ export default function SelectSchoolPage() {
           {/* Register school link — always visible, under everything */}
           <div className={styles.registerRow}>
             <span>Are you a school administrator?</span>
-            <a href="/register-school" className={styles.registerLink}>
+            <Link href="/register-school" className={styles.registerLink}>
               Register school <ArrowRightIcon size={13} />
-            </a>
+            </Link>
           </div>
         </div>
       </div>
