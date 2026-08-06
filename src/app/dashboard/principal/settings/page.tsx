@@ -52,6 +52,7 @@ export default async function PrincipalSettingsPage() {
         email:            school.email            ?? null,
         school_type:      school.school_type      ?? null,
         primary_color:    school.primary_color    ?? '#800020',
+        secondary_color:  school.secondary_color  ?? null,
         font_family:      school.font_family      ?? 'Inter',
         logo_url:         school.logo_url         ?? null,
         build_image_url:  school.build_image_url  ?? null,
