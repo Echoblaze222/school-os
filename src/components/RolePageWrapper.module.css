@@ -34,8 +34,6 @@
 
 .main {
   padding: var(--space-6) var(--space-5);
-  /* Bottom padding clears the floating bottom nav pill on mobile (~83px) */
-  padding-bottom: 110px;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;

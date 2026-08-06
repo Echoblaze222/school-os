@@ -16,43 +16,6 @@ import {
 } from './Icons'
 import styles from './RoleNav.module.css'
 
-// ── More drawer styles (teacher mobile) ─────────────────────
-const drawerOverlayStyle: React.CSSProperties = {
-  position: 'fixed', inset: 0, zIndex: 9999,
-  display: 'flex', alignItems: 'flex-end',
-}
-const drawerBackdropStyle: React.CSSProperties = {
-  position: 'absolute', inset: 0,
-  background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-}
-const drawerPanelStyle: React.CSSProperties = {
-  position: 'relative', zIndex: 1,
-  width: '100%', maxWidth: 480, margin: '0 auto',
-  background: 'var(--nav-bg)', border: '1px solid var(--nav-border)',
-  borderRadius: '20px 20px 0 0', padding: '20px 20px 40px',
-}
-
-const MORE_NAV_ITEMS = [
-  { href: '/dashboard/teacher/assignments',   Icon: ClipboardIcon, label: 'Assignments'   },
-  { href: '/dashboard/teacher/grades',        Icon: BarChartIcon,  label: 'Grades'        },
-  { href: '/dashboard/teacher/results',       Icon: BarChartIcon,  label: 'Results'       },
-  { href: '/dashboard/teacher/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
-  { href: '/dashboard/teacher/submissions',   Icon: ClipboardIcon, label: 'Submissions'   },
-  { href: '/dashboard/teacher/live',          Icon: VideoIcon,     label: 'Live Class'    },
-  { href: '/dashboard/teacher/messages',      Icon: MessageIcon,   label: 'Messages'      },
-  { href: '/dashboard/teacher/notes',         Icon: BookIcon,      label: 'Study Notes'   },
-  { href: '/dashboard/teacher/timetable',     Icon: ClockIcon,     label: 'Timetable'     },
-  { href: '/dashboard/teacher/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
-  { href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
-  { href: '/dashboard/teacher/clinic',        Icon: ActivityIcon,  label: 'Clinic'        },
-  { href: '/dashboard/teacher/report-cards',  Icon: FileTextIcon,  label: 'Report Cards'  },
-  { href: '/dashboard/teacher/notifications', Icon: BellIcon,      label: 'Notifications' },
-  { href: '/dashboard/teacher/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
-  { href: '/dashboard/teacher/audit',         Icon: ShieldIcon,    label: 'Audit Log'     },
-  { href: '/dashboard/teacher/ai',            Icon: AiIcon,        label: 'AI Assistant'  },
-  { href: '/dashboard/teacher/profile',       Icon: UserIcon,      label: 'My Profile'    },
-]
-
 const NAV: Record<string, {
   sidebar: { label: string; items: { href: string; Icon: any; label: string }[] }[]
   bottom:  { href?: string; Icon?: any; label?: string; home?: boolean; more?: boolean }[]
@@ -239,7 +202,6 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
   const pathname = usePathname()
   const router   = useRouter()
   const { theme, toggleTheme } = useTheme()
-  const [showMore,    setShowMore]    = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const supabase = createClient()
   const config   = NAV[role]
@@ -338,112 +300,6 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
         </div>
       </aside>
 
-      {/* ── Mobile bottom nav ────────────────────────────── */}
-      <nav className={styles.bottomNav}>
-        {config.bottom.map((item, i) => {
-          // Home button — matches the pattern already shipped for
-          // Principal/Bursar/Secretary: centered, raised, brand-colored.
-          if (item.home) return (
-            // brand-2 (accent), not schoolColor — the dock itself is now a
-            // schoolColor gradient bar, so the FAB needs the accent colour
-            // to stand out instead of blending into its own background.
-            <Link key="home" href={homePath} className={styles.homeBtn}>
-              <HomeIcon size={20} color="var(--brand-dark)" strokeWidth={2}/>
-            </Link>
-          )
-
-          // More drawer button — role-aware (pulls remaining items from that role's sidebar)
-          if ((item as any).more) return (
-            <button key="more" onClick={() => setShowMore(true)}
-              className={styles.pill}
-              style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-              <span style={{ fontSize: 20, lineHeight: 1 }}>⋯</span>
-              <span>More</span>
-            </button>
-          )
-
-          const active     = isActive(item.href!)
-          const isChatItem = item.href?.endsWith('/chat')
-          return (
-            // Active state uses brand-2 (accent), not schoolColor — same
-            // reasoning as the home FAB: this pill sits on a schoolColor
-            // gradient bar now, so it needs the accent to read as "active".
-            <Link key={item.href} href={item.href!}
-              className={`${styles.pill} ${active ? styles.pillActive : ''}`}>
-              {/* Unread badge on Chat bottom item */}
-              <div style={{ position: 'relative', display: 'inline-flex' }}>
-                <item.Icon size={20} color={active ? 'var(--brand-2)' : undefined}/>
-                {isChatItem && unreadCount > 0 && (
-                  <span style={{
-                    position: 'absolute', top: -4, right: -4,
-                    background: '#EF4444', color: '#fff',
-                    borderRadius: 999, fontSize: '0.5rem', fontWeight: 800,
-                    padding: '1px 4px', minWidth: 14,
-                    textAlign: 'center', lineHeight: '12px',
-                  }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </div>
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
-      </nav>
-
-      {/* ── More Drawer (teacher mobile) ─────────────────── */}
-      {showMore && (
-        <div style={drawerOverlayStyle} onClick={() => setShowMore(false)}>
-          <div style={drawerBackdropStyle}/>
-          <div style={drawerPanelStyle} onClick={e => e.stopPropagation()}>
-            {/* Handle bar */}
-            <div style={{
-              width: 40, height: 4, borderRadius: 2,
-              background: 'var(--glass-border)', margin: '-8px auto 16px',
-            }}/>
-            <p style={{
-              fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.1em',
-              textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12,
-            }}>
-              All Modules
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              {MORE_NAV_ITEMS.map(item => {
-                const active = isActive(item.href)
-                return (
-                  <Link key={item.href} href={item.href}
-                    onClick={() => setShowMore(false)}
-                    style={{
-                      display: 'flex', flexDirection: 'column',
-                      alignItems: 'center', gap: 6, padding: '12px 8px',
-                      background: active ? `${schoolColor}20` : 'var(--glass-bg)',
-                      border: `1px solid ${active ? schoolColor + '50' : 'var(--glass-border)'}`,
-                      borderRadius: 12, textDecoration: 'none',
-                      color: active ? schoolColor : 'var(--text-secondary)',
-                    }}>
-                    <item.Icon size={20} color={active ? schoolColor : 'var(--text-muted)'}/>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>
-                      {item.label}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-            {/* Sign out at bottom of drawer */}
-            <button onClick={logout}
-              style={{
-                marginTop: 16, width: '100%', padding: '10px',
-                background: 'var(--danger-subtle)', border: '1px solid var(--danger)',
-                borderRadius: 10, color: 'var(--danger)', fontWeight: 700,
-                fontSize: '0.82rem', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}>
-              <LogOutIcon size={14} color="var(--danger)"/>
-              Sign Out
-            </button>
-          </div>
-        </div>
-      )}
     </>
   )
 }
