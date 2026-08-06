@@ -6,8 +6,16 @@ import { createClient } from '@/lib/supabase/client'
 import {
   SendIcon, PaperclipIcon,
   ArrowLeftIcon, SmileIcon, MoreIcon, XIcon,
+  BanIcon, PeopleIcon, UserIcon, RefreshIcon, ClockIcon,
+  UploadIcon, CheckIcon, AlertIcon, EditIcon, TrashIcon, LockIcon, MessageIcon,
 } from '@/components/Icons'
+import motion from '@/components/dashboard-motion.module.css'
 import styles from './chat-room.module.css'
+
+// REDESIGN PASS (Lane 3 — Student): all chrome/status emoji converted to
+// Icons.tsx components below. The EMOJIS reaction-picker array a few lines
+// down stays untouched — per EMOJI-ICON-MAP.md, emoji used as actual chat
+// reactions are the one exception to the conversion.
 
 interface Message {
   id:           string
@@ -94,7 +102,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // this flag swallows exactly that one click.
   const suppressNextCloseClick = useRef(false)
 
-  const schoolColor = school?.primary_color ?? '#7C3AED'
+  const schoolColor = school?.primary_color ?? '#800020'
 
   // ── Bootstrap ────────────────────────────────────────────
   useEffect(() => {
@@ -304,7 +312,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         return {
           ...m,
           reply_to: {
-            content:     parent.is_deleted ? '🚫 Deleted' : displayLabel(parent),
+            content:     parent.is_deleted ? 'Deleted' : displayLabel(parent),
             sender_name: parent.sender?.full_name ?? 'Unknown',
           },
         }
@@ -321,8 +329,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // a blank line.
   function displayLabel(m: Message) {
     if (m.content?.trim()) return m.content
-    if (m.file_type === 'image') return '🖼️ Photo'
-    if (m.file_type === 'video') return '🎥 Video'
+    if (m.file_type === 'image') return 'Photo'
+    if (m.file_type === 'video') return 'Video'
     return m.content ?? ''
   }
 
@@ -398,7 +406,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     const isVideo  = file.type.startsWith('video/')
     const bucket   = isImage ? 'chat-images' : isVideo ? 'chat-videos' : 'chat-files'
     const fileType = isImage ? 'image' : isVideo ? 'video' : 'file'
-    const fallback = isImage ? '🖼️ Image' : isVideo ? '🎥 Video' : `📎 ${file.name}`
+    const fallback = isImage ? 'Photo' : isVideo ? 'Video' : file.name
     // If the person wrote a caption it becomes the message content; otherwise
     // leave content blank and fall back to a plain label wherever content
     // needs to stand alone (reply previews, notifications).
@@ -469,7 +477,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       is_deleted: false, is_edited: false,
       reply_to_id: replyId,
       reply_to: replyTo ? {
-        content:     replyTo.is_deleted ? '🚫 Deleted' : displayLabel(replyTo),
+        content:     replyTo.is_deleted ? 'Deleted' : displayLabel(replyTo),
         sender_name: replyTo.sender?.full_name ?? 'Unknown',
       } : null,
       _status: 'sending',
@@ -541,7 +549,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
     const temp: Message = {
       id: tempId,
-      content: capText.trim() || (fileType === 'file' ? `📎 ${file.name}` : ''),
+      content: capText.trim() || (fileType === 'file' ? file.name : ''),
       sender_id: userId, sent_at: new Date().toISOString(),
       is_deleted: false, is_edited: false,
       file_url: localUrl, file_type: fileType,
@@ -576,11 +584,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   async function deleteMessage(msgId: string) {
     setContextMenuId(null)
     setMessages(prev => prev.map(m =>
-      m.id === msgId ? { ...m, is_deleted: true, content: '🚫 This message was deleted' } : m
+      m.id === msgId ? { ...m, is_deleted: true, content: 'This message was deleted' } : m
     ))
     await supabase
       .from('chat_messages')
-      .update({ is_deleted: true, content: '🚫 This message was deleted' })
+      .update({ is_deleted: true, content: 'This message was deleted' })
       .eq('id', msgId).eq('sender_id', userId)
   }
 
@@ -722,10 +730,15 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </button>
         {showMenu && (
           <div className={styles.headerMenu} onClick={e => e.stopPropagation()}>
-            <button onClick={() => { setShowProfile(true); setShowMenu(false) }}>
-              {roomInfo?.is_group ? '👥 Group info' : '👤 View profile'}
+            <button onClick={() => { setShowProfile(true); setShowMenu(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {roomInfo?.is_group ? <PeopleIcon size={15} /> : <UserIcon size={15} />}
+              {roomInfo?.is_group ? 'Group info' : 'View profile'}
             </button>
-            <button onClick={() => { loadMessages(); setShowMenu(false) }}>🔄 Refresh chat</button>
+            <button onClick={() => { loadMessages(); setShowMenu(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <RefreshIcon size={15} /> Refresh chat
+            </button>
           </div>
         )}
       </header>
@@ -798,8 +811,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         )}
 
         {!loading && messages.length === 0 && (
-          <div className={styles.emptyMessages}>
-            <p>No messages yet. Say hello! 👋</p>
+          <div className={styles.emptyMessages} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <MessageIcon size={32} color="var(--text-faint)" strokeWidth={1.5} />
+            <p>No messages yet. Say hello!</p>
           </div>
         )}
 
@@ -894,26 +908,31 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                         <p className={styles.captionText}>{msg.content}</p>
                       )}
                       {msg.file_type === 'file' && msg.file_url && (
-                        <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}>
-                          📎 {msg.content}
+                        <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <PaperclipIcon size={14} /> {msg.content}
                         </a>
                       )}
                       {!msg.file_type && (
                         msg.is_deleted
-                          ? <p className={styles.deleted}>🚫 Message deleted</p>
+                          ? <p className={styles.deleted}>Message deleted</p>
                           : <p className={styles.bubbleText}>{msg.content}</p>
                       )}
                       <div className={styles.msgFooter}>
                         {msg.is_edited && !msg.is_deleted && <span className={styles.edited}>edited</span>}
                         <span className={styles.msgTime}>{formatTime(msg.sent_at)}</span>
-                        {isMe && msg._status === 'sending' && <span className={styles.msgClock}>🕐</span>}
-                        {isMe && msg._status === 'uploading' && <span className={styles.msgClock}>⬆</span>}
+                        {isMe && msg._status === 'sending' && <span className={styles.msgClock}><ClockIcon size={11} /></span>}
+                        {isMe && msg._status === 'uploading' && <span className={styles.msgClock}><UploadIcon size={11} /></span>}
                         {isMe && (msg._status === 'sent' || !msg._status) && (
-                          <span className={`${styles.msgCheck} ${readIds.has(msg.id) ? styles.msgCheckSeen : ''}`}>✓✓</span>
+                          <span className={`${styles.msgCheck} ${readIds.has(msg.id) ? styles.msgCheckSeen : ''}`}
+                            style={{ display: 'inline-flex', alignItems: 'center' }}>
+                            <CheckIcon size={11} /><span style={{ marginLeft: -6 }}><CheckIcon size={11} /></span>
+                          </span>
                         )}
                         {isMe && msg._status === 'failed' && (
-                          <button className={styles.retryBtn} onClick={e => { e.stopPropagation(); retry(msg) }}>
-                            ⚠ retry
+                          <button className={styles.retryBtn} onClick={e => { e.stopPropagation(); retry(msg) }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <AlertIcon size={11} /> retry
                           </button>
                         )}
                       </div>
@@ -951,13 +970,13 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       {isMe && !msg.is_deleted && !msg.file_type && (
                         <button className={styles.actionBtn} title="Edit"
                           onClick={e => { e.stopPropagation(); startEdit(msg) }}>
-                          ✎
+                          <EditIcon size={13} />
                         </button>
                       )}
                       {isMe && !msg.is_deleted && (
                         <button className={styles.actionBtn} title="Delete"
                           onClick={e => { e.stopPropagation(); deleteMessage(msg.id) }}>
-                          🗑
+                          <TrashIcon size={13} />
                         </button>
                       )}
                     </div>
@@ -975,14 +994,20 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                               ↩ Reply
                             </button>
                           )}
-                          <button onClick={() => { setEmojiTarget(msg.id); setContextMenuId(null) }}>
-                            😊 React
+                          <button onClick={() => { setEmojiTarget(msg.id); setContextMenuId(null) }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <SmileIcon size={14} /> React
                           </button>
                           {isMe && !msg.is_deleted && !msg.file_type && (
-                            <button onClick={() => startEdit(msg)}>✎ Edit</button>
+                            <button onClick={() => startEdit(msg)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <EditIcon size={14} /> Edit
+                            </button>
                           )}
                           {isMe && !msg.is_deleted && (
-                            <button className={styles.contextMenuDanger} onClick={() => deleteMessage(msg.id)}>🗑 Delete</button>
+                            <button className={styles.contextMenuDanger} onClick={() => deleteMessage(msg.id)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <TrashIcon size={14} /> Delete
+                            </button>
                           )}
                           <button className={styles.contextMenuCancel} onClick={() => setContextMenuId(null)}>Cancel</button>
                         </div>
@@ -1017,7 +1042,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               Replying to {replyTo.sender?.full_name ?? 'message'}
             </p>
             <p className={styles.replyBannerText}>
-              {replyTo.is_deleted ? '🚫 Deleted message' : displayLabel(replyTo)}
+              {replyTo.is_deleted ? 'Deleted message' : displayLabel(replyTo)}
             </p>
           </div>
           <button className={styles.replyBannerClose} onClick={() => setReplyTo(null)}>
@@ -1031,7 +1056,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         <div className={styles.replyBanner}>
           <div className={styles.replyBannerBar} style={{ background: '#f59e0b' }} />
           <div className={styles.replyBannerContent}>
-            <p className={styles.replyBannerAuthor} style={{ color: '#f59e0b' }}>✎ Editing message</p>
+            <p className={styles.replyBannerAuthor} style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <EditIcon size={13} /> Editing message
+            </p>
           </div>
           <button className={styles.replyBannerClose} onClick={cancelEdit}>
             <XIcon size={16} />
@@ -1056,7 +1083,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               <video src={pendingPreview} className={styles.attachPreviewVideo} controls playsInline />
             )}
             {pendingKind === 'file' && (
-              <div className={styles.attachPreviewFile}>📎 {pendingFile.name}</div>
+              <div className={styles.attachPreviewFile} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <PaperclipIcon size={14} /> {pendingFile.name}
+              </div>
             )}
           </div>
           <div className={styles.attachCaptionRow}>
@@ -1101,8 +1130,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           </button>
         </div>
       ) : (
-        <div className={styles.readOnlyBar}>
-          🔒 Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here — you can still react and comment with emoji
+        <div className={styles.readOnlyBar} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+          <LockIcon size={13} /> Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here — you can still react and comment with emoji
         </div>
       )}
     </div>
