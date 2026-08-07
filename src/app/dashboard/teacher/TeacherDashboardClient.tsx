@@ -156,7 +156,7 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
         <div className={styles.spacer} />
       </main>
 
-      <BottomDock homeHref="/dashboard/teacher" aiHref="/dashboard/teacher/ai" />
+      <BottomDock aiHref="/dashboard/teacher/ai" groups={FEATURE_GROUPS} role="teacher" />
       <ChatWidget userId={userId} role="teacher" schoolColor={schoolColor} />
     </div>
   )
