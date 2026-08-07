@@ -172,7 +172,7 @@ export default function SecretaryClient({
         <div className={styles.spacer} />
       </main>
 
-      <BottomDock homeHref="/dashboard/secretary" aiHref="/dashboard/secretary/ai" />
+      <BottomDock aiHref="/dashboard/secretary/ai" groups={FEATURE_GROUPS} role="secretary" />
       <ChatWidget userId={userId} role="secretary" schoolColor={schoolColor} />
     </div>
   )
