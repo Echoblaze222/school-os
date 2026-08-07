@@ -208,6 +208,16 @@ export default function RegisterSchoolPage() {
 
       <div className={`${styles.content} ${mounted ? styles.visible : ''}`}>
 
+        {/* Back to school selection */}
+        <button
+          type="button"
+          className={`${styles.topBackBtn} ${motion.focusable}`}
+          onClick={() => router.push('/select-school')}
+          aria-label="Back to select school"
+        >
+          <ArrowLeftIcon size={15} /> Select School
+        </button>
+
         {/* Brand — logo + wordmark, matching the select-school entry screen */}
         <div className={styles.brandBlock}>
           <AnimatedLogo size={52} variant="dark-bg" className={styles.brandLogo} />
