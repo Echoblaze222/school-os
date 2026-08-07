@@ -1,9 +1,9 @@
 'use client'
 // components/BottomDock.tsx
-// Floating control for the role's dashboard home screen: Menu (opens the
+// Floating control used on every dashboard page — the 6 home screens
+// (RoleHeroHeader) and every sub-page (RoleSubHeader): Menu (opens the
 // same "all features" sheet used in the header) and AI (the role's AI
-// Insights page). Menu replaces the old Home button — this dock only ever
-// renders on the home screen itself, so a "go home" action was redundant.
+// Insights page). Menu replaces the old Home button.
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

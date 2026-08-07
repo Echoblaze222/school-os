@@ -107,7 +107,7 @@ export default function RoleSubHeader({
         {children}
       </main>
 
-      {!hideDock && <BottomDock homeHref={resolvedHome} aiHref={resolvedAi} />}
+      {!hideDock && <BottomDock aiHref={resolvedAi} groups={featureGroups} role={role} />}
     </div>
   )
 }
