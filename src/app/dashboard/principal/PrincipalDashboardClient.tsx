@@ -197,7 +197,7 @@ export default function PrincipalDashboardClient({
         <div className={styles.spacer} />
       </main>
 
-      <BottomDock homeHref="/dashboard/principal" aiHref="/dashboard/principal/ai" />
+      <BottomDock aiHref="/dashboard/principal/ai" groups={FEATURE_GROUPS} role="principal" />
       <ChatWidget userId={userId} role="principal" schoolColor={schoolColor} />
     </div>
   )
