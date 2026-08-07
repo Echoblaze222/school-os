@@ -61,7 +61,7 @@
   position: fixed;  /* was: absolute — changed to escape stacking context */
   /* top and right are set by inline style from JS */
   width: 340px;
-  max-height: 480px;
+  max-height: min(480px, calc(100dvh - 90px));
   background: var(--bg-elevated);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { BellIcon, CheckCircleIcon } from './Icons'
 import styles from './NotificationsBell.module.css'
@@ -37,11 +38,34 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
   const [loading,       setLoading]       = useState(false)
   // FIX: track button position so fixed panel renders in the right spot
   const [panelPos,      setPanelPos]      = useState({ top: 0, right: 0 })
+  // FIX: portal target must be set after mount — document isn't available during SSR,
+  // and rendering the portal requires a real DOM node to exist.
+  const [mounted,       setMounted]       = useState(false)
   const supabase = createClient()
   const panelRef = useRef<HTMLDivElement>(null)
   const btnRef   = useRef<HTMLButtonElement>(null)
 
   const unread = notifications.filter(n => !n.is_read).length
+
+  useEffect(() => { setMounted(true) }, [])
+
+  // Recalculate panel position on scroll/resize while open — the panel is
+  // portaled to <body>, so it no longer moves with a scrolling header; it
+  // has to be re-anchored to the bell button explicitly instead.
+  useEffect(() => {
+    if (!open) return
+    function reposition() {
+      if (!btnRef.current) return
+      const rect = btnRef.current.getBoundingClientRect()
+      setPanelPos({ top: rect.bottom + 10, right: window.innerWidth - rect.right })
+    }
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
+  }, [open])
 
   // ── Load notifications ───────────────────────────────────
   useEffect(() => {
@@ -150,10 +174,13 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
         ref={btnRef}
         className={styles.bellBtn}
         onClick={() => {
-          // FIX: calculate viewport position so the fixed panel appears below the button
+          // FIX: calculate viewport position so the fixed panel appears below the
+          // button. Clamp `right` so the panel can't be pushed past the left edge
+          // of narrow screens (panel is ~340px, or calc(100vw - 16px) below 400px).
           if (!open && btnRef.current) {
             const rect = btnRef.current.getBoundingClientRect()
-            setPanelPos({ top: rect.bottom + 10, right: window.innerWidth - rect.right })
+            const right = Math.max(8, window.innerWidth - rect.right)
+            setPanelPos({ top: rect.bottom + 10, right })
           }
           setOpen(!open)
         }}
@@ -167,11 +194,15 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
         )}
       </button>
 
-      {/* Panel — FIX: position:fixed to escape the sticky header's backdrop-filter
-           stacking context. backdrop-filter creates a new stacking context that traps
-           any absolutely-positioned children regardless of their z-index.
-           Fixed positioning breaks out of it and renders at viewport level. */}
-      {open && (
+      {/* Panel — FIX: portaled to document.body instead of position:fixed in place.
+           backdrop-filter on the sticky dashboard header establishes a *containing
+           block* for any position:fixed descendant (per spec, filter/backdrop-filter/
+           transform/perspective/will-change all do this) — so the previous "fixed"
+           panel was never actually anchored to the viewport, it was anchored to the
+           blurred header box, which drifts from the true bell position once the page
+           scrolls. Rendering through a portal removes the panel from that DOM subtree
+           entirely, so position:fixed resolves against the real viewport again. */}
+      {mounted && open && createPortal(
         <div
           ref={panelRef}
           className={styles.panel}
@@ -240,7 +271,8 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
               </a>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
