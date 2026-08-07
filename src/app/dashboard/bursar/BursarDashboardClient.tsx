@@ -191,7 +191,7 @@ export default function BursarDashboardClient({
         <div className={styles.spacer} />
       </main>
 
-      <BottomDock homeHref="/dashboard/bursar" aiHref="/dashboard/bursar/ai" />
+      <BottomDock aiHref="/dashboard/bursar/ai" groups={FEATURE_GROUPS} role="bursar" />
       <ChatWidget userId={userId} role="bursar" schoolColor={schoolColor} />
     </div>
   )
