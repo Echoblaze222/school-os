@@ -1,14 +1,17 @@
 'use client'
 // src/app/dashboard/secretary/codes/CodesClient.tsx
+// Access Codes — secretary can view/manage every code, and generate new
+// student or parent access codes one at a time ("New Code") or in bulk.
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import DOBPicker from '@/components/DOBPicker'
 import {
-  LockIcon, ClipboardIcon, RefreshIcon, KeyIcon, CheckIcon,
-  AlertIcon, UserIcon, XIcon, PeopleIcon,
+  ClipboardIcon, RefreshIcon, KeyIcon, CheckIcon,
+  AlertIcon, UserIcon, XIcon, BulbIcon,
 } from '@/components/Icons'
-import styles from '../secretary.module.css'
+import styles from './codes.module.css'
 
 interface CodeEntry {
   id: string; full_name: string; email: string; role: string
@@ -17,57 +20,242 @@ interface CodeEntry {
 interface StudentOption {
   id: string; full_name: string; class_level: string | null; admission_number: string | null
 }
-interface Props { entries: CodeEntry[]; students: StudentOption[]; profile: any; school: any; userId: string }
-
-const ROLE_COLORS: Record<string, string> = {
-  student: '#10B981', teacher: '#3B82F6', bursar: '#F59E0B',
-  secretary: '#8B5CF6', parent: '#06B6D4', librarian: '#EC4899', nurse: '#EF4444',
+interface ClassOption {
+  id: string; name: string; class_level: string; section: string
+}
+interface Props {
+  entries:  CodeEntry[]
+  students: StudentOption[]
+  classes:  ClassOption[]
+  profile:  any
+  school:   any
+  userId:   string
+  schoolId: string
 }
 
-const RELATIONSHIPS = ['Father', 'Mother', 'Guardian']
+const ROLE_META: Record<string, { color: string; icon: string; label: string }> = {
+  student:   { color: '#10B981', icon: 'S',  label: 'Student'   },
+  teacher:   { color: '#3B82F6', icon: 'T',  label: 'Teacher'   },
+  bursar:    { color: '#F59E0B', icon: 'B',  label: 'Bursar'    },
+  secretary: { color: '#8B5CF6', icon: 'Sc', label: 'Secretary' },
+  librarian: { color: '#EC4899', icon: 'L',  label: 'Librarian' },
+  nurse:     { color: '#EF4444', icon: 'N',  label: 'Nurse'     },
+  principal: { color: '#800020', icon: 'P',  label: 'Principal' },
+  parent:    { color: '#06B6D4', icon: 'Pa', label: 'Parent'    },
+}
+function roleMeta(role: string) {
+  return ROLE_META[role] ?? { color: '#6B7280', icon: '?', label: role }
+}
 
-// Stores a revealed new password per user id — cleared when dismissed
+// The secretary only ever mints codes for students and their parents —
+// other staff roles are enrolled from the Principal dashboard.
+const ROLES_ASSIGNABLE = ['student', 'parent'] as const
+type AssignableRole = typeof ROLES_ASSIGNABLE[number]
+
+const RELATIONSHIPS = ['Father', 'Mother', 'Guardian']
+const GENDERS = ['Male', 'Female', 'Other']
+const STATES_NG = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+  'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa',
+  'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba',
+  'Yobe', 'Zamfara',
+]
+
+const thStyle: React.CSSProperties = {
+  padding: '8px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
+  color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
+  borderBottom: '1px solid var(--glass-border)', whiteSpace: 'nowrap',
+}
+const tdStyle: React.CSSProperties = { padding: '4px 6px', verticalAlign: 'middle' }
+const cellInputStyle: React.CSSProperties = {
+  width: '100%', background: 'transparent', border: 'none', outline: 'none',
+  color: 'var(--text-primary)', fontSize: '0.82rem', padding: '6px 4px',
+  borderRadius: 'var(--radius-sm)', fontFamily: 'inherit',
+}
+
+interface BulkRow {
+  full_name: string
+  email: string
+  role: AssignableRole
+  phone: string
+  gender: string
+  dateOfBirth: string
+  // Student-only
+  classId: string
+  admissionNumber: string
+  guardianName: string
+  guardianPhone: string
+  // Parent-only
+  studentId: string
+  relationship: string
+}
+const EMPTY_ROW = (): BulkRow => ({
+  full_name: '', email: '', role: 'student',
+  phone: '', gender: '', dateOfBirth: '',
+  classId: '', admissionNumber: '', guardianName: '', guardianPhone: '',
+  studentId: '', relationship: '',
+})
+const DEFAULT_ROWS = 5
+
+interface GeneratedEntry extends BulkRow {
+  code:   string
+  saved:  boolean
+  error:  string | null
+  userId?: string
+}
+
 type RevealedPasswords = Record<string, { password: string; copied: boolean }>
 
-export default function CodesClient({ entries: init, students, profile, school, userId }: Props) {
-  const [entries,  setEntries]  = useState(init)
-  const [search,   setSearch]   = useState('')
-  const [roleTab,  setRoleTab]  = useState('all')
-  const [copied,   setCopied]   = useState<string | null>(null)
-  const [saving,   setSaving]   = useState<string | null>(null)
+// ─── Success screen shown after a single code generation ─────────────────
+function CodeSuccessScreen({
+  result, sc, onGenerateAnother,
+}: {
+  result: { full_name: string; email: string; role: string; code: string }
+  sc: string
+  onGenerateAnother: () => void
+}) {
+  const [copiedCode, setCopiedCode] = useState(false)
+  const m = roleMeta(result.role)
 
-  // Reset password state
+  async function copyCode() {
+    const text = `Name: ${result.full_name}\nRole: ${roleMeta(result.role).label}\nAccess Code: ${result.code}`
+    await navigator.clipboard.writeText(text).catch(() => {})
+    setCopiedCode(true)
+    setTimeout(() => setCopiedCode(false), 2500)
+  }
+
+  return (
+    <div className={styles.successScreen}>
+      <div className={styles.successIcon}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+
+      <h2 className={styles.successTitle}>Code Generated!</h2>
+      <p className={styles.successSub}>
+        Share the access code below with <strong>{result.full_name}</strong>. They'll use it on first login to set their own password.
+      </p>
+
+      <div className={styles.successBadge}>
+        <div className={styles.successAvatar} style={{ background: m.color + '22', color: m.color }}>
+          {result.full_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+        </div>
+        <div>
+          <p className={styles.successName}>{result.full_name}</p>
+          <p className={styles.successEmail}>{result.email}</p>
+          <span className={styles.successRoleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>
+            {m.label}
+          </span>
+        </div>
+      </div>
+
+      <div className={styles.credentialBox} style={{ borderColor: sc + '44', background: sc + '0a' }}>
+        <p className={styles.credLabel}>Access Code</p>
+        <div className={styles.credRow}>
+          <code className={styles.credValue} style={{ color: sc }}>{result.code}</code>
+          <button
+            onClick={() => { navigator.clipboard.writeText(result.code).catch(() => {}); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }}
+            className={styles.credCopy}
+            style={copiedCode ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: sc + '55', color: sc }}
+          >
+            {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
+          </button>
+        </div>
+        <p className={styles.credWarning} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+          <BulbIcon size={14} /> The user enters this code on the <strong>New User</strong> tab at login to set their own password.
+        </p>
+      </div>
+
+      <button onClick={copyCode} className={styles.copyBothBtn}>
+        Copy Details
+      </button>
+
+      <button onClick={onGenerateAnother} className={styles.enrolAnotherBtn}>
+        + Generate Another Code
+      </button>
+    </div>
+  )
+}
+
+export default function CodesClient({ entries: init, students, classes, profile, school, userId, schoolId }: Props) {
+  const supabase = createClient()
+  const sc        = school?.primary_color ?? '#800020'
+
+  const [entries, setEntries] = useState(init)
+  const [search,  setSearch]  = useState('')
+  const [roleTab, setRoleTab] = useState('all')
+  const [copied,  setCopied]  = useState<string | null>(null)
+  const [saving,  setSaving]  = useState<string | null>(null)
+  const [tab,     setTab]     = useState<'existing' | 'enrol' | 'bulk'>('existing')
+
+  // Reset password state (existing users)
   const [resetting,  setResetting]  = useState<string | null>(null)
   const [revealed,   setRevealed]   = useState<RevealedPasswords>({})
   const [resetError, setResetError] = useState<string | null>(null)
 
-  // New parent access code state
-  const [showParentForm, setShowParentForm] = useState(false)
-  const [parentName,     setParentName]     = useState('')
-  const [parentEmail,    setParentEmail]    = useState('')
-  const [parentPhone,    setParentPhone]    = useState('')
-  const [relationship,   setRelationship]   = useState('')
-  const [studentId,      setStudentId]      = useState('')
-  const [creatingParent, setCreatingParent] = useState(false)
-  const [parentError,    setParentError]    = useState<string | null>(null)
-  const [newParentCode,  setNewParentCode]  = useState<{ name: string; code: string; copied: boolean } | null>(null)
+  // ── New code (single) ──────────────────────────────────────
+  const [nRole,    setNRole]    = useState<AssignableRole>('student')
+  const [nLoading, setNLoading] = useState(false)
+  const [nError,   setNError]   = useState<string | null>(null)
+  const [nResult,  setNResult]  = useState<{ full_name: string; email: string; role: string; code: string } | null>(null)
 
-  const supabase = createClient()
-  const sc       = school?.primary_color ?? '#800020'
+  // Common fields
+  const [fName,    setFName]    = useState('')
+  const [fEmail,   setFEmail]   = useState('')
+  const [fPhone,   setFPhone]   = useState('')
+  const [fGender,  setFGender]  = useState('')
+  const [fDOB,     setFDOB]     = useState('')
+  const [fAddress, setFAddress] = useState('')
+  const [fState,   setFState]   = useState('')
 
-  const filtered = entries.filter(e => {
-    const matchSearch = e.full_name?.toLowerCase().includes(search.toLowerCase())
-      || e.default_code?.toLowerCase().includes(search.toLowerCase())
-      || e.email?.toLowerCase().includes(search.toLowerCase())
+  // Student-only fields
+  const [fClass,    setFClass]    = useState('')
+  const [fAdmNo,    setFAdmNo]    = useState('')
+  const [fGuardian, setFGuardian] = useState('')
+  const [fGuardPh,  setFGuardPh]  = useState('')
+
+  // Parent-only fields
+  const [fRelationship, setFRelationship] = useState('')
+  const [fStudentLink,  setFStudentLink]  = useState('')
+
+  // ── Bulk ──────────────────────────────────────────────────
+  const [bRows,     setBRows]     = useState<BulkRow[]>(() => Array.from({ length: DEFAULT_ROWS }, EMPTY_ROW))
+  const [bResults,  setBResults]  = useState<GeneratedEntry[]>([])
+  const [bLoading,  setBLoading]  = useState(false)
+  const [bSaved,    setBSaved]    = useState(false)
+  const [copiedAll, setCopiedAll] = useState(false)
+
+  const roles = useMemo(() => {
+    const r = ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()]
+    if (!r.includes('parent'))  r.splice(1, 0, 'parent')
+    if (!r.includes('student')) r.splice(1, 0, 'student')
+    return r
+  }, [entries])
+
+  const filtered = useMemo(() => entries.filter(e => {
+    const q = search.toLowerCase()
+    const matchSearch = (e.full_name ?? '').toLowerCase().includes(q)
+      || (e.default_code ?? '').toLowerCase().includes(q)
+      || (e.email ?? '').toLowerCase().includes(q)
     const matchRole = roleTab === 'all' || e.role === roleTab
     return matchSearch && matchRole
-  })
+  }), [entries, search, roleTab])
+
+  function resetForm() {
+    setFName(''); setFEmail(''); setFPhone(''); setFGender(''); setFDOB('')
+    setFAddress(''); setFState(''); setFClass(''); setFAdmNo('')
+    setFGuardian(''); setFGuardPh(''); setFRelationship(''); setFStudentLink('')
+    setNError(null)
+  }
 
   async function regenerateCode(entry: CodeEntry) {
     setSaving(entry.id)
+    const prefix  = entry.role.slice(0, 3).toUpperCase()
     const year    = new Date().getFullYear()
     const rand    = Math.floor(1000 + Math.random() * 9000)
-    const newCode = `SCH-${year}-${rand}`
+    const newCode = `${prefix}-${year}-${rand}`
     const { error } = await supabase.from('profiles').update({ default_code: newCode }).eq('id', entry.id)
     if (!error) setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: newCode } : e))
     setSaving(null)
@@ -82,7 +270,6 @@ export default function CodesClient({ entries: init, students, profile, school, 
   async function resetPassword(entry: CodeEntry) {
     setResetting(entry.id)
     setResetError(null)
-    // Clear any existing revealed password for this user first
     setRevealed(p => { const n = { ...p }; delete n[entry.id]; return n })
 
     try {
@@ -93,7 +280,6 @@ export default function CodesClient({ entries: init, students, profile, school, 
       })
       const json = await res.json()
       if (!res.ok) { setResetError(json.error ?? 'Failed to reset password'); setResetting(null); return }
-      // Show the new password inline — stays visible until dismissed
       setRevealed(p => ({ ...p, [entry.id]: { password: json.password, copied: false } }))
     } catch (e: any) {
       setResetError(e.message ?? 'Network error')
@@ -111,287 +297,685 @@ export default function CodesClient({ entries: init, students, profile, school, 
     setRevealed(p => { const n = { ...p }; delete n[id]; return n })
   }
 
-  async function createParentCode() {
-    if (!parentName.trim() || !parentEmail.trim()) {
-      setParentError('Name and email are required')
-      return
-    }
-    setCreatingParent(true)
-    setParentError(null)
+  async function handleGenerate() {
+    if (!fName.trim() || !fEmail.trim()) { setNError('Full name and email are required.'); return }
+    setNError(null); setNLoading(true)
     try {
-      const res = await fetch('/api/secretary/create-user', {
+      const res  = await fetch('/api/secretary/create-user', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: parentName.trim(),
-          email:    parentEmail.trim(),
-          phone:    parentPhone.trim() || undefined,
-          role:     'parent',
-          schoolId: profile.school_id,
-          studentId:    studentId || undefined,
-          relationship: relationship || undefined,
+        body:    JSON.stringify({
+          fullName:         fName.trim(),
+          email:            fEmail.trim().toLowerCase(),
+          role:             nRole,
+          schoolId,
+          phone:            fPhone.trim() || null,
+          gender:           fGender || null,
+          dateOfBirth:      fDOB || null,
+          address:          fAddress.trim() || null,
+          state:            fState || null,
+          classId:          nRole === 'student' ? (fClass || null) : null,
+          admissionNumber:  nRole === 'student' ? (fAdmNo.trim() || null) : null,
+          guardianName:     nRole === 'student' ? (fGuardian.trim() || null) : null,
+          guardianPhone:    nRole === 'student' ? (fGuardPh.trim() || null) : null,
+          studentId:        nRole === 'parent'  ? (fStudentLink || null) : null,
+          relationship:     nRole === 'parent'  ? (fRelationship || null) : null,
         }),
       })
       const json = await res.json()
-      if (!res.ok) { setParentError(json.error ?? 'Failed to generate parent code'); setCreatingParent(false); return }
+      if (!res.ok) throw new Error(json.error ?? 'Failed to generate code')
 
-      // Add the new parent straight into the list and reveal the code
+      setNResult({ full_name: fName.trim(), email: fEmail.trim(), role: nRole, code: json.code })
       setEntries(p => [{
-        id: json.userId, full_name: parentName.trim(), email: parentEmail.trim(),
-        role: 'parent', default_code: json.code, is_active: true, created_at: new Date().toISOString(),
+        id: json.userId, full_name: fName.trim(), email: fEmail.trim().toLowerCase(),
+        role: nRole, default_code: json.code, is_active: true, created_at: new Date().toISOString(),
       }, ...p])
-      setNewParentCode({ name: parentName.trim(), code: json.code, copied: false })
-
-      // Reset the form
-      setParentName(''); setParentEmail(''); setParentPhone(''); setRelationship(''); setStudentId('')
-      setShowParentForm(false)
-    } catch (e: any) {
-      setParentError(e.message ?? 'Network error')
+      resetForm()
+    } catch (err: any) {
+      setNError(err.message ?? 'Failed to save')
     }
-    setCreatingParent(false)
+    setNLoading(false)
   }
 
-  async function copyNewParentCode() {
-    if (!newParentCode) return
-    await navigator.clipboard.writeText(newParentCode.code).catch(() => {})
-    setNewParentCode(p => p ? { ...p, copied: true } : p)
-    setTimeout(() => setNewParentCode(p => p ? { ...p, copied: false } : p), 2000)
+  // One click = real users created in the database immediately; the codes
+  // shown below are live, not a preview.
+  async function handleBulkSave() {
+    const validRows = bRows.filter(r => r.full_name.trim() && r.email.trim() && ROLES_ASSIGNABLE.includes(r.role))
+    if (!validRows.length) return
+
+    setBLoading(true)
+    setBResults(validRows.map(r => ({ ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', saved: false, error: null })))
+
+    const updated: GeneratedEntry[] = await Promise.all(
+      validRows.map(async (r): Promise<GeneratedEntry> => {
+        try {
+          const res  = await fetch('/api/secretary/create-user', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+              fullName:         r.full_name.trim(),
+              email:            r.email.trim().toLowerCase(),
+              role:             r.role,
+              schoolId,
+              phone:            r.phone.trim() || null,
+              gender:           r.gender || null,
+              dateOfBirth:      r.dateOfBirth || null,
+              classId:          r.role === 'student' ? (r.classId || null) : null,
+              admissionNumber:  r.role === 'student' ? (r.admissionNumber.trim() || null) : null,
+              guardianName:     r.role === 'student' ? (r.guardianName.trim() || null) : null,
+              guardianPhone:    r.role === 'student' ? (r.guardianPhone.trim() || null) : null,
+              studentId:        r.role === 'parent'  ? (r.studentId || null) : null,
+              relationship:     r.role === 'parent'  ? (r.relationship || null) : null,
+            }),
+          })
+          const json = await res.json()
+          if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: json.error ?? 'Failed', saved: false }
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, userId: json.userId, saved: true, error: null }
+        } catch (e: any) {
+          return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: e.message ?? 'Network error', saved: false }
+        }
+      })
+    )
+    setBResults(updated)
+
+    const saved = updated.filter(r => r.saved && r.userId)
+    if (saved.length) {
+      setEntries(p => [
+        ...saved.map(r => ({
+          id: r.userId as string, full_name: r.full_name, email: r.email, role: r.role,
+          default_code: r.code, is_active: true, created_at: new Date().toISOString(),
+        })),
+        ...p,
+      ])
+    }
+    if (updated.every(r => r.saved)) setBSaved(true)
+    setBLoading(false)
   }
 
-  const roles = ['all', ...Array.from(new Set(entries.map(e => e.role))).sort()]
-  if (!roles.includes('parent')) roles.splice(1, 0, 'parent')
+  async function copyAllCodes(list: GeneratedEntry[]) {
+    const text = list.filter(r => r.saved).map(r => `${r.full_name} | ${roleMeta(r.role).label} | Code: ${r.code}`).join('\n')
+    await navigator.clipboard.writeText(text).catch(() => {})
+    setCopiedAll(true)
+    setTimeout(() => setCopiedAll(false), 2500)
+  }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--input-bg)', border: '1px solid var(--input-border)',
-    borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.82rem',
-    padding: '10px 12px', fontFamily: 'inherit', outline: 'none',
+  function updateBulkRow(index: number, patch: Partial<BulkRow>) {
+    setBRows(prev => {
+      const next = [...prev]
+      next[index] = { ...next[index], ...patch }
+      return next
+    })
+    setBResults([])
+    setBSaved(false)
   }
-  const labelStyle: React.CSSProperties = {
-    fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)',
-    textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block',
+
+  const RoleChip = ({ r }: { r: string }) => {
+    const m        = roleMeta(r)
+    const isActive = roleTab === r
+    const count    = r === 'all' ? entries.length : entries.filter(e => e.role === r).length
+    return (
+      <button onClick={() => setRoleTab(r)} className={styles.roleChip}
+        style={{
+          background:  isActive ? m.color + '22' : 'var(--glass-bg)',
+          borderColor: isActive ? m.color : 'var(--glass-border)',
+          color:       isActive ? m.color : 'var(--text-muted)',
+        }}>
+        {r === 'all' ? 'All' : m.label} ({count})
+      </button>
+    )
   }
+
+  const isStudentRole = nRole === 'student'
 
   return (
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Access Codes">
 
-      {/* Info banner */}
-      <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)', display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
-        <LockIcon size={19} color={sc} />
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>Access Codes</p>
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-            Each user has a unique login code. Share it with them to access SchoolOS.
-            You can regenerate a code if it's compromised, reset their password if they've forgotten it,
-            or generate a brand-new code for a parent below.
-          </p>
-        </div>
-        <button
-          onClick={() => { setShowParentForm(s => !s); setParentError(null) }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 'var(--radius-md)',
-            background: showParentForm ? 'var(--glass-bg-hover)' : (sc + '18'), border: `1px solid ${sc}`,
-            color: sc, cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0,
-          }}>
-          <PeopleIcon size={14} color={sc} />
-          {showParentForm ? 'Cancel' : 'New Parent Code'}
-        </button>
-      </div>
-
-      {/* New parent code form */}
-      {showParentForm && (
-        <div style={{ background: 'var(--glass-bg)', border: `1px solid ${sc}55`, borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
-          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--space-4)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <PeopleIcon size={16} color={sc} /> Generate Parent Access Code
-          </p>
-
-          {parentError && (
-            <div style={{ background: '#EF444415', border: '1px solid #EF444433', borderRadius: 'var(--radius-md)', padding: 'var(--space-2) var(--space-3)', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertIcon size={14} color="#EF4444" />
-              <p style={{ fontSize: '0.76rem', color: '#EF4444', margin: 0 }}>{parentError}</p>
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-            <div>
-              <label style={labelStyle}>Parent full name *</label>
-              <input style={inputStyle} value={parentName} onChange={e => setParentName(e.target.value)} placeholder="e.g. Mrs. Adaeze Okoro" />
-            </div>
-            <div>
-              <label style={labelStyle}>Email *</label>
-              <input style={inputStyle} type="email" value={parentEmail} onChange={e => setParentEmail(e.target.value)} placeholder="parent@email.com" />
-            </div>
-            <div>
-              <label style={labelStyle}>Phone</label>
-              <input style={inputStyle} value={parentPhone} onChange={e => setParentPhone(e.target.value)} placeholder="080…" />
-            </div>
-            <div>
-              <label style={labelStyle}>Relationship</label>
-              <select style={inputStyle} value={relationship} onChange={e => setRelationship(e.target.value)}>
-                <option value="">Select…</option>
-                {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>Link to student (optional — can be added later)</label>
-              <select style={inputStyle} value={studentId} onChange={e => setStudentId(e.target.value)}>
-                <option value="">No student linked yet</option>
-                {students.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.full_name}{s.class_level ? ` — ${s.class_level}` : ''}{s.admission_number ? ` (${s.admission_number})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <button
-            onClick={createParentCode}
-            disabled={creatingParent}
-            style={{
-              padding: '9px 18px', borderRadius: 'var(--radius-md)', background: sc, border: 'none',
-              color: '#F6F1E4', cursor: creatingParent ? 'default' : 'pointer', fontSize: '0.78rem', fontWeight: 700,
-              opacity: creatingParent ? 0.6 : 1,
-            }}>
-            {creatingParent ? 'Generating…' : 'Generate Code'}
-          </button>
-        </div>
-      )}
-
-      {/* Newly generated parent code — stays visible until dismissed */}
-      {newParentCode && (
-        <div style={{ background: '#06B6D40D', border: '1px solid #06B6D433', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#06B6D4' }}>{newParentCode.name}'s access code:</span>
-          <code style={{ fontSize: '0.82rem', fontWeight: 700, color: '#06B6D4', fontFamily: 'monospace', letterSpacing: '0.08em', flex: 1 }}>
-            {newParentCode.code}
-          </code>
-          <button onClick={copyNewParentCode}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: `1px solid ${newParentCode.copied ? '#10B981' : '#06B6D455'}`, color: newParentCode.copied ? '#10B981' : '#06B6D4' }}>
-            {newParentCode.copied ? <><CheckIcon size={12} color="#10B981" /> Copied</> : <><ClipboardIcon size={12} color="#06B6D4" /> Copy</>}
-          </button>
-          <button onClick={() => setNewParentCode(null)}
-            title="Dismiss — make sure you've copied the code first"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 2px', display: 'flex' }}>
-            <XIcon size={16} />
-          </button>
-          <p style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', color: '#06B6D499', margin: 0 }}>
-            <AlertIcon size={12} color="#06B6D499" /> Share this with the parent now — it won't be shown again once dismissed.
-          </p>
-        </div>
-      )}
-
-      {/* Global reset error */}
-      {resetError && (
-        <div style={{ background: '#EF444415', border: '1px solid #EF444433', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: 0 }}>{resetError}</p>
-          <button onClick={() => setResetError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 0, display: 'flex' }}><XIcon size={14} color="#EF4444" /></button>
-        </div>
-      )}
-
-      {/* Search */}
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-        <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input className={styles.searchInput} placeholder="Search by name, email or code…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-      </div>
-
-      {/* Role filter tabs */}
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
-        {roles.map(r => (
-          <button key={r} onClick={() => setRoleTab(r)}
-            style={{
-              padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid',
-              fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-              background:   roleTab === r ? (ROLE_COLORS[r] ?? sc) + '22' : 'var(--glass-bg)',
-              borderColor:  roleTab === r ? (ROLE_COLORS[r] ?? sc)        : 'var(--glass-border)',
-              color:        roleTab === r ? (ROLE_COLORS[r] ?? sc)        : 'var(--text-muted)',
-            }}>
-            {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)} ({entries.filter(e => r === 'all' || e.role === r).length})
+      <div className={styles.tabRow}>
+        {(['existing', 'enrol', 'bulk'] as const).map(t => (
+          <button key={t} onClick={() => { setTab(t); setNResult(null) }}
+            className={`${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
+            {t === 'existing' && 'All Codes'}
+            {t === 'enrol'    && 'New Code'}
+            {t === 'bulk'     && 'Bulk Add'}
           </button>
         ))}
       </div>
 
-      {/* Entries */}
-      {filtered.length === 0 ? (
-        <div className={styles.emptyState}>
-          <KeyIcon size={32} color="var(--text-muted)" />
-          <p className={styles.emptyTitle}>No users found</p>
-        </div>
-      ) : (
-        filtered.map(e => {
-          const rc  = ROLE_COLORS[e.role] ?? sc
-          const rev = revealed[e.id]
-          return (
-            <div key={e.id} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)', marginBottom: 'var(--space-3)' }}>
+      {/* ── EXISTING CODES ── */}
+      {tab === 'existing' && (
+        <>
+          <div className={styles.infoBanner}>
+            <div>
+              <p className={styles.infoBannerTitle}>Access Codes</p>
+              <p className={styles.infoBannerSub}>
+                Every user has a unique login code. Share it with them to access SchoolOS.
+                Regenerate a code if it's compromised, or reset their password if they've forgotten it.
+              </p>
+            </div>
+          </div>
 
-              {/* Main row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: rc + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <UserIcon size={18} color={rc} />
-                </div>
+          {resetError && (
+            <div style={{ background: '#EF444415', border: '1px solid #EF444433', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: 0 }}>{resetError}</p>
+              <button onClick={() => setResetError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 0, display: 'flex' }}><XIcon size={14} color="#EF4444" /></button>
+            </div>
+          )}
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.full_name}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                    <code style={{ fontSize: '0.78rem', fontWeight: 700, color: sc, background: sc + '15', padding: '2px 8px', borderRadius: 'var(--radius-md)', letterSpacing: '0.04em', fontFamily: 'monospace' }}>
-                      {e.default_code}
-                    </code>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{e.role}</span>
+          <div className={styles.searchWrap}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input className={styles.searchInput} placeholder="Search by name, email or code…" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+
+          <div className={styles.roleTabs}>
+            {roles.map(r => <RoleChip key={r} r={r} />)}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className={styles.empty}>
+              <KeyIcon size={32} color="var(--text-muted)" />
+              <p className={styles.emptyTitle}>No users found</p>
+            </div>
+          ) : (
+            filtered.map(e => {
+              const m   = roleMeta(e.role)
+              const rev = revealed[e.id]
+              return (
+                <div key={e.id} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)', marginBottom: 'var(--space-3)' }}>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: m.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <UserIcon size={18} color={m.color} />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.full_name}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                        <code style={{ fontSize: '0.78rem', fontWeight: 700, color: sc, background: sc + '15', padding: '2px 8px', borderRadius: 'var(--radius-md)', letterSpacing: '0.04em', fontFamily: 'monospace' }}>
+                          {e.default_code}
+                        </code>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{e.role}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                      <button onClick={() => copyCode(e.default_code, e.id)}
+                        title="Copy login code"
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: copied === e.id ? '#10B98122' : 'var(--glass-bg)', border: `1px solid ${copied === e.id ? '#10B981' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: copied === e.id ? '#10B981' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                        {copied === e.id ? <><CheckIcon size={12} color="#10B981" /> Copied</> : <><ClipboardIcon size={12} /> Copy</>}
+                      </button>
+
+                      <button onClick={() => regenerateCode(e)}
+                        disabled={saving === e.id}
+                        title="Regenerate login code"
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', opacity: saving === e.id ? 0.5 : 1 }}>
+                        <RefreshIcon size={12} /> {saving === e.id ? 'Regenerating…' : 'Regen'}
+                      </button>
+
+                      <button onClick={() => resetPassword(e)}
+                        disabled={resetting === e.id}
+                        title="Reset this user's password"
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: rev ? '#F59E0B15' : 'var(--glass-bg)', border: `1px solid ${rev ? '#F59E0B55' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: resetting === e.id ? 'var(--text-muted)' : '#F59E0B', whiteSpace: 'nowrap', opacity: resetting === e.id ? 0.6 : 1 }}>
+                        <KeyIcon size={12} color={resetting === e.id ? 'var(--text-muted)' : '#F59E0B'} /> {resetting === e.id ? 'Resetting…' : 'Reset Pwd'}
+                      </button>
+                    </div>
                   </div>
+
+                  {rev && (
+                    <div style={{ marginTop: 'var(--space-3)', background: '#F59E0B0D', border: '1px solid #F59E0B33', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#F59E0B' }}>New password:</span>
+                      <code style={{ fontSize: '0.82rem', fontWeight: 700, color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.08em', flex: 1 }}>
+                        {rev.password}
+                      </code>
+                      <button onClick={() => copyNewPassword(e.id, rev.password)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: `1px solid ${rev.copied ? '#10B981' : '#F59E0B55'}`, color: rev.copied ? '#10B981' : '#F59E0B', whiteSpace: 'nowrap' }}>
+                        {rev.copied ? <><CheckIcon size={12} color="#10B981" /> Copied</> : 'Copy'}
+                      </button>
+                      <button onClick={() => dismissPassword(e.id)}
+                        title="Dismiss — make sure you've copied the password first"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 4px', display: 'flex' }}>
+                        <XIcon size={16} />
+                      </button>
+                      <p style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', color: '#F59E0B99', margin: 0 }}>
+                        <AlertIcon size={12} color="#F59E0B99" /> Copy this now — it won't be shown again once you dismiss it.
+                      </p>
+                    </div>
+                  )}
                 </div>
+              )
+            })
+          )}
+        </>
+      )}
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                  {/* Copy code */}
-                  <button onClick={() => copyCode(e.default_code, e.id)}
-                    title="Copy login code"
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: copied === e.id ? '#10B98122' : 'var(--glass-bg)', border: `1px solid ${copied === e.id ? '#10B981' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: copied === e.id ? '#10B981' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                    {copied === e.id ? <><CheckIcon size={12} color="#10B981" /> Copied</> : <><ClipboardIcon size={12} /> Copy</>}
-                  </button>
+      {/* ── NEW CODE (single) ── */}
+      {tab === 'enrol' && (
+        <>
+          {nResult ? (
+            <CodeSuccessScreen
+              result={nResult}
+              sc={sc}
+              onGenerateAnother={() => { setNResult(null); setNRole('student') }}
+            />
+          ) : (
+            <div className={styles.enrolForm}>
+              <div className={styles.formHeader}>
+                <p className={styles.formTitle}>Generate Access Code</p>
+                <p className={styles.formSub}>Fill in the details below. After saving, you'll get the access code to share — they'll set their own password on first login.</p>
+              </div>
 
-                  {/* Regen code */}
-                  <button onClick={() => regenerateCode(e)}
-                    disabled={saving === e.id}
-                    title="Regenerate login code"
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', opacity: saving === e.id ? 0.5 : 1 }}>
-                    <RefreshIcon size={12} /> {saving === e.id ? 'Regenerating…' : 'Regen'}
-                  </button>
-
-                  {/* Reset password */}
-                  <button onClick={() => resetPassword(e)}
-                    disabled={resetting === e.id}
-                    title="Reset this user's password"
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: rev ? '#F59E0B15' : 'var(--glass-bg)', border: `1px solid ${rev ? '#F59E0B55' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: resetting === e.id ? 'var(--text-muted)' : '#F59E0B', whiteSpace: 'nowrap', opacity: resetting === e.id ? 0.6 : 1 }}>
-                    <KeyIcon size={12} color={resetting === e.id ? 'var(--text-muted)' : '#F59E0B'} /> {resetting === e.id ? 'Resetting…' : 'Reset Pwd'}
-                  </button>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Who is this for? *</label>
+                <div className={styles.roleGrid}>
+                  {ROLES_ASSIGNABLE.map(r => {
+                    const m = roleMeta(r)
+                    return (
+                      <button key={r} onClick={() => setNRole(r)}
+                        className={styles.roleOption}
+                        style={{
+                          background:  nRole === r ? m.color + '22' : 'var(--glass-bg)',
+                          borderColor: nRole === r ? m.color : 'var(--glass-border)',
+                          color:       nRole === r ? m.color : 'var(--text-muted)',
+                        }}>
+                        {m.label}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* Revealed new password — stays until dismissed */}
-              {rev && (
-                <div style={{ marginTop: 'var(--space-3)', background: '#F59E0B0D', border: '1px solid #F59E0B33', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#F59E0B' }}>New password:</span>
-                  <code style={{ fontSize: '0.82rem', fontWeight: 700, color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.08em', flex: 1 }}>
-                    {rev.password}
-                  </code>
-                  <button onClick={() => copyNewPassword(e.id, rev.password)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: `1px solid ${rev.copied ? '#10B981' : '#F59E0B55'}`, color: rev.copied ? '#10B981' : '#F59E0B', whiteSpace: 'nowrap' }}>
-                    {rev.copied ? <><CheckIcon size={12} color="#10B981" /> Copied</> : 'Copy'}
-                  </button>
-                  <button onClick={() => dismissPassword(e.id)}
-                    title="Dismiss — make sure you've copied the password first"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 4px', display: 'flex' }}>
-                    <XIcon size={16} />
-                  </button>
-                  <p style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', color: '#F59E0B99', margin: 0 }}>
-                    <AlertIcon size={12} color="#F59E0B99" /> Copy this now — it won't be shown again once you dismiss it.
-                  </p>
+              <div className={styles.formDivider}><span>Personal Information</span></div>
+
+              <div className={styles.fieldGrid}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Full Name *</label>
+                  <input className={styles.fieldInput} placeholder="e.g. Amara Osei" value={fName} onChange={e => setFName(e.target.value)} />
                 </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Email Address *</label>
+                  <input className={styles.fieldInput} type="email" placeholder="e.g. amara@gmail.com" value={fEmail} onChange={e => setFEmail(e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Phone Number</label>
+                  <input className={styles.fieldInput} type="tel" placeholder="e.g. 08012345678" value={fPhone} onChange={e => setFPhone(e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Gender</label>
+                  <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fGender} onChange={e => setFGender(e.target.value)}>
+                    <option value="">Select gender...</option>
+                    {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+                  </select>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Date of Birth</label>
+                  <DOBPicker value={fDOB} onChange={setFDOB} inputStyle={{
+                    background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+                    borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                    fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+                  }} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>State of Origin</label>
+                  <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fState} onChange={e => setFState(e.target.value)}>
+                    <option value="">Select state...</option>
+                    {STATES_NG.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className={`${styles.fieldGroup} ${styles.fieldFull}`}>
+                  <label className={styles.fieldLabel}>Home Address</label>
+                  <input className={styles.fieldInput} placeholder="e.g. 12 Unity Street, Lagos" value={fAddress} onChange={e => setFAddress(e.target.value)} />
+                </div>
+              </div>
+
+              {isStudentRole ? (
+                <>
+                  <div className={styles.formDivider}><span>Student Details</span></div>
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Class</label>
+                      <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fClass} onChange={e => setFClass(e.target.value)}>
+                        <option value="">Select class...</option>
+                        {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Admission Number</label>
+                      <input className={styles.fieldInput} placeholder="e.g. ADM/2025/001" value={fAdmNo} onChange={e => setFAdmNo(e.target.value)} />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Parent / Guardian Name</label>
+                      <input className={styles.fieldInput} placeholder="e.g. Mr. Osei Kofi" value={fGuardian} onChange={e => setFGuardian(e.target.value)} />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Parent / Guardian Phone</label>
+                      <input className={styles.fieldInput} type="tel" placeholder="e.g. 08098765432" value={fGuardPh} onChange={e => setFGuardPh(e.target.value)} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.formDivider}><span>Parent Details</span></div>
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Relationship</label>
+                      <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fRelationship} onChange={e => setFRelationship(e.target.value)}>
+                        <option value="">Select…</option>
+                        {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div className={`${styles.fieldGroup} ${styles.fieldFull}`}>
+                      <label className={styles.fieldLabel}>Link to Student (optional — can be added later)</label>
+                      <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fStudentLink} onChange={e => setFStudentLink(e.target.value)}>
+                        <option value="">No student linked yet</option>
+                        {students.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.full_name}{s.class_level ? ` — ${s.class_level}` : ''}{s.admission_number ? ` (${s.admission_number})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
               )}
 
+              {nError && <p className={styles.errorMsg}>{nError}</p>}
+
+              <button onClick={handleGenerate} disabled={nLoading} className={styles.generateBtn}>
+                {nLoading ? 'Saving...' : `Generate ${roleMeta(nRole).label} Code`}
+              </button>
             </div>
-          )
-        })
+          )}
+        </>
+      )}
+
+      {/* ── BULK ADD ── */}
+      {tab === 'bulk' && (
+        <>
+          <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
+            <div className={styles.formHeader}>
+              <p className={styles.formTitle}>Bulk Generate Codes</p>
+              <p className={styles.formSub}>Fill in each row directly — mix students and parents freely. Leave blank rows empty, they'll be ignored.</p>
+            </div>
+            <div className={styles.formBody}>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1400 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-elevated)' }}>
+                      <th style={thStyle}>#</th>
+                      <th style={thStyle}>Full Name *</th>
+                      <th style={thStyle}>Email *</th>
+                      <th style={thStyle}>Role *</th>
+                      <th style={thStyle}>Phone</th>
+                      <th style={thStyle}>Gender</th>
+                      <th style={{ ...thStyle, minWidth: 230 }}>Date of Birth</th>
+                      <th style={thStyle}>Class</th>
+                      <th style={thStyle}>Admission No.</th>
+                      <th style={thStyle}>Guardian Name</th>
+                      <th style={thStyle}>Guardian Phone</th>
+                      <th style={thStyle}>Link Student</th>
+                      <th style={thStyle}>Relationship</th>
+                      <th style={thStyle} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bRows.map((row, i) => {
+                      const isEmpty    = !row.full_name && !row.email
+                      const m          = roleMeta(row.role)
+                      const isStudentR = row.role === 'student'
+                      const isParentR  = row.role === 'parent'
+                      return (
+                        <tr
+                          key={i}
+                          style={{
+                            borderBottom: '1px solid var(--glass-border)',
+                            background: isEmpty ? 'transparent' : m.color + '06',
+                          }}
+                        >
+                          <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700 }}>
+                            {i + 1}
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              value={row.full_name}
+                              placeholder="e.g. Amara Osei"
+                              onChange={e => updateBulkRow(i, { full_name: e.target.value })}
+                              onKeyDown={e => {
+                                if (e.key === 'Tab' && !e.shiftKey && i === bRows.length - 1) {
+                                  e.preventDefault()
+                                  setBRows(r => [...r, EMPTY_ROW()])
+                                }
+                              }}
+                              style={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              type="email"
+                              value={row.email}
+                              placeholder="e.g. amara@gmail.com"
+                              onChange={e => updateBulkRow(i, { email: e.target.value })}
+                              style={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.role}
+                              onChange={e => updateBulkRow(i, { role: e.target.value as AssignableRole })}
+                              style={{ ...cellInputStyle, color: m.color, fontWeight: 700, paddingRight: 4 }}
+                            >
+                              {ROLES_ASSIGNABLE.map(r => (
+                                <option key={r} value={r}>{roleMeta(r).label}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              type="tel"
+                              value={row.phone}
+                              placeholder="08012345678"
+                              onChange={e => updateBulkRow(i, { phone: e.target.value })}
+                              style={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.gender}
+                              onChange={e => updateBulkRow(i, { gender: e.target.value })}
+                              style={cellInputStyle}
+                            >
+                              <option value="">—</option>
+                              {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+                            </select>
+                          </td>
+
+                          <td style={tdStyle}>
+                            <DOBPicker
+                              value={row.dateOfBirth}
+                              onChange={v => updateBulkRow(i, { dateOfBirth: v })}
+                              inputStyle={cellInputStyle}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.classId}
+                              onChange={e => updateBulkRow(i, { classId: e.target.value })}
+                              disabled={!isStudentR}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            >
+                              <option value="">—</option>
+                              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              value={row.admissionNumber}
+                              placeholder={isStudentR ? 'ADM/2025/001' : ''}
+                              disabled={!isStudentR}
+                              onChange={e => updateBulkRow(i, { admissionNumber: e.target.value })}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              value={row.guardianName}
+                              placeholder={isStudentR ? 'Mr. Osei Kofi' : ''}
+                              disabled={!isStudentR}
+                              onChange={e => updateBulkRow(i, { guardianName: e.target.value })}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <input
+                              type="tel"
+                              value={row.guardianPhone}
+                              placeholder={isStudentR ? '08098765432' : ''}
+                              disabled={!isStudentR}
+                              onChange={e => updateBulkRow(i, { guardianPhone: e.target.value })}
+                              style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
+                            />
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.studentId}
+                              onChange={e => updateBulkRow(i, { studentId: e.target.value })}
+                              disabled={!isParentR}
+                              style={{ ...cellInputStyle, opacity: isParentR ? 1 : 0.35 }}
+                            >
+                              <option value="">—</option>
+                              {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                            </select>
+                          </td>
+
+                          <td style={tdStyle}>
+                            <select
+                              value={row.relationship}
+                              onChange={e => updateBulkRow(i, { relationship: e.target.value })}
+                              disabled={!isParentR}
+                              style={{ ...cellInputStyle, opacity: isParentR ? 1 : 0.35 }}
+                            >
+                              <option value="">—</option>
+                              {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </td>
+
+                          <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            <button
+                              onClick={() => {
+                                const next = bRows.length === 1 ? [EMPTY_ROW()] : bRows.filter((_, idx) => idx !== i)
+                                setBRows(next)
+                                setBResults([])
+                                setBSaved(false)
+                              }}
+                              title="Remove row"
+                              style={{
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: 'var(--text-muted)', padding: 4, lineHeight: 1,
+                                opacity: isEmpty ? 0.3 : 0.7,
+                              }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <button
+                onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'none', border: '1px dashed var(--glass-border)',
+                  borderRadius: 'var(--radius-md)', padding: '8px 16px',
+                  color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700,
+                  cursor: 'pointer', width: '100%', justifyContent: 'center',
+                  transition: 'all var(--transition-fast)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--glass-border-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--glass-border)')}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add Row
+              </button>
+
+              {(() => {
+                const filled = bRows.filter(r => r.full_name.trim() && r.email.trim()).length
+                return filled > 0 ? (
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+                    {filled} code{filled !== 1 ? 's' : ''} ready to generate
+                  </p>
+                ) : null
+              })()}
+
+              <button
+                onClick={handleBulkSave}
+                className={styles.previewBtn}
+                disabled={bLoading || !bRows.some(r => r.full_name.trim() && r.email.trim())}
+              >
+                {bLoading ? 'Generating...' : 'Generate All Codes'}
+              </button>
+            </div>
+          </div>
+
+          {bResults.length > 0 && (
+            <div className={styles.bulkPreviewCard}>
+              <div className={styles.bulkPreviewHeader}>
+                <div>
+                  <p className={styles.formTitle}>{bResults.length} Code{bResults.length !== 1 ? 's' : ''} {bLoading ? 'Generating…' : 'Processed'}</p>
+                  <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live — share them now.'}</p>
+                </div>
+                <div className={styles.bulkActions}>
+                  <button onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
+                    disabled={bLoading}
+                    style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
+                    {copiedAll ? 'All Copied' : 'Copy All'}
+                  </button>
+                  {bSaved && <span className={styles.savedBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>All Saved <CheckIcon size={13} /></span>}
+                </div>
+              </div>
+              <div className={styles.bulkTableHead}>
+                <span>USER</span><span>ROLE</span><span>CODE</span><span>STATUS</span>
+              </div>
+              <div className={styles.bulkTableBody}>
+                {bResults.map((r, i) => {
+                  const m = roleMeta(r.role)
+                  return (
+                    <div key={i} className={styles.bulkRow}>
+                      <div className={styles.bulkUser}>
+                        <div className={styles.avatarSm} style={{ background: m.color + '22', color: m.color, fontWeight: 700, fontSize: '0.75rem' }}>{m.icon}</div>
+                        <div>
+                          <p className={styles.bulkName}>{r.full_name}</p>
+                          <p className={styles.bulkEmail}>{r.email}</p>
+                        </div>
+                      </div>
+                      <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
+                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : '—')}</code>
+                      <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? <>Saved <CheckIcon size={12} /></> : bLoading ? 'Saving…' : 'Pending'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div style={{ height: 110 }} />

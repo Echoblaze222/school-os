@@ -35,13 +35,24 @@ export default async function CodesPage() {
     .eq('is_active', true)
     .order('full_name')
 
+  // Classes for the "New Student Code" / bulk student rows — lets the
+  // secretary assign a class right at enrolment time.
+  const { data: classRows } = await supabase
+    .from('classes')
+    .select('id, name, class_level, section')
+    .eq('school_id', profile.school_id)
+    .order('class_level')
+    .order('section')
+
   return (
     <CodesClient
       entries={entries ?? []}
       students={studentRows ?? []}
+      classes={classRows ?? []}
       profile={profile}
       school={school}
       userId={user.id}
+      schoolId={profile.school_id}
     />
   )
 }
