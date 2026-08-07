@@ -9,6 +9,17 @@
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
+// Force fully dynamic, per-request rendering with no caching of any kind.
+// This layout reads the signed-in user's school (brand colours, role data)
+// from cookies on every request. Without this, Next.js can cache the
+// rendered output/data for this route and reuse it across different users
+// or sessions hitting the same URL — which is what caused stale brand
+// colours after a refresh, and briefly showed one signed-in user's
+// dashboard to the next person who logs in on the same device.
+export const dynamic    = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
 export default async function SecretaryLayout({
   children,
 }: {
