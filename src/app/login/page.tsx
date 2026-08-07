@@ -124,11 +124,16 @@ export default function LoginPage() {
         if (!res.ok) { setLoginError(data.error || 'Invalid code or password.'); return }
         const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
         if (signInErr) { setLoginError('Wrong password. Please try again.'); return }
-        router.replace('/dashboard')
+        // Hard navigation, not router.replace: this is a fresh sign-in, and
+        // the client Router Cache doesn't reset on auth changes — a soft
+        // nav here can briefly hand back a PREVIOUS session's cached
+        // dashboard (e.g. another role's, on a shared device) before it
+        // catches up. window.location guarantees a clean, fully fresh load.
+        window.location.href = '/dashboard'
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: value, password })
         if (error) { setLoginError(error.message); return }
-        router.replace('/dashboard')
+        window.location.href = '/dashboard'
       }
     } catch { setLoginError('Something went wrong. Please try again.')
     } finally { setLoginLoading(false) }
@@ -171,10 +176,12 @@ export default function LoginPage() {
         await supabase.auth.getSession()
 
         const stage = data.onboarding_stage
-        router.replace(
+        // Hard navigation for the same reason as handleExistingLogin above —
+        // this is a fresh sign-in and must not reuse a cached page from
+        // whoever was previously signed in on this device.
+        window.location.href =
           stage === 'stage_1_pending' ? '/onboarding/stage-1' :
           stage === 'stage_2_pending' ? '/onboarding/stage-2' : '/dashboard'
-        )
       }
     } catch { setNewUserError('Something went wrong. Please try again.')
     } finally { setNewUserLoading(false) }
