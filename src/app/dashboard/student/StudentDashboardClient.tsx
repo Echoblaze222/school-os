@@ -157,7 +157,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
         <div className={styles.mobileSpace} />
       </main>
 
-      <BottomDock homeHref="/dashboard/student" aiHref="/dashboard/student/ai" />
+      <BottomDock aiHref="/dashboard/student/ai" groups={FEATURE_GROUPS} role="student" />
       <ChatWidget userId={userId} role="student" schoolColor={schoolColor} />
     </div>
   )
