@@ -56,6 +56,15 @@ export async function signOutFlow(
   try { await supabase.auth.signOut() } catch { /* proceed regardless */ }
 
   const nav = router.replace ?? router.push
-  nav('/select-school')
-  router.refresh?.()
+  // A hard navigation, not a client-side route change: signing out is an
+  // identity change, and Next's client Router Cache doesn't know that —
+  // it can keep a signed-in dashboard page cached and hand it straight
+  // back to whoever logs in next on this device. window.location forces
+  // a full page load, which throws that cache away completely.
+  if (typeof window !== 'undefined') {
+    window.location.href = '/select-school'
+  } else {
+    nav('/select-school')
+    router.refresh?.()
+  }
 }
