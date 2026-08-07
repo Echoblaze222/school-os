@@ -366,7 +366,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         <div className={styles.mobileSpace} />
       </main>
 
-      <BottomDock homeHref="/dashboard/parent" aiHref="/dashboard/parent/ai" />
+      <BottomDock aiHref="/dashboard/parent/ai" groups={FEATURE_GROUPS} role="parent" />
       <ChatWidget userId={userId} role="parent" schoolColor={sc} />
     </div>
   )
