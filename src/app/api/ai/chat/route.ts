@@ -2,15 +2,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 
 // ─── Clients ────────────────────────────────────────────────────────────────
+// NOTE: @google/generative-ai was retired by Google (EOL Nov 30 2025). This
+// route now uses the current unified SDK, @google/genai.
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 function getGemini() {
   const key = process.env.GEMINI_API_KEY
   if (!key) throw new Error('GEMINI_API_KEY is not set')
-  return new GoogleGenerativeAI(key)
+  return new GoogleGenAI({ apiKey: key })
 }
 
 // ─── Error classifier ────────────────────────────────────────────────────────
@@ -482,11 +484,7 @@ async function callGemini(
   messages: Array<{ role: string; content: string }>,
   image?: ImageAttachment
 ): Promise<NormalisedResponse> {
-  const genai = getGemini()
-  const model = genai.getGenerativeModel({
-    model:           'gemini-2.0-flash',
-    systemInstruction: systemPrompt,
-  })
+  const ai = getGemini()
 
   // Convert to Gemini history format (all but the last message)
   const history = messages.slice(0, -1).map(m => ({
@@ -494,17 +492,22 @@ async function callGemini(
     parts: [{ text: m.content }],
   }))
 
-  const chat    = model.startChat({ history })
+  const chat = ai.chats.create({
+    model:   'gemini-2.5-flash',
+    history,
+    config:  { systemInstruction: systemPrompt },
+  })
+
   const lastMsg = messages[messages.length - 1]
 
   // Gemini also accepts inline image parts alongside the text prompt.
-  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> =
+  const messageParts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> =
     image && SUPPORTED_IMAGE_TYPES.has(image.mediaType)
       ? [{ inlineData: { mimeType: image.mediaType, data: image.data } }, { text: lastMsg.content }]
       : [{ text: lastMsg.content }]
 
-  const result = await chat.sendMessage(parts as any)
-  const text   = result.response.text()
+  const response = await chat.sendMessage({ message: messageParts as any })
+  const text     = response.text ?? ''
 
   return { content: [{ type: 'text', text }], model_used: 'gemini' }
 }
