@@ -36,18 +36,40 @@ function escapeHtml(text: string) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
+// Applies inline markdown formatting (bold, italic, inline code) to text
+// that has ALREADY been HTML-escaped. Since the input is escaped, none of
+// the characters being matched here can themselves inject HTML.
+function mdInlineToHtml(escaped: string): string {
+  return escaped
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+}
+
+function formatLine(line: string): string {
+  return mdInlineToHtml(escapeHtml(line))
+}
+
 // Parses [[Button label|/route]] markers the AI emits (see the step-format
 // instruction in api/ai/chat/route.ts) out of numbered-list lines and turns
 // consecutive numbered steps into a walkthrough with tappable deep-link
 // buttons, e.g.:
 //   1. Open Settings [[Go to Settings|/dashboard/principal/settings]]
-// Falls back to plain paragraph rendering for everything else.
-const MARKER_RE = /\[\[([^\|\]]+)\|([^\]]+)\]\]/
-const STEP_RE   = /^\s*(\d+)[.)]\s+(.*)$/
+// Also renders ### headings, **bold**/*italic*/`code` inline markdown,
+// "- "/"* " bullet lists, and "---" horizontal rules. Falls back to plain
+// paragraph rendering for everything else.
+const MARKER_RE  = /\[\[([^\|\]]+)\|([^\]]+)\]\]/
+const STEP_RE    = /^\s*(\d+)[.)]\s+(.*)$/
+const HEADING_RE = /^\s*(#{1,6})\s+(.*)$/
+const HR_RE      = /^\s*-{3,}\s*$/
+const BULLET_RE  = /^\s*[-*]\s+(.*)$/
 
 type StepItem = { num: string; text: string; label?: string; href?: string }
 type ContentBlock =
   | { kind: 'steps'; items: StepItem[] }
+  | { kind: 'bullets'; items: string[] }
+  | { kind: 'heading'; text: string }
+  | { kind: 'hr' }
   | { kind: 'text'; lines: string[] }
 
 function parseContentBlocks(content: string): ContentBlock[] {
@@ -56,6 +78,19 @@ function parseContentBlocks(content: string): ContentBlock[] {
   let current: ContentBlock | null = null
 
   for (const rawLine of lines) {
+    if (HR_RE.test(rawLine)) {
+      blocks.push({ kind: 'hr' })
+      current = null
+      continue
+    }
+
+    const headingMatch = rawLine.match(HEADING_RE)
+    if (headingMatch) {
+      blocks.push({ kind: 'heading', text: headingMatch[2].trim() })
+      current = null
+      continue
+    }
+
     const stepMatch = rawLine.match(STEP_RE)
     if (stepMatch) {
       let [, num, text] = stepMatch
@@ -72,13 +107,24 @@ function parseContentBlocks(content: string): ContentBlock[] {
         blocks.push(current)
       }
       current.items.push({ num, text, label, href })
-    } else {
-      if (!current || current.kind !== 'text') {
-        current = { kind: 'text', lines: [] }
+      continue
+    }
+
+    const bulletMatch = rawLine.match(BULLET_RE)
+    if (bulletMatch) {
+      if (!current || current.kind !== 'bullets') {
+        current = { kind: 'bullets', items: [] }
         blocks.push(current)
       }
-      current.lines.push(rawLine)
+      current.items.push(bulletMatch[1])
+      continue
     }
+
+    if (!current || current.kind !== 'text') {
+      current = { kind: 'text', lines: [] }
+      blocks.push(current)
+    }
+    current.lines.push(rawLine)
   }
   return blocks
 }
@@ -99,7 +145,7 @@ function StepWalkthrough({ content, accent }: { content: string; accent: string 
                 <li key={ii} className={styles.stepRow}>
                   <span className={styles.stepNum} style={{ background: accent }}>{item.num}</span>
                   <span className={styles.stepText}>
-                    <span dangerouslySetInnerHTML={{ __html: escapeHtml(item.text) }} />
+                    <span dangerouslySetInnerHTML={{ __html: formatLine(item.text) }} />
                     {item.href && (
                       <button
                         type="button"
@@ -116,13 +162,32 @@ function StepWalkthrough({ content, accent }: { content: string; accent: string 
             </ol>
           )
         }
+        if (block.kind === 'bullets') {
+          return (
+            <ul key={bi} className={styles.bulletList}>
+              {block.items.map((text, ii) => (
+                <li key={ii} className={styles.bulletItem}
+                  dangerouslySetInnerHTML={{ __html: formatLine(text) }} />
+              ))}
+            </ul>
+          )
+        }
+        if (block.kind === 'heading') {
+          return (
+            <p key={bi} className={styles.headingLine}
+              dangerouslySetInnerHTML={{ __html: formatLine(block.text) }} />
+          )
+        }
+        if (block.kind === 'hr') {
+          return <hr key={bi} className={styles.hrLine} />
+        }
         const nonEmpty = block.lines.filter(l => l.trim().length > 0)
         if (nonEmpty.length === 0) return null
         return (
           <div key={bi}>
             {nonEmpty.map((l, li) => (
               <p key={li} className={styles.plainLine}
-                dangerouslySetInnerHTML={{ __html: escapeHtml(l) }} />
+                dangerouslySetInnerHTML={{ __html: formatLine(l) }} />
             ))}
           </div>
         )
