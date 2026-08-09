@@ -512,6 +512,194 @@ async function callGemini(
   return { content: [{ type: 'text', text }], model_used: 'gemini' }
 }
 
+// ─── Live school data context ──────────────────────────────────────────────
+// Pulls a lightweight, role-scoped snapshot of the school's real data
+// (enrolment, attendance, results, fees) and injects it into the system
+// prompt so the AI can actually analyse the school instead of guessing.
+//
+// SECURITY: every query below is scoped using values that came from the
+// user's OWN profile row (fetched server-side via their authenticated
+// session) — never from anything the client sent in the request body. A
+// principal at School A can only ever pull School A's numbers; a student
+// or parent can only ever pull their own / their linked child's records.
+// This mirrors the same school_id-scoping pattern used throughout the rest
+// of the dashboard (see e.g. src/app/dashboard/principal/page.tsx).
+async function fetchDataContext(
+  supabase: any,
+  role: string,
+  effectiveUserId: string,
+  profile: any
+): Promise<string> {
+  const schoolId = profile?.school_id
+  if (!schoolId) return ''
+
+  try {
+    if (role === 'principal' || role === 'secretary') {
+      const [
+        { count: studentCount },
+        { count: teacherCount },
+        { count: classCount },
+        { data: results },
+        { data: feeRows },
+        { data: attendanceRows },
+      ] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId).eq('role', 'student'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId).eq('role', 'teacher'),
+        supabase.from('classes').select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId),
+        supabase.from('results').select('score, max_score')
+          .eq('school_id', schoolId).limit(500),
+        supabase.from('school_fees').select('amount_ngn, paid_ngn')
+          .eq('school_id', schoolId),
+        supabase.from('attendance').select('status, is_present')
+          .eq('school_id', schoolId).limit(1000),
+      ])
+
+      const scores = (results ?? [])
+        .map((r: any) => (r.max_score ? (r.score / r.max_score) * 100 : r.score))
+        .filter((s: any) => typeof s === 'number' && !isNaN(s))
+      const avgScore = scores.length
+        ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
+        : null
+
+      const feeTotals = (feeRows ?? []).reduce(
+        (acc: { due: number; paid: number }, r: any) => {
+          acc.due  += Number(r.amount_ngn) || 0
+          acc.paid += Number(r.paid_ngn)   || 0
+          return acc
+        },
+        { due: 0, paid: 0 }
+      )
+      const collectionRate = feeTotals.due > 0
+        ? Math.round((feeTotals.paid / feeTotals.due) * 100) : null
+
+      const attRows = attendanceRows ?? []
+      const presentCount = attRows.filter((a: any) => a.status === 'present' || a.is_present === true).length
+      const attendanceRate = attRows.length
+        ? Math.round((presentCount / attRows.length) * 100) : null
+
+      return `
+## Live School Data (fetched just now for this conversation — use these real numbers, don't invent your own)
+- Students enrolled: ${studentCount ?? 'unknown'}
+- Teachers: ${teacherCount ?? 'unknown'}
+- Classes: ${classCount ?? 'unknown'}
+- Average result score: ${avgScore !== null ? `${avgScore}%` : 'no results recorded yet'}
+- Fee collection rate: ${collectionRate !== null ? `${collectionRate}% (₦${feeTotals.paid.toLocaleString()} collected of ₦${feeTotals.due.toLocaleString()} due)` : 'no fee records yet'}
+- Attendance rate (recent records sampled): ${attendanceRate !== null ? `${attendanceRate}%` : 'no attendance records yet'}
+`.trim()
+    }
+
+    if (role === 'bursar') {
+      const [{ data: feeRows }, { data: invoices }] = await Promise.all([
+        supabase.from('school_fees').select('amount_ngn, paid_ngn').eq('school_id', schoolId),
+        supabase.from('fee_invoices').select('status, amount_due, amount_paid').eq('school_id', schoolId).limit(1000),
+      ])
+      const feeTotals = (feeRows ?? []).reduce(
+        (acc: { due: number; paid: number }, r: any) => {
+          acc.due  += Number(r.amount_ngn) || 0
+          acc.paid += Number(r.paid_ngn)   || 0
+          return acc
+        },
+        { due: 0, paid: 0 }
+      )
+      const outstandingCount = (invoices ?? []).filter((i: any) => i.status !== 'paid').length
+
+      return `
+## Live School Finance Data (fetched just now — use these real numbers, don't invent your own)
+- Total due: ₦${feeTotals.due.toLocaleString()}
+- Total collected: ₦${feeTotals.paid.toLocaleString()}
+- Outstanding balance: ₦${(feeTotals.due - feeTotals.paid).toLocaleString()}
+- Invoices not yet fully paid: ${outstandingCount}
+`.trim()
+    }
+
+    if (role === 'teacher') {
+      const { data: myClasses } = await supabase
+        .from('class_teachers')
+        .select('class_id, subject, classes ( name, class_level )')
+        .eq('teacher_id', effectiveUserId)
+        .eq('school_id', schoolId)
+
+      const classList = (myClasses ?? [])
+        .map((c: any) => `${c.classes?.name ?? 'Unnamed class'}${c.subject ? ` (${c.subject})` : ''}`)
+        .join(', ') || 'none assigned yet'
+
+      return `
+## Live Teaching Data (fetched just now — use these real details, don't invent your own)
+- Classes/subjects assigned to this teacher: ${classList}
+`.trim()
+    }
+
+    if (role === 'student') {
+      const [{ data: results }, { data: attendanceRows }] = await Promise.all([
+        supabase.from('results').select('score, max_score')
+          .eq('student_id', effectiveUserId).eq('school_id', schoolId).limit(100),
+        supabase.from('attendance').select('status, is_present')
+          .eq('student_id', effectiveUserId).eq('school_id', schoolId).limit(200),
+      ])
+      const scores = (results ?? [])
+        .map((r: any) => (r.max_score ? (r.score / r.max_score) * 100 : r.score))
+        .filter((s: any) => typeof s === 'number' && !isNaN(s))
+      const avgScore = scores.length
+        ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : null
+      const attRows = attendanceRows ?? []
+      const presentCount = attRows.filter((a: any) => a.status === 'present' || a.is_present === true).length
+      const attendanceRate = attRows.length ? Math.round((presentCount / attRows.length) * 100) : null
+
+      return `
+## Live Student Data (fetched just now for this student — use these real numbers, don't invent your own)
+- Average score across recorded results: ${avgScore !== null ? `${avgScore}%` : 'no results recorded yet'}
+- Attendance rate: ${attendanceRate !== null ? `${attendanceRate}%` : 'no attendance records yet'}
+`.trim()
+    }
+
+    if (role === 'parent') {
+      const { data: links } = await supabase
+        .from('parent_student_links')
+        .select('student_id, profiles:student_id ( full_name )')
+        .eq('parent_id', effectiveUserId)
+
+      const childIds = (links ?? []).map((l: any) => l.student_id)
+      if (childIds.length === 0) return ''
+
+      const [{ data: results }, { data: attendanceRows }] = await Promise.all([
+        supabase.from('results').select('student_id, score, max_score')
+          .in('student_id', childIds).eq('school_id', schoolId).limit(300),
+        supabase.from('attendance').select('student_id, status, is_present')
+          .in('student_id', childIds).eq('school_id', schoolId).limit(600),
+      ])
+
+      const perChild = (links ?? []).map((l: any) => {
+        const cScores = (results ?? [])
+          .filter((r: any) => r.student_id === l.student_id)
+          .map((r: any) => (r.max_score ? (r.score / r.max_score) * 100 : r.score))
+          .filter((s: any) => typeof s === 'number' && !isNaN(s))
+        const avg = cScores.length
+          ? Math.round(cScores.reduce((a: number, b: number) => a + b, 0) / cScores.length) : null
+        const cAtt = (attendanceRows ?? []).filter((a: any) => a.student_id === l.student_id)
+        const present = cAtt.filter((a: any) => a.status === 'present' || a.is_present === true).length
+        const attRate = cAtt.length ? Math.round((present / cAtt.length) * 100) : null
+        const name = l.profiles?.full_name ?? 'Child'
+        return `- ${name}: average score ${avg !== null ? `${avg}%` : 'no results yet'}, attendance ${attRate !== null ? `${attRate}%` : 'no records yet'}`
+      }).join('\n')
+
+      return `
+## Live Data for Linked Children (fetched just now — use these real numbers, don't invent your own)
+${perChild}
+`.trim()
+    }
+
+    return ''
+  } catch (err: any) {
+    // Never let a data-fetch hiccup take down the whole AI response —
+    // just answer without the live-data section this one time.
+    console.warn('[AI] fetchDataContext failed:', err?.message ?? err)
+    return ''
+  }
+}
+
 // ─── Route handler ───────────────────────────────────────────────────────────
 // Per-role request budget. Staff roles get a slightly higher ceiling than
 // students/parents since bursar/principal workflows can be message-heavy.
@@ -586,19 +774,23 @@ export async function POST(req: Request) {
       .single()
 
     const systemPrompt = buildSystemPrompt(resolvedRole, profile)
+    const dataContext  = await fetchDataContext(supabase, resolvedRole, effectiveUserId, profile)
+    const finalSystemPrompt = dataContext
+      ? `${systemPrompt}\n\n---\n\n${dataContext}`
+      : systemPrompt
 
     // ── Try Claude first, fall back to Gemini on quota/overload ──────────────
     let result: NormalisedResponse
     let usedFallback = false
 
     try {
-      result = await callClaude(systemPrompt, formattedMessages, imageAttachment)
+      result = await callClaude(finalSystemPrompt, formattedMessages, imageAttachment)
     } catch (claudeErr: any) {
       if (isClaudeQuotaOrOverloadError(claudeErr)) {
         console.warn('[AI] Claude unavailable — falling back to Gemini. Reason:', claudeErr?.message)
         usedFallback = true
         try {
-          result = await callGemini(systemPrompt, formattedMessages, imageAttachment)
+          result = await callGemini(finalSystemPrompt, formattedMessages, imageAttachment)
         } catch (geminiErr: any) {
           console.error('[AI] Gemini fallback also failed:', geminiErr?.message)
           return NextResponse.json(
