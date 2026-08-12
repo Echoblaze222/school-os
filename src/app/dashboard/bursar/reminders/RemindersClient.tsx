@@ -7,6 +7,7 @@
 //   4. History reads from fee_reminders with proper student name display
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BellIcon, PeopleIcon } from '@/components/Icons'
@@ -65,6 +66,45 @@ export default function RemindersClient({ profile, school, userId }: Props) {
   const [error,      setError]      = useState('')
 
   const [previewMsg,    setPreviewMsg]    = useState<any | null>(null)
+  const [aiDraftBanner, setAiDraftBanner] = useState<string | null>(null)
+
+  const supabase = createClient()
+  const sc       = school?.primary_color ?? '#7C3AED'
+  const schoolName = school?.name ?? 'the school'
+  const searchParams = useSearchParams()
+  const router        = useRouter()
+
+  // ── Load an AI-drafted reminder message ───────────────────────────────────
+  // Only prefills the message text. Recipients are ALWAYS picked manually by
+  // the bursar from the debtor checklist below, and nothing sends until they
+  // tick recipients and tap Send themselves — the AI never selects who gets
+  // a financial message.
+  useEffect(() => {
+    const draftId = searchParams.get('draftId')
+    if (!draftId) return
+
+    ;(async () => {
+      const { data: draft, error } = await supabase
+        .from('ai_action_drafts')
+        .select('id, title, payload')
+        .eq('id', draftId)
+        .eq('action_type', 'fee_reminder')
+        .single()
+
+      if (error || !draft) {
+        setAiDraftBanner('Couldn\'t load that AI draft — it may have already been used or removed.')
+        return
+      }
+
+      setCustomMsg(draft.payload?.message ?? '')
+      setUseCustom(true)
+      setTab('send')
+      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant — select who should receive it below, then send.`)
+
+      await supabase.from('ai_action_drafts').delete().eq('id', draftId) // consumed
+      router.replace('/dashboard/bursar/reminders')
+    })()
+  }, [searchParams])
 
   const OVERLAY: React.CSSProperties = {
     position: 'fixed', inset: 0, zIndex: 200,
@@ -447,6 +487,12 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       {/* ── SEND REMINDERS TAB ──────────────────────────── */}
       {tab === 'send' && (
         <>
+          {aiDraftBanner && (
+            <div style={{ padding: '10px 14px', background: `${sc}14`, border: `1px solid ${sc}44`,
+              borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              {aiDraftBanner}
+            </div>
+          )}
           {/* Year + Term selector */}
           <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', alignItems: 'center' }}>
             <input
