@@ -191,6 +191,47 @@ const NAV: Record<string, {
       { href: '/dashboard/parent/ai',      Icon: AiIcon,       label: 'AI'      },
     ],
   },
+
+  student: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/student',               Icon: HomeIcon,      label: 'Dashboard'     },
+        { href: '/dashboard/student/ai',            Icon: AiIcon,        label: 'AI Tutor'      },
+        { href: '/dashboard/student/chat',          Icon: MessageIcon,   label: 'Messages'      },
+        { href: '/dashboard/student/announcements', Icon: MegaphoneIcon, label: 'Announcements' },
+        { href: '/dashboard/student/notifications', Icon: BellIcon,      label: 'Notifications' },
+      ]},
+      { label: 'Academics', items: [
+        { href: '/dashboard/student/classes',       Icon: PeopleIcon,    label: 'My Classes'    },
+        { href: '/dashboard/student/assignments',   Icon: ClipboardIcon, label: 'Assignments'   },
+        { href: '/dashboard/student/quizzes',       Icon: AwardIcon,     label: 'Quizzes'       },
+        { href: '/dashboard/student/results',       Icon: BarChartIcon,  label: 'Results'       },
+        { href: '/dashboard/student/records',       Icon: FileTextIcon,  label: 'Records'       },
+        { href: '/dashboard/student/notes',         Icon: BookIcon,      label: 'Study Notes'   },
+        { href: '/dashboard/student/syllabus',      Icon: BookOpenIcon,  label: 'Syllabus'      },
+        { href: '/dashboard/student/live',          Icon: VideoIcon,     label: 'Live Classes'  },
+      ]},
+      { label: 'More', items: [
+        { href: '/dashboard/student/timetable',     Icon: ClockIcon,     label: 'Timetable'     },
+        { href: '/dashboard/student/schedule',      Icon: CalendarIcon,  label: 'Schedule'      },
+        { href: '/dashboard/student/leaderboard',   Icon: TrophyIcon,    label: 'Leaderboard'   },
+        { href: '/dashboard/student/library',       Icon: SchoolIcon,    label: 'Library'       },
+        { href: '/dashboard/student/alumni',        Icon: AwardIcon,     label: 'Alumni'        },
+        { href: '/dashboard/student/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
+        { href: '/dashboard/student/id-card',       Icon: CreditCardIcon,label: 'ID Card'       },
+        { href: '/dashboard/student/profile',       Icon: UserIcon,      label: 'My Profile'    },
+      ]},
+    ],
+    // Matches the pattern already shipped for the other roles:
+    // role item / role item / home (center, raised) / role item / AI.
+    bottom: [
+      { href: '/dashboard/student/assignments', Icon: ClipboardIcon, label: 'Tasks'   },
+      { href: '/dashboard/student/results',     Icon: BarChartIcon,  label: 'Results' },
+      { home: true },
+      { href: '/dashboard/student/chat',        Icon: MessageIcon,   label: 'Chat'    },
+      { href: '/dashboard/student/ai',          Icon: AiIcon,        label: 'AI'      },
+    ],
+  },
 }
 
 interface Props {
