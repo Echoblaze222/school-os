@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, Type } from '@google/genai'
 
 // ─── Clients ────────────────────────────────────────────────────────────────
 // NOTE: @google/generative-ai was retired by Google (EOL Nov 30 2025). This
@@ -193,8 +193,40 @@ function toolsForRole(role: string): AgentTool[] {
 function anthropicToolSchema(t: AgentTool) {
   return { name: t.name, description: t.description, input_schema: t.schema }
 }
+
+// Gemini's SDK wants its own `Type` enum (Type.OBJECT, Type.STRING, ...)
+// instead of the lowercase JSON-schema type strings ('object', 'string', ...)
+// that AGENT_TOOLS is written in (and that Anthropic's input_schema uses
+// as-is). Recursively convert just for the Gemini path so both providers
+// can keep sharing one tool definition.
+function jsonSchemaTypeToGeminiType(t: string): Type {
+  switch (t) {
+    case 'object':  return Type.OBJECT
+    case 'array':   return Type.ARRAY
+    case 'string':  return Type.STRING
+    case 'number':  return Type.NUMBER
+    case 'integer': return Type.INTEGER
+    case 'boolean': return Type.BOOLEAN
+    default:        return Type.STRING
+  }
+}
+function toGeminiSchema(schema: any): any {
+  if (!schema || typeof schema !== 'object') return schema
+
+  const out: any = { ...schema }
+  if (typeof schema.type === 'string') out.type = jsonSchemaTypeToGeminiType(schema.type)
+
+  if (schema.properties) {
+    out.properties = Object.fromEntries(
+      Object.entries(schema.properties).map(([key, val]) => [key, toGeminiSchema(val)])
+    )
+  }
+  if (schema.items) out.items = toGeminiSchema(schema.items)
+
+  return out
+}
 function geminiToolSchema(t: AgentTool) {
-  return { name: t.name, description: t.description, parameters: t.schema }
+  return { name: t.name, description: t.description, parameters: toGeminiSchema(t.schema) }
 }
 
 // ─── System prompt factory ───────────────────────────────────────────────────
