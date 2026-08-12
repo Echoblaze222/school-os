@@ -67,10 +67,6 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
   const [previewMsg,    setPreviewMsg]    = useState<any | null>(null)
   const [aiDraftBanner, setAiDraftBanner] = useState<string | null>(null)
-
-  const supabase = createClient()
-  const sc       = school?.primary_color ?? '#7C3AED'
-  const schoolName = school?.name ?? 'the school'
   const searchParams = useSearchParams()
   const router        = useRouter()
 
