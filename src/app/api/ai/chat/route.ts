@@ -1123,7 +1123,7 @@ export async function POST(req: Request) {
           {
             conversation_id: resolvedConversationId,
             role:            'assistant',
-            content:         result.content[0].text,
+            content:         combinedText,
             model_used:      result.model_used,
           },
         ])
