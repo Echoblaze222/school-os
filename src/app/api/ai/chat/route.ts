@@ -45,9 +45,156 @@ function isClaudeQuotaOrOverloadError(err: any): boolean {
 }
 
 // ─── Normalised response shape ───────────────────────────────────────────────
+type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool_use'; name: string; input: any }
+
 interface NormalisedResponse {
-  content:    [{ type: 'text'; text: string }]
+  content:    ContentBlock[]
   model_used: 'claude' | 'gemini'
+}
+
+// ─── Agent tools (generic registry) ───────────────────────────────────────
+// Every AI action across every role is defined ONCE here as an entry in
+// AGENT_TOOLS. Adding a new capability later means adding one entry to
+// this array (+ a small "load draft" effect on the relevant dashboard
+// page) — nothing else in this file needs to change.
+//
+// SAFETY MODEL: no tool here writes real data. Every one of them saves a
+// row to `ai_action_drafts` (school/user-scoped by RLS) and hands back a
+// [[label|href]] link into the *existing* dashboard page for that action.
+// A human reviews and clicks the real Save/Publish button there — that's
+// what actually creates the announcement/quiz/etc. This is deliberate:
+// content going out school-wide, or touching real records, should always
+// have a human in the loop, never be auto-published by the model.
+interface AgentTool {
+  name:        string
+  roles:       string[]           // which roles see this tool
+  actionType:  string             // stored in ai_action_drafts.action_type
+  description: string
+  schema: {                       // Claude input_schema / Gemini parameters (same shape)
+    type: 'object'
+    properties: Record<string, any>
+    required: string[]
+  }
+  // Where the review page lives for each role that can use this tool.
+  reviewPath: (role: string, draftId: string) => string
+  // Cheap structural validation before we trust the model's tool call —
+  // NOT business-rule validation (that still happens in the real page's
+  // own Save flow, same as if a human typed it).
+  validate: (input: any) => boolean
+}
+
+const AGENT_TOOLS: AgentTool[] = [
+  {
+    name:        'draft_quiz_from_note',
+    roles:       ['teacher'],
+    actionType:  'quiz',
+    description:
+      'Create a draft quiz (title + questions) generated from one of this teacher\'s notes. ' +
+      'This does NOT publish a real quiz — it only saves a draft the teacher will review and edit ' +
+      'inside the Quizzes page before anything is actually created. Only call this when the teacher ' +
+      'has clearly asked you to generate/create quiz questions from a specific note, and only using a ' +
+      'note_id that appears in the "This teacher\'s notes" section of your context.',
+    schema: {
+      type: 'object',
+      properties: {
+        note_id: { type: 'string', description: 'The note_id of the source note, exactly as given in context.' },
+        title:   { type: 'string', description: 'A short quiz title, e.g. "Photosynthesis Quiz".' },
+        questions: {
+          type: 'array',
+          minItems: 3,
+          maxItems: 20,
+          items: {
+            type: 'object',
+            properties: {
+              question: { type: 'string' },
+              options:  { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 6 },
+              answer:   { type: 'string', description: 'Must exactly match one of the options.' },
+              marks:    { type: 'number' },
+            },
+            required: ['question', 'options', 'answer', 'marks'],
+          },
+        },
+      },
+      required: ['note_id', 'title', 'questions'],
+    },
+    reviewPath: (_role, id) => `/dashboard/teacher/quizzes?draftId=${id}`,
+    validate: (input) => {
+      const { note_id, title, questions } = input ?? {}
+      return !!note_id && !!title && Array.isArray(questions) && questions.length > 0 &&
+        questions.every((q: any) =>
+          typeof q?.question === 'string' &&
+          Array.isArray(q?.options) && q.options.length >= 2 &&
+          typeof q?.answer === 'string' &&
+          typeof q?.marks === 'number'
+        )
+    },
+  },
+  {
+    name:        'draft_announcement',
+    roles:       ['principal', 'teacher', 'secretary'],
+    actionType:  'announcement',
+    description:
+      'Draft a school announcement. This does NOT publish it — it only saves a draft the user will ' +
+      'review inside the Announcements/Notices page and click Post themselves. Only call this when the user ' +
+      'has clearly asked you to write/create/draft an announcement, and always write the full body ' +
+      'text yourself based on what they told you, not a placeholder.',
+    schema: {
+      type: 'object',
+      properties: {
+        title:    { type: 'string', description: 'Short announcement title.' },
+        body:     { type: 'string', description: 'The full announcement text.' },
+        audience: {
+          type: 'string',
+          enum: ['all', 'teachers', 'students', 'parents', 'staff'],
+          description: 'Who this announcement is for.',
+        },
+      },
+      required: ['title', 'body', 'audience'],
+    },
+    reviewPath: (role, id) => {
+      if (role === 'principal') return `/dashboard/principal/announcements?draftId=${id}`
+      if (role === 'secretary') return `/dashboard/secretary/notices?draftId=${id}`
+      return `/dashboard/teacher/announcements?draftId=${id}`
+    },
+    validate: (input) => {
+      const { title, body, audience } = input ?? {}
+      return !!title && !!body &&
+        ['all', 'teachers', 'students', 'parents', 'staff'].includes(audience)
+    },
+  },
+  {
+    name:        'draft_fee_reminder_message',
+    roles:       ['bursar'],
+    actionType:  'fee_reminder',
+    description:
+      'Draft the WORDING of a fee reminder message. This does NOT send anything and does NOT pick ' +
+      'recipients — it only saves a draft message the bursar will load into the Fee Reminders page, ' +
+      'where they still manually select which debtor(s) to send it to and click Send themselves. ' +
+      'Never claim in your reply that a message has been sent — it has not.',
+    schema: {
+      type: 'object',
+      properties: {
+        title:   { type: 'string', description: 'A short internal label for this draft, e.g. "Term 2 overdue reminder".' },
+        message: { type: 'string', description: 'The full reminder message body, addressed to a parent/guardian.' },
+      },
+      required: ['title', 'message'],
+    },
+    reviewPath: (_role, id) => `/dashboard/bursar/reminders?draftId=${id}`,
+    validate: (input) => !!input?.title && !!input?.message,
+  },
+]
+
+function toolsForRole(role: string): AgentTool[] {
+  return AGENT_TOOLS.filter(t => t.roles.includes(role))
+}
+
+function anthropicToolSchema(t: AgentTool) {
+  return { name: t.name, description: t.description, input_schema: t.schema }
+}
+function geminiToolSchema(t: AgentTool) {
+  return { name: t.name, description: t.description, parameters: t.schema }
 }
 
 // ─── System prompt factory ───────────────────────────────────────────────────
@@ -441,7 +588,8 @@ const SUPPORTED_IMAGE_TYPES = new Set([
 async function callClaude(
   systemPrompt: string,
   messages: Anthropic.MessageParam[],
-  image?: ImageAttachment
+  image?: ImageAttachment,
+  role?: string
 ): Promise<NormalisedResponse> {
   let finalMessages = messages
 
@@ -465,24 +613,31 @@ async function callClaude(
     }
   }
 
+  const agentTools = toolsForRole(role ?? '')
+  const tools = agentTools.map(anthropicToolSchema)
   const response = await anthropic.messages.create({
     model:      'claude-sonnet-4-20250514',
-    max_tokens: 1024,
+    max_tokens: 1536,
     system:     systemPrompt,
     messages:   finalMessages,
+    ...(tools.length ? { tools } : {}),
   })
-  const text = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-    .map(b => b.text)
-    .join('\n')
-  return { content: [{ type: 'text', text }], model_used: 'claude' }
+
+  const content: ContentBlock[] = response.content.map((b): ContentBlock | null => {
+    if (b.type === 'text') return { type: 'text', text: b.text }
+    if (b.type === 'tool_use') return { type: 'tool_use', name: b.name, input: b.input }
+    return null
+  }).filter((b): b is ContentBlock => b !== null)
+
+  return { content, model_used: 'claude' }
 }
 
 // ─── Gemini call ─────────────────────────────────────────────────────────────
 async function callGemini(
   systemPrompt: string,
   messages: Array<{ role: string; content: string }>,
-  image?: ImageAttachment
+  image?: ImageAttachment,
+  role?: string
 ): Promise<NormalisedResponse> {
   const ai = getGemini()
 
@@ -492,10 +647,15 @@ async function callGemini(
     parts: [{ text: m.content }],
   }))
 
+  const agentTools = toolsForRole(role ?? '')
+  const tools = agentTools.length
+    ? [{ functionDeclarations: agentTools.map(geminiToolSchema) }]
+    : undefined
+
   const chat = ai.chats.create({
     model:   'gemini-3.6-flash',
     history,
-    config:  { systemInstruction: systemPrompt },
+    config:  { systemInstruction: systemPrompt, ...(tools ? { tools } : {}) },
   })
 
   const lastMsg = messages[messages.length - 1]
@@ -507,9 +667,14 @@ async function callGemini(
       : [{ text: lastMsg.content }]
 
   const response = await chat.sendMessage({ message: messageParts as any })
-  const text     = response.text ?? ''
 
-  return { content: [{ type: 'text', text }], model_used: 'gemini' }
+  const content: ContentBlock[] = []
+  if (response.text) content.push({ type: 'text', text: response.text })
+  for (const call of response.functionCalls ?? []) {
+    if (call.name) content.push({ type: 'tool_use', name: call.name, input: call.args ?? {} })
+  }
+
+  return { content, model_used: 'gemini' }
 }
 
 // ─── Live school data context ──────────────────────────────────────────────
@@ -616,19 +781,37 @@ async function fetchDataContext(
     }
 
     if (role === 'teacher') {
-      const { data: myClasses } = await supabase
-        .from('class_teachers')
-        .select('class_id, subject, classes ( name, class_level )')
-        .eq('teacher_id', effectiveUserId)
-        .eq('school_id', schoolId)
+      const [{ data: myClasses }, { data: notes }] = await Promise.all([
+        supabase.from('class_teachers')
+          .select('class_id, subject, classes ( name, class_level )')
+          .eq('teacher_id', effectiveUserId).eq('school_id', schoolId),
+        supabase.from('school_notes')
+          .select('id, title, description, content, file_url')
+          .eq('uploaded_by', effectiveUserId).eq('school_id', schoolId)
+          .order('created_at', { ascending: false }).limit(15),
+      ])
 
       const classList = (myClasses ?? [])
         .map((c: any) => `${c.classes?.name ?? 'Unnamed class'}${c.subject ? ` (${c.subject})` : ''}`)
         .join(', ') || 'none assigned yet'
 
+      // Only notes with actual typed text (content/description) can be used
+      // to draft quiz questions — a note that's just an uploaded PDF/file
+      // has no text here for the model to read.
+      const readableNotes = (notes ?? []).filter((n: any) => (n.content || n.description)?.trim())
+      const notesBlock = readableNotes.length
+        ? readableNotes.map((n: any) => {
+            const text = (n.content || n.description || '').slice(0, 3000)
+            return `### Note "${n.title}" (note_id: ${n.id})\n${text}`
+          }).join('\n\n')
+        : 'None of this teacher\'s notes have readable text content yet (they may be uploaded as files/PDFs, which can\'t be read here) — if asked to draft a quiz from a note, say so rather than inventing content.'
+
       return `
 ## Live Teaching Data (fetched just now — use these real details, don't invent your own)
 - Classes/subjects assigned to this teacher: ${classList}
+
+## This teacher's notes (usable as quiz source material via the draft_quiz_from_note tool)
+${notesBlock}
 `.trim()
     }
 
@@ -784,13 +967,13 @@ export async function POST(req: Request) {
     let usedFallback = false
 
     try {
-      result = await callClaude(finalSystemPrompt, formattedMessages, imageAttachment)
+      result = await callClaude(finalSystemPrompt, formattedMessages, imageAttachment, resolvedRole)
     } catch (claudeErr: any) {
       if (isClaudeQuotaOrOverloadError(claudeErr)) {
         console.warn('[AI] Claude unavailable — falling back to Gemini. Reason:', claudeErr?.message)
         usedFallback = true
         try {
-          result = await callGemini(finalSystemPrompt, formattedMessages, imageAttachment)
+          result = await callGemini(finalSystemPrompt, formattedMessages, imageAttachment, resolvedRole)
         } catch (geminiErr: any) {
           console.error('[AI] Gemini fallback also failed:', geminiErr?.message)
           return NextResponse.json(
@@ -804,8 +987,67 @@ export async function POST(req: Request) {
       }
     }
 
-    // ── Persist conversation + messages (real history, not just a cache) ────
+    // ── Execute any agent tool calls (generic — see AGENT_TOOLS above) ───────
+    // The model may respond with a tool_use block instead of / alongside text.
+    // Every tool here does the same thing: validate → save ONE draft row to
+    // ai_action_drafts → hand back a [[label|href]] button into the real
+    // dashboard page. No tool call ever writes real data directly.
     const resolvedSchoolId = schoolId ?? profile?.school_id
+    for (const block of result.content) {
+      if (block.type !== 'tool_use') continue
+
+      const tool = AGENT_TOOLS.find(t => t.name === block.name && t.roles.includes(resolvedRole))
+      if (!tool) continue // model called something it shouldn't have access to — ignore it
+
+      if (!tool.validate(block.input)) {
+        result.content.push({ type: 'text', text: `\n\n(I tried to draft that but the details came out incomplete — could you ask me again?)` })
+        continue
+      }
+
+      const { title, ...rest } = block.input
+      const noteId = typeof rest.note_id === 'string' ? rest.note_id : null
+
+      try {
+        const { data: draft, error: draftErr } = await supabase
+          .from('ai_action_drafts')
+          .insert({
+            school_id:   resolvedSchoolId,
+            user_id:     effectiveUserId,
+            role:        resolvedRole,
+            action_type: tool.actionType,
+            note_id:     noteId,
+            title,
+            payload:     rest,
+          })
+          .select('id')
+          .single()
+
+        if (draftErr) throw draftErr
+
+        const summary = tool.actionType === 'quiz' && Array.isArray(rest.questions)
+          ? `**${rest.questions.length} questions** titled "${title}"`
+          : `"${title}"`
+
+        result.content.push({
+          type: 'text',
+          text: `\n\n✅ I've drafted ${summary}. Nothing has been published yet — review and edit it, then publish from there.\n\n1. Review the draft [[Review & Publish|${tool.reviewPath(resolvedRole, draft.id)}]]`,
+        })
+      } catch (toolErr: any) {
+        console.error(`[AI] Failed to save ${tool.actionType} draft:`, toolErr?.message ?? toolErr)
+        result.content.push({ type: 'text', text: `\n\n(I put that together but couldn't save the draft — please try again.)` })
+      }
+    }
+
+    // Flatten to the single text string the client renders (tool_use blocks
+    // never reach the client directly — only the text/marker we built above).
+    const combinedText = result.content
+      .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+      .map(b => b.text)
+      .join('')
+      .trim()
+    result = { ...result, content: [{ type: 'text', text: combinedText }] }
+
+    // ── Persist conversation + messages (real history, not just a cache) ────
     const lastUserMessage  = formattedMessages[formattedMessages.length - 1]
     let resolvedConversationId: string | null = conversationId ?? null
 
