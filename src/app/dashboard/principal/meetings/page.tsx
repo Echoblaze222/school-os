@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalMeetingsClient from './PrincipalMeetingsClient'
 
-export const metadata = { title: 'Meetings — SchoolOS' }
+export const metadata = { title: 'Meetings | SchoolOS' }
 
 export interface MeetingRow {
   id: string
@@ -30,9 +30,13 @@ export default async function PrincipalMeetingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, school_id, schools(*)')
+    .select('full_name, school_id, role, schools(*)')
     .eq('id', user.id)
     .single()
+
+  if (!profile || !['principal', 'admin'].includes((profile as any).role ?? '')) {
+    redirect('/login')
+  }
 
   const schoolId = profile?.school_id ?? ''
   const school   = (profile as any)?.schools ?? null

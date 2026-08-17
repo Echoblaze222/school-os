@@ -128,7 +128,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
   async function handleDelete(asgn: any) {
     setDeleting(asgn.id)
-    const { error } = await supabase.from('assignments').delete().eq('id', asgn.id)
+    const { error } = await supabase.from('assignments').delete().eq('id', asgn.id).eq('school_id', school.id)
     setDeleting(null); setConfirmDel(null)
     if (error) { showToast('Failed to delete', false); return }
     setAssignments(prev => prev.filter(a => a.id !== asgn.id))
@@ -175,8 +175,8 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
             <h3 className={styles.dialogTitle}>Delete Assignment?</h3>
             <p className={styles.dialogBody}>"{confirmDel.title}" will be permanently removed.</p>
             <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmDel(null)}>Cancel</button>
-              <button className={styles.deleteBtn} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className={`${styles.deleteBtn} pressable`} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
                 {deleting === confirmDel.id ? 'Deleting…' : 'Delete'}
               </button>
             </div>
@@ -207,7 +207,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
             {(['','active','draft','closed'] as const).map(s => (
               <button
                 key={s}
-                className={`${styles.filterTab} ${filter === s ? styles.filterTabActive : ''}`}
+                className={`${styles.filterTab} ${filter === s ? styles.filterTabActive : ''} pressable`}
                 style={filter === s && s ? { borderColor: STATUS_COLOR[s as Status], color: STATUS_COLOR[s as Status] } : {}}
                 onClick={() => setFilter(s as any)}
               >
@@ -215,7 +215,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               </button>
             ))}
           </div>
-          <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
+          <button className={`${styles.addBtn} pressable`} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? <><XIcon size={14} /> Close</> : '+ New Assignment'}
           </button>
         </div>
@@ -261,8 +261,8 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               </div>
             </div>
             <div className={styles.formActions}>
-              <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.title.trim()}>
+              <button className={`${styles.cancelFormBtn} pressable`} onClick={() => setShowForm(false)}>Cancel</button>
+              <button className={`${styles.saveBtn} pressable`} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.title.trim()}>
                 {saving ? 'Creating…' : 'Create Assignment'}
               </button>
             </div>
@@ -286,7 +286,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 <div key={asgn.id} className={`${styles.assignmentCard} ${overdue ? styles.overdueCard : ''}`}
                   style={{ display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex' }}>
-                    <div className={styles.cardLeft} onClick={() => setExpanded(expanded === asgn.id ? null : asgn.id)} style={{ cursor: 'pointer', flex: 1 }}>
+                    <div className={`${styles.cardLeft} pressable`} onClick={() => setExpanded(expanded === asgn.id ? null : asgn.id)} style={{ cursor: 'pointer', flex: 1 }}>
                       <div className={styles.cardTop}>
                         <span className={styles.statusPill} style={{ background: sc2 + '20', color: sc2 }}>{asgn.status}</span>
                         {asgn.subject && <span className={styles.subjectTag}>{asgn.subject}</span>}
@@ -324,14 +324,14 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     </div>
                     <div className={styles.cardActions}>
                       <button
-                        className={styles.statusToggle}
+                        className={`${styles.statusToggle} pressable`}
                         onClick={() => toggleStatus(asgn)}
                         title={`Change status (currently ${asgn.status})`}
                         style={{ color: sc2 }}
                       >
                         <RefreshIcon size={14} />
                       </button>
-                      <button className={styles.delBtn} onClick={() => setConfirmDel(asgn)} title="Delete">
+                      <button className={`${styles.delBtn} pressable`} onClick={() => setConfirmDel(asgn)} title="Delete">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                       </button>
                     </div>

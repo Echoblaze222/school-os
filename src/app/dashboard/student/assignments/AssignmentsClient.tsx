@@ -47,6 +47,8 @@ import {
 } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import { logActivity } from '@/lib/logActivity'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -197,6 +199,18 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
     setSubFiles(prev => ({ ...prev, [assignmentId]: null }))
     setSubText(prev => ({ ...prev, [assignmentId]: '' }))
     setUploading(prev => ({ ...prev, [assignmentId]: false }))
+
+    // Fire-and-forget — never blocks the actual submission on logging failing.
+    const submittedItem = items.find(i => i.id === assignmentId)
+    if (submittedItem && school?.id) {
+      logActivity({
+        userId, schoolId: school.id,
+        type:  'assignment_submitted',
+        title: `Submitted "${submittedItem.title}"`,
+        subtitle: submittedItem.subject ?? undefined,
+        href: `/dashboard/student/assignments`,
+      })
+    }
   }
 
   const filtered = tab === 'all' ? items
@@ -239,7 +253,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           </div>
 
           {loading
-            ? <div className={styles.loading}><span/><span/><span/></div>
+            ? <SkeletonList count={3} variant="card" />
             : filtered.length === 0
               ? <div className={`${styles.empty} ${motion.riseIn}`}>
                   <ClipboardIcon size={40} color="var(--text-faint)" strokeWidth={1}/>

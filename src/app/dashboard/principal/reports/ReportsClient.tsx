@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BarChartIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
+import { SkeletonBlock } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 type Tab = 'summary' | 'by_class' | 'by_type'
@@ -142,7 +143,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             width: 110, flexShrink: 0 }} />
         <div className={styles.tabs} style={{ flex: 1 }}>
           {TERMS.map(t => (
-            <button key={t} onClick={() => setTerm(t)}
+            <button className="pressable" key={t} onClick={() => setTerm(t)}
               className={`${styles.tab} ${term === t ? styles.tabActive : ''}`}
               style={term === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
               {t.replace(' Term', '')}
@@ -154,7 +155,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-5)' }}>
         {([['summary', 'Summary'], ['by_class', 'By Class'], ['by_type', 'By Type']] as const)
           .map(([key, lbl]) => (
-            <button key={key} onClick={() => setTab(key)}
+            <button className="pressable" key={key} onClick={() => setTab(key)}
               className={`${styles.tab} ${tab === key ? styles.tabActive : ''}`}
               style={tab === key ? { background: sc, color: '#fff', borderColor: sc } : {}}>
               {lbl}
@@ -170,7 +171,24 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span /><span /><span /></div>
+        ? (
+          <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+            <div className={styles.statsRow} style={{ marginBottom: 0 }}>
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className={styles.statCard}>
+                  <SkeletonBlock width={40} height={22} style={{ margin: '0 auto 8px' }} />
+                  <SkeletonBlock width={60} height={11} style={{ margin: '0 auto' }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', display: 'grid', gap: 12 }}>
+              <SkeletonBlock width={140} height={13} />
+              <SkeletonBlock width="100%" height={10} radius={5} />
+              <SkeletonBlock width={200} height={11} />
+            </div>
+          </div>
+        )
         : !report
           ? <div className={styles.empty}>
               <BarChartIcon size={40} color="var(--text-faint)" strokeWidth={1} />

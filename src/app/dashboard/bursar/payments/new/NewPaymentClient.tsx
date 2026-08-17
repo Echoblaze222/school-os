@@ -381,7 +381,7 @@ export default function NewPaymentClient({ bursarId, bursarName }: Props) {
                   {loadingInvoices ? (
                     <div className={styles.searchingText}>Loading invoices…</div>
                   ) : invoices.length === 0 ? (
-                    <div className={styles.searchingText}>No outstanding invoices — student is fully paid.</div>
+                    <div className={styles.searchingText}>No outstanding invoices. Student is fully paid.</div>
                   ) : (
                     <div className={styles.invoiceList}>
                       {invoices.map(inv => (
@@ -431,8 +431,8 @@ export default function NewPaymentClient({ bursarId, bursarName }: Props) {
                       value={currency}
                       onChange={e => setCurrency(e.target.value as 'NGN' | 'USD')}
                     >
-                      <option value="NGN">NGN — Naira</option>
-                      <option value="USD">USD — Dollar</option>
+                      <option value="NGN">NGN (Naira)</option>
+                      <option value="USD">USD (Dollar)</option>
                     </select>
                   </div>
                 </div>

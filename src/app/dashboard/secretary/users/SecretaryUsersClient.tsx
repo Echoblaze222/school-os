@@ -183,9 +183,9 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
             <div className={styles.drawerFields}>
               {([
                 ['Email', selected.email],
-                ['Phone', selected.phone??'—'],
+                ['Phone', selected.phone?? 'N/A'],
                 ['Status', selected.is_active?'Active':'Inactive'],
-                ['Onboarding', selected.onboarding_stage??'—'],
+                ['Onboarding', selected.onboarding_stage?? 'N/A'],
                 ['Last Seen', relTime(selected.last_sign_in)],
                 ['Joined', new Date(selected.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})],
                 ...(selected.class_name?[['Class', selected.class_name]]:[] as any),

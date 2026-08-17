@@ -23,6 +23,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { BookOpenIcon, AlertIcon, XIcon, FileTextIcon, CheckIcon, DownloadIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -136,7 +137,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
             </div>
           )}
 
-          {loading ? <div className={styles.loading}><span /><span /><span /></div> : <>
+          {loading ? <SkeletonList count={3} variant="row" /> : <>
 
             {/* Syllabus PDF section */}
             {pdfUrl && (

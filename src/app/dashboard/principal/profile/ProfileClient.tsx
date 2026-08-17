@@ -128,16 +128,16 @@ export default function ProfileClient({
   }
 
   const fields = [
-    ['Full Name', profile?.full_name ?? '—'],
-    ['ID Code', profile?.default_code ?? '—'],
+    ['Full Name', profile?.full_name ?? 'N/A'],
+    ['ID Code', profile?.default_code ?? 'N/A'],
     [
       'Role',
       (profile?.role ?? '').charAt(0).toUpperCase() +
         (profile?.role ?? '').slice(1),
     ],
-    ['School', school?.name ?? '—'],
-    ['Email', profile?.email ?? '—'],
-    ['Phone', profile?.phone ?? '—'],
+    ['School', school?.name ?? 'N/A'],
+    ['Email', profile?.email ?? 'N/A'],
+    ['Phone', profile?.phone ?? 'N/A'],
   ]
 
   return (
@@ -202,7 +202,7 @@ export default function ProfileClient({
             )}
           </div>
 
-          <button
+          <button className="pressable"
             onClick={() => fileRef.current?.click()}
             disabled={uploadingPhoto}
             style={{
@@ -291,7 +291,7 @@ export default function ProfileClient({
             Personal Info
           </p>
 
-          <button
+          <button className="pressable"
             onClick={() => setEditing(!editing)}
             style={{
               display: 'flex',
@@ -378,7 +378,7 @@ export default function ProfileClient({
               </p>
             )}
 
-            <button
+            <button className="pressable"
               onClick={save}
               disabled={saving}
               style={{
@@ -458,7 +458,7 @@ export default function ProfileClient({
           Change Password
         </a>
 
-        <button
+        <button className="pressable"
           onClick={logout}
           style={{
             display: 'flex',

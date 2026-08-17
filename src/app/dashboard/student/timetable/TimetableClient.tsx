@@ -16,6 +16,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import StudentNav from '@/components/StudentNav'
 import { ClockIcon } from '@/components/Icons'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -84,14 +85,14 @@ export default function TimetableClient({ profile, school, userId }: Props) {
           <div className={styles.dayTabs}>
             {DAYS.map(d => (
               <button key={d} onClick={() => setDay(d)}
-                className={`${styles.dayTab} ${day === d ? styles.dayTabActive : ''}`}
+                className={`pressable ${styles.dayTab} ${day === d ? styles.dayTabActive : ''}`}
                 style={day === d ? { background: schoolColor, color: '#fff', borderColor: schoolColor } : {}}>
                 {d.slice(0, 3)}
               </button>
             ))}
           </div>
           <p className={styles.sectionLabel}>{day}'s Schedule</p>
-          {loading ? <div className={styles.loading}><span /><span /><span /></div>
+          {loading ? <SkeletonList count={3} variant="row" />
             : todaySlots.length === 0
               ? <div className={styles.empty}><ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No classes on {day}</p></div>
               : <div className={styles.periodList}>

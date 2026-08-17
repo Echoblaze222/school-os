@@ -94,12 +94,12 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   }
 
   const fields = [
-    { label: 'Full Name',    value: profile?.full_name    ?? '—' },
-    { label: 'Student Code', value: profile?.default_code ?? '—' },
-    { label: 'Class Level',  value: profile?.class_level  ?? '—' },
-    { label: 'School',       value: school?.name          ?? '—' },
-    { label: 'Email',        value: profile?.email        ?? '—' },
-    { label: 'Phone',        value: profile?.phone        ?? '—' },
+    { label: 'Full Name',    value: profile?.full_name    ?? 'N/A' },
+    { label: 'Student Code', value: profile?.default_code ?? 'N/A' },
+    { label: 'Class Level',  value: profile?.class_level  ?? 'N/A' },
+    { label: 'School',       value: school?.name          ?? 'N/A' },
+    { label: 'Email',        value: profile?.email        ?? 'N/A' },
+    { label: 'Phone',        value: profile?.phone        ?? 'N/A' },
   ]
 
   return (
@@ -123,7 +123,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                   </div>
                 )}
               </div>
-              <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              <button className="pressable" onClick={() => fileRef.current?.click()} disabled={uploading}
                 style={{ position:'absolute', bottom:0, right:0, width:30, height:30, borderRadius:'50%', background:schoolColor, border:'2px solid var(--bg-base)', display:'flex', alignItems:'center', justifyContent:'center', cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.6 : 1 }}>
                 <CameraIcon size={14} color="white"/>
               </button>
@@ -142,7 +142,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', overflow:'hidden', marginBottom:'var(--space-5)' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--space-4) var(--space-5)', borderBottom:'1px solid var(--glass-border)' }}>
               <p style={{ fontSize:'0.72rem', fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--text-muted)', margin:0 }}>Personal Info</p>
-              <button onClick={() => setEditing(!editing)}
+              <button className="pressable" onClick={() => setEditing(!editing)}
                 style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', background:editing?'var(--glass-bg)':'var(--brand-subtle)', border:`1px solid ${editing?'var(--glass-border)':'var(--brand-border)'}`, borderRadius:'999px', color:editing?'var(--text-muted)':'var(--brand-light)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
                 <EditIcon size={12}/> {editing ? 'Cancel' : 'Edit'}
               </button>
@@ -161,7 +161,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                     style={{ width:'100%', height:44, padding:'0 14px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:'var(--radius-md)', color:'var(--text-primary)', fontSize:'0.875rem', outline:'none' }}/>
                 </div>
                 {msg && <p style={{ fontSize:'0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin:0 }}>{msg}</p>}
-                <button onClick={saveProfile} disabled={saving}
+                <button className="pressable" onClick={saveProfile} disabled={saving}
                   style={{ width:'100%', height:44, background:`linear-gradient(135deg,${schoolColor},${schoolColor}cc)`, color:'#fff', border:'none', borderRadius:'var(--radius-md)', fontWeight:700, fontSize:'0.875rem', cursor:'pointer' }}>
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -184,7 +184,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
               style={{ display:'flex', alignItems:'center', gap:'var(--space-3)', padding:'var(--space-4)', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-lg)', color:'var(--text-secondary)', fontSize:'0.85rem', fontWeight:500, textDecoration:'none' }}>
               <KeyIcon size={16}/> Change Password
             </a>
-            <button onClick={logout}
+            <button className="pressable" onClick={logout}
               style={{ display:'flex', alignItems:'center', gap:'var(--space-3)', padding:'var(--space-4)', background:'var(--danger-subtle)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:'var(--radius-lg)', color:'var(--danger)', fontSize:'0.85rem', fontWeight:600, cursor:'pointer', width:'100%', textAlign:'left' }}>
               <LogOutIcon size={16} color="var(--danger)"/> Sign Out
             </button>

@@ -12,12 +12,12 @@
 //      every other dashboard page uses.
 //
 //      Problems with the old nav:
-//      1. Emoji icons instead of SVG icons — looked visually different
+//      1. Emoji icons instead of SVG icons - looked visually different
 //      2. "bottom-nav" CSS class doesn't exist in globals.css for most roles
-//      3. Home button used "nav-home" / "nav-home-btn" — different classes
+//      3. Home button used "nav-home" / "nav-home-btn" - different classes
 //      4. No active-state highlighting driven by usePathname()
 //      5. No school color theming
-//      6. Bursar page had NO bottom nav at all — it was missing entirely
+//      6. Bursar page had NO bottom nav at all - it was missing entirely
 //
 //      Fix: import <RoleNav> (the same component every other page uses) and
 //      pass the same props. The notification page already has userId, profile,
@@ -30,6 +30,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import RoleNav from '@/components/RoleNav'
+import {
+  BellIcon, BellOffIcon, StatusDotIcon, BarChartIcon, WalletIcon, MegaphoneIcon,
+  ClipboardIcon, SettingsIcon, GraduationCapIcon, TransferIcon, CalendarIcon,
+  MessageIcon, ClockIcon, CheckIcon, XIcon, SendIcon, AlertIcon, ArrowLeftIcon,
+} from '@/components/Icons'
 import styles from './notifications.module.css'
 
 interface Notification {
@@ -53,27 +58,27 @@ interface Props {
   schoolColor?: string
 }
 
-const FILTERS = [
-  { key: 'all',          label: 'All',         emoji: '🔔' },
-  { key: 'unread',       label: 'Unread',      emoji: '🔵' },
-  { key: 'result',       label: 'Results',     emoji: '📊' },
-  { key: 'payment',      label: 'Payments',    emoji: '💰' },
-  { key: 'announcement', label: 'News',        emoji: '📣' },
-  { key: 'assignment',   label: 'Assignments', emoji: '📝' },
-  { key: 'system',       label: 'System',      emoji: '⚙️' },
+const FILTERS: { key: string; label: string; Icon: typeof BellIcon }[] = [
+  { key: 'all',          label: 'All',         Icon: BellIcon },
+  { key: 'unread',       label: 'Unread',      Icon: StatusDotIcon },
+  { key: 'result',       label: 'Results',     Icon: BarChartIcon },
+  { key: 'payment',      label: 'Payments',    Icon: WalletIcon },
+  { key: 'announcement', label: 'News',        Icon: MegaphoneIcon },
+  { key: 'assignment',   label: 'Assignments', Icon: ClipboardIcon },
+  { key: 'system',       label: 'System',      Icon: SettingsIcon },
 ]
 
-const TYPE_EMOJIS: Record<string, string> = {
-  result:       '📊',
-  assignment:   '📝',
-  payment:      '💰',
-  announcement: '📣',
-  promotion:    '🎓',
-  transfer:     '🔄',
-  meeting:      '📅',
-  chat:         '💬',
-  system:       '⚙️',
-  reminder:     '⏰',
+const TYPE_ICONS: Record<string, typeof BellIcon> = {
+  result:       BarChartIcon,
+  assignment:   ClipboardIcon,
+  payment:      WalletIcon,
+  announcement: MegaphoneIcon,
+  promotion:    GraduationCapIcon,
+  transfer:     TransferIcon,
+  meeting:      CalendarIcon,
+  chat:         MessageIcon,
+  system:       SettingsIcon,
+  reminder:     ClockIcon,
 }
 
 const ROLE_DASHBOARDS: Record<string, string> = {
@@ -96,7 +101,7 @@ export default function NotificationsPageClient({
   schoolId,
   profile,
   school,
-  schoolColor = '#7C3AED',
+  schoolColor = '#800020',
 }: Props) {
   const router   = useRouter()
   const supabase = createClient()
@@ -152,14 +157,16 @@ export default function NotificationsPageClient({
   }
 
   async function markOneRead(id: string) {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    // Scoped to this user's own id, matching the ownership check every other
+    // mutation in this app uses - never trust the row id alone.
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', userId)
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
     setLocalUnread(prev => Math.max(prev - 1, 0))
   }
 
   async function deleteNotif(id: string, e: React.MouseEvent) {
     e.stopPropagation()
-    await supabase.from('notifications').delete().eq('id', id)
+    await supabase.from('notifications').delete().eq('id', id).eq('user_id', userId)
     setNotifications(prev => prev.filter(n => n.id !== id))
   }
 
@@ -271,24 +278,29 @@ export default function NotificationsPageClient({
 
   function PushBtn() {
     if (!push.supported) return null
-    if (push.loading) return <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>🔔…</span>
+    if (push.loading) return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', opacity: 0.5 }}>
+        <BellIcon size={14} />…
+      </span>
+    )
     if (push.permission === 'denied') return (
-      <span style={{ fontSize: '0.75rem', opacity: 0.5 }} title="Notifications blocked in browser settings">
-        🔕 Blocked
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', opacity: 0.5 }} title="Notifications blocked in browser settings">
+        <BellOffIcon size={14} /> Blocked
       </span>
     )
     return (
       <button
-        className={styles.markAllBtn}
+        className={`${styles.markAllBtn} pressable`}
         style={{
           background:  push.subscribed ? 'rgba(34,197,94,0.15)' : 'var(--card-bg)',
           color:       push.subscribed ? '#4ade80' : 'var(--text)',
           borderColor: push.subscribed ? 'rgba(34,197,94,0.4)' : 'var(--border)',
+          display: 'inline-flex', alignItems: 'center', gap: 4,
         }}
         onClick={push.subscribed ? push.unsubscribe : push.subscribe}
         title={push.subscribed ? 'Tap to disable push alerts' : 'Tap to enable push alerts on this device'}
       >
-        {push.subscribed ? '🔔 Alerts On' : '🔕 Enable Alerts'}
+        {push.subscribed ? <><BellIcon size={14} /> Alerts On</> : <><BellOffIcon size={14} /> Enable Alerts</>}
       </button>
     )
   }
@@ -298,7 +310,9 @@ export default function NotificationsPageClient({
 
       {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push(dashboardPath)}>←</button>
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push(dashboardPath)} aria-label="Back">
+          <ArrowLeftIcon size={18} />
+        </button>
         <div className={styles.headerCenter}>
           <h1 className={styles.headerTitle}>Notifications</h1>
           {localUnread > 0 && <span className={styles.unreadBadge}>{localUnread}</span>}
@@ -306,15 +320,18 @@ export default function NotificationsPageClient({
         <div className={styles.headerRight}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead}>✓ All read</button>
+            <button className={`${styles.markAllBtn} pressable`} onClick={markAllRead}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <CheckIcon size={14} /> All read
+            </button>
           )}
           {isPrincipal && (
             <button
-              className={styles.markAllBtn}
-              style={{ background: 'var(--burgundy)', color: '#fff', borderColor: 'transparent' }}
+              className={`${styles.markAllBtn} pressable`}
+              style={{ background: 'var(--burgundy)', color: '#fff', borderColor: 'transparent', display: 'inline-flex', alignItems: 'center', gap: 4 }}
               onClick={() => setShowSend(v => !v)}
             >
-              📤 Send
+              <SendIcon size={14} /> Send
             </button>
           )}
         </div>
@@ -326,17 +343,24 @@ export default function NotificationsPageClient({
           margin: '8px 16px', padding: '10px 14px', borderRadius: 10,
           background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           color: '#f87171', fontSize: '0.8rem',
+          display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          ⚠️ {push.error}
+          <AlertIcon size={14} /> {push.error}
         </div>
       )}
 
       {/* Principal broadcast panel */}
       {isPrincipal && showSend && (
         <div className={styles.broadcastPanel}>
-          <p className={styles.broadcastTitle}>📢 Send Notification to School</p>
-          {sendResult === 'success' && <div className={styles.sendSuccess}>✓ Notification sent!</div>}
-          {sendResult === 'error'   && <div className={styles.sendError}>✕ {sendError || 'Failed to send'}</div>}
+          <p className={styles.broadcastTitle}>
+            <MegaphoneIcon size={16} /> Send Notification to School
+          </p>
+          {sendResult === 'success' && (
+            <div className={styles.sendSuccess}><CheckIcon size={14} /> Notification sent!</div>
+          )}
+          {sendResult === 'error' && (
+            <div className={styles.sendError}><XIcon size={14} /> {sendError || 'Failed to send'}</div>
+          )}
           <div className={styles.broadcastGrid}>
             <div className={styles.bFieldGroup}>
               <label className={styles.bFieldLabel}>Title *</label>
@@ -366,10 +390,14 @@ export default function NotificationsPageClient({
             </div>
           </div>
           <div className={styles.broadcastActions}>
-            <button className={styles.cancelBroadcast} onClick={() => setShowSend(false)}>Cancel</button>
-            <button className={styles.sendBroadcast} onClick={sendBroadcast}
+            <button className={`${styles.cancelBroadcast} pressable`} onClick={() => setShowSend(false)}>Cancel</button>
+            <button className={`${styles.sendBroadcast} pressable`} onClick={sendBroadcast}
               disabled={sending || !sendTitle.trim() || !sendBody.trim()}>
-              {sending ? 'Sending…' : `📤 Send to ${sendTarget === 'all' ? 'Everyone' : sendTarget}`}
+              {sending ? 'Sending…' : (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <SendIcon size={14} /> Send to {sendTarget === 'all' ? 'Everyone' : sendTarget}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -386,10 +414,10 @@ export default function NotificationsPageClient({
           return (
             <button
               key={f.key}
-              className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''}`}
+              className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''} pressable`}
               onClick={() => setFilter(f.key)}
             >
-              <span>{f.emoji}</span>
+              <span><f.Icon size={14} /></span>
               <span>{f.label}</span>
               {count > 0 && <span className={styles.filterCount}>{count}</span>}
             </button>
@@ -401,7 +429,7 @@ export default function NotificationsPageClient({
       <div className={styles.list}>
         {filtered.length === 0 ? (
           <div className={styles.empty}>
-            <p className={styles.emptyEmoji}>🔔</p>
+            <p className={styles.emptyEmoji}><BellIcon size={40} strokeWidth={1} /></p>
             <p className={styles.emptyTitle}>
               {filter === 'all' ? 'No notifications yet' : `No ${filter} notifications`}
             </p>
@@ -418,14 +446,16 @@ export default function NotificationsPageClient({
             return (
               <div key={group}>
                 <p className={styles.dateGroup}>{group}</p>
-                {items.map(notif => (
+                {items.map(notif => {
+                  const NotifIcon = TYPE_ICONS[notif.type] ?? BellIcon
+                  return (
                   <button
                     key={notif.id}
-                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''}`}
+                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''} pressable`}
                     onClick={() => handleClick(notif)}
                   >
                     <div className={`${styles.notifIcon} ${!notif.is_read ? styles.notifIconUnread : ''}`}>
-                      {TYPE_EMOJIS[notif.type] ?? '🔔'}
+                      <NotifIcon size={18} />
                     </div>
                     <div className={styles.notifContent}>
                       <p className={styles.notifTitle}>{notif.title}</p>
@@ -435,21 +465,22 @@ export default function NotificationsPageClient({
                     <div className={styles.notifRight}>
                       {!notif.is_read && <div className={styles.unreadDot} />}
                       <button
-                        className={styles.deleteBtn}
+                        className={`${styles.deleteBtn} pressable`}
                         onClick={e => deleteNotif(notif.id, e)}
                         title="Delete"
-                      >✕</button>
+                      ><XIcon size={14} /></button>
                     </div>
                   </button>
-                ))}
+                  )
+                })}
               </div>
             )
           })
         )}
 
         {filtered.length >= 50 && (
-          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading}>
-            {loading ? '⏳ Loading...' : 'Load more notifications'}
+          <button className={`${styles.loadMoreBtn} pressable`} onClick={loadMore} disabled={loading}>
+            {loading ? 'Loading…' : 'Load more notifications'}
           </button>
         )}
 
@@ -483,16 +514,19 @@ export default function NotificationsPageClient({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: '1.4rem' }}>{TYPE_EMOJIS[selected.type] ?? '🔔'}</span>
+                <span style={{ display: 'inline-flex', color: schoolColor }}>
+                  {(() => { const M = TYPE_ICONS[selected.type] ?? BellIcon; return <M size={22} /> })()}
+                </span>
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>{selected.title}</h2>
               </div>
-              <button
+              <button className="pressable"
                 onClick={closeModal}
                 style={{
                   background: 'transparent', border: 'none', color: 'inherit',
                   fontSize: '1.1rem', cursor: 'pointer', opacity: 0.6, lineHeight: 1,
+                  display: 'inline-flex', alignItems: 'center',
                 }}
-              >✕</button>
+              ><XIcon size={18} /></button>
             </div>
 
             <p style={{
@@ -507,7 +541,7 @@ export default function NotificationsPageClient({
             </p>
 
             {selected.link_url && (
-              <button
+              <button className="pressable"
                 onClick={viewLinkedItem}
                 style={{
                   marginTop: 12, width: '100%', padding: '10px 16px',
@@ -523,7 +557,7 @@ export default function NotificationsPageClient({
         </div>
       )}
 
-      {/* ── Canonical RoleNav — same as every other dashboard page ── */}
+      {/* ── Canonical RoleNav - same as every other dashboard page ── */}
       <RoleNav
         userId={userId}
         profile={profile}

@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient }       from '@supabase/supabase-js'
 import { cookies }            from 'next/headers'
 import { NextResponse }       from 'next/server'
+import crypto                 from 'crypto'
 
 export async function POST(request: Request) {
   try {
@@ -41,8 +42,26 @@ export async function POST(request: Request) {
     const { data: callerProfile } = await supabaseAuth
       .from('profiles').select('role, school_id').eq('id', user.id).single()
 
-    if (!callerProfile || !['secretary', 'admin', 'principal'].includes((callerProfile as any).role)) {
+    const callerRole = (callerProfile as any)?.role as string | undefined
+
+    if (!callerProfile || !['secretary', 'admin', 'principal'].includes(callerRole ?? '')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Role-escalation guard — the frontend dropdown already limits which
+    // roles each caller can assign, but that is a UI convenience only.
+    // A secretary token replayed with role: "principal" (or any other
+    // elevated role) must be rejected here too, or the client-side
+    // restriction is worthless. This list must stay in sync with
+    // ROLES_ASSIGNABLE in the secretary/principal CodesClient.tsx files.
+    const ROLES_CALLER_CAN_ASSIGN: Record<string, string[]> = {
+      secretary: ['student', 'parent'],
+      principal: ['student', 'teacher', 'bursar', 'secretary', 'librarian', 'nurse', 'parent'],
+      admin:     ['student', 'teacher', 'bursar', 'secretary', 'librarian', 'nurse', 'parent'],
+    }
+    const allowedRoles = ROLES_CALLER_CAN_ASSIGN[callerRole ?? ''] ?? []
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json({ error: `You are not permitted to create a ${role} account.` }, { status: 403 })
     }
 
     // Admin client with service role key
@@ -52,9 +71,15 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Generate access code  e.g. STU-2026-4821
+    // Generate access code, e.g. STU-2026-K7XQPM
+    // The random segment MUST be long and cryptographically random. It is
+    // the sole credential needed to activate an account (see
+    // auth/first-login), so a short Math.random() suffix (previously a
+    // 4-digit number with only 9,000 possibilities and no rate limiting)
+    // let anyone brute-force their way into hijacking any unactivated
+    // account before the real user's first login.
     const year   = new Date().getFullYear()
-    const rand   = Math.floor(1000 + Math.random() * 9000)
+    const rand   = crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
     const prefix = role.slice(0, 3).toUpperCase()
     const code   = `${prefix}-${year}-${rand}`
 
@@ -95,7 +120,7 @@ export async function POST(request: Request) {
         )
       }
       userId      = signUpData.user.id
-      authWarning = 'Created via signUp — email confirmation may be required'
+      authWarning = 'Created via signUp, email confirmation may be required'
     } else {
       userId = adminCreateData.user.id
     }
@@ -120,10 +145,13 @@ export async function POST(request: Request) {
     }
 
     // Build profile update payload — only include fields with values
+    // school_id is always the caller's own school — never trust a
+    // client-supplied schoolId here, or a secretary at School A could
+    // create accounts inside School B by editing the request body.
     const profileUpdate: Record<string, any> = {
       full_name:        fullName,
       role,
-      school_id:        schoolId ?? (callerProfile as any).school_id,
+      school_id:        (callerProfile as any).school_id,
       default_code:     code,
       onboarding_stage: onboardingStage,
     }
@@ -199,7 +227,7 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             from:    'SchoolOS <onboarding@resend.dev>',
             to:      email.toLowerCase(),
-            subject: `🎓 Your SchoolOS Account is Ready — ${fullName}`,
+            subject: `🎓 Your SchoolOS Account is Ready, ${fullName}`,
             html: `
               <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
                 <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
@@ -242,7 +270,7 @@ export async function POST(request: Request) {
                   </p>
                 </div>
                 <div style="background:#111;padding:16px;text-align:center;">
-                  <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong> — Built for Nigerian Schools</p>
+                  <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong> · Built for Nigerian Schools</p>
                 </div>
               </div>
             `,
@@ -260,7 +288,7 @@ export async function POST(request: Request) {
         actor_id:     user.id,
         target_table: 'profiles',
         target_id:    userId,
-        metadata:     { role, code, school_id: schoolId },
+        metadata:     { role, code, school_id: (callerProfile as any).school_id },
         logged_at:    new Date().toISOString(),
       })
     } catch { /* non-critical */ }

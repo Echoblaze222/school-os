@@ -30,6 +30,7 @@ import NoteBook from '@/components/NoteBook'
 import DocumentViewer from '@/components/DocumentViewer'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -109,7 +110,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
           )}
 
           {loading
-            ? <div className={styles.loading}><span /><span /><span /></div>
+            ? <SkeletonList count={3} variant="card" />
             : notes.length === 0
               ? <div className={`${styles.empty} ${motion.riseIn}`}>
                   <BookIcon size={40} color="var(--text-faint)" strokeWidth={1} />

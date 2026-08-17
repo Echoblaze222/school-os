@@ -13,6 +13,8 @@ import { WalletIcon } from '@/components/Icons'
 import { getCurrentAcademicYear } from '@/lib/utils/term'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -83,7 +85,7 @@ export default function PaymentsClient({ profile, school, userId }: Props) {
           letterSpacing:'0.05em', margin:0 }}>
           PAYMENT HISTORY
         </p>
-        <a href="/dashboard/bursar/record-payment"
+        <a href="/dashboard/bursar/record-payment" className="pressable"
           style={{ display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px',
             background:sc, color:'#fff', borderRadius:8,
             fontWeight:700, fontSize:'0.8rem', textDecoration:'none' }}>
@@ -92,15 +94,16 @@ export default function PaymentsClient({ profile, school, userId }: Props) {
       </div>
 
       {histLoading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="row" />
         : history.length === 0
-          ? <div className={styles.empty}>
-              <WalletIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No payments recorded yet</p>
-            </div>
-          : <div className={styles.list}>
+          ? <EmptyState
+              icon={<WalletIcon size={40} color="var(--text-faint)" strokeWidth={1}/>}
+              title="No payments recorded yet"
+              subtitle="Payments you record will appear here, most recent first."
+            />
+          : <div className={`${styles.list} stagger`}>
               {history.map((p:any) => (
-                <div key={p.id} className={styles.card}>
+                <div key={p.id} className={`${styles.card} animate-fade-up`}>
                   <div className={styles.cardIcon} style={{ background:sc+'20' }}>
                     <WalletIcon size={16} color={sc}/>
                   </div>

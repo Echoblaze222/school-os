@@ -22,6 +22,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ClockIcon, ArrowLeftIcon, AlertIcon, XIcon, PartyPopperIcon, CheckCircleIcon, BookOpenIcon, AwardIcon } from '@/components/Icons'
+import { logActivity } from '@/lib/logActivity'
 import motion from '@/components/dashboard-motion.module.css'
 
 interface DbQuestion {
@@ -146,6 +147,16 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
     setSubmitted(true)
     setSubmitting(false)
+
+    if (school?.id) {
+      logActivity({
+        userId, schoolId: school.id,
+        type:  'quiz_completed',
+        title: `Completed "${quiz?.title ?? 'a quiz'}"`,
+        subtitle: `${total}/${maxScore}`,
+        href:  '/dashboard/student/quizzes',
+      })
+    }
   }, [answers, questions, submitted, submitting])
 
   function formatTime(s: number) {
@@ -262,7 +273,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
           {error && (
             <p style={{ fontSize: '0.75rem', color: 'var(--warning)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-              <AlertIcon size={13} color="var(--warning)" /> Your answers were scored locally — saving may have had an issue: {error}
+              <AlertIcon size={13} color="var(--warning)" /> Your answers were scored locally. Saving may have had an issue: {error}
             </p>
           )}
 

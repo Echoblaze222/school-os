@@ -95,7 +95,7 @@ function StaffSuccessModal({
               flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
               color: roleColor, fontFamily: 'monospace',
             }}>{result.code}</code>
-            <button
+            <button className="pressable"
               onClick={() => copy(result.code, 'code')}
               style={{
                 padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
@@ -122,7 +122,7 @@ function StaffSuccessModal({
               flex: 1, fontSize: '1rem', fontWeight: 700,
               color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
             }}>{result.password}</code>
-            <button
+            <button className="pressable"
               onClick={() => copy(result.password, 'pwd')}
               style={{
                 padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
@@ -140,7 +140,7 @@ function StaffSuccessModal({
         </div>
 
         {/* Actions */}
-        <button
+        <button className="pressable"
           onClick={copyAllDetails}
           style={{
             width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
@@ -154,10 +154,10 @@ function StaffSuccessModal({
         </button>
         <button
           onClick={onClose}
-          className={styles.saveBtn}
+          className={`${styles.saveBtn} pressable`}
           style={{ width: '100%', background: sc }}
         >
-          Done — Add Another
+          Done, Add Another
         </button>
       </div>
     </div>
@@ -202,7 +202,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
         .from('profiles')
         .select('*')
         .eq('school_id', school.id)
-        .not('role', 'in', '(student,parent)')
+        .not('role', 'in', '(student,parent,principal)')
         .order('full_name')
       if (data) setStaff(data)
     }
@@ -216,8 +216,21 @@ export default function StaffClient({ profile, school, userId }: Props) {
   }
 
   async function handleDelete(member: any) {
+    // Defense in depth: never allow removing your own account from this
+    // screen, and always scope the delete to this school. The staff list
+    // is already filtered to this school's rows, but a delete should not
+    // depend solely on that filter (or on RLS) being correct.
+    if (member.id === userId) {
+      showToast('You cannot remove your own account.', false)
+      setConfirmDel(null)
+      return
+    }
     setDeleting(member.id)
-    const { error } = await supabase.from('profiles').delete().eq('id', member.id)
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', member.id)
+      .eq('school_id', school.id)
     setDeleting(null)
     setConfirmDel(null)
     if (error) { showToast('Failed to remove staff member', false); return }
@@ -343,9 +356,9 @@ export default function StaffClient({ profile, school, userId }: Props) {
               Their login access will be revoked.
             </p>
             <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => setConfirmDel(null)}>Cancel</button>
               <button
-                className={styles.deleteBtn}
+                className={`${styles.deleteBtn} pressable`}
                 onClick={() => handleDelete(confirmDel)}
                 disabled={deleting === confirmDel.id}
               >
@@ -394,7 +407,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
               </option>
             ))}
           </select>
-          <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
+          <button className={`${styles.addBtn} pressable`} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? <><XIcon size={14} /> Close</> : '+ Add Staff'}
           </button>
         </div>
@@ -451,9 +464,9 @@ export default function StaffClient({ profile, school, userId }: Props) {
               )}
             </div>
             <div className={styles.formActions}>
-              <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
+              <button className={`${styles.cancelFormBtn} pressable`} onClick={() => setShowForm(false)}>Cancel</button>
               <button
-                className={styles.saveBtn}
+                className={`${styles.saveBtn} pressable`}
                 style={{ background: sc }}
                 onClick={handleCreate}
                 disabled={saving || !form.full_name.trim() || !form.email.trim()}
@@ -474,18 +487,18 @@ export default function StaffClient({ profile, school, userId }: Props) {
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             <p>{search || roleFilter ? 'No staff match your filters' : 'No staff added yet'}</p>
             {!showForm && (
-              <button className={styles.addBtn} style={{ background: sc, marginTop: 12 }} onClick={() => setShowForm(true)}>
+              <button className={`${styles.addBtn} pressable`} style={{ background: sc, marginTop: 12 }} onClick={() => setShowForm(true)}>
                 + Add First Staff Member
               </button>
             )}
           </div>
         ) : (
-          <div className={styles.staffGrid}>
+          <div className={`${styles.staffGrid} stagger`}>
             {filtered.map(member => {
               const initials  = member.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
               const roleColor = ROLE_COLORS[member.role] ?? sc
               return (
-                <div key={member.id} className={styles.staffCard} onClick={() => setPreviewMember(member)} style={{ cursor: 'pointer' }}>
+                <div key={member.id} className={`${styles.staffCard} pressable animate-fade-up`} onClick={() => setPreviewMember(member)} style={{ cursor: 'pointer' }}>
                   <div className={styles.cardHeader}>
                     <div className={styles.avatar} style={{ background: roleColor + '30', color: roleColor }}>
                       {member.avatar_url
@@ -500,7 +513,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                       </span>
                     </div>
                     <button
-                      className={styles.delBtn}
+                      className={`${styles.delBtn} pressable`}
                       onClick={() => setConfirmDel(member)}
                       title="Remove staff member"
                     >
@@ -597,11 +610,11 @@ export default function StaffClient({ profile, school, userId }: Props) {
             ))}
 
             <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
-              <button className={styles.saveBtn} style={{ flex:1, background:sc }}
+              <button className={`${styles.saveBtn} pressable`} style={{ flex:1, background:sc }}
                 onClick={() => { setEditMember(previewMember); setEditForm({}) }}>
                 <EditIcon size={14} /> Edit Details
               </button>
-              <button className={styles.cancelBtn} onClick={() => setPreviewMember(null)}>Close</button>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => setPreviewMember(null)}>Close</button>
             </div>
           </div>
         </div>
@@ -619,7 +632,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
           >
             <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
             <p style={{ fontWeight:800, fontSize:'1rem', color:'var(--text-primary)', marginBottom:'var(--space-5)' }}>
-              Edit — {editMember.full_name}
+              Edit: {editMember.full_name}
             </p>
 
             <div className={styles.formGrid}>
@@ -660,8 +673,8 @@ export default function StaffClient({ profile, school, userId }: Props) {
             </div>
 
             <div className={styles.formActions}>
-              <button className={styles.cancelFormBtn} onClick={() => { setEditMember(null); setEditForm({}) }}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
+              <button className={`${styles.cancelFormBtn} pressable`} onClick={() => { setEditMember(null); setEditForm({}) }}>Cancel</button>
+              <button className={`${styles.saveBtn} pressable`} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
                 {editSaving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>

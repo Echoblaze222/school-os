@@ -152,14 +152,14 @@ export default function NotificationsPageClient({
   }
 
   async function markOneRead(id: string) {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', userId)
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
     setLocalUnread(prev => Math.max(prev - 1, 0))
   }
 
   async function deleteNotif(id: string, e: React.MouseEvent) {
     e.stopPropagation()
-    await supabase.from('notifications').delete().eq('id', id)
+    await supabase.from('notifications').delete().eq('id', id).eq('user_id', userId)
     setNotifications(prev => prev.filter(n => n.id !== id))
   }
 
@@ -279,7 +279,7 @@ export default function NotificationsPageClient({
     )
     return (
       <button
-        className={styles.markAllBtn}
+        className={`${styles.markAllBtn} pressable`}
         style={{
           background:  push.subscribed ? 'rgba(34,197,94,0.15)' : 'var(--card-bg)',
           color:       push.subscribed ? '#4ade80' : 'var(--text)',
@@ -298,7 +298,7 @@ export default function NotificationsPageClient({
 
       {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push(dashboardPath)}>←</button>
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push(dashboardPath)}>←</button>
         <div className={styles.headerCenter}>
           <h1 className={styles.headerTitle}>Notifications</h1>
           {localUnread > 0 && <span className={styles.unreadBadge}>{localUnread}</span>}
@@ -306,11 +306,11 @@ export default function NotificationsPageClient({
         <div className={styles.headerRight}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead}>✓ All read</button>
+            <button className={`${styles.markAllBtn} pressable`} onClick={markAllRead}>✓ All read</button>
           )}
           {isPrincipal && (
             <button
-              className={styles.markAllBtn}
+              className={`${styles.markAllBtn} pressable`}
               style={{ background: 'var(--burgundy)', color: '#fff', borderColor: 'transparent' }}
               onClick={() => setShowSend(v => !v)}
             >
@@ -366,8 +366,8 @@ export default function NotificationsPageClient({
             </div>
           </div>
           <div className={styles.broadcastActions}>
-            <button className={styles.cancelBroadcast} onClick={() => setShowSend(false)}>Cancel</button>
-            <button className={styles.sendBroadcast} onClick={sendBroadcast}
+            <button className={`${styles.cancelBroadcast} pressable`} onClick={() => setShowSend(false)}>Cancel</button>
+            <button className={`${styles.sendBroadcast} pressable`} onClick={sendBroadcast}
               disabled={sending || !sendTitle.trim() || !sendBody.trim()}>
               {sending ? 'Sending…' : `📤 Send to ${sendTarget === 'all' ? 'Everyone' : sendTarget}`}
             </button>
@@ -386,7 +386,7 @@ export default function NotificationsPageClient({
           return (
             <button
               key={f.key}
-              className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''}`}
+              className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''} pressable`}
               onClick={() => setFilter(f.key)}
             >
               <span>{f.emoji}</span>
@@ -421,7 +421,7 @@ export default function NotificationsPageClient({
                 {items.map(notif => (
                   <button
                     key={notif.id}
-                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''}`}
+                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''} pressable`}
                     onClick={() => handleClick(notif)}
                   >
                     <div className={`${styles.notifIcon} ${!notif.is_read ? styles.notifIconUnread : ''}`}>
@@ -435,7 +435,7 @@ export default function NotificationsPageClient({
                     <div className={styles.notifRight}>
                       {!notif.is_read && <div className={styles.unreadDot} />}
                       <button
-                        className={styles.deleteBtn}
+                        className={`${styles.deleteBtn} pressable`}
                         onClick={e => deleteNotif(notif.id, e)}
                         title="Delete"
                       >✕</button>
@@ -448,7 +448,7 @@ export default function NotificationsPageClient({
         )}
 
         {filtered.length >= 50 && (
-          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading}>
+          <button className={`${styles.loadMoreBtn} pressable`} onClick={loadMore} disabled={loading}>
             {loading ? '⏳ Loading...' : 'Load more notifications'}
           </button>
         )}
@@ -486,7 +486,7 @@ export default function NotificationsPageClient({
                 <span style={{ fontSize: '1.4rem' }}>{TYPE_EMOJIS[selected.type] ?? '🔔'}</span>
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>{selected.title}</h2>
               </div>
-              <button
+              <button className="pressable"
                 onClick={closeModal}
                 style={{
                   background: 'transparent', border: 'none', color: 'inherit',
@@ -507,7 +507,7 @@ export default function NotificationsPageClient({
             </p>
 
             {selected.link_url && (
-              <button
+              <button className="pressable"
                 onClick={viewLinkedItem}
                 style={{
                   marginTop: 12, width: '100%', padding: '10px 16px',

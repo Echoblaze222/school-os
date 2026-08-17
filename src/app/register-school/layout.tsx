@@ -15,7 +15,7 @@ import { ThemeScript } from './ThemeScript'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Register Your School — SchoolOS',
+  title: 'Register Your School | SchoolOS',
   description: 'Set up your school on SchoolOS',
 }
 

@@ -1,8 +1,8 @@
 'use client'
 // FIXED:
-// 1. School branding — accent colour from school.primary_color replaces hardcoded --burgundy
+// 1. School branding - accent colour from school.primary_color replaces hardcoded --burgundy
 // 2. Props extended: accepts school + profile from page.tsx
-// 3. handleGrade() now updates existing grade OR sets new — same function handles both
+// 3. handleGrade() now updates existing grade OR sets new - same function handles both
 // 4. Error messages surfaced in UI instead of only setSaveErrors
 // 5. Uses RolePageWrapper so header/nav is consistent with rest of teacher dashboard
 // 6. filter bar uses school brand colour for active state
@@ -108,7 +108,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
       <div className={styles.filterBar} style={{ marginBottom: 'var(--space-4)' }}>
         {(['ungraded', 'all', 'graded'] as const).map(f => (
           <button key={f}
-            className={`${styles.filterTab} ${filter === f ? styles.filterTabActive : ''}`}
+            className={`${styles.filterTab} ${filter === f ? styles.filterTabActive : ''} pressable`}
             style={filter === f ? { color: sc, borderBottomColor: sc } : {}}
             onClick={() => setFilter(f)}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -221,7 +221,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
 
                     {/* Grade button */}
                     <button
-                      className={styles.gradeBtn}
+                      className={`${styles.gradeBtn} pressable`}
                       onClick={() => handleGrade(sub)}
                       disabled={saving === sub.id}
                       style={{ background: sc }}>

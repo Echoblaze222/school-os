@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import RecordPaymentClient from './RecordPaymentClient'
 
-export const metadata = { title: 'Record Payment — SchoolOS' }
+export const metadata = { title: 'Record Payment | SchoolOS' }
 
 export interface SchoolInfo {
   school_id:    string

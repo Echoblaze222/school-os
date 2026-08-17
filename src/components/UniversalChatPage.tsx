@@ -432,8 +432,8 @@ export default function UniversalChatPage({
               <p className={styles.findTitle}>New Message</p>
               <p className={styles.findDesc}>
                 {role === 'principal'
-                  ? "Type a code to search your school — or another principal, anywhere"
-                  : "Start typing a code — matches from your school will show up"}
+                  ? "Type a code to search your school, or another principal, anywhere"
+                  : "Start typing a code. Matches from your school will show up"}
               </p>
               <div className={styles.findRow}>
                 <input
@@ -597,4 +597,4 @@ export default function UniversalChatPage({
       </div>
     </div>
   )
-}
+}

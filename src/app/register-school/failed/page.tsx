@@ -19,7 +19,7 @@ export default function RegistrationFailedPage() {
 
         <p className={styles.subtitle}>
           Your payment could not be verified or was not completed.
-          Your school registration has been saved — you can try paying again.
+          Your school registration has been saved. You can try paying again.
         </p>
 
         <div className={styles.nextSteps}>

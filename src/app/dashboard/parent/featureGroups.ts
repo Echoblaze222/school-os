@@ -1,5 +1,5 @@
 // src/app/dashboard/parent/featureGroups.ts
-// Shared "All features" list for the Parent role — used by RoleHeroHeader
+// Shared "All features" list for the Parent role - used by RoleHeroHeader
 // (dashboard home) and RoleSubHeader (every other Parent page) so the sheet
 // stays identical everywhere instead of drifting per page.
 

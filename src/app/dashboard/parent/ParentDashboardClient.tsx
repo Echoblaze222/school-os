@@ -57,12 +57,12 @@ interface Props { profile: any; school: any; userId: string; counts?: any; activ
 
 function buildInsight(stats: ChildStats, childName: string): string {
   if (stats.attendance != null && stats.attendance < 80) {
-    return `${childName}'s attendance is at ${stats.attendance}% this term — below where it usually sits. Worth checking in about what's been keeping them out.`
+    return `${childName}'s attendance is at ${stats.attendance}% this term, below where it usually sits. Worth checking in about what's been keeping them out.`
   }
   if (stats.pendingTasks > 0) {
     return `${childName} has ${stats.pendingTasks} assignment${stats.pendingTasks === 1 ? '' : 's'} due. Attendance and results are both looking normal.`
   }
-  return `${childName} is tracking well this term — attendance and assignments are both on pace.`
+  return `${childName} is tracking well this term. Attendance and assignments are both on pace.`
 }
 
 export default function ParentDashboardClient({ profile, school, userId, counts = {}, activities }: Props) {
@@ -96,7 +96,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
       // student_profiles.class_id is what every real write flow updates
       // (student creation, the secretary edit modal, and promotion/transfer
-      // all write here) — it's the CURRENT value, especially after a
+      // all write here) - it's the CURRENT value, especially after a
       // student has been promoted. profiles.class_id is never updated by
       // promotion, so it goes stale for any promoted student; it's used
       // only as a fallback for the rare case where a student has no
@@ -260,10 +260,9 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         {children.length > 1 && (
           <div className={motion.riseIn} style={{ display: 'flex', gap: 8, marginTop: 'var(--space-6)', marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
             {children.map((c: any) => (
-              <button
-                key={c.id}
+              <button key={c.id}
                 onClick={() => setActiveChildId(c.id)}
-                className={motion.pressable}
+                className={`${motion.pressable} pressable`}
                 style={{
                   padding: '7px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
                   background: activeChildId === c.id ? sc : 'var(--glass-bg)',
@@ -292,7 +291,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
                 label="Term GPA"
                 value={statsLoading ? 0 : (childStats.gpa != null ? Math.round((childStats.gpa / 5) * 100) : 0)}
                 isPercent
-                displayValue={statsLoading ? '…' : (childStats.gpa != null ? childStats.gpa.toFixed(1) : '—')}
+                displayValue={statsLoading ? '…' : (childStats.gpa != null ? childStats.gpa.toFixed(1) : 'N/A')}
                 color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
               />
             </div>
@@ -335,9 +334,8 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         )}
 
         {/* Link another child */}
-        <button
-          onClick={() => setShowLinkForm(true)}
-          className={motion.pressable}
+        <button onClick={() => setShowLinkForm(true)}
+          className={`${motion.pressable} pressable`}
           style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', margin: '14px 0 20px',
             background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
@@ -349,7 +347,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         {showLinkForm && (
           <div style={{ marginBottom: 16 }}>
             <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} />
-            <button onClick={() => setShowLinkForm(false)}
+            <button className="pressable" onClick={() => setShowLinkForm(false)}
               style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
               Cancel
             </button>
@@ -360,7 +358,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
           items={activities}
           accentColor={sc}
           onDelete={handleDeleteActivity}
-          emptyLabel="Nothing yet — updates about your child will show up here"
+          emptyLabel="Nothing yet. Updates about your child will show up here"
         />
 
         <div className={styles.mobileSpace} />

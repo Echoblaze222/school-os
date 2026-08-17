@@ -5,6 +5,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import StudentNav from '@/components/StudentNav'
 import { FileTextIcon, CalendarIcon } from '@/components/Icons'
 import styles from './page.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -113,8 +114,8 @@ export default function RecordsClient({ profile, school, userId }: Props) {
               attendance.length === 0
                 ? <div className={styles.empty}><CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No attendance records yet</p></div>
                 : <div className={styles.list}>
-                  {attendance.map(a => (
-                    <div key={a.id} className={styles.card}>
+                  {attendance.map((a, i) => (
+                    <div key={a.id} className={`${styles.card} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                       <div className={styles.cardIcon} style={{ background: sColor(a.status)+'20' }}>
                         <CalendarIcon size={16} color={sColor(a.status)}/>
                       </div>
@@ -134,8 +135,8 @@ export default function RecordsClient({ profile, school, userId }: Props) {
               behaviour.length === 0
                 ? <div className={styles.empty}><FileTextIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No behaviour records yet</p></div>
                 : <div className={styles.list}>
-                  {behaviour.map(b => (
-                    <div key={b.id} className={styles.card}>
+                  {behaviour.map((b, i) => (
+                    <div key={b.id} className={`${styles.card} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                       <div className={styles.cardIcon} style={{ background: bColor(b.type)+'20' }}>
                         <FileTextIcon size={16} color={bColor(b.type)}/>
                       </div>

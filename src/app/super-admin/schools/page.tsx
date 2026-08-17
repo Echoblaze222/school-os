@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SchoolsPageClient from './SchoolsPageClient'
 
-export const metadata = { title: 'All Schools — SchoolOS Admin' }
+export const metadata = { title: 'All Schools | SchoolOS Admin' }
 
 export default async function SchoolsPage() {
   const supabase =await createClient()

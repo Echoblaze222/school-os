@@ -208,9 +208,8 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
 
       {/* ── Header ── */}
       <header className={styles.header}>
-        <button
-          onClick={() => router.back()}
-          className={styles.backBtn}
+        <button onClick={() => router.back()}
+          className={`${styles.backBtn} pressable`}
           aria-label="Go back"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -240,7 +239,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
                 <button
                   key={cls.id}
                   type="button"
-                  className={`${styles.classChip} ${form.class_id === cls.id ? styles.classChipActive : ''}`}
+                  className={`${styles.classChip} ${form.class_id === cls.id ? styles.classChipActive : ''} pressable`}
                   onClick={() => handleClassChange(cls.id)}
                   aria-pressed={form.class_id === cls.id}
                 >
@@ -348,7 +347,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
                 <button
                   key={n}
                   type="button"
-                  className={`${styles.presetBtn} ${Number(form.max_score) === n ? styles.presetBtnActive : ''}`}
+                  className={`${styles.presetBtn} ${Number(form.max_score) === n ? styles.presetBtnActive : ''} pressable`}
                   onClick={() => setForm(f => ({ ...f, max_score: String(n) }))}
                 >
                   {n}
@@ -375,7 +374,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
               </div>
               <button
                 type="button"
-                className={styles.fileRemoveBtn}
+                className={`${styles.fileRemoveBtn} pressable`}
                 onClick={removeFile}
                 aria-label="Remove file"
               >
@@ -450,7 +449,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
         <div className={styles.formActions}>
           <button
             type="button"
-            className="btn btn-ghost"
+            className="btn btn-ghost pressable"
             onClick={() => router.back()}
             disabled={submitting}
           >
@@ -458,7 +457,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
           </button>
           <button
             type="button"
-            className={`btn btn-primary ${styles.submitBtn}`}
+            className={`btn btn-primary ${styles.submitBtn} pressable`}
             onClick={handleSubmit}
             disabled={submitting || classes.length === 0}
           >

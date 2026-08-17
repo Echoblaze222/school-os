@@ -175,7 +175,7 @@ export default function OnboardingStage3() {
     )
     if (ninStatus === 'bypassed') return (
       <span style={{ fontSize: '0.72rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
-        ⏭️ NIN saved — will be verified later by admin
+        ⏭️ NIN saved, will be verified later by admin
       </span>
     )
     if (ninStatus === 'failed') return (
@@ -194,7 +194,7 @@ export default function OnboardingStage3() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#10B981,#059669)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}>📸</div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 3 of 3 — Passport photo &amp; NIN verification</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 3 of 3: Passport photo &amp; NIN verification</p>
         </div>
 
         {/* Progress dots */}
@@ -227,7 +227,7 @@ export default function OnboardingStage3() {
                 : <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--glass-bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>👤</div>
               }
               <span style={{ fontSize: '0.82rem', fontWeight: 600, color: preview ? '#10B981' : 'var(--brand-light)' }}>
-                {preview ? '✓ Photo uploaded — tap to change' : 'Tap to upload'}
+                {preview ? '✓ Photo uploaded, tap to change' : 'Tap to upload'}
               </span>
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhoto} />
             </label>
@@ -237,10 +237,10 @@ export default function OnboardingStage3() {
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
               National Identification Number (NIN)
-              {ninBypassed && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> — optional for now</span>}
+              {ninBypassed && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>, optional for now</span>}
             </label>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
-              11 digits{ninBypassed ? ' — enter if available' : ' — verified in real time against NIMC'}
+              11 digits{ninBypassed ? ', enter if available' : ', verified in real time against NIMC'}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <input

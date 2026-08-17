@@ -2,7 +2,7 @@
 // src/app/dashboard/parent/fees/FeesClient.tsx
 //
 // Parent-facing fee overview. Shows, per linked child:
-//   - balance owed (from payment_invoices — the live source of truth)
+//   - balance owed (from payment_invoices - the live source of truth)
 //   - payment history / receipts (from payments, joined through
 //     payment_invoices -> fee_structures, same chain bursar's ReceiptsClient uses)
 //   - reminders sent by the bursar (from fee_reminders)
@@ -21,6 +21,7 @@ import {
   XIcon, CameraIcon, ImageIcon, AlertIcon, CheckIcon, ReceiptIcon,
 } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -97,7 +98,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   const router       = useRouter()
 
   // Parent returns from Paystack's hosted checkout to this same page with
-  // ?payment=callback — webhook delivery is usually near-instant but can lag
+  // ?payment=callback - webhook delivery is usually near-instant but can lag
   // a second or two behind the redirect, so we refetch once on arrival and
   // clean the query param so a manual refresh doesn't re-trigger this.
   useEffect(() => {
@@ -110,7 +111,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   async function loadChildren() {
     setLoading(true)
     setError('')
-    // A parent can have more than one linked child — never assume .single()
+    // A parent can have more than one linked child - never assume .single()
     const { data: childData, error: err } = await supabase
       .from('profiles')
       .select('id, full_name, class_level')
@@ -172,7 +173,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
       return
     }
 
-    // Re-verify term/year client-side — PostgREST does not reliably apply
+    // Re-verify term/year client-side - PostgREST does not reliably apply
     // filters on a 2nd-level nested embed (payment_invoices -> fee_structures).
     const filteredInv = (invData ?? []).filter((inv: any) => {
       const fs = unwrapEmbed(inv.fee_structures)
@@ -289,35 +290,36 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
       const proofUrl = urlData?.publicUrl ?? null
 
-      const { error: claimErr } = await supabase.from('payment_claims').insert({
-        school_id:      school.id,
-        parent_id:      userId,
-        student_id:     child.id,
-        fee_type:       feeType,
-        term:           claimTerm,
-        academic_year:  claimYear,
-        amount_claimed: parseFloat(claimAmount),
-        bank_used:      bankUsed.trim() || null,
-        payment_date:   payDate || null,
-        notes:          notes.trim() || null,
-        proof_url:      proofUrl,
-        status:         'pending',
-      })
+      const { data: claimRow, error: claimErr } = await supabase
+        .from('payment_claims')
+        .insert({
+          school_id:      school.id,
+          parent_id:      userId,
+          student_id:     child.id,
+          fee_type:       feeType,
+          term:           claimTerm,
+          academic_year:  claimYear,
+          amount_claimed: parseFloat(claimAmount),
+          bank_used:      bankUsed.trim() || null,
+          payment_date:   payDate || null,
+          notes:          notes.trim() || null,
+          proof_url:      proofUrl,
+          status:         'pending',
+        })
+        .select('id')
+        .single()
 
       if (claimErr) throw new Error(claimErr.message)
 
-      await fetch('/api/payments/claim-notify', {
+      // Best-effort: let the bursar know a new claim is waiting. The claim
+      // itself is already saved at this point, so a notify failure (offline,
+      // slow network) must never surface as a submission failure to the
+      // parent - that would risk them re-submitting a duplicate claim.
+      fetch('/api/payments/claim-notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          school_id:    school.id,
-          student_name: child.full_name,
-          amount:       parseFloat(claimAmount),
-          term:         claimTerm,
-          year:         claimYear,
-          fee_type:     feeType,
-        }),
-      })
+        body: JSON.stringify({ claim_id: claimRow?.id }),
+      }).catch(() => {})
 
       showToast('Payment claim submitted! Awaiting bursar confirmation.')
       setShowForm(false)
@@ -394,11 +396,21 @@ export default function FeesClient({ profile, school, userId }: Props) {
   }
 
   function downloadReceipt(r: any) {
+    // Every field below can ultimately trace back to text a staff member
+    // typed somewhere (school address, payment reference/teller note,
+    // fee description). Escaping before interpolation stops a crafted
+    // value in any of those fields from executing as HTML/script when a
+    // parent opens their receipt.
+    const esc = (v: unknown) =>
+      String(v ?? '').replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+      ))
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <title>Receipt ${r.receipt_number}</title>
+  <title>Receipt ${esc(r.receipt_number)}</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; color: #111; }
     h1   { font-size: 1.1rem; margin: 0 0 2px; color: ${sc}; }
@@ -414,20 +426,20 @@ export default function FeesClient({ profile, school, userId }: Props) {
   </style>
 </head>
 <body>
-  <h1>${school?.name ?? 'School'}</h1>
-  ${school?.address ? `<p class="sub">${school.address}</p>` : ''}
+  <h1>${esc(school?.name ?? 'School')}</h1>
+  ${school?.address ? `<p class="sub">${esc(school.address)}</p>` : ''}
   <p class="sub" style="font-weight:800;letter-spacing:.08em;font-size:.7rem;margin-bottom:4px">PAYMENT RECEIPT</p>
-  <p class="badge">${r.receipt_number}</p>
+  <p class="badge">${esc(r.receipt_number)}</p>
   <table>
-    <tr><td>Student</td><td>${child?.full_name ?? ''}</td></tr>
-    ${child?.class_level ? `<tr><td>Class</td><td>${child.class_level}</td></tr>` : ''}
-    <tr><td>Fee Type</td><td style="text-transform:capitalize">${r.fee_type?.replace(/_/g,' ') ?? ''}</td></tr>
-    <tr><td>Term</td><td>${r.term}</td></tr>
-    <tr><td>Academic Year</td><td>${r.academic_year}</td></tr>
-    <tr><td>Payment Method</td><td style="text-transform:capitalize">${r.payment_method?.replace(/_/g,' ') ?? ''}</td></tr>
-    ${r.reference ? `<tr><td>Reference / Teller</td><td>${r.reference}</td></tr>` : ''}
-    <tr><td>Date</td><td>${fmtDate(r.created_at)}</td></tr>
-    <tr class="amount-row"><td>Amount Paid</td><td>${fmtAmt(r.amount)}</td></tr>
+    <tr><td>Student</td><td>${esc(child?.full_name)}</td></tr>
+    ${child?.class_level ? `<tr><td>Class</td><td>${esc(child.class_level)}</td></tr>` : ''}
+    <tr><td>Fee Type</td><td style="text-transform:capitalize">${esc(r.fee_type?.replace(/_/g,' '))}</td></tr>
+    <tr><td>Term</td><td>${esc(r.term)}</td></tr>
+    <tr><td>Academic Year</td><td>${esc(r.academic_year)}</td></tr>
+    <tr><td>Payment Method</td><td style="text-transform:capitalize">${esc(r.payment_method?.replace(/_/g,' '))}</td></tr>
+    ${r.reference ? `<tr><td>Reference / Teller</td><td>${esc(r.reference)}</td></tr>` : ''}
+    <tr><td>Date</td><td>${esc(fmtDate(r.created_at))}</td></tr>
+    <tr class="amount-row"><td>Amount Paid</td><td>${esc(fmtAmt(r.amount))}</td></tr>
   </table>
 </body>
 </html>`
@@ -437,6 +449,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
     const a    = document.createElement('a')
     a.href     = url
     a.target   = '_blank'
+    a.rel      = 'noopener'
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
@@ -494,11 +507,11 @@ export default function FeesClient({ profile, school, userId }: Props) {
               </p>
             </div>
             {([
-              ['Student',        child?.full_name ?? '—'],
-              ['Class',          child?.class_level ?? '—'],
+              ['Student',        child?.full_name ?? 'N/A'],
+              ['Class',          child?.class_level ?? 'N/A'],
               ['Fee Type',       selectedReceipt.fee_type?.replace(/_/g,' ')],
-              ['Term',           selectedReceipt.term || '—'],
-              ['Academic Year',  selectedReceipt.academic_year || '—'],
+              ['Term',           selectedReceipt.term || 'N/A'],
+              ['Academic Year',  selectedReceipt.academic_year || 'N/A'],
               ['Payment Method', selectedReceipt.payment_method?.replace(/_/g,' ')],
               selectedReceipt.reference ? ['Reference / Teller', selectedReceipt.reference] : null,
               ['Date',           fmtDate(selectedReceipt.created_at)],
@@ -509,11 +522,11 @@ export default function FeesClient({ profile, school, userId }: Props) {
               </div>
             ))}
             <div style={{ display:'flex', gap:10, marginTop:16 }}>
-              <button onClick={() => downloadReceipt(selectedReceipt)}
+              <button className="pressable" onClick={() => downloadReceipt(selectedReceipt)}
                 style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
                 ↓ Download / Print
               </button>
-              <button onClick={() => setSelectedReceipt(null)}
+              <button className="pressable" onClick={() => setSelectedReceipt(null)}
                 style={{ flex:1, height:44, background:'var(--input-bg)', color:'var(--text-primary)', border:'1px solid var(--input-border)', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
                 Close
               </button>
@@ -542,18 +555,18 @@ export default function FeesClient({ profile, school, userId }: Props) {
       )}
 
       {loading && children.length === 0
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <div style={{ padding: 'var(--space-4)' }}><SkeletonList count={3} variant="card" /></div>
         : children.length === 0
           ? <div className={styles.empty}>
               <WalletIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
               <p>No child linked to your account.</p>
             </div>
           : <>
-              {/* Child switcher — only shown when parent has more than one linked child */}
+              {/* Child switcher - only shown when parent has more than one linked child */}
               {children.length > 1 && (
                 <div style={{ display:'flex', gap:8, marginBottom:'var(--space-4)', overflowX:'auto' }}>
                   {children.map(c => (
-                    <button key={c.id} onClick={() => setChildId(c.id)}
+                    <button className="pressable" key={c.id} onClick={() => setChildId(c.id)}
                       style={{
                         flexShrink:0, padding:'8px 16px', borderRadius:20, fontWeight:700,
                         fontSize:'0.82rem', cursor:'pointer', border:'1px solid var(--glass-border)',
@@ -577,7 +590,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                 <div className={styles.tabs} style={{ flex:1 }}>
                   {TERMS.map(t => (
                     <button key={t} onClick={() => setTerm(t)}
-                      className={`${styles.tab} ${term===t ? styles.tabActive : ''}`}
+                      className={`${styles.tab} ${term===t ? styles.tabActive : ''} pressable`}
                       style={term===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
                       {t.replace(' Term','')}
                     </button>
@@ -602,7 +615,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                   ['reminders', BellIcon, `Reminders${unreadReminderCount ? ` (${unreadReminderCount})` : ''}`],
                 ] as [Tab, typeof WalletIcon, string][]).map(([t, TabIcon, label]) => (
                   <button key={t} onClick={() => setTab(t)}
-                    className={`${styles.tab} ${tab===t ? styles.tabActive : ''}`}
+                    className={`${styles.tab} ${tab===t ? styles.tabActive : ''} pressable`}
                     style={tab===t
                       ? { background:sc, color:'#fff', borderColor:sc, display:'flex', alignItems:'center', gap:6 }
                       : { display:'flex', alignItems:'center', gap:6 }}>
@@ -704,7 +717,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                                 }}
                                               />
                                             </div>
-                                            <button
+                                            <button className="pressable"
                                               onClick={closePayForm}
                                               style={{
                                                 height: 40, width: 40, flexShrink: 0, background: 'transparent',
@@ -714,9 +727,9 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                             ><XIcon size={16} /></button>
                                           </div>
                                           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0' }}>
-                                            Balance owed: {fmtAmt(inv.balance_ngn)} — you can pay part or all of it.
+                                            Balance owed: {fmtAmt(inv.balance_ngn)}. You can pay part or all of it.
                                           </p>
-                                          <button
+                                          <button className="pressable"
                                             onClick={() => {
                                               const amt = parseFloat(payAmountInput)
                                               if (!amt || amt <= 0) { setPayError('Enter a valid amount.'); return }
@@ -739,7 +752,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                           </button>
                                         </div>
                                       ) : (
-                                        <button
+                                        <button className="pressable"
                                           onClick={() => openPayForm(inv.id, inv.balance_ngn)}
                                           style={{
                                             width: '100%', height: 40, marginTop: 8,
@@ -763,7 +776,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             )}
 
                             {totalOwed > 0 && (
-                              <button onClick={() => { setTab('submit'); setShowForm(true) }}
+                              <button className="pressable" onClick={() => { setTab('submit'); setShowForm(true) }}
                                 style={{ width:'100%', height:46, background:sc, color:'#fff',
                                   border:'none', borderRadius:10, fontWeight:700, fontSize:'0.88rem',
                                   cursor:'pointer', marginTop:'var(--space-4)', display:'flex',
@@ -812,7 +825,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                     {tab === 'submit' && (
                       <>
                         {!showForm && (
-                          <button onClick={() => setShowForm(true)}
+                          <button className="pressable" onClick={() => setShowForm(true)}
                             style={{ width:'100%', height:46, background:sc, color:'#fff',
                               border:'none', borderRadius:10, fontWeight:700, fontSize:'0.88rem',
                               cursor:'pointer', marginBottom:'var(--space-5)', display:'flex',
@@ -875,7 +888,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                   style={{ display:'none' }}/>
 
                                 {!proofPreview
-                                  ? <button onClick={() => fileRef.current?.click()}
+                                  ? <button className="pressable" onClick={() => fileRef.current?.click()}
                                       style={{ width:'100%', height:100, border:'2px dashed var(--input-border)',
                                         borderRadius:10, background:'var(--input-bg)', cursor:'pointer',
                                         display:'flex', flexDirection:'column', alignItems:'center',
@@ -889,7 +902,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                       <img src={proofPreview} alt="proof"
                                         style={{ width:'100%', maxHeight:200, objectFit:'contain',
                                           borderRadius:10, border:'1px solid var(--glass-border)' }}/>
-                                      <button onClick={() => { setProofFile(null); setProofPreview(null) }}
+                                      <button className="pressable" onClick={() => { setProofFile(null); setProofPreview(null) }}
                                         style={{ position:'absolute', top:6, right:6, background:'#EF4444',
                                           border:'none', borderRadius:'50%', width:26, height:26,
                                           cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -903,12 +916,12 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>
                               <button onClick={handleSubmitClaim}
                                 disabled={saving || !claimAmount || !proofFile}
-                                className="btn-primary"
+                                className="btn-primary pressable"
                                 style={{ flex:1, height:44, border:'none', borderRadius:9, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
                                 {saving ? 'Submitting…' : 'Submit for Confirmation'}
                               </button>
                               <button onClick={() => { setShowForm(false); resetForm() }}
-                                className="btn-secondary"
+                                className="btn-secondary pressable"
                                 style={{ padding:'0 18px', height:44, borderRadius:9, fontWeight:700, cursor:'pointer' }}>
                                 Cancel
                               </button>
@@ -934,7 +947,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                       <div style={{ display:'flex', justifyContent:'space-between', width:'100%', alignItems:'center' }}>
                                         <div>
                                           <p className={styles.cardTitle} style={{ marginBottom:2 }}>
-                                            {c.fee_type?.replace(/_/g,' ')} — {c.term} {c.academic_year}
+                                            {c.fee_type?.replace(/_/g,' ')}, {c.term} {c.academic_year}
                                           </p>
                                           <p className={styles.cardMeta}>
                                             {fmtAmt(c.amount_claimed)}

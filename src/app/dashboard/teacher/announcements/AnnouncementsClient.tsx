@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { MegaphoneIcon, PlusIcon, MapPinIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -23,7 +24,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
   useEffect(() => { load() }, [])
 
   // ── Load an AI-generated announcement draft ───────────────────────────────
-  // Only prefills the form — nothing is posted until this teacher clicks
+  // Only prefills the form - nothing is posted until this teacher clicks
   // the real "Post" button below, same as if they'd typed it themselves.
   useEffect(() => {
     const draftId = searchParams.get('draftId')
@@ -38,7 +39,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
         .single()
 
       if (error || !draft) {
-        setAiDraftBanner('Couldn\'t load that AI draft — it may have already been used or removed.')
+        setAiDraftBanner('Couldn\'t load that AI draft. It may have already been used or removed.')
         return
       }
 
@@ -48,7 +49,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
         audience: draft.payload?.audience ?? 'students',
       })
       setShowForm(true)
-      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant — review below, then post it yourself.`)
+      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant. Review below, then post it yourself.`)
 
       await supabase.from('ai_action_drafts').delete().eq('id', draftId) // consumed
       router.replace('/dashboard/teacher/announcements')
@@ -101,7 +102,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Announcements">
 
       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'var(--space-4)' }}>
-        <button onClick={() => setShowForm(!showForm)}
+        <button className="pressable" onClick={() => setShowForm(!showForm)}
           style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 14px', background:sc, color:'#fff', border:'none', borderRadius:999, fontWeight:700, fontSize:'0.8rem', cursor:'pointer' }}>
           <PlusIcon size={13} color="white"/> New Announcement
         </button>
@@ -140,11 +141,11 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
             </div>
           </div>
           <div style={{ display:'flex', gap:'var(--space-2)', marginTop:'var(--space-4)' }}>
-            <button onClick={create} disabled={saving || !form.title || !form.body}
+            <button className="pressable" onClick={create} disabled={saving || !form.title || !form.body}
               style={{ flex:1, height:40, background:sc, color:'#fff', border:'none', borderRadius:8, fontWeight:700, fontSize:'0.85rem', cursor:'pointer', opacity:saving?0.6:1 }}>
               {saving ? 'Posting...' : 'Post Announcement'}
             </button>
-            <button onClick={() => setShowForm(false)}
+            <button className="pressable" onClick={() => setShowForm(false)}
               style={{ flex:1, height:40, background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-muted)', fontWeight:600, fontSize:'0.85rem', cursor:'pointer' }}>
               Cancel
             </button>
@@ -152,7 +153,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
         </div>
       )}
 
-      {loading ? <div className={styles.loading}><span/><span/><span/></div>
+      {loading ? <SkeletonList count={4} variant="card" />
         : rows.length === 0
           ? <div className={styles.empty}><MegaphoneIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No announcements yet</p></div>
           : <div className={styles.list}>
@@ -178,12 +179,12 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:'var(--space-2)', paddingLeft:56 }}>
-                  <button onClick={() => togglePin(item.id, item.is_pinned)}
+                  <button className="pressable" onClick={() => togglePin(item.id, item.is_pinned)}
                     style={{ padding:'5px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--text-muted)', cursor:'pointer' }}>
                     {item.is_pinned ? 'Unpin' : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><MapPinIcon size={11} /></span>Pin</>}
                   </button>
                   {item.author?.id === userId || !item.author ? (
-                    <button onClick={() => deleteRow(item.id)}
+                    <button className="pressable" onClick={() => deleteRow(item.id)}
                       style={{ padding:'5px 12px', background:'transparent', border:'1px solid rgba(239,68,68,0.2)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--danger)', cursor:'pointer' }}>
                       Delete
                     </button>

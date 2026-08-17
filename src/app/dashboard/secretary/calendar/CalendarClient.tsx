@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { CalendarIcon, EditIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 const EVENT_TYPES = ['Academic', 'Holiday', 'Exam', 'Meeting', 'Sports', 'Cultural', 'Other']
 const TYPE_COLORS: Record<string, string> = {
@@ -94,9 +95,9 @@ export default function CalendarClient({ events: init, profile, school, userId }
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Calendar">
       {/* Month nav */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-5)' }}>
-        <button onClick={prevMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '1.1rem' }}>‹</button>
+        <button className="pressable" onClick={prevMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '1.1rem' }}>‹</button>
         <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{MONTHS[curMonth]} {curYear}</p>
-        <button onClick={nextMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '1.1rem' }}>›</button>
+        <button className="pressable" onClick={nextMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '1.1rem' }}>›</button>
       </div>
 
       {/* Day labels */}
@@ -138,8 +139,8 @@ export default function CalendarClient({ events: init, profile, school, userId }
       {upcoming.length === 0 ? (
         <div className={styles.emptyState} style={{ paddingTop: 'var(--space-6)' }}><CalendarIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No upcoming events</p></div>
       ) : (
-        upcoming.map(e => (
-          <div key={e.id} className={styles.listItem}>
+        upcoming.map((e, i) => (
+          <div key={e.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
             <div className={styles.listIconBox} style={{ background: (TYPE_COLORS[e.event_type] ?? sc) + '22' }}>
               <CalendarIcon size={16} color={TYPE_COLORS[e.event_type] ?? sc} />
             </div>
@@ -149,8 +150,8 @@ export default function CalendarClient({ events: init, profile, school, userId }
             </div>
             <span className={styles.listBadge} style={{ background: (TYPE_COLORS[e.event_type] ?? '#6B7280') + '22', color: TYPE_COLORS[e.event_type] ?? '#6B7280' }}>{e.event_type}</span>
             <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-              <button onClick={() => openEdit(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EditIcon size={14} /></button>
-              <button onClick={() => setDelItem(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
+              <button className="pressable" onClick={() => openEdit(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EditIcon size={14} /></button>
+              <button className="pressable" onClick={() => setDelItem(e)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
             </div>
           </div>
         ))

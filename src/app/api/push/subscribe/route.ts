@@ -35,9 +35,11 @@ export async function POST(req: Request) {
   const admin = adminClient()
 
   // If this is a subscription renewal (pushsubscriptionchange event),
-  // delete the old endpoint first
+  // delete the old endpoint first — scoped to this user, so a request
+  // can't be used to unsubscribe a different user's device by passing
+  // their endpoint string.
   if (oldEndpoint) {
-    await admin.from('push_subscriptions').delete().eq('endpoint', oldEndpoint)
+    await admin.from('push_subscriptions').delete().eq('endpoint', oldEndpoint).eq('user_id', user.id)
   }
 
   // Upsert by endpoint so re-subscribing the same browser doesn't create a duplicate

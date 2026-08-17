@@ -5,6 +5,7 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { UserIcon, BarChartIcon, CalendarIcon, TrophyIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 // PARENT FIX: accept childId prop so parent can view any linked child via ?id=
 interface Props { profile: any; school: any; userId: string; childId?: string | null }
@@ -32,7 +33,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
     const ids = links.map((l: any) => l.student_id as string)
 
     // student_profiles.class_id is what every real write flow updates
-    // (creation, edit modal, promotion/transfer) — it's the CURRENT value.
+    // (creation, edit modal, promotion/transfer) - it's the CURRENT value.
     // profiles.class_id is never touched by promotion, so it goes stale
     // for any promoted student; used only as a fallback when a student has
     // no student_profiles row at all.
@@ -108,7 +109,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
   return (
     <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Child's Profile" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="card" />
         : !child
           ? <div className={styles.empty}><UserIcon size={40} color="var(--text-faint)" strokeWidth={1}/><p>No child linked to your account. Contact the school admin.</p></div>
           : <>

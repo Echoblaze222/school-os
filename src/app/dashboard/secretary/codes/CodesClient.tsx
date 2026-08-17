@@ -168,11 +168,11 @@ function CodeSuccessScreen({
         </p>
       </div>
 
-      <button onClick={copyCode} className={styles.copyBothBtn}>
+      <button className="pressable" onClick={copyCode} className={styles.copyBothBtn}>
         Copy Details
       </button>
 
-      <button onClick={onGenerateAnother} className={styles.enrolAnotherBtn}>
+      <button className="pressable" onClick={onGenerateAnother} className={styles.enrolAnotherBtn}>
         + Generate Another Code
       </button>
     </div>
@@ -252,12 +252,30 @@ export default function CodesClient({ entries: init, students, classes, profile,
 
   async function regenerateCode(entry: CodeEntry) {
     setSaving(entry.id)
-    const prefix  = entry.role.slice(0, 3).toUpperCase()
-    const year    = new Date().getFullYear()
-    const rand    = Math.floor(1000 + Math.random() * 9000)
-    const newCode = `${prefix}-${year}-${rand}`
-    const { error } = await supabase.from('profiles').update({ default_code: newCode }).eq('id', entry.id)
-    if (!error) setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: newCode } : e))
+    // Regeneration goes through /api/staff-codes/regenerate (added while
+    // hardening Principal's identical CodesClient.tsx) rather than writing
+    // directly from the browser. The old approach generated a 4-digit code
+    // (only 9,000 possibilities) with no school scoping on the write — the
+    // access code is the sole credential needed to activate an account, so
+    // a short, guessable one let anyone brute-force account takeover
+    // before the real user's first login. The route also verifies the
+    // caller and target are in the same school and that a secretary is
+    // only touching student/parent codes, matching this screen's own
+    // create-account role restrictions.
+    try {
+      const res = await fetch('/api/staff-codes/regenerate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ profileId: entry.id }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error ?? 'Could not regenerate code')
+      setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: result.code } : e))
+    } catch {
+      // Silent no-op on failure matches this function's prior behaviour
+      // (no error UI existed before this fix either); the code simply
+      // won't update and the user can retry.
+    }
     setSaving(null)
   }
 
@@ -414,7 +432,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
     const isActive = roleTab === r
     const count    = r === 'all' ? entries.length : entries.filter(e => e.role === r).length
     return (
-      <button onClick={() => setRoleTab(r)} className={styles.roleChip}
+      <button className="pressable" onClick={() => setRoleTab(r)} className={styles.roleChip}
         style={{
           background:  isActive ? m.color + '22' : 'var(--glass-bg)',
           borderColor: isActive ? m.color : 'var(--glass-border)',
@@ -457,7 +475,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
           {resetError && (
             <div style={{ background: '#EF444415', border: '1px solid #EF444433', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: 0 }}>{resetError}</p>
-              <button onClick={() => setResetError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 0, display: 'flex' }}><XIcon size={14} color="#EF4444" /></button>
+              <button className="pressable" onClick={() => setResetError(null)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 0, display: 'flex' }}><XIcon size={14} color="#EF4444" /></button>
             </div>
           )}
 
@@ -498,20 +516,20 @@ export default function CodesClient({ entries: init, students, classes, profile,
                     </div>
 
                     <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                      <button onClick={() => copyCode(e.default_code, e.id)}
+                      <button className="pressable" onClick={() => copyCode(e.default_code, e.id)}
                         title="Copy login code"
                         style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: copied === e.id ? '#10B98122' : 'var(--glass-bg)', border: `1px solid ${copied === e.id ? '#10B981' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: copied === e.id ? '#10B981' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                         {copied === e.id ? <><CheckIcon size={12} color="#10B981" /> Copied</> : <><ClipboardIcon size={12} /> Copy</>}
                       </button>
 
-                      <button onClick={() => regenerateCode(e)}
+                      <button className="pressable" onClick={() => regenerateCode(e)}
                         disabled={saving === e.id}
                         title="Regenerate login code"
                         style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', opacity: saving === e.id ? 0.5 : 1 }}>
                         <RefreshIcon size={12} /> {saving === e.id ? 'Regenerating…' : 'Regen'}
                       </button>
 
-                      <button onClick={() => resetPassword(e)}
+                      <button className="pressable" onClick={() => resetPassword(e)}
                         disabled={resetting === e.id}
                         title="Reset this user's password"
                         style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: rev ? '#F59E0B15' : 'var(--glass-bg)', border: `1px solid ${rev ? '#F59E0B55' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: resetting === e.id ? 'var(--text-muted)' : '#F59E0B', whiteSpace: 'nowrap', opacity: resetting === e.id ? 0.6 : 1 }}>
@@ -526,17 +544,17 @@ export default function CodesClient({ entries: init, students, classes, profile,
                       <code style={{ fontSize: '0.82rem', fontWeight: 700, color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.08em', flex: 1 }}>
                         {rev.password}
                       </code>
-                      <button onClick={() => copyNewPassword(e.id, rev.password)}
+                      <button className="pressable" onClick={() => copyNewPassword(e.id, rev.password)}
                         style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: `1px solid ${rev.copied ? '#10B981' : '#F59E0B55'}`, color: rev.copied ? '#10B981' : '#F59E0B', whiteSpace: 'nowrap' }}>
                         {rev.copied ? <><CheckIcon size={12} color="#10B981" /> Copied</> : 'Copy'}
                       </button>
-                      <button onClick={() => dismissPassword(e.id)}
-                        title="Dismiss — make sure you've copied the password first"
+                      <button className="pressable" onClick={() => dismissPassword(e.id)}
+                        title="Dismiss (make sure you've copied the password first)"
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 4px', display: 'flex' }}>
                         <XIcon size={16} />
                       </button>
                       <p style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', color: '#F59E0B99', margin: 0 }}>
-                        <AlertIcon size={12} color="#F59E0B99" /> Copy this now — it won't be shown again once you dismiss it.
+                        <AlertIcon size={12} color="#F59E0B99" /> Copy this now. It won't be shown again once you dismiss it.
                       </p>
                     </div>
                   )}
@@ -560,7 +578,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
             <div className={styles.enrolForm}>
               <div className={styles.formHeader}>
                 <p className={styles.formTitle}>Generate Access Code</p>
-                <p className={styles.formSub}>Fill in the details below. After saving, you'll get the access code to share — they'll set their own password on first login.</p>
+                <p className={styles.formSub}>Fill in the details below. After saving, you'll get the access code to share. They'll set their own password on first login.</p>
               </div>
 
               <div className={styles.fieldGroup}>
@@ -663,12 +681,12 @@ export default function CodesClient({ entries: init, students, classes, profile,
                       </select>
                     </div>
                     <div className={`${styles.fieldGroup} ${styles.fieldFull}`}>
-                      <label className={styles.fieldLabel}>Link to Student (optional — can be added later)</label>
+                      <label className={styles.fieldLabel}>Link to Student (optional, can be added later)</label>
                       <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={fStudentLink} onChange={e => setFStudentLink(e.target.value)}>
                         <option value="">No student linked yet</option>
                         {students.map(s => (
                           <option key={s.id} value={s.id}>
-                            {s.full_name}{s.class_level ? ` — ${s.class_level}` : ''}{s.admission_number ? ` (${s.admission_number})` : ''}
+                            {s.full_name}{s.class_level ? `, ${s.class_level}` : ''}{s.admission_number ? ` (${s.admission_number})` : ''}
                           </option>
                         ))}
                       </select>
@@ -679,7 +697,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
 
               {nError && <p className={styles.errorMsg}>{nError}</p>}
 
-              <button onClick={handleGenerate} disabled={nLoading} className={styles.generateBtn}>
+              <button className="pressable" onClick={handleGenerate} disabled={nLoading} className={styles.generateBtn}>
                 {nLoading ? 'Saving...' : `Generate ${roleMeta(nRole).label} Code`}
               </button>
             </div>
@@ -693,7 +711,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
           <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
             <div className={styles.formHeader}>
               <p className={styles.formTitle}>Bulk Generate Codes</p>
-              <p className={styles.formSub}>Fill in each row directly — mix students and parents freely. Leave blank rows empty, they'll be ignored.</p>
+              <p className={styles.formSub}>Fill in each row directly, mix students and parents freely. Leave blank rows empty, they'll be ignored.</p>
             </div>
             <div className={styles.formBody}>
 
@@ -788,7 +806,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                               onChange={e => updateBulkRow(i, { gender: e.target.value })}
                               style={cellInputStyle}
                             >
-                              <option value="">—</option>
+                              <option value="">N/A</option>
                               {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
                             </select>
                           </td>
@@ -808,7 +826,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                               disabled={!isStudentR}
                               style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
                             >
-                              <option value="">—</option>
+                              <option value="">N/A</option>
                               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                           </td>
@@ -851,7 +869,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                               disabled={!isParentR}
                               style={{ ...cellInputStyle, opacity: isParentR ? 1 : 0.35 }}
                             >
-                              <option value="">—</option>
+                              <option value="">N/A</option>
                               {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
                             </select>
                           </td>
@@ -863,7 +881,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                               disabled={!isParentR}
                               style={{ ...cellInputStyle, opacity: isParentR ? 1 : 0.35 }}
                             >
-                              <option value="">—</option>
+                              <option value="">N/A</option>
                               {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                           </td>
@@ -938,10 +956,10 @@ export default function CodesClient({ entries: init, students, classes, profile,
               <div className={styles.bulkPreviewHeader}>
                 <div>
                   <p className={styles.formTitle}>{bResults.length} Code{bResults.length !== 1 ? 's' : ''} {bLoading ? 'Generating…' : 'Processed'}</p>
-                  <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live — share them now.'}</p>
+                  <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live. Share them now.'}</p>
                 </div>
                 <div className={styles.bulkActions}>
-                  <button onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
+                  <button className="pressable" onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
                     disabled={bLoading}
                     style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
                     {copiedAll ? 'All Copied' : 'Copy All'}
@@ -965,7 +983,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                         </div>
                       </div>
                       <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
-                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : '—')}</code>
+                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : 'N/A')}</code>
                       <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? <>Saved <CheckIcon size={12} /></> : bLoading ? 'Saving…' : 'Pending'}
                       </span>

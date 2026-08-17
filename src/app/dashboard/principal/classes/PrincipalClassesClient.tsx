@@ -190,15 +190,15 @@ export default function PrincipalClassesClient({
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal')}>
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal')}>
           <ArrowLeftIcon size={18} />
         </button>
         <h1 className={styles.headerTitle}>Classes</h1>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn} onClick={toggleTheme}>
+          <button className={`${styles.iconBtn} pressable`} onClick={toggleTheme}>
             {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
           </button>
-          <button className={styles.addBtn} onClick={() => setShowCreate(true)} style={{ background: 'var(--brand)' }}>
+          <button className={`${styles.addBtn} pressable`} onClick={() => setShowCreate(true)} style={{ background: 'var(--brand)' }}>
             <PlusIcon size={16} color="white" />
             <span>New Class</span>
           </button>
@@ -257,7 +257,7 @@ export default function PrincipalClassesClient({
                   ? Math.round((cls.student_count / cls.capacity) * 100) : 0
 
                 return (
-                  <button key={cls.id} className={styles.classCard} onClick={() => setActiveClass(cls)}>
+                  <button key={cls.id} className={`${styles.classCard} pressable`} onClick={() => setActiveClass(cls)}>
                     <div className={styles.classCardTop}>
                       <p className={styles.classCardName}>{cls.name ?? `${cls.class_level}${cls.section}`}</p>
                       <ChevronRightIcon size={14} color="var(--text-muted)" />
@@ -308,7 +308,7 @@ export default function PrincipalClassesClient({
           <div className={styles.detailPanel} onClick={e => e.stopPropagation()}>
             <div className={styles.detailHeader}>
               <h2 className={styles.detailTitle}>{activeClass.name ?? `${activeClass.class_level}${activeClass.section}`}</h2>
-              <button className={styles.closeBtn} onClick={() => setActiveClass(null)}><XIcon size={18} /></button>
+              <button className={`${styles.closeBtn} pressable`} onClick={() => setActiveClass(null)}><XIcon size={18} /></button>
             </div>
 
             {/* Stats */}
@@ -344,7 +344,7 @@ export default function PrincipalClassesClient({
                   </p>
                   <p style={{ margin: 0, fontSize: '0.7rem', color: '#F59E0B' }}>All subjects · Class admin</p>
                 </div>
-                <button
+                <button className="pressable"
                   onClick={() => removeTeacher(activeClass.id, activeClass.class_teacher.teacher_id, null)}
                   style={{ fontSize: '0.7rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
                   Remove
@@ -383,7 +383,7 @@ export default function PrincipalClassesClient({
                       <p className={styles.subjectName}>{st.subject}</p>
                       <p className={styles.teacherName}>{st.full_name}</p>
                     </div>
-                    <button
+                    <button className="pressable"
                       onClick={() => removeTeacher(activeClass.id, st.teacher_id, st.subject)}
                       style={{ fontSize: '0.68rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, marginLeft: 'auto', flexShrink: 0 }}>
                       <XIcon size={11} />
@@ -394,7 +394,7 @@ export default function PrincipalClassesClient({
             )}
 
             {/* Assign teacher button */}
-            <button
+            <button className="pressable"
               onClick={() => { setShowAssign(true); setAssignTeacher(''); setAssignSubject(''); setAssignIsPrimary(false); setError(null) }}
               style={{
                 width: '100%', padding: '10px',
@@ -427,7 +427,7 @@ export default function PrincipalClassesClient({
               <h2 className={styles.detailTitle}>
                 Assign Teacher to {activeClass.name ?? activeClass.class_level}
               </h2>
-              <button className={styles.closeBtn} onClick={() => setShowAssign(false)}><XIcon size={18} /></button>
+              <button className={`${styles.closeBtn} pressable`} onClick={() => setShowAssign(false)}><XIcon size={18} /></button>
             </div>
 
             <div className={styles.createForm}>
@@ -449,7 +449,7 @@ export default function PrincipalClassesClient({
                     { v: false, label: 'Subject Teacher', color: '#3B82F6' },
                     { v: true,  label: 'Class Teacher', color: '#F59E0B' },
                   ].map(opt => (
-                    <button
+                    <button className="pressable"
                       key={String(opt.v)}
                       onClick={() => setAssignIsPrimary(opt.v)}
                       style={{
@@ -482,14 +482,14 @@ export default function PrincipalClassesClient({
 
               {assignIsPrimary && (
                 <p style={{ fontSize: '0.75rem', color: '#F59E0B', margin: '-8px 0 0', lineHeight: 1.5 }}>
-                  This teacher will be the class admin — responsible for attendance, reports, and class-wide management. Any existing class teacher will be demoted.
+                  This teacher will be the class admin, responsible for attendance, reports, and class-wide management. Any existing class teacher will be demoted.
                 </p>
               )}
 
               {error && <p className={styles.errorMsg}>{error}</p>}
 
               <button
-                className={styles.createBtn}
+                className={`${styles.createBtn} pressable`}
                 onClick={assignTeacherToClass}
                 disabled={saving || !assignTeacher || (!assignIsPrimary && !assignSubject)}
               >
@@ -506,7 +506,7 @@ export default function PrincipalClassesClient({
           <div className={styles.detailPanel} onClick={e => e.stopPropagation()}>
             <div className={styles.detailHeader}>
               <h2 className={styles.detailTitle}>Create New Class</h2>
-              <button className={styles.closeBtn} onClick={() => setShowCreate(false)}><XIcon size={18} /></button>
+              <button className={`${styles.closeBtn} pressable`} onClick={() => setShowCreate(false)}><XIcon size={18} /></button>
             </div>
             <div className={styles.createForm}>
               <div className={styles.formField}>
@@ -530,7 +530,7 @@ export default function PrincipalClassesClient({
                 <input type="text" className="input" value={newYear} onChange={e => setNewYear(e.target.value)} placeholder="e.g. 2025/2026" />
               </div>
               {error && <p className={styles.errorMsg}>{error}</p>}
-              <button className={styles.createBtn} onClick={createClass} disabled={saving}>
+              <button className={`${styles.createBtn} pressable`} onClick={createClass} disabled={saving}>
                 {saving ? 'Creating...' : 'Create Class'}
               </button>
             </div>

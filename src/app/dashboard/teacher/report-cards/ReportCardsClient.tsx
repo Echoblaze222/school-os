@@ -100,7 +100,7 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         {TERMS.map(t => (
-          <button key={t.value} onClick={() => setTerm(t.value)}
+          <button className="pressable" key={t.value} onClick={() => setTerm(t.value)}
             style={{
               padding: '8px 16px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600,
               border: `1px solid ${term === t.value ? sc : 'var(--glass-border)'}`,
@@ -159,7 +159,7 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
                 className="input"
                 style={{ width: '100%', minHeight: 60, marginBottom: 8 }}
               />
-              <button
+              <button className="pressable"
                 onClick={() => submitForStudent(s.id)}
                 disabled={locked || savingId === s.id}
                 style={{

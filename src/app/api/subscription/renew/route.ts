@@ -30,11 +30,41 @@ export async function POST(req: Request) {
     }
 
     // ── Body ──────────────────────────────────────────────────────────────────
-    const { schoolId, planType, studentCount, amount, principalName } = await req.json()
+    // Neither planType nor studentCount is trusted from the client anymore.
+    // Pricing is now a single school-size-based rate (no more Basic/Standard/
+    // Premium price selection), and the student count that determines the
+    // rate is counted server-side from real active students — otherwise a
+    // principal could simply under-report their count in the request to
+    // land in a cheaper tier.
+    const { count: studentCountReal, error: countErr } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('school_id', profile.school_id)
+      .eq('role', 'student')
+      .eq('is_active', true)
 
-    if (!schoolId || !planType || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (countErr) {
+      return NextResponse.json({ error: 'Could not verify active student count' }, { status: 500 })
     }
+    if (!studentCountReal || studentCountReal <= 0) {
+      return NextResponse.json({ error: 'No active students found for your school' }, { status: 400 })
+    }
+
+    // Tiered pricing by school size — replaces the old flat Basic/Standard/
+    // Premium plan selector. One rate, determined purely by how many active
+    // students the school actually has right now.
+    function pricePerStudentForSize(n: number): { rate: number; tierLabel: string } {
+      if (n <= 150) return { rate: 1000, tierLabel: 'Starter (up to 150 students)' }
+      if (n <= 250) return { rate: 2000, tierLabel: 'Growth (151-250 students)' }
+      return { rate: 3000, tierLabel: 'Scale (251+ students)' }
+    }
+
+    const { rate: pricePerStudent, tierLabel } = pricePerStudentForSize(studentCountReal)
+    const schoolId      = profile.school_id
+    const planType      = tierLabel
+    const studentCount  = studentCountReal
+
+    const amount = studentCount * pricePerStudent
 
     if (Number(amount) <= 0) {
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 })
@@ -69,7 +99,7 @@ export async function POST(req: Request) {
           plan_type:     planType,
           student_count: studentCount,
           principal_id:  user.id,
-          principal_name: principalName ?? profile.full_name,
+          principal_name: profile.full_name,
           amount_ngn:    amount,
           custom_fields: [
             { display_name: 'School',   variable_name: 'school_name', value: school?.name ?? '' },
@@ -116,5 +146,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-            }
-      
+}

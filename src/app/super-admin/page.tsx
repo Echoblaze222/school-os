@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SuperAdminDashboard from './SuperAdminDashboard'
 
-export const metadata = { title: 'Super Admin — SchoolOS' }
+export const metadata = { title: 'Super Admin | SchoolOS' }
 
 export default async function SuperAdminPage() {
   const supabase =await createClient()

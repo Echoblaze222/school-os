@@ -13,6 +13,7 @@ import { GraduationCapIcon, EditIcon, TrashIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface Student {
   id: string
@@ -96,7 +97,7 @@ export default function StudentsClient({ students: init, profile, school, userId
     if (!hasUnsavedResults) return
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault()
-      e.returnValue = 'You have unsaved student codes — are you sure you want to leave?'
+      e.returnValue = 'You have unsaved student codes. Are you sure you want to leave?'
     }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
@@ -325,14 +326,14 @@ export default function StudentsClient({ students: init, profile, school, userId
             </div>
           ) : (
             <div>
-              {filtered.map(s => (
-                <div key={s.id} className={styles.listItem}>
+              {filtered.map((s, i) => (
+                <div key={s.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                   <div className={styles.listIconBox} style={{ background: sc + '22' }}>
                     <GraduationCapIcon size={18} color={sc} />
                   </div>
                   <div className={styles.listContent}>
                     <p className={styles.listTitle}>{s.full_name}</p>
-                    <p className={styles.listSub}>{s.admission_number ?? '—'} · {s.class_name ?? 'No class'}</p>
+                    <p className={styles.listSub}>{s.admission_number ?? 'N/A'} · {s.class_name ?? 'No class'}</p>
                   </div>
                   <span className={`${styles.listBadge} ${s.onboarding_stage === 'complete' ? styles.badgeGreen : styles.badgeYellow}`}>
                     {s.onboarding_stage === 'complete' ? 'Active' : 'Pending'}
@@ -353,7 +354,7 @@ export default function StudentsClient({ students: init, profile, school, userId
         <>
           <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
             <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>Bulk Add Students</p>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Fill in each row directly. Leave blank rows empty — they'll be ignored. Saving creates real accounts immediately.</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Fill in each row directly. Leave blank rows empty, they'll be ignored. Saving creates real accounts immediately.</p>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -400,7 +401,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                       </td>
                       <td style={tdStyle}>
                         <select value={row.gender} onChange={e => updateBulkRow(i, { gender: e.target.value })} style={cellInputStyle}>
-                          <option value="">—</option>
+                          <option value="">N/A</option>
                           {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
                         </select>
                       </td>
@@ -409,7 +410,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                       </td>
                       <td style={tdStyle}>
                         <select value={row.classId} onChange={e => updateBulkRow(i, { classId: e.target.value })} style={cellInputStyle}>
-                          <option value="">—</option>
+                          <option value="">N/A</option>
                           {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </td>
@@ -485,7 +486,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                     {bResults.length} Student{bResults.length !== 1 ? 's' : ''} {bLoading ? 'Saving…' : 'Processed'}
                   </p>
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-                    {bLoading ? 'Creating accounts, please wait...' : 'Codes below are live — share them now.'}
+                    {bLoading ? 'Creating accounts, please wait...' : 'Codes below are live. Share them now.'}
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -509,7 +510,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                     <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0 }}>{r.email}</p>
                   </div>
                   <code style={{ fontSize: '0.74rem', fontWeight: 700, color: sc, background: sc + '15', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontFamily: 'monospace' }}>
-                    {r.code || (bLoading ? '…' : '—')}
+                    {r.code || (bLoading ? '…' : 'N/A')}
                   </code>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)' }}>
                     {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? 'Saved' : bLoading ? 'Saving…' : 'Pending'}
@@ -547,7 +548,7 @@ export default function StudentsClient({ students: init, profile, school, userId
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Gender</label>
               <select className={styles.formSelect} value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
-                <option value="">— Select gender —</option>
+                <option value="">Select gender</option>
                 {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
               </select>
             </div>
@@ -560,7 +561,7 @@ export default function StudentsClient({ students: init, profile, school, userId
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Class</label>
               <select className={styles.formSelect} value={form.class_id} onChange={e => setForm(p => ({ ...p, class_id: e.target.value }))}>
-                <option value="">— Select class —</option>
+                <option value="">Select class</option>
                 {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>

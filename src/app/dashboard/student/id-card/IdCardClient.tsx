@@ -67,8 +67,8 @@ export default function IdCardClient({ profile, school, userId }: Props) {
                 {profile?.class_level ?? 'Student'}
               </p>
               {[
-                ['Student ID', profile?.default_code ?? '—'],
-                ['School',     school?.name ?? '—'],
+                ['Student ID', profile?.default_code ?? 'N/A'],
+                ['School',     school?.name ?? 'N/A'],
                 ['Session',    new Date().getFullYear() + '/' + (new Date().getFullYear()+1)],
               ].map(([label, value]) => (
                 <div key={label} style={{ display:'flex', justifyContent:'space-between', marginBottom:'var(--space-2)', fontSize:'0.82rem' }}>
@@ -82,7 +82,7 @@ export default function IdCardClient({ profile, school, userId }: Props) {
             </div>
           </div>
           {/* Download button */}
-          <button onClick={downloadCard}
+          <button className="pressable" onClick={downloadCard}
             style={{ display:'flex', alignItems:'center', gap:'var(--space-2)', padding:'12px 24px', background:`linear-gradient(135deg,${schoolColor},${schoolColor}cc)`, color:'#fff', border:'none', borderRadius:'999px', fontWeight:700, fontSize:'0.875rem', cursor:'pointer', boxShadow:`0 4px 16px ${schoolColor}50` }}>
             <DownloadIcon size={16} color="white"/> Download / Print
           </button>

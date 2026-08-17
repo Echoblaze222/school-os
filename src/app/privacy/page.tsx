@@ -105,20 +105,20 @@ const SECTIONS = [
   },
   {
     number: '06',
-    title: 'Student Data — Special Protections',
+    title: 'Student Data | Special Protections',
     intro: 'We take the privacy of students seriously. The following protections apply specifically to student data:',
     items: [
       'Student records are only accessible to users within the same school, based on their role permissions',
       'No student\'s data is ever visible to another school on the platform',
       'Student data is never used for advertising, profiling, or sold to any third party',
-      'Parents can only view data for their own linked children — never for any other student',
+      'Parents can only view data for their own linked children, never for any other student',
       'Schools are responsible for obtaining appropriate parental consent before enrolling students on the platform',
     ],
   },
   {
     number: '07',
     title: 'Data Isolation Between Schools',
-    body: `Every school's data on SchoolOS is completely isolated from every other school. This is enforced at the database level using Row Level Security (RLS) policies in PostgreSQL — not just at the interface level. A user from School A cannot access any data from School B under any circumstances, including direct API access.`,
+    body: `Every school's data on SchoolOS is completely isolated from every other school. This is enforced at the database level using Row Level Security (RLS) policies in PostgreSQL, not just at the interface level. A user from School A cannot access any data from School B under any circumstances, including direct API access.`,
   },
   {
     number: '08',
@@ -135,7 +135,7 @@ const SECTIONS = [
     title: 'Security',
     intro: 'We implement the following security measures to protect your data:',
     items: [
-      'All passwords are hashed using bcrypt — never stored in plain text',
+      'All passwords are hashed using bcrypt, never stored in plain text',
       'User sessions are managed via secure, HTTP-only cookies that expire automatically',
       'All data is transmitted over HTTPS/TLS encryption',
       'Database access is protected by Row Level Security at the PostgreSQL engine level',
@@ -149,11 +149,11 @@ const SECTIONS = [
     title: 'Your Rights',
     intro: 'As a school administrator or individual user, you have the right to:',
     items: [
-      'Access — request a copy of the personal data we hold about you or your school',
-      'Correction — request that inaccurate data be corrected',
-      'Deletion — request that your data be deleted (subject to legal retention requirements)',
-      'Export — request an export of your school\'s data in a portable format',
-      'Objection — object to how we process your data in specific circumstances',
+      'Access: request a copy of the personal data we hold about you or your school',
+      'Correction: request that inaccurate data be corrected',
+      'Deletion: request that your data be deleted (subject to legal retention requirements)',
+      'Export: request an export of your school\'s data in a portable format',
+      'Objection: object to how we process your data in specific circumstances',
     ],
     footer: 'To exercise any of these rights, contact us at piussimon717@gmail.com. We will respond within 14 business days.',
   },
@@ -172,7 +172,7 @@ const SECTIONS = [
   {
     number: '12',
     title: 'Cookies',
-    body: `SchoolOS uses only essential cookies — specifically, a secure session cookie to keep you logged in. We do not use advertising cookies, tracking cookies, or third-party analytics cookies.`,
+    body: `SchoolOS uses only essential cookies: specifically, a secure session cookie to keep you logged in. We do not use advertising cookies, tracking cookies, or third-party analytics cookies.`,
   },
   {
     number: '13',
@@ -187,7 +187,7 @@ const SECTIONS = [
   {
     number: '15',
     title: 'Contact Us',
-    body: `For any privacy-related questions, data requests, or concerns:\n\nEchoblaze — SchoolOS Privacy\nEmail: piussimon717@gmail.com\nWebsite: school-os-sphg.vercel.app`,
+    body: `For any privacy-related questions, data requests, or concerns:\n\nEchoblaze, SchoolOS Privacy\nEmail: piussimon717@gmail.com\nWebsite: school-os-sphg.vercel.app`,
   },
 ]
 
@@ -296,7 +296,7 @@ export default function PrivacyPage() {
         {/* Footer */}
         <div className={styles.footer}>
           <p className={styles.footerText}>
-            Your data belongs to you. SchoolOS processes it only to run your school's platform — nothing more.
+            Your data belongs to you. SchoolOS processes it only to run your school's platform, nothing more.
           </p>
           <div className={styles.footerLinks}>
             <button className={styles.footerLink} onClick={() => router.push('/terms')}>

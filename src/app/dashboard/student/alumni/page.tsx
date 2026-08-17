@@ -59,7 +59,7 @@ export default async function StudentAlumniArchivePage() {
     : { data: null as any }
 
   const alumniProfile: AlumniProfile = {
-    full_name:        profile.full_name ?? '—',
+    full_name:        profile.full_name ?? 'N/A',
     avatar_url:        profile.avatar_url ?? null,
     class_name:        classRow?.name ?? null,
     graduation_year:   sp?.graduation_year ?? null,
@@ -99,12 +99,12 @@ export default async function StudentAlumniArchivePage() {
   // track it there; left as class_subject_id for now since the exact join wasn't confirmed.
   const results: AlumniResult[] = (resultRows ?? []).map((r: any) => ({
     id:            r.id,
-    subject:       r.subject ?? '—',        // adjust once the subject join is confirmed
-    class_name:    alumniProfile.class_name ?? '—',
+    subject:       r.subject ?? 'N/A',        // adjust once the subject join is confirmed
+    class_name:    alumniProfile.class_name ?? 'N/A',
     term:          r.term,
     academic_year: r.academic_year,
     score:         r.score,
-    grade:         r.grade ?? '—',
+    grade:         r.grade ?? 'N/A',
   }))
 
   const receipts: AlumniReceipt[] = (paymentRows ?? []).map((p: any) => ({
@@ -112,7 +112,7 @@ export default async function StudentAlumniArchivePage() {
     amount_ngn:     p.amount,
     description:    p.payment_method ?? 'Fee payment',
     paid_at:        p.payment_date,
-    receipt_number: p.receipt_number ?? '—',
+    receipt_number: p.receipt_number ?? 'N/A',
     receipt_url:    null,   // not yet wired — see note above
   }))
 

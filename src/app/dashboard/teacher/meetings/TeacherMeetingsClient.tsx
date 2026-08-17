@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './teacher-meetings.module.css'
+import { logActivity } from '@/lib/logActivity'
 import type { MeetingRow } from './page'
 
 interface Props {
@@ -192,6 +193,7 @@ function MeetingCard({
             target="_blank"
             rel="noopener noreferrer"
             className={styles.listJoinBtn}
+            onClick={() => logActivity({ userId, schoolId, type: 'meeting_joined', title: `Joined "${meeting.title}"`, href: '/dashboard/teacher/meetings' })}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>

@@ -300,7 +300,7 @@ export default function SelectSchoolPage() {
       </div>
 
       <div className={styles.poweredBy}>
-        Powered by <strong>SchoolOS</strong> — Premium School Management
+        Powered by <strong>SchoolOS</strong> · Premium School Management
       </div>
     </div>
   )

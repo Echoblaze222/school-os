@@ -703,6 +703,63 @@ textarea.input {
 .stagger > *:nth-child(7) { animation-delay: 360ms; }
 .stagger > *:nth-child(8) { animation-delay: 420ms; }
 
+/* ── PRESS / SUCCESS / TOAST ──────────────────────────────────
+   Small reusable motion primitives so buttons, success states, and
+   toasts feel consistent across every screen instead of each one
+   inventing its own timing. */
+.pressable {
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+.pressable:active:not(:disabled) { transform: scale(0.97); }
+.pressable:disabled { cursor: default; }
+
+@keyframes success-pop {
+  0%   { opacity: 0; transform: scale(0.85); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-success-pop { animation: success-pop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to   { opacity: 0; transform: translate(-50%, -8px); }
+}
+.animate-toast-in  { animation: toast-in  0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
+.animate-toast-out { animation: toast-out 0.2s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+@keyframes shake-x {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.animate-shake { animation: shake-x 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
+
+/* Respect the OS-level reduced-motion preference everywhere at once,
+   rather than special-casing it per component. Entrance/press/shake
+   motion collapses to an instant, accessible state; essential feedback
+   (opacity/color changes) still communicates state without movement. */
+@media (prefers-reduced-motion: reduce) {
+  /* Universal catch-all — covers every animation/transition in the app,
+     whether applied via a CSS class (.animate-fade-up etc.) or via an
+     inline style={{ animation: '...' }} on a component (chat bubbles,
+     quick-prompt cards, typing indicators, etc). Targeted class-based
+     overrides alone miss inline-style animations entirely since inline
+     styles otherwise take precedence. */
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .pressable:active:not(:disabled) { transform: none; }
+}
+
+
 /* ── UTILITY ───────────────────────────────────────────────── */
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -762,4 +819,96 @@ textarea.input {
 
 @media (min-width: 1024px) {
   .mobile-spacer { height: 0; }
+}
+
+/* ============================================================
+   Phase 1 Foundation — added design tokens (§68.14 gap-fill)
+   Button/link/table/modal/chart tokens, derived from the
+   existing --brand / --gold / status palette.
+   ============================================================ */
+/* ============================================================
+   SchoolOS — Phase 1 Foundation: missing token surfaces (§68.14)
+   Appended to src/app/globals.css, not a replacement.
+   Every color below is derived from the EXISTING tokens already in
+   globals.css (--brand, --brand-light, --brand-dark, --gold, --success,
+   --danger, --warning, --info, --text-*) — nothing invented, per
+   "reuse before inventing." Confirmed gaps from the audit: buttons,
+   links, tables, modals, charts had no dedicated tokens.
+   ============================================================ */
+
+:root {
+  /* Buttons — states as tokens, not just hover CSS, so Phase 3/4 pages
+     read one source instead of re-deriving hover/active shades per file. */
+  --btn-primary-bg:          var(--brand);
+  --btn-primary-bg-hover:    var(--brand-light);
+  --btn-primary-bg-active:   var(--brand-dark);
+  --btn-primary-text:        #FFFFFF;
+  --btn-primary-bg-disabled: var(--text-faint);
+
+  --btn-secondary-bg:        var(--glass-bg);
+  --btn-secondary-bg-hover:  var(--glass-bg-hover);
+  --btn-secondary-border:    var(--glass-border);
+  --btn-secondary-text:      var(--text-primary);
+
+  --btn-accent-bg:           var(--gold);
+  --btn-accent-bg-hover:     var(--gold-light);
+  --btn-accent-text:         #FFFFFF;
+
+  --btn-danger-bg:           var(--danger);
+  --btn-danger-bg-hover:     #DC2626;
+  --btn-danger-text:         #FFFFFF;
+
+  --btn-focus-ring:          var(--brand-glow);
+
+  /* Links */
+  --link-color:        var(--brand);
+  --link-color-hover:  var(--brand-light);
+  --link-color-visited: var(--brand-dark);
+
+  /* Tables */
+  --table-header-bg:     var(--bg-elevated);
+  --table-header-text:   var(--text-secondary);
+  --table-row-bg:         var(--bg-surface);
+  --table-row-bg-alt:     var(--bg-raised);
+  --table-row-bg-hover:   var(--glass-bg-hover);
+  --table-border:          var(--glass-border);
+
+  /* Modals */
+  --modal-bg:          var(--bg-elevated);
+  --modal-overlay:     var(--bg-overlay);
+  --modal-border:      var(--glass-border);
+  --modal-shadow:      0 16px 64px rgba(0,0,0,0.5);
+
+  /* Charts — reuses brand/gold/status so charts never invent an
+     off-palette color; ordered for series that need 4-5 distinguishable
+     lines/bars before repeating. */
+  --chart-series-1:  var(--brand);
+  --chart-series-2:  var(--gold);
+  --chart-series-3:  var(--success);
+  --chart-series-4:  var(--warning);
+  --chart-series-5:  var(--info);
+  --chart-grid-line: var(--glass-border);
+  --chart-axis-text: var(--text-muted);
+
+  /* Status — already existed as flat colors; adding the text/bg pairing
+     Phase 3/4 badges and pills need so they don't recompute contrast. */
+  --status-success-bg:  var(--success-subtle);
+  --status-success-text: var(--success);
+  --status-danger-bg:    var(--danger-subtle);
+  --status-danger-text:  var(--danger);
+  --status-warning-bg:   var(--warning-subtle);
+  --status-warning-text: var(--warning);
+  --status-info-bg:      var(--info-subtle);
+  --status-info-text:    var(--info);
+}
+
+/* Light mode overrides — only where the value actually needs to differ
+   from the dark-mode default above (most button/link/chart tokens don't;
+   tables and modals do, matching the existing light-mode pattern for
+   bg-elevated / bg-raised). */
+[data-theme="light"] {
+  --table-header-bg:   var(--bg-elevated);
+  --table-row-bg-alt:  var(--bg-raised);
+  --modal-bg:           var(--bg-elevated);
+  --modal-shadow:       0 12px 48px rgba(0,0,0,0.18);
 }

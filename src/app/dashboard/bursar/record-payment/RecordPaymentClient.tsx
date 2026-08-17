@@ -20,6 +20,8 @@ import { createClient } from '@/lib/supabase/client'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import type { SchoolInfo } from './page'
 import { ArrowLeftIcon, SunIcon, MoonIcon, XIcon, CheckIcon, AlertIcon, PrinterIcon } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import { logActivity } from '@/lib/logActivity'
 
 interface Props {
   userId:        string
@@ -362,6 +364,15 @@ export default function RecordPaymentClient({
 
     setIsSubmitting(false)
     loadInvoices(selectedStudent.id)
+
+    // Fire-and-forget — never blocks the receipt/UI on logging failing.
+    logActivity({
+      userId: bursarId, schoolId,
+      type:  'fee_paid',
+      title: `Recorded payment for ${selectedStudent.full_name}`,
+      subtitle: `${currency === 'USD' ? '$' : '₦'}${amount.toLocaleString()} · ${paymentMethod}`,
+      href:  '/dashboard/bursar/history',
+    })
   }
 
   if (!mounted) return null
@@ -396,8 +407,8 @@ export default function RecordPaymentClient({
             {[
               ['School',      receipt.schoolName],
               ['Student',     receipt.studentName],
-              ['Class',       receipt.className ?? '—'],
-              ['Adm. No.',    receipt.admissionNumber ?? '—'],
+              ['Class',       receipt.className ?? 'N/A'],
+              ['Adm. No.',    receipt.admissionNumber ?? 'N/A'],
               ['Date',        receipt.paymentDate],
               ['Method',      receipt.paymentMethod.replace('_', ' ').toUpperCase()],
               ['Recorded by', receipt.bursarName],
@@ -477,7 +488,7 @@ export default function RecordPaymentClient({
           borderRadius: 14, padding: 16, marginBottom: 14,
         }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 10px' }}>
-            STEP 1 — SELECT STUDENT
+            STEP 1: SELECT STUDENT
           </p>
 
           {selectedStudent ? (
@@ -498,7 +509,7 @@ export default function RecordPaymentClient({
                   {selectedStudent.full_name}
                 </p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                  {selectedStudent.class_level ?? '—'}
+                  {selectedStudent.class_level ?? 'N/A'}
                   {selectedStudent.permanent_student_id ? ` · ${selectedStudent.permanent_student_id}` : ''}
                 </p>
               </div>
@@ -541,7 +552,7 @@ export default function RecordPaymentClient({
                         {s.full_name}
                       </p>
                       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                        {s.class_level ?? '—'} · {s.permanent_student_id ?? s.admission_number ?? '—'}
+                        {s.class_level ?? 'N/A'} · {s.permanent_student_id ?? s.admission_number ?? 'N/A'}
                       </p>
                     </div>
                   ))}
@@ -563,13 +574,11 @@ export default function RecordPaymentClient({
             borderRadius: 14, padding: 16, marginBottom: 14,
           }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 10px' }}>
-              STEP 2 — SELECT OUTSTANDING INVOICES
+              STEP 2: SELECT OUTSTANDING INVOICES
             </p>
 
             {loadingInvoices ? (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>
-                Loading invoices…
-              </p>
+              <SkeletonList count={2} variant="card" />
             ) : invoices.length === 0 ? (
               <div style={{
                 padding: '16px', background: '#10B98110', border: '1px solid #10B98130',
@@ -667,7 +676,7 @@ export default function RecordPaymentClient({
             borderRadius: 14, padding: 16, marginBottom: 14,
           }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 14px' }}>
-              STEP 3 — PAYMENT DETAILS
+              STEP 3: PAYMENT DETAILS
             </p>
 
             <div style={{
@@ -703,8 +712,8 @@ export default function RecordPaymentClient({
                     value={currency}
                     onChange={e => setCurrency(e.target.value as 'NGN' | 'USD')}
                     style={{ ...inp, width: 110, flexShrink: 0 }}>
-                    <option value="NGN">NGN — Naira</option>
-                    <option value="USD">USD — Dollar</option>
+                    <option value="NGN">NGN (Naira)</option>
+                    <option value="USD">USD (Dollar)</option>
                   </select>
                 </div>
                 {amountInNgn > totalBalanceNgn + 0.5 && (
@@ -781,7 +790,7 @@ export default function RecordPaymentClient({
             <button
               onClick={handleSubmit}
               disabled={!canSubmit || isSubmitting}
-              className={canSubmit ? 'btn btn-primary' : 'btn btn-secondary'}
+              className={`pressable ${canSubmit ? 'btn btn-primary' : 'btn btn-secondary'}`}
               style={{ width: '100%', height: 48, marginTop: 16, fontSize: '0.95rem', fontWeight: 800 }}>
               {isSubmitting
                 ? 'Recording…'

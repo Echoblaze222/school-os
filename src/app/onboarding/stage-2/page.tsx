@@ -84,7 +84,7 @@ export default function OnboardingStage2() {
         <div className={styles.header}>
           <div className={styles.icon}><ShieldIcon size={26} color="white"/></div>
           <h1 className={styles.title}>Secure Your Account</h1>
-          <p className={styles.sub}>Step 2 of 3 — Set up your PIN and secret identifier</p>
+          <p className={styles.sub}>Step 2 of 3: Set up your PIN and secret identifier</p>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
@@ -123,7 +123,7 @@ export default function OnboardingStage2() {
 
           <div className={styles.field}>
             <label className={styles.label}>Secret Identifier</label>
-            <p className={styles.hint}>A word only you know — used for password recovery (e.g. your mother&apos;s maiden name)</p>
+            <p className={styles.hint}>A word only you know, used for password recovery (e.g. your mother&apos;s maiden name)</p>
             <input className={styles.input} type="text" value={secret}
               onChange={e => setSecret(e.target.value)}
               placeholder="e.g. Sunshine, Mango, etc." autoComplete="off"/>

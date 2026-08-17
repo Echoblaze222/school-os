@@ -1,6 +1,6 @@
 // src/app/dashboard/teacher/submissions/page.tsx
 //
-// FIXED — the core pipeline bug:
+// FIXED - the core pipeline bug:
 // The old page was either missing or had a broken Supabase query that couldn't
 // join assignment_submissions back to profiles + assignments + classes in one
 // call, so the teacher's page received empty or null data even when students
@@ -33,7 +33,7 @@ export interface Submission {
   file_name:        string | null
   text_response:    string | null
   max_score:        number
-  // Joined fields — shaped in the map below
+  // Joined fields - shaped in the map below
   student_name:     string
   student_avatar:   string | null
   assignment_title: string
@@ -57,7 +57,7 @@ export default async function SubmissionsPage() {
 
   // ── Fetch all submissions for assignments belonging to THIS teacher ──
   // Supabase join syntax: table!foreign_key(columns)
-  // assignment_submissions has no school_id — we filter via the nested
+  // assignment_submissions has no school_id - we filter via the nested
   // assignment.school_id instead.
   const { data: raw, error } = await supabase
     .from('assignment_submissions')
@@ -140,7 +140,7 @@ export default async function SubmissionsPage() {
       student_name:     stud.full_name ?? 'Unknown student',
       student_avatar:   stud.avatar_url ?? null,
       assignment_title: asg.title ?? 'Assignment',
-      subject:          asg.subject ?? '—',
+      subject:          asg.subject ?? 'N/A',
       class_name:       className,
     }
   })

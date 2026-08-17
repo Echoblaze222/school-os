@@ -5,6 +5,7 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { BookIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -22,7 +23,7 @@ export default function LibraryClient({ profile, school, userId }: Props) {
     setLoading(true)
 
     // Resolve children via parent_student_links first, fallback to profiles.parent_id
-    // — same resolution order used by the parent Attendance/Results pages.
+    // - same resolution order used by the parent Attendance/Results pages.
     const { data: links } = await supabase.from('parent_student_links').select('student_id').eq('parent_id', userId)
     let resolvedChildren: any[] = []
 
@@ -71,7 +72,7 @@ export default function LibraryClient({ profile, school, userId }: Props) {
   return (
     <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Library" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="card" />
         : !child
           ? <div className={styles.empty}>
               <BookIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
@@ -81,7 +82,7 @@ export default function LibraryClient({ profile, school, userId }: Props) {
               {children.length > 1 && (
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
                   {children.map(c => (
-                    <button key={c.id} onClick={() => switchChild(c)}
+                    <button className="pressable" key={c.id} onClick={() => switchChild(c)}
                       style={{
                         padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
                         background: child.id === c.id ? sc : 'var(--glass-bg)',

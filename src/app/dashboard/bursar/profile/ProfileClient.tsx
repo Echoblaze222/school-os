@@ -135,11 +135,11 @@ export default function ProfileClient({
   }
 
   const fields = [
-    ['Full Name', profile?.full_name ?? '—'],
-    ['ID Code', profile?.default_code ?? '—'],
-    ['School', school?.name ?? '—'],
-    ['Email', profile?.email ?? '—'],
-    ['Phone', profile?.phone ?? '—'],
+    ['Full Name', profile?.full_name ?? 'N/A'],
+    ['ID Code', profile?.default_code ?? 'N/A'],
+    ['School', school?.name ?? 'N/A'],
+    ['Email', profile?.email ?? 'N/A'],
+    ['Phone', profile?.phone ?? 'N/A'],
   ]
 
   return (
@@ -207,6 +207,7 @@ export default function ProfileClient({
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploadingPhoto}
+            className="pressable"
             style={{
               position: 'absolute',
               bottom: 0,
@@ -297,6 +298,7 @@ export default function ProfileClient({
             onClick={() =>
               setEditing(!editing)
             }
+            className="pressable"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -394,6 +396,7 @@ export default function ProfileClient({
 
             {msg && (
               <p
+                className="animate-fade-up"
                 style={{
                   fontSize:
                     '0.78rem',
@@ -411,6 +414,7 @@ export default function ProfileClient({
             <button
               onClick={save}
               disabled={saving}
+              className="pressable"
               style={{
                 height: 44,
                 background:
@@ -509,6 +513,7 @@ export default function ProfileClient({
 
         <button
           onClick={logout}
+          className="pressable"
           style={{
             display: 'flex',
             alignItems: 'center',

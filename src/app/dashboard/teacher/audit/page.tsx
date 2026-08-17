@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AuditClient from './AuditClient'
 
-export const metadata = { title: 'Audit Log — SchoolOS' }
+export const metadata = { title: 'Audit Log | SchoolOS' }
 
 export interface AuditEntry {
   id: string
@@ -77,11 +77,11 @@ export default async function AuditPage({ searchParams }: PageParams) {
 
   const entries: AuditEntry[] = rawRows.map((r: any) => ({
     id:         r.id ?? crypto.randomUUID(),
-    action:     r.action ?? '—',
+    action:     r.action ?? 'N/A',
     details:    r.details ?? null,
     logged_at:  r.logged_at,
     actor_name: r.profiles?.full_name ?? 'Unknown',
-    actor_role: r.profiles?.role ?? '—',
+    actor_role: r.profiles?.role ?? 'N/A',
   }))
 
   return (

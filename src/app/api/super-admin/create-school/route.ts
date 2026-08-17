@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       await getResend().emails.send({
         from:    'SchoolOS <onboarding@resend.dev>',
         to:      principalEmail,
-        subject: `🎉 Welcome to SchoolOS — Your School is Ready`,
+        subject: `🎉 Welcome to SchoolOS, Your School is Ready`,
         html: `
           <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
             <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
@@ -270,7 +270,7 @@ export async function POST(req: Request) {
               </p>
             </div>
             <div style="background:#111;padding:16px;text-align:center;">
-              <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong> — Built for Nigerian Schools</p>
+              <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong>, built for Nigerian Schools</p>
             </div>
           </div>
         `,

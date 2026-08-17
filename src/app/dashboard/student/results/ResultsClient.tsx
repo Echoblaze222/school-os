@@ -13,11 +13,12 @@
 // design tokens where a matching token exists, glass-card/motion treatment.
 // Chrome was already on RolePageWrapper, so no chrome change needed here.
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BarChartIcon, FileTextIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { logActivity } from '@/lib/logActivity'
 
 export interface ResultRow {
   id:            string
@@ -74,7 +75,7 @@ const TYPE_ORDER: Record<string, number> = {
 // D sits between warning and danger with no matching token, so it keeps a
 // distinct literal orange rather than reusing warning's amber for two grades.
 function gradeColor(g: string) {
-  if (!g || g === '—') return 'var(--text-muted)'
+  if (!g || g === 'N/A') return 'var(--text-muted)'
   if (g === 'A') return 'var(--success)'
   if (g === 'B') return 'var(--info)'
   if (g === 'C') return 'var(--warning)'
@@ -92,16 +93,34 @@ function gradeBg(g: string) {
 
 // Resolve the display name of a result row
 function resolveSubjectName(r: ResultRow): string {
-  return r.class_subjects?.subjects?.name ?? '—'
+  return r.class_subjects?.subjects?.name ?? 'N/A'
 }
 
 function resolveClassName(r: ResultRow): string {
   const cls = r.class_subjects?.classes
-  return cls?.name ?? cls?.class_level ?? '—'
+  return cls?.name ?? cls?.class_level ?? 'N/A'
 }
 
 export default function ResultsClient({ profile, school, userId, results, reportCards = [] }: ResultsClientProps) {
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null)
+
+  // Log once per page visit when there are actual results to see — landing
+  // on this page with real result rows already IS "viewing your results";
+  // there's no per-row detail click to hook into instead (results render
+  // as a flat table/grouped list, not expandable cards). Deliberately runs
+  // once on mount (empty deps), not on every filter-tab change.
+  useEffect(() => {
+    if (results.length > 0 && school?.id) {
+      logActivity({
+        userId, schoolId: school.id,
+        type:  'result_viewed',
+        title: 'Viewed your results',
+        subtitle: `${results.length} result${results.length !== 1 ? 's' : ''}`,
+        href:  '/dashboard/student/results',
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function downloadReportCard(term: string, academicYear: string | null) {
     const rc = reportCards.find(r => r.term === term && r.academic_year === academicYear)
@@ -145,7 +164,7 @@ export default function ResultsClient({ profile, school, userId, results, report
         / filtered.length
       )
     : 0
-  const passCount = filtered.filter(r => r.grade !== 'F' && r.grade !== '—').length
+  const passCount = filtered.filter(r => r.grade !== 'F' && r.grade !== 'N/A').length
 
 const DB_TO_TERM_LABEL: Record<string, string> = {
   first:  'First Term',
@@ -410,7 +429,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                         fontSize: '0.9rem',
                         color: gradeColor(r.grade),
                       }}>
-                        {r.grade ?? '—'}
+                        {r.grade ?? 'N/A'}
                       </span>
                     </div>
                   </div>

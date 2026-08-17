@@ -62,7 +62,7 @@ interface Props {
 
 function buildInsight(counts: any): string {
   if ((counts.pendingGrading ?? 0) > 5) {
-    return `${counts.pendingGrading} submissions are waiting to be graded — the oldest ones are starting to pile up. Clearing these keeps feedback useful for students.`
+    return `${counts.pendingGrading} submissions are waiting to be graded. The oldest ones are starting to pile up. Clearing these keeps feedback useful for students.`
   }
   if ((counts.pendingGrading ?? 0) > 0) {
     return `${counts.pendingGrading} submission${counts.pendingGrading === 1 ? '' : 's'} waiting to be graded across your classes.`
@@ -150,7 +150,7 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           items={activities}
           accentColor={schoolColor}
           onDelete={handleDeleteActivity}
-          emptyLabel="Nothing yet — grading, attendance, and messages will show up here"
+          emptyLabel="Nothing yet. Grading, attendance, and messages will show up here"
         />
 
         <div className={styles.spacer} />

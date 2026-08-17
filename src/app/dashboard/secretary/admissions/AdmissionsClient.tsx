@@ -8,6 +8,7 @@ import { ClipboardIcon, CheckCircleIcon, ClockIcon, XIcon, TrashIcon } from '@/c
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 const STATUS_COLORS = { pending: styles.badgeYellow, approved: styles.badgeGreen, rejected: styles.badgeRed, waitlisted: styles.badgeBlue }
 
@@ -22,6 +23,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
   const [tab,        setTab]        = useState('pending')
   const [modal,      setModal]      = useState(false)
   const [viewItem,   setViewItem]   = useState<Admission | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving,     setSaving]     = useState(false)
   const [msg,        setMsg]        = useState('')
   const [form,       setForm]       = useState({ applicant_name: '', applicant_email: '', class_applied: '', notes: '' })
@@ -58,6 +60,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
     await supabase.from('admissions').delete().eq('id', id)
     setAdmissions(p => p.filter(a => a.id !== id))
     setViewItem(null)
+    setConfirmDelete(false)
   }
 
   function formatDate(d: string) { return new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) }
@@ -99,8 +102,8 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
           <p className={styles.emptyHint}>Applications submitted to this school appear here</p>
         </div>
       ) : (
-        filtered.map(a => (
-          <div key={a.id} className={styles.listItem} onClick={() => setViewItem(a)}>
+        filtered.map((a, i) => (
+          <div key={a.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} onClick={() => setViewItem(a)}>
             <div className={styles.listIconBox} style={{ background: sc + '22' }}>
               <ClipboardIcon size={17} color={sc} />
             </div>
@@ -119,11 +122,11 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>{viewItem.applicant_name}</h2>
             {[
-              ['Email', viewItem.applicant_email || '—'],
-              ['Class Applied', viewItem.class_applied || '—'],
+              ['Email', viewItem.applicant_email || 'N/A'],
+              ['Class Applied', viewItem.class_applied || 'N/A'],
               ['Applied', formatDate(viewItem.applied_at)],
               ['Status', viewItem.status],
-              ['Notes', viewItem.notes || '—'],
+              ['Notes', viewItem.notes || 'N/A'],
             ].map(([label, val]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>{label}</span>
@@ -135,9 +138,19 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
               {viewItem.status !== 'waitlisted' && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'waitlisted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><ClockIcon size={14} /> Waitlist</button>}
               {viewItem.status !== 'rejected'   && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')}   disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
             </div>
-            <button onClick={() => deleteAdmission(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>
+            <button className="pressable" onClick={() => setConfirmDelete(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>
               <TrashIcon size={13} /> Delete application
             </button>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && viewItem && (
+        <div className={styles.modalOverlay} onClick={() => setConfirmDelete(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Delete admission?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>&quot;<strong>{viewItem.applicant_name}</strong>&quot;&apos;s admission record will be permanently removed. This can&apos;t be undone.</p>
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setConfirmDelete(false)}>Cancel</button><button className={styles.btnDanger} onClick={() => deleteAdmission(viewItem.id)}>Delete</button></div>
           </div>
         </div>
       )}
@@ -158,7 +171,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Class</label>
               <select className={styles.formSelect} value={form.class_applied} onChange={e => setForm(p => ({ ...p, class_applied: e.target.value }))}>
-                <option value="">— Select class —</option>
+                <option value="">Select class</option>
                 {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
             </div>

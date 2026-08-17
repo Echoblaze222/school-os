@@ -12,6 +12,7 @@ import ReminderButton from '@/components/ReminderButton'
 import { VideoIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon, AlertIcon, XIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -112,7 +113,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span /><span /><span /></div>
+        ? <SkeletonList count={3} variant="card" />
         : visibleSessions.length === 0
           ? (
             <div className={`${styles.empty} ${motion.riseIn}`}>

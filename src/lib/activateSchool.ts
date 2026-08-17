@@ -76,7 +76,7 @@ export async function activateSchool(schoolId: string, plan: string, amountKobo:
     await getResend().emails.send({
       from:    'SchoolOS <onboarding@resend.dev>',
       to:      principal.email,
-      subject: `🎉 Welcome to SchoolOS — ${school?.name} is Now Active!`,
+      subject: `🎉 Welcome to SchoolOS, ${school?.name} is Now Active!`,
       html: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
           <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
@@ -128,7 +128,7 @@ export async function activateSchool(schoolId: string, plan: string, amountKobo:
   await getResend().emails.send({
     from:    'SchoolOS <onboarding@resend.dev>',
     to:      process.env.SUPER_ADMIN_EMAIL!,
-    subject: `💰 New School Payment — ${school?.name ?? schoolId}`,
+    subject: `💰 New School Payment: ${school?.name ?? schoolId}`,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0f0f0f;color:#fff;border-radius:12px;overflow:hidden;">
         <div style="background:linear-gradient(135deg,#10B981,#059669);padding:28px;text-align:center;">
@@ -138,17 +138,17 @@ export async function activateSchool(schoolId: string, plan: string, amountKobo:
         <div style="padding:28px;">
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">School</td>
-                <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name ?? '—'}</td></tr>
+                <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name ?? 'N/A'}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Plan</td>
                 <td style="color:#a78bfa;font-weight:600;font-size:14px;">${plan}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Amount</td>
                 <td style="color:#10B981;font-weight:700;font-size:18px;">${amountNaira}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal</td>
-                <td style="color:#fff;font-weight:600;font-size:14px;">${principal?.full_name ?? '—'}</td></tr>
+                <td style="color:#fff;font-weight:600;font-size:14px;">${principal?.full_name ?? 'N/A'}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal Email</td>
-                <td style="color:#fff;font-size:14px;">${principal?.email ?? '—'}</td></tr>
+                <td style="color:#fff;font-size:14px;">${principal?.email ?? 'N/A'}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Access Code</td>
-                <td style="color:#fff;font-family:monospace;font-size:14px;">${principal?.default_code ?? '—'}</td></tr>
+                <td style="color:#fff;font-family:monospace;font-size:14px;">${principal?.default_code ?? 'N/A'}</td></tr>
           </table>
           <div style="margin-top:20px;background:#1a2e1a;border:1px solid #10B981;border-radius:8px;padding:12px;text-align:center;">
             <p style="margin:0;color:#10B981;font-size:13px;">✅ School has been automatically activated in SchoolOS</p>

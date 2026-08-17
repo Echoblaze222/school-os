@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CodesClient from './CodesClient'
 
-export const metadata = { title: 'Access Codes — SchoolOS' }
+export const metadata = { title: 'Access Codes | SchoolOS' }
 
 export default async function PrincipalCodesPage() {
   const supabase = await createClient()

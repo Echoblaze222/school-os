@@ -4,7 +4,7 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import SecretaryUsersClient from './SecretaryUsersClient'
 
-export const metadata = { title: 'User Management — SchoolOS' }
+export const metadata = { title: 'User Management | SchoolOS' }
 
 export type UserRole = 'student' | 'teacher' | 'bursar' | 'secretary' | 'principal' | 'admin' | 'parent'
 

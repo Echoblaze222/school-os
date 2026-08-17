@@ -319,7 +319,7 @@ export default function NotificationsPageClient({
         <div className={styles.headerRight}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className={`${styles.markAllBtn} pressable`} onClick={markAllRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <CheckIcon size={14} /> All read
             </button>
           )}
@@ -354,12 +354,12 @@ export default function NotificationsPageClient({
             <MegaphoneIcon size={15} /> Send Notification to School
           </p>
           {sendResult === 'success' && (
-            <div className={styles.sendSuccess} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className={`${styles.sendSuccess} animate-success-pop`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircleIcon size={14} /> Notification sent!
             </div>
           )}
           {sendResult === 'error' && (
-            <div className={styles.sendError} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className={`${styles.sendError} animate-shake`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <XIcon size={14} /> {sendError || 'Failed to send'}
             </div>
           )}
@@ -392,8 +392,8 @@ export default function NotificationsPageClient({
             </div>
           </div>
           <div className={styles.broadcastActions}>
-            <button className={styles.cancelBroadcast} onClick={() => setShowSend(false)}>Cancel</button>
-            <button className={styles.sendBroadcast} onClick={sendBroadcast}
+            <button className={`${styles.cancelBroadcast} pressable`} onClick={() => setShowSend(false)}>Cancel</button>
+            <button className={`${styles.sendBroadcast} pressable`} onClick={sendBroadcast}
               disabled={sending || !sendTitle.trim() || !sendBody.trim()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               {sending ? 'Sending…' : <><UploadIcon size={14} /> Send to {sendTarget === 'all' ? 'Everyone' : sendTarget}</>}
@@ -475,7 +475,7 @@ export default function NotificationsPageClient({
         )}
 
         {filtered.length >= 50 && (
-          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button className={`${styles.loadMoreBtn} pressable`} onClick={loadMore} disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {loading ? <><RefreshIcon size={14} /> Loading...</> : 'Load more notifications'}
           </button>
         )}

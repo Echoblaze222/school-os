@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
@@ -22,10 +23,27 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // SECURITY: same reasoning as first-login. This looks up an account
+    // by a guessable code, so it needs the same IP + code throttling.
+    const normalizedCode = code.toUpperCase()
+    const ip = getClientIp(request)
+    const ipCheck = await checkRateLimit(adminClient, 'auth_code_signin_ip', ip, 15, 60)
+    if (!ipCheck.allowed) {
+      const r = ipCheck.errorResponse!
+      return NextResponse.json({ error: r.error }, { status: r.status,
+        headers: r.retryAfter ? { 'Retry-After': String(r.retryAfter) } : undefined })
+    }
+    const codeCheck = await checkRateLimit(adminClient, 'auth_code_signin_code', normalizedCode, 8, 300)
+    if (!codeCheck.allowed) {
+      const r = codeCheck.errorResponse!
+      return NextResponse.json({ error: r.error }, { status: r.status,
+        headers: r.retryAfter ? { 'Retry-After': String(r.retryAfter) } : undefined })
+    }
+
     const { data: profile, error } = await adminClient
       .from('profiles')
       .select('id, email, onboarding_stage')
-      .eq('default_code', code.toUpperCase())
+      .eq('default_code', normalizedCode)
       .single()
 
     if (error || !profile) {

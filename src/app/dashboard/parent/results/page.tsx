@@ -17,7 +17,7 @@ export default async function ResultsPage() {
   if (!profile) redirect('/login')
   const school = (profile as any)?.schools ?? null
 
-  // Resolve linked child — profiles.parent_id references the parent's profile id
+  // Resolve linked child - profiles.parent_id references the parent's profile id
   const { data: child } = await supabase
     .from('profiles')
     .select('id, full_name, class_level, class_id, admission_number')

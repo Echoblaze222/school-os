@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   }
   if (recipientIds.length > 200) {
     return NextResponse.json(
-      { ok: false, error: 'Max 200 recipients per request — split into batches for larger sends' },
+      { ok: false, error: 'Max 200 recipients per request. Split into batches for larger sends' },
       { status: 400 }
     )
   }
@@ -68,7 +68,26 @@ export async function POST(req: Request) {
   // request body — prevents a school from sending notifications "as" another school.
   const schoolId = profile.school_id
 
-  const results = await notifyUsers(recipientIds, {
+  // notifyUser() looks up any recipientId's phone number and sends real,
+  // billed SMS/WhatsApp with no school check of its own — so this route
+  // MUST filter recipientIds down to people actually in the caller's
+  // school before calling it. Without this, any staff account (even at an
+  // unverified trial school) could pass arbitrary UUIDs and spam real
+  // phone numbers platform-wide at the platform's expense.
+  const { createAdminClient } = await import('@/lib/supabase/admin')
+  const admin = createAdminClient()
+  const { data: schoolMembers } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('school_id', schoolId)
+    .in('id', recipientIds)
+
+  const scopedRecipientIds = (schoolMembers ?? []).map((m: any) => m.id)
+  if (scopedRecipientIds.length === 0) {
+    return NextResponse.json({ ok: false, error: 'No valid recipients in your school' }, { status: 400 })
+  }
+
+  const results = await notifyUsers(scopedRecipientIds, {
     schoolId,
     title,
     body: notificationBody,
@@ -85,7 +104,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     sentCount,
-    totalRecipients: recipientIds.length,
+    totalRecipients: scopedRecipientIds.length,
     results,
   })
 }

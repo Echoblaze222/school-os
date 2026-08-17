@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 const RATE = 1600 // fallback NGN/USD rate
 
@@ -12,6 +13,28 @@ export async function POST(request: Request) {
   try {
     const { payment_id } = await request.json()
     if (!payment_id) return NextResponse.json({ error: 'payment_id required' }, { status: 400 })
+
+    // Authenticate the caller and load their profile — this route has no
+    // role restriction (bursar, principal, parent, and the student
+    // themselves can all legitimately fetch a receipt), but it MUST
+    // confirm the caller is actually entitled to *this* payment. Without
+    // this check, any logged-in user at any school could pass another
+    // family's payment_id and read their financial receipt.
+    const supabase = await createClient()
+    const { data: { user }, error: authErr } = await supabase.auth.getUser()
+    if (authErr || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role, school_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!callerProfile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+    }
 
     const admin = createAdminClient()
 
@@ -21,13 +44,13 @@ export async function POST(request: Request) {
       .select(`
         id, receipt_number, amount_paid_ngn, amount_paid_usd,
         currency_used, payment_method, payment_reference, paid_at,
-        invoice_id, student_id,
+        invoice_id, student_id, school_id, received_by,
         payment_invoices (
           amount_due_ngn, status,
           fee_structures ( description, term, academic_year )
         ),
         profiles!payments_student_id_fkey (
-          full_name,
+          full_name, parent_id,
           student_profiles ( admission_number )
         ),
         profiles!payments_received_by_fkey ( full_name )
@@ -39,8 +62,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
-    const p         = payment as any
-    const student   = p.profiles
+    const p = payment as any
+
+    // Entitlement check — same school, and one of: staff (bursar/principal/
+    // secretary), the payer/received_by, or the parent of the student this
+    // payment belongs to. Everyone else is denied, regardless of role.
+    const studentRow = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+    const isSameSchool = callerProfile.school_id === p.school_id
+    const isStaff       = ['bursar', 'principal', 'secretary', 'admin'].includes(callerProfile.role)
+    const isOwningParent = studentRow?.parent_id === user.id
+    const isTheStudent   = p.student_id === user.id
+
+    if (!isSameSchool || !(isStaff || isOwningParent || isTheStudent)) {
+      return NextResponse.json({ error: 'You are not permitted to view this receipt.' }, { status: 403 })
+    }
+
     const inv       = p.payment_invoices
     const fee       = inv?.fee_structures
     const isPaid    = inv?.status === 'completed'
@@ -114,17 +150,17 @@ export async function POST(request: Request) {
 
   <div class="section">
     <div class="section-title">Student Information</div>
-    <div class="row"><span class="row-label">Full Name</span><span class="row-value">${student?.full_name ?? '—'}</span></div>
-    <div class="row"><span class="row-label">Admission No.</span><span class="row-value">${student?.student_profiles?.admission_number ?? '—'}</span></div>
+    <div class="row"><span class="row-label">Full Name</span><span class="row-value">${studentRow?.full_name ?? "N/A"}</span></div>
+    <div class="row"><span class="row-label">Admission No.</span><span class="row-value">${studentRow?.student_profiles?.admission_number ?? "N/A"}</span></div>
   </div>
 
   <div class="section">
     <div class="section-title">Payment Details</div>
     <div class="row"><span class="row-label">Description</span><span class="row-value">${fee?.description ?? 'School Fees'}</span></div>
-    <div class="row"><span class="row-label">Term</span><span class="row-value">${fee?.term ? fee.term.charAt(0).toUpperCase() + fee.term.slice(1) + ' Term' : '—'}</span></div>
-    <div class="row"><span class="row-label">Academic Year</span><span class="row-value">${fee?.academic_year ?? '—'}</span></div>
+    <div class="row"><span class="row-label">Term</span><span class="row-value">${fee?.term ? fee.term.charAt(0).toUpperCase() + fee.term.slice(1) + ' Term' : 'N/A'}</span></div>
+    <div class="row"><span class="row-label">Academic Year</span><span class="row-value">${fee?.academic_year ?? 'N/A'}</span></div>
     <div class="row"><span class="row-label">Payment Method</span><span class="row-value">${(p.payment_method ?? 'Bank Transfer').replace('_', ' ')}</span></div>
-    <div class="row"><span class="row-label">Reference</span><span class="row-value">${p.payment_reference ?? '—'}</span></div>
+    <div class="row"><span class="row-label">Reference</span><span class="row-value">${p.payment_reference ?? 'N/A'}</span></div>
     <div class="row"><span class="row-label">Date Paid</span><span class="row-value">${new Date(p.paid_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
   </div>
 

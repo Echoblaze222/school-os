@@ -5,6 +5,7 @@ import { useState } from 'react'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BookIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface Book { id: string; title: string; author: string | null; category: string; available_copies: number; total_copies: number; shelf_location: string | null }
 interface Loan {
@@ -51,7 +52,7 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
         {(['catalog', 'mine'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
+          <button key={t} onClick={() => setTab(t)} className="pressable"
             style={{ flex: 1, padding: '8px 0', borderRadius: 'var(--radius-md)', border: '1px solid', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
               background: tab === t ? sc + '22' : 'var(--glass-bg)',
               borderColor: tab === t ? sc : 'var(--glass-border)',
@@ -71,8 +72,8 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
             <div className={styles.empty}>No books match your search.</div>
           ) : (
             <div className={styles.list}>
-              {filtered.map(b => (
-                <div key={b.id} className={styles.card} style={{ cursor: 'default' }}>
+              {filtered.map((b, i) => (
+                <div key={b.id} className={`${styles.card} ${motion.staggerItem}`} style={{ cursor: 'default', animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                   <div className={styles.cardIcon} style={{ background: sc + '22', color: sc }}><BookIcon size={18} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p className={styles.cardTitle}>{b.title}</p>
@@ -99,10 +100,10 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
           <div className={styles.empty}>You haven't borrowed any books yet.</div>
         ) : (
           <div className={styles.list}>
-            {myLoans.map(l => {
+            {myLoans.map((l, i) => {
               const dl = dueLabel(l.due_at, l.status)
               return (
-                <div key={l.id} className={styles.card} style={{ cursor: 'default' }}>
+                <div key={l.id} className={`${styles.card} ${motion.staggerItem}`} style={{ cursor: 'default', animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                   <div className={styles.cardIcon} style={{ background: (dl?.color ?? sc) + '22', color: dl?.color ?? sc }}><BookIcon size={18} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p className={styles.cardTitle}>{l.library_books?.title ?? 'Unknown title'}</p>

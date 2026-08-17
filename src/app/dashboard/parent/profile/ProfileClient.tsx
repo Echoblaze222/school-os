@@ -83,12 +83,12 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   }
 
   const fields = [
-    ['Full Name', profile?.full_name    ?? '—'],
-    ['ID Code',   profile?.default_code ?? '—'],
+    ['Full Name', profile?.full_name    ?? 'N/A'],
+    ['ID Code',   profile?.default_code ?? 'N/A'],
     ['Role',      (profile?.role ?? '').charAt(0).toUpperCase() + (profile?.role ?? '').slice(1)],
-    ['School',    school?.name          ?? '—'],
-    ['Email',     profile?.email        ?? '—'],
-    ['Phone',     profile?.phone        ?? '—'],
+    ['School',    school?.name          ?? 'N/A'],
+    ['Email',     profile?.email        ?? 'N/A'],
+    ['Phone',     profile?.phone        ?? 'N/A'],
   ]
 
   return (
@@ -107,7 +107,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
               </div>
             )}
           </div>
-          <button
+          <button className="pressable"
             onClick={() => fileRef.current?.click()}
             disabled={uploadingPhoto}
             style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: sc, border: '2px solid var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', opacity: uploadingPhoto ? 0.6 : 1 }}
@@ -127,7 +127,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', marginBottom: 'var(--space-5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--glass-border)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>Personal Info</p>
-          <button
+          <button className="pressable"
             onClick={() => setEditing(!editing)}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: '1px solid ' + (editing ? 'var(--glass-border)' : 'var(--brand-border)'), borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
           >
@@ -148,7 +148,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
               </div>
             ))}
             {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin: 0 }}>{msg}</p>}
-            <button
+            <button className="pressable"
               onClick={save}
               disabled={saving}
               style={{ height: 44, background: 'linear-gradient(135deg,' + sc + ',' + sc + 'cc)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
@@ -176,7 +176,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
         >
           <KeyIcon size={16} /> Change Password
         </a>
-        <button
+        <button className="pressable"
           onClick={logout}
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
         >

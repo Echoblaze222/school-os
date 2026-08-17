@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UniversalAIPage from '@/components/UniversalAIPage'
 
-export const metadata = { title: 'AI Assistant — Bursar | SchoolOS' }
+export const metadata = { title: 'AI Assistant | Bursar | SchoolOS' }
 
 export default async function BursarAIPage() {
   const supabase = await createClient()

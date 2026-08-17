@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { VideoIcon, ClockIcon, BarChartIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 type Status = 'live' | 'scheduled' | 'ended'
@@ -106,11 +107,11 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
   // ── helpers ──────────────────────────────────────────────
   function fmtTime(iso: string | null) {
-    if (!iso) return '—'
+    if (!iso) return 'N/A'
     return new Date(iso).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
   }
   function fmtDate(iso: string | null) {
-    if (!iso) return '—'
+    if (!iso) return 'N/A'
     return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })
   }
   function elapsed(started: string) {
@@ -149,7 +150,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       {/* Tabs */}
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
+          <button className="pressable" key={t.key} onClick={() => setTab(t.key)}
             className={`${styles.tab} ${tab === t.key ? styles.tabActive : ''}`}
             style={tab === t.key ? { background: sc, color: '#fff', borderColor: sc } : {}}>
             {t.label}
@@ -167,7 +168,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
       {/* Content */}
       {loading
-        ? <div className={styles.loading}><span /><span /><span /></div>
+        ? <SkeletonList count={3} variant="card" />
         : rows.length === 0
           ? (
             <div className={styles.empty}>

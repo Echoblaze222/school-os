@@ -13,6 +13,8 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { BarChartIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
 
 type Tab = 'summary' | 'by_class' | 'by_type'
 interface Props { profile: any; school: any; userId: string }
@@ -152,11 +154,11 @@ export default function ReportsClient({ profile, school, userId }: Props) {
           style={{ height:40, padding:'0 12px', background:'var(--input-bg)',
             border:'1px solid var(--input-border)', borderRadius:8,
             color:'var(--text-primary)', fontSize:'0.82rem', outline:'none',
-            width:110, flexShrink:0 }}/>
+            width:110, flexShrink:0, transition:'border-color var(--transition-fast)' }}/>
         <div className={styles.tabs} style={{ flex:1 }}>
           {TERMS.map(t => (
             <button key={t} onClick={() => setTerm(t)}
-              className={`${styles.tab} ${term===t ? styles.tabActive : ''}`}
+              className={`${styles.tab} pressable ${term===t ? styles.tabActive : ''}`}
               style={term===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
               {t.replace(' Term','')}
             </button>
@@ -168,7 +170,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
         {([['summary','Summary'],['by_class','By Class'],['by_type','By Type']] as const)
           .map(([key, lbl]) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`${styles.tab} ${tab===key ? styles.tabActive : ''}`}
+              className={`${styles.tab} pressable ${tab===key ? styles.tabActive : ''}`}
               style={tab===key ? { background:sc, color:'#fff', borderColor:sc } : {}}>
               {lbl}
             </button>
@@ -176,38 +178,39 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
+        <div className="animate-shake" style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
           borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
           ⚠️ {error}
         </div>
       )}
 
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="row" />
         : !report
-          ? <div className={styles.empty}>
-              <BarChartIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No data available</p>
-            </div>
+          ? <EmptyState
+              icon={<BarChartIcon size={40} color="var(--text-faint)" strokeWidth={1}/>}
+              title="No data available"
+              subtitle="Reports will populate once invoices and payments exist for this term."
+            />
           : <>
               {/* ── Summary ─────────────────────────────────── */}
               {tab === 'summary' && (
                 <>
-                  <div className={styles.statsRow} style={{ marginBottom:'var(--space-5)' }}>
+                  <div className={`${styles.statsRow} stagger`} style={{ marginBottom:'var(--space-5)' }}>
                     {[
                       { label:'Collected',      value: fmtAmt(report.totalCollected), color:'#10B981' },
                       { label:'Students Paid',  value: report.paidCount,              color: sc       },
                       { label:'Not Paid',       value: report.unpaidCount,            color:'#EF4444' },
                       { label:'Total Students', value: report.studentCount,           color:'#F59E0B' },
                     ].map(s => (
-                      <div key={s.label} className={styles.statCard}>
+                      <div key={s.label} className={`${styles.statCard} animate-fade-up`}>
                         <p className={styles.statVal} style={{ color:s.color }}>{s.value}</p>
                         <p className={styles.statLbl}>{s.label}</p>
                       </div>
                     ))}
                   </div>
 
-                  <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
+                  <div className="animate-fade-up" style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
                     borderRadius:'var(--radius-xl)', padding:'var(--space-5)' }}>
                     <div style={{ display:'flex', justifyContent:'space-between',
                       alignItems:'baseline', marginBottom:'var(--space-3)' }}>
@@ -236,14 +239,14 @@ export default function ReportsClient({ profile, school, userId }: Props) {
               {tab === 'by_class' && (
                 <div style={{ display:'grid', gap:'var(--space-4)' }}>
                   {Object.keys(report.byClass).length === 0
-                    ? <div className={styles.empty}>
-                        <BarChartIcon size={32} color="var(--text-faint)" strokeWidth={1}/>
-                        <p>No class data yet</p>
-                      </div>
+                    ? <EmptyState
+                        icon={<BarChartIcon size={32} color="var(--text-faint)" strokeWidth={1}/>}
+                        title="No class data yet"
+                      />
                     : Object.entries(report.byClass)
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([cl, vals]: any) => (
-                          <div key={cl} style={{ background:'var(--glass-bg)',
+                          <div key={cl} className="animate-fade-up" style={{ background:'var(--glass-bg)',
                             border:'1px solid var(--glass-border)',
                             borderRadius:'var(--radius-xl)', padding:'var(--space-4)' }}>
                             <div style={{ display:'flex', justifyContent:'space-between',
@@ -267,14 +270,14 @@ export default function ReportsClient({ profile, school, userId }: Props) {
               {tab === 'by_type' && (
                 <div style={{ display:'grid', gap:'var(--space-4)' }}>
                   {Object.keys(report.byType).length === 0
-                    ? <div className={styles.empty}>
-                        <BarChartIcon size={32} color="var(--text-faint)" strokeWidth={1}/>
-                        <p>No payment types yet</p>
-                      </div>
+                    ? <EmptyState
+                        icon={<BarChartIcon size={32} color="var(--text-faint)" strokeWidth={1}/>}
+                        title="No payment types yet"
+                      />
                     : Object.entries(report.byType)
                         .sort(([, a]: any, [, b]: any) => b - a)
                         .map(([type, amount]: any) => (
-                          <div key={type} style={{ background:'var(--glass-bg)',
+                          <div key={type} className="animate-fade-up" style={{ background:'var(--glass-bg)',
                             border:'1px solid var(--glass-border)',
                             borderRadius:'var(--radius-xl)', padding:'var(--space-4)' }}>
                             <div style={{ display:'flex', justifyContent:'space-between',

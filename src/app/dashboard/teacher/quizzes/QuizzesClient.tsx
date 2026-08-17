@@ -3,27 +3,27 @@
 //
 // FIXES THIS SESSION:
 //
-// BUG 1 — CRITICAL: createQuiz() hard-blocked when class_subject_id is null
+// BUG 1 - CRITICAL: createQuiz() hard-blocked when class_subject_id is null
 //   Was:  if (!cls?.class_subject_id) { alert('...'); return }
-//   The class_subjects table is sparsely populated — same root cause as the
+//   The class_subjects table is sparsely populated - same root cause as the
 //   assignments issue. This meant teachers could never create quizzes unless
 //   admin had explicitly mapped class_subjects rows. Removed the hard block.
 //   class_subject_id is sent only if available; quiz row still inserts fine
-//   because quizzes.class_subject_id has a NOT NULL constraint — so we need
+//   because quizzes.class_subject_id has a NOT NULL constraint - so we need
 //   a fallback. Fix: if no class_subject_id, we query/create one on-the-fly
 //   OR we need to relax the constraint. Since we can't alter the schema here,
 //   we use the best available class_subject_id from ANY subject for that class
 //   as a fallback, and surface a warning (not a blocker) if truly none exists.
 //
-// BUG 2 — SILENT: saveQuestions / saveEditedQuestions never surfaced errors
+// BUG 2 - SILENT: saveQuestions / saveEditedQuestions never surfaced errors
 //   Teacher saw the form close but questions may not have saved.
 //   Fix: show inline error banner, don't close form on failure.
 //
-// BUG 3 — SILENT: loadTeacherClasses picked wrong class_subject_id
-//   Didn't filter by teacher_id — picked first subject for the class.
+// BUG 3 - SILENT: loadTeacherClasses picked wrong class_subject_id
+//   Didn't filter by teacher_id - picked first subject for the class.
 //   Fix: try teacher_id filter first, fall back to any class_subject row.
 //
-// BUG 4 — SILENT: createQuiz / saveQuestions errors only console.error'd
+// BUG 4 - SILENT: createQuiz / saveQuestions errors only console.error'd
 //   Fix: setSaveError() on any failure so teacher sees what went wrong.
 //
 // (Carried: QuestionBuilder at module level, both text+question columns sent)
@@ -34,6 +34,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { AwardIcon, PlusIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -63,7 +64,7 @@ const BLANK_Q: Question = {
   marks:  1,
 }
 
-// ── Stable module-level component — keeps input focus on every keystroke ──
+// ── Stable module-level component - keeps input focus on every keystroke ──
 function QuestionBuilder({
   questions, setQuestions, onSave, onCancel, saveLabel, saving, saveError, sc,
 }: {
@@ -91,7 +92,7 @@ function QuestionBuilder({
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: sc }}>Q{qi + 1}</span>
               {questions.length > 1 && (
-                <button onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
+                <button className="pressable" onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
                   style={{ fontSize: '0.72rem', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
                   Remove
                 </button>
@@ -137,16 +138,16 @@ function QuestionBuilder({
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-        <button
+        <button className="pressable"
           onClick={() => setQuestions(prev => [...prev, { ...BLANK_Q, options: BLANK_Q.options.map(o => ({ ...o })) }])}
           style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
           + Add Question
         </button>
-        <button onClick={onSave} disabled={saving || questions.some(q => !q.question.trim())}
+        <button className="pressable" onClick={onSave} disabled={saving || questions.some(q => !q.question.trim())}
           style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
           {saving ? 'Saving...' : saveLabel}
         </button>
-        <button onClick={onCancel}
+        <button className="pressable" onClick={onCancel}
           style={{ height: 40, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
           Cancel
         </button>
@@ -182,7 +183,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   useEffect(() => { loadTeacherClasses(); loadQuizzes() }, [])
 
   // ── Load an AI-generated quiz draft (from the AI Assistant chat) ─────────
-  // This ONLY prefills the on-screen form — nothing is published until the
+  // This ONLY prefills the on-screen form - nothing is published until the
   // teacher goes through the normal Create → Add Questions → Save flow.
   useEffect(() => {
     const draftId = searchParams.get('draftId')
@@ -197,7 +198,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         .single()
 
       if (error || !draft) {
-        setAiDraftBanner('Couldn\'t load that AI draft — it may have already been used or removed.')
+        setAiDraftBanner('Couldn\'t load that AI draft. It may have already been used or removed.')
         return
       }
 
@@ -212,7 +213,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       setForm(f => ({ ...f, title: draft.title ?? f.title }))
       setAiDraftQuestions(converted.length ? converted : null)
       setAiDraftId(draft.id)
-      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant — pick a class below, then continue as normal. Nothing is published yet.`)
+      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant. Pick a class below, then continue as normal. Nothing is published yet.`)
       setStep('create')
 
       // Clean the draftId out of the URL so a refresh doesn't try to reload it.
@@ -341,7 +342,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     const { error: insErr } = await supabase.from('quiz_questions').insert(
       questions.map((q, i) => ({
         quiz_id:  editingQuiz.id,
-        text:     q.question,   // NOT NULL — must always be sent
+        text:     q.question,   // NOT NULL - must always be sent
         question: q.question,   // keep in sync
         options:  q.options,
         answer:   q.answer,
@@ -434,7 +435,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     const { error } = await supabase.from('quiz_questions').insert(
       questions.map((q, i) => ({
         quiz_id:  newQuiz.id,
-        text:     q.question,   // NOT NULL — must always be sent
+        text:     q.question,   // NOT NULL - must always be sent
         question: q.question,
         options:  q.options,
         answer:   q.answer,
@@ -460,15 +461,28 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     const newEndsAt = isActive
       ? now.toISOString()
       : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    await supabase.from('quizzes').update({ ends_at: newEndsAt, closes_at: newEndsAt }).eq('id', id)
+    await supabase.from('quizzes').update({ ends_at: newEndsAt, closes_at: newEndsAt })
+      .eq('id', id).eq('created_by', userId)
     loadQuizzes()
   }
 
   async function deleteQuiz(id: string) {
     if (!confirm('Delete this quiz and all its questions and attempts?')) return
+    // Delete (and verify ownership of) the parent row first. Scoping this to
+    // created_by means an attempt on a quiz that isn't this teacher's simply
+    // matches zero rows - nothing downstream gets touched.
+    const { data: owned, error: ownErr } = await supabase
+      .from('quizzes')
+      .delete()
+      .eq('id', id)
+      .eq('created_by', userId)
+      .select('id')
+    if (ownErr || !owned?.length) {
+      setSaveError(ownErr?.message ?? "Couldn't delete that quiz.")
+      return
+    }
     await supabase.from('quiz_questions').delete().eq('quiz_id', id)
     await supabase.from('quiz_attempts').delete().eq('quiz_id', id)
-    await supabase.from('quizzes').delete().eq('id', id)
     setQuizzes(prev => prev.filter(q => q.id !== id))
   }
 
@@ -485,10 +499,10 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
         <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{editingQuiz.title}</p>
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          {editingQuiz.classes?.name ?? '—'} · {editingQuiz.total_marks} marks · {questions.length} question{questions.length !== 1 ? 's' : ''}
+          {editingQuiz.classes?.name ?? 'N/A'} · {editingQuiz.total_marks} marks · {questions.length} question{questions.length !== 1 ? 's' : ''}
         </p>
       </div>
-      <button onClick={backToList}
+      <button className="pressable" onClick={backToList}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         ← Back to Quizzes
       </button>
@@ -506,7 +520,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   // ── New quiz: add questions step ──────────────────────────────────────────
   if (step === 'questions') return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Add Questions" showBack={false}>
-      <button onClick={backToList}
+      <button className="pressable" onClick={backToList}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         ← Back to Quizzes
       </button>
@@ -527,7 +541,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   // ── Create form ───────────────────────────────────────────────────────────
   if (step === 'create') return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" showBack={false}>
-      <button onClick={backToList}
+      <button className="pressable" onClick={backToList}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         ← Back to Quizzes
       </button>
@@ -570,10 +584,10 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                 </option>
               ))}
             </select>
-            {/* BUG 1 FIX: warning instead of hard block — principal needs to fix class_subjects */}
+            {/* BUG 1 FIX: warning instead of hard block - principal needs to fix class_subjects */}
             {form.class_id && !teacherClasses.find(c => c.class_id === form.class_id)?.class_subject_id && (
               <p style={{ fontSize: '0.7rem', color: 'var(--warning)', margin: 0 }}>
-                <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={12} /></span>No subject mapping for this class. Ask principal to assign subjects to this class — otherwise quiz creation will fail.
+                <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={12} /></span>No subject mapping for this class. Ask principal to assign subjects to this class, otherwise quiz creation will fail.
               </p>
             )}
           </div>
@@ -612,11 +626,11 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button onClick={createQuiz} disabled={saving || !form.title || !form.class_id}
+          <button className="pressable" onClick={createQuiz} disabled={saving || !form.title || !form.class_id}
             style={{ flex: 1, height: 44, background: sc, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', opacity: saving || !form.class_id ? 0.5 : 1 }}>
             {saving ? 'Creating...' : 'Continue → Add Questions'}
           </button>
-          <button onClick={backToList}
+          <button className="pressable" onClick={backToList}
             style={{ height: 44, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 10, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
             Cancel
           </button>
@@ -643,14 +657,14 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
-        <button onClick={() => setStep('create')}
+        <button className="pressable" onClick={() => setStep('create')}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> New Quiz
         </button>
       </div>
 
       {loading ? (
-        <div className={styles.loading}><span /><span /><span /></div>
+        <SkeletonList count={4} variant="card" />
       ) : quizzes.length === 0 ? (
         <div className={styles.empty}>
           <AwardIcon size={40} color="var(--text-faint)" strokeWidth={1} />
@@ -670,7 +684,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: '0 0 2px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem' }}>{q.title}</p>
                   <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.72rem' }}>
-                    {q.classes?.name ?? '—'} · {q.total_marks} marks · {attemptCounts[q.id] ?? 0} attempt{(attemptCounts[q.id] ?? 0) !== 1 ? 's' : ''}
+                    {q.classes?.name ?? 'N/A'} · {q.total_marks} marks · {attemptCounts[q.id] ?? 0} attempt{(attemptCounts[q.id] ?? 0) !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
@@ -678,15 +692,15 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                     {statusLabel}
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => openPreview(q)}
+                    <button className="pressable" onClick={() => openPreview(q)}
                       style={{ fontSize: '0.7rem', fontWeight: 700, color: sc, background: 'none', border: 'none', cursor: 'pointer' }}>
                       Edit
                     </button>
-                    <button onClick={() => togglePublish(q.id, q.ends_at)}
+                    <button className="pressable" onClick={() => togglePublish(q.id, q.ends_at)}
                       style={{ fontSize: '0.7rem', fontWeight: 700, color: status === 'live' ? 'var(--warning)' : sc, background: 'none', border: 'none', cursor: 'pointer' }}>
                       {status === 'live' ? 'Close' : 'Open'}
                     </button>
-                    <button onClick={() => deleteQuiz(q.id)}
+                    <button className="pressable" onClick={() => deleteQuiz(q.id)}
                       style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
                       Delete
                     </button>

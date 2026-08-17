@@ -263,7 +263,7 @@ const ROLE_CONFIG: Record<string, { title: string; subtitle: string; context: st
     context:  'parent',
     starters: [
       '📚 How can I help my child study better at home?',
-      '😟 My child is struggling with Maths — what can I do?',
+      '😟 My child is struggling with Maths. What can I do?',
       '✉️ Help me write a message to my child\'s class teacher',
       '📊 What questions should I ask at a parent-teacher meeting?',
       '🎯 How do I motivate a teenager who has lost interest in school?',

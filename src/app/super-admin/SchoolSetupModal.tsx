@@ -367,7 +367,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
               <h3>Confirm Setup</h3>
               <div className={styles.confirmCard}>
                 <div className={styles.confirmRow}><span>School</span><strong>{form.schoolName}</strong></div>
-                <div className={styles.confirmRow}><span>Location</span><strong>{[form.city, form.state].filter(Boolean).join(', ') || '—'}</strong></div>
+                <div className={styles.confirmRow}><span>Location</span><strong>{[form.city, form.state].filter(Boolean).join(', ') || 'N/A'}</strong></div>
                 <div className={styles.confirmRow}><span>Type</span><strong style={{ textTransform: 'capitalize' }}>{form.schoolType}</strong></div>
                 <div className={styles.confirmRow}><span>Setup Type</span>
                   <strong style={{ color: setupType === 'trial' ? '#F59E0B' : '#10B981' }}>

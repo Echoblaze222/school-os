@@ -115,7 +115,7 @@ function FilterPanel({
     <div className={styles.filterWrap}>
       <div className={styles.filterBar}>
         <button
-          className={`${styles.filterToggleBtn} ${open ? styles.filterToggleBtnOpen : ''}`}
+          className={`${styles.filterToggleBtn} ${open ? styles.filterToggleBtnOpen : ''} pressable`}
           onClick={() => setOpen(o => !o)} aria-expanded={open}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"/>
@@ -126,7 +126,7 @@ function FilterPanel({
           {isDirty && <span className={styles.filterActiveDot} />}
         </button>
         {isDirty && (
-          <button className={styles.filterClearBtn} onClick={handleClear}>Clear all</button>
+          <button className={`${styles.filterClearBtn} pressable`} onClick={handleClear}>Clear all</button>
         )}
       </div>
       {open && (
@@ -162,8 +162,8 @@ function FilterPanel({
             </div>
           </div>
           <div className={styles.filterActions}>
-            <button className="btn btn-ghost" onClick={handleClear}>Clear</button>
-            <button className="btn btn-primary" onClick={handleApply} style={{ flex: 1 }}>Apply Filters</button>
+            <button className="btn btn-ghost pressable" onClick={handleClear}>Clear</button>
+            <button className="btn btn-primary pressable" onClick={handleApply} style={{ flex: 1 }}>Apply Filters</button>
           </div>
         </div>
       )}
@@ -203,7 +203,7 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
 
       {/* Export CSV strip */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
-        <button
+        <button className="pressable"
           onClick={() => exportCSV(entries)}
           disabled={entries.length === 0}
           style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', background: 'var(--success-bg)', border: '1px solid rgba(45,139,85,0.25)', color: 'var(--success)', fontWeight: 700, fontSize: '0.75rem', borderRadius: 8, cursor: entries.length === 0 ? 'not-allowed' : 'pointer', opacity: entries.length === 0 ? 0.4 : 1 }}>
@@ -249,7 +249,7 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
               {isDirty ? 'Try adjusting your filters.' : 'No activity has been logged yet.'}
             </p>
             {isDirty && (
-              <button className="btn btn-ghost" onClick={clearFilters}>Clear filters</button>
+              <button className="btn btn-ghost pressable" onClick={clearFilters}>Clear filters</button>
             )}
           </div>
         ) : (
@@ -295,7 +295,7 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
       {/* Pagination */}
       {totalPages > 1 && (
         <div className={styles.pagination} aria-label="Pagination">
-          <button className={`${styles.pageBtn} ${styles.pageBtnPrev}`}
+          <button className={`${styles.pageBtn} ${styles.pageBtnPrev} pressable`}
             onClick={() => goPage(page - 1)} disabled={!hasPrev} aria-label="Previous page">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6"/>
@@ -311,14 +311,14 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
               else { p = page - 2 + i }
               return (
                 <button key={p}
-                  className={`${styles.pageNum} ${p === page ? styles.pageNumActive : ''}`}
+                  className={`${styles.pageNum} ${p === page ? styles.pageNumActive : ''} pressable`}
                   onClick={() => goPage(p)} aria-current={p === page ? 'page' : undefined}>
                   {p + 1}
                 </button>
               )
             })}
           </div>
-          <button className={`${styles.pageBtn} ${styles.pageBtnNext}`}
+          <button className={`${styles.pageBtn} ${styles.pageBtnNext} pressable`}
             onClick={() => goPage(page + 1)} disabled={!hasNext} aria-label="Next page">
             Next
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

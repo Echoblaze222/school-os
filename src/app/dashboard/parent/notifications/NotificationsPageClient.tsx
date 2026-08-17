@@ -1,5 +1,5 @@
 // src/app/dashboard/parent/notifications/NotificationsPageClient.tsx
-// Parent-specific variant — no broadcast panel (parents can't send to school)
+// Parent-specific variant - no broadcast panel (parents can't send to school)
 // Uses the same RoleSubHeader + BottomDock as every other parent page
 'use client'
 
@@ -9,7 +9,11 @@ import { createClient } from '@/lib/supabase/client'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
-import { AlertIcon, CheckCircleIcon } from '@/components/Icons'
+import {
+  AlertIcon, CheckCircleIcon, BellIcon, BellOffIcon, StatusDotIcon, BarChartIcon,
+  WalletIcon, MegaphoneIcon, ClipboardIcon, SettingsIcon, GraduationCapIcon,
+  TransferIcon, CalendarIcon, MessageIcon, ClockIcon, XIcon,
+} from '@/components/Icons'
 import styles from './notifications.module.css'
 
 interface Notification {
@@ -33,27 +37,27 @@ interface Props {
   schoolColor?: string
 }
 
-const FILTERS = [
-  { key: 'all',          label: 'All',         emoji: '🔔' },
-  { key: 'unread',       label: 'Unread',      emoji: '🔵' },
-  { key: 'result',       label: 'Results',     emoji: '📊' },
-  { key: 'payment',      label: 'Payments',    emoji: '💰' },
-  { key: 'announcement', label: 'News',        emoji: '📣' },
-  { key: 'assignment',   label: 'Assignments', emoji: '📝' },
-  { key: 'system',       label: 'System',      emoji: '⚙️' },
+const FILTERS: { key: string; label: string; Icon: typeof BellIcon }[] = [
+  { key: 'all',          label: 'All',         Icon: BellIcon },
+  { key: 'unread',       label: 'Unread',      Icon: StatusDotIcon },
+  { key: 'result',       label: 'Results',     Icon: BarChartIcon },
+  { key: 'payment',      label: 'Payments',    Icon: WalletIcon },
+  { key: 'announcement', label: 'News',        Icon: MegaphoneIcon },
+  { key: 'assignment',   label: 'Assignments', Icon: ClipboardIcon },
+  { key: 'system',       label: 'System',      Icon: SettingsIcon },
 ]
 
-const TYPE_EMOJIS: Record<string, string> = {
-  result:       '📊',
-  assignment:   '📝',
-  payment:      '💰',
-  announcement: '📣',
-  promotion:    '🎓',
-  transfer:     '🔄',
-  meeting:      '📅',
-  chat:         '💬',
-  system:       '⚙️',
-  reminder:     '⏰',
+const TYPE_ICONS: Record<string, typeof BellIcon> = {
+  result:       BarChartIcon,
+  assignment:   ClipboardIcon,
+  payment:      WalletIcon,
+  announcement: MegaphoneIcon,
+  promotion:    GraduationCapIcon,
+  transfer:     TransferIcon,
+  meeting:      CalendarIcon,
+  chat:         MessageIcon,
+  system:       SettingsIcon,
+  reminder:     ClockIcon,
 }
 
 export default function ParentNotificationsPageClient({
@@ -107,14 +111,16 @@ export default function ParentNotificationsPageClient({
   }
 
   async function markOneRead(id: string) {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    // Scoped to this user's own id, matching the ownership check every other
+    // mutation in this app uses - never trust the row id alone.
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', userId)
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
     setLocalUnread(prev => Math.max(prev - 1, 0))
   }
 
   async function deleteNotif(id: string, e: React.MouseEvent) {
     e.stopPropagation()
-    await supabase.from('notifications').delete().eq('id', id)
+    await supabase.from('notifications').delete().eq('id', id).eq('user_id', userId)
     setNotifications(prev => prev.filter(n => n.id !== id))
   }
 
@@ -185,24 +191,29 @@ export default function ParentNotificationsPageClient({
 
   function PushBtn() {
     if (!push.supported) return null
-    if (push.loading) return <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>🔔…</span>
+    if (push.loading) return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', opacity: 0.5 }}>
+        <BellIcon size={14} />…
+      </span>
+    )
     if (push.permission === 'denied') return (
-      <span style={{ fontSize: '0.75rem', opacity: 0.5 }} title="Notifications blocked in browser settings">
-        🔕 Blocked
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', opacity: 0.5 }} title="Notifications blocked in browser settings">
+        <BellOffIcon size={14} /> Blocked
       </span>
     )
     return (
       <button
-        className={styles.markAllBtn}
+        className={`${styles.markAllBtn} pressable`}
         style={{
           background:  push.subscribed ? 'rgba(34,197,94,0.15)' : 'var(--card-bg)',
           color:       push.subscribed ? '#4ade80' : 'var(--text)',
           borderColor: push.subscribed ? 'rgba(34,197,94,0.4)' : 'var(--border)',
+          display: 'inline-flex', alignItems: 'center', gap: 4,
         }}
         onClick={push.subscribed ? push.unsubscribe : push.subscribe}
         title={push.subscribed ? 'Tap to disable push alerts' : 'Tap to enable push alerts'}
       >
-        {push.subscribed ? '🔔 Alerts On' : '🔕 Enable Alerts'}
+        {push.subscribed ? <><BellIcon size={14} /> Alerts On</> : <><BellOffIcon size={14} /> Enable Alerts</>}
       </button>
     )
   }
@@ -210,7 +221,7 @@ export default function ParentNotificationsPageClient({
   return (
     <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Notifications" featureGroups={PARENT_FEATURE_GROUPS}>
 
-      {/* Controls row — unread badge, push toggle, mark-all-read */}
+      {/* Controls row - unread badge, push toggle, mark-all-read */}
       <div className="glass-card-flat" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 14px', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Notifications</span>
@@ -219,7 +230,7 @@ export default function ParentNotificationsPageClient({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={styles.markAllBtn} onClick={markAllRead}><CheckCircleIcon size={13} /> All read</button>
+            <button className={`${styles.markAllBtn} pressable`} onClick={markAllRead}><CheckCircleIcon size={13} /> All read</button>
           )}
         </div>
       </div>
@@ -246,10 +257,10 @@ export default function ParentNotificationsPageClient({
           return (
             <button
               key={f.key}
-              className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''}`}
+              className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ''} pressable`}
               onClick={() => setFilter(f.key)}
             >
-              <span>{f.emoji}</span>
+              <span><f.Icon size={14} /></span>
               <span>{f.label}</span>
               {count > 0 && <span className={styles.filterCount}>{count}</span>}
             </button>
@@ -261,7 +272,7 @@ export default function ParentNotificationsPageClient({
       <div className={styles.list}>
         {filtered.length === 0 ? (
           <div className={styles.empty}>
-            <p className={styles.emptyEmoji}>🔔</p>
+            <p className={styles.emptyEmoji}><BellIcon size={40} strokeWidth={1} /></p>
             <p className={styles.emptyTitle}>
               {filter === 'all' ? 'No notifications yet' : `No ${filter} notifications`}
             </p>
@@ -278,14 +289,16 @@ export default function ParentNotificationsPageClient({
             return (
               <div key={group}>
                 <p className={styles.dateGroup}>{group}</p>
-                {items.map(notif => (
+                {items.map(notif => {
+                  const NotifIcon = TYPE_ICONS[notif.type] ?? BellIcon
+                  return (
                   <button
                     key={notif.id}
-                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''}`}
+                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''} pressable`}
                     onClick={() => handleClick(notif)}
                   >
                     <div className={`${styles.notifIcon} ${!notif.is_read ? styles.notifIconUnread : ''}`}>
-                      {TYPE_EMOJIS[notif.type] ?? '🔔'}
+                      <NotifIcon size={18} />
                     </div>
                     <div className={styles.notifContent}>
                       <p className={styles.notifTitle}>{notif.title}</p>
@@ -295,21 +308,22 @@ export default function ParentNotificationsPageClient({
                     <div className={styles.notifRight}>
                       {!notif.is_read && <div className={styles.unreadDot} />}
                       <button
-                        className={styles.deleteBtn}
+                        className={`${styles.deleteBtn} pressable`}
                         onClick={e => deleteNotif(notif.id, e)}
                         title="Delete"
-                      >✕</button>
+                      ><XIcon size={14} /></button>
                     </div>
                   </button>
-                ))}
+                  )
+                })}
               </div>
             )
           })
         )}
 
         {filtered.length >= 50 && (
-          <button className={styles.loadMoreBtn} onClick={loadMore} disabled={loading}>
-            {loading ? '⏳ Loading...' : 'Load more notifications'}
+          <button className={`${styles.loadMoreBtn} pressable`} onClick={loadMore} disabled={loading}>
+            {loading ? 'Loading…' : 'Load more notifications'}
           </button>
         )}
 
@@ -343,16 +357,19 @@ export default function ParentNotificationsPageClient({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: '1.4rem' }}>{TYPE_EMOJIS[selected.type] ?? '🔔'}</span>
+                <span style={{ display: 'inline-flex', color: schoolColor }}>
+                  {(() => { const M = TYPE_ICONS[selected.type] ?? BellIcon; return <M size={22} /> })()}
+                </span>
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>{selected.title}</h2>
               </div>
-              <button
+              <button className="pressable"
                 onClick={closeModal}
                 style={{
                   background: 'transparent', border: 'none', color: 'inherit',
                   fontSize: '1.1rem', cursor: 'pointer', opacity: 0.6, lineHeight: 1,
+                  display: 'inline-flex', alignItems: 'center',
                 }}
-              >✕</button>
+              ><XIcon size={18} /></button>
             </div>
 
             <p style={{
@@ -367,7 +384,7 @@ export default function ParentNotificationsPageClient({
             </p>
 
             {selected.link_url && (
-              <button
+              <button className="pressable"
                 onClick={viewLinkedItem}
                 style={{
                   marginTop: 12, width: '100%', padding: '10px 16px',

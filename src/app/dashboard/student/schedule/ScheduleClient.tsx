@@ -31,6 +31,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { CalendarIcon, PlusIcon, SparkleIcon, AlertIcon, XIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -116,7 +117,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
       const res = await fetch('/api/study-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, schoolId: school?.id, classId: profile?.class_id }),
+        body: JSON.stringify({}),
       })
       if (!res.ok) {
         setError(`AI plan unavailable right now (${res.status}). Add sessions manually.`)
@@ -141,7 +142,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
         if (insErr) { setError(insErr.message); setGenerating(false); return }
         if (inserted) setPlan(prev => [...prev, ...inserted])
       } else {
-        setError('AI couldn\'t generate a plan — try adding sessions manually.')
+        setError('AI couldn\'t generate a plan. Try adding sessions manually.')
       }
     } catch (e: any) {
       console.error('[schedule] AI generate error:', e)
@@ -293,7 +294,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
 
           {/* Plan list */}
           {loading
-            ? <div className={styles.loading}><span /><span /><span /></div>
+            ? <SkeletonList count={3} variant="row" />
             : plan.length === 0
               ? (
                 <div className={`${styles.empty} ${motion.riseIn}`}>

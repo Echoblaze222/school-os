@@ -14,7 +14,7 @@ interface Props {
 
 type Filter = 'all' | 'pending' | 'submitted' | 'graded'
 
-/* ── tiny inline styles — no separate CSS file needed here ── */
+/* ── tiny inline styles - no separate CSS file needed here ── */
 const c = {
   page: { minHeight: '100dvh', background: 'var(--bg-base)', fontFamily: 'var(--font-body)', paddingBottom: 60 } as React.CSSProperties,
   header: { position: 'sticky' as const, top: 0, zIndex: 50, padding: '20px 24px 16px', background: 'var(--bg-overlay)', backdropFilter: 'blur(24px) saturate(160%)', borderBottom: '1px solid var(--glass-border)' },
@@ -57,7 +57,7 @@ const c = {
 function initials(n: string) { return n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() }
 
 function fmtDateTime(iso: string | null) {
-  if (!iso) return '—'
+  if (!iso) return 'N/A'
   return new Date(iso).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
 }
 
@@ -133,7 +133,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
       <header style={c.header}>
         <Link href="/dashboard/teacher" style={c.backBtn}><IconChevronLeft /> Teacher Dashboard</Link>
         <h1 style={c.title}>
-          <span style={c.titleSpan}>{assignment.subject_name}</span> — {assignment.title}
+          <span style={c.titleSpan}>{assignment.subject_name}</span>: {assignment.title}
         </h1>
         <p style={c.sub}>
           {assignment.class_name} · Due: {assignment.due_date ? new Date(assignment.due_date).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : 'No deadline'} · Max score: {assignment.max_score}
@@ -163,7 +163,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
         {/* Filter bar */}
         <div style={c.filterBar}>
           {(['all','submitted','graded','pending'] as Filter[]).map(f => (
-            <button key={f} style={c.fBtn(filter === f) as any} onClick={() => setFilter(f)}>
+            <button className="pressable" key={f} style={c.fBtn(filter === f) as any} onClick={() => setFilter(f)}>
               {f === 'all' ? `All (${counts.all})` : f === 'submitted' ? `Submitted (${counts.submitted})` : f === 'graded' ? `Graded (${counts.graded})` : `Pending (${counts.pending})`}
             </button>
           ))}
@@ -199,7 +199,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                     <div style={c.avatar}>{initials(sub.student_name)}</div>
                     <div>
                       <p style={c.name}>{sub.student_name}</p>
-                      <p style={c.num}>{sub.student_number ?? '—'}</p>
+                      <p style={c.num}>{sub.student_number ?? 'N/A'}</p>
                     </div>
                   </div>
 
@@ -221,7 +221,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                         {sub.notes}
                       </span>
                     )}
-                    {!sub.file_url && !sub.notes && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>—</span>}
+                    {!sub.file_url && !sub.notes && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>No submission content</span>}
                   </div>
 
                   {/* Feedback */}
@@ -247,7 +247,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                         <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--success)' }}>
                           {sub.score} / {assignment.max_score}
                         </span>
-                        <button
+                        <button className="pressable"
                           style={{ fontSize: '0.68rem', color: 'var(--text-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
                           onClick={() => setScores(p => ({ ...p, [sub.student_id]: String(sub.score ?? '') }))}
                         >Edit</button>
@@ -265,7 +265,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                           />
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>/ {assignment.max_score}</span>
                         </div>
-                        <button
+                        <button className="pressable"
                           style={c.saveBtn(isSaving || !scoreStr)}
                           onClick={() => saveGrade(sub)}
                           disabled={isSaving || !scoreStr}
@@ -274,7 +274,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                         </button>
                       </>
                     ) : (
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>—</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Not graded yet</span>
                     )}
                   </div>
                 </div>

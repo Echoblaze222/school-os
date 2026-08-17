@@ -27,7 +27,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title:       'SchoolOS — Nigeria\'s Smartest School Portal',
+  title:       'SchoolOS | Nigeria\'s Smartest School Portal',
   description: 'Complete school management system for Nigerian schools',
   manifest:    '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SchoolOS' },

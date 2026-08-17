@@ -10,8 +10,9 @@
 //   ✓ Urgent items pinned visually to top of list
 // ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { logActivity } from '@/lib/logActivity'
 import styles from './viewer.module.css'
 
 // ── Types ────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ interface Announcement {
 interface Props {
   initialItems:  Announcement[]
   schoolId:      string
+  userId?:       string
   /** Viewer's role — used to filter announcements */
   viewerAudience: Audience | 'all'
 }
@@ -63,12 +65,32 @@ function relativeTime(iso: string): string {
 
 // ── Component ─────────────────────────────────────────────────
 export default function AnnouncementsViewer({
-  initialItems, schoolId, viewerAudience,
+  initialItems, schoolId, userId, viewerAudience,
 }: Props) {
   const supabase = createClient()
 
   const [items,      setItems]      = useState<Announcement[]>(initialItems)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const loggedIds = useRef<Set<string>>(new Set())
+
+  // Opening a long announcement is the one clear, discrete "read" action
+  // available here (short ones are just visible in the list with nothing to
+  // click) — log once per item per session, not on every expand/collapse
+  // toggle if the person opens and closes it repeatedly.
+  function handleExpand(item: Announcement) {
+    const opening = expandedId !== item.id
+    setExpandedId(opening ? item.id : null)
+    if (opening && userId && !loggedIds.current.has(item.id)) {
+      loggedIds.current.add(item.id)
+      logActivity({
+        userId, schoolId,
+        type:  'announcement_read',
+        title: `Read "${item.title}"`,
+        subtitle: item.poster_name ?? undefined,
+        href:  '/dashboard/student/announcements',
+      })
+    }
+  }
 
   // ── Real-time: new announcements appear instantly ──────────
   useEffect(() => {
@@ -158,7 +180,7 @@ export default function AnnouncementsViewer({
             {/* Title — tappable to expand */}
             <h3
               className={styles.cardTitle}
-              onClick={() => isLong && setExpandedId(isExpanded ? null : item.id)}
+              onClick={() => isLong && handleExpand(item)}
               style={{ cursor: isLong ? 'pointer' : 'default' }}
             >
               {item.title}
@@ -176,7 +198,7 @@ export default function AnnouncementsViewer({
             {isLong && (
               <button
                 className={styles.expandBtn}
-                onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                onClick={() => handleExpand(item)}
                 type="button"
               >
                 {isExpanded
@@ -194,7 +216,7 @@ export default function AnnouncementsViewer({
 
             {/* Posted by */}
             {item.poster_name && (
-              <p className={styles.postedBy}>— {item.poster_name}</p>
+              <p className={styles.postedBy}>By {item.poster_name}</p>
             )}
           </div>
         )

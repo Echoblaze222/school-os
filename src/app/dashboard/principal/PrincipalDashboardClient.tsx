@@ -76,12 +76,12 @@ function notifRelTime(iso: string) {
 // surface as the AI insight, instead of a generic static line.
 function buildInsight(counts: any): string {
   if ((counts.feeCollectionRate ?? 0) < 60) {
-    return `Fee collection is at ${counts.feeCollectionRate}% this term — below the usual pace by this point. Worth a reminder push to outstanding families.`
+    return `Fee collection is at ${counts.feeCollectionRate}% this term, below the usual pace by this point. Worth a reminder push to outstanding families.`
   }
   if ((counts.avgScore ?? 0) < 50) {
-    return `Average score across recent results is ${counts.avgScore}% — worth a look at which classes are pulling this down.`
+    return `Average score across recent results is ${counts.avgScore}%, worth a look at which classes are pulling this down.`
   }
-  return `Fee collection is at ${counts.feeCollectionRate ?? 0}% and average score is ${counts.avgScore ?? 0}% this term — both tracking normally. ${counts.pendingActions ?? 0} items are waiting on your review.`
+  return `Fee collection is at ${counts.feeCollectionRate ?? 0}% and average score is ${counts.avgScore ?? 0}% this term, both tracking normally. ${counts.pendingActions ?? 0} items are waiting on your review.`
 }
 
 export default function PrincipalDashboardClient({
@@ -191,7 +191,7 @@ export default function PrincipalDashboardClient({
           items={activities}
           accentColor={schoolColor}
           onDelete={handleDeleteActivity}
-          emptyLabel="Nothing yet — school-wide actions will show up here"
+          emptyLabel="Nothing yet. School-wide actions will show up here"
         />
 
         <div className={styles.spacer} />

@@ -31,6 +31,9 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
   const [rejectId,  setRejectId]  = useState<string | null>(null)
   const [rejectNote,setRejectNote]= useState('')
   const [toast,     setToast]     = useState('')
+  const [toastLeaving, setToastLeaving] = useState(false)
+  const [justConfirmed, setJustConfirmed] = useState<string | null>(null)
+  const [shakeInput, setShakeInput] = useState(false)
 
   const supabase = createClient()
   const sc = school?.primary_color ?? '#800020'
@@ -62,43 +65,31 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
       const res = await fetch('/api/payments/confirm-claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          claim_id:    claim.id,
-          bursar_id:   userId,
-          school_id:   school.id,
-          student_id:  claim.student_id,
-          parent_id:   claim.parent_id,
-          amount:      claim.amount_claimed,
-          term:        claim.term,
-          year:        claim.academic_year,
-          fee_type:    claim.fee_type,
-        }),
+        body: JSON.stringify({ claim_id: claim.id, invoice_id: claim.invoice_id ?? null }),
       })
       const result = await res.json()
       if (!res.ok) throw new Error(result.error ?? 'Confirm failed')
 
+      // Brief success moment on the card itself before the list refreshes,
+      // so the bursar sees *this* payment confirm rather than the row just
+      // vanishing and reappearing in a different tab.
+      setJustConfirmed(claim.id)
       showToast('Payment confirmed and balance updated')
-      load()
+      setTimeout(() => { setJustConfirmed(null); setReviewing(null); load() }, 650)
     } catch (err: any) {
       showToast(err.message)
-    } finally {
       setReviewing(null)
     }
   }
 
   async function reject(claimId: string) {
-    if (!rejectNote.trim()) { showToast('Please enter a rejection reason'); return }
+    if (!rejectNote.trim()) { showToast('Please enter a rejection reason'); setShakeInput(true); setTimeout(() => setShakeInput(false), 400); return }
     setReviewing(claimId)
     try {
       const res = await fetch('/api/payments/reject-claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          claim_id:   claimId,
-          bursar_id:  userId,
-          school_id:  school.id,
-          bursar_note: rejectNote.trim(),
-        }),
+        body: JSON.stringify({ claim_id: claimId, bursar_note: rejectNote.trim() }),
       })
       const result = await res.json()
       if (!res.ok) throw new Error(result.error ?? 'Reject failed')
@@ -114,7 +105,10 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
   }
 
   function showToast(msg: string) {
-    setToast(msg); setTimeout(() => setToast(''), 4000)
+    setToastLeaving(false)
+    setToast(msg)
+    setTimeout(() => setToastLeaving(true), 3200)
+    setTimeout(() => { setToast(''); setToastLeaving(false) }, 3500)
   }
 
   function fmt(n: number) {
@@ -127,7 +121,8 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Payment Claims">
 
       {toast && (
-        <div style={{ position:'fixed', top:80, left:'50%', transform:'translateX(-50%)',
+        <div className={toastLeaving ? 'animate-toast-out' : 'animate-toast-in'}
+          style={{ position:'fixed', top:80, left:'50%',
           background:'#1a1a2e', color:'#fff', padding:'10px 20px', borderRadius:10,
           fontSize:'0.82rem', zIndex:999, boxShadow:'0 4px 20px #0008',
           border:'1px solid var(--glass-border)', maxWidth:'90vw', textAlign:'center' }}>
@@ -153,16 +148,42 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
       </div>
 
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <div style={{ display:'grid', gap:'var(--space-3)' }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
+                borderRadius:14, padding:'var(--space-4)', display:'grid', gap:10 }}>
+                <div style={{ display:'flex', justifyContent:'space-between' }}>
+                  <div style={{ display:'grid', gap:6 }}>
+                    <div className="skeleton" style={{ width:120, height:14 }} />
+                    <div className="skeleton" style={{ width:160, height:11 }} />
+                  </div>
+                  <div className="skeleton" style={{ width:70, height:18 }} />
+                </div>
+                <div className="skeleton" style={{ width:'100%', height:40, borderRadius:9 }} />
+              </div>
+            ))}
+          </div>
         : claims.length === 0
           ? <div className={styles.empty}>
               <WalletIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
               <p>No {tab} claims</p>
             </div>
-          : <div style={{ display:'grid', gap:'var(--space-3)' }}>
+          : <div className="stagger" style={{ display:'grid', gap:'var(--space-3)' }}>
               {claims.map((c: any) => (
-                <div key={c.id} style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
-                  borderRadius:14, padding:'var(--space-4)', display:'grid', gap:10 }}>
+                <div key={c.id} className="animate-fade-up" style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
+                  borderRadius:14, padding:'var(--space-4)', display:'grid', gap:10, position:'relative', overflow:'hidden' }}>
+
+                  {justConfirmed === c.id && (
+                    <div className="animate-success-pop" style={{ position:'absolute', inset:0, zIndex:2,
+                      background:'var(--glass-bg)', backdropFilter:'blur(2px)',
+                      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8 }}>
+                      <div style={{ width:40, height:40, borderRadius:'50%', background:'#10B981',
+                        display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <CheckIcon size={20} color="#fff" />
+                      </div>
+                      <p style={{ fontSize:'0.8rem', fontWeight:700, color:'#10B981', margin:0 }}>Confirmed</p>
+                    </div>
+                  )}
 
                   {/* Top row: student + amount */}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
@@ -222,7 +243,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                     <div style={{ background:'#10B98115', borderRadius:8, padding:'7px 12px' }}>
                       <p style={{ fontSize:'0.75rem', color:'#10B981', margin:0, fontWeight:700,
                         display:'flex', alignItems:'center', gap:5 }}>
-                        <CheckIcon size={12} /> Confirmed — balance auto-deducted
+                        <CheckIcon size={12} /> Confirmed, balance auto-deducted
                       </p>
                     </div>
                   )}
@@ -235,18 +256,21 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                         <div style={{ display:'grid', gap:8 }}>
                           <input placeholder="Rejection reason (required)" value={rejectNote}
                             onChange={e => setRejectNote(e.target.value)}
+                            className={shakeInput ? 'animate-shake' : ''}
                             style={{ width:'100%', height:38, padding:'0 12px',
                               background:'var(--input-bg)', border:'1px solid #EF444450',
                               borderRadius:8, color:'var(--text-primary)', fontSize:'0.82rem', outline:'none' }}/>
                           <div style={{ display:'flex', gap:8 }}>
                             <button onClick={() => reject(c.id)}
                               disabled={reviewing === c.id}
+                              className="pressable"
                               style={{ flex:1, height:38, background:'#EF4444', color:'#fff',
                                 border:'none', borderRadius:8, fontWeight:700, fontSize:'0.8rem',
                                 cursor:'pointer', opacity: reviewing===c.id ? 0.5 : 1 }}>
                               {reviewing===c.id ? 'Rejecting…' : 'Confirm Reject'}
                             </button>
                             <button onClick={() => { setRejectId(null); setRejectNote('') }}
+                              className="pressable"
                               style={{ padding:'0 14px', height:38, background:'var(--input-bg)',
                                 border:'1px solid var(--input-border)', borderRadius:8,
                                 color:'var(--text-muted)', fontWeight:700, cursor:'pointer' }}>
@@ -260,6 +284,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                         <div style={{ display:'flex', gap:8 }}>
                           <button onClick={() => confirm(c)}
                             disabled={reviewing === c.id}
+                            className="pressable"
                             style={{ flex:1, height:40, background:'#10B981', color:'#fff',
                               border:'none', borderRadius:9, fontWeight:700, fontSize:'0.82rem',
                               cursor:'pointer', display:'flex', alignItems:'center',
@@ -269,6 +294,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                             {reviewing===c.id ? 'Confirming…' : 'Confirm Payment'}
                           </button>
                           <button onClick={() => { setRejectId(c.id); setRejectNote('') }}
+                            className="pressable"
                             style={{ flex:1, height:40, background:'#EF444415', color:'#EF4444',
                               border:'1px solid #EF444430', borderRadius:9, fontWeight:700,
                               fontSize:'0.82rem', cursor:'pointer', display:'flex',

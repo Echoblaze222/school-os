@@ -28,7 +28,7 @@ function exportCSV(rows: AlumniStudent[]) {
   const header = ['Full Name','Admission No.','Class','Graduation Year','Email','Phone','Status']
   const data   = rows.map(r => [
     `"${r.full_name}"`, r.admission_number, r.class_name,
-    r.graduation_year ?? '—', r.email ?? '—', r.phone ?? '—',
+    r.graduation_year ?? 'N/A', r.email ?? 'N/A', r.phone ?? 'N/A',
     r.lifecycle_stage.charAt(0).toUpperCase() + r.lifecycle_stage.slice(1),
   ].join(','))
   const csv  = [header.join(','), ...data].join('\n')
@@ -74,7 +74,7 @@ export default function PrincipalAlumniClient({ alumni, userId, profile, school,
 
       {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal')} aria-label="Back">
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal')} aria-label="Back">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div className={styles.headerText}>
@@ -82,7 +82,7 @@ export default function PrincipalAlumniClient({ alumni, userId, profile, school,
           <p className={styles.headerSub}>{alumni.length} graduated student{alumni.length !== 1 ? 's' : ''}</p>
         </div>
         <button
-          className={styles.csvBtn}
+          className={`${styles.csvBtn} pressable`}
           onClick={() => exportCSV(filtered)}
           disabled={filtered.length === 0}
           title="Export CSV"

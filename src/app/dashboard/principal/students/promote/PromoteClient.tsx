@@ -92,7 +92,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
 
     setStudents((spRows ?? []).map(s => ({
       id: s.id,
-      full_name: namesById[s.id] ?? '—',
+      full_name: namesById[s.id] ?? 'N/A',
       admission_number: s.admission_number,
       selected: true,
     })))
@@ -222,7 +222,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
       <div className={styles.orb} aria-hidden />
 
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal/students')} aria-label="Back">
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal/students')} aria-label="Back">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div className={styles.headerText}>
@@ -247,7 +247,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                 : 'Each student has been notified of their promotion.'}
             </p>
             <div className={styles.successActions}>
-              <button className={styles.resetBtn} onClick={reset}>Do another batch</button>
+              <button className={`${styles.resetBtn} pressable`} onClick={reset}>Do another batch</button>
               {result.mode === 'graduate' && (
                 <Link href="/dashboard/principal/alumni" className={styles.viewAlumniBtn}>View Alumni</Link>
               )}
@@ -268,7 +268,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                   <option value="">Select class…</option>
                   {classes.map(c => (
                     <option key={c.id} value={c.id}>
-                      {c.label}{c.likelyFinal ? ' — final year' : ''}
+                      {c.label}{c.likelyFinal ? ', final year' : ''}
                     </option>
                   ))}
                 </select>
@@ -280,14 +280,14 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                 <h2 className={styles.cardTitle}>2. Choose what happens next</h2>
                 <p className={styles.cardHint}>
                   {currentFromClass?.likelyFinal
-                    ? `${currentFromClass.label} looks like a final-year class — graduating is suggested, but you can still promote to another class if needed.`
+                    ? `${currentFromClass.label} looks like a final-year class. Graduating is suggested, but you can still promote to another class if needed.`
                     : 'Promote to the next class, or graduate these students out to alumni.'}
                 </p>
 
                 <div className={styles.destToggle}>
                   <button
                     type="button"
-                    className={`${styles.destOption} ${destination === 'promote' ? styles.destOptionActive : ''}`}
+                    className={`${styles.destOption} ${destination === 'promote' ? styles.destOptionActive : ''} pressable`}
                     onClick={() => setDestination('promote')}
                   >
                     <span className={styles.destIcon}><BookIcon size={20} /></span>
@@ -296,7 +296,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                   </button>
                   <button
                     type="button"
-                    className={`${styles.destOption} ${destination === 'graduate' ? styles.destOptionActive : ''}`}
+                    className={`${styles.destOption} ${destination === 'graduate' ? styles.destOptionActive : ''} pressable`}
                     onClick={() => setDestination('graduate')}
                   >
                     <span className={styles.destIcon}><GraduationCapIcon size={20} /></span>
@@ -375,7 +375,7 @@ export default function PromoteClient({ userId, profile, school, role, schoolId,
                 </div>
 
                 <button
-                  className={`${styles.actionBtn} ${destination === 'graduate' ? styles.actionBtnGraduate : ''}`}
+                  className={`${styles.actionBtn} ${destination === 'graduate' ? styles.actionBtnGraduate : ''} pressable`}
                   onClick={handleSubmit}
                   disabled={!canSubmit}
                 >

@@ -327,6 +327,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
           <div style={{ display:'grid', gap:'var(--space-3)' }}>
             {DATASETS.map(ds => (
               <button key={ds.key} onClick={() => { setDataSet(ds.key); setPreview(null); setResult(null) }}
+                className="pressable"
                 style={{ padding:'var(--space-4)',
                   background: dataSet===ds.key ? sc+'18' : 'var(--input-bg)',
                   border: `1px solid ${dataSet===ds.key ? sc : 'var(--input-border)'}`,
@@ -368,7 +369,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
       )}
 
       {result !== null && !error && (
-        <div style={{ padding:'var(--space-4)', marginTop:'var(--space-5)',
+        <div className="animate-success-pop" style={{ padding:'var(--space-4)', marginTop:'var(--space-5)',
           background: result.count > 0 ? '#10B98115' : '#F59E0B15',
           border: `1px solid ${result.count > 0 ? '#10B98140' : '#F59E0B40'}`,
           borderRadius:10, fontSize:'0.85rem', fontWeight:700,
@@ -382,9 +383,9 @@ export default function ExportClient({ profile, school, userId }: Props) {
 
       {/* ── Preview Table ── */}
       {preview && (
-        <div style={{ marginTop:'var(--space-5)' }}>
+        <div className="animate-fade-up" style={{ marginTop:'var(--space-5)' }}>
           <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.05em', margin:'0 0 8px' }}>
-            PREVIEW — FIRST {preview.rows.length} ROWS
+            PREVIEW: FIRST {preview.rows.length} ROWS
           </p>
           {preview.rows.length === 0 ? (
             <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', padding:'12px 0' }}>No records found for this selection.</p>
@@ -405,7 +406,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
                     <tr key={i} style={{ borderBottom:'1px solid var(--glass-border)' }}>
                       {preview.cols.map(col => (
                         <td key={col} style={{ padding:'8px 10px', color:'var(--text-primary)', maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                          {typeof row[col] === 'number' ? row[col].toLocaleString() : (row[col] ?? '—')}
+                          {typeof row[col] === 'number' ? row[col].toLocaleString() : (row[col] ?? 'N/A')}
                         </td>
                       ))}
                     </tr>
@@ -418,7 +419,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
       )}
 
       <div style={{ display:'flex', gap:10, marginTop:'var(--space-5)' }}>
-        <button onClick={previewData} disabled={previewing}
+        <button onClick={previewData} disabled={previewing} className="pressable"
           style={{ flex:1, height:50, background:'var(--input-bg)',
             color:'var(--text-primary)', border:'1px solid var(--input-border)',
             borderRadius:10, fontWeight:700, fontSize:'0.88rem',
@@ -427,7 +428,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
           {previewing ? 'Loading…' : <><EyeIcon size={16} /> Preview</>}
         </button>
 
-        <button onClick={exportData} disabled={exporting}
+        <button onClick={exportData} disabled={exporting} className="pressable"
           style={{ flex:2, height:50, background:sc, color:'#fff',
             border:'none', borderRadius:10, fontWeight:700, fontSize:'0.9rem',
             cursor:'pointer',

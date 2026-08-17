@@ -8,6 +8,7 @@ import { TransferIcon, GraduationCapIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 type TransferStatus = 'requested' | 'approved' | 'rejected' | 'completed'
 
@@ -55,7 +56,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 function fmtDate(d: string | null) {
-  if (!d) return '—'
+  if (!d) return 'N/A'
   return new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
@@ -149,8 +150,8 @@ export default function TransfersClient({
       results.push({
         id: p.id,
         full_name: p.full_name,
-        admission_number: p.admission_number ?? '—',
-        class_label: '—',
+        admission_number: p.admission_number ?? 'N/A',
+        class_label: 'N/A',
         outstanding_fees: fees,
       })
     }
@@ -273,8 +274,8 @@ export default function TransfersClient({
               <p className={styles.emptyHint}>{search ? 'Try a different search' : 'Students enrolled in this school appear here'}</p>
             </div>
           ) : (
-            filteredStudents.map(s => (
-              <div key={s.id} className={styles.listItem} onClick={() => setViewStudent(s)} style={{ cursor: 'pointer' }}>
+            filteredStudents.map((s, i) => (
+              <div key={s.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ cursor: 'pointer', animationDelay: `${Math.min(i, 8) * 40}ms` }} onClick={() => setViewStudent(s)}>
                 {/* Avatar */}
                 <div className={styles.listIconBox}
                   style={{ background: sc + '22', fontWeight: 800, fontSize: '1rem', color: sc }}>
@@ -381,9 +382,9 @@ export default function TransfersClient({
             </div>
 
             {([
-              ['Admission No.', viewStudent.admission_number ?? '—'],
-              ['Class',         viewStudent.class_name ?? '—'],
-              ['Email',         viewStudent.email ?? '—'],
+              ['Admission No.', viewStudent.admission_number ?? 'N/A'],
+              ['Class',         viewStudent.class_name ?? 'N/A'],
+              ['Email',         viewStudent.email ?? 'N/A'],
               ['Status',        viewStudent.is_active ? 'Active' : 'Inactive'],
               ['Enrolled',      fmtDate(viewStudent.created_at)],
             ] as [string, string][]).map(([l, v]) => (
@@ -464,7 +465,7 @@ export default function TransfersClient({
                 <h2 className={styles.modalTitle}>New Transfer</h2>
 
                 {/* Step 1: find student */}
-                <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Step 1 — Select Student</p>
+                <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Step 1: Select Student</p>
                 <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                   <input className={styles.formInput} placeholder="Search by name…"
                     value={studentSearch} onChange={e => setStudentSearch(e.target.value)}
@@ -507,7 +508,7 @@ export default function TransfersClient({
                   <>
                     {/* Load all schools as soon as Step 2 becomes visible */}
                     {(() => { if (!schoolsLoaded) loadAllSchools(); return null })()}
-                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 'var(--space-5) 0 var(--space-2)' }}>Step 2 — Destination School</p>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 'var(--space-5) 0 var(--space-2)' }}>Step 2: Destination School</p>
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                       <input className={styles.formInput} placeholder="Search school name…"
                         value={schoolSearch} onChange={e => setSchoolSearch(e.target.value)}

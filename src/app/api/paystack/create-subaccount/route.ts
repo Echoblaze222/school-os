@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: 'This school has not yet been verified for online payments. ' +
-                 'Please contact SchoolOS support — this is a quick one-time check.',
+                 'Please contact SchoolOS support, this is a quick one-time check.',
         },
         { status: 403 }
       )

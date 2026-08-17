@@ -85,11 +85,11 @@ export async function POST(request: Request) {
     const attendancePct = totalDays ? Math.round(((present + late) / totalDays) * 100) : null
 
     const rows = (results ?? []).map((r: any) => ({
-      subject: r.class_subjects?.subjects?.name ?? '—',
+      subject: r.class_subjects?.subjects?.name ?? 'N/A',
       type:    TYPE_LABEL[r.result_type] ?? r.result_type,
       score:   r.score,
       max:     r.max_score,
-      grade:   r.grade ?? '—',
+      grade:   r.grade ?? 'N/A',
       remarks: r.remarks ?? '',
     }))
     const avgPct = rows.length
@@ -100,8 +100,8 @@ export async function POST(request: Request) {
     const primary     = branding?.primary_color ?? '#800020'
     const logoUrl     = branding?.logo_url ?? ''
     const className   = rc.classes?.name ?? `${rc.classes?.class_level ?? ''} ${rc.classes?.section ?? ''}`.trim()
-    const studentName = rc.student?.full_name ?? '—'
-    const admissionNo = rc.student?.admission_number ?? rc.student?.student_number ?? '—'
+    const studentName = rc.student?.full_name ?? 'N/A'
+    const admissionNo = rc.student?.admission_number ?? rc.student?.student_number ?? 'N/A'
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -173,24 +173,24 @@ export async function POST(request: Request) {
   <table>
     <thead><tr><th>Subject</th><th>Type</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
     <tbody>
-      ${rows.map(r => `<tr><td>${r.subject}</td><td>${r.type}</td><td>${r.score ?? '—'}/${r.max}</td><td>${r.grade}</td><td>${r.remarks}</td></tr>`).join('')}
+      ${rows.map(r => `<tr><td>${r.subject}</td><td>${r.type}</td><td>${r.score ?? 'N/A'}/${r.max}</td><td>${r.grade}</td><td>${r.remarks}</td></tr>`).join('')}
       ${rows.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px;">No results recorded for this term yet.</td></tr>' : ''}
     </tbody>
   </table>
 
   <div class="summary">
-    <div class="summary-box"><div class="val">${avgPct !== null ? avgPct + '%' : '—'}</div><div class="lbl">Average Score</div></div>
-    <div class="summary-box"><div class="val">${attendancePct !== null ? attendancePct + '%' : '—'}</div><div class="lbl">Attendance</div></div>
+    <div class="summary-box"><div class="val">${avgPct !== null ? avgPct + '%' : 'N/A'}</div><div class="lbl">Average Score</div></div>
+    <div class="summary-box"><div class="val">${attendancePct !== null ? attendancePct + '%' : 'N/A'}</div><div class="lbl">Attendance</div></div>
     <div class="summary-box"><div class="val">${totalDays}</div><div class="lbl">Days Recorded</div></div>
   </div>
 
   <div class="remark-block">
     <div class="remark-title">Class Teacher's Remark</div>
-    <div class="remark-text">${rc.class_teacher_remark || '—'}</div>
+    <div class="remark-text">${rc.class_teacher_remark || 'N/A'}</div>
   </div>
   <div class="remark-block">
     <div class="remark-title">Principal's Remark</div>
-    <div class="remark-text">${rc.principal_remark || '—'}</div>
+    <div class="remark-text">${rc.principal_remark || 'N/A'}</div>
   </div>
 
   <div class="sign-row">
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
     </div>
     <div class="sign-box">
       ${rc.approver?.signature_url ? `<img src="${rc.approver.signature_url}" />` : ''}
-      <div class="sign-line">${rc.approver?.full_name ?? '—'}</div>
+      <div class="sign-line">${rc.approver?.full_name ?? 'N/A'}</div>
       <div class="sign-role">Principal</div>
     </div>
   </div>

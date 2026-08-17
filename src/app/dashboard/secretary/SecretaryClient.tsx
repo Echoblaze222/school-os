@@ -166,7 +166,7 @@ export default function SecretaryClient({
           items={activities}
           accentColor={schoolColor}
           onDelete={handleDeleteActivity}
-          emptyLabel="Nothing yet — admissions, transfers, and clinic visits will show up here"
+          emptyLabel="Nothing yet. Admissions, transfers, and clinic visits will show up here"
         />
 
         <div className={styles.spacer} />

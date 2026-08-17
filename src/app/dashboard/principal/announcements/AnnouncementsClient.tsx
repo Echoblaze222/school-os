@@ -104,14 +104,14 @@ export default function AnnouncementsClient({
         .single()
 
       if (error || !draft) {
-        setAiDraftBanner('Couldn\'t load that AI draft — it may have already been used or removed.')
+        setAiDraftBanner('Couldn\'t load that AI draft. It may have already been used or removed.')
         return
       }
 
       setTitle(draft.title ?? '')
       setBody(draft.payload?.body ?? '')
       if (draft.payload?.audience) setAudience(draft.payload.audience)
-      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant — review below, then post it yourself.`)
+      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant. Review below, then post it yourself.`)
       titleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
       await supabase.from('ai_action_drafts').delete().eq('id', draftId) // consumed
@@ -129,7 +129,7 @@ export default function AnnouncementsClient({
   async function handleDelete(ann: AnnouncementRow) {
     setDeleting(ann.id); setDeleteError('')
     const supabase = createClient()
-    const { error } = await supabase.from('announcements').delete().eq('id', ann.id)
+    const { error } = await supabase.from('announcements').delete().eq('id', ann.id).eq('school_id', schoolId)
     setDeleting(null)
     if (error) { setDeleteError(error.message); return }
     setAnnouncements(prev => prev.filter(a => a.id !== ann.id))
@@ -191,8 +191,8 @@ export default function AnnouncementsClient({
             </p>
             {deleteError && <p style={{ color:'var(--error)', fontSize:'0.8rem', marginBottom:12 }}>{deleteError}</p>}
             <div className={styles.dialogActions}>
-              <button className={styles.dlgCancel} onClick={() => setConfirmDel(null)}>Cancel</button>
-              <button className={styles.dlgDelete} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
+              <button className={`${styles.dlgCancel} pressable`} onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className={`${styles.dlgDelete} pressable`} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
                 {deleting === confirmDel.id ? 'Deleting…' : 'Delete'}
               </button>
             </div>
@@ -218,7 +218,7 @@ export default function AnnouncementsClient({
               {announcements.map(a => (
                 <div
                   key={a.id}
-                  className={`${styles.announcementCard} ${selected?.id === a.id ? styles.announcementCardSelected : ''}`}
+                  className={`${styles.announcementCard} ${selected?.id === a.id ? styles.announcementCardSelected : ''} pressable`}
                   onClick={() => setSelected(selected?.id === a.id ? null : a)}
                 >
                   <div className={styles.cardTop}>
@@ -246,7 +246,7 @@ export default function AnnouncementsClient({
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       {a.class_name && <span className={styles.classTag}>{a.class_name}</span>}
-                      <button
+                      <button className="pressable"
                         onClick={e => { e.stopPropagation(); setConfirmDel(a) }}
                         title="Delete announcement"
                         className={styles.deleteIconBtn}
@@ -315,7 +315,7 @@ export default function AnnouncementsClient({
                 value={audience}
                 onChange={e => setAudience(e.target.value as AudienceType)}
               >
-                <option value="all">All — Everyone</option>
+                <option value="all">All: Everyone</option>
                 <option value="students">Students only</option>
                 <option value="teachers">Teachers only</option>
                 <option value="parents">Parents only</option>
@@ -339,9 +339,9 @@ export default function AnnouncementsClient({
           </div>
 
           <div className={styles.composePanelFooter}>
-            <button className={styles.clearBtn} onClick={resetForm} type="button">Clear</button>
+            <button className={`${styles.clearBtn} pressable`} onClick={resetForm} type="button">Clear</button>
             <button
-              className={styles.submitBtn}
+              className={`${styles.submitBtn} pressable`}
               style={{ background: sc }}
               onClick={handleSubmit}
               disabled={!isFormValid || isSubmitting}

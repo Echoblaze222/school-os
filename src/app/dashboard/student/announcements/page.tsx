@@ -62,6 +62,7 @@ export default async function StudentAnnouncementsPage() {
         <AnnouncementsViewer
           initialItems={items}
           schoolId={schoolId}
+          userId={user.id}
           viewerAudience="students"
         />
         <div style={{ height: 100 }} />

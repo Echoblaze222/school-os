@@ -3,13 +3,13 @@
 //
 // FIX: this page was reading a flat day/subject/teacher_name shape from
 // `timetable` that doesn't match the real schema. The actual columns are
-// day_of_week (INTEGER, 1=Monday...5=Friday — not text), class_id,
+// day_of_week (INTEGER, 1=Monday...5=Friday - not text), class_id,
 // class_subject_id, and teacher_id, matching the already-fixed student-side
 // TimetableClient. Subject names are resolved via a local lookup against
 // class_subjects instead of a fragile nested join.
 //
 // Also: a parent can have more than one linked child (profiles.parent_id is
-// not unique per parent), so child resolution never uses .single() — same
+// not unique per parent), so child resolution never uses .single() - same
 // fix already applied to FeesClient.tsx.
 
 import { useState, useEffect } from 'react'
@@ -18,12 +18,13 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { ClockIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 // Matches the teacher/student-side mapping: day_of_week is stored as an
-// integer, 1=Monday...5=Friday — never compare it against a string label.
+// integer, 1=Monday...5=Friday - never compare it against a string label.
 const DAY_TO_NUM: Record<string, number> = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 }
 const PERIOD_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
 
@@ -65,7 +66,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       return
     }
 
-    // A parent can have more than one linked child — never assume .single()
+    // A parent can have more than one linked child - never assume .single()
     const { data: childData, error: childErr } = await supabase
       .from('profiles')
       .select('id, full_name, class_level, class_id')
@@ -81,7 +82,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
     }
 
     // student_profiles.class_id is what promotion/transfer actually
-    // updates — it's the CURRENT class after any promotion. profiles.class_id
+    // updates - it's the CURRENT class after any promotion. profiles.class_id
     // is never touched by promotion, so it goes stale; used only as a
     // fallback when a student has no student_profiles row at all.
     const { data: spRows } = await supabase
@@ -104,7 +105,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
     const childData = children.find(c => c.id === id)
     if (!childData?.class_id) { setTimetable([]); setLoading(false); return }
 
-    // No nested join — select class_subject_id directly, resolve the
+    // No nested join - select class_subject_id directly, resolve the
     // subject name via a separate lookup instead of relying on PostgREST's
     // FK cache, exactly like the teacher/student-side fix.
     const { data, error: err } = await supabase
@@ -142,18 +143,18 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   return (
     <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Timetable" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading && children.length === 0
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="card" />
         : children.length === 0
           ? <div className={styles.empty}>
               <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
               <p>{error ? `Couldn't load timetable: ${error}` : 'No child linked to your account.'}</p>
             </div>
           : <>
-              {/* Child switcher — only shown when parent has more than one linked child */}
+              {/* Child switcher - only shown when parent has more than one linked child */}
               {children.length > 1 && (
                 <div style={{ display:'flex', gap:8, marginBottom:'var(--space-4)', overflowX:'auto' }}>
                   {children.map(c => (
-                    <button key={c.id} onClick={() => setChildId(c.id)}
+                    <button className="pressable" key={c.id} onClick={() => setChildId(c.id)}
                       style={{
                         flexShrink:0, padding:'8px 16px', borderRadius:20, fontWeight:700,
                         fontSize:'0.82rem', cursor:'pointer', border:'1px solid var(--glass-border)',
@@ -173,7 +174,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
               {/* Day tabs */}
               <div style={{ display:'flex', gap:6, overflowX:'auto', marginBottom:'var(--space-5)', paddingBottom:4 }}>
                 {DAYS.map(d => (
-                  <button
+                  <button className="pressable"
                     key={d}
                     onClick={() => setDay(d)}
                     style={{
@@ -195,7 +196,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
               </div>
 
               {loading
-                ? <div className={styles.loading}><span/><span/><span/></div>
+                ? <SkeletonList count={4} variant="card" />
                 : timetable.length === 0
                   ? <div className={styles.empty}>
                       <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1}/>

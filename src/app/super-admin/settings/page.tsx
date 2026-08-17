@@ -330,11 +330,11 @@ export default function SettingsPage() {
                 <div className={styles.toggleRow}>
                   <button onClick={() => setSetupFee(prev => prev ? { ...prev, is_required:true } : null)}
                     className={`${styles.toggleOption} ${setupFee?.is_required ? styles.toggleOptionActive : ''}`}>
-                    Yes — Required
+                    Yes, required
                   </button>
                   <button onClick={() => setSetupFee(prev => prev ? { ...prev, is_required:false } : null)}
                     className={`${styles.toggleOption} ${!setupFee?.is_required ? styles.toggleOptionActive : ''}`}>
-                    No — Optional
+                    No, optional
                   </button>
                 </div>
               </div>

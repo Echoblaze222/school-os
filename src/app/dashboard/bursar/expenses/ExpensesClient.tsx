@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { PlusIcon, TrashIcon, EditIcon } from '@/components/Icons'
+import { PlusIcon, TrashIcon, EditIcon, AlertIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
+import { useToast, Toast } from '@/components/motion/Toast'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -20,6 +23,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
   const [deleting, setDeleting] = useState<string|null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string|null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editId,   setEditId]   = useState<string|null>(null)
   const [form,     setForm]     = useState({ ...BLANK })
@@ -27,6 +31,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
   const [year,     setYear]     = useState(CUR_YEAR)
   const supabase = createClient()
   const sc = school?.primary_color ?? '#7C3AED'
+  const { toast, showToast } = useToast()
 
   useEffect(() => { load() }, [term, year])
 
@@ -75,13 +80,16 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
       await supabase.from('school_expenses').insert(payload)
     }
     setShowForm(false); setSaving(false); setEditId(null); setForm({ ...BLANK })
+    showToast(editId ? 'Expense updated' : 'Expense saved')
     load()
   }
 
   async function del(id: string) {
     setDeleting(id)
     await supabase.from('school_expenses').delete().eq('id', id)
-    setDeleting(null); load()
+    setDeleting(null); setConfirmDeleteId(null)
+    showToast('Expense deleted')
+    load()
   }
 
   function fmt(n: number) {
@@ -106,14 +114,14 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
         <div className={styles.tabs} style={{ flex:1 }}>
           {TERMS.map(t => (
             <button key={t} onClick={() => setTerm(t)}
-              className={`${styles.tab} ${term===t ? styles.tabActive : ''}`}
+              className={`${styles.tab} pressable ${term===t ? styles.tabActive : ''}`}
               style={term===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
               {t.replace(' Term','')}
             </button>
           ))}
         </div>
         {!showForm && (
-          <button onClick={openCreate}
+          <button onClick={openCreate} className="pressable"
             style={{ display:'flex', alignItems:'center', gap:6, height:36, padding:'0 14px',
               background:sc, color:'#fff', border:'none', borderRadius:8,
               fontWeight:700, fontSize:'0.8rem', cursor:'pointer', flexShrink:0 }}>
@@ -127,7 +135,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
         <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
           borderRadius:'var(--radius-xl)', padding:'var(--space-5)', marginBottom:'var(--space-5)' }}>
           <p style={{ fontSize:'0.85rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 var(--space-4)' }}>
-            {editId ? 'Edit Expense' : 'New Expense'} — {term} {year}
+            {editId ? 'Edit Expense' : 'New Expense'}: {term} {year}
           </p>
           <div style={{ display:'grid', gap:'var(--space-3)' }}>
             <input placeholder="Title *" value={form.title}
@@ -154,13 +162,13 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
             </div>
           </div>
           <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>
-            <button onClick={submit} disabled={saving || !form.title || !form.amount}
+            <button onClick={submit} disabled={saving || !form.title || !form.amount} className="pressable"
               style={{ flex:1, height:42, background:sc, color:'#fff', border:'none', borderRadius:8,
                 fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
                 opacity:(saving || !form.title || !form.amount) ? 0.5 : 1 }}>
               {saving ? 'Saving…' : editId ? 'Update' : 'Save Expense'}
             </button>
-            <button onClick={() => { setShowForm(false); setEditId(null) }}
+            <button onClick={() => { setShowForm(false); setEditId(null) }} className="pressable"
               style={{ padding:'0 20px', height:42, background:'var(--input-bg)',
                 color:'var(--text-muted)', border:'1px solid var(--input-border)',
                 borderRadius:8, fontWeight:700, cursor:'pointer' }}>
@@ -176,7 +184,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
           border:'1px solid #EF444430', borderRadius:10, marginBottom:'var(--space-4)' }}>
           <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)',
             letterSpacing:'0.05em', margin:'0 0 4px' }}>
-            TOTAL EXPENSES — {term} {year}
+            TOTAL EXPENSES: {term} {year}
           </p>
           <p style={{ fontSize:'1.2rem', fontWeight:800, color:'#EF4444', margin:0 }}>
             {fmt(totalSpend)}
@@ -185,14 +193,16 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={3} variant="row" />
         : rows.length === 0
-          ? <div className={styles.empty}>
-              <p>No expenses recorded for {term} {year}</p>
-            </div>
-          : <div className={styles.list}>
+          ? <EmptyState
+              title={`No expenses recorded for ${term} ${year}`}
+              subtitle="Add school spending as it happens to keep your books accurate."
+              action={{ label: 'Add Expense', onClick: openCreate }}
+            />
+          : <div className={`${styles.list} stagger`}>
               {rows.map((item: any) => (
-                <div key={item.id} className={styles.card}>
+                <div key={item.id} className={`${styles.card} animate-fade-up`}>
                   <div className={styles.cardIcon} style={{ background:'#EF444420' }}>
                     <span style={{ fontSize:'0.8rem' }}>₦</span>
                   </div>
@@ -208,23 +218,44 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
                     <span style={{ fontSize:'0.9rem', fontWeight:800, color:'#EF4444' }}>
                       {fmt(item.amount)}
                     </span>
-                    <button onClick={() => openEdit(item)}
-                      style={{ background:'#3B82F620', border:'none', borderRadius:6,
-                        padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
-                      <EditIcon size={13} color="#3B82F6"/>
-                    </button>
-                    <button onClick={() => del(item.id)} disabled={deleting===item.id}
-                      style={{ background:'#EF444420', border:'none', borderRadius:6,
-                        padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center',
-                        opacity:deleting===item.id ? 0.5 : 1 }}>
-                      <TrashIcon size={13} color="#EF4444"/>
-                    </button>
+                    {confirmDeleteId === item.id ? (
+                      <>
+                        <button onClick={() => del(item.id)} disabled={deleting===item.id}
+                          className="pressable"
+                          style={{ background:'#EF4444', color:'#fff', border:'none', borderRadius:6,
+                            padding:'5px 10px', cursor:'pointer', fontSize:'0.72rem', fontWeight:700,
+                            opacity:deleting===item.id ? 0.6 : 1 }}>
+                          {deleting===item.id ? '…' : 'Confirm'}
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(null)}
+                          className="pressable"
+                          style={{ background:'var(--input-bg)', border:'1px solid var(--input-border)',
+                            borderRadius:6, padding:'5px 10px', cursor:'pointer', fontSize:'0.72rem',
+                            fontWeight:700, color:'var(--text-muted)' }}>
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => openEdit(item)} className="pressable"
+                          style={{ background:'#3B82F620', border:'none', borderRadius:6,
+                            padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
+                          <EditIcon size={13} color="#3B82F6"/>
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(item.id)} className="pressable"
+                          style={{ background:'#EF444420', border:'none', borderRadius:6,
+                            padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
+                          <TrashIcon size={13} color="#EF4444"/>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
       }
       <div className={styles.spacer}/>
+      <Toast toast={toast} />
     </RolePageWrapper>
   )
 }

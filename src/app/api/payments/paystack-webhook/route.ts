@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { logActivityWithClient } from '@/lib/logActivity'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
 
@@ -157,6 +158,20 @@ export async function POST(req: NextRequest) {
         body:       `Your payment of ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name} was successful.`,
         link_url:   '/dashboard/parent/fees',
         is_read:    false,
+      })
+
+      // Log to the parent's own Recent Activity — this is the true
+      // confirmed-payment moment for the online-checkout flow (the
+      // FeesClient.tsx component that initiates payment does a full-page
+      // redirect to Paystack's hosted checkout, so there is no point in
+      // that client-side component where a "success" callback fires; this
+      // webhook is the only place that actually knows the charge succeeded).
+      await logActivityWithClient(supabaseAdmin, {
+        userId: studentProfile.parent_id, schoolId,
+        type:  'fee_paid',
+        title: `Paid ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name}`,
+        subtitle: 'via Paystack',
+        href:  '/dashboard/parent/fees',
       })
     }
 

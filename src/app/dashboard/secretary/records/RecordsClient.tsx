@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { CheckCircleIcon, AlertIcon, FileTextIcon, FolderIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
+import { logActivity } from '@/lib/logActivity'
+import motion from '@/components/dashboard-motion.module.css'
 
 // Matches the real `behaviour_records` table:
 //   id, school_id, student_id, recorded_by, type ('positive'|'negative'|'neutral'), description, created_at
@@ -60,6 +62,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
   const [typeTab,  setTypeTab]  = useState<'all' | BehaviourRecord['type']>('all')
   const [modal,    setModal]    = useState(false)
   const [viewItem, setViewItem] = useState<BehaviourRecord | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState('')
   const [form,     setForm]     = useState<{ student_id: string; type: BehaviourRecord['type']; description: string }>({
@@ -108,6 +111,16 @@ export default function RecordsClient({ records: init, profile, school, userId, 
     if (!error && data) {
       setRecords(p => [data, ...p])
       setModal(false)
+
+      const studentName = students.find(s => s.id === form.student_id)?.full_name
+      logActivity({
+        userId, schoolId: school?.id,
+        type:  'record_added',
+        title: `Added a ${form.type} record${studentName ? ` for ${studentName}` : ''}`,
+        subtitle: form.description.slice(0, 60),
+        href:  '/dashboard/secretary/records',
+      })
+
       setForm({ student_id: '', type: 'neutral', description: '' })
     } else {
       setMsg(error?.message ?? 'Failed to create record')
@@ -119,6 +132,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
     await supabase.from('behaviour_records').delete().eq('id', id)
     setRecords(p => p.filter(r => r.id !== id))
     setViewItem(null)
+    setConfirmDeleteId(null)
   }
 
   function formatDate(d: string) {
@@ -154,8 +168,8 @@ export default function RecordsClient({ records: init, profile, school, userId, 
       {filtered.length === 0 ? (
         <div className={styles.emptyState}><FolderIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No records found</p><p className={styles.emptyHint}>Student behaviour records appear here</p></div>
       ) : (
-        filtered.map(r => (
-          <div key={r.id} className={styles.listItem} onClick={() => setViewItem(r)}>
+        filtered.map((r, i) => (
+          <div key={r.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} onClick={() => setViewItem(r)}>
             <div className={styles.listIconBox} style={{ background: TYPE_COLORS[r.type] + '22' }}>
               {(() => { const TIcon = TYPE_ICONS[r.type]; return <TIcon size={16} color={TYPE_COLORS[r.type]} /> })()}
             </div>
@@ -183,7 +197,17 @@ export default function RecordsClient({ records: init, profile, school, userId, 
               </div>
             ))}
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)', lineHeight: 1.6 }}>{viewItem.description}</p>
-            <button onClick={() => deleteRecord(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} color="var(--danger)" /> Delete record</button>
+            <button className="pressable" onClick={() => setConfirmDeleteId(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} color="var(--danger)" /> Delete record</button>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteId && (
+        <div className={styles.modalOverlay} onClick={() => setConfirmDeleteId(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Delete record?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>This behaviour record will be permanently removed. This can&apos;t be undone.</p>
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setConfirmDeleteId(null)}>Cancel</button><button className={styles.btnDanger} onClick={() => deleteRecord(confirmDeleteId)}>Delete</button></div>
           </div>
         </div>
       )}
@@ -195,7 +219,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Student *</label>
               <select className={styles.formSelect} value={form.student_id} onChange={e => setForm(p => ({ ...p, student_id: e.target.value }))}>
-                <option value="">— Select student —</option>
+                <option value="">Select student</option>
                 {students.map(s => <option key={s.id} value={s.id}>{studentLabel(s)}</option>)}
               </select>
               {students.length === 0 && <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>No students found for this school yet.</p>}

@@ -1,11 +1,11 @@
 // src/app/dashboard/teacher/results/page.tsx
 //
-// FIXED: use class_teachers table (same as AttendanceClient) — NOT class_subjects
+// FIXED: use class_teachers table (same as AttendanceClient) - NOT class_subjects
 //        class_teachers is the actual teacher-assignment table with school_id
-// FIXED: students from profiles.class_id (confirmed in schema — profiles has class_id directly)
+// FIXED: students from profiles.class_id (confirmed in schema - profiles has class_id directly)
 // FIXED: primary_color from schools.primary_color (via profiles → schools(*) join)
 //        No separate school_branding query needed
-// FIXED: for results we still need class_subject_id — we resolve it by matching
+// FIXED: for results we still need class_subject_id - we resolve it by matching
 //        class_id + subject name to class_subjects after loading class_teachers
 
 import { createClient }  from '@/lib/supabase/server'
@@ -31,7 +31,7 @@ export default async function TeacherResultsPage() {
   const primaryColor = school?.primary_color ?? '#800020'
 
   // 2) Teacher's class assignments via class_teachers
-  //    (same table AttendanceClient uses — has school_id, is_primary, subject text)
+  //    (same table AttendanceClient uses - has school_id, is_primary, subject text)
   const { data: classTeachers } = await supabase
     .from('class_teachers')
     .select(`
@@ -83,7 +83,7 @@ export default async function TeacherResultsPage() {
       class_id:         ct.class_id,
       subject_id:       matchedCS?.subject_id ?? null,
       subject_name:     ct.subject ?? matchedCS?.subjects?.name ?? 'Class Teacher',
-      class_name:       ct.classes?.name ?? ct.classes?.class_level ?? '—',
+      class_name:       ct.classes?.name ?? ct.classes?.class_level ?? 'N/A',
       is_primary:       ct.is_primary ?? false,
     }
   }).sort((a: any, b: any) => {
@@ -93,7 +93,7 @@ export default async function TeacherResultsPage() {
     return a.class_name.localeCompare(b.class_name)
   })
 
-  // 4) Students via profiles.class_id (confirmed in schema — profiles has class_id directly)
+  // 4) Students via profiles.class_id (confirmed in schema - profiles has class_id directly)
   let allStudents: any[] = []
   if (classIds.length > 0) {
     const { data: students } = await supabase

@@ -49,10 +49,10 @@ interface Props { profile: any; school: any; userId: string; counts?: Counts; ac
 
 function buildInsight(counts: Counts, firstName: string): string {
   if (counts.isLive) {
-    return `A live class is happening right now — join before it wraps up.`
+    return `A live class is happening right now. Join before it wraps up.`
   }
   if ((counts.attendance ?? 100) < 80) {
-    return `Your attendance is at ${counts.attendance}% this term — a bit below where it usually sits. Missing more could start affecting your standing.`
+    return `Your attendance is at ${counts.attendance}% this term, a bit below where it usually sits. Missing more could start affecting your standing.`
   }
   if (counts.pendingTasks > 0) {
     return `You have ${counts.pendingTasks} assignment${counts.pendingTasks === 1 ? '' : 's'} due, and ${counts.upcomingQuizzes} quiz${counts.upcomingQuizzes === 1 ? '' : 'zes'} open right now.`
@@ -96,7 +96,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
             border: '1px solid var(--status-warn, #E4572E)', textDecoration: 'none',
           }}>
             <span style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--status-warn, #E4572E)' }} className={motion.pulseDot} />
-            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>A class is live right now — tap to join</span>
+            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>A class is live right now, tap to join</span>
           </Link>
         )}
 
@@ -113,7 +113,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
               label="Term GPA"
               value={c.gpa != null ? Math.round((c.gpa / 5) * 100) : 0}
               isPercent
-              displayValue={c.gpa != null ? c.gpa.toFixed(1) : '—'}
+              displayValue={c.gpa != null ? c.gpa.toFixed(1) : 'N/A'}
               color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
             />
           </div>
@@ -134,7 +134,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
         <div className={styles.statsGrid} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
           {[
             { label: 'Open quizzes', value: c.upcomingQuizzes },
-            { label: 'Class rank',   value: c.rank ? `#${c.rank}` : '—' },
+            { label: 'Class rank',   value: c.rank ? `#${c.rank}` : 'N/A' },
           ].map((s, i) => (
             <div
               key={s.label}
@@ -151,7 +151,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
           items={activities}
           accentColor={schoolColor}
           onDelete={handleDeleteActivity}
-          emptyLabel="Nothing yet — assignments, grades, and messages will show up here"
+          emptyLabel="Nothing yet. Assignments, grades, and messages will show up here"
         />
 
         <div className={styles.mobileSpace} />

@@ -88,7 +88,7 @@ function EnrolSuccessModal({
               flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
               color: sc, fontFamily: 'monospace',
             }}>{result.code}</code>
-            <button
+            <button className="pressable"
               onClick={() => copy(result.code, 'code')}
               style={{
                 padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
@@ -115,7 +115,7 @@ function EnrolSuccessModal({
               flex: 1, fontSize: '1rem', fontWeight: 700,
               color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
             }}>{result.password}</code>
-            <button
+            <button className="pressable"
               onClick={() => copy(result.password, 'pwd')}
               style={{
                 padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
@@ -133,7 +133,7 @@ function EnrolSuccessModal({
         </div>
 
         {/* Actions */}
-        <button
+        <button className="pressable"
           onClick={copyAllDetails}
           style={{
             width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
@@ -147,10 +147,10 @@ function EnrolSuccessModal({
         </button>
         <button
           onClick={onClose}
-          className={styles.saveBtn}
+          className={`${styles.saveBtn} pressable`}
           style={{ width: '100%', background: sc }}
         >
-          Done — Enrol Another
+          Done, Enrol Another
         </button>
       </div>
     </div>
@@ -211,7 +211,13 @@ export default function StudentsClient({ profile, school, userId }: Props) {
 
   async function handleDelete(student: any) {
     setDeleting(student.id)
-    const { error } = await supabase.from('profiles').delete().eq('id', student.id)
+    // Scope the delete to this school as a second guard beyond RLS, in
+    // case a stale/tampered id ever gets passed in.
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', student.id)
+      .eq('school_id', school.id)
     setDeleting(null)
     setConfirmDel(null)
     if (error) { showToast('Failed to remove student', false); return }
@@ -339,8 +345,8 @@ export default function StudentsClient({ profile, school, userId }: Props) {
               This will permanently remove <strong>{confirmDel.full_name}</strong> from the school records. This cannot be undone.
             </p>
             <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmDel(null)}>Cancel</button>
-              <button className={styles.deleteBtn} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className={`${styles.deleteBtn} pressable`} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
                 {deleting === confirmDel.id ? 'Removing…' : 'Yes, Remove'}
               </button>
             </div>
@@ -379,7 +385,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
                 {classes.map(c => (
-                  <button
+                  <button className="pressable"
                     key={c.id}
                     onClick={() => setAssignClassId(c.id)}
                     style={{
@@ -405,11 +411,11 @@ export default function StudentsClient({ profile, school, userId }: Props) {
             )}
 
             <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => { setAssignTarget(null); setAssignClassId('') }}>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => { setAssignTarget(null); setAssignClassId('') }}>
                 Cancel
               </button>
               <button
-                className={styles.saveBtn}
+                className={`${styles.saveBtn} pressable`}
                 style={{ background: sc, opacity: !assignClassId ? 0.5 : 1 }}
                 onClick={handleAssignClass}
                 disabled={assigning || !assignClassId}
@@ -452,7 +458,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
             <option value="">All Classes</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
+          <button className={`${styles.addBtn} pressable`} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? <><XIcon size={14} /> Close</> : '+ Enrol Student'}
           </button>
           <Link href="/dashboard/principal/students/transfer" className={styles.addBtn} style={{ background: '#F59E0B', textDecoration: 'none' }}>
@@ -513,8 +519,8 @@ export default function StudentsClient({ profile, school, userId }: Props) {
               </div>
             </div>
             <div className={styles.formActions}>
-              <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim() || !form.email.trim()}>
+              <button className={`${styles.cancelFormBtn} pressable`} onClick={() => setShowForm(false)}>Cancel</button>
+              <button className={`${styles.saveBtn} pressable`} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.full_name.trim() || !form.email.trim()}>
                 {saving ? 'Enrolling…' : 'Enrol & Get Code'}
               </button>
             </div>
@@ -538,12 +544,12 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                 <span className={styles.className}>{cls}</span>
                 <span className={styles.classCount}>{studs.length} student{studs.length !== 1 ? 's' : ''}</span>
               </div>
-              <div className={styles.studentList}>
+              <div className={`${styles.studentList} stagger`}>
                 {studs.map(student => {
                   const initials = student.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase() ?? '?'
                   const genderColor = student.gender?.toLowerCase() === 'female' ? '#EC4899' : student.gender?.toLowerCase() === 'male' ? '#3B82F6' : sc
                   return (
-                    <div key={student.id} className={styles.studentRow}>
+                    <div key={student.id} className={`${styles.studentRow} animate-fade-up`}>
                       <div className={styles.studentAvatar} style={{ background: genderColor + '25', color: genderColor }}>
                         {student.avatar_url
                           ? <img src={student.avatar_url} alt="" style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}/>
@@ -559,7 +565,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                         </div>
                       </div>
                       {/* Assign class button */}
-                      <button
+                      <button className="pressable"
                         onClick={() => { setAssignTarget(student); setAssignClassId('') }}
                         title={student.class_level ? `Reassign from ${student.class_level}` : 'Assign to class'}
                         style={{
@@ -590,7 +596,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                           <path d="M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/>
                         </svg>
                       </Link>
-                      <button className={styles.delBtn} onClick={() => setConfirmDel(student)} title="Remove student">
+                      <button className={`${styles.delBtn} pressable`} onClick={() => setConfirmDel(student)} title="Remove student">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                       </button>
                     </div>

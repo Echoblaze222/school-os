@@ -88,7 +88,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
               <input className={styles.formInput} type={type} value={val} onChange={e => setter(e.target.value)} placeholder={placeholder} />
             </div>
           ))}
-          {[['ID Code', profile?.default_code ?? '—'], ['Role', 'Secretary'], ['Email', profile?.email ?? '—'], ['School', school?.name ?? '—']].map(([l, v]) => (
+          {[['ID Code', profile?.default_code ?? 'N/A'], ['Role', 'Secretary'], ['Email', profile?.email ?? 'N/A'], ['School', school?.name ?? 'N/A']].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderTop: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>{l}</span>
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{v}</span>
@@ -102,7 +102,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       {section === 'school' && (
         <div className="glass-card" style={{ padding: 'var(--space-5)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>School Information</p>
-          {[['School Name', school?.name ?? '—'], ['School ID', school?.id ?? '—'], ['Address', school?.address ?? '—'], ['Phone', school?.phone ?? '—'], ['Email', school?.email ?? '—']].map(([l, v]) => (
+          {[['School Name', school?.name ?? 'N/A'], ['School ID', school?.id ?? 'N/A'], ['Address', school?.address ?? 'N/A'], ['Phone', school?.phone ?? 'N/A'], ['Email', school?.email ?? 'N/A']].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>{l}</span>
               <span style={{ fontWeight: 600, color: 'var(--text-primary)', textAlign: 'right', maxWidth: '60%' }}>{v}</span>
@@ -126,7 +126,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
                 <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{label}</p>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>{desc}</p>
               </div>
-              <button onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))}
+              <button className="pressable" onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))}
                 style={{ width: 44, height: 24, borderRadius: 12, background: notifs[key] ? sc : 'var(--glass-border)', border: 'none', cursor: 'pointer', transition: 'background 0.2s', position: 'relative', flexShrink: 0 }}>
                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: notifs[key] ? 23 : 3, transition: 'left 0.2s' }} />
               </button>
@@ -143,9 +143,9 @@ export default function SettingsClient({ profile, school, userId }: Props) {
           <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Login Code</p>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 var(--space-3)' }}>Your unique access code for this school</p>
-            <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', letterSpacing: '0.08em' }}>{profile?.default_code ?? '—'}</p>
+            <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', letterSpacing: '0.08em' }}>{profile?.default_code ?? 'N/A'}</p>
           </div>
-          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+          <button className="pressable" onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
             <LogOutIcon size={16} color="var(--danger)" /> Sign Out
           </button>
         </div>

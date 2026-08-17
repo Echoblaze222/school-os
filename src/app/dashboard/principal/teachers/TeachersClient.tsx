@@ -111,7 +111,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
         {pills.map(p => (
           <button
             key={p.key}
-            className={`${styles.pill} ${roleFilter === p.key ? styles.pillActive : ''}`}
+            className={`${styles.pill} ${roleFilter === p.key ? styles.pillActive : ''} pressable`}
             style={roleFilter === p.key
               ? { background: sc, color: '#fff', borderColor: sc }
               : {}}
@@ -173,7 +173,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
               return (
                 <button
                   key={t.id}
-                  className={`glass-card ${styles.teacherCard} animate-fade-up`}
+                  className={`glass-card ${styles.teacherCard} animate-fade-up pressable`}
                   style={{ animationDelay: `${Math.min(i, 20) * 40}ms`, opacity: 0 }}
                   onClick={() => setSelected(t)}
                 >
@@ -248,7 +248,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
                 <p className={styles.drawerEmail}>{selected.email}</p>
               </div>
               <button
-                className={styles.drawerClose}
+                className={`${styles.drawerClose} pressable`}
                 onClick={() => setSelected(null)}
                 aria-label="Close"
               >
@@ -276,9 +276,9 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
               <section className={styles.drawerSection}>
                 <p className={styles.drawerSectionTitle}>Personal Info</p>
                 {[
-                  { label: 'Phone',         value: selected.phone          ?? '—' },
-                  { label: 'Employee ID',   value: selected.employee_id    ?? '—' },
-                  { label: 'Qualification', value: selected.qualification  ?? '—' },
+                  { label: 'Phone',         value: selected.phone          ?? 'N/A' },
+                  { label: 'Employee ID',   value: selected.employee_id    ?? 'N/A' },
+                  { label: 'Qualification', value: selected.qualification  ?? 'N/A' },
                   { label: 'Status',        value: selected.is_active ? 'Active' : 'Inactive' },
                 ].map(row => (
                   <div key={row.label} className={styles.drawerField}>
@@ -323,7 +323,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
                 <p className={styles.drawerSectionTitle}>Activity</p>
                 {[
                   { label: 'Last Active',    value: relTime(selected.last_activity) },
-                  { label: 'Last Action',    value: selected.last_action       ?? '—' },
+                  { label: 'Last Action',    value: selected.last_action       ?? 'N/A' },
                   { label: 'Notes Uploaded', value: String(selected.notes_uploaded)  },
                   { label: 'Results Posted', value: String(selected.results_posted)  },
                 ].map(row => (

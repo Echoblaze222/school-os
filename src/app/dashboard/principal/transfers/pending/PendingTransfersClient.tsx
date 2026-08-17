@@ -157,7 +157,7 @@ export default function PendingTransfersClient({
                   borderBottom: '1px solid var(--glass-border)',
                 }}>
                   {([
-                    ['Avg Score',        t.avg_score !== null ? `${t.avg_score}%` : '—', false],
+                    ['Avg Score',        t.avg_score !== null ? `${t.avg_score}%` : 'N/A', false],
                     ['Results',          t.total_results,                                 false],
                     ['Outstanding Fees', t.outstanding_fees > 0
                       ? `₦${t.outstanding_fees.toLocaleString()}` : 'None',               t.outstanding_fees > 0],
@@ -181,14 +181,14 @@ export default function PendingTransfersClient({
                 <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
                     <button
-                      className={styles.btnPrimary}
+                      className={`${styles.btnPrimary} pressable`}
                       style={{ flex: 1, background: '#10B981', borderColor: '#10B981' }}
                       onClick={() => approve(t)}
                       disabled={busy}>
                       {busy ? 'Processing…' : 'Approve Transfer'}
                     </button>
                     <button
-                      className={styles.btnGhost}
+                      className={`${styles.btnGhost} pressable`}
                       style={{ color: '#EF4444', borderColor: '#EF444440' }}
                       onClick={() => setRejectingId(rejectingId === t.id ? null : t.id)}
                       disabled={busy}>
@@ -206,7 +206,7 @@ export default function PendingTransfersClient({
                         onChange={e => setRejectReason(p => ({ ...p, [t.id]: e.target.value }))}
                       />
                       <button
-                        className={styles.btnPrimary}
+                        className={`${styles.btnPrimary} pressable`}
                         style={{ background: '#EF4444', borderColor: '#EF4444', whiteSpace: 'nowrap' }}
                         onClick={() => reject(t)}
                         disabled={busy}>

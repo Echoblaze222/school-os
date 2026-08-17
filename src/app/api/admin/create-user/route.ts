@@ -3,6 +3,7 @@ import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getResend }         from '@/lib/activateSchool'
+import crypto                from 'crypto'
 
 export async function POST(req: Request) {
   const supabase      = await createClient()
@@ -92,7 +93,14 @@ export async function POST(req: Request) {
   }
 
   const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-  const defaultCode  = `PRIN-${school.id.slice(0, 6).toUpperCase()}`
+  // Critical: this must NOT be derived from anything public. It previously
+  // sliced the school's own UUID (PRIN-${school.id.slice(0,6)}), and
+  // schools/search publicly returns that same id to any unauthenticated
+  // visitor — meaning the principal's activation code, the
+  // highest-privilege account for the entire school, was directly
+  // computable by anyone who searched for the school by name, with no
+  // guessing required at all. It must be independently random.
+  const defaultCode  = `PRIN-${crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)}`
 
   const { data: authUser, error: authErr } = await adminSupabase.auth.admin.createUser({
     email:         principalEmail,
@@ -151,7 +159,7 @@ export async function POST(req: Request) {
     await getResend().emails.send({
       from:    'SchoolOS <onboarding@resend.dev>',
       to:      principalEmail,
-      subject: `🎉 Welcome to SchoolOS — Your School is Ready`,
+      subject: `🎉 Welcome to SchoolOS, Your School is Ready`,
       html: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
           <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
@@ -189,7 +197,7 @@ export async function POST(req: Request) {
             </p>
           </div>
           <div style="background:#111;padding:16px;text-align:center;">
-            <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong> — Built for Nigerian Schools</p>
+            <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong>, built for Nigerian Schools</p>
           </div>
         </div>
       `,

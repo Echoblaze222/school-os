@@ -11,6 +11,7 @@ import {
   PeopleIcon, CalendarIcon, ClipboardIcon,
   BarChartIcon, AwardIcon, CrownIcon,
 } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -117,7 +118,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="My Classes">
       {loading ? (
-        <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>Loading classes...</div>
+        <SkeletonList count={4} variant="card" />
       ) : classes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40 }}>
           <PeopleIcon size={40} color="var(--text-faint)" strokeWidth={1} />
@@ -130,7 +131,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
           {/* Class pills */}
           <div style={{ overflowX: 'auto', display: 'flex', gap: 8, marginBottom: 'var(--space-5)', paddingBottom: 4 }}>
             {classes.map(cls => (
-              <button
+              <button className="pressable"
                 key={`${cls.class_id}-${cls.subject ?? 'all'}`}
                 onClick={() => setSelected(cls)}
                 style={{
@@ -210,7 +211,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 marginBottom: 'var(--space-5)',
               }}>
                 {QUICK_ACTIONS.map(action => (
-                  <button
+                  <button className="pressable"
                     key={action.label}
                     onClick={action.onClick}
                     style={{

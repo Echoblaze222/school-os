@@ -53,7 +53,7 @@ interface Props {
 
 function buildInsight(counts: any, pendingClaims: number): string {
   if (pendingClaims > 0) {
-    return `${pendingClaims} payment claim${pendingClaims === 1 ? '' : 's'} submitted by parents are waiting on your review — approving them updates fee balances automatically.`
+    return `${pendingClaims} payment claim${pendingClaims === 1 ? '' : 's'} submitted by parents are waiting on your review. Approving them updates fee balances automatically.`
   }
   if ((counts.overdueCount ?? 0) > 0) {
     return `${counts.overdueCount} student${counts.overdueCount === 1 ? '' : 's'} ${counts.overdueCount === 1 ? 'is' : 'are'} past due on fees this term. A reminder push could help before it grows.`
@@ -185,7 +185,7 @@ export default function BursarDashboardClient({
           items={activities}
           accentColor={schoolColor}
           onDelete={handleDeleteActivity}
-          emptyLabel="Nothing yet — payments and claims will show up here"
+          emptyLabel="Nothing yet. Payments and claims will show up here"
         />
 
         <div className={styles.spacer} />

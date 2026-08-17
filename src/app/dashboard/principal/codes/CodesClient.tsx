@@ -168,7 +168,7 @@ function CodeSuccessScreen({
         <p className={styles.credLabel}>Access Code</p>
         <div className={styles.credRow}>
           <code className={styles.credValue} style={{ color: sc }}>{result.code}</code>
-          <button
+          <button className="pressable"
             onClick={() => { navigator.clipboard.writeText(result.code).catch(() => {}); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }}
             className={styles.credCopy}
             style={copiedCode ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: sc + '55', color: sc }}
@@ -181,11 +181,11 @@ function CodeSuccessScreen({
         </p>
       </div>
 
-      <button onClick={copyCode} className={styles.copyBothBtn}>
+      <button onClick={copyCode} className={`${styles.copyBothBtn} pressable`}>
         Copy Details
       </button>
 
-      <button onClick={onEnrolAnother} className={styles.enrolAnotherBtn}>
+      <button onClick={onEnrolAnother} className={`${styles.enrolAnotherBtn} pressable`}>
         + Enrol Another Person
       </button>
     </div>
@@ -255,12 +255,20 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
   async function regenerateCode(entry: CodeEntry) {
     setRegen(entry.id)
-    const prefix  = entry.role.slice(0, 3).toUpperCase()
-    const year    = new Date().getFullYear()
-    const rand    = Math.floor(1000 + Math.random() * 9000)
-    const newCode = `${prefix}-${year}-${rand}`
-    const { error } = await supabase.from('profiles').update({ default_code: newCode }).eq('id', entry.id)
-    if (!error) setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: newCode } : e))
+    try {
+      const res = await fetch('/api/staff-codes/regenerate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ profileId: entry.id }),
+      })
+      const data = await res.json()
+      if (res.ok && data.code) {
+        setEntries(p => p.map(e => e.id === entry.id ? { ...e, default_code: data.code } : e))
+      }
+    } catch {
+      // Silently leave the old code in place; the button re-enables and
+      // the user can retry.
+    }
     setRegen(null)
   }
 
@@ -385,7 +393,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
     const isActive = roleTab === r
     const count    = r === 'all' ? entries.length : entries.filter(e => e.role === r).length
     return (
-      <button onClick={() => setRoleTab(r)} className={styles.roleChip}
+      <button className={`${styles.roleChip} pressable`} onClick={() => setRoleTab(r)}
         style={{
           background:  isActive ? m.color + '22' : 'var(--glass-bg)',
           borderColor: isActive ? m.color : 'var(--glass-border)',
@@ -403,7 +411,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
       <div className={styles.tabRow}>
         {(['existing','enrol','bulk'] as const).map(t => (
-          <button key={t} onClick={() => { setTab(t); setSResult(null) }}
+          <button className="pressable" key={t} onClick={() => { setTab(t); setSResult(null) }}
             className={`${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
             {t === 'existing' && 'All Codes'}
             {t === 'enrol'    && 'Enrol / Add User'}
@@ -453,11 +461,11 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                       {e.default_code}
                     </code>
                     <div className={styles.codeRowActions}>
-                      <button onClick={() => copyCode(e.default_code, e.id)} className={styles.actionBtn}
+                      <button className={`${styles.actionBtn} pressable`} onClick={() => copyCode(e.default_code, e.id)}
                         style={copied === e.id ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : {}}>
                         {copied === e.id ? 'Copied' : 'Copy'}
                       </button>
-                      <button onClick={() => regenerateCode(e)} disabled={regen === e.id} className={styles.actionBtn}
+                      <button className={`${styles.actionBtn} pressable`} onClick={() => regenerateCode(e)} disabled={regen === e.id}
                         style={{ opacity: regen === e.id ? 0.5 : 1 }}>
                         {regen === e.id ? 'Wait...' : 'Regen'}
                       </button>
@@ -483,7 +491,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
             <div className={styles.enrolForm}>
               <div className={styles.formHeader}>
                 <p className={styles.formTitle}>Enrol / Add User</p>
-                <p className={styles.formSub}>Fill in the details below. After saving, you will get the access code to share with them — they'll set their own password on first login.</p>
+                <p className={styles.formSub}>Fill in the details below. After saving, you will get the access code to share with them. They'll set their own password on first login.</p>
               </div>
 
               <div className={styles.fieldGroup}>
@@ -492,7 +500,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   {ROLES_ASSIGNABLE.map(r => {
                     const m = roleMeta(r)
                     return (
-                      <button key={r} onClick={() => setSRole(r)}
+                      <button className="pressable" key={r} onClick={() => setSRole(r)}
                         className={styles.roleOption}
                         style={{
                           background:  sRole === r ? m.color + '22' : 'var(--glass-bg)',
@@ -598,7 +606,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
               {sError && <p className={styles.errorMsg}>{sError}</p>}
 
-              <button onClick={handleEnrol} disabled={sLoading} className={styles.generateBtn}>
+              <button onClick={handleEnrol} disabled={sLoading} className={`${styles.generateBtn} pressable`}>
                 {sLoading ? 'Saving...' : `Enrol ${roleMeta(sRole).label} & Get Code`}
               </button>
             </div>
@@ -612,7 +620,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
           <div className={styles.formCard} style={{ marginBottom: 'var(--space-5)' }}>
             <div className={styles.formHeader}>
               <p className={styles.formTitle}>Bulk Add Users</p>
-              <p className={styles.formSub}>Fill in each row directly. Leave blank rows empty — they'll be ignored.</p>
+              <p className={styles.formSub}>Fill in each row directly. Leave blank rows empty, they'll be ignored.</p>
             </div>
             <div className={styles.formBody}>
 
@@ -709,7 +717,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                               onChange={e => updateBulkRow(i, { gender: e.target.value })}
                               style={cellInputStyle}
                             >
-                              <option value="">—</option>
+                              <option value="">N/A</option>
                               {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
                             </select>
                           </td>
@@ -729,7 +737,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                               disabled={!isStudentR}
                               style={{ ...cellInputStyle, opacity: isStudentR ? 1 : 0.35 }}
                             >
-                              <option value="">—</option>
+                              <option value="">N/A</option>
                               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                           </td>
@@ -766,7 +774,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                           </td>
 
                           <td style={{ ...tdStyle, textAlign: 'center' }}>
-                            <button
+                            <button className="pressable"
                               onClick={() => {
                                 const next = bRows.length === 1 ? [EMPTY_ROW()] : bRows.filter((_, idx) => idx !== i)
                                 setBRows(next)
@@ -792,7 +800,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 </table>
               </div>
 
-              <button
+              <button className="pressable"
                 onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -822,7 +830,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
               <button
                 onClick={handleBulkSave}
-                className={styles.previewBtn}
+                className={`${styles.previewBtn} pressable`}
                 disabled={bLoading || !bRows.some(r => r.full_name.trim() && r.email.trim())}
               >
                 {bLoading ? 'Saving...' : 'Save All Users'}
@@ -835,10 +843,10 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               <div className={styles.bulkPreviewHeader}>
                 <div>
                   <p className={styles.formTitle}>{bResults.length} User{bResults.length !== 1 ? 's' : ''} {bLoading ? 'Saving…' : 'Processed'}</p>
-                  <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live — share them now.'}</p>
+                  <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live. Share them now.'}</p>
                 </div>
                 <div className={styles.bulkActions}>
-                  <button onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
+                  <button className={`${styles.copyAllBtn} pressable`} onClick={() => copyAllCodes(bResults)}
                     disabled={bLoading}
                     style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
                     {copiedAll ? 'All Copied' : 'Copy All'}
@@ -862,7 +870,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                         </div>
                       </div>
                       <span className={styles.roleBadge} style={{ background: m.color + '18', color: m.color, borderColor: m.color + '44' }}>{m.label}</span>
-                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : '—')}</code>
+                      <code className={styles.codeChip} style={{ background: sc + '15', color: sc }}>{r.code || (bLoading ? '…' : 'N/A')}</code>
                       <span style={{ color: r.error ? '#EF4444' : r.saved ? '#10B981' : 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {r.error ? (r.error.length > 24 ? 'Error' : r.error) : r.saved ? <>Saved <CheckIcon size={12} /></> : bLoading ? 'Saving…' : 'Pending'}
                       </span>

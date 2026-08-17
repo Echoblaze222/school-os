@@ -5,6 +5,7 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { ActivityIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -65,7 +66,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
   return (
     <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Clinic" featureGroups={PARENT_FEATURE_GROUPS}>
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="card" />
         : !child
           ? <div className={styles.empty}>
               <ActivityIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
@@ -75,7 +76,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
               {children.length > 1 && (
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
                   {children.map(c => (
-                    <button key={c.id} onClick={() => switchChild(c)}
+                    <button className="pressable" key={c.id} onClick={() => switchChild(c)}
                       style={{
                         padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
                         background: child.id === c.id ? sc : 'var(--glass-bg)',
@@ -97,7 +98,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
                 </div>
                 {record ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', fontSize: '0.8rem' }}>
-                    <div><p style={{ margin: '0 0 2px', color: 'var(--text-muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Blood group</p><p style={{ margin: 0 }}>{record.blood_group || '—'}</p></div>
+                    <div><p style={{ margin: '0 0 2px', color: 'var(--text-muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Blood group</p><p style={{ margin: 0 }}>{record.blood_group || 'N/A'}</p></div>
                     <div><p style={{ margin: '0 0 2px', color: 'var(--text-muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Allergies</p><p style={{ margin: 0, color: record.allergies ? '#EF4444' : undefined, fontWeight: record.allergies ? 700 : undefined }}>{record.allergies || 'None on file'}</p></div>
                     <div style={{ gridColumn: '1 / -1' }}><p style={{ margin: '0 0 2px', color: 'var(--text-muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Chronic conditions</p><p style={{ margin: 0 }}>{record.chronic_conditions || 'None on file'}</p></div>
                     <div style={{ gridColumn: '1 / -1' }}><p style={{ margin: '0 0 2px', color: 'var(--text-muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Emergency contact</p><p style={{ margin: 0 }}>{record.emergency_contact_name ? `${record.emergency_contact_name}${record.emergency_contact_phone ? ` · ${record.emergency_contact_phone}` : ''}` : 'Not on file'}</p></div>

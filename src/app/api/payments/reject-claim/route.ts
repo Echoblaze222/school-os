@@ -19,10 +19,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { claim_id, bursar_id, school_id, bursar_note } = await req.json()
+  const { claim_id, bursar_note } = await req.json()
 
   if (!claim_id || !bursar_note) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
+
+  // Load the claim first so we can enforce the tenant boundary — a
+  // bursar/principal may only act on claims belonging to their own school.
+  const { data: claimRow } = await admin
+    .from('payment_claims')
+    .select('school_id, status')
+    .eq('id', claim_id)
+    .single()
+
+  if (!claimRow) {
+    return NextResponse.json({ error: 'Claim not found' }, { status: 404 })
+  }
+  if (claimRow.school_id !== me.school_id) {
+    return NextResponse.json({ error: 'This claim does not belong to your school.' }, { status: 403 })
+  }
+  if (claimRow.status !== 'pending') {
+    return NextResponse.json({ error: `This claim was already ${claimRow.status}.` }, { status: 400 })
   }
 
   // 1. Update claim status
@@ -31,7 +49,7 @@ export async function POST(req: Request) {
     .update({
       status:      'rejected',
       bursar_note,
-      reviewed_by: bursar_id,
+      reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', claim_id)

@@ -2,7 +2,7 @@
 // src/app/dashboard/teacher/clinic/ClinicClient.tsx
 //
 // Deliberately narrower than Secretary's clinic view: teacher only gets the
-// allergy/condition *summary* for students in classes they actually teach —
+// allergy/condition *summary* for students in classes they actually teach -
 // no visit log, no editing. Matches the medical_records_teacher_own_class_students
 // RLS policy in schoolos_library_clinic.sql exactly, so this UI can't show
 // anything the database wouldn't return anyway.
@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { ActivityIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -55,7 +56,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Clinic">
       {loading ? (
-        <div className={styles.loading}><span/><span/><span/></div>
+        <SkeletonList count={4} variant="card" />
       ) : rows.length === 0 ? (
         <div className={styles.empty}>
           <ActivityIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
@@ -81,7 +82,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
           </div>
 
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 var(--space-4)' }}>
-            Showing the safety-relevant summary only. Full clinic visit history isn't available to teachers — contact the school office for that.
+            Showing the safety-relevant summary only. Full clinic visit history isn't available to teachers. Contact the school office for that.
           </p>
 
           <div className={styles.list}>

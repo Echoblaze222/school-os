@@ -171,7 +171,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
       if (data.ok) {
         setIsVerified(true)
         setVerifiedAt(new Date().toISOString())
-        flash('School verified — Paystack can now be connected ✓')
+        flash('School verified. Paystack can now be connected ✓')
       } else {
         flash(data.error ?? 'Failed to verify', true)
       }
@@ -429,8 +429,8 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
                       <tr key={p.id}>
                         <td className={styles.td} style={{ textTransform:'capitalize', fontWeight:600 }}>{p.payment_type}</td>
                         <td className={styles.td} style={{ fontWeight:700, color:'#10B981' }}>₦{Number(p.amount_ngn).toLocaleString()}</td>
-                        <td className={styles.td}>{p.plan ? PLAN_LABEL[p.plan] ?? p.plan : '—'}</td>
-                        <td className={styles.td} style={{ fontFamily:'monospace', fontSize:'0.75rem', color:'var(--text-muted)' }}>{p.payment_ref || '—'}</td>
+                        <td className={styles.td}>{p.plan ? PLAN_LABEL[p.plan] ?? p.plan : 'N/A'}</td>
+                        <td className={styles.td} style={{ fontFamily:'monospace', fontSize:'0.75rem', color:'var(--text-muted)' }}>{p.payment_ref || 'N/A'}</td>
                         <td className={styles.td} style={{ color:'var(--text-muted)', fontSize:'0.78rem' }}>
                           {new Date(p.confirmed_at).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })}
                         </td>
@@ -449,7 +449,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Compliance Contact</h3>
             <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'var(--space-4)', lineHeight:1.5 }}>
-              Required before this school can connect Paystack split payments —
+              Required before this school can connect Paystack split payments.
               Paystack asks platforms like SchoolOS to keep due-diligence records
               on file for each onboarded business.
             </p>
@@ -494,7 +494,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Bank Verification</h3>
             <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'var(--space-4)', lineHeight:1.5 }}>
-              Snapshot of the account verified at sign-off time — kept separate
+              Snapshot of the account verified at sign-off time, kept separate
               from the school's live banking details so changes later don't
               silently alter this audit record.
             </p>

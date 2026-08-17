@@ -17,6 +17,7 @@ import { NextResponse }      from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient }      from '@/lib/supabase/server'
 import { unwrapEmbed }       from '@/lib/utils/unwrapEmbed'
+import { logActivityWithClient } from '@/lib/logActivity'
 
 const TERM_KEY_MAP: Record<string, string> = {
   'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
@@ -39,20 +40,53 @@ export async function POST(req: Request) {
   }
 
   const {
-    claim_id, bursar_id, school_id,
-    student_id, parent_id,
-    amount, term, year, fee_type,
+    claim_id,
     invoice_id,   // may be null if parent didn't link a specific invoice
   } = await req.json()
 
-  if (!claim_id || !school_id || !student_id || !amount) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  if (!claim_id) {
+    return NextResponse.json({ error: 'Missing claim_id' }, { status: 400 })
   }
+
+  // ── Load the claim itself and treat it as the source of truth ──
+  // school_id, student_id, parent_id, amount, term, year, and fee_type all
+  // come from THIS row, never from the request body. Trusting client-sent
+  // copies of these fields would let anyone with bursar/principal access
+  // confirm a fabricated payment for any school, any student, and any
+  // amount — creating a real payments row and marking real invoices paid
+  // for money that never moved.
+  const { data: claimRow, error: claimFetchErr } = await admin
+    .from('payment_claims')
+    .select('id, school_id, parent_id, student_id, invoice_id, fee_type, term, academic_year, amount_claimed, status')
+    .eq('id', claim_id)
+    .single()
+
+  if (claimFetchErr || !claimRow) {
+    return NextResponse.json({ error: 'Claim not found' }, { status: 404 })
+  }
+
+  // Tenant boundary — a bursar/principal may only confirm claims that
+  // belong to their own school.
+  if (claimRow.school_id !== me.school_id) {
+    return NextResponse.json({ error: 'This claim does not belong to your school.' }, { status: 403 })
+  }
+
+  if (claimRow.status !== 'pending') {
+    return NextResponse.json({ error: `This claim was already ${claimRow.status}.` }, { status: 400 })
+  }
+
+  const school_id  = claimRow.school_id
+  const student_id = claimRow.student_id
+  const parent_id  = claimRow.parent_id
+  const amount     = claimRow.amount_claimed
+  const term       = claimRow.term
+  const year       = claimRow.academic_year
+  const fee_type   = claimRow.fee_type
 
   // ── 1. Mark claim confirmed ───────────────────────────────────
   const { error: claimErr } = await admin.from('payment_claims').update({
     status:      'confirmed',
-    reviewed_by: bursar_id,
+    reviewed_by: user.id,
     reviewed_at: new Date().toISOString(),
     updated_at:  new Date().toISOString(),
   }).eq('id', claim_id)
@@ -62,7 +96,21 @@ export async function POST(req: Request) {
   // ── 2. Resolve invoice — scoped to THIS student + term + year ──
   // payment_invoices has no direct term/year columns; those live on the
   // linked fee_structures row. We join through that to filter correctly.
-  let resolvedInvoiceId = invoice_id ?? null
+  // If the client supplied an invoice_id (the parent linked a specific
+  // invoice when filing the claim), verify it actually belongs to this
+  // student and school before trusting it — otherwise a crafted request
+  // could redirect a confirmed payment onto someone else's invoice.
+  let resolvedInvoiceId: string | null = null
+  if (invoice_id) {
+    const { data: linkedInvoice } = await admin
+      .from('payment_invoices')
+      .select('id')
+      .eq('id', invoice_id)
+      .eq('student_id', student_id)
+      .eq('school_id', school_id)
+      .maybeSingle()
+    resolvedInvoiceId = linkedInvoice?.id ?? null
+  }
   let invoiceWarning: string | null = null
 
   if (!resolvedInvoiceId) {
@@ -116,12 +164,12 @@ export async function POST(req: Request) {
     invoice_id:      resolvedInvoiceId,   // null if genuinely no invoice exists yet
     student_id,
     school_id,
-    received_by:     bursar_id,
+    received_by:     user.id,
     amount_paid_ngn: Number(amount),
     currency_used:   'NGN',
     payment_method:  'bank_transfer',
     receipt_number:  receiptNumber,
-    notes:           `Confirmed from parent payment claim (${fee_type?.replace(/_/g,' ')} — ${term} ${year})`,
+    notes:           `Confirmed from parent payment claim (${fee_type?.replace(/_/g,' ')}, ${term} ${year})`,
     paid_at:         new Date().toISOString(),
   }).select('id').single()
 
@@ -163,6 +211,20 @@ export async function POST(req: Request) {
     type:       'payment',
     action_url: '/dashboard/parent/fees',
     is_read:    false,
+  })
+
+  // Log to the parent's Recent Activity — this is the confirmed-payment
+  // moment for the manual/bank-transfer claim flow (as opposed to the
+  // instant online-checkout flow, which logs from the Paystack webhook
+  // instead). Deliberately NOT logged at claim-submission time — a claim
+  // is unconfirmed until a bursar reviews it, so logging "fee_paid" before
+  // that would show something as paid that might still get rejected.
+  await logActivityWithClient(admin, {
+    userId: parent_id, schoolId: school_id,
+    type:  'fee_paid',
+    title: `Paid ${fmtAmount} for ${fee_type?.replace(/_/g,' ')}`,
+    subtitle: `${term} ${year}`,
+    href:  '/dashboard/parent/fees',
   })
 
   return NextResponse.json({

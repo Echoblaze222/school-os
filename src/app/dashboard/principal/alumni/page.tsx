@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import PrincipalAlumniClient from './PrincipalAlumniClient'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Alumni — SchoolOS' }
+export const metadata = { title: 'Alumni | SchoolOS' }
 
 export interface AlumniStudent {
   id: string
@@ -74,9 +74,9 @@ export default async function PrincipalAlumniPage() {
     const p = profileById[r.id] ?? {}
     return {
       id:               r.id,
-      full_name:        p.full_name ?? '—',
-      admission_number: r.admission_number ?? '—',
-      class_name:       classById[r.class_id]?.name ?? '—',
+      full_name:        p.full_name ?? 'N/A',
+      admission_number: r.admission_number ?? 'N/A',
+      class_name:       classById[r.class_id]?.name ?? 'N/A',
       graduation_year:  r.graduation_year ? String(r.graduation_year) : null,
       email:            p.email ?? null,
       phone:            p.phone ?? null,

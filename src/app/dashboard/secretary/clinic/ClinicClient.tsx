@@ -8,6 +8,7 @@ import { ActivityIcon, UserIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface StudentOpt { id: string; full_name: string; default_code: string | null }
 interface Visit {
@@ -178,8 +179,8 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
           {visits.length === 0 ? (
             <div className={styles.emptyState}><ActivityIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No visits logged</p><p className={styles.emptyHint}>Clinic visits will show up here</p></div>
           ) : (
-            visits.map(v => (
-              <div key={v.id} className={styles.listItem}>
+            visits.map((v, i) => (
+              <div key={v.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                 <div className={styles.listIconBox} style={{ background: (v.sent_home ? '#F59E0B' : sc) + '22' }}>
                   <ActivityIcon size={18} color={v.sent_home ? '#F59E0B' : sc} />
                 </div>
@@ -208,16 +209,16 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
           {filteredStudents.length === 0 ? (
             <div className={styles.emptyState}><UserIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No students found</p></div>
           ) : (
-            filteredStudents.map(s => {
+            filteredStudents.map((s, i) => {
               const rec = recordByStudent.get(s.id)
               return (
-                <div key={s.id} className={styles.listItem} onClick={() => openRecordModal(s)} style={{ cursor: 'pointer' }}>
+                <div key={s.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ cursor: 'pointer', animationDelay: `${Math.min(i, 8) * 40}ms` }} onClick={() => openRecordModal(s)}>
                   <div className={styles.listIconBox} style={{ background: (rec?.allergies ? '#EF4444' : sc) + '22' }}>
                     {rec?.allergies ? <AlertIcon size={18} color="#EF4444" /> : <UserIcon size={18} color={sc} />}
                   </div>
                   <div className={styles.listContent}>
                     <p className={styles.listTitle}>{s.full_name}</p>
-                    <p className={styles.listSub}>{rec ? (rec.allergies ? `Allergies: ${rec.allergies}` : 'On file — no allergies noted') : 'No medical record yet'}</p>
+                    <p className={styles.listSub}>{rec ? (rec.allergies ? `Allergies: ${rec.allergies}` : 'On file, no allergies noted') : 'No medical record yet'}</p>
                   </div>
                   <span className={styles.listBadge} style={{ background: rec ? '#10B98122' : 'var(--glass-bg)', color: rec ? '#10B981' : 'var(--text-muted)', border: rec ? 'none' : '1px solid var(--glass-border)' }}>{rec ? 'On file' : 'Add'}</span>
                 </div>

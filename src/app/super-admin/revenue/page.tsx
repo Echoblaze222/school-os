@@ -112,9 +112,9 @@ export default function RevenuePage() {
               <tbody>
                 {payments.map(p => (
                   <tr key={p.id} className={styles.tr}>
-                    <td className={styles.td}>{(p.schools as any)?.name ?? '—'}</td>
+                    <td className={styles.td}>{(p.schools as any)?.name ?? 'N/A'}</td>
                     <td className={styles.td}>{TYPE_LABELS[p.payment_type] ?? p.payment_type}</td>
-                    <td className={styles.td}>{p.plan ? PLAN_LABELS[p.plan] ?? p.plan : '—'}</td>
+                    <td className={styles.td}>{p.plan ? PLAN_LABELS[p.plan] ?? p.plan : 'N/A'}</td>
                     <td className={styles.td}>
                       <span style={{ fontWeight:700, color:'#10B981' }}>₦{Number(p.amount_ngn).toLocaleString()}</span>
                     </td>

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import NewAssignmentClient from './NewAssignmentClient'
 
-export const metadata = { title: 'Post Assignment — SchoolOS' }
+export const metadata = { title: 'Post Assignment | SchoolOS' }
 
 export interface TeacherClassOption {
   id: string

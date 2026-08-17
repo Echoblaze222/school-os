@@ -8,6 +8,7 @@ export default async function ChatPage() {
   if (!user) redirect('/login')
   const { data: profile } = await supabase
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+  if (!profile || (profile as any).role !== 'principal') redirect('/login')
   const school = (profile as any)?.schools ?? null
   const schoolColor = school?.primary_color ?? '#7C3AED'
   return (

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { EditIcon, CheckCircleIcon, XIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 // `applications.status` is constrained in the DB to exactly these 3 values —
 // keep the UI in lock-step or updates silently fail the CHECK constraint.
@@ -20,6 +21,7 @@ export default function ApplicationsClient({ applications: init, profile, school
   const [tab,      setTab]      = useState('all')
   const [modal,    setModal]    = useState(false)
   const [viewItem, setViewItem] = useState<Application | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState('')
   const [form,     setForm]     = useState({ applicant_name: '', class_applying_for: 'Enrollment', notes: '' })
@@ -60,6 +62,7 @@ export default function ApplicationsClient({ applications: init, profile, school
     await supabase.from('applications').delete().eq('id', id)
     setApps(p => p.filter(a => a.id !== id))
     setViewItem(null)
+    setConfirmDelete(false)
   }
 
   return (
@@ -78,8 +81,8 @@ export default function ApplicationsClient({ applications: init, profile, school
       {filtered.length === 0 ? (
         <div className={styles.emptyState}><EditIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No applications</p><p className={styles.emptyHint}>Track enrollment and transfer applications here</p></div>
       ) : (
-        filtered.map(a => (
-          <div key={a.id} className={styles.listItem} onClick={() => setViewItem(a)}>
+        filtered.map((a, i) => (
+          <div key={a.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} onClick={() => setViewItem(a)}>
             <div className={styles.listIconBox} style={{ background: sc + '22' }}><EditIcon size={17} color={sc} /></div>
             <div className={styles.listContent}>
               <p className={styles.listTitle}>{a.applicant_name}</p>
@@ -94,7 +97,7 @@ export default function ApplicationsClient({ applications: init, profile, school
         <div className={styles.modalOverlay} onClick={() => setViewItem(null)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>{viewItem.applicant_name}</h2>
-            {[['Type', viewItem.class_applying_for], ['Status', viewItem.status], ['Submitted', new Date(viewItem.created_at).toLocaleDateString()], ['Notes', viewItem.notes ?? '—']].map(([l, v]) => (
+            {[['Type', viewItem.class_applying_for], ['Status', viewItem.status], ['Submitted', new Date(viewItem.created_at).toLocaleDateString()], ['Notes', viewItem.notes ?? 'N/A']].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>{l}</span><span style={{ fontWeight: 600, color: 'var(--text-primary)', textTransform: l === 'Status' ? 'capitalize' : 'none' }}>{v}</span>
               </div>
@@ -105,7 +108,17 @@ export default function ApplicationsClient({ applications: init, profile, school
               {viewItem.status !== 'rejected' && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
               {viewItem.status !== 'pending'  && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'pending')}  disabled={saving} style={{ flex: 1 }}>↺ Back to Pending</button>}
             </div>
-            <button onClick={() => deleteApp(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} /> Delete application</button>
+            <button className="pressable" onClick={() => setConfirmDelete(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} /> Delete application</button>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && viewItem && (
+        <div className={styles.modalOverlay} onClick={() => setConfirmDelete(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Delete application?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>&quot;<strong>{viewItem.applicant_name}</strong>&quot;&apos;s application will be permanently removed. This can&apos;t be undone.</p>
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setConfirmDelete(false)}>Cancel</button><button className={styles.btnDanger} onClick={() => deleteApp(viewItem.id)}>Delete</button></div>
           </div>
         </div>
       )}

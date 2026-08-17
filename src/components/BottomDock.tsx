@@ -33,7 +33,7 @@ export default function BottomDock({ aiHref, groups, role }: Props) {
           className={`${styles.btn} ${motion.rippleHost} ${motion.focusable}`}
           onClick={() => setMenuOpen(true)}
           onMouseDown={ripple(motion)}
-          aria-label="Menu — all features"
+          aria-label="Menu: all features"
         >
           <GridIcon size={17} />
           Menu

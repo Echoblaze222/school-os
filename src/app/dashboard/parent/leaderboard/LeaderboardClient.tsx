@@ -9,6 +9,7 @@ import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 // the student lane supplies its own list here.
 import { TrophyIcon, AwardIcon } from '@/components/Icons'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface LeaderboardEntry {
   student_id: string
@@ -96,7 +97,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     const term = getCurrentTerm()
     const year = getCurrentYear()
 
-    // 1a. Students — plain query, no joins
+    // 1a. Students - plain query, no joins
     const { data: students, error: sErr } = await supabase
       .from('profiles')
       .select('id, full_name, avatar_url, class_id')
@@ -113,7 +114,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     const studentIds = students.map((s: any) => s.id)
 
     // student_profiles.class_id is what every real write flow updates
-    // (creation, edit modal, promotion/transfer) — it's the CURRENT value.
+    // (creation, edit modal, promotion/transfer) - it's the CURRENT value.
     // profiles.class_id is never touched by promotion, so it goes stale
     // for any promoted student; used only as a fallback when a student has
     // no student_profiles row at all.
@@ -141,7 +142,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
       const cl = (classRows ?? []).find((c: any) => c.id === resolvedClassId)
       spMap[s.id] = {
         class_id:    resolvedClassId ?? null,
-        class_level: cl?.class_level ?? cl?.name ?? '—',
+        class_level: cl?.class_level ?? cl?.name ?? 'N/A',
       }
     })
 
@@ -174,7 +175,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     // 3. Group by student and calculate scores
     const entries: LeaderboardEntry[] = students.map((s: any) => {
       const sp         = spMap[s.id]
-      const classLevel = sp?.class_level ?? '—'
+      const classLevel = sp?.class_level ?? 'N/A'
       const classId    = sp?.class_id    ?? null
 
       // Quiz avg
@@ -244,11 +245,11 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
   return (
     <RoleSubHeader userId={userId} role={isParent ? 'parent' : 'student'} profile={profile} school={school} title="Leaderboard" featureGroups={isParent ? PARENT_FEATURE_GROUPS : []}>
           {loading ? (
-            <div className={styles.loading}><span /><span /><span /></div>
+            <SkeletonList count={4} variant="card" />
           ) : board.length === 0 ? (
             <div className={styles.empty}>
               <TrophyIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-              <p>{debugMsg || 'No scores yet — complete quizzes, assignments, or exams to appear here.'}</p>
+              <p>{debugMsg || 'No scores yet. Complete quizzes, assignments, or exams to appear here.'}</p>
             </div>
           ) : (
             <>

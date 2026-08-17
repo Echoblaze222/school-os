@@ -48,6 +48,7 @@ export default async function PrincipalFeesPage({
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
 
+  if (!profile || !['principal', 'admin'].includes((profile as any).role ?? '')) redirect('/login')
   if (!school) redirect('/login')
 
   const params  = await searchParams

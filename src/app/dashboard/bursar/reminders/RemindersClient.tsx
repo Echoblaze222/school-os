@@ -13,6 +13,8 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { BellIcon, PeopleIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
 
 type Tab = 'send' | 'history'
 interface Props { profile: any; school: any; userId: string }
@@ -38,7 +40,7 @@ function buildMessage(studentName: string, className: string, outstanding: numbe
   const fmtd = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(outstanding)
   return `Dear Parent/Guardian of ${studentName},
 
-This is a friendly reminder from ${schoolName || 'the school'} that the outstanding school fee balance of ${fmtd} for ${className} — ${term} ${year} — has not been settled.
+This is a friendly reminder from ${schoolName || 'the school'} that the outstanding school fee balance of ${fmtd} for ${className}, ${term} ${year}, has not been settled.
 
 Kindly visit the school's bursar office or make payment via your preferred channel at your earliest convenience.
 
@@ -88,14 +90,14 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         .single()
 
       if (error || !draft) {
-        setAiDraftBanner('Couldn\'t load that AI draft — it may have already been used or removed.')
+        setAiDraftBanner('Couldn\'t load that AI draft. It may have already been used or removed.')
         return
       }
 
       setCustomMsg(draft.payload?.message ?? '')
       setUseCustom(true)
       setTab('send')
-      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant — select who should receive it below, then send.`)
+      setAiDraftBanner(`Loaded "${draft.title}" from the AI Assistant. Select who should receive it below, then send.`)
 
       await supabase.from('ai_action_drafts').delete().eq('id', draftId) // consumed
       router.replace('/dashboard/bursar/reminders')
@@ -130,7 +132,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
     if (!first) return
     const msg = useCustom && customMsg.trim()
       ? customMsg
-      : buildMessage(first.full_name, first.class_level ?? '—', first.outstanding, term, year, schoolName)
+      : buildMessage(first.full_name, first.class_level ?? 'N/A', first.outstanding, term, year, schoolName)
     setPreview(msg)
   }, [selected, useCustom, customMsg, debtors, term, year])
 
@@ -177,7 +179,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         studentMap.set(sid, {
           id:           sid,
           full_name:    student.full_name,
-          class_level:  student.class_level ?? '—',
+          class_level:  student.class_level ?? 'N/A',
           default_code: student.default_code ?? '',
           parent_id:    null,   // resolved below via parent_student_links
           parent_name:  null,
@@ -313,7 +315,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       if (!parentId) {
         setError(prev =>
           (prev ? prev + '; ' : '') +
-          `${debtor.full_name} has no parent linked — reminder skipped`
+          `${debtor.full_name} has no parent linked, reminder skipped`
         )
         count++
         setSentCount(count)
@@ -375,7 +377,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           console.error('Reminder insert error:', remErr.message, remErr.details, remErr.code, remErr.hint)
           setError(prev =>
             (prev ? prev + ' | ' : '') +
-            `DB error: ${remErr.message}${remErr.details ? ' — ' + remErr.details : ''}`
+            `DB error: ${remErr.message}${remErr.details ? ', ' + remErr.details : ''}`
           )
           invoiceErrors++
           continue
@@ -436,7 +438,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                     {student?.full_name ?? 'Unknown Student'}
                   </p>
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '3px 0 0' }}>
-                    {student?.class_level ?? '—'} · {fmtDate(previewMsg.sent_at ?? previewMsg.created_at)}
+                    {student?.class_level ?? 'N/A'} · {fmtDate(previewMsg.sent_at ?? previewMsg.created_at)}
                   </p>
                 </div>
                 <span style={{
@@ -536,7 +538,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               marginBottom: 'var(--space-4)',
             }}>
               <p style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--space-3)' }}>
-                📝 Compose Reminder — {selected.size} student{selected.size !== 1 ? 's' : ''}
+                📝 Compose Reminder, {selected.size} student{selected.size !== 1 ? 's' : ''}
               </p>
 
               {/* Toggle custom vs default */}
@@ -606,6 +608,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               <button
                 onClick={sendReminders}
                 disabled={sending || (useCustom && !customMsg.trim())}
+                className="pressable"
                 style={{
                   width: '100%', marginTop: 'var(--space-3)', height: 44,
                   background: sc, color: '#fff', border: 'none', borderRadius: 8,
@@ -621,16 +624,14 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
           {/* Debtors list */}
           {loading
-            ? <div className={styles.loading}><span /><span /><span /></div>
+            ? <SkeletonList count={4} variant="row" />
             : debtors.length === 0
               ? (
-                <div className={styles.empty}>
-                  <BellIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-                  <p>No outstanding invoices for {term} {year}</p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                    All students are fully paid up for this term.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<BellIcon size={40} color="var(--text-faint)" strokeWidth={1} />}
+                  title={`No outstanding invoices for ${term} ${year}`}
+                  subtitle="All students are fully paid up for this term."
+                />
               )
               : (
                 <>
@@ -640,17 +641,17 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                       {selected.size > 0 && ` · ${selected.size} selected`}
                     </p>
                     <button
-                      onClick={toggleAll}
+                      onClick={toggleAll} className="pressable"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: sc, fontWeight: 700, padding: 0 }}>
                       {selected.size === debtors.length ? 'Deselect all' : 'Select all'}
                     </button>
                   </div>
 
-                  <div className={styles.list}>
+                  <div className={`${styles.list} stagger`}>
                     {debtors.map((d: any) => (
                       <div
                         key={d.id}
-                        className={styles.card}
+                        className={`${styles.card} pressable animate-fade-up`}
                         onClick={() => toggleSelect(d.id)}
                         style={{ cursor: 'pointer', border: selected.has(d.id) ? `1px solid ${sc}50` : undefined }}>
                         {/* Checkbox */}
@@ -691,7 +692,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       {/* ── SENT HISTORY TAB ────────────────────────────── */}
       {tab === 'history' && (
         loading
-          ? <div className={styles.loading}><span /><span /><span /></div>
+          ? <SkeletonList count={4} variant="row" />
           : history.length === 0
             ? (
               <div className={styles.empty}>
@@ -718,7 +719,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                             {student?.full_name ?? 'Unknown Student'}
                           </p>
                           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                            {student?.class_level ?? '—'} · {fmtDate(item.sent_at ?? item.created_at)}
+                            {student?.class_level ?? 'N/A'} · {fmtDate(item.sent_at ?? item.created_at)}
                           </p>
                         </div>
                         <span style={{

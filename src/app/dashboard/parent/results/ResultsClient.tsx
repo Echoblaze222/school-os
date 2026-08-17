@@ -5,12 +5,13 @@
 // FIXED: child resolved via profiles.parent_id = userId (not a separate table)
 // FIXED: term filter against real DB term values
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import GaugeStat from '@/components/GaugeStat'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { BarChartIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { logActivity } from '@/lib/logActivity'
 
 interface Props {
   profile: any
@@ -39,10 +40,23 @@ export default function ResultsClient({ profile, school, userId, child, results 
   const [termFilter, setTermFilter] = useState('All Terms')
   const sc = school?.primary_color ?? '#800020'
 
+  useEffect(() => {
+    if (results.length > 0 && school?.id) {
+      logActivity({
+        userId, schoolId: school.id,
+        type:  'result_viewed',
+        title: `Viewed ${child?.full_name ?? "your child's"} results`,
+        subtitle: `${results.length} result${results.length !== 1 ? 's' : ''}`,
+        href:  '/dashboard/parent/results',
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const enriched = useMemo(() => results.map((r: any) => ({
     ...r,
-    subject_name: r.class_subjects?.subjects?.name ?? '—',
-    class_name:   r.class_subjects?.classes?.name ?? r.class_subjects?.classes?.class_level ?? '—',
+    subject_name: r.class_subjects?.subjects?.name ?? 'N/A',
+    class_name:   r.class_subjects?.classes?.name ?? r.class_subjects?.classes?.class_level ?? 'N/A',
   })), [results])
 
   const filtered = useMemo(() =>
@@ -95,7 +109,7 @@ export default function ResultsClient({ profile, school, userId, child, results 
       <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
         {TERMS.map(t => (
           <button key={t} onClick={() => setTermFilter(t)}
-            className={termFilter === t ? 'btn-primary' : 'btn-secondary'}
+            className={`${termFilter === t ? 'btn-primary' : 'btn-secondary'} pressable`}
             style={{ padding: '6px 14px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, fontSize: '0.75rem', fontWeight: 700 }}>
             {t}
           </button>
@@ -134,7 +148,7 @@ export default function ResultsClient({ profile, school, userId, child, results 
                     {r.score}<span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>/{r.max_score ?? 100}</span>
                   </td>
                   <td style={{ padding: '10px' }}>
-                    <span style={{ fontWeight: 800, color: gradeColor(r.grade), fontSize: '0.9rem' }}>{r.grade ?? '—'}</span>
+                    <span style={{ fontWeight: 800, color: gradeColor(r.grade), fontSize: '0.9rem' }}>{r.grade ?? 'N/A'}</span>
                   </td>
                 </tr>
               ))}

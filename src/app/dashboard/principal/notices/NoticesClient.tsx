@@ -86,7 +86,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
 
   async function handleDelete(notice: Notice) {
     setDeleting(notice.id)
-    const { error } = await supabase.from('announcements').delete().eq('id', notice.id)
+    const { error } = await supabase.from('announcements').delete().eq('id', notice.id).eq('school_id', school.id)
     setDeleting(null)
     setConfirmDel(null)
     if (error) { showToast('Failed to delete notice', false); return }
@@ -125,8 +125,8 @@ export default function NoticesClient({ profile, school, userId }: Props) {
               "<strong>{confirmDel.title}</strong>" will be permanently deleted and removed from all feeds.
             </p>
             <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmDel(null)}>Cancel</button>
-              <button className={styles.deleteBtn} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className={`${styles.deleteBtn} pressable`} onClick={() => handleDelete(confirmDel)} disabled={deleting === confirmDel.id}>
                 {deleting === confirmDel.id ? 'Deleting…' : 'Delete'}
               </button>
             </div>
@@ -157,7 +157,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
             {(['','all','students','teachers','parents','staff'] as const).map(a => (
               <button
                 key={a}
-                className={`${styles.filterTab} ${filter === a ? styles.filterTabActive : ''}`}
+                className={`${styles.filterTab} ${filter === a ? styles.filterTabActive : ''} pressable`}
                 style={filter === a ? { borderColor: a ? AUDIENCE_COLOR[a as Audience] : sc, color: a ? AUDIENCE_COLOR[a as Audience] : sc } : {}}
                 onClick={() => setFilter(a as any)}
               >
@@ -165,7 +165,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
               </button>
             ))}
           </div>
-          <button className={styles.addBtn} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
+          <button className={`${styles.addBtn} pressable`} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? <><XIcon size={14} /> Close</> : '+ New Notice'}
           </button>
         </div>
@@ -198,8 +198,8 @@ export default function NoticesClient({ profile, school, userId }: Props) {
               </div>
             </div>
             <div className={styles.formActions}>
-              <button className={styles.cancelFormBtn} onClick={() => setShowForm(false)}>Cancel</button>
-              <button className={styles.saveBtn} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.title.trim() || !form.body.trim()}>
+              <button className={`${styles.cancelFormBtn} pressable`} onClick={() => setShowForm(false)}>Cancel</button>
+              <button className={`${styles.saveBtn} pressable`} style={{ background: sc }} onClick={handleCreate} disabled={saving || !form.title.trim() || !form.body.trim()}>
                 {saving ? 'Publishing…' : 'Publish Notice'}
               </button>
             </div>
@@ -214,7 +214,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
         ) : filtered.length === 0 ? (
           <div className={styles.empty}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-            <p>No notices yet — publish one above</p>
+            <p>No notices yet. Publish one above</p>
           </div>
         ) : (
           <div className={styles.noticeList}>
@@ -224,7 +224,7 @@ export default function NoticesClient({ profile, school, userId }: Props) {
               const aColor = AUDIENCE_COLOR[notice.audience ?? 'all']
               return (
                 <div key={notice.id} className={`${styles.noticeCard} ${notice.priority === 'urgent' ? styles.urgentCard : ''}`}>
-                  <div className={styles.noticeTop} onClick={() => setExpanded(isExp ? null : notice.id)}>
+                  <div className={`${styles.noticeTop} pressable`} onClick={() => setExpanded(isExp ? null : notice.id)}>
                     <div className={styles.noticeMeta}>
                       <span className={styles.priorityDot} style={{ background: pColor }}/>
                       <span className={styles.audiencePill} style={{ background: aColor + '20', color: aColor }}>
@@ -232,17 +232,17 @@ export default function NoticesClient({ profile, school, userId }: Props) {
                       </span>
                       <span className={styles.noticeTime}>{relTime(notice.created_at)}</span>
                     </div>
-                    <button className={styles.delIconBtn} onClick={e => { e.stopPropagation(); setConfirmDel(notice) }} title="Delete">
+                    <button className={`${styles.delIconBtn} pressable`} onClick={e => { e.stopPropagation(); setConfirmDel(notice) }} title="Delete">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                     </button>
                   </div>
                   <h3 className={styles.noticeTitle} onClick={() => setExpanded(isExp ? null : notice.id)}>{notice.title}</h3>
                   <p className={styles.noticeBody} style={isExp ? { WebkitLineClamp: 'unset', display:'block' } : {}}>{notice.body}</p>
                   {!isExp && notice.body.length > 120 && (
-                    <button className={styles.readMore} onClick={() => setExpanded(notice.id)}>Read more ↓</button>
+                    <button className={`${styles.readMore} pressable`} onClick={() => setExpanded(notice.id)}>Read more ↓</button>
                   )}
                   {isExp && (
-                    <button className={styles.readMore} onClick={() => setExpanded(null)}>Show less ↑</button>
+                    <button className={`${styles.readMore} pressable`} onClick={() => setExpanded(null)}>Show less ↑</button>
                   )}
                 </div>
               )

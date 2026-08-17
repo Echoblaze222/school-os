@@ -228,7 +228,7 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
       {showPay && (
         <div className={styles.payOverlay} onClick={() => setShowPay(false)}>
           <div className={styles.payModal} onClick={e => e.stopPropagation()}>
-            <h4>Confirm Payment — {school.name}</h4>
+            <h4>Confirm Payment: {school.name}</h4>
 
             {school.setup_status !== 'active' && (
               <>
@@ -250,9 +250,9 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
               <>
                 <label className={styles.label}>Subscription Plan</label>
                 <select className={styles.input} value={payPlan} onChange={e => setPayPlan(e.target.value)}>
-                  <option value="basic_500">₦500/month — Basic</option>
-                  <option value="standard_1000">₦1,000/month — Standard</option>
-                  <option value="premium_2000">₦2,000/month — Premium</option>
+                  <option value="basic_500">₦500/month (Basic)</option>
+                  <option value="standard_1000">₦1,000/month (Standard)</option>
+                  <option value="premium_2000">₦2,000/month (Premium)</option>
                   <option value="installment_3month">Installment (3 months)</option>
                 </select>
                 <label className={styles.label}>Amount Paid (₦)</label>

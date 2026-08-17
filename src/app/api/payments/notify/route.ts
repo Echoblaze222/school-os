@@ -6,11 +6,27 @@ import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: Request) {
-  // 1. Auth check — must be a logged-in bursar (or any school staff)
+  // 1. Auth + role check — the comment above always claimed this required
+  // "a logged-in bursar (or any school staff)" but the code never actually
+  // checked role, only that *someone* was logged in. Combined with the
+  // admin client below (which bypasses RLS) and a client-supplied
+  // payment_id with no school check, any authenticated user of any role at
+  // any school could trigger fabricated "Payment Received" notifications
+  // for a completely different school's real payment.
   const supabase = await createClient()
   const { data: { user }, error: authErr } = await supabase.auth.getUser()
   if (authErr || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role, school_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!callerProfile || !['bursar', 'principal', 'secretary', 'admin'].includes(callerProfile.role)) {
+    return NextResponse.json({ error: 'Not permitted' }, { status: 403 })
   }
 
   const { payment_id } = await req.json()
@@ -37,6 +53,10 @@ export async function POST(req: Request) {
 
   if (pmtErr || !payment) {
     return NextResponse.json({ error: pmtErr?.message ?? 'Payment not found' }, { status: 404 })
+  }
+
+  if (payment.school_id !== callerProfile.school_id) {
+    return NextResponse.json({ error: 'This payment does not belong to your school.' }, { status: 403 })
   }
 
   const schoolId      = payment.school_id

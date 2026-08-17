@@ -11,6 +11,8 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { ClockIcon, CreditCardIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -134,7 +136,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
       {/* ── Payment Preview Modal ── */}
       {preview && (
         <div style={OVERLAY} onClick={() => setPreview(null)}>
-          <div style={SHEET} onClick={e => e.stopPropagation()}>
+          <div className="animate-slide-up" style={SHEET} onClick={e => e.stopPropagation()}>
             <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
 
             <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 12px',
@@ -157,9 +159,9 @@ export default function HistoryClient({ profile, school, userId }: Props) {
             {/* Detail rows */}
             {([
               ['Student',    preview.student_name],
-              ['Class',      preview.class_level  || '—'],
+              ['Class',      preview.class_level  || 'N/A'],
               ['Fee Type',   preview.fee_type?.replace(/_/g,' ')],
-              ['Term',       preview.term         || '—'],
+              ['Term',       preview.term         || 'N/A'],
               ['Currency',   preview.currency     || 'NGN'],
               ['Date',       fmtDate(preview.created_at)],
             ] as [string, string][]).map(([label, value]) => (
@@ -169,7 +171,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
               </div>
             ))}
 
-            <button onClick={() => setPreview(null)}
+            <button onClick={() => setPreview(null)} className="pressable"
               style={{ width:'100%', height:42, marginTop:16,
                 background:'var(--input-bg)', color:'var(--text-primary)',
                 border:'1px solid var(--input-border)', borderRadius:10,
@@ -187,14 +189,14 @@ export default function HistoryClient({ profile, school, userId }: Props) {
             width:110, flexShrink:0 }}/>
         <div className={styles.subjectScroll} style={{ flex:1 }}>
           <button onClick={() => setTerm(null)}
-            className={`${styles.subjectPill} ${!term ? styles.subjectPillActive : ''}`}
+            className={`${styles.subjectPill} pressable ${!term ? styles.subjectPillActive : ''}`}
             style={!term ? { background:sc, borderColor:sc, color:'#fff' }
               : { borderColor:sc+'50', color:sc }}>
             All
           </button>
           {TERMS.map(t => (
             <button key={t} onClick={() => setTerm(t)}
-              className={`${styles.subjectPill} ${term===t ? styles.subjectPillActive : ''}`}
+              className={`${styles.subjectPill} pressable ${term===t ? styles.subjectPillActive : ''}`}
               style={term===t ? { background:sc, borderColor:sc, color:'#fff' }
                 : { borderColor:sc+'50', color:sc }}>
               {t.replace(' Term','')}
@@ -216,7 +218,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
           border:`1px solid ${sc}30`, borderRadius:10, marginBottom:'var(--space-4)' }}>
           <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)',
             letterSpacing:'0.05em', margin:'0 0 4px' }}>
-            TOTAL — {payments.length} PAYMENT{payments.length !== 1 ? 'S' : ''}
+            TOTAL, {payments.length} PAYMENT{payments.length !== 1 ? 'S' : ''}
           </p>
           <p style={{ fontSize:'1.1rem', fontWeight:800, color:sc, margin:0 }}>
             {fmtAmt(totalShown)}
@@ -225,15 +227,16 @@ export default function HistoryClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="row" />
         : payments.length === 0
-          ? <div className={styles.empty}>
-              <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No payments recorded for {year}</p>
-            </div>
-          : <div className={styles.list}>
+          ? <EmptyState
+              icon={<ClockIcon size={40} color="var(--text-faint)" strokeWidth={1}/>}
+              title={`No payments recorded for ${year}`}
+              subtitle="Payments you record will show up here, filterable by term."
+            />
+          : <div className={`${styles.list} stagger`}>
               {payments.map((p: any) => (
-                <div key={p.id} className={styles.card}
+                <div key={p.id} className={`${styles.card} pressable animate-fade-up`}
                   style={{ cursor:'pointer' }}
                   onClick={() => setPreview(p)}>
                   <div className={styles.cardIcon} style={{ background:sc+'20' }}>

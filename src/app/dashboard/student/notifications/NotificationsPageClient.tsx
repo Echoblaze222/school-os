@@ -31,6 +31,7 @@ import { createClient } from '@/lib/supabase/client'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import RoleNav from '@/components/RoleNav'
 import styles from './notifications.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 interface Notification {
   id: string
@@ -418,10 +419,11 @@ export default function NotificationsPageClient({
             return (
               <div key={group}>
                 <p className={styles.dateGroup}>{group}</p>
-                {items.map(notif => (
+                {items.map((notif, i) => (
                   <button
                     key={notif.id}
-                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''}`}
+                    className={`${styles.notifItem} ${!notif.is_read ? styles.unread : ''} ${motion.staggerItem}`}
+                    style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
                     onClick={() => handleClick(notif)}
                   >
                     <div className={`${styles.notifIcon} ${!notif.is_read ? styles.notifIconUnread : ''}`}>

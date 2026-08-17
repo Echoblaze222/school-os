@@ -243,7 +243,7 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
 
             <p className={styles.sectionLabel}>Platform-wide user breakdown coming soon</p>
             <p className={styles.comingSoonNote}>
-              This section will show detailed analytics of users across all schools — active sessions, role distribution, onboarding rates, and more.
+              This section will show detailed analytics of users across all schools: active sessions, role distribution, onboarding rates, and more.
             </p>
           </>
         )}

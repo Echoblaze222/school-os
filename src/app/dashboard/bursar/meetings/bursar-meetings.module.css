@@ -138,6 +138,9 @@
 .listJoinBtn:hover {
   background: rgba(123, 47, 190, 0.25);
 }
+.listJoinBtn:active {
+  transform: scale(0.96);
+}
 
 .emptyState {
   display: flex;

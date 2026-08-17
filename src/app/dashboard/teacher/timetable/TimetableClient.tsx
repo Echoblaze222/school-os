@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
 import { ClockIcon, PlusIcon, AlertIcon, XIcon, MapPinIcon } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -165,7 +166,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
 
   async function deletePeriod(id: string) {
     setError(null)
-    const { error: err } = await supabase.from('timetable').delete().eq('id', id)
+    const { error: err } = await supabase.from('timetable').delete().eq('id', id).eq('teacher_id', userId)
     if (err) { setError(err.message); return }
     setPeriods(prev => prev.filter(p => p.id !== id))
   }
@@ -197,12 +198,12 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       <div className={styles.dayTabs} style={{ marginBottom: 'var(--space-4)' }}>
         {DAYS.map(d => (
           <button key={d} onClick={() => setDay(d)}
-            className={`${styles.dayTab} ${day === d ? styles.dayTabActive : ''}`}
+            className={`${styles.dayTab} ${day === d ? styles.dayTabActive : ''} pressable`}
             style={day === d ? { background: sc, color: '#fff', borderColor: sc } : {}}>
             {d.slice(0, 3)}
           </button>
         ))}
-        <button onClick={() => setShowForm(!showForm)}
+        <button className="pressable" onClick={() => setShowForm(!showForm)}
           style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}>
           <PlusIcon size={13} color="white" /> Add
         </button>
@@ -211,14 +212,14 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
-          <button onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
+          <button className="pressable" onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
       {showForm && (
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
           <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>
-            Add Period — {day}
+            Add Period: {day}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -259,11 +260,11 @@ export default function TimetableClient({ profile, school, userId }: Props) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-            <button onClick={create} disabled={saving || !form.class_id || !form.class_subject_id}
+            <button className="pressable" onClick={create} disabled={saving || !form.class_id || !form.class_subject_id}
               style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving || !form.class_subject_id ? 0.5 : 1 }}>
               {saving ? 'Adding...' : 'Add Period'}
             </button>
-            <button onClick={() => setShowForm(false)}
+            <button className="pressable" onClick={() => setShowForm(false)}
               style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
@@ -272,7 +273,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span /><span /><span /></div>
+        ? <SkeletonList count={3} variant="row" />
         : periods.length === 0
           ? <div className={styles.empty}><ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No periods for {day}</p></div>
           : <div className={styles.periodList}>
@@ -296,7 +297,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                         <span>{duration(p.start_time, p.end_time)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        {/* Reminder — only if the period hasn't started yet today */}
+                        {/* Reminder - only if the period hasn't started yet today */}
                         {stillFuture && (
                           <ReminderButton
                             sourceType="timetable"
@@ -309,7 +310,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                             size="sm"
                           />
                         )}
-                        <button onClick={() => deletePeriod(p.id)}
+                        <button className="pressable" onClick={() => deletePeriod(p.id)}
                           style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
                           Remove
                         </button>

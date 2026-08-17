@@ -1,5 +1,5 @@
 // src/app/dashboard/teacher/report-cards/page.tsx
-// Only meaningful for the CLASS teacher (is_primary=true in class_teachers) —
+// Only meaningful for the CLASS teacher (is_primary=true in class_teachers) -
 // subject teachers don't compile the overall report card.
 
 import { createClient } from '@/lib/supabase/server'

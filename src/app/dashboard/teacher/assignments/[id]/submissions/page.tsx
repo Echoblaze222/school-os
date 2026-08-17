@@ -1,5 +1,5 @@
 // src/app/dashboard/teacher/assignments/[id]/submissions/page.tsx
-// Server Component — loads one assignment and all its student submissions
+// Server Component - loads one assignment and all its student submissions
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'

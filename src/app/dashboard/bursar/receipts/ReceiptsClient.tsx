@@ -13,6 +13,8 @@ import { FileTextIcon, AlertIcon, DownloadIcon } from '@/components/Icons'
 import { getCurrentAcademicYear, getCurrentTerm } from '@/lib/utils/term'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -196,7 +198,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       {/* ── Receipt Preview Modal ── */}
       {selected && (
         <div style={OVERLAY} onClick={() => setSelected(null)}>
-          <div style={SHEET} onClick={e => e.stopPropagation()}>
+          <div className="animate-slide-up" style={SHEET} onClick={e => e.stopPropagation()}>
             <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
 
             {/* Header */}
@@ -230,10 +232,10 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
             {/* Detail rows */}
             {([
               ['Student',        selected.student_name],
-              ['Class',          selected.class_level          || '—'],
+              ['Class',          selected.class_level          || 'N/A'],
               ['Fee Type',       selected.fee_type?.replace(/_/g,' ')],
-              ['Term',           selected.term                 || '—'],
-              ['Academic Year',  selected.academic_year        || '—'],
+              ['Term',           selected.term                 || 'N/A'],
+              ['Academic Year',  selected.academic_year        || 'N/A'],
               ['Payment Method', selected.payment_method?.replace(/_/g,' ')],
               selected.reference ? ['Reference / Teller', selected.reference] : null,
               selected.notes     ? ['Notes',               selected.notes]    : null,
@@ -257,12 +259,12 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
 
             {/* Actions */}
             <div style={{ display:'flex', gap:10, marginTop:16 }}>
-              <button onClick={() => downloadReceipt(selected)}
+              <button onClick={() => downloadReceipt(selected)} className="pressable"
                 style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
                   display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                 <DownloadIcon size={15} color="#fff" /> Download / Print
               </button>
-              <button onClick={() => setSelected(null)}
+              <button onClick={() => setSelected(null)} className="pressable"
                 style={{ flex:1, height:44, background:'var(--input-bg)', color:'var(--text-primary)', border:'1px solid var(--input-border)', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
                 Close
               </button>
@@ -279,7 +281,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
         <div className={styles.tabs} style={{ flex:1 }}>
           {TERMS.map(t => (
             <button key={t} onClick={() => setTerm(t)}
-              className={`${styles.tab} ${term===t ? styles.tabActive : ''}`}
+              className={`${styles.tab} pressable ${term===t ? styles.tabActive : ''}`}
               style={term===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
               {t.replace(' Term','')}
             </button>
@@ -303,15 +305,16 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={4} variant="row" />
         : payments.length === 0
-          ? <div className={styles.empty}>
-              <FileTextIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No receipts for {term} {year}</p>
-            </div>
-          : <div className={styles.list}>
+          ? <EmptyState
+              icon={<FileTextIcon size={40} color="var(--text-faint)" strokeWidth={1}/>}
+              title={`No receipts for ${term} ${year}`}
+              subtitle="Receipts generate automatically whenever a payment is recorded."
+            />
+          : <div className={`${styles.list} stagger`}>
               {payments.map((p: any) => (
-                <div key={p.id} className={styles.card}
+                <div key={p.id} className={`${styles.card} pressable animate-fade-up`}
                   style={{ cursor:'pointer' }}
                   onClick={() => setSelected(p)}>
                   <div className={styles.cardIcon} style={{ background:sc+'20' }}>
@@ -331,7 +334,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
                     <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}>
                       {fmtShort(p.created_at)}
                     </p>
-                    <button onClick={e => { e.stopPropagation(); downloadReceipt(p) }}
+                    <button onClick={e => { e.stopPropagation(); downloadReceipt(p) }} className="pressable"
                       style={{ fontSize:'0.65rem', fontWeight:700, color:sc,
                         background:sc+'15', border:`1px solid ${sc}40`,
                         borderRadius:5, padding:'2px 7px', cursor:'pointer',

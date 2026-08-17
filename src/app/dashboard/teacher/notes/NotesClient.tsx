@@ -1,12 +1,12 @@
 'use client'
 // src/app/dashboard/teacher/notes/NotesClient.tsx
 // FIXES:
-//   1. `term` is a Postgres ENUM accepting only 'first' | 'second' | 'third' —
+//   1. `term` is a Postgres ENUM accepting only 'first' | 'second' | 'third' -
 //      the UI was sending 'First Term' / 'Second Term' / 'Third Term' straight
 //      through, which Postgres rejected with "invalid input value for enum term".
 //      The dropdown still shows friendly labels; we map to the enum value only
 //      when writing, and map back to a friendly label only when displaying.
-//   2. Added visible error display on save failure — previously errors were
+//   2. Added visible error display on save failure - previously errors were
 //      silently swallowed (only logged to console), so a failed save looked
 //      identical to nothing happening at all.
 
@@ -17,6 +17,7 @@ import { BookIcon, PlusIcon, DownloadIcon, AlertIcon, XIcon, EditIcon, FileTextI
 import NoteBook from '@/components/NoteBook'
 import DocumentViewer from '@/components/DocumentViewer'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -199,7 +200,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Study Notes">
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
-        <button onClick={() => setShowForm(!showForm)}
+        <button className="pressable" onClick={() => setShowForm(!showForm)}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> New Note
         </button>
@@ -209,7 +210,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
-          <button onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
+          <button className="pressable" onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
@@ -247,13 +248,13 @@ export default function NotesClient({ profile, school, userId }: Props) {
           <div style={{ marginBottom: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Title *</label>
             <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Chapter 5 — Photosynthesis"
+              placeholder="e.g. Chapter 5: Photosynthesis"
               style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-3)' }}>
             {(['type', 'upload'] as const).map(mode => (
-              <button key={mode} onClick={() => setUploadMode(mode)}
+              <button className="pressable" key={mode} onClick={() => setUploadMode(mode)}
                 style={{ flex: 1, height: 36, borderRadius: 8, border: `1px solid ${uploadMode === mode ? sc : 'var(--glass-border)'}`, background: uploadMode === mode ? sc + '20' : 'transparent', color: uploadMode === mode ? sc : 'var(--text-muted)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
                 {mode === 'type'
                   ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><EditIcon size={14} /></span>Type Note</>
@@ -272,7 +273,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
           ) : (
             <div style={{ marginBottom: 'var(--space-3)' }}>
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" onChange={handleFileChange} style={{ display: 'none' }} />
-              <button onClick={() => fileRef.current?.click()}
+              <button className="pressable" onClick={() => fileRef.current?.click()}
                 style={{ width: '100%', height: 80, border: `2px dashed ${uploadedFile ? sc : 'var(--glass-border)'}`, borderRadius: 10, background: uploadedFile ? sc + '10' : 'transparent', color: uploadedFile ? sc : 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
                 {uploadedFile
                   ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={14} /></span>{uploadedFile.name}</>
@@ -283,12 +284,12 @@ export default function NotesClient({ profile, school, userId }: Props) {
           )}
 
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button onClick={createNote}
+            <button className="pressable" onClick={createNote}
               disabled={saving || !form.title || !form.class_id || (uploadMode === 'type' && !form.content) || (uploadMode === 'upload' && !uploadedFile)}
               style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Save Note'}
             </button>
-            <button onClick={() => { setShowForm(false); setUploadedFile(null) }}
+            <button className="pressable" onClick={() => { setShowForm(false); setUploadedFile(null) }}
               style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
@@ -296,7 +297,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
         </div>
       )}
 
-      {loading ? <div className={styles.loading}><span /><span /><span /></div>
+      {loading ? <SkeletonList count={4} variant="card" />
         : rows.length === 0
           ? <div className={styles.empty}><BookIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No notes yet. Create your first note.</p></div>
           : <div className={styles.list}>
@@ -326,14 +327,14 @@ export default function NotesClient({ profile, school, userId }: Props) {
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 'var(--space-2)' }}>
                       {item.description && (
-                        <button onClick={() => setPreviewBook(item)}
+                        <button className="pressable" onClick={() => setPreviewBook(item)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                           <BookOpenIcon size={13} color="#fff" /> Preview as Flip-Book
                         </button>
                       )}
                       {item.file_url && (
                         <>
-                          <button onClick={() => setPreviewDoc(item)}
+                          <button className="pressable" onClick={() => setPreviewDoc(item)}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc + '20', color: sc, border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                             <FileTextIcon size={13} color={sc} /> Preview In-App
                           </button>
@@ -345,7 +346,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                       )}
                     </div>
                     <br />
-                    <button onClick={() => deleteNote(item.id)}
+                    <button className="pressable" onClick={() => deleteNote(item.id)}
                       style={{ marginTop: 6, padding: '5px 12px', background: 'transparent', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.72rem', color: 'var(--danger)', cursor: 'pointer' }}>
                       Delete Note
                     </button>

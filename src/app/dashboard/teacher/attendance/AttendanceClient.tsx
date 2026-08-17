@@ -8,7 +8,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { CalendarIcon, CheckCircleIcon, ClockIcon, CrownIcon } from '@/components/Icons'
+import { logActivity } from '@/lib/logActivity'
 import GaugeStat from '@/components/GaugeStat'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from './attendance.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -131,7 +133,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     if (!selectedClass) return
     setSaving(true)
     setSaveError(null)
-    // teacher_id DOES exist on attendance — needed for RLS scoping on teacher reads (History tab, etc.)
+    // teacher_id DOES exist on attendance - needed for RLS scoping on teacher reads (History tab, etc.)
     const rows = students.map((s: any) => ({
       school_id: school?.id,
       student_id: s.id,
@@ -155,7 +157,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       const { error: insertError } = await supabase.from('attendance').insert(rows)
       if (insertError) {
         // FIX: previously this failure was silently swallowed and the UI
-        // showed "Attendance Saved" regardless — meaning attendance could
+        // showed "Attendance Saved" regardless - meaning attendance could
         // fail to write entirely (e.g. an RLS policy blocking the insert)
         // with no indication anything was wrong.
         setSaveError(insertError.message)
@@ -166,6 +168,14 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     }
     setSaved(true)
     setSaving(false)
+
+    logActivity({
+      userId, schoolId: school?.id,
+      type:  'attendance_marked',
+      title: `Marked attendance for ${selectedClass.class_name}`,
+      subtitle: `${students.length} student${students.length !== 1 ? 's' : ''} · ${date}`,
+      href:  '/dashboard/teacher/attendance',
+    })
   }
 
   async function loadHistory(classId: string) {
@@ -201,7 +211,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     setExpandedDate(d)
     setExpandedLoading(true)
     // Supabase cannot auto-resolve profiles join on attendance because two FKs
-    // point to profiles (student_id + teacher_id) — fetch separately instead
+    // point to profiles (student_id + teacher_id) - fetch separately instead
     const { data: rows } = await supabase
       .from("attendance")
       .select("student_id, status, is_present")
@@ -231,7 +241,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
   if (loading && teacherClasses.length === 0) return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
-      <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading your classes...</div>
+      <SkeletonList count={4} variant="row" />
     </RolePageWrapper>
   )
 
@@ -250,7 +260,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       {/* Class selector */}
       <div style={{ overflowX: "auto", display: "flex", gap: 8, marginBottom: "var(--space-4)", paddingBottom: 4 }}>
         {teacherClasses.map(cls => (
-          <button key={cls.class_id + (cls.subject ?? "")}
+          <button className="pressable" key={cls.class_id + (cls.subject ?? "")}
             onClick={() => { setSelectedClass(cls); setSaved(false) }}
             style={{ flexShrink: 0, padding: "6px 14px", borderRadius: 999, border: "1px solid " + (selectedClass?.class_id === cls.class_id ? sc : sc + "40"), background: selectedClass?.class_id === cls.class_id ? sc : "transparent", color: selectedClass?.class_id === cls.class_id ? "#fff" : sc, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             {cls.class_name}{cls.subject ? " · " + cls.subject : ""}{cls.is_primary && <span style={{ display:'inline-flex', marginLeft: 4, verticalAlign: "middle" }}><CrownIcon size={12} /></span>}
@@ -261,7 +271,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: "var(--space-4)", background: "var(--glass-bg)", padding: 4, borderRadius: 10, border: "1px solid var(--glass-border)" }}>
         {(["mark", "history"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
+          <button className="pressable" key={t} onClick={() => setTab(t)}
             style={{ flex: 1, padding: "8px 0", borderRadius: 7, background: tab === t ? sc : "transparent", color: tab === t ? "#fff" : "var(--text-muted)", fontWeight: 700, fontSize: "0.8rem", border: "none", cursor: "pointer", transition: "all 0.15s", textTransform: "capitalize" }}>
             {t === "mark" ? "Mark Attendance" : "History"}
           </button>
@@ -286,7 +296,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
           </div>
         )}
 
-        {/* Summary — GaugeStat ring row matches dashboard treatment */}
+        {/* Summary - GaugeStat ring row matches dashboard treatment */}
         {students.length > 0 && (
           <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-4)" }}>
             {[
@@ -304,7 +314,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
         {/* Student list */}
         {loading ? (
-          <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 20 }}>Loading students...</div>
+          <SkeletonList count={5} variant="row" />
         ) : students.length === 0 ? (
           <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 20 }}>No students in this class.</div>
         ) : (
@@ -313,7 +323,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
               const status = records[s.id] ?? "present"
               const st = STATUS_COLORS[status]
               return (
-                <button key={s.id} onClick={() => toggle(s.id)}
+                <button className="pressable" key={s.id} onClick={() => toggle(s.id)}
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: st.bg, border: "1px solid " + st.color + "40", borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.15s" }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: sc + "20", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
                     {s.avatar_url
@@ -335,7 +345,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         )}
 
         {students.length > 0 && (
-          <button onClick={submit} disabled={saving || saved}
+          <button className="pressable" onClick={submit} disabled={saving || saved}
             style={{ width: "100%", height: 46, background: saved ? "color-mix(in srgb, var(--success) 13%, transparent)" : sc, border: "1px solid " + (saved ? "var(--success)" : "transparent"), borderRadius: 10, color: saved ? "var(--success)" : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {saved
               ? <><CheckCircleIcon size={16} color="var(--success)" /> Attendance Saved</>
@@ -365,7 +375,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                 const label = d.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
                 return (
                   <div key={h.date} className="glass-card" style={{ borderRadius: 10, overflow: "hidden" }}>
-                    <button onClick={() => loadExpandedDay(h.date)}
+                    <button className="pressable" onClick={() => loadExpandedDay(h.date)}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                       {/* Rate circle */}
                       <div style={{ width: 40, height: 40, borderRadius: "50%", background: rateColor + "18", border: "2px solid " + rateColor + "50", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

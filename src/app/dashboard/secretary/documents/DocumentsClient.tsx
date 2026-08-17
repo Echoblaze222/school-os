@@ -10,6 +10,7 @@ import {
   FileTextIcon, ImageIcon,
 } from '@/components/Icons'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 const DOC_CATS = ['General', 'Admissions', 'Academic', 'Finance', 'Legal', 'HR', 'Other']
 const CAT_COLORS: Record<string, string> = {
@@ -28,6 +29,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
   const [search,  setSearch] = useState('')
   const [modal,   setModal]  = useState(false)
   const [saving,  setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Doc | null>(null)
   const [msg,     setMsg]    = useState('')
   const [form,    setForm]   = useState({ title: '', category: 'General' })
   const [file,    setFile]   = useState<File | null>(null)
@@ -75,6 +77,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
   async function deleteDoc(id: string) {
     await supabase.from('school_documents').delete().eq('id', id)
     setDocs(p => p.filter(d => d.id !== id))
+    setDeleteTarget(null)
   }
 
   function fileIcon(url: string | null, size = 20, color?: string) {
@@ -84,7 +87,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
   }
 
   function formatSize(bytes: number | null) {
-    if (!bytes) return '—'
+    if (!bytes) return 'N/A'
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024*1024) return `${(bytes/1024).toFixed(0)} KB`
     return `${(bytes/1024/1024).toFixed(1)} MB`
@@ -116,8 +119,8 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
       {filtered.length === 0 ? (
         <div className={styles.emptyState}><FolderIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No documents</p><p className={styles.emptyHint}>Upload school documents, forms, and policies</p></div>
       ) : (
-        filtered.map(d => (
-          <div key={d.id} className={styles.listItem} onClick={() => setPreviewItem(d)} style={{ cursor: 'pointer' }}>
+        filtered.map((d, i) => (
+          <div key={d.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ cursor: 'pointer', animationDelay: `${Math.min(i, 8) * 40}ms` }} onClick={() => setPreviewItem(d)}>
             <div className={styles.listIconBox} style={{ background: (CAT_COLORS[d.category] ?? sc) + '22' }}>
               {fileIcon(d.file_url, 19, CAT_COLORS[d.category] ?? sc)}
             </div>
@@ -132,7 +135,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
                   <DownloadIcon size={14} />
                 </a>
               )}
-              <button onClick={e => { e.stopPropagation(); deleteDoc(d.id) }} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button className="pressable" onClick={e => { e.stopPropagation(); setDeleteTarget(d) }} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrashIcon size={14} color="var(--danger)" />
               </button>
             </div>
@@ -212,6 +215,17 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
           </div>
         </div>
       )}
+
+      {deleteTarget && (
+        <div className={styles.modalOverlay} onClick={() => setDeleteTarget(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Delete document?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>&quot;<strong>{deleteTarget.title}</strong>&quot; will be permanently removed. This can&apos;t be undone.</p>
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setDeleteTarget(null)}>Cancel</button><button className={styles.btnDanger} onClick={() => deleteDoc(deleteTarget.id)}>Delete</button></div>
+          </div>
+        </div>
+      )}
+
       <div style={{ height: 110 }} />
     </RolePageWrapper>
   )

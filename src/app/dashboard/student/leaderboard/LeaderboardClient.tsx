@@ -11,6 +11,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { TrophyIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface LeaderboardEntry {
   student_id: string
@@ -146,7 +147,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
       const cl = (classRows ?? []).find((c: any) => c.id === resolvedClassId)
       spMap[s.id] = {
         class_id:    resolvedClassId ?? null,
-        class_level: cl?.class_level ?? cl?.name ?? '—',
+        class_level: cl?.class_level ?? cl?.name ?? 'N/A',
       }
     })
 
@@ -179,7 +180,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     // 3. Group by student and calculate scores
     const entries: LeaderboardEntry[] = students.map((s: any) => {
       const sp         = spMap[s.id]
-      const classLevel = sp?.class_level ?? '—'
+      const classLevel = sp?.class_level ?? 'N/A'
       const classId    = sp?.class_id    ?? null
 
       // Quiz avg
@@ -249,11 +250,11 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     <RolePageWrapper userId={userId} role={isParent ? 'parent' : 'student'} profile={profile} school={school} title="Leaderboard">
         <>
           {loading ? (
-            <div className={styles.loading}><span /><span /><span /></div>
+            <SkeletonList count={3} variant="row" />
           ) : board.length === 0 ? (
             <div className={`${styles.empty} ${motion.riseIn}`}>
               <TrophyIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-              <p>{debugMsg || 'No scores yet — complete quizzes, assignments, or exams to appear here.'}</p>
+              <p>{debugMsg || 'No scores yet. Complete quizzes, assignments, or exams to appear here.'}</p>
             </div>
           ) : (
             <>

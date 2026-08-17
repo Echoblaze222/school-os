@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './principal-meetings.module.css'
+import { logActivity } from '@/lib/logActivity'
 import type { MeetingRow, ClassOption } from './page'
 
 interface Props {
@@ -169,7 +170,7 @@ export default function PrincipalMeetingsClient({
             <div className={styles.typeGrid}>
               {(Object.entries(MEETING_TYPE_LABELS) as [MeetingType, string][]).map(([k, v]) => (
                 <button key={k} type="button"
-                  className={`${styles.typeBtn} ${type === k ? styles.typeBtnActive : ''}`}
+                  className={`${styles.typeBtn} ${type === k ? styles.typeBtnActive : ''} pressable`}
                   onClick={() => setType(k)}>
                   {v}
                 </button>
@@ -201,13 +202,13 @@ export default function PrincipalMeetingsClient({
               </div>
               <div className={styles.segmentToggle}>
                 <button type="button"
-                  className={`${styles.segBtn} ${!isOnline ? styles.segBtnActive : ''}`}
+                  className={`${styles.segBtn} ${!isOnline ? styles.segBtnActive : ''} pressable`}
                   onClick={() => setIsOnline(false)}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   In-Person
                 </button>
                 <button type="button"
-                  className={`${styles.segBtn} ${isOnline ? styles.segBtnActive : ''}`}
+                  className={`${styles.segBtn} ${isOnline ? styles.segBtnActive : ''} pressable`}
                   onClick={() => setIsOnline(true)}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
                   Online
@@ -251,7 +252,7 @@ export default function PrincipalMeetingsClient({
             <div className={styles.audienceGrid}>
               {(Object.entries(AUDIENCE_LABELS) as [Audience, string][]).map(([k, v]) => (
                 <button key={k} type="button"
-                  className={`${styles.audienceBtn} ${audience === k ? styles.audienceBtnActive : ''}`}
+                  className={`${styles.audienceBtn} ${audience === k ? styles.audienceBtnActive : ''} pressable`}
                   onClick={() => setAudience(k)}>
                   {v}
                 </button>
@@ -273,13 +274,13 @@ export default function PrincipalMeetingsClient({
           )}
 
           <div className={styles.formActions}>
-            <button type="button" className="btn btn-ghost"
+            <button type="button" className="btn btn-ghost pressable"
               onClick={() => { resetForm(); setMode('list') }}
               disabled={submitting}>
               Cancel
             </button>
             <button type="button"
-              className={`btn btn-primary ${styles.submitBtn}`}
+              className={`btn btn-primary ${styles.submitBtn} pressable`}
               style={{ background: sc }}
               onClick={handleCreate}
               disabled={submitting}>
@@ -304,7 +305,7 @@ export default function PrincipalMeetingsClient({
           <div className={styles.listToolbar}>
             <p className={styles.listCount}>{meetings.length} meeting{meetings.length !== 1 ? 's' : ''}</p>
             <button
-              className={styles.createBtn}
+              className={`${styles.createBtn} pressable`}
               style={{ background: sc }}
               onClick={() => { resetForm(); setMode('create') }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -397,7 +398,8 @@ function MeetingListCard({
         )}
         {meeting.meeting_url && !isPast && (
           <a href={meeting.meeting_url} target="_blank" rel="noopener noreferrer"
-            className={styles.listJoinBtn}>
+            className={styles.listJoinBtn}
+            onClick={() => logActivity({ userId, schoolId, type: 'meeting_joined', title: `Joined "${meeting.title}"`, href: '/dashboard/principal/meetings' })}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
             Join Meeting
           </a>

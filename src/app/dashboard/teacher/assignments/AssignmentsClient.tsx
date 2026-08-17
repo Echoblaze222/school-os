@@ -1,17 +1,17 @@
 'use client'
 // src/app/dashboard/teacher/assignments/AssignmentsClient.tsx
 //
-// FIXED — 5 bugs that caused assignment creation to silently fail:
+// FIXED - 5 bugs that caused assignment creation to silently fail:
 //
 // BUG 1 (CRITICAL): insert/update never checked { error } from Supabase.
 //   When the DB rejected the insert (RLS, constraint, anything), the code
-//   just continued — cleared the form and closed the panel as if it worked.
+//   just continued - cleared the form and closed the panel as if it worked.
 //   Teacher saw no error, assignment was never saved.
 //   Fix: destructure { error } from both insert and update, surface to UI.
 //
 // BUG 2 (CRITICAL): class_subject_id lookup picked the wrong row.
 //   class_subjects query only filtered by class_id (no teacher_id filter),
-//   so it returned the first subject for that class — not THIS teacher's
+//   so it returned the first subject for that class - not THIS teacher's
 //   subject. A Maths teacher in JSS1 got JSS1's English class_subject_id.
 //   Fix: also filter class_subjects by teacher_id = userId.
 //
@@ -38,6 +38,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { ClipboardIcon, PlusIcon, AlertIcon, XIcon, PaperclipIcon } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -271,7 +272,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
         console.error('[assignments] insert error:', error.message)
         // Surface a helpful message for the most common causes
         if (error.message.includes('row-level security') || error.message.includes('new row')) {
-          setSaveError('Permission denied — check Supabase RLS policies on the assignments table.')
+          setSaveError('Permission denied. Check Supabase RLS policies on the assignments table.')
         } else if (error.message.includes('violates not-null')) {
           setSaveError(`Missing required field: ${error.message}`)
         } else {
@@ -298,12 +299,12 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {(['active', 'past'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${tab === t ? styles.tabActive : ''} pressable`}
             style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
             {t === 'active' ? 'Active' : 'Past'}
           </button>
         ))}
-        <button onClick={openCreate}
+        <button className="pressable" onClick={openCreate}
           style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
             padding: '7px 14px', background: sc, color: '#fff', border: 'none',
             borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
@@ -326,7 +327,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10,
               marginBottom: 'var(--space-4)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={13} color="var(--danger)" /> {saveError}</span>
-              <button onClick={() => setSaveError(null)}
+              <button className="pressable" onClick={() => setSaveError(null)}
                 style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)',
                   cursor: 'pointer' }}><XIcon size={15} color="var(--danger)" /></button>
             </div>
@@ -345,7 +346,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                   color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
             </div>
 
-            {/* Class — auto-sets class_subject_id when selected */}
+            {/* Class - auto-sets class_subject_id when selected */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Class *</label>
               <select value={form.class_id}
@@ -369,7 +370,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               </select>
               {teacherClasses.length === 0 && (
                 <span style={{ fontSize: '0.68rem', color: 'var(--warning)' }}>
-                  No classes assigned yet — ask admin to assign you to a class.
+                  No classes assigned yet. Ask admin to assign you to a class.
                 </span>
               )}
             </div>
@@ -413,7 +414,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
                 onChange={e => setAttachFile(e.target.files?.[0] ?? null)}
                 style={{ display: 'none' }} />
-              <button onClick={() => fileRef.current?.click()}
+              <button className="pressable" onClick={() => fileRef.current?.click()}
                 style={{ width: '100%', height: 44,
                   border: `1.5px dashed ${attachFile ? sc : 'var(--glass-border)'}`,
                   borderRadius: 8, background: attachFile ? sc + '10' : 'transparent',
@@ -426,7 +427,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                   : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={13} /></span>Attach file (optional)</>}
               </button>
               {attachFile && (
-                <button onClick={() => setAttachFile(null)}
+                <button className="pressable" onClick={() => setAttachFile(null)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', color: 'var(--danger)', background: 'none',
                     border: 'none', cursor: 'pointer', marginTop: 4, padding: 0 }}>
                   <XIcon size={11} color="var(--danger)" /> Remove file
@@ -437,7 +438,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-            <button
+            <button className="pressable"
               onClick={saveAssignment}
               disabled={saving || uploading || !form.title.trim() || !form.due_date || !form.class_id}
               style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none',
@@ -445,7 +446,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 opacity: (saving || uploading || !form.title.trim() || !form.due_date || !form.class_id) ? 0.5 : 1 }}>
               {saving ? 'Saving...' : uploading ? 'Uploading...' : editingId ? 'Save Changes' : 'Create Assignment'}
             </button>
-            <button
+            <button className="pressable"
               onClick={() => { setShowForm(false); setAttachFile(null); setEditingId(null); setSaveError(null) }}
               style={{ height: 40, padding: '0 16px', background: 'transparent',
                 border: '1px solid var(--glass-border)', borderRadius: 8,
@@ -458,13 +459,13 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
       {/* Assignment list */}
       {loading ? (
-        <div className={styles.loading}><span /><span /><span /></div>
+        <SkeletonList count={4} variant="card" />
       ) : items.length === 0 ? (
         <div className={styles.empty}>
           <ClipboardIcon size={40} color="var(--text-faint)" strokeWidth={1} />
           <p>No {tab} assignments</p>
           {tab === 'active' && (
-            <button onClick={openCreate}
+            <button className="pressable" onClick={openCreate}
               style={{ marginTop: 12, padding: '8px 20px', background: sc, color: '#fff',
                 border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
               Create your first assignment
@@ -484,7 +485,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 <div className={styles.cardBody}>
                   <p className={styles.cardTitle}>{item.title}</p>
                   <p className={styles.cardMeta}>
-                    {item.classes?.name ?? '—'}
+                    {item.classes?.name ?? 'N/A'}
                     {item.subject ? ` · ${item.subject}` : ''}
                     {' · Due '}
                     {new Date(item.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
@@ -510,7 +511,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                   View Submissions ({submCounts[item.id] ?? 0})
                 </Link>
 
-                <button onClick={() => openEdit(item)}
+                <button className="pressable" onClick={() => openEdit(item)}
                   style={{ padding: '5px 12px', background: 'var(--glass-bg)', color: 'var(--text-secondary)',
                     border: '1px solid var(--glass-border)', borderRadius: 8,
                     fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>

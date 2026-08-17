@@ -7,6 +7,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
 import { VideoIcon, PlusIcon, CalendarIcon, StatusDotIcon, CheckCircleIcon, AlertIcon, XIcon, PlayIcon, StopIcon, LinkIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -127,7 +128,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
   async function startClass(id: string) {
     setError(null)
     const { error: err } = await supabase.from('online_classes')
-      .update({ is_live: true, started_at: new Date().toISOString() }).eq('id', id)
+      .update({ is_live: true, started_at: new Date().toISOString() })
+      .eq('id', id).eq('teacher_id', userId)
     if (err) { setError(err.message); return }
     setTab('live')
     load()
@@ -137,7 +139,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
     setError(null)
     const { error: err } = await supabase.from('online_classes')
       .update({ is_live: false, ended_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('id', id).eq('teacher_id', userId)
     if (err) { setError(err.message); return }
     setTab('ended')
     load()
@@ -145,7 +147,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
   async function deleteSession(id: string) {
     setError(null)
-    const { error: err } = await supabase.from('online_classes').delete().eq('id', id)
+    const { error: err } = await supabase.from('online_classes').delete().eq('id', id).eq('teacher_id', userId)
     if (err) { setError(err.message); return }
     setSessions(prev => prev.filter(s => s.id !== id))
   }
@@ -160,7 +162,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {(['scheduled', 'live', 'ended'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${tab === t ? styles.tabActive : ''} pressable`}
             style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
             {t === 'scheduled'
               ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CalendarIcon size={13} /></span>Upcoming</>
@@ -169,7 +171,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
               : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CheckCircleIcon size={13} /></span>Ended</>}
           </button>
         ))}
-        <button onClick={() => setShowForm(!showForm)}
+        <button className="pressable" onClick={() => setShowForm(!showForm)}
           style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> Schedule
         </button>
@@ -178,7 +180,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
-          <button onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
+          <button className="pressable" onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
@@ -241,11 +243,11 @@ export default function LiveClient({ profile, school, userId }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-            <button onClick={create} disabled={saving || !form.title || !form.class_id}
+            <button className="pressable" onClick={create} disabled={saving || !form.title || !form.class_id}
               style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving || !form.class_id ? 0.5 : 1 }}>
               {saving ? 'Scheduling...' : 'Schedule Class'}
             </button>
-            <button onClick={() => setShowForm(false)}
+            <button className="pressable" onClick={() => setShowForm(false)}
               style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
@@ -253,7 +255,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
         </div>
       )}
 
-      {loading ? <div className={styles.loading}><span /><span /><span /></div>
+      {loading ? <SkeletonList count={4} variant="card" />
         : visibleSessions.length === 0
           ? <div className={styles.empty}><VideoIcon size={40} color="var(--text-faint)" strokeWidth={1} /><p>No {tab} classes</p></div>
           : <div className={styles.list}>
@@ -288,13 +290,13 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
                   <div style={{ display: 'flex', gap: 'var(--space-2)', paddingLeft: 56, flexWrap: 'wrap', alignItems: 'center' }}>
                     {status === 'scheduled' && (
-                      <button onClick={() => startClass(s.id)}
+                      <button className="pressable" onClick={() => startClass(s.id)}
                         style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                         <PlayIcon size={13} color="#fff" /> Start Now
                       </button>
                     )}
                     {status === 'live' && (
-                      <button onClick={() => endClass(s.id)}
+                      <button className="pressable" onClick={() => endClass(s.id)}
                         style={{ padding: '6px 14px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                         <StopIcon size={13} color="#fff" /> End Class
                       </button>
@@ -312,7 +314,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
                       </a>
                     )}
 
-                    {/* Reminder button — only for future scheduled/live classes */}
+                    {/* Reminder button - only for future scheduled/live classes */}
                     {(status === 'scheduled' || status === 'live') && isFuture && s.scheduled_at && (
                       <ReminderButton
                         sourceType="live_class"
@@ -326,7 +328,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
                     )}
 
                     {status !== 'live' && (
-                      <button onClick={() => deleteSession(s.id)}
+                      <button className="pressable" onClick={() => deleteSession(s.id)}
                         style={{ padding: '6px 14px', background: 'transparent', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                         Delete
                       </button>

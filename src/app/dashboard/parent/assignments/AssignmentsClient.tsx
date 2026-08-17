@@ -3,7 +3,7 @@
 //
 // Read-only parent view of a child's assignments: title, subject, due date,
 // status (pending/submitted/graded/overdue), score, and teacher feedback.
-// Parents do not submit work here — submissions stay tied to the student's
+// Parents do not submit work here - submissions stay tied to the student's
 // own account (src/app/dashboard/student/assignments/AssignmentsClient.tsx).
 //
 // Schema confirmed against the already-fixed student-side file:
@@ -12,7 +12,7 @@
 //   assignment_submissions: id, assignment_id, student_id, file_url,
 //     text_response, answer_text, status (pending|submitted|graded|late),
 //     score, feedback, submitted_at, graded_at, graded_by
-//     — NO school_id column on this table.
+//     - NO school_id column on this table.
 //
 // Supports parents with more than one linked child (profiles.parent_id is
 // not unique per parent) via a child switcher, instead of assuming .single().
@@ -23,6 +23,7 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import GaugeStat from '@/components/GaugeStat'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
 import { ClipboardIcon, AlertIcon, XIcon, PaperclipIcon, UploadIcon } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -65,7 +66,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       return
     }
 
-    // A parent can have more than one linked child — never assume .single()
+    // A parent can have more than one linked child - never assume .single()
     const { data: childData, error: err } = await supabase
       .from('profiles')
       .select('id, full_name, class_level, class_id')
@@ -81,7 +82,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
     }
 
     // student_profiles.class_id is what promotion/transfer actually
-    // updates — it's the CURRENT class after any promotion. profiles.class_id
+    // updates - it's the CURRENT class after any promotion. profiles.class_id
     // is never touched by promotion, so it goes stale; used only as a
     // fallback when a student has no student_profiles row at all.
     const { data: spRows } = await supabase
@@ -160,24 +161,24 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10,
           marginBottom: 'var(--space-4)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#EF4444', flex: 1 }}><AlertIcon size={14} /> {error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none',
+          <button className="pressable" onClick={() => setError(null)} style={{ background: 'none', border: 'none',
             color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><XIcon size={16} /></button>
         </div>
       )}
 
       {loading && children.length === 0
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <div style={{ padding: 'var(--space-4)' }}><SkeletonList count={3} variant="card" /></div>
         : children.length === 0
           ? <div className={styles.empty}>
               <ClipboardIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
               <p>No child linked to your account.</p>
             </div>
           : <>
-              {/* Child switcher — only shown when parent has more than one linked child */}
+              {/* Child switcher - only shown when parent has more than one linked child */}
               {children.length > 1 && (
                 <div style={{ display:'flex', gap:8, marginBottom:'var(--space-4)', overflowX:'auto' }}>
                   {children.map(c => (
-                    <button key={c.id} onClick={() => setChildId(c.id)}
+                    <button className="pressable" key={c.id} onClick={() => setChildId(c.id)}
                       style={{
                         flexShrink:0, padding:'8px 16px', borderRadius:20, fontWeight:700,
                         fontSize:'0.82rem', cursor:'pointer', border:'1px solid var(--glass-border)',
@@ -210,7 +211,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
                 {([['pending', 'Pending'], ['submitted', 'Submitted'], ['all', 'All']] as const).map(([v, l]) => (
                   <button key={v} onClick={() => setTab(v)}
-                    className={tab === v ? 'btn-primary' : 'btn-secondary'}
+                    className={`${tab === v ? 'btn-primary' : 'btn-secondary'} pressable`}
                     style={{ padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                     {l}
                   </button>
@@ -324,7 +325,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                               </div>
                             )}
 
-                            {/* Not yet submitted — informational only, no submit action for parents */}
+                            {/* Not yet submitted - informational only, no submit action for parents */}
                             {!submitted && (
                               <div style={{ paddingLeft: 52 }}>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>

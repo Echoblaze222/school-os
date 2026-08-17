@@ -16,6 +16,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { AwardIcon, ClockIcon, AlertIcon, XIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -98,7 +99,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
             </div>
           )}
 
-          {loading ? <div className={styles.loading}><span /><span /><span /></div>
+          {loading ? <SkeletonList count={3} variant="card" />
             : quizzes.length === 0
               ? <div className={`${styles.empty} ${motion.riseIn}`}>
                   <AwardIcon size={40} color="var(--text-faint)" strokeWidth={1} />

@@ -82,13 +82,13 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
         </div>
       </div>
 
-      <button onClick={save} disabled={saving}
+      <button onClick={save} disabled={saving} className="pressable"
         style={{ width:'100%', height:48, background:saved ? '#10B981' : sc,
           color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.9rem',
           cursor:'pointer', marginTop:'var(--space-6)',
           display:'flex', alignItems:'center', justifyContent:'center', gap:8,
           opacity:saving ? 0.7 : 1, transition:'background 0.2s' }}>
-        {saved ? <CheckIcon size={16} color="#fff"/> : <SaveIcon size={16} color="#fff"/>}
+        {saved ? <CheckIcon size={16} color="#fff" className="animate-success-pop" /> : <SaveIcon size={16} color="#fff"/>}
         {saving ? 'Saving…' : saved ? 'Saved' : 'Save Changes'}
       </button>
       <div className={styles.spacer}/>

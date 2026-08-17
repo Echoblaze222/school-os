@@ -106,7 +106,7 @@ export default async function PrincipalResultsPage() {
       result_type:      r.result_type,
       score:            r.score        ?? 0,
       max_score:        r.max_score    ?? 100,
-      grade:            r.grade        ?? '—',
+      grade:            r.grade        ?? 'N/A',
       remarks:          r.remarks,
       posted_at:        r.posted_at,
       approved:         r.approved     ?? false,
@@ -114,10 +114,10 @@ export default async function PrincipalResultsPage() {
       school_id:        r.school_id,
       student_name:     s?.full_name      ?? 'Unknown Student',
       student_number:   s?.student_number ?? s?.default_code ?? s?.admission_number ?? null,
-      subject_name:     subj?.name        ?? '—',
+      subject_name:     subj?.name        ?? 'N/A',
       subject_code:     subj?.code        ?? '',
-      class_name:       cls?.name         ?? cls?.class_level ?? '—',
-      teacher_name:     r.posted_by ? (teacherMap[r.posted_by] ?? '—') : '—',
+      class_name:       cls?.name         ?? cls?.class_level ?? 'N/A',
+      teacher_name:     r.posted_by ? (teacherMap[r.posted_by] ?? 'N/A') : 'N/A',
     }
   })
 

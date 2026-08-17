@@ -90,7 +90,7 @@ export default function StudentAlumniClient({
 
   // Group results by term+year
   const grouped = results.reduce<Record<string, AlumniResult[]>>((acc, r) => {
-    const key = `${r.term} — ${r.academic_year}`
+    const key = `${r.term}, ${r.academic_year}`
     if (!acc[key]) acc[key] = []
     acc[key].push(r)
     return acc
@@ -111,7 +111,7 @@ export default function StudentAlumniClient({
           </div>
           <div className={styles.heroInfo}>
             <h2 className={styles.heroName}>{alumniProfile.full_name}</h2>
-            <p className={styles.heroSub}>{alumniProfile.class_name} · Class of {alumniProfile.graduation_year ?? '—'}</p>
+            <p className={styles.heroSub}>{alumniProfile.class_name} · Class of {alumniProfile.graduation_year ?? 'N/A'}</p>
             <div className={styles.heroBadgeRow}>
               <span className={styles.heroBadge}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
@@ -140,7 +140,7 @@ export default function StudentAlumniClient({
             ) : transcriptStatus === 'approved' ? (
               <span className={styles.transcriptApproved}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Approved — download from school
+                Approved, download from school
               </span>
             ) : (
               <button

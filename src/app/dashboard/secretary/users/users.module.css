@@ -146,6 +146,7 @@
   color: var(--text-muted); cursor: pointer; transition: all var(--transition-fast);
 }
 .clearSearch:hover { color: var(--text-primary); background: var(--glass-bg-hover); }
+.clearSearch:active { transform: scale(0.9); }
 
 .resultCount { font-family: var(--font-body); font-size: 0.72rem; color: var(--text-muted); }
 
@@ -227,6 +228,7 @@
   transition: all var(--transition-fast);
 }
 .actionBtn:hover         { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text-primary); }
+.actionBtn:active:not(:disabled) { transform: scale(0.94); }
 .actionBtn:disabled      { opacity: 0.5; cursor: not-allowed; }
 .actionBtnSuccess        { color: var(--success); border-color: rgba(45,139,85,0.25); background: var(--success-bg); }
 .actionBtnSuccess:hover  { background: rgba(45,139,85,0.2); border-color: rgba(45,139,85,0.4); }

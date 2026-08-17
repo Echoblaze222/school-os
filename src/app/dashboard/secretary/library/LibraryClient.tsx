@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BookIcon, BookOpenIcon, ClipboardIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
+import motion from '@/components/dashboard-motion.module.css'
 
 const CATEGORIES = ['General', 'Fiction', 'Non-Fiction', 'Textbook', 'Reference', 'Periodical']
 const CAT_COLORS: Record<string, string> = {
@@ -38,6 +39,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
 
   const [bookModal, setBookModal] = useState(false)
   const [loanModal, setLoanModal] = useState(false)
+  const [deleteBookTarget, setDeleteBookTarget] = useState<Book | null>(null)
   const [saving,    setSaving]    = useState(false)
   const [msg,       setMsg]       = useState('')
 
@@ -85,6 +87,8 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
   async function deleteBook(id: string) {
     const { error } = await supabase.from('library_books').delete().eq('id', id)
     if (!error) setBooks(p => p.filter(b => b.id !== id))
+    else setMsg(error.message.includes('foreign key') ? 'This book has loan history and can\u2019t be deleted.' : (error.message ?? 'Could not delete book'))
+    setDeleteBookTarget(null)
   }
 
   async function issueLoan() {
@@ -185,8 +189,8 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
           {filteredBooks.length === 0 ? (
             <div className={styles.emptyState}><BookIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No books yet</p><p className={styles.emptyHint}>Add your first title to the catalog</p></div>
           ) : (
-            filteredBooks.map(b => (
-              <div key={b.id} className={styles.listItem}>
+            filteredBooks.map((b, i) => (
+              <div key={b.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                 <div className={styles.listIconBox} style={{ background: (CAT_COLORS[b.category] ?? sc) + '22' }}>
                   <BookOpenIcon size={19} color={CAT_COLORS[b.category] ?? sc} />
                 </div>
@@ -195,7 +199,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
                   <p className={styles.listSub}>{b.author ?? 'Unknown author'} · {b.available_copies}/{b.total_copies} available{b.shelf_location ? ` · Shelf ${b.shelf_location}` : ''}</p>
                 </div>
                 <span className={styles.listBadge} style={{ background: (CAT_COLORS[b.category] ?? '#6B7280') + '22', color: CAT_COLORS[b.category] ?? '#6B7280' }}>{b.category}</span>
-                <button onClick={() => deleteBook(b.id)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
+                <button className="pressable" onClick={() => setDeleteBookTarget(b)} style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon size={14} color="var(--danger)" /></button>
               </div>
             ))
           )}
@@ -211,10 +215,10 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
           {loans.length === 0 ? (
             <div className={styles.emptyState}><ClipboardIcon size={32} color="var(--text-muted)" /><p className={styles.emptyTitle}>No loans yet</p><p className={styles.emptyHint}>Issue a book to a student to get started</p></div>
           ) : (
-            loans.map(l => {
+            loans.map((l, i) => {
               const dl = daysLabel(l.due_at, l.status)
               return (
-                <div key={l.id} className={styles.listItem}>
+                <div key={l.id} className={`${styles.listItem} ${motion.staggerItem}`} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                   <div className={styles.listIconBox} style={{ background: (STATUS_COLORS[l.status] ?? sc) + '22' }}>
                     <BookOpenIcon size={19} color={STATUS_COLORS[l.status] ?? sc} />
                   </div>
@@ -279,6 +283,16 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
             <div className={styles.formGroup}><label className={styles.formLabel}>Due date *</label><input type="date" className={styles.formInput} value={loanForm.due_at} onChange={e => setLoanForm(p => ({ ...p, due_at: e.target.value }))} min={new Date().toISOString().split('T')[0]} /></div>
             {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{msg}</p>}
             <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setLoanModal(false)}>Cancel</button><button className={styles.btnPrimary} onClick={issueLoan} disabled={saving}>{saving ? 'Issuing…' : 'Issue Loan'}</button></div>
+          </div>
+        </div>
+      )}
+
+      {deleteBookTarget && (
+        <div className={styles.modalOverlay} onClick={() => setDeleteBookTarget(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Delete book?</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>&quot;<strong>{deleteBookTarget.title}</strong>&quot; will be permanently removed from the catalog.</p>
+            <div className={styles.modalActions}><button className={styles.btnGhost} onClick={() => setDeleteBookTarget(null)}>Cancel</button><button className={styles.btnDanger} onClick={() => deleteBook(deleteBookTarget.id)}>Delete</button></div>
           </div>
         </div>
       )}

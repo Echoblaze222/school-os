@@ -1024,7 +1024,9 @@ export async function POST(req: Request) {
     // Every tool here does the same thing: validate → save ONE draft row to
     // ai_action_drafts → hand back a [[label|href]] button into the real
     // dashboard page. No tool call ever writes real data directly.
-    const resolvedSchoolId = schoolId ?? profile?.school_id
+    // Never trust a client-supplied schoolId — always tag drafts with the
+    // caller's own school, the same way fetchDataContext already does.
+    const resolvedSchoolId = profile?.school_id
     for (const block of result.content) {
       if (block.type !== 'tool_use') continue
 
@@ -1032,7 +1034,7 @@ export async function POST(req: Request) {
       if (!tool) continue // model called something it shouldn't have access to — ignore it
 
       if (!tool.validate(block.input)) {
-        result.content.push({ type: 'text', text: `\n\n(I tried to draft that but the details came out incomplete — could you ask me again?)` })
+        result.content.push({ type: 'text', text: `\n\n(I tried to draft that but the details came out incomplete. Could you ask me again?)` })
         continue
       }
 
@@ -1062,11 +1064,11 @@ export async function POST(req: Request) {
 
         result.content.push({
           type: 'text',
-          text: `\n\n✅ I've drafted ${summary}. Nothing has been published yet — review and edit it, then publish from there.\n\n1. Review the draft [[Review & Publish|${tool.reviewPath(resolvedRole, draft.id)}]]`,
+          text: `\n\n✅ I've drafted ${summary}. Nothing has been published yet, review and edit it, then publish from there.\n\n1. Review the draft [[Review & Publish|${tool.reviewPath(resolvedRole, draft.id)}]]`,
         })
       } catch (toolErr: any) {
         console.error(`[AI] Failed to save ${tool.actionType} draft:`, toolErr?.message ?? toolErr)
-        result.content.push({ type: 'text', text: `\n\n(I put that together but couldn't save the draft — please try again.)` })
+        result.content.push({ type: 'text', text: `\n\n(I put that together but couldn't save the draft. Please try again.)` })
       }
     }
 

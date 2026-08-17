@@ -9,59 +9,34 @@ import {
 } from '@/components/Icons'
 import styles from './subscription.module.css'
 
-// ── Per-student pricing tiers ─────────────────────────────
-// School pays SchoolOS: ₦500 × number of active students per term
-const PRICE_PER_STUDENT = 500 // NGN
+// ── School-size-based pricing ──────────────────────────────
+// Replaces the old per-plan price selector. Every school gets the same
+// full feature set; the per-student rate is determined automatically by
+// how many active students the school has — matching what the server
+// (subscription/renew) computes independently and authoritatively.
+function pricePerStudentForSize(n: number): { rate: number; tierLabel: string } {
+  if (n <= 150) return { rate: 1000, tierLabel: 'Starter' }
+  if (n <= 250) return { rate: 2000, tierLabel: 'Growth' }
+  return { rate: 3000, tierLabel: 'Scale' }
+}
 
-// Plans determine what FEATURES the school unlocks
-// Not the per-student cost — that stays at ₦500 per student always
-const PLANS = [
-  {
-    id:       'Basic',
-    label:    'Basic',
-    price:    500,        // per student per term
-    maxStudents: 200,
-    features: [
-      'Student & staff portal',
-      'Fee management',
-      'Results & assignments',
-      'Timetable & attendance',
-      'School notes & syllabus',
-    ],
-    color: '#3B82F6',
-  },
-  {
-    id:       'Standard',
-    label:    'Standard',
-    price:    1000,       // per student per term
-    maxStudents: 500,
-    features: [
-      'Everything in Basic',
-      'AI Tutor for students',
-      'AI Assistant for all staff',
-      'Live & recorded classes',
-      'WhatsApp notifications',
-      'Bulk SMS reminders',
-    ],
-    color:   '#800020',
-    popular: true,
-  },
-  {
-    id:       'Premium',
-    label:    'Premium',
-    price:    2000,       // per student per term
-    maxStudents: 99999,  // unlimited
-    features: [
-      'Everything in Standard',
-      'AI face-match NIN verification',
-      'Custom school domain',
-      'Priority support',
-      'Advanced analytics',
-      'Cross-school principal chat',
-      'Student permanent ID cards',
-    ],
-    color: '#10B981',
-  },
+const ALL_FEATURES = [
+  'Student & staff portal',
+  'Fee management',
+  'Results & assignments',
+  'Timetable & attendance',
+  'School notes & syllabus',
+  'AI Tutor for students',
+  'AI Assistant for all staff',
+  'Live & recorded classes',
+  'WhatsApp notifications',
+  'Bulk SMS reminders',
+  'AI face-match NIN verification',
+  'Custom school domain',
+  'Priority support',
+  'Advanced analytics',
+  'Cross-school principal chat',
+  'Student permanent ID cards',
 ]
 
 const REGISTRATION_FEE = 150000 // One-time only
@@ -80,7 +55,6 @@ export default function SubscriptionClient({
 }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [selectedPlan, setSelectedPlan] = useState(subscription?.plan_type ?? 'Standard')
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState<string | null>(null)
   const [theme,        setTheme]        = useState<'dark' | 'light'>('dark')
@@ -138,9 +112,10 @@ export default function SubscriptionClient({
   const isWarning = daysRemaining > 10 && daysRemaining <= 30
 
   // ── Calculate renewal amount ──────────────────────────
-  // School pays: number of students × plan price per student
-  const selectedPlanData = PLANS.find(p => p.id === selectedPlan)
-  const pricePerStudent  = selectedPlanData?.price ?? PRICE_PER_STUDENT
+  // School pays: number of active students × the size-based rate. This
+  // display figure is informational only — the server recomputes the
+  // authoritative amount itself from real active student counts.
+  const { rate: pricePerStudent, tierLabel } = pricePerStudentForSize(studentCount)
   const renewalAmount    = studentCount * pricePerStudent
 
   // Status color
@@ -165,14 +140,7 @@ export default function SubscriptionClient({
       const response = await fetch('/api/subscription/renew', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          schoolId:      school.id,
-          planType:      selectedPlan,
-          studentCount,
-          amount:        renewalAmount,
-          principalName,
-          userId,
-        }),
+        body:    JSON.stringify({}), // pricing and student count are computed server-side
       })
 
       const data = await response.json()
@@ -233,7 +201,7 @@ export default function SubscriptionClient({
             : <AlertCircleIcon size={16} color="var(--error, #ef4444)" />
           }
           {toast.message}
-          <button
+          <button className="pressable"
             onClick={() => setToast(null)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '4px', opacity: 0.7, color: 'inherit' }}
           ><XIcon size={13} /></button>
@@ -242,11 +210,11 @@ export default function SubscriptionClient({
 
       {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal')}>
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal')}>
           <ArrowLeftIcon size={18} />
         </button>
         <h1 className={styles.headerTitle}>Subscription</h1>
-        <button className={styles.iconBtn} onClick={toggleTheme}>
+        <button className={`${styles.iconBtn} pressable`} onClick={toggleTheme}>
           {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
         </button>
       </header>
@@ -269,7 +237,7 @@ export default function SubscriptionClient({
         {(['status', 'renew', 'history'] as const).map(t => (
           <button
             key={t}
-            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${tab === t ? styles.tabActive : ''} pressable`}
             onClick={() => setTab(t)}
           >
             {t === 'status'  ? 'Status'  :
@@ -312,7 +280,7 @@ export default function SubscriptionClient({
                   <div className={styles.infoRow}>
                     <CalendarIcon size={14} color="var(--text-muted)" />
                     <span>
-                      Expires: {subscription?.expiry_date ? fmtDate(subscription.expiry_date) : '—'}
+                      Expires: {subscription?.expiry_date ? fmtDate(subscription.expiry_date) : 'N/A'}
                     </span>
                   </div>
                   <div className={styles.infoRow}>
@@ -348,29 +316,28 @@ export default function SubscriptionClient({
             <div className={styles.pricingNote}>
               <p className={styles.pricingNoteTitle}>How pricing works</p>
               <p className={styles.pricingNoteBody}>
-                SchoolOS charges <strong>₦{selectedPlanData?.price.toLocaleString()} per student per term</strong>.
+                Your rate is based on school size. You're currently on the <strong>{tierLabel}</strong> tier
+                at <strong>₦{pricePerStudent.toLocaleString()} per student per term</strong>.
                 With <strong>{studentCount} active students</strong>, your renewal costs <strong>{fmtAmount(renewalAmount)}</strong> this term.
-                As your school grows, your fee adjusts automatically.
+                As your school grows past a tier boundary, your rate adjusts automatically, and every school gets the full feature set regardless of size.
               </p>
             </div>
 
             {/* Current features */}
-            {selectedPlanData && (
-              <div className={styles.featuresCard}>
-                <p className={styles.featuresTitle}>Your Plan Includes</p>
-                <div className={styles.featuresList}>
-                  {selectedPlanData.features.map((f, i) => (
-                    <div key={i} className={styles.featureItem}>
-                      <CheckCircleIcon size={14} color="var(--success)" />
-                      <span>{f}</span>
-                    </div>
-                  ))}
-                </div>
+            <div className={styles.featuresCard}>
+              <p className={styles.featuresTitle}>Your Plan Includes</p>
+              <div className={styles.featuresList}>
+                {ALL_FEATURES.map((f, i) => (
+                  <div key={i} className={styles.featureItem}>
+                    <CheckCircleIcon size={14} color="var(--success)" />
+                    <span>{f}</span>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
             <button
-              className={styles.renewCta}
+              className={`${styles.renewCta} pressable`}
               style={{ background: schoolColor }}
               onClick={() => setTab('renew')}
             >
@@ -384,71 +351,39 @@ export default function SubscriptionClient({
         {tab === 'renew' && (
           <>
             <div className={styles.renewHeader}>
-              <p className={styles.renewTitle}>Choose Your Plan</p>
+              <p className={styles.renewTitle}>Confirm Your Renewal</p>
               <p className={styles.renewSubtitle}>
-                You have <strong>{studentCount} active students</strong>.
-                Your fee = students × plan rate per term.
+                You have <strong>{studentCount} active students</strong>, placing you on the
+                {' '}<strong>{tierLabel}</strong> tier at ₦{pricePerStudent.toLocaleString()} per student per term.
               </p>
             </div>
 
-            {/* Plan cards */}
+            {/* Current tier summary card — replaces the old plan picker.
+                Pricing is no longer a choice; it's determined automatically
+                by school size, so there's nothing to select here. */}
             <div className={styles.planCards}>
-              {PLANS.map(plan => {
-                const amount    = studentCount * plan.price
-                const isSelected = selectedPlan === plan.id
+              <div className={styles.planCard} style={{ borderColor: schoolColor, boxShadow: `0 0 0 2px ${schoolColor}28` }}>
+                <div className={styles.planCardTop}>
+                  <p className={styles.planCardName} style={{ color: schoolColor }}>{tierLabel}</p>
+                  <CheckCircleIcon size={16} color={schoolColor} />
+                </div>
 
-                return (
-                  <button
-                    key={plan.id}
-                    className={`${styles.planCard} ${isSelected ? styles.planCardSelected : ''}`}
-                    style={isSelected ? { borderColor: plan.color, boxShadow: `0 0 0 2px ${plan.color}28` } : {}}
-                    onClick={() => setSelectedPlan(plan.id)}
-                  >
-                    {plan.popular && (
-                      <span className={styles.popularTag} style={{ background: plan.color }}>
-                        Most Popular
-                      </span>
-                    )}
+                <div className={styles.planPriceRow}>
+                  <p className={styles.planRate}>₦{pricePerStudent.toLocaleString()}</p>
+                  <p className={styles.planRateLabel}>per student/term</p>
+                </div>
 
-                    <div className={styles.planCardTop}>
-                      <p className={styles.planCardName} style={{ color: plan.color }}>
-                        {plan.label}
-                      </p>
-                      {isSelected && (
-                        <CheckCircleIcon size={16} color={plan.color} />
-                      )}
-                    </div>
+                <div className={styles.planTotal}>
+                  <p className={styles.planTotalLabel}>Your total ({studentCount} students)</p>
+                  <p className={styles.planTotalAmount} style={{ color: schoolColor }}>
+                    {fmtAmount(renewalAmount)}
+                  </p>
+                </div>
 
-                    <div className={styles.planPriceRow}>
-                      <p className={styles.planRate}>₦{plan.price.toLocaleString()}</p>
-                      <p className={styles.planRateLabel}>per student/term</p>
-                    </div>
-
-                    <div className={styles.planTotal}>
-                      <p className={styles.planTotalLabel}>Your total ({studentCount} students)</p>
-                      <p className={styles.planTotalAmount} style={{ color: plan.color }}>
-                        {fmtAmount(amount)}
-                      </p>
-                    </div>
-
-                    <p className={styles.planMaxStudents}>
-                      {plan.maxStudents >= 99999 ? 'Unlimited students' : `Up to ${plan.maxStudents.toLocaleString()} students`}
-                    </p>
-
-                    <div className={styles.planFeatures}>
-                      {plan.features.slice(0, 3).map((f, i) => (
-                        <div key={i} className={styles.planFeatureItem}>
-                          <CheckCircleIcon size={12} color={plan.color} />
-                          <span>{f}</span>
-                        </div>
-                      ))}
-                      {plan.features.length > 3 && (
-                        <p className={styles.planMoreFeatures}>+{plan.features.length - 3} more features</p>
-                      )}
-                    </div>
-                  </button>
-                )
-              })}
+                <p className={styles.planMaxStudents}>
+                  Up to 150: ₦1,000/student &middot; 151-250: ₦2,000/student &middot; 251+: ₦3,000/student
+                </p>
+              </div>
             </div>
 
             {/* Order summary */}
@@ -456,8 +391,8 @@ export default function SubscriptionClient({
               <p className={styles.summaryTitle}>Order Summary</p>
 
               <div className={styles.summaryRow}>
-                <span>Plan</span>
-                <strong>{selectedPlan}</strong>
+                <span>Tier</span>
+                <strong>{tierLabel}</strong>
               </div>
               <div className={styles.summaryRow}>
                 <span>Active Students</span>
@@ -465,7 +400,7 @@ export default function SubscriptionClient({
               </div>
               <div className={styles.summaryRow}>
                 <span>Rate per student</span>
-                <strong>₦{selectedPlanData?.price.toLocaleString()}/term</strong>
+                <strong>₦{pricePerStudent.toLocaleString()}/term</strong>
               </div>
               <div className={styles.summaryRow}>
                 <span>Term coverage</span>
@@ -492,7 +427,7 @@ export default function SubscriptionClient({
             )}
 
             <button
-              className={styles.payBtn}
+              className={`${styles.payBtn} pressable`}
               style={{ background: schoolColor }}
               onClick={handleRenew}
               disabled={loading || studentCount === 0}

@@ -8,7 +8,7 @@ const SECTIONS = [
   {
     number: '01',
     title: 'Acceptance of Terms',
-    body: `By registering a school on SchoolOS or accessing any part of the platform, you — the school owner, principal, or authorised representative — agree to be bound by these Terms and Conditions. If you do not agree, do not use the platform.`,
+    body: `By registering a school on SchoolOS or accessing any part of the platform, you (the school owner, principal, or authorised representative) agree to be bound by these Terms and Conditions. If you do not agree, do not use the platform.`,
   },
   {
     number: '02',

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import PromoteClient from './PromoteClient'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Promote Students — SchoolOS' }
+export const metadata = { title: 'Promote Students | SchoolOS' }
 
 export default async function PromotePage() {
   const supabase = await createClient()

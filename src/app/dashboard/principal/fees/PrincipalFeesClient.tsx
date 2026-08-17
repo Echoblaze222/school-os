@@ -129,7 +129,7 @@ export default function PrincipalFeesClient({
                   </div>
                   <div>
                     <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{student?.full_name ?? 'Unknown'}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{student?.class_level || '—'}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{student?.class_level || 'N/A'}</p>
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
@@ -137,7 +137,7 @@ export default function PrincipalFeesClient({
                     { label: 'Balance Due', val: fmt(previewItem.balance_ngn), color: 'var(--error)' },
                     { label: 'Amount Due',  val: fmt(previewItem.amount_due_ngn), color: 'var(--text-primary)' },
                     { label: 'Amount Paid', val: fmt(previewItem.amount_paid_ngn), color: 'var(--success)' },
-                    { label: 'Due Date',    val: previewItem.due_date ? fmtDate(previewItem.due_date) : '—', color: 'var(--text-muted)' },
+                    { label: 'Due Date',    val: previewItem.due_date ? fmtDate(previewItem.due_date) : 'N/A', color: 'var(--text-muted)' },
                   ].map(({ label, val, color }) => (
                     <div key={label} style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 12px' }}>
                       <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label.toUpperCase()}</p>
@@ -171,8 +171,8 @@ export default function PrincipalFeesClient({
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>#{previewItem.receipt_number}</p>
                 </div>
                 {[
-                  { label: 'Student',  val: student?.full_name ?? '—' },
-                  { label: 'Class',    val: student?.class_level ?? '—' },
+                  { label: 'Student',  val: student?.full_name ?? 'N/A' },
+                  { label: 'Class',    val: student?.class_level ?? 'N/A' },
                   { label: 'Currency', val: previewItem.currency_used ?? 'NGN' },
                   { label: 'Date',     val: fmtDate(previewItem.paid_at) },
                 ].map(({ label, val }) => (
@@ -189,11 +189,11 @@ export default function PrincipalFeesClient({
       })()}
 
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal')}>
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal')}>
           <ArrowLeftIcon size={18} />
         </button>
         <h1 className={styles.headerTitle}>Fee Overview</h1>
-        <button className={styles.iconBtn} onClick={toggleTheme}>
+        <button className={`${styles.iconBtn} pressable`} onClick={toggleTheme}>
           {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
         </button>
       </header>
@@ -217,7 +217,7 @@ export default function PrincipalFeesClient({
         />
         <div style={{ display: 'flex', gap: 6, flex: 1 }}>
           {TERM_OPTIONS.map(t => (
-            <button
+            <button className="pressable"
               key={t.key}
               onClick={() => goToTermYear(t.key, yearInput || currentYear)}
               style={{
@@ -238,7 +238,7 @@ export default function PrincipalFeesClient({
         {(['overview', 'classes', 'overdue', 'recent'] as const).map(t => (
           <button
             key={t}
-            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${tab === t ? styles.tabActive : ''} pressable`}
             onClick={() => setTab(t)}
           >
             {t === 'overview' ? 'Overview' :
@@ -393,7 +393,7 @@ export default function PrincipalFeesClient({
                 const student = unwrapEmbed(inv.profiles) as any
 
                 return (
-                  <div key={i} className={styles.overdueCard} onClick={() => openOverduePreview(inv)} style={{ cursor: 'pointer' }}>
+                  <div key={i} className={`${styles.overdueCard} pressable`} onClick={() => openOverduePreview(inv)} style={{ cursor: 'pointer' }}>
                     <div className={styles.overdueLeft}>
                       <div className={styles.overdueAvatar}>
                         {student?.full_name?.[0]?.toUpperCase() ?? '?'}
@@ -401,7 +401,7 @@ export default function PrincipalFeesClient({
                       <div>
                         <p className={styles.overdueName}>{student?.full_name ?? 'Unknown'}</p>
                         <p className={styles.overdueClass}>
-                          {student?.class_level || '—'}
+                          {student?.class_level || 'N/A'}
                         </p>
                         {inv.due_date && (
                           <p className={styles.overdueDate}>
@@ -430,7 +430,7 @@ export default function PrincipalFeesClient({
                 ? `$${(amount ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
                 : fmt(amount ?? 0)
               return (
-                <div key={p.id} className={styles.recentCard} onClick={() => openRecentPreview(p)} style={{ cursor: 'pointer' }}>
+                <div key={p.id} className={`${styles.recentCard} pressable`} onClick={() => openRecentPreview(p)} style={{ cursor: 'pointer' }}>
                   <div className={styles.recentIcon}>
                     <CreditCardIcon size={15} color="var(--brand)" />
                   </div>

@@ -139,7 +139,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
             <IcBack /> Dashboard
           </Link>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <button className="pressable"
               onClick={exportCSV}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
@@ -151,7 +151,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
               <IcDownload /> CSV
             </button>
             {pendingCount > 0 && (
-              <button
+              <button className="pressable"
                 onClick={approveAll}
                 style={{
                   padding: '7px 12px', borderRadius: 8,
@@ -174,7 +174,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
         {/* ── Term filter ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
           {TERM_OPTIONS.map(t => (
-            <button
+            <button className="pressable"
               key={t.value}
               onClick={() => setTermFilter(t.value)}
               style={{
@@ -192,7 +192,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
 
         {/* ── Type filter ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
-          <button
+          <button className="pressable"
             onClick={() => setTypeFilter('')}
             style={{
               flexShrink: 0, padding: '6px 14px', borderRadius: 999,
@@ -205,7 +205,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
             All Types
           </button>
           {TYPE_OPTIONS.map(t => (
-            <button
+            <button className="pressable"
               key={t.value}
               onClick={() => setTypeFilter(prev => prev === t.value ? '' : t.value)}
               style={{
@@ -235,7 +235,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
             <option value="">All Classes</option>
             {classOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <button
+          <button className="pressable"
             onClick={exportCSV}
             style={{
               display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
@@ -305,7 +305,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                       {r.student_name}
                     </p>
                     <p style={{ margin: '0 0 4px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                      {r.student_number ?? '—'}
+                      {r.student_number ?? 'N/A'}
                     </p>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -343,7 +343,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <span style={{ fontWeight: 800, fontSize: '0.9rem', color: gradeColor(r.grade) }}>
-                        {r.grade ?? '—'}
+                        {r.grade ?? 'N/A'}
                       </span>
                     </div>
                     {isApproved ? (
@@ -354,7 +354,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                         <IcCheck /> Done
                       </div>
                     ) : (
-                      <button
+                      <button className="pressable"
                         onClick={() => approveResult(r.id)}
                         disabled={isApproving}
                         style={{

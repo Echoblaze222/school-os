@@ -11,6 +11,7 @@ import {
 } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './chat-room.module.css'
+import { logActivity } from '@/lib/logActivity'
 
 // REDESIGN PASS (Lane 3 — Student): all chrome/status emoji converted to
 // Icons.tsx components below. The EMOJIS reaction-picker array a few lines
@@ -450,6 +451,20 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
     setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
     pushNotification(content || fallback)
+
+    // Log as activity only for file/photo/video shares, not plain text —
+    // recent_activities shows the last 15 items across the whole account,
+    // and someone in an active text conversation could easily send more
+    // than that in a single sitting. A shared file is a much rarer,
+    // genuinely activity-worthy event than routine text chatter.
+    if (school?.id) {
+      logActivity({
+        userId, schoolId: school.id,
+        type:  'message_sent',
+        title: `Shared a ${fileType} with ${otherUser?.full_name ?? 'someone'}`,
+        href:  `/dashboard/${role}/chat/${roomId}`,
+      })
+    }
   }
 
   function retry(msg: Message) {
@@ -730,12 +745,12 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </button>
         {showMenu && (
           <div className={styles.headerMenu} onClick={e => e.stopPropagation()}>
-            <button onClick={() => { setShowProfile(true); setShowMenu(false) }}
+            <button className="pressable" onClick={() => { setShowProfile(true); setShowMenu(false) }}
               style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {roomInfo?.is_group ? <PeopleIcon size={15} /> : <UserIcon size={15} />}
               {roomInfo?.is_group ? 'Group info' : 'View profile'}
             </button>
-            <button onClick={() => { loadMessages(); setShowMenu(false) }}
+            <button className="pressable" onClick={() => { loadMessages(); setShowMenu(false) }}
               style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <RefreshIcon size={15} /> Refresh chat
             </button>
@@ -990,16 +1005,16 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                         }}>
                         <div className={styles.contextMenu} onClick={e => e.stopPropagation()}>
                           {canPost && (
-                            <button onClick={() => { setReplyTo(msg); setEditingId(null); setContextMenuId(null); setTimeout(() => inputRef.current?.focus(), 80) }}>
+                            <button className="pressable" onClick={() => { setReplyTo(msg); setEditingId(null); setContextMenuId(null); setTimeout(() => inputRef.current?.focus(), 80) }}>
                               ↩ Reply
                             </button>
                           )}
-                          <button onClick={() => { setEmojiTarget(msg.id); setContextMenuId(null) }}
+                          <button className="pressable" onClick={() => { setEmojiTarget(msg.id); setContextMenuId(null) }}
                             style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <SmileIcon size={14} /> React
                           </button>
                           {isMe && !msg.is_deleted && !msg.file_type && (
-                            <button onClick={() => startEdit(msg)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button className="pressable" onClick={() => startEdit(msg)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <EditIcon size={14} /> Edit
                             </button>
                           )}
@@ -1131,7 +1146,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       ) : (
         <div className={styles.readOnlyBar} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-          <LockIcon size={13} /> Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here — you can still react and comment with emoji
+          <LockIcon size={13} /> Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here, you can still react and comment with emoji
         </div>
       )}
     </div>

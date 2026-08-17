@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import MessagesClient from './MessagesClient'
 
-export const metadata = { title: 'Messages — SchoolOS' }
+export const metadata = { title: 'Messages | SchoolOS' }
 export interface ChatRoom { id: string; name: string; type: string; last_message: string | null; last_message_at: string | null; unread_count: number; participant_names: string[] }
 export interface UserProfile { id: string; full_name: string; avatar_url: string | null }
 

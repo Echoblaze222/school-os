@@ -1,6 +1,6 @@
 'use client'
 // FIXED:
-// 1. syllabus INSERT now includes school_id (was missing — caused RLS rejection)
+// 1. syllabus INSERT now includes school_id (was missing - caused RLS rejection)
 // 2. class_subject_id lookup filters by subject to avoid wrong row
 // 3. addTopic() surfaces Supabase error instead of silently failing
 // 4. Edit topic inline: click pencil icon to edit title/description/week
@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { BookOpenIcon, PlusIcon, CheckCircleIcon, DownloadIcon, ClipboardIcon, FileTextIcon, AlertIcon, XIcon, EditIcon } from '@/components/Icons'
+import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from './syllabus.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -161,7 +162,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       title: editTopic.title,
       description: editTopic.description || null,
       week_number: editTopic.week_number,
-    }).eq('id', editTopicId)
+    }).eq('id', editTopicId).eq('created_by', userId)
     if (err) { setError(err.message); setSaving(false); return }
     setTopics(prev => prev.map(t =>
       t.id === editTopicId
@@ -176,7 +177,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
     const { error: err } = await supabase.from('syllabus_topics').update({
       is_covered: !current,
       covered_at: !current ? new Date().toISOString() : null,
-    }).eq('id', id)
+    }).eq('id', id).eq('created_by', userId)
     if (err) { setError(err.message); return }
     setTopics(prev => prev.map(t =>
       t.id === id ? { ...t, is_covered: !current, covered_at: !current ? new Date().toISOString() : null } : t
@@ -185,7 +186,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
 
   async function deleteTopic(id: string) {
     if (!confirm('Delete this topic?')) return
-    const { error: err } = await supabase.from('syllabus_topics').delete().eq('id', id)
+    const { error: err } = await supabase.from('syllabus_topics').delete().eq('id', id).eq('created_by', userId)
     if (err) { setError(err.message); return }
     setTopics(prev => prev.filter(t => t.id !== id))
   }
@@ -205,7 +206,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       const { error: err } = await supabase.from('syllabus').update({ file_url: fileUrl }).eq('id', syllabusPdf.id)
       if (err) { setError(err.message); setUploadingPdf(false); return }
     } else {
-      // FIX: `syllabus` table has NO school_id column — only `syllabus_topics` does.
+      // FIX: `syllabus` table has NO school_id column - only `syllabus_topics` does.
       // The previous "FIXED: added school_id" comment was based on a wrong assumption;
       // sending school_id here makes PostgREST reject the insert (surfaced as an RLS error).
       // RLS scoping for `syllabus` is handled via class_id → classes.school_id instead.
@@ -228,7 +229,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
 
   if (loading) return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Syllabus">
-      <div className={styles.loader}><span /><span /><span /></div>
+      <SkeletonList count={4} variant="row" />
     </RolePageWrapper>
   )
 
@@ -249,7 +250,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
         <div className={styles.classPills}>
           {teacherClasses.map(cls => (
             <button key={cls.class_id} onClick={() => setSelectedClass(cls)}
-              className={styles.classPill}
+              className={`${styles.classPill} pressable`}
               style={{
                 border: `1px solid ${selectedClass?.class_id === cls.class_id ? sc : sc + '40'}`,
                 background: selectedClass?.class_id === cls.class_id ? sc : 'transparent',
@@ -265,7 +266,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       <div className={styles.termTabs}>
         {TERM_OPTIONS.map(t => (
           <button key={t.value} onClick={() => setTerm(t.value)}
-            className={styles.termTab}
+            className={`${styles.termTab} pressable`}
             style={{
               border: `1px solid ${term === t.value ? sc : 'var(--glass-border)'}`,
               background: term === t.value ? sc : 'transparent',
@@ -280,7 +281,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       <div className={styles.modeTabs}>
         {(['topics', 'pdf'] as const).map(m => (
           <button key={m} onClick={() => setTab(m)}
-            className={styles.modeTab}
+            className={`${styles.modeTab} pressable`}
             style={{
               border: `1px solid ${tab === m ? sc : 'var(--glass-border)'}`,
               background: tab === m ? sc + '20' : 'transparent',
@@ -297,7 +298,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       {error && (
         <div className={styles.errorBanner}>
           <AlertIcon size={14} /> {error}
-          <button onClick={() => setError(null)} className={styles.errorClose}><XIcon size={14} /></button>
+          <button onClick={() => setError(null)} className={`${styles.errorClose} pressable`}><XIcon size={14} /></button>
         </div>
       )}
 
@@ -321,7 +322,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
 
           <div className={styles.addTopicRow}>
             <button onClick={() => { setShowAddTopic(!showAddTopic); setEditTopicId(null) }}
-              className={styles.addBtn} style={{ background: sc }}>
+              className={`${styles.addBtn} pressable`} style={{ background: sc }}>
               <PlusIcon size={13} color="white" /> Add Topic
             </button>
           </div>
@@ -354,10 +355,10 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
               </div>
               <div className={styles.formActions}>
                 <button onClick={addTopic} disabled={saving || !newTopic.title}
-                  className={styles.btnPrimary} style={{ background: sc }}>
+                  className={`${styles.btnPrimary} pressable`} style={{ background: sc }}>
                   {saving ? 'Adding...' : 'Add Topic'}
                 </button>
-                <button onClick={() => setShowAddTopic(false)} className={styles.btnSecondary}>
+                <button onClick={() => setShowAddTopic(false)} className={`${styles.btnSecondary} pressable`}>
                   Cancel
                 </button>
               </div>
@@ -392,10 +393,10 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
               </div>
               <div className={styles.formActions}>
                 <button onClick={saveEditTopic} disabled={saving}
-                  className={styles.btnPrimary} style={{ background: sc }}>
+                  className={`${styles.btnPrimary} pressable`} style={{ background: sc }}>
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button onClick={() => setEditTopicId(null)} className={styles.btnSecondary}>
+                <button onClick={() => setEditTopicId(null)} className={`${styles.btnSecondary} pressable`}>
                   Cancel
                 </button>
               </div>
@@ -423,7 +424,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                   }}>
                   {/* Covered toggle */}
                   <button onClick={() => toggleCovered(topic.id, topic.is_covered)}
-                    className={styles.coverBtn}
+                    className={`${styles.coverBtn} pressable`}
                     style={{
                       border: `2px solid ${topic.is_covered ? 'var(--success)' : 'var(--glass-border)'}`,
                       background: topic.is_covered ? 'var(--success)' : 'transparent',
@@ -452,20 +453,19 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                   )}
 
                   {/* Edit button */}
-                  <button
-                    onClick={() => {
+                  <button onClick={() => {
                       setEditTopicId(topic.id)
                       setEditTopic({ title: topic.title, description: topic.description ?? '', week_number: topic.week_number })
                       setShowAddTopic(false)
                     }}
-                    className={styles.editTopicBtn}
+                    className={`${styles.editTopicBtn} pressable`}
                     style={{ color: sc }}
                     title="Edit topic">
                     <EditIcon size={14} />
                   </button>
 
                   {/* Delete */}
-                  <button onClick={() => deleteTopic(topic.id)} className={styles.deleteTopicBtn}><XIcon size={14} /></button>
+                  <button onClick={() => deleteTopic(topic.id)} className={`${styles.deleteTopicBtn} pressable`}><XIcon size={14} /></button>
                 </div>
               ))}
             </div>
@@ -500,14 +500,14 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                   <DownloadIcon size={14} color={sc} /> View
                 </a>
                 <button onClick={() => pdfRef.current?.click()} disabled={uploadingPdf}
-                  className={styles.replacePdfBtn}>
+                  className={`${styles.replacePdfBtn} pressable`}>
                   {uploadingPdf ? 'Uploading...' : 'Replace'}
                 </button>
               </div>
             </div>
           ) : (
             <button onClick={() => pdfRef.current?.click()} disabled={uploadingPdf}
-              className={styles.uploadDropzone}
+              className={`${styles.uploadDropzone} pressable`}
               style={{ borderColor: sc + '50', background: sc + '08', color: sc }}>
               {uploadingPdf ? 'Uploading...' : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><FileTextIcon size={14} /></span>Upload {TERM_LABEL[term] ?? term} Syllabus PDF</>}
             </button>

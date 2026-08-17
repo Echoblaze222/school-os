@@ -403,7 +403,7 @@ export default function SettingsClient({ profile, school }: Props) {
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <button
-            className={styles.backBtn}
+            className={`${styles.backBtn} pressable`}
             onClick={() => router.push('/dashboard/principal')}
             aria-label="Back to dashboard"
           >
@@ -425,7 +425,7 @@ export default function SettingsClient({ profile, school }: Props) {
             </span>
           )}
           <button
-            className={`${styles.saveBtn} ${saved ? styles.saveBtnSuccess : ''}`}
+            className={`${styles.saveBtn} ${saved ? styles.saveBtnSuccess : ''} pressable`}
             onClick={saveSettings}
             disabled={saving}
           >
@@ -449,7 +449,7 @@ export default function SettingsClient({ profile, school }: Props) {
         ] as { key: Tab; label: string; Icon: typeof SchoolIcon }[]).map(({ key, label, Icon }) => (
           <button
             key={key}
-            className={`${styles.tab} ${tab === key ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${tab === key ? styles.tabActive : ''} pressable`}
             onClick={() => setTab(key)}
           >
             <Icon size={16} />
@@ -500,7 +500,7 @@ export default function SettingsClient({ profile, school }: Props) {
                   value={schoolType}
                   onChange={e => setSchoolType(e.target.value)}
                 >
-                  <option value="">— Select type —</option>
+                  <option value="">Select type</option>
                   {SCHOOL_TYPES.map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -521,13 +521,13 @@ export default function SettingsClient({ profile, school }: Props) {
                   <img src={logoPreview} alt="Logo preview" className={styles.logoPreview} />
                   <div className={styles.imageActions}>
                     <button
-                      className={styles.changeBtn}
+                      className={`${styles.changeBtn} pressable`}
                       onClick={() => logoInputRef.current?.click()}
                       disabled={logoUploading}
                     >
                       {logoUploading ? <><RefreshIcon size={14} /> Uploading…</> : <><RefreshIcon size={14} /> Change Logo</>}
                     </button>
-                    <button className={styles.removeBtn} onClick={removeLogo}>
+                    <button className={`${styles.removeBtn} pressable`} onClick={removeLogo}>
                       <TrashIcon size={14} /> Remove
                     </button>
                   </div>
@@ -553,7 +553,7 @@ export default function SettingsClient({ profile, school }: Props) {
                     <>
                       <UploadIcon size={28} />
                       <p className={styles.dropTitle}>Drop your logo here</p>
-                      <p className={styles.dropSub}>or click to browse — PNG, SVG, JPG · max 5 MB</p>
+                      <p className={styles.dropSub}>or click to browse (PNG, SVG, JPG · max 5 MB)</p>
                     </>
                   )}
                 </div>
@@ -577,7 +577,7 @@ export default function SettingsClient({ profile, school }: Props) {
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
                 Appears on every report card you approve. Upload a photo or scan of your
-                signature on a plain background — PNG with a transparent background works best.
+                signature on a plain background. PNG with a transparent background works best.
               </p>
 
               {sigPreview ? (
@@ -585,13 +585,13 @@ export default function SettingsClient({ profile, school }: Props) {
                   <img src={sigPreview} alt="Signature preview" className={styles.logoPreview} />
                   <div className={styles.imageActions}>
                     <button
-                      className={styles.changeBtn}
+                      className={`${styles.changeBtn} pressable`}
                       onClick={() => sigInputRef.current?.click()}
                       disabled={sigUploading}
                     >
                       {sigUploading ? <><RefreshIcon size={14} /> Uploading…</> : <><RefreshIcon size={14} /> Change Signature</>}
                     </button>
-                    <button className={styles.removeBtn} onClick={removeSig}>
+                    <button className={`${styles.removeBtn} pressable`} onClick={removeSig}>
                       <TrashIcon size={14} /> Remove
                     </button>
                   </div>
@@ -617,7 +617,7 @@ export default function SettingsClient({ profile, school }: Props) {
                     <>
                       <UploadIcon size={28} />
                       <p className={styles.dropTitle}>Drop your signature here</p>
-                      <p className={styles.dropSub}>or click to browse — PNG, JPG · max 5 MB</p>
+                      <p className={styles.dropSub}>or click to browse (PNG, JPG · max 5 MB)</p>
                     </>
                   )}
                 </div>
@@ -650,13 +650,13 @@ export default function SettingsClient({ profile, school }: Props) {
                   <img src={buildImagePreview} alt="Build image preview" className={styles.buildPreview} />
                   <div className={styles.imageActions}>
                     <button
-                      className={styles.changeBtn}
+                      className={`${styles.changeBtn} pressable`}
                       onClick={() => buildImageInputRef.current?.click()}
                       disabled={buildImageUploading}
                     >
                       {buildImageUploading ? <><RefreshIcon size={14} /> Uploading…</> : <><RefreshIcon size={14} /> Change Image</>}
                     </button>
-                    <button className={styles.removeBtn} onClick={removeBuildImage}>
+                    <button className={`${styles.removeBtn} pressable`} onClick={removeBuildImage}>
                       <TrashIcon size={14} /> Remove
                     </button>
                   </div>
@@ -682,7 +682,7 @@ export default function SettingsClient({ profile, school }: Props) {
                     <>
                       <SchoolIcon size={28} />
                       <p className={styles.dropTitle}>Drop your school building photo here</p>
-                      <p className={styles.dropSub}>or click to browse — JPG, PNG, WebP · max 5 MB · landscape preferred</p>
+                      <p className={styles.dropSub}>or click to browse (JPG, PNG, WebP · max 5 MB · landscape preferred)</p>
                     </>
                   )}
                 </div>
@@ -806,13 +806,13 @@ export default function SettingsClient({ profile, school }: Props) {
                 </p>
                 <div className={styles.brandPreviewBtnRow}>
                   <button
-                    className={styles.brandPreviewBtn}
+                    className={`${styles.brandPreviewBtn} pressable`}
                     style={{ background: primaryColor, fontFamily }}
                   >
                     Primary
                   </button>
                   <button
-                    className={styles.brandPreviewBtn}
+                    className={`${styles.brandPreviewBtn} pressable`}
                     style={{ background: secondaryColor, fontFamily }}
                   >
                     Secondary
@@ -927,7 +927,7 @@ export default function SettingsClient({ profile, school }: Props) {
                   value={bankName}
                   onChange={e => setBankName(e.target.value)}
                 >
-                  <option value="">— Select bank —</option>
+                  <option value="">Select bank</option>
                   {NIGERIAN_BANKS.map(b => (
                     <option key={b} value={b}>{b}</option>
                   ))}
@@ -974,15 +974,15 @@ export default function SettingsClient({ profile, school }: Props) {
                   <div className={styles.bankPreview}>
                     <div className={styles.bankPreviewRow}>
                       <span className={styles.bankPreviewKey}>Bank</span>
-                      <span className={styles.bankPreviewVal}>{bankName || '—'}</span>
+                      <span className={styles.bankPreviewVal}>{bankName || 'N/A'}</span>
                     </div>
                     <div className={styles.bankPreviewRow}>
                       <span className={styles.bankPreviewKey}>Account No.</span>
-                      <span className={styles.bankPreviewVal}>{accountNumber || '—'}</span>
+                      <span className={styles.bankPreviewVal}>{accountNumber || 'N/A'}</span>
                     </div>
                     <div className={styles.bankPreviewRow}>
                       <span className={styles.bankPreviewKey}>Account Name</span>
-                      <span className={styles.bankPreviewVal}>{accountName || '—'}</span>
+                      <span className={styles.bankPreviewVal}>{accountName || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -993,7 +993,7 @@ export default function SettingsClient({ profile, school }: Props) {
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
                 Connect this account so parents can pay fees online via card, bank transfer,
-                or USSD. Paystack settles 97% directly to your bank account above —
+                or USSD. Paystack settles 97% directly to your bank account above.
                 3% is the platform fee, deducted automatically per transaction. You never
                 need a Paystack account of your own.
               </p>
@@ -1007,7 +1007,7 @@ export default function SettingsClient({ profile, school }: Props) {
                     </span>
                   </div>
                   <button
-                    className={styles.changeBtn}
+                    className={`${styles.changeBtn} pressable`}
                     onClick={connectPaystack}
                     disabled={connectingPaystack}
                     style={{ marginTop: 12 }}
@@ -1020,7 +1020,7 @@ export default function SettingsClient({ profile, school }: Props) {
                 </div>
               ) : (
                 <button
-                  className={styles.saveBtn}
+                  className={`${styles.saveBtn} pressable`}
                   onClick={connectPaystack}
                   disabled={connectingPaystack}
                   style={{ marginTop: 12 }}
@@ -1048,7 +1048,7 @@ export default function SettingsClient({ profile, school }: Props) {
         <div className={styles.saveRow}>
           {saveErr && <p className={styles.saveErr}>{saveErr}</p>}
           <button
-            className={`${styles.saveBtn} ${styles.saveBtnLarge} ${saved ? styles.saveBtnSuccess : ''}`}
+            className={`${styles.saveBtn} ${styles.saveBtnLarge} ${saved ? styles.saveBtnSuccess : ''} pressable`}
             onClick={saveSettings}
             disabled={saving}
           >

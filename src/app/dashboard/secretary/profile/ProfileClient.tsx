@@ -92,11 +92,11 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
   }
 
   const fields = [
-    ['Full Name', profile?.full_name ?? '—'],
-    ['ID Code',   profile?.default_code ?? '—'],
-    ['School',    school?.name ?? '—'],
-    ['Email',     profile?.email ?? '—'],
-    ['Phone',     profile?.phone ?? '—'],
+    ['Full Name', profile?.full_name ?? 'N/A'],
+    ['ID Code',   profile?.default_code ?? 'N/A'],
+    ['School',    school?.name ?? 'N/A'],
+    ['Email',     profile?.email ?? 'N/A'],
+    ['Phone',     profile?.phone ?? 'N/A'],
   ]
 
   return (
@@ -115,7 +115,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
               </div>
             )}
           </div>
-          <button onClick={() => fileRef.current?.click()} disabled={uploadingPhoto} style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: sc, border: '2px solid var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', opacity: uploadingPhoto ? 0.6 : 1 }}><CameraIcon size={14} color="white" /></button>
+          <button className="pressable" onClick={() => fileRef.current?.click()} disabled={uploadingPhoto} style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: sc, border: '2px solid var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', opacity: uploadingPhoto ? 0.6 : 1 }}><CameraIcon size={14} color="white" /></button>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadAvatar} disabled={uploadingPhoto} />
           <style>{`@keyframes profile-spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -129,7 +129,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
       <div className="glass-card" style={{ overflow: 'hidden', marginBottom: 'var(--space-5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--glass-border)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>Personal Info</p>
-          <button onClick={() => setEditing(!editing)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: `1px solid ${editing ? 'var(--glass-border)' : 'var(--brand-border)'}`, borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
+          <button className="pressable" onClick={() => setEditing(!editing)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: `1px solid ${editing ? 'var(--glass-border)' : 'var(--brand-border)'}`, borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
             <EditIcon size={12} color={editing ? 'var(--text-muted)' : 'var(--brand-light)'} /> {editing ? 'Cancel' : 'Edit'}
           </button>
         </div>
@@ -143,7 +143,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
               </div>
             ))}
             {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin: 0 }}>{msg}</p>}
-            <button onClick={save} disabled={saving} style={{ height: 44, background: `linear-gradient(135deg,${sc},${sc}cc)`, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save Changes'}</button>
+            <button className="pressable" onClick={save} disabled={saving} style={{ height: 44, background: `linear-gradient(135deg,${sc},${sc}cc)`, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save Changes'}</button>
           </div>
         ) : (
           <div>
@@ -162,7 +162,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
         <a href="/forgot-password" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500, textDecoration: 'none' }}>
           <KeyIcon size={16} /> Change Password
         </a>
-        <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+        <button className="pressable" onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
           <LogOutIcon size={16} color="var(--danger)" /> Sign Out
         </button>
       </div>

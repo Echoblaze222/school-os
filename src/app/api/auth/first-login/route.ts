@@ -5,6 +5,7 @@
 
 import { NextResponse }  from 'next/server'
 import { createClient }  from '@supabase/supabase-js'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +34,25 @@ export async function POST(request: Request) {
     // copy-pasted or auto-filled codes can carry leading/trailing spaces
     // that silently fail an exact match.
     const normalizedCode = code.trim().toUpperCase()
+
+    // SECURITY: this endpoint sets a password from nothing but a guessed
+    // code — it's the exact endpoint an account-takeover attempt would
+    // hammer. Throttle on two dimensions: the caller's IP (catches one
+    // attacker guessing across many codes) and the code itself (catches
+    // many attackers/requests hammering one target code).
+    const ip = getClientIp(request)
+    const ipCheck = await checkRateLimit(adminClient, 'auth_first_login_ip', ip, 15, 60)
+    if (!ipCheck.allowed) {
+      const r = ipCheck.errorResponse!
+      return NextResponse.json({ error: r.error }, { status: r.status,
+        headers: r.retryAfter ? { 'Retry-After': String(r.retryAfter) } : undefined })
+    }
+    const codeCheck = await checkRateLimit(adminClient, 'auth_first_login_code', normalizedCode, 8, 300)
+    if (!codeCheck.allowed) {
+      const r = codeCheck.errorResponse!
+      return NextResponse.json({ error: r.error }, { status: r.status,
+        headers: r.retryAfter ? { 'Retry-After': String(r.retryAfter) } : undefined })
+    }
 
     const { data: profile, error: profileErr } = await adminClient
       .from('profiles')

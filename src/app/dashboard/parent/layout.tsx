@@ -1,9 +1,9 @@
 // src/app/dashboard/parent/layout.tsx
 // Injects the school's brand colours + font as CSS variables on <html>
-// before first paint — covers every sub-page with zero client-component changes.
+// before first paint - covers every sub-page with zero client-component changes.
 //
 // primary_color, secondary_color, and font_family all live directly on the
-// `schools` table (added via the schools-branding-columns migration — see
+// `schools` table (added via the schools-branding-columns migration - see
 // src/lib/supabase/types.ts). Previously this queried the separate
 // `school_branding` table, which is the wrong source and is why branding
 // wasn't reliably applying here.
@@ -15,7 +15,7 @@ import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 // This layout reads the signed-in user's school (brand colours, role data)
 // from cookies on every request. Without this, Next.js can cache the
 // rendered output/data for this route and reuse it across different users
-// or sessions hitting the same URL — which is what caused stale brand
+// or sessions hitting the same URL - which is what caused stale brand
 // colours after a refresh, and briefly showed one signed-in user's
 // dashboard to the next person who logs in on the same device.
 export const dynamic    = 'force-dynamic'

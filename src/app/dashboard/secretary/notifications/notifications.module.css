@@ -35,7 +35,9 @@
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast);
 }
+.backBtn:active { transform: scale(0.92); }
 
 .headerCenter {
   flex: 1;
@@ -99,6 +101,7 @@
   background: var(--burgundy);
   color: white;
 }
+.markAllBtn:active { transform: scale(0.95); }
 
 /* Filter tabs */
 .filterTabs {
@@ -190,6 +193,7 @@
 }
 
 .notifItem:hover { background: var(--glass-bg); }
+.notifItem:active { background: var(--glass-bg-hover); }
 .unread { background: var(--burgundy-subtle); }
 .unread:hover { background: rgba(128,0,32,0.1); }
 
@@ -307,6 +311,7 @@
 .loadMoreBtn:hover {
   background: var(--burgundy-subtle);
 }
+.loadMoreBtn:active:not(:disabled) { transform: scale(0.96); }
 
 .loadMoreBtn:disabled {
   opacity: 0.6;
@@ -391,7 +396,9 @@
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  transition: transform var(--transition-fast);
 }
+.cancelBroadcast:active { transform: scale(0.96); }
 .sendBroadcast {
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-full);
@@ -405,6 +412,7 @@
   transition: all 0.2s;
 }
 .sendBroadcast:hover:not(:disabled) { filter: brightness(1.1); }
+.sendBroadcast:active:not(:disabled) { transform: scale(0.96); }
 .sendBroadcast:disabled { opacity: 0.5; cursor: not-allowed; }
 .sendSuccess {
   padding: var(--space-3) var(--space-4);

@@ -38,7 +38,12 @@ function TransferPageContent() {
   async function loadMySchool() {
     const { data: me } = await supabase.auth.getUser()
     if (!me.user) return
-    const { data: p } = await supabase.from('profiles').select('school_id').eq('id', me.user.id).single()
+    const { data: p } = await supabase.from('profiles').select('school_id, role').eq('id', me.user.id).single()
+    // Defense in depth: middleware already blocks non-principal roles from
+    // this whole /dashboard/principal/* route tree, but this page has no
+    // server component gate of its own (unlike every sibling page.tsx), so
+    // check again here rather than rely solely on middleware.
+    if ((p as any)?.role !== 'principal') { router.replace('/login'); return }
     const schoolId = (p as any)?.school_id ?? null
     setMySchoolId(schoolId)
 
@@ -64,8 +69,8 @@ function TransferPageContent() {
     const fees = (inv ?? []).reduce((s: number, i: any) => s + (i.balance_ngn ?? 0), 0)
     setSelectedStudent({
       id: p.id, full_name: p.full_name,
-      admission_number: sp?.admission_number ?? '—',
-      class_label: sp?.classes ? `${sp.classes.level}${sp.classes.section}` : '—',
+      admission_number: sp?.admission_number ?? 'N/A',
+      class_label: sp?.classes ? `${sp.classes.level}${sp.classes.section}` : 'N/A',
       outstanding_fees: fees,
     })
     setPreselected(true)
@@ -100,8 +105,8 @@ function TransferPageContent() {
       students.push({
         id:               p.id,
         full_name:        p.full_name,
-        admission_number: sp?.admission_number ?? '—',
-        class_label:      sp?.classes ? `${sp.classes.level}${sp.classes.section}` : '—',
+        admission_number: sp?.admission_number ?? 'N/A',
+        class_label:      sp?.classes ? `${sp.classes.level}${sp.classes.section}` : 'N/A',
         outstanding_fees: fees,
       })
     }
@@ -151,7 +156,7 @@ function TransferPageContent() {
     return (
       <div className={styles.page}>
         <header className={styles.header}>
-          <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal')}>
+          <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </button>
           <h1 className={styles.headerTitle}>Transfer Initiated</h1>
@@ -164,7 +169,7 @@ function TransferPageContent() {
             The Principal of <strong>{selectedSchool?.name}</strong> has been notified.
             Once they approve, the transfer will be completed automatically.
           </p>
-          <button className={styles.resetBtn} onClick={() => { setSuccess(false); setSelectedStudent(null); setSelectedSchool(null); setPreselected(false) }}>
+          <button className={`${styles.resetBtn} pressable`} onClick={() => { setSuccess(false); setSelectedStudent(null); setSelectedSchool(null); setPreselected(false) }}>
             New Transfer
           </button>
         </div>
@@ -175,11 +180,11 @@ function TransferPageContent() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/dashboard/principal')}>
+        <button className={`${styles.backBtn} pressable`} onClick={() => router.push('/dashboard/principal')}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
         <h1 className={styles.headerTitle}>Transfer Student</h1>
-        <button className={styles.themeBtn} onClick={() => {
+        <button className={`${styles.themeBtn} pressable`} onClick={() => {
           const next = theme === 'light' ? 'dark' : 'light'
           setTheme(next); localStorage.setItem('schoolos_theme', next)
           document.documentElement.setAttribute('data-theme', next)
@@ -190,13 +195,13 @@ function TransferPageContent() {
         {/* Step 1: Search student — skipped if we arrived with a student already chosen */}
         {!preselected && (
           <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Step 1 — Find Student</h2>
+            <h2 className={styles.cardTitle}>Step 1: Find Student</h2>
             <div className={styles.searchRow}>
               <input className={styles.input} placeholder="Search by student name..." value={studentSearch} onChange={e => setStudentSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchStudents()} />
-              <button className={styles.searchBtn} onClick={searchStudents}>Search</button>
+              <button className={`${styles.searchBtn} pressable`} onClick={searchStudents}>Search</button>
             </div>
             {studentResults.map(s => (
-              <button key={s.id} className={`${styles.resultRow} ${selectedStudent?.id === s.id ? styles.resultRowActive : ''}`} onClick={() => setSelectedStudent(s)}>
+              <button key={s.id} className={`${styles.resultRow} ${selectedStudent?.id === s.id ? styles.resultRowActive : ''} pressable`} onClick={() => setSelectedStudent(s)}>
                 <div>
                   <p className={styles.resultName}>{s.full_name}</p>
                   <p className={styles.resultMeta}>{s.class_label} · {s.admission_number}</p>
@@ -216,7 +221,7 @@ function TransferPageContent() {
             <p className={styles.profileName}>{selectedStudent.full_name}</p>
             <p className={styles.profileMeta}>{selectedStudent.class_label} · {selectedStudent.admission_number}</p>
             {preselected && (
-              <button
+              <button className="pressable"
                 onClick={() => { setPreselected(false); setSelectedStudent(null); setStudentResults([]); setAcknowledged(false) }}
                 style={{ background: 'none', border: 'none', padding: 0, color: 'var(--brand)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', marginBottom: 'var(--space-2)' }}
               >
@@ -242,13 +247,13 @@ function TransferPageContent() {
         {/* Step 2: Search destination school */}
         {selectedStudent && (!hasDebt || acknowledged) && (
           <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Step 2 — Destination School</h2>
+            <h2 className={styles.cardTitle}>Step 2: Destination School</h2>
             <div className={styles.searchRow}>
               <input className={styles.input} placeholder="Search school by name..." value={schoolSearch} onChange={e => setSchoolSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchSchools()} />
-              <button className={styles.searchBtn} onClick={searchSchools}>Search</button>
+              <button className={`${styles.searchBtn} pressable`} onClick={searchSchools}>Search</button>
             </div>
             {schoolResults.map(s => (
-              <button key={s.id} className={`${styles.resultRow} ${selectedSchool?.id === s.id ? styles.resultRowActive : ''}`} onClick={() => setSelectedSchool(s)}>
+              <button key={s.id} className={`${styles.resultRow} ${selectedSchool?.id === s.id ? styles.resultRowActive : ''} pressable`} onClick={() => setSelectedSchool(s)}>
                 <div>
                   <p className={styles.resultName}>{s.name}</p>
                   <p className={styles.resultMeta}>{s.city}</p>
@@ -267,7 +272,7 @@ function TransferPageContent() {
             </p>
             <p className={styles.confirmSub}>The destination school principal will need to approve this transfer.</p>
             {error && <p className={styles.errorMsg}>{error}</p>}
-            <button className={styles.transferBtn} onClick={initiateTransfer} disabled={transferring}>
+            <button className={`${styles.transferBtn} pressable`} onClick={initiateTransfer} disabled={transferring}>
               {transferring ? <><span className={styles.spinner}/> Initiating...</> : <><TransferIcon size={14} /> Initiate Transfer</>}
             </button>
           </div>

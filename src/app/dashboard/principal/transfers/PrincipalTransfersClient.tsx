@@ -53,7 +53,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 function fmtDate(d: string | null) {
-  if (!d) return '—'
+  if (!d) return 'N/A'
   return new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
@@ -142,8 +142,8 @@ export default function PrincipalTransfersClient({
       results.push({
         id: p.id,
         full_name: p.full_name,
-        admission_number: p.admission_number ?? '—',
-        class_label: '—',
+        admission_number: p.admission_number ?? 'N/A',
+        class_label: 'N/A',
         outstanding_fees: fees,
       })
     }
@@ -215,7 +215,7 @@ export default function PrincipalTransfersClient({
       {/* ── Main tab switcher ── */}
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
         {(['students', 'transfers'] as const).map(t => (
-          <button key={t} onClick={() => setMainTab(t)}
+          <button className="pressable" key={t} onClick={() => setMainTab(t)}
             style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
               background: mainTab === t ? sc + '22' : 'var(--glass-bg)',
               borderColor: mainTab === t ? sc : 'var(--glass-border)',
@@ -232,7 +232,7 @@ export default function PrincipalTransfersClient({
           style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
           <ClockIcon size={14} /> Pending
         </a>
-        <button className={styles.btnPrimary}
+        <button className={`${styles.btnPrimary} pressable`}
           onClick={() => setModal(true)}
           style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
           + New Transfer
@@ -271,7 +271,7 @@ export default function PrincipalTransfersClient({
             </div>
           ) : (
             filteredStudents.map(s => (
-              <div key={s.id} className={styles.listItem} onClick={() => setViewStudent(s)} style={{ cursor: 'pointer' }}>
+              <div key={s.id} className={`${styles.listItem} pressable`} onClick={() => setViewStudent(s)} style={{ cursor: 'pointer' }}>
                 <div className={styles.listIconBox}
                   style={{ background: sc + '22', fontWeight: 800, fontSize: '1rem', color: sc }}>
                   {s.full_name?.[0]?.toUpperCase() ?? '?'}
@@ -296,7 +296,7 @@ export default function PrincipalTransfersClient({
         <>
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             {(['sent', 'received'] as const).map(d => (
-              <button key={d} onClick={() => { setDirection(d); setStatusTab('all') }}
+              <button className="pressable" key={d} onClick={() => { setDirection(d); setStatusTab('all') }}
                 style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                   background: direction === d ? sc + '22' : 'var(--glass-bg)',
                   borderColor: direction === d ? sc : 'var(--glass-border)',
@@ -312,7 +312,7 @@ export default function PrincipalTransfersClient({
               const count = t === 'all' ? transferRows.length : transferRows.filter(r => r.status === t).length
               const color = t === 'all' ? sc : STATUS_COLORS[t]
               return (
-                <button key={t} onClick={() => setStatusTab(t)}
+                <button className="pressable" key={t} onClick={() => setStatusTab(t)}
                   style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                     background: statusTab === t ? color + '22' : 'var(--glass-bg)',
                     borderColor: statusTab === t ? color : 'var(--glass-border)',
@@ -336,7 +336,7 @@ export default function PrincipalTransfersClient({
             </div>
           ) : (
             filteredTransfers.map(r => (
-              <div key={r.id} className={styles.listItem} onClick={() => setViewItem(r)} style={{ cursor: 'pointer' }}>
+              <div key={r.id} className={`${styles.listItem} pressable`} onClick={() => setViewItem(r)} style={{ cursor: 'pointer' }}>
                 <div className={styles.listIconBox} style={{ background: STATUS_COLORS[r.status] + '22' }}>
                   <TransferIcon size={18} color={STATUS_COLORS[r.status]} />
                 </div>
@@ -374,9 +374,9 @@ export default function PrincipalTransfersClient({
             </div>
 
             {([
-              ['Admission No.', viewStudent.admission_number ?? '—'],
-              ['Class',         viewStudent.class_name ?? '—'],
-              ['Email',         viewStudent.email ?? '—'],
+              ['Admission No.', viewStudent.admission_number ?? 'N/A'],
+              ['Class',         viewStudent.class_name ?? 'N/A'],
+              ['Email',         viewStudent.email ?? 'N/A'],
               ['Status',        viewStudent.is_active ? 'Active' : 'Inactive'],
               ['Enrolled',      fmtDate(viewStudent.created_at)],
             ] as [string, string][]).map(([l, v]) => (
@@ -386,7 +386,7 @@ export default function PrincipalTransfersClient({
               </div>
             ))}
 
-            <button
+            <button className="pressable"
               onClick={() => { setViewStudent(null); setStudentSearch(viewStudent.full_name); setModal(true) }}
               className={styles.btnPrimary}
               style={{ width: '100%', marginTop: 'var(--space-5)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -445,22 +445,22 @@ export default function PrincipalTransfersClient({
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: 280, lineHeight: 1.7 }}>
                   The principal of <strong>{selectedSchool?.name}</strong> has been notified and will review this request.
                 </p>
-                <button className={styles.btnPrimary} onClick={resetModal} style={{ width: '100%' }}>Done</button>
+                <button className={`${styles.btnPrimary} pressable`} onClick={resetModal} style={{ width: '100%' }}>Done</button>
               </div>
             ) : (
               <>
                 <h2 className={styles.modalTitle}>New Transfer</h2>
 
-                <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Step 1 — Select Student</p>
+                <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Step 1: Select Student</p>
                 <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                   <input className={styles.formInput} placeholder="Search by name…"
                     value={studentSearch} onChange={e => setStudentSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && searchStudents()} style={{ flex: 1 }} />
-                  <button className={styles.btnPrimary} onClick={searchStudents} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>Search</button>
+                  <button className={`${styles.btnPrimary} pressable`} onClick={searchStudents} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>Search</button>
                 </div>
 
                 {studentResults.map(s => (
-                  <button key={s.id} onClick={() => setSelectedStudent(s)}
+                  <button className="pressable" key={s.id} onClick={() => setSelectedStudent(s)}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', background: selectedStudent?.id === s.id ? sc + '22' : 'var(--glass-bg)', border: `1px solid ${selectedStudent?.id === s.id ? sc : 'var(--glass-border)'}`, borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-2)', cursor: 'pointer', textAlign: 'left' }}>
                     <div>
                       <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{s.full_name}</p>
@@ -491,16 +491,16 @@ export default function PrincipalTransfersClient({
                   <>
                     {/* Load all schools as soon as Step 2 becomes visible */}
                     {(() => { if (!schoolsLoaded) loadAllSchools(); return null })()}
-                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 'var(--space-5) 0 var(--space-2)' }}>Step 2 — Destination School</p>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 'var(--space-5) 0 var(--space-2)' }}>Step 2: Destination School</p>
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                       <input className={styles.formInput} placeholder="Search school name…"
                         value={schoolSearch} onChange={e => setSchoolSearch(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && searchSchools()} style={{ flex: 1 }} />
-                      <button className={styles.btnPrimary} onClick={searchSchools} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>Search</button>
+                      <button className={`${styles.btnPrimary} pressable`} onClick={searchSchools} style={{ height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>Search</button>
                     </div>
 
                     {schoolResults.map(s => (
-                      <button key={s.id} onClick={() => setSelectedSchool(s)}
+                      <button className="pressable" key={s.id} onClick={() => setSelectedSchool(s)}
                         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-4)', background: selectedSchool?.id === s.id ? sc + '22' : 'var(--glass-bg)', border: `1px solid ${selectedSchool?.id === s.id ? sc : 'var(--glass-border)'}`, borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-2)', cursor: 'pointer', textAlign: 'left' }}>
                         <div>
                           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{s.name}</p>
@@ -520,14 +520,14 @@ export default function PrincipalTransfersClient({
                       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>The destination school's principal will approve or reject this request.</p>
                     </div>
                     {formError && <p style={{ fontSize: '0.78rem', color: '#EF4444', marginBottom: 'var(--space-3)' }}>{formError}</p>}
-                    <button className={styles.btnPrimary} onClick={submitTransfer} disabled={submitting} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <button className={`${styles.btnPrimary} pressable`} onClick={submitTransfer} disabled={submitting} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                       {submitting ? 'Sending…' : <><TransferIcon size={16} /> Send Transfer Request</>}
                     </button>
                   </>
                 )}
 
                 <div className={styles.modalActions} style={{ marginTop: 'var(--space-4)' }}>
-                  <button className={styles.btnGhost} onClick={resetModal}>Cancel</button>
+                  <button className={`${styles.btnGhost} pressable`} onClick={resetModal}>Cancel</button>
                 </div>
               </>
             )}

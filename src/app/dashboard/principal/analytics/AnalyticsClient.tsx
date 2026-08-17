@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react'
 import { createClient }        from '@/lib/supabase/client'
 import RolePageWrapper         from '@/components/RolePageWrapper'
 import { BarChartIcon }        from '@/components/Icons'
+import { SkeletonBlock }       from '@/components/motion/Skeleton'
 import styles                  from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -190,10 +191,10 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
     // ── Grade breakdown ─────────────────────────────────────────
     const gradeMap: Record<string, number> = {}
     for (const r of rows as any[]) {
-      const g = r.grade ?? '—'
+      const g = r.grade ?? 'N/A'
       gradeMap[g] = (gradeMap[g] ?? 0) + 1
     }
-    const gradeOrder = ['A', 'B', 'C', 'D', 'E', 'F', '—']
+    const gradeOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'N/A']
     setGradeBreakdown(
       Object.entries(gradeMap)
         .sort(([a], [b]) => {
@@ -250,7 +251,7 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
         />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {TERM_OPTIONS.map(t => (
-            <button
+            <button className="pressable"
               key={t.value}
               onClick={() => setTerm(t.value)}
               style={{
@@ -268,7 +269,19 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
       </div>
 
       {loading ? (
-        <div className={styles.loading}><span/><span/><span/></div>
+        <div style={{ padding: '0 var(--space-5)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 'var(--space-3)' }}>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} style={{
+                background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center',
+              }}>
+                <SkeletonBlock width={48} height={24} style={{ margin: '0 auto 8px' }} />
+                <SkeletonBlock width={64} height={10} style={{ margin: '0 auto' }} />
+              </div>
+            ))}
+          </div>
+        </div>
       ) : noData ? (
         <div className={styles.empty}>
           <BarChartIcon size={40} color="var(--text-faint)" strokeWidth={1}/>

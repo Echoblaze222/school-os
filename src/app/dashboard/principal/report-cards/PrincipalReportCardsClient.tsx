@@ -68,7 +68,7 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
 
       {!hasSignature && (
         <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid #F59E0B', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#F59E0B', fontSize: '0.85rem' }}>
-          You haven't uploaded a signature yet — add one in Settings before approving report cards.
+          You haven't uploaded a signature yet. Add one in Settings before approving report cards.
         </div>
       )}
       {error && (
@@ -88,7 +88,7 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
             </span>
           </div>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 8 }}>
-            <em>Class teacher's remark:</em> {rc.class_teacher_remark || '—'}
+            <em>Class teacher's remark:</em> {rc.class_teacher_remark || 'N/A'}
           </p>
           <textarea
             value={principalRemarks[rc.id] ?? ''}
@@ -98,11 +98,11 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
             style={{ width: '100%', minHeight: 50, marginBottom: 8 }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
+            <button className="pressable" onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
               style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600 }}>
               {downloadingId === rc.id ? 'Loading…' : 'Preview'}
             </button>
-            <button onClick={() => approve(rc.id)} disabled={savingId === rc.id}
+            <button className="pressable" onClick={() => approve(rc.id)} disabled={savingId === rc.id}
               style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: sc, color: '#fff', fontWeight: 700 }}>
               {savingId === rc.id ? 'Approving…' : 'Approve & Sign'}
             </button>
@@ -113,8 +113,8 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
       <h3 style={{ margin: '24px 0 10px' }}>Approved ({approved.length})</h3>
       {approved.map((rc: any) => (
         <div key={rc.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid var(--glass-border)', borderRadius: 10, marginBottom: 8 }}>
-          <span>{rc.student?.full_name} — {TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}</span>
-          <button onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
+          <span>{rc.student?.full_name}, {TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}</span>
+          <button className="pressable" onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
             style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem' }}>
             {downloadingId === rc.id ? 'Loading…' : 'View PDF'}
           </button>

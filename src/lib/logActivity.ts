@@ -45,3 +45,34 @@ export async function logActivity(input: LogActivityInput) {
     console.warn('logActivity failed (non-critical):', err)
   }
 }
+
+/**
+ * Server-side variant for API routes and webhooks, which have no browser
+ * session for the client-side createClient() to attach to. Pass in
+ * whichever Supabase client the caller already has — typically the
+ * service-role admin client, since webhooks (e.g. the Paystack webhook)
+ * act on behalf of the system rather than an authenticated browser user.
+ *
+ * Example (inside a webhook route.ts):
+ *   await logActivityWithClient(supabaseAdmin, {
+ *     userId: parentId, schoolId,
+ *     type: 'fee_paid',
+ *     title: `Paid ₦${amount.toLocaleString()} for ${studentName}`,
+ *     href: '/dashboard/parent/fees',
+ *   })
+ */
+export async function logActivityWithClient(supabase: any, input: LogActivityInput) {
+  try {
+    await supabase.from('recent_activities').insert({
+      user_id:    input.userId,
+      school_id:  input.schoolId,
+      type:       input.type,
+      title:      input.title,
+      subtitle:   input.subtitle ?? null,
+      href:       input.href,
+      metadata:   input.metadata ?? null,
+    })
+  } catch (err) {
+    console.warn('logActivityWithClient failed (non-critical):', err)
+  }
+}

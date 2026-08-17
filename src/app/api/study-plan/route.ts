@@ -15,7 +15,16 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { userId, schoolId, classLevel } = await req.json()
+    // schoolId/classLevel must come from the caller's own verified profile,
+    // never from the request body, or any authenticated user could pass an
+    // arbitrary schoolId and enumerate another school's timetable subjects.
+    const { data: callerProfile } = await supabase
+      .from('profiles').select('school_id, class_level').eq('id', user.id).single()
+
+    const schoolId    = (callerProfile as any)?.school_id
+    const classLevel  = (callerProfile as any)?.class_level
+
+    if (!schoolId) return NextResponse.json({ error: 'No school on this account' }, { status: 400 })
 
     // Get student's subjects from timetable/syllabus
     const { data: subjects } = await supabase

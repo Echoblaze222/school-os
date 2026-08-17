@@ -66,7 +66,7 @@ function getAcademicYear(override?: string): string {
 }
 
 function computeGrade(score: number, maxScore: number): string {
-  if (maxScore === 0) return '—'
+  if (maxScore === 0) return 'N/A'
   const pct = (score / maxScore) * 100
   if (pct >= 75) return 'A'
   if (pct >= 65) return 'B'
@@ -118,7 +118,7 @@ export default function PostResultsClient({
   profile,
   school,
 }: Props) {
-  // Live results — starts from server data, updated after each save
+  // Live results - starts from server data, updated after each save
   const [liveResults,  setLiveResults]  = useState<ExistingResult[]>(initialResults)
 
   // Navigation state
@@ -164,8 +164,8 @@ export default function PostResultsClient({
         map[groupKey] = {
           key:         groupKey,
           csId:        r.class_subject_id,
-          subjectName: tc?.subject_name ?? '—',
-          className:   tc?.class_name   ?? '—',
+          subjectName: tc?.subject_name ?? 'N/A',
+          className:   tc?.class_name   ?? 'N/A',
           term:        r.term,
           termKey:     DB_TO_TERM[r.term] ?? 'first',
           resultType:  r.result_type as ResultType,
@@ -283,7 +283,7 @@ export default function PostResultsClient({
     if (!selectedCS.class_subject_id) {
       setIsSubmitting(false)
       setSubmitStatus('error')
-      setErrorMsg('This class has no subject record yet — ask an admin to assign this subject to the class before posting results.')
+      setErrorMsg('This class has no subject record yet. Ask an admin to assign this subject to the class before posting results.')
       return
     }
 
@@ -379,7 +379,7 @@ export default function PostResultsClient({
       .map(r => ({
         ...r,
         studentName:   allStudents.find(s => s.student_id === r.student_id)?.full_name ?? 'Unknown',
-        studentNumber: allStudents.find(s => s.student_id === r.student_id)?.student_number ?? '—',
+        studentNumber: allStudents.find(s => s.student_id === r.student_id)?.student_number ?? 'N/A',
       }))
       .sort((a, b) => a.studentName.localeCompare(b.studentName))
   }, [previewGroup, liveResults, allStudents])
@@ -394,7 +394,7 @@ export default function PostResultsClient({
       <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title="Results">
         {/* Post Results button */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-          <button onClick={openNewWizard} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
+          <button className="pressable" onClick={openNewWizard} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
             <IcPlus /> Post Results
           </button>
         </div>
@@ -423,7 +423,7 @@ export default function PostResultsClient({
             <div style={{ marginBottom: 12 }}><IcEmpty /></div>
             <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)' }}>No results posted yet</p>
             <p style={{ margin: '0 0 20px', fontSize: '0.8rem' }}>Tap "Post Results" to get started</p>
-            <button
+            <button className="pressable"
               onClick={openNewWizard}
               style={{
                 padding: '10px 20px', borderRadius: 10,
@@ -468,7 +468,7 @@ export default function PostResultsClient({
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button
+                  <button className="pressable"
                     onClick={() => openPreview(g)}
                     title="Preview scores"
                     style={{
@@ -480,7 +480,7 @@ export default function PostResultsClient({
                   >
                     <IcEye /> View
                   </button>
-                  <button
+                  <button className="pressable"
                     onClick={() => openEditWizard(g)}
                     title="Edit scores"
                     style={{
@@ -508,13 +508,13 @@ export default function PostResultsClient({
       <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title={previewGroup.subjectName}>
         {/* Back + edit row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <button onClick={() => setMode('overview')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
+          <button className="pressable" onClick={() => setMode('overview')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
             <IcBack /> Back
           </button>
           <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', flex: 1 }}>
             {previewGroup.className} · {previewGroup.term} · {RESULT_TYPE_LABELS[previewGroup.resultType]}
           </p>
-          <button onClick={() => openEditWizard(previewGroup)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontSize: '0.78rem', fontWeight: 700 }}>
+          <button className="pressable" onClick={() => openEditWizard(previewGroup)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontSize: '0.78rem', fontWeight: 700 }}>
             <IcEdit /> Edit
           </button>
         </div>
@@ -581,14 +581,14 @@ export default function PostResultsClient({
   // ── WIZARD ────────────────────────────────────────────────────────────────
   const wizardTitle = step === 1 ? 'Post Results'
     : step === 2 ? 'Assessment Details'
-    : `${selectedCS?.subject_name ?? ''} — ${selectedCS?.class_name ?? ''}`
+    : `${selectedCS?.subject_name ?? ''}, ${selectedCS?.class_name ?? ''}`
 
   return (
     <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title={wizardTitle}>
 
       {/* Back + step info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <button onClick={() => { setMode('overview'); setStep(1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
+        <button className="pressable" onClick={() => { setMode('overview'); setStep(1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
           <IcBack /> Back
         </button>
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -617,7 +617,7 @@ export default function PostResultsClient({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {teacherClasses.map(tc => (
-                <button
+                <button className="pressable"
                   key={tc.class_subject_id}
                   onClick={() => { setSelectedCS(tc); setStep(2) }}
                   style={{
@@ -651,7 +651,7 @@ export default function PostResultsClient({
             <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Term</p>
             <div style={{ display: 'flex', gap: 8 }}>
               {(['first', 'second', 'third'] as Term[]).map(t => (
-                <button
+                <button className="pressable"
                   key={t}
                   onClick={() => setTerm(t)}
                   style={{
@@ -674,7 +674,7 @@ export default function PostResultsClient({
             <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Assessment Type</p>
             <div style={{ display: 'flex', gap: 8 }}>
               {(['day_test', 'mid_term', 'exam'] as ResultType[]).map(rt => (
-                <button
+                <button className="pressable"
                   key={rt}
                   onClick={() => setResultType(rt)}
                   style={{
@@ -710,10 +710,10 @@ export default function PostResultsClient({
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-            <button onClick={() => setStep(1)} style={{ flex: 1, padding: '12px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>
+            <button className="pressable" onClick={() => setStep(1)} style={{ flex: 1, padding: '12px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>
               ← Back
             </button>
-            <button
+            <button className="pressable"
               onClick={() => setStep(3)}
               disabled={!maxScore || Number(maxScore) <= 0}
               style={{ flex: 2, padding: '12px', borderRadius: 10, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: (!maxScore || Number(maxScore) <= 0) ? 0.5 : 1 }}
@@ -754,7 +754,7 @@ export default function PostResultsClient({
               {classStudents.map(s => {
                 const raw   = scores[s.student_id] ?? ''
                 const num   = raw !== '' ? Number(raw) : NaN
-                const grade = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : '—'
+                const grade = !isNaN(num) && raw !== '' ? computeGrade(Math.min(num, maxNum), maxNum) : 'N/A'
                 const isOver = !isNaN(num) && num > maxNum
                 return (
                   <div key={s.student_id} style={{
@@ -770,12 +770,12 @@ export default function PostResultsClient({
                     {/* Name */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: '0 0 1px', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.full_name}</p>
-                      <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-muted)' }}>{s.student_number ?? '—'}</p>
+                      <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-muted)' }}>{s.student_number ?? 'N/A'}</p>
                     </div>
                     {/* Score input */}
                     <input
                       type="number" min="0" max={maxNum}
-                      placeholder="—"
+                      placeholder="N/A"
                       value={raw}
                       onChange={e => setScores(prev => ({ ...prev, [s.student_id]: e.target.value }))}
                       style={{
@@ -787,8 +787,8 @@ export default function PostResultsClient({
                       }}
                     />
                     {/* Grade badge */}
-                    <div style={{ width: 30, height: 30, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: grade !== '—' ? gradeBg(grade) : 'var(--glass-border)', flexShrink: 0 }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.8rem', color: grade !== '—' ? gradeColor(grade) : 'var(--text-muted)' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: grade !== 'N/A' ? gradeBg(grade) : 'var(--glass-border)', flexShrink: 0 }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.8rem', color: grade !== 'N/A' ? gradeColor(grade) : 'var(--text-muted)' }}>
                         {grade}
                       </span>
                     </div>
@@ -800,13 +800,13 @@ export default function PostResultsClient({
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button
+            <button className="pressable"
               onClick={() => setStep(2)}
               style={{ padding: '12px 16px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}
             >
               ← Back
             </button>
-            <button
+            <button className="pressable"
               onClick={handleSubmit}
               disabled={isSubmitting || filledCount === 0}
               style={{

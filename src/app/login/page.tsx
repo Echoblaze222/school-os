@@ -362,7 +362,7 @@ export default function LoginPage() {
               School<span className={styles.footerLogoAccent}>OS</span>
             </p>
             <p className={styles.footerTagline}>
-              Nigeria's most comprehensive multi-role school management platform — built for principals,
+              Nigeria's most comprehensive multi-role school management platform, built for principals,
               teachers, bursars, secretaries, students, and parents. Every role. One platform.
             </p>
           </div>

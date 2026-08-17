@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import BursarMeetingsClient from './BursarMeetingsClient'
 
-export const metadata = { title: 'Meetings — SchoolOS' }
+export const metadata = { title: 'Meetings | SchoolOS' }
 
 export interface MeetingRow {
   id: string

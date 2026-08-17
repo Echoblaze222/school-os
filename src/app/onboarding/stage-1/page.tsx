@@ -68,7 +68,7 @@ export default function OnboardingStage1() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#800020,#5C0018)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(128,0,32,0.3)' }}>🎓</div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3 — Set up your profile</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3: Set up your profile</p>
         </div>
 
         {/* Progress dots */}
@@ -95,7 +95,7 @@ export default function OnboardingStage1() {
           {/* Phone */}
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Phone Number</label>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>Optional — used for account recovery</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>Optional, used for account recovery</p>
             <input
               type="tel"
               value={phone}

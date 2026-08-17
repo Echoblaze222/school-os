@@ -13,6 +13,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { VideoIcon, StatusDotIcon, CalendarIcon, AlertIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -108,7 +109,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
           </div>
 
           {loading
-            ? <div className={styles.loading}><span /><span /><span /></div>
+            ? <SkeletonList count={3} variant="row" />
             : visible.length === 0
               ? (
                 <div className={`${styles.empty} ${motion.riseIn}`}>

@@ -8,6 +8,8 @@ import { NextResponse }      from 'next/server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 
+import crypto                 from 'crypto'
+
 
 
 // One-time platform setup fee
@@ -170,7 +172,15 @@ export async function POST(request: Request) {
 
     // ── 3. Create principal profile ───────────────────────
 
-    const defaultCode = `SCH-${Date.now().toString().slice(-6)}`
+    // SECURITY FIX: this used to be `SCH-${Date.now().toString().slice(-6)}`
+    // — the last 6 digits of the server clock, which repeats on a ~16.7
+    // minute cycle and is trivially guessable by anyone with a rough idea
+    // of when the school registered. That code is the sole credential
+    // /api/auth/first-login accepts to set the principal's password, so a
+    // predictable code there is a direct account-takeover path. Generate
+    // it the same cryptographically random way admin/create-user and
+    // staff-codes/regenerate already do.
+    const defaultCode = `SCH-${crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)}`
 
 
 

@@ -14,6 +14,8 @@ import { PeopleIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { SkeletonList } from '@/components/motion/Skeleton'
+import EmptyState from '@/components/motion/EmptyState'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -122,11 +124,10 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
           style={{ height:40, padding:'0 12px', background:'var(--input-bg)',
             border:'1px solid var(--input-border)', borderRadius:8,
             color:'var(--text-primary)', fontSize:'0.82rem', outline:'none',
-            width:110, flexShrink:0 }}/>
+            width:110, flexShrink:0, transition:'border-color var(--transition-fast)' }}/>
         <div className={styles.tabs} style={{ flex:1 }}>
           {TERMS.map(t => (
-            <button key={t} onClick={() => setTerm(t)}
-              className={`${styles.tab} ${term===t ? styles.tabActive : ''}`}
+            <button key={t} onClick={() => setTerm(t)} className={`${styles.tab} pressable ${term===t ? styles.tabActive : ''}`}
               style={term===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
               {t.replace(' Term','')}
             </button>
@@ -145,7 +146,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
       {!loading && debtors.length > 0 && (
         <div className={`glass-card ${motion.riseIn}`} style={{ padding:'var(--space-4)', marginBottom:'var(--space-4)' }}>
           <GaugeStat
-            label={`Collected — ${term} ${year}`}
+            label={`Collected: ${term} ${year}`}
             value={collectionPct} isPercent
             color="var(--brand-2, var(--brand))"
             caption={`${fmtAmt(totalOutstanding)} outstanding across ${debtors.length} student${debtors.length !== 1 ? 's' : ''}`}
@@ -154,19 +155,20 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
       )}
 
       {loading
-        ? <div className={styles.loading}><span/><span/><span/></div>
+        ? <SkeletonList count={3} variant="row" />
         : debtors.length === 0
-          ? <div className={styles.empty}>
-              <PeopleIcon size={40} color="var(--text-faint)" strokeWidth={1}/>
-              <p>No outstanding fees for {term} {year}</p>
-            </div>
-          : <div className={styles.list}>
+          ? <EmptyState
+              icon={<PeopleIcon size={40} color="var(--text-faint)" strokeWidth={1}/>}
+              title={`No outstanding fees for ${term} ${year}`}
+              subtitle="Every invoice for this term has been fully paid, or no invoices have been generated yet."
+            />
+          : <div className={`${styles.list} stagger`}>
               {debtors.map((d: any) => {
                 const paidPct = d.expected > 0
                   ? Math.min(100, Math.round((d.paid / d.expected) * 100))
                   : 0
                 return (
-                  <div key={d.id} className={styles.card}>
+                  <div key={d.id} className={`${styles.card} animate-fade-up`}>
                     <div className={styles.cardIcon}
                       style={{ background:'#EF444420', borderRadius:'50%', overflow:'hidden' }}>
                       {d.avatar_url

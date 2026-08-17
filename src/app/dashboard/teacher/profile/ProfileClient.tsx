@@ -1,6 +1,6 @@
 'use client'
 // src/app/dashboard/teacher/profile/ProfileClient.tsx
-// FIX #12: Added teacher-specific fields — subjects, classes, qualification, employee ID, years experience
+// FIX #12: Added teacher-specific fields - subjects, classes, qualification, employee ID, years experience
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -106,7 +106,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
     try {
       const ext  = file.name.split('.').pop()
-      // No leading 'avatars/' here — that prefix is the bucket name itself,
+      // No leading 'avatars/' here - that prefix is the bucket name itself,
       // adding it again created a nested avatars/avatars/ path inside the bucket.
       const path = `${userId}/${Date.now()}.${ext}`
 
@@ -137,7 +137,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       setMsg('Photo updated!')
       router.refresh() // re-fetches server data so header/nav avatar also updates
     } catch (err: any) {
-      // Catches network failures, CORS errors, or a missing bucket — all of
+      // Catches network failures, CORS errors, or a missing bucket - all of
       // which previously failed silently with no feedback at all.
       console.error('Avatar upload error:', err)
       setMsg('Upload failed: ' + (err?.message ?? 'Please check your connection and try again.'))
@@ -186,7 +186,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
               </div>
             )}
           </div>
-          <button
+          <button className="pressable"
             onClick={() => fileRef.current?.click()}
             disabled={uploadingPhoto}
             style={{
@@ -232,7 +232,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: 0 }}>
             Personal Info
           </p>
-          <button onClick={() => setEditing(!editing)} style={{
+          <button className="pressable" onClick={() => setEditing(!editing)} style={{
             display: 'flex', alignItems: 'center', gap: 5,
             padding: '5px 12px',
             background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)',
@@ -274,7 +274,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
               </p>
             )}
 
-            <button onClick={save} disabled={saving} style={{
+            <button className="pressable" onClick={save} disabled={saving} style={{
               height: 44,
               background: `linear-gradient(135deg, ${sc}, ${sc}cc)`,
               color: '#fff', border: 'none', borderRadius: 10,
@@ -286,14 +286,14 @@ export default function ProfileClient({ profile, school, userId }: Props) {
         ) : (
           <div>
             {[
-              ['Full Name',      profile?.full_name       ?? '—'],
-              ['Employee ID',    profile?.employee_id     ?? '—'],
-              ['Email',          profile?.email           ?? '—'],
-              ['Phone',          profile?.phone           ?? '—'],
-              ['Qualification',  profile?.qualification   ?? '—'],
-              ['Years Teaching', profile?.years_experience != null ? `${profile.years_experience} yrs` : '—'],
-              ['ID Code',        profile?.default_code    ?? '—'],
-              ['School',         school?.name             ?? '—'],
+              ['Full Name',      profile?.full_name       ?? 'N/A'],
+              ['Employee ID',    profile?.employee_id     ?? 'N/A'],
+              ['Email',          profile?.email           ?? 'N/A'],
+              ['Phone',          profile?.phone           ?? 'N/A'],
+              ['Qualification',  profile?.qualification   ?? 'N/A'],
+              ['Years Teaching', profile?.years_experience != null ? `${profile.years_experience} yrs` : 'N/A'],
+              ['ID Code',        profile?.default_code    ?? 'N/A'],
+              ['School',         school?.name             ?? 'N/A'],
             ].map(([label, value]) => (
               <div key={label} style={{
                 display: 'flex', justifyContent: 'space-between',
@@ -397,7 +397,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           Change Password
         </a>
 
-        <button onClick={logout} style={{
+        <button className="pressable" onClick={logout} style={{
           display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
           padding: 'var(--space-4)',
           background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',

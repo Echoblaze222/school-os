@@ -8,6 +8,7 @@ export default async function PrincipalLivePage() {
   if (!user) redirect('/login')
   const { data: profile } = await supabase
     .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+  if (!profile || (profile as any).role !== 'principal') redirect('/login')
   const school = (profile as any)?.schools ?? null
   return <LiveClient profile={profile} school={school} userId={user.id} />
 }

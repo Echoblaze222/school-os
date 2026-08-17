@@ -103,11 +103,11 @@ export default function MessagesClient({ userId, userName, userAvatar, initialRo
       {/* Header */}
       <header className={styles.header}>
         {activeRoom ? (
-          <button onClick={() => { setActiveRoom(null); if(channelRef.current){supabase.removeChannel(channelRef.current);channelRef.current=null} }} className={styles.backBtn} aria-label="Back to rooms">
+          <button onClick={() => { setActiveRoom(null); if(channelRef.current){supabase.removeChannel(channelRef.current);channelRef.current=null} }} className={`${styles.backBtn} pressable`} aria-label="Back to rooms">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
         ) : (
-          <button onClick={() => router.push('/dashboard/teacher')} className={styles.backBtn} aria-label="Back">
+          <button onClick={() => router.push('/dashboard/teacher')} className={`${styles.backBtn} pressable`} aria-label="Back">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
         )}
@@ -130,7 +130,7 @@ export default function MessagesClient({ userId, userName, userAvatar, initialRo
           ) : (
             <div className={styles.roomList}>
               {rooms.map((room, i) => (
-                <button key={room.id} className={`${styles.roomItem} animate-fade-up`} style={{animationDelay:`${i*40}ms`,opacity:0}} onClick={() => openRoom(room)}>
+                <button key={room.id} className={`${styles.roomItem} animate-fade-up pressable`} style={{animationDelay:`${i*40}ms`,opacity:0}} onClick={() => openRoom(room)}>
                   <div className={styles.roomAvatar}>
                     {room.type === 'group'
                       ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -187,7 +187,7 @@ export default function MessagesClient({ userId, userName, userAvatar, initialRo
               disabled={sending}
               className={styles.msgInput}
             />
-            <button onClick={handleSend} disabled={!input.trim()||sending} className={styles.sendBtn} aria-label="Send">
+            <button onClick={handleSend} disabled={!input.trim()||sending} className={`${styles.sendBtn} pressable`} aria-label="Send">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>

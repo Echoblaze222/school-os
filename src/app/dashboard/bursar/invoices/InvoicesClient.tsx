@@ -187,7 +187,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                     {student?.full_name ?? 'Unknown'}
                   </p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                    {student?.class_level ?? '—'} · {student?.permanent_student_id ?? student?.admission_number ?? '—'}
+                    {student?.class_level ?? 'N/A'} · {student?.permanent_student_id ?? student?.admission_number ?? 'N/A'}
                   </p>
                 </div>
                 <span className={`badge ${STATUS_COLORS[previewInv.status] ?? 'badge-info'}`}
@@ -202,7 +202,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                   {fee?.description ?? 'School Fees'}
                 </p>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-                  {fee?.term ? fee.term.charAt(0).toUpperCase() + fee.term.slice(1) + ' Term' : '—'}
+                  {fee?.term ? fee.term.charAt(0).toUpperCase() + fee.term.slice(1) + ' Term' : 'N/A'}
                   {fee?.academic_year ? ` · ${fee.academic_year}` : ''}
                 </p>
               </div>
@@ -247,12 +247,13 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
               )}
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={saveInvoiceEdit} disabled={saving}
+                <button onClick={saveInvoiceEdit} disabled={saving} className="pressable"
                   style={{ flex: 1, height: 42, background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
                 {previewInv.balance_ngn > 0 && (
                   <a href={`/dashboard/bursar/record-payment?invoice=${previewInv.id}&student=${student?.full_name ?? ''}`}
+                    className="pressable"
                     style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
                     <CreditCardIcon size={15} color="var(--text-primary)" /> Record Payment
                   </a>
@@ -297,7 +298,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           </p>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
             This creates invoices for all active students based on the fee structures you've set up.
-            Safe to run multiple times — existing invoices are not duplicated.
+            Safe to run multiple times. Existing invoices are not duplicated.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
@@ -348,7 +349,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
               fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
               opacity: generating ? 0.6 : 1,
             }}>
-            {generating ? 'Generating…' : `Generate Invoices — ${genTerm} ${genYear}`}
+            {generating ? 'Generating…' : `Generate Invoices: ${genTerm} ${genYear}`}
           </button>
         </div>
       )}
@@ -433,7 +434,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                   <div>
                     <p className={styles.studentName}>{student?.full_name ?? 'Unknown'}</p>
                     <p className={styles.studentMeta}>
-                      {student?.permanent_student_id ?? student?.admission_number ?? '—'}
+                      {student?.permanent_student_id ?? student?.admission_number ?? 'N/A'}
                       {student?.class_level ? ` · ${student.class_level}` : ''}
                     </p>
                   </div>
