@@ -4,7 +4,7 @@
 
    Rebuilt on the real SchoolOS design tokens (see globals.css). The old
    version referenced --burgundy-*, --font-display, --font-body, --success-bg,
-   --warning-bg, --z-card — none of which exist, so the page rendered with
+   --warning-bg, --z-card - none of which exist, so the page rendered with
    zero styling. This version uses --brand (school-colour-driven via
    SchoolBrandInjector), --gold for the "alumni" accent, and the shared
    spacing/radius/text tokens used across the rest of the app. */

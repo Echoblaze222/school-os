@@ -13,6 +13,8 @@ import {
   MegaphoneIcon, ClockIcon, BookOpenIcon, AwardIcon, SchoolIcon,
   CheckCircleIcon, DownloadIcon, TrophyIcon, SunIcon, MoonIcon,
   SettingsIcon, CreditCardIcon, ShieldIcon, UploadIcon, ActivityIcon,
+  HeartIcon, AlertCircleIcon, ArrowLeftIcon,
+  GlobeIcon,
 } from './Icons'
 import styles from './RoleNav.module.css'
 
@@ -77,6 +79,7 @@ const NAV: Record<string, {
         { href: '/dashboard/principal/report-cards',Icon: FileTextIcon,  label: 'Report Cards'},
         { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'        },
         { href: '/dashboard/principal/reports',     Icon: FileTextIcon,  label: 'Reports'     },
+        { href: '/dashboard/principal/promotions',  Icon: GlobeIcon,     label: 'Promotions'  },
         { href: '/dashboard/principal/profile',     Icon: UserIcon,      label: 'My Profile'  },
       ]},
     ],
@@ -123,6 +126,95 @@ const NAV: Record<string, {
       { home: true },
       { href: '/dashboard/bursar/debtors',  Icon: PeopleIcon,   label: 'Debtors'  },
       { href: '/dashboard/bursar/reports',  Icon: BarChartIcon, label: 'Reports'  },
+    ],
+  },
+
+  counselor: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/counselor',               Icon: HomeIcon,      label: 'Dashboard'     },
+        { href: '/dashboard/counselor/ai',             Icon: AiIcon,        label: 'AI Assistant'  },
+        { href: '/dashboard/counselor/chat',           Icon: MessageIcon,   label: 'Messages'      },
+        { href: '/dashboard/counselor/notifications',  Icon: BellIcon,      label: 'Notifications' },
+      ]},
+      { label: 'Counseling', items: [
+        { href: '/dashboard/counselor/cases',          Icon: HeartIcon,     label: 'Caseload'      },
+        { href: '/dashboard/counselor/appointments',   Icon: CalendarIcon,  label: 'Appointments'  },
+        { href: '/dashboard/counselor/referrals',      Icon: ShieldIcon,    label: 'Referrals'     },
+        { href: '/dashboard/counselor/reports',        Icon: BarChartIcon,  label: 'Reports'       },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/counselor/profile',        Icon: UserIcon,      label: 'My Profile'    },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/counselor/cases',        Icon: HeartIcon,    label: 'Caseload'     },
+      { href: '/dashboard/counselor/appointments', Icon: CalendarIcon, label: 'Appointments' },
+      { home: true },
+      { href: '/dashboard/counselor/referrals',    Icon: ShieldIcon,   label: 'Referrals'    },
+      { href: '/dashboard/counselor/reports',      Icon: BarChartIcon, label: 'Reports'      },
+    ],
+  },
+
+  // Phase 2, Lane C, appointment-gated, not role-gated. A teacher who
+  // holds an active exam-committee appointment reaches this via the
+  // "Examination Team" link on their teacher dashboard; base teacher
+  // functionality is completely unaffected either way. See
+  // middleware.ts APPOINTMENT_DASHBOARD_SEGMENTS for the access check.
+  examination: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/examination',            Icon: HomeIcon,        label: 'Committee Home' },
+        { href: '/dashboard/teacher',                Icon: ArrowLeftIcon,   label: 'Teacher Dashboard' },
+      ]},
+      { label: 'Examinations', items: [
+        { href: '/dashboard/examination/sessions',   Icon: CalendarIcon,    label: 'Exam Sessions' },
+        { href: '/dashboard/examination/timetable',  Icon: ClockIcon,       label: 'Timetable'     },
+        { href: '/dashboard/examination/invigilation', Icon: ShieldIcon,    label: 'Invigilation'  },
+        { href: '/dashboard/examination/attendance', Icon: CheckCircleIcon, label: 'Exam Attendance' },
+        { href: '/dashboard/examination/documents',  Icon: FileTextIcon,    label: 'Question Papers' },
+        { href: '/dashboard/examination/incidents',  Icon: AlertCircleIcon, label: 'Incidents'     },
+      ]},
+      { label: 'Results', items: [
+        { href: '/dashboard/examination/results',    Icon: BarChartIcon,    label: 'Verify & Publish' },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/examination/timetable',    Icon: ClockIcon,       label: 'Timetable' },
+      { href: '/dashboard/examination/invigilation', Icon: ShieldIcon,      label: 'Duty'      },
+      { home: true },
+      { href: '/dashboard/examination/results',      Icon: BarChartIcon,    label: 'Results'   },
+      { href: '/dashboard/examination/incidents',    Icon: AlertCircleIcon, label: 'Incidents' },
+    ],
+  },
+
+  // Added for Phase 2, Lane D. 'ict' is never a profiles.role value (it's
+  // an appointment, see lib/permissions.ts), but this Record is keyed by
+  // plain string and RoleNav derives homePath as `/dashboard/${role}`, so
+  // passing role="ict" from the ICT layout works without touching any
+  // other role's config below.
+  ict: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/ict',                    Icon: HomeIcon,      label: 'Dashboard'        },
+        { href: '/dashboard/ict/tickets',             Icon: ClipboardIcon, label: 'Support Tickets'  },
+        { href: '/dashboard/ict/assets',              Icon: ActivityIcon,  label: 'Assets'           },
+        { href: '/dashboard/ict/account-requests',    Icon: UserIcon,      label: 'Account Requests' },
+        { href: '/dashboard/ict/applications',        Icon: CheckCircleIcon, label: 'Applications'   },
+      ]},
+      { label: 'Workspace', items: [
+        { href: '/dashboard/ict/chat',                Icon: MessageIcon,   label: 'Messages'      },
+        { href: '/dashboard/ict/ai',                  Icon: AiIcon,        label: 'AI Assistant'  },
+        { href: '/dashboard/ict/notifications',       Icon: BellIcon,      label: 'Notifications' },
+        { href: '/dashboard/ict/profile',             Icon: UserIcon,      label: 'My Profile'    },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/ict/tickets', Icon: ClipboardIcon, label: 'Tickets' },
+      { href: '/dashboard/ict/assets',  Icon: ActivityIcon,  label: 'Assets'  },
+      { home: true },
+      { href: '/dashboard/ict/chat',    Icon: MessageIcon,   label: 'Chat'    },
+      { href: '/dashboard/ict/ai',      Icon: AiIcon,        label: 'AI'      },
     ],
   },
 

@@ -86,7 +86,7 @@ export default function NewAssignmentClient({ classes, teacherId }: Props) {
     if (!form.title.trim()) e.title       = 'Title is required'
     if (!form.due_date)     e.due_date    = 'Due date is required'
     const score = Number(form.max_score)
-    if (isNaN(score) || score < 1 || score > 1000) e.max_score = 'Score must be 1–1000'
+    if (isNaN(score) || score < 1 || score > 1000) e.max_score = 'Score must be 1-1000'
     setErrors(e)
     return Object.keys(e).length === 0
   }

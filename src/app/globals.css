@@ -731,6 +731,26 @@ textarea.input {
 .animate-toast-in  { animation: toast-in  0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
 .animate-toast-out { animation: toast-out 0.2s cubic-bezier(0.4,0,0.2,1) forwards; }
 
+/* Used by ToastContext.tsx's stacked toast items, which live inside an
+   already-horizontally-centered container — unlike toast-in/toast-out
+   above (designed for a single element that centers itself via
+   left:50% + translate(-50%,...)), these only animate vertically so
+   they don't fight the parent's centering transform. */
+@keyframes toast-item-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-item-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+.animate-toast-item-in  { animation: toast-item-in  0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
+.animate-toast-item-out { animation: toast-item-out 0.2s cubic-bezier(0.4,0,0.2,1) forwards; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 @keyframes shake-x {
   10%, 90% { transform: translateX(-1px); }
   20%, 80% { transform: translateX(2px); }

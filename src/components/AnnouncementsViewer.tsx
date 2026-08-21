@@ -4,8 +4,8 @@
 //  Read-only feed used by: student, teacher, parent, bursar
 //
 //  FIXES:
-//   ✓ Click to read full message works — expand/collapse inline
-//   ✓ Real-time subscription — new posts appear without refresh
+//   ✓ Click to read full message works - expand/collapse inline
+//   ✓ Real-time subscription - new posts appear without refresh
 //   ✓ Audience filtering (viewer only sees relevant notices)
 //   ✓ Urgent items pinned visually to top of list
 // ─────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ interface Props {
   initialItems:  Announcement[]
   schoolId:      string
   userId?:       string
-  /** Viewer's role — used to filter announcements */
+  /** Viewer's role - used to filter announcements */
   viewerAudience: Audience | 'all'
 }
 
@@ -75,7 +75,7 @@ export default function AnnouncementsViewer({
 
   // Opening a long announcement is the one clear, discrete "read" action
   // available here (short ones are just visible in the list with nothing to
-  // click) — log once per item per session, not on every expand/collapse
+  // click) - log once per item per session, not on every expand/collapse
   // toggle if the person opens and closes it repeatedly.
   function handleExpand(item: Announcement) {
     const opening = expandedId !== item.id
@@ -177,7 +177,7 @@ export default function AnnouncementsViewer({
               </span>
             </div>
 
-            {/* Title — tappable to expand */}
+            {/* Title - tappable to expand */}
             <h3
               className={styles.cardTitle}
               onClick={() => isLong && handleExpand(item)}
@@ -186,7 +186,7 @@ export default function AnnouncementsViewer({
               {item.title}
             </h3>
 
-            {/* Body — clipped unless expanded */}
+            {/* Body - clipped unless expanded */}
             <p
               className={styles.cardBody}
               style={isExpanded ? { WebkitLineClamp: 'unset', display: 'block' } : {}}

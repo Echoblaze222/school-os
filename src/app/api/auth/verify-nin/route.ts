@@ -1,7 +1,7 @@
 // src/app/api/auth/verify-nin/route.ts
 //
 // Verifies a Nigerian NIN in real-time via Dojah.
-// The Dojah API key lives only on the server — never exposed to the client.
+// The Dojah API key lives only on the server - never exposed to the client.
 //
 // Dojah docs: https://docs.dojah.io/docs/nin-lookup
 // Add to .env.local:
@@ -9,7 +9,7 @@
 //   DOJAH_API_KEY=your_private_key
 //
 // Free tier: 100 NIN lookups/month. Production: pay-as-you-go.
-// Sign up at https://dojah.io — API keys available in ~5 minutes.
+// Sign up at https://dojah.io - API keys available in ~5 minutes.
 
 import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
@@ -19,7 +19,7 @@ const DOJAH_BASE = 'https://api.dojah.io'
 
 export async function POST(request: Request) {
   try {
-    // ── 1. Auth — must be a logged-in user in stage_3_pending ──────────────
+    // ── 1. Auth - must be a logged-in user in stage_3_pending ──────────────
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
           { status: 422 }
         )
       }
-      // Log status + message only — never log dojahData directly as it may echo the NIN
+      // Log status + message only - never log dojahData directly as it may echo the NIN
       console.error('[verify-nin] Dojah error:', dojahRes.status, dojahData?.error ?? dojahData?.message ?? 'unknown')
       return NextResponse.json(
         { error: 'Verification service error. Please try again.' },
@@ -106,12 +106,12 @@ export async function POST(request: Request) {
     }
 
     // ── 7. Log the verification attempt ─────────────────────────────────────
-    // nin_verification_log exists in the schema — write to it regardless of outcome
+    // nin_verification_log exists in the schema - write to it regardless of outcome
     await admin.from('nin_verification_log').insert({
       user_id:           user.id,
       passport_url:      '',            // photo URL added after upload in stage-3
       nin_url:           nin,           // storing NIN string in this column
-      match_confidence:  100,           // Dojah NIN lookup is binary — either found or not
+      match_confidence:  100,           // Dojah NIN lookup is binary - either found or not
       passed:            true,
       verified_at:       new Date().toISOString(),
     }).then(() => { /* fire and forget */ })

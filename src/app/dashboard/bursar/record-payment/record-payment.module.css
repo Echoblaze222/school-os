@@ -1,5 +1,5 @@
 /* src/app/dashboard/bursar/record-payment/record-payment.module.css */
-/* Header + nav are now provided by RolePageWrapper / RoleNav — no custom versions needed */
+/* Header + nav are now provided by RolePageWrapper / RoleNav - no custom versions needed */
 .stepDots{display:flex;align-items:center;justify-content:center;gap:var(--space-4);padding:var(--space-4) var(--space-5);background:var(--glass-bg);border-bottom:1px solid var(--glass-border);}
 .dot{width:28px;height:28px;border-radius:50%;background:var(--glass-bg);border:1.5px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:0.72rem;font-weight:700;color:var(--text-muted);transition:all var(--transition-fast);}
 .dotActive{background:var(--burgundy-subtle);border-color:rgba(128,0,32,0.5);color:var(--text-accent);}

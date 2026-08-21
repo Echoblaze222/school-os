@@ -17,7 +17,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props
     try {
       const supabase = createClient()
 
-      // Step 1: find student by code — simple query, no joins
+      // Step 1: find student by code - simple query, no joins
       const { data: student, error: e1 } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')

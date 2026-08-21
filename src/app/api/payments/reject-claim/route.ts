@@ -1,5 +1,5 @@
 // src/app/api/payments/reject-claim/route.ts
-// Bursar rejects a payment claim with a reason — notifies parent.
+// Bursar rejects a payment claim with a reason - notifies parent.
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: me } = await admin.from('profiles')
-    .select('role').eq('id', user.id).single()
+    .select('role, school_id').eq('id', user.id).single()
 
   if (!me || !['bursar','principal','super_admin'].includes(me.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
-  // Load the claim first so we can enforce the tenant boundary — a
+  // Load the claim first so we can enforce the tenant boundary - a
   // bursar/principal may only act on claims belonging to their own school.
   const { data: claimRow } = await admin
     .from('payment_claims')
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (!claimRow) {
     return NextResponse.json({ error: 'Claim not found' }, { status: 404 })
   }
-  if (claimRow.school_id !== me.school_id) {
+  if (me.role !== 'super_admin' && claimRow.school_id !== me.school_id) {
     return NextResponse.json({ error: 'This claim does not belong to your school.' }, { status: 403 })
   }
   if (claimRow.status !== 'pending') {

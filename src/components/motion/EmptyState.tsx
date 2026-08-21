@@ -1,6 +1,6 @@
 'use client'
 
-// Reusable empty state — enforces the WHAT/WHY/NEXT pattern from the UX
+// Reusable empty state - enforces the WHAT/WHY/NEXT pattern from the UX
 // spec (what's empty, why it may be empty, what to do next) instead of a
 // bare "No data" line.
 

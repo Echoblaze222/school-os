@@ -2,7 +2,7 @@
 // components/AllFeaturesSheet.tsx
 // A single "All features" button that opens a bottom sheet listing every
 // module for the current role, grouped. Replaces a permanently-visible
-// grid/sidebar of every button at once — the role's routes don't change,
+// grid/sidebar of every button at once - the role's routes don't change,
 // only how many of them are on screen by default.
 
 import Link from 'next/link'

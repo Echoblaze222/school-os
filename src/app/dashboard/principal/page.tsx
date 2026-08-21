@@ -1,5 +1,5 @@
 // src/app/dashboard/principal/page.tsx
-// BUG 7 FIX: Was passing no counts — all zeros on dashboard. Now fetches real data.
+// BUG 7 FIX: Was passing no counts - all zeros on dashboard. Now fetches real data.
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalDashboardClient from './PrincipalDashboardClient'

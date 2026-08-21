@@ -58,12 +58,12 @@ interface NormalisedResponse {
 // Every AI action across every role is defined ONCE here as an entry in
 // AGENT_TOOLS. Adding a new capability later means adding one entry to
 // this array (+ a small "load draft" effect on the relevant dashboard
-// page) — nothing else in this file needs to change.
+// page) - nothing else in this file needs to change.
 //
 // SAFETY MODEL: no tool here writes real data. Every one of them saves a
 // row to `ai_action_drafts` (school/user-scoped by RLS) and hands back a
 // [[label|href]] link into the *existing* dashboard page for that action.
-// A human reviews and clicks the real Save/Publish button there — that's
+// A human reviews and clicks the real Save/Publish button there - that's
 // what actually creates the announcement/quiz/etc. This is deliberate:
 // content going out school-wide, or touching real records, should always
 // have a human in the loop, never be auto-published by the model.
@@ -79,8 +79,7 @@ interface AgentTool {
   }
   // Where the review page lives for each role that can use this tool.
   reviewPath: (role: string, draftId: string) => string
-  // Cheap structural validation before we trust the model's tool call —
-  // NOT business-rule validation (that still happens in the real page's
+  // Cheap structural validation before we trust the model's tool call - // NOT business-rule validation (that still happens in the real page's
   // own Save flow, same as if a human typed it).
   validate: (input: any) => boolean
 }
@@ -92,7 +91,7 @@ const AGENT_TOOLS: AgentTool[] = [
     actionType:  'quiz',
     description:
       'Create a draft quiz (title + questions) generated from one of this teacher\'s notes. ' +
-      'This does NOT publish a real quiz — it only saves a draft the teacher will review and edit ' +
+      'This does NOT publish a real quiz - it only saves a draft the teacher will review and edit ' +
       'inside the Quizzes page before anything is actually created. Only call this when the teacher ' +
       'has clearly asked you to generate/create quiz questions from a specific note, and only using a ' +
       'note_id that appears in the "This teacher\'s notes" section of your context.',
@@ -136,7 +135,7 @@ const AGENT_TOOLS: AgentTool[] = [
     roles:       ['principal', 'teacher', 'secretary'],
     actionType:  'announcement',
     description:
-      'Draft a school announcement. This does NOT publish it — it only saves a draft the user will ' +
+      'Draft a school announcement. This does NOT publish it - it only saves a draft the user will ' +
       'review inside the Announcements/Notices page and click Post themselves. Only call this when the user ' +
       'has clearly asked you to write/create/draft an announcement, and always write the full body ' +
       'text yourself based on what they told you, not a placeholder.',
@@ -170,9 +169,9 @@ const AGENT_TOOLS: AgentTool[] = [
     actionType:  'fee_reminder',
     description:
       'Draft the WORDING of a fee reminder message. This does NOT send anything and does NOT pick ' +
-      'recipients — it only saves a draft message the bursar will load into the Fee Reminders page, ' +
+      'recipients - it only saves a draft message the bursar will load into the Fee Reminders page, ' +
       'where they still manually select which debtor(s) to send it to and click Send themselves. ' +
-      'Never claim in your reply that a message has been sent — it has not.',
+      'Never claim in your reply that a message has been sent - it has not.',
     schema: {
       type: 'object',
       properties: {
@@ -236,7 +235,7 @@ function buildSystemPrompt(role: string, profile: any): string {
 
   // ── Shared platform knowledge (injected for every role) ──────────────────
   const platformKnowledge = `
-## SchoolOS — Platform Overview
+## SchoolOS - Platform Overview
 SchoolOS is a multi-role school management SaaS platform built for Nigerian schools.
 It runs on a subscription model and serves six user roles: Principal, Teacher, Bursar, Secretary, Student, and Parent.
 
@@ -249,12 +248,12 @@ It runs on a subscription model and serves six user roles: Principal, Teacher, B
 
 ### Onboarding Stages (Principal flow)
 After a school is registered, the Principal must complete onboarding in order:
-  1. **School Profile** — school name, logo, address, primary colour.
-  2. **Academic Setup** — set current session/term, class levels (JSS1–SS3 or custom).
-  3. **Fee Structures** — define fee items (Tuition, PTA levy, etc.) per class level.
-  4. **Staff Accounts** — Secretary creates teacher, bursar, and other staff accounts.
-  5. **Student Enrolment** — Secretary adds students; system generates student access codes.
-  6. **Parent Linking** — Parents sign up and link to a child via the child's student ID.
+  1. **School Profile** - school name, logo, address, primary colour.
+  2. **Academic Setup** - set current session/term, class levels (JSS1-SS3 or custom).
+  3. **Fee Structures** - define fee items (Tuition, PTA levy, etc.) per class level.
+  4. **Staff Accounts** - Secretary creates teacher, bursar, and other staff accounts.
+  5. **Student Enrolment** - Secretary adds students; system generates student access codes.
+  6. **Parent Linking** - Parents sign up and link to a child via the child's student ID.
 Skipping a stage may cause downstream features (fee invoices, class assignments, quizzes) to malfunction.
 
 ### Roles & Dashboard Structure
@@ -272,7 +271,7 @@ Each role has its own dashboard with a bottom navigation bar and the following p
 **Teacher Dashboard**
 - Overview (my classes, upcoming lessons, recent quiz results)
 - Classes (assigned subjects and class levels)
-- Quizzes (create, publish, view results — subjects must be assigned first)
+- Quizzes (create, publish, view results - subjects must be assigned first)
 - Attendance (mark daily attendance per class)
 - Results (enter/upload scores, view gradebook)
 - Messages (send messages to parents or students)
@@ -343,7 +342,7 @@ Each role has its own dashboard with a bottom navigation bar and the following p
   // each step that corresponds to a real screen ends with a deep-link marker
   // in the form [[Button label|/exact/route]]. The client
   // (UniversalAIPage.tsx) parses this marker and renders a tappable button
-  // that navigates straight to that screen — instead of the person having to
+  // that navigates straight to that screen - instead of the person having to
   // find it themselves. Only use routes from the map below; never invent one.
   const stepFormatInstruction = `
 ## Response format for "how do I..." / navigation questions
@@ -352,11 +351,11 @@ numbered list of short steps. For any step where the action happens on a
 specific SchoolOS screen, end that step's line with a deep-link marker:
   1. Open Settings [[Go to Settings|/dashboard/principal/settings]]
   2. Click "Academic Setup" and select the current term
-Only use exact routes from "Your available routes" below — never invent a
+Only use exact routes from "Your available routes" below - never invent a
 route. Steps that are actions within a screen (e.g. "click Save") don't need
 a marker. Keep each step to one short sentence. For questions that aren't
 about navigating the app (explanations, drafting text, general advice),
-respond normally in prose — don't force the numbered/link format.
+respond normally in prose - don't force the numbered/link format.
 `.trim()
 
   const ROUTE_MAP: Record<string, Record<string, string>> = {
@@ -510,7 +509,7 @@ Your job is to help teachers use SchoolOS efficiently and support their classroo
 
 ### What you can help with:
 - **Navigation**: Guide to any Teacher dashboard feature step by step.
-- **Quiz creation**: Walk through creating a quiz — remind the teacher they must be assigned to a subject first. Steps: Quizzes → Create Quiz → select subject/class → add questions → set timer → Publish.
+- **Quiz creation**: Walk through creating a quiz - remind the teacher they must be assigned to a subject first. Steps: Quizzes → Create Quiz → select subject/class → add questions → set timer → Publish.
 - **Attendance**: Guide to Classes → Attendance → select class → mark present/absent → Save.
 - **Results entry**: Guide to Results → select class/subject → enter scores → Save.
 - **Lesson planning**: Generate detailed lesson plans (topic, objectives, introduction, activities, assessment) aligned to WAEC/NECO/JAMB standards.
@@ -588,7 +587,7 @@ Your job is to help parents monitor their child's education and use SchoolOS eff
 
 ### What you can help with:
 - **Navigation**: Guide to any Parent dashboard feature step by step.
-- **Linking a child**: If not already linked — go to My Child → Link Child → enter child's student ID → Confirm.
+- **Linking a child**: If not already linked - go to My Child → Link Child → enter child's student ID → Confirm.
 - **Viewing fees**: My Child → Fees tab → see all invoices, amounts, and payment status.
 - **Viewing results**: My Child → Results tab → view subject scores and term reports.
 - **Viewing attendance**: My Child → Attendance tab → see daily attendance record.
@@ -716,7 +715,7 @@ async function callGemini(
 //
 // SECURITY: every query below is scoped using values that came from the
 // user's OWN profile row (fetched server-side via their authenticated
-// session) — never from anything the client sent in the request body. A
+// session) - never from anything the client sent in the request body. A
 // principal at School A can only ever pull School A's numbers; a student
 // or parent can only ever pull their own / their linked child's records.
 // This mirrors the same school_id-scoping pattern used throughout the rest
@@ -778,7 +777,7 @@ async function fetchDataContext(
         ? Math.round((presentCount / attRows.length) * 100) : null
 
       return `
-## Live School Data (fetched just now for this conversation — use these real numbers, don't invent your own)
+## Live School Data (fetched just now for this conversation - use these real numbers, don't invent your own)
 - Students enrolled: ${studentCount ?? 'unknown'}
 - Teachers: ${teacherCount ?? 'unknown'}
 - Classes: ${classCount ?? 'unknown'}
@@ -804,7 +803,7 @@ async function fetchDataContext(
       const outstandingCount = (invoices ?? []).filter((i: any) => i.status !== 'paid').length
 
       return `
-## Live School Finance Data (fetched just now — use these real numbers, don't invent your own)
+## Live School Finance Data (fetched just now - use these real numbers, don't invent your own)
 - Total due: ₦${feeTotals.due.toLocaleString()}
 - Total collected: ₦${feeTotals.paid.toLocaleString()}
 - Outstanding balance: ₦${(feeTotals.due - feeTotals.paid).toLocaleString()}
@@ -828,7 +827,7 @@ async function fetchDataContext(
         .join(', ') || 'none assigned yet'
 
       // Only notes with actual typed text (content/description) can be used
-      // to draft quiz questions — a note that's just an uploaded PDF/file
+      // to draft quiz questions - a note that's just an uploaded PDF/file
       // has no text here for the model to read.
       const readableNotes = (notes ?? []).filter((n: any) => (n.content || n.description)?.trim())
       const notesBlock = readableNotes.length
@@ -836,10 +835,10 @@ async function fetchDataContext(
             const text = (n.content || n.description || '').slice(0, 3000)
             return `### Note "${n.title}" (note_id: ${n.id})\n${text}`
           }).join('\n\n')
-        : 'None of this teacher\'s notes have readable text content yet (they may be uploaded as files/PDFs, which can\'t be read here) — if asked to draft a quiz from a note, say so rather than inventing content.'
+        : 'None of this teacher\'s notes have readable text content yet (they may be uploaded as files/PDFs, which can\'t be read here) - if asked to draft a quiz from a note, say so rather than inventing content.'
 
       return `
-## Live Teaching Data (fetched just now — use these real details, don't invent your own)
+## Live Teaching Data (fetched just now - use these real details, don't invent your own)
 - Classes/subjects assigned to this teacher: ${classList}
 
 ## This teacher's notes (usable as quiz source material via the draft_quiz_from_note tool)
@@ -864,7 +863,7 @@ ${notesBlock}
       const attendanceRate = attRows.length ? Math.round((presentCount / attRows.length) * 100) : null
 
       return `
-## Live Student Data (fetched just now for this student — use these real numbers, don't invent your own)
+## Live Student Data (fetched just now for this student - use these real numbers, don't invent your own)
 - Average score across recorded results: ${avgScore !== null ? `${avgScore}%` : 'no results recorded yet'}
 - Attendance rate: ${attendanceRate !== null ? `${attendanceRate}%` : 'no attendance records yet'}
 `.trim()
@@ -901,15 +900,14 @@ ${notesBlock}
       }).join('\n')
 
       return `
-## Live Data for Linked Children (fetched just now — use these real numbers, don't invent your own)
+## Live Data for Linked Children (fetched just now - use these real numbers, don't invent your own)
 ${perChild}
 `.trim()
     }
 
     return ''
   } catch (err: any) {
-    // Never let a data-fetch hiccup take down the whole AI response —
-    // just answer without the live-data section this one time.
+    // Never let a data-fetch hiccup take down the whole AI response - // just answer without the live-data section this one time.
     console.warn('[AI] fetchDataContext failed:', err?.message ?? err)
     return ''
   }
@@ -938,14 +936,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No messages provided' }, { status: 400 })
     }
 
-    // The route only ever acts on behalf of the authenticated caller —
-    // never trust a userId the client might pass for someone else.
+    // The route only ever acts on behalf of the authenticated caller - // never trust a userId the client might pass for someone else.
     const effectiveUserId = user.id
     if (userId && userId !== effectiveUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Resolve role — client may send it as `role` or `systemContext`
+    // Resolve role - client may send it as `role` or `systemContext`
     const resolvedRole = (role ?? systemContext ?? 'student').toLowerCase()
 
     // ── High-traffic protection: atomic DB-backed rate limit ─────────────────
@@ -959,7 +956,7 @@ export async function POST(req: Request) {
       p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
     })
     if (rateErr) {
-      // Fail open — a rate-limit outage should never take the assistant down.
+      // Fail open - a rate-limit outage should never take the assistant down.
       console.warn('[AI] Rate limit check failed, allowing request:', rateErr.message)
     } else if (allowed === false) {
       return NextResponse.json(
@@ -1002,7 +999,7 @@ export async function POST(req: Request) {
       result = await callClaude(finalSystemPrompt, formattedMessages, imageAttachment, resolvedRole)
     } catch (claudeErr: any) {
       if (isClaudeQuotaOrOverloadError(claudeErr)) {
-        console.warn('[AI] Claude unavailable — falling back to Gemini. Reason:', claudeErr?.message)
+        console.warn('[AI] Claude unavailable - falling back to Gemini. Reason:', claudeErr?.message)
         usedFallback = true
         try {
           result = await callGemini(finalSystemPrompt, formattedMessages, imageAttachment, resolvedRole)
@@ -1014,24 +1011,24 @@ export async function POST(req: Request) {
           )
         }
       } else {
-        // Not a quota/overload error — re-throw so the outer catch handles it
+        // Not a quota/overload error - re-throw so the outer catch handles it
         throw claudeErr
       }
     }
 
-    // ── Execute any agent tool calls (generic — see AGENT_TOOLS above) ───────
+    // ── Execute any agent tool calls (generic - see AGENT_TOOLS above) ───────
     // The model may respond with a tool_use block instead of / alongside text.
     // Every tool here does the same thing: validate → save ONE draft row to
     // ai_action_drafts → hand back a [[label|href]] button into the real
     // dashboard page. No tool call ever writes real data directly.
-    // Never trust a client-supplied schoolId — always tag drafts with the
+    // Never trust a client-supplied schoolId - always tag drafts with the
     // caller's own school, the same way fetchDataContext already does.
     const resolvedSchoolId = profile?.school_id
     for (const block of result.content) {
       if (block.type !== 'tool_use') continue
 
       const tool = AGENT_TOOLS.find(t => t.name === block.name && t.roles.includes(resolvedRole))
-      if (!tool) continue // model called something it shouldn't have access to — ignore it
+      if (!tool) continue // model called something it shouldn't have access to - ignore it
 
       if (!tool.validate(block.input)) {
         result.content.push({ type: 'text', text: `\n\n(I tried to draft that but the details came out incomplete. Could you ask me again?)` })
@@ -1073,7 +1070,7 @@ export async function POST(req: Request) {
     }
 
     // Flatten to the single text string the client renders (tool_use blocks
-    // never reach the client directly — only the text/marker we built above).
+    // never reach the client directly - only the text/marker we built above).
     const combinedText = result.content
       .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
       .map(b => b.text)
@@ -1140,7 +1137,7 @@ export async function POST(req: Request) {
       console.warn('[AI] Failed to persist conversation history:', persistErr?.message ?? persistErr)
     }
 
-    // Return normalised response — client reads data.content[0].text
+    // Return normalised response - client reads data.content[0].text
     return NextResponse.json({
       ...result,
       fallback_used:   usedFallback,

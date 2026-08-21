@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const TERM_MAP: Record<string, string> = {
   'First Term':  'first',
@@ -43,6 +44,17 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
+  // This writes a payment_invoices row per student — a genuinely bulk,
+  // financial write. Cap how often one bursar account can trigger a
+  // full run; the existing per-student "does an invoice already exist"
+  // check below prevents duplicate rows even on a rapid double-submit,
+  // but this still stops someone from turning a mis-click into dozens
+  // of full-school sweeps.
+  const rl = await checkRateLimit(admin, 'bursar_generate_invoices', user.id, 5, 300)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: rl.errorResponse!.error }, { status: rl.errorResponse!.status })
+  }
+
   // 1. Get all fee structures for this school/term/year
   const { data: feeStructures, error: feesErr } = await admin
     .from('fee_structures')
@@ -69,7 +81,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No active students found in this school.' }, { status: 404 })
   }
 
-  // 3. Build invoice records
+  // 3. Fetch every existing invoice for these fee structures ONCE, up
+  //    front, instead of one "does this exist" query per student per
+  //    fee (the old code ran students.length * fees-per-student
+  //    round trips — a few hundred for a mid-size school, on every
+  //    run). Build an in-memory set for O(1) lookup below.
+  //    student_id/fee_structure_id pairs are unique per school, so a
+  //    plain Set of "studentId::feeId" strings is enough — no need to
+  //    also filter by school_id here since fee_structures was already
+  //    scoped to this school above.
+  const feeStructureIds = feeStructures.map((fs: any) => fs.id)
+  const { data: existingInvoices, error: existingErr } = await admin
+    .from('payment_invoices')
+    .select('student_id, fee_structure_id')
+    .in('fee_structure_id', feeStructureIds)
+
+  if (existingErr) return NextResponse.json({ error: existingErr.message }, { status: 500 })
+
+  const existingSet = new Set(
+    (existingInvoices ?? []).map((inv: any) => `${inv.student_id}::${inv.fee_structure_id}`)
+  )
+
+  // 4. Build invoice records — pure in-memory matching now, no DB
+  //    calls inside the loop.
   const invoicesToInsert: any[] = []
   const skipped: string[] = []
 
@@ -86,15 +120,7 @@ export async function POST(req: NextRequest) {
     }
 
     for (const fee of matchingFees) {
-      // Check if invoice already exists for this student + fee structure
-      const { data: existing } = await admin
-        .from('payment_invoices')
-        .select('id')
-        .eq('student_id', student.id)
-        .eq('fee_structure_id', fee.id)
-        .maybeSingle()
-
-      if (existing) continue // already exists, skip
+      if (existingSet.has(`${student.id}::${fee.id}`)) continue // already exists, skip
 
       invoicesToInsert.push({
         student_id:        student.id,
@@ -117,7 +143,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 4. Batch insert invoices
+  // 5. Batch insert invoices
   const { error: insErr } = await admin.from('payment_invoices').insert(invoicesToInsert)
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 })
 

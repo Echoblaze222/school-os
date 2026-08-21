@@ -1,5 +1,5 @@
 /* ============================================================
-   SchoolOS — Student Notes
+   SchoolOS - Student Notes
    notes.module.css
    ============================================================ */
 
@@ -197,7 +197,7 @@
 .noteActions {
   display: flex; gap: var(--space-2); flex-shrink: 0; align-items: center;
 }
-/* VIEW — opens in new tab (PDF inline view) */
+/* VIEW - opens in new tab (PDF inline view) */
 .viewBtn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
@@ -209,7 +209,7 @@
 .viewBtn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text-primary); }
 .viewBtn svg { width: 12px; height: 12px; }
 
-/* DOWNLOAD — direct anchor download */
+/* DOWNLOAD - direct anchor download */
 .downloadBtn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);

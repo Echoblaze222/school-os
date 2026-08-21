@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { computeSubscriptionAmount, computeBillableStudentCount, type BillingCycle } from '@/lib/billing'
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!
 const APP_URL         = process.env.NEXT_PUBLIC_APP_URL ?? 'https://school-os-sphg.vercel.app'
@@ -30,13 +31,20 @@ export async function POST(req: Request) {
     }
 
     // ── Body ──────────────────────────────────────────────────────────────────
-    // Neither planType nor studentCount is trusted from the client anymore.
-    // Pricing is now a single school-size-based rate (no more Basic/Standard/
-    // Premium price selection), and the student count that determines the
-    // rate is counted server-side from real active students — otherwise a
-    // principal could simply under-report their count in the request to
-    // land in a cheaper tier.
-    const { count: studentCountReal, error: countErr } = await supabase
+    // billingCycle is the only client-supplied input that affects price,
+    // and it's a closed choice (termly/yearly), not a number - the actual
+    // amount is always computed from it server-side, never trusted as a
+    // value. Anything else, default to termly rather than reject, since an
+    // unrecognized value here is far more likely a stale client than an
+    // attack (computeSubscriptionAmount would just ignore it anyway).
+    const body = await req.json().catch(() => ({}))
+    const billingCycle: BillingCycle = body?.billingCycle === 'yearly' ? 'yearly' : 'termly'
+
+    // Neither planType nor studentCount is trusted from the client. The
+    // count that determines the rate is counted server-side from real
+    // active students — otherwise a principal could simply under-report
+    // their count in the request to land in a cheaper tier.
+    const { count: liveStudentCount, error: countErr } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('school_id', profile.school_id)
@@ -46,36 +54,29 @@ export async function POST(req: Request) {
     if (countErr) {
       return NextResponse.json({ error: 'Could not verify active student count' }, { status: 500 })
     }
-    if (!studentCountReal || studentCountReal <= 0) {
+    if (!liveStudentCount || liveStudentCount <= 0) {
       return NextResponse.json({ error: 'No active students found for your school' }, { status: 400 })
     }
 
-    // Tiered pricing by school size — replaces the old flat Basic/Standard/
-    // Premium plan selector. One rate, determined purely by how many active
-    // students the school actually has right now.
-    function pricePerStudentForSize(n: number): { rate: number; tierLabel: string } {
-      if (n <= 150) return { rate: 1000, tierLabel: 'Starter (up to 150 students)' }
-      if (n <= 250) return { rate: 2000, tierLabel: 'Growth (151-250 students)' }
-      return { rate: 3000, tierLabel: 'Scale (251+ students)' }
-    }
+    const schoolId = profile.school_id
 
-    const { rate: pricePerStudent, tierLabel } = pricePerStudentForSize(studentCountReal)
-    const schoolId      = profile.school_id
-    const planType      = tierLabel
-    const studentCount  = studentCountReal
+    // Anti-gaming: bill on the higher of the live count and the peak seen
+    // during this period, not just whatever the count happens to be right
+    // now - see computeBillableStudentCount in lib/billing.ts for why.
+    const { data: schoolRow } = await supabase
+      .from('schools')
+      .select('name, email, peak_active_student_count')
+      .eq('id', schoolId)
+      .single()
 
-    const amount = studentCount * pricePerStudent
+    const billableStudentCount = computeBillableStudentCount(liveStudentCount, schoolRow?.peak_active_student_count)
+
+    const { ratePerStudent, tierLabel, amount, discountApplied } = computeSubscriptionAmount(billableStudentCount, billingCycle)
+    const planType = tierLabel
 
     if (Number(amount) <= 0) {
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 })
     }
-
-    // ── Get school info for email ─────────────────────────────────────────────
-    const { data: school } = await supabase
-      .from('schools')
-      .select('name, email')
-      .eq('id', schoolId)
-      .single()
 
     // ── Generate unique reference ─────────────────────────────────────────────
     const reference = `SCOS-${schoolId.slice(0, 8).toUpperCase()}-${Date.now()}`
@@ -88,23 +89,25 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email:     profile.email ?? school?.email ?? `${schoolId}@schoolos.ng`,
+        email:     profile.email ?? schoolRow?.email ?? `${schoolId}@schoolos.ng`,
         amount:    Math.round(Number(amount) * 100), // Paystack uses kobo
         reference,
         currency:  'NGN',
         callback_url: `${APP_URL}/api/subscription/callback`,
         metadata: {
-          school_id:     schoolId,
-          school_name:   school?.name ?? '',
-          plan_type:     planType,
-          student_count: studentCount,
-          principal_id:  user.id,
+          school_id:      schoolId,
+          school_name:    schoolRow?.name ?? '',
+          plan_type:      planType,
+          student_count:  billableStudentCount,
+          billing_cycle:  billingCycle,
+          principal_id:   user.id,
           principal_name: profile.full_name,
-          amount_ngn:    amount,
+          amount_ngn:     amount,
           custom_fields: [
-            { display_name: 'School',   variable_name: 'school_name', value: school?.name ?? '' },
+            { display_name: 'School',   variable_name: 'school_name', value: schoolRow?.name ?? '' },
             { display_name: 'Plan',     variable_name: 'plan_type',   value: planType },
-            { display_name: 'Students', variable_name: 'student_count', value: String(studentCount) },
+            { display_name: 'Billing cycle', variable_name: 'billing_cycle', value: billingCycle },
+            { display_name: 'Students', variable_name: 'student_count', value: String(billableStudentCount) },
           ],
         },
       }),
@@ -121,14 +124,17 @@ export async function POST(req: Request) {
     }
 
     // ── Log pending payment in subscription_payments table ────────────────────
-    // This lets the super-admin see attempted payments even if webhook is delayed
+    // This lets the super-admin see attempted payments even if webhook is
+    // delayed, AND is what activateSubscription cross-checks the eventual
+    // Paystack-confirmed amount against before activating anything.
     await adminSupabase.from('subscription_payments').insert({
-      school_id:         schoolId,
-      amount_paid:       Number(amount),
-      currency_used:     'NGN',
-      plan_type:         planType,
-      student_count:     studentCount,
-      receipt_number:    reference,
+      school_id:          schoolId,
+      amount_paid:        Number(amount),
+      currency_used:      'NGN',
+      plan_type:          planType,
+      student_count:      billableStudentCount,
+      billing_cycle:       billingCycle,
+      receipt_number:     reference,
       paystack_reference: reference,
       // paid_at will be set by the webhook on confirmation
     }).select().single()
@@ -137,6 +143,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       paymentUrl: paystackData.data.authorization_url,
       reference,
+      billingCycle,
+      amount,
+      discountApplied,
+      billableStudentCount,
+      peakAppliedAboveLiveCount: billableStudentCount > liveStudentCount,
     })
 
   } catch (err) {

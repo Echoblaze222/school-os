@@ -1,5 +1,5 @@
 // src/app/api/cron/check-subscriptions/route.ts
-// Vercel Cron Job — runs on a schedule regardless of whether anyone logs in.
+// Vercel Cron Job - runs on a schedule regardless of whether anyone logs in.
 // Configure in vercel.json:
 // { "path": "/api/cron/check-subscriptions", "schedule": "0 * * * *" }
 //
@@ -8,7 +8,7 @@
 // was only triggered by an un-awaited fetch() on the STUDENT dashboard page.
 // If no student logged in that day (e.g. only the principal was using the
 // app), setup_status never flipped from 'trial'/'active' to
-// 'expired'/'suspended' — so nothing ever locked, for anyone.
+// 'expired'/'suspended' - so nothing ever locked, for anyone.
 //
 // This job sweeps every trial/active school on a timer, so expiry no longer
 // depends on any particular role loading any particular page.
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient()
 
-  // Only trial/active schools can possibly need a status flip — schools
+  // Only trial/active schools can possibly need a status flip - schools
   // already expired/suspended/locked don't need re-checking here.
   const { data: schools, error } = await admin
     .from('schools')

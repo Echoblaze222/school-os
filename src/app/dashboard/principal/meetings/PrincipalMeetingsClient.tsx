@@ -114,7 +114,7 @@ export default function PrincipalMeetingsClient({
         meeting_url:     isOnline ? meetingUrl.trim() : null,
         agenda:          agenda.trim() || null,
         target_audience: audience,
-        // BUG 4 FIX: target_class_id column removed — doesn't exist in DB schema
+        // BUG 4 FIX: target_class_id column removed - doesn't exist in DB schema
         // If you need class targeting, run: ALTER TABLE online_meetings ADD COLUMN IF NOT EXISTS target_class_id uuid REFERENCES classes(id);
       })
       .select()
@@ -330,7 +330,7 @@ export default function PrincipalMeetingsClient({
                   <h2 className={styles.sectionTitle}>Upcoming</h2>
                   <div className={styles.meetingList}>
                     {upcoming.map((m, i) => (
-                      <MeetingListCard key={m.id} meeting={m} index={i} />
+                      <MeetingListCard key={m.id} meeting={m} index={i} userId={userId} schoolId={schoolId} />
                     ))}
                   </div>
                 </section>
@@ -340,7 +340,7 @@ export default function PrincipalMeetingsClient({
                   <h2 className={styles.sectionTitle}>Past</h2>
                   <div className={styles.meetingList}>
                     {past.map((m, i) => (
-                      <MeetingListCard key={m.id} meeting={m} index={i} isPast />
+                      <MeetingListCard key={m.id} meeting={m} index={i} isPast userId={userId} schoolId={schoolId} />
                     ))}
                   </div>
                 </section>
@@ -357,9 +357,10 @@ export default function PrincipalMeetingsClient({
 
 /* ── Meeting list card ──────────────────────────────────── */
 function MeetingListCard({
-  meeting, index, isPast = false,
+  meeting, index, isPast = false, userId, schoolId,
 }: {
   meeting: MeetingRow; index: number; isPast?: boolean
+  userId: string; schoolId: string
 }) {
   const typeLabel = MEETING_TYPE_LABELS[meeting.meeting_type as MeetingType] ?? meeting.meeting_type
 

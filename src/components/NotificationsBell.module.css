@@ -52,13 +52,13 @@
   100% { transform: scale(1); }
 }
 
-/* ── Panel — FIX: position:fixed to escape backdrop-filter stacking context ── *
+/* ── Panel - FIX: position:fixed to escape backdrop-filter stacking context ── *
  * backdrop-filter on the sticky header creates a new stacking context.         *
  * Any position:absolute child is trapped inside it regardless of z-index.      *
  * position:fixed renders at the viewport level, breaking free of it.           *
  * Top/right coords are injected as inline style from getBoundingClientRect().  */
 .panel {
-  position: fixed;  /* was: absolute — changed to escape stacking context */
+  position: fixed;  /* was: absolute - changed to escape stacking context */
   /* top and right are set by inline style from JS */
   width: 340px;
   max-height: min(480px, calc(100dvh - 90px));

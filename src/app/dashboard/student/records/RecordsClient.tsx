@@ -20,7 +20,7 @@ export default function RecordsClient({ profile, school, userId }: Props) {
   useEffect(() => { load() }, [])
 
   async function load() {
-    // Attendance — always available
+    // Attendance - always available
     const { data: att } = await supabase
       .from('attendance')
       .select('id, date, status, note')
@@ -29,7 +29,7 @@ export default function RecordsClient({ profile, school, userId }: Props) {
       .limit(60)
     if (att) setAttendance(att)
 
-    // Behaviour records — only query if table exists, fail silently
+    // Behaviour records - only query if table exists, fail silently
     try {
       const { data: beh } = await supabase
         .from('behaviour_records')
@@ -39,7 +39,7 @@ export default function RecordsClient({ profile, school, userId }: Props) {
         .limit(20)
       if (beh) setBehaviour(beh)
     } catch (_) {
-      // table doesn't exist yet — show empty state
+      // table doesn't exist yet - show empty state
     }
 
     setLoading(false)

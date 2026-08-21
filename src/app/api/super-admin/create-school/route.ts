@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     // ── Seed the subscriptions row ──────────────────────────────────────────
     // Without this, the principal's /dashboard/principal/subscription page
     // finds no subscriptions row at all (that page only ever reads
-    // subscriptions.expiry_date — it never looks at schools.free_month_ends
+    // subscriptions.expiry_date - it never looks at schools.free_month_ends
     // or schools.trial_ends_at). That made a brand-new school look
     // "Expired / 0 days remaining" immediately instead of showing the free
     // period countdown. This mirrors exactly what confirm_setup does later
@@ -130,18 +130,17 @@ export async function POST(req: Request) {
       }
     } catch (subErr) {
       // Non-fatal: school + principal account still get created. Logged so
-      // it's visible, but we don't roll back the whole signup over this —
-      // a super-admin can still run confirm_setup manually to backfill it.
+      // it's visible, but we don't roll back the whole signup over this - // a super-admin can still run confirm_setup manually to backfill it.
       console.error('[create-school] Subscription row seed failed (non-fatal):', subErr)
     }
 
     // Supabase auth requires a password on user creation, but this account is
-    // never meant to be signed into with it — activation happens entirely via
+    // never meant to be signed into with it - activation happens entirely via
     // the access code + a password the principal sets themselves on first
     // login (see /api/auth/first-login). So this is thrown away immediately:
     // long, random, never logged, never emailed, never shown in any UI.
     const throwawayPassword = crypto.randomUUID() + crypto.randomUUID()
-    // PRIN-XXX-XXX — drawn from a charset with no 0/O or 1/I, since those
+    // PRIN-XXX-XXX - drawn from a charset with no 0/O or 1/I, since those
     // are nearly indistinguishable in most UI fonts and cause exactly the
     // kind of "Invalid access code" mistype this was built to prevent.
     const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -176,7 +175,7 @@ export async function POST(req: Request) {
       role:             'principal',
       school_id:        school.id,
       default_code:     defaultCode,
-      onboarding_stage: 'stage_1_pending',  // ✅ was integer 2 — now canonical string enum
+      onboarding_stage: 'stage_1_pending',  // ✅ was integer 2 - now canonical string enum
     }, { onConflict: 'id' })
 
     if (profileErr) {
@@ -187,7 +186,7 @@ export async function POST(req: Request) {
 
     // Seed a compliance record from the principal's contact details on file.
     // is_verified stays false until a super-admin actually reviews/confirms
-    // it (see SchoolDetailClient.tsx → Compliance tab) — this row just makes
+    // it (see SchoolDetailClient.tsx → Compliance tab) - this row just makes
     // sure no school is ever fully missing a record to begin with. Non-fatal:
     // a missing compliance row just means Paystack setup is blocked later
     // (see create-subaccount route), not that school creation should fail.
@@ -225,7 +224,7 @@ export async function POST(req: Request) {
       type:    'system',
     })
 
-    // ── Email (non-critical — wrapped so it never kills the response) ──────────
+    // ── Email (non-critical - wrapped so it never kills the response) ──────────
     try {
       const loginUrl  = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
       const planLabel = setupType === 'trial' ? `${trialDays}-Day Free Trial` : 'Active (1 Month Free)'
@@ -276,7 +275,7 @@ export async function POST(req: Request) {
         `,
       })
     } catch (emailErr) {
-      // Email failure is non-fatal — credentials still shown on dashboard
+      // Email failure is non-fatal - credentials still shown on dashboard
       console.error('[create-school] Email send failed (non-fatal):', emailErr)
     }
 

@@ -1,16 +1,16 @@
 'use client'
 // src/app/dashboard/student/schedule/ScheduleClient.tsx
 //
-// DEPLOYED FIX — targets `study_plans` (the real table for this feature).
+// DEPLOYED FIX - targets `study_plans` (the real table for this feature).
 //
 // study_plans columns confirmed from schema:
 //   id, student_id, school_id, day (text), subject (text),
 //   time (text), duration_mins (integer), color (text), created_at
 //
 // The unique constraint "idx_study_plans_student" exists on the live DB
-// but is NOT in the exported schema — it was added manually. The fix
+// but is NOT in the exported schema - it was added manually. The fix
 // for the duplicate-key error is:
-//   1. Drop that unique constraint (see SQL below — it shouldn't be there;
+//   1. Drop that unique constraint (see SQL below - it shouldn't be there;
 //      students can have multiple sessions per day).
 //   2. This file correctly does .insert() (not .upsert()), so no INSERT
 //      conflict will occur once the constraint is dropped.
@@ -18,11 +18,11 @@
 // SQL to run in Supabase Dashboard → SQL Editor:
 //   DROP INDEX IF EXISTS idx_study_plans_student;
 //
-// No other DB changes needed — study_plans has RLS disabled or open
+// No other DB changes needed - study_plans has RLS disabled or open
 // INSERT for authenticated users already, since the old code was
 // successfully creating rows (just hitting the unique constraint).
 //
-// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// REDESIGN PASS (Lane 3 - Student): RolePageWrapper chrome, emoji → Icons,
 // glass-card/motion treatment, hardcoded status hex → design tokens.
 
 import { useState, useEffect } from 'react'
@@ -37,7 +37,7 @@ interface Props { profile: any; school: any; userId: string }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-// Categorical per-session tag palette — unrelated to brand color, intentionally varied
+// Categorical per-session tag palette - unrelated to brand color, intentionally varied
 const COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
 
 export default function ScheduleClient({ profile, school, userId }: Props) {

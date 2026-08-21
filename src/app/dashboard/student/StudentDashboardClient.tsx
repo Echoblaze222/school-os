@@ -5,6 +5,7 @@ import Link from 'next/link'
 import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
+import ContextSwitcher from '@/components/ContextSwitcher'
 import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
@@ -86,6 +87,8 @@ export default function StudentDashboardClient({ profile, school, userId, counts
         sub={c.rank ? `Rank #${c.rank} in class this term` : school?.name ?? ''}
         featureGroups={FEATURE_GROUPS}
       />
+
+      <ContextSwitcher />
 
       <main className={styles.main}>
 

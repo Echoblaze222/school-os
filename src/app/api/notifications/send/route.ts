@@ -10,8 +10,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { notifyUsers, type NotifyChannel } from '@/lib/notify/notifyUser'
+import { enqueueJob } from '@/lib/queue'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const ALLOWED_ROLES = ['principal', 'bursar', 'secretary', 'teacher']
+
+// Above this many recipients, process synchronously in the request is
+// the §68 violation this route used to be: up to 200 recipients each
+// doing a DB insert + phone lookup + up to two external Termii calls,
+// sequentially, inside one HTTP request. Below the threshold it's fast
+// enough that queueing would just add latency for no benefit (a
+// teacher notifying their 25-student class shouldn't wait on a cron
+// tick). Threshold is deliberately well under the 200 hard cap.
+const SYNC_THRESHOLD = 15
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -87,6 +98,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'No valid recipients in your school' }, { status: 400 })
   }
 
+  // Cap how often one account can trigger a send at all — independent
+  // of the sync/queue split below, this stops a compromised or
+  // careless account from repeatedly re-triggering large sends.
+  const rl = await checkRateLimit(admin, 'notifications_send', user.id, 20, 300)
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: false, error: rl.errorResponse!.error }, { status: rl.errorResponse!.status })
+  }
+
+  if (scopedRecipientIds.length > SYNC_THRESHOLD) {
+    // Bulk path — enqueue and return immediately instead of blocking
+    // the request on up to 200 sequential sends. Same job_type and
+    // payload shape the Lane 1 worker (api/cron/process-queue) already
+    // handles for bulk_notification, so this reuses that consumer
+    // rather than building a second queue path.
+    const enqueueResult = await enqueueJob(admin, 'bulk_notification', {
+      recipientIds: scopedRecipientIds,
+      title,
+      body: notificationBody,
+      type,
+      linkUrl,
+      referenceId,
+      referenceTable,
+    }, { schoolId })
+
+    if (!enqueueResult.ok) {
+      return NextResponse.json({ ok: false, error: 'Could not queue the send. Please try again.' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      ok: true,
+      queued: true,
+      jobId: enqueueResult.jobId,
+      totalRecipients: scopedRecipientIds.length,
+      message: `Queued for ${scopedRecipientIds.length} recipients — delivery runs in the background and completes within a minute.`,
+    })
+  }
+
+  // Small send — fast enough to just do inline.
   const results = await notifyUsers(scopedRecipientIds, {
     schoolId,
     title,
@@ -103,6 +152,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     ok: true,
+    queued: false,
     sentCount,
     totalRecipients: scopedRecipientIds.length,
     results,

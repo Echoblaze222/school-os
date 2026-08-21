@@ -1,4 +1,4 @@
-/* Students Management — Principal */
+/* Students Management - Principal */
 .container { padding: var(--space-5); max-width: 900px; margin: 0 auto; }
 
 .statsRow { display:flex; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-5); }

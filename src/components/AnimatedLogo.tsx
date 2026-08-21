@@ -2,7 +2,7 @@
 // The 4-tile mark with the sequential zoom-out/zoom-in pulse, as a reusable
 // component instead of a raw <img>. Each tile grows then shrinks during the
 // first quarter of its own 2s cycle, staggered by 0.5s each, so exactly one
-// tile is ever moving at a time — see styles module for the timing math.
+// tile is ever moving at a time - see styles module for the timing math.
 
 import styles from './AnimatedLogo.module.css'
 

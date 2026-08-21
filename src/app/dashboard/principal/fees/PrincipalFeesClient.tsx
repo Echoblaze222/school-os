@@ -66,7 +66,7 @@ export default function PrincipalFeesClient({
     ? Math.round((stats.totalCollected / stats.totalExpected) * 100)
     : 0
 
-  // Group class fees — uses profiles.class_level directly (the column every
+  // Group class fees - uses profiles.class_level directly (the column every
   // other page in this app already relies on). The original version tried
   // to go through student.student_profiles.classes, but student_profiles.id
   // has no foreign key to profiles.id in the schema, so that nested embed
@@ -198,7 +198,7 @@ export default function PrincipalFeesClient({
         </button>
       </header>
 
-      {/* Term/Year picker — without this, the dashboard silently guessed
+      {/* Term/Year picker - without this, the dashboard silently guessed
           the term from today's calendar date with no way to correct it,
           which is exactly what caused it to show all zeros when the
           school's actual term didn't match that guess. */}

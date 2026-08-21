@@ -1,12 +1,12 @@
 'use client'
 // src/app/dashboard/student/quizzes/QuizzesClient.tsx
 // FIX: old file selected non-existent columns: `subject`, `question_count`,
-// `status` — these don't exist on the real `quizzes` table. Real columns are:
+// `status` - these don't exist on the real `quizzes` table. Real columns are:
 // id, title, total_marks, attempt_limit, starts_at, ends_at, class_id.
 // Status is now derived from starts_at/ends_at (same logic as teacher side).
-// Also: no error handling on load — added error banner.
+// Also: no error handling on load - added error banner.
 //
-// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// REDESIGN PASS (Lane 3 - Student): RolePageWrapper chrome, emoji → Icons,
 // glass-card/motion treatment, hardcoded status hex → design tokens.
 
 import { useState, useEffect } from 'react'
@@ -50,7 +50,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       { data: q, error: qErr },
       { data: a, error: aErr },
     ] = await Promise.all([
-      // FIX: only real columns — no subject/question_count/status
+      // FIX: only real columns - no subject/question_count/status
       supabase.from('quizzes')
         .select('id, title, total_marks, attempt_limit, starts_at, ends_at, class_id')
         .eq('school_id', school?.id)

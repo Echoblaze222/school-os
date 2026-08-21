@@ -378,7 +378,7 @@ export default function GradeSubmissionsPage() {
                                 {(!isGraded||editing)&&(
                                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
                                     <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                      <input type="number" min={0} max={sub.max_score} placeholder={`0–${sub.max_score}`} value={scoreStr} onChange={e=>setScoreInputs(p=>({...p,[sub.id]:e.target.value}))} style={{width:90,height:38,padding:'0 10px',background:'var(--input-bg)',border:`1px solid ${color}60`,borderRadius:8,color:'var(--text-primary)',fontSize:'0.9rem',fontWeight:700,outline:'none'}}/>
+                                      <input type="number" min={0} max={sub.max_score} placeholder={`0 - ${sub.max_score}`} value={scoreStr} onChange={e=>setScoreInputs(p=>({...p,[sub.id]:e.target.value}))} style={{width:90,height:38,padding:'0 10px',background:'var(--input-bg)',border:`1px solid ${color}60`,borderRadius:8,color:'var(--text-primary)',fontSize:'0.9rem',fontWeight:700,outline:'none'}}/>
                                       <span style={{color:'var(--text-muted)',fontSize:'0.82rem'}}>/ {sub.max_score}</span>
                                       {gr&&<span style={{padding:'3px 10px',borderRadius:6,background:gr.c+'20',color:gr.c,fontSize:'0.8rem',fontWeight:800}}>{gr.g}</span>}
                                     </div>

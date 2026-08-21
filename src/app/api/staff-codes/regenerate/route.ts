@@ -4,7 +4,7 @@
 // direct `supabase.from('profiles').update(...)` call from the browser in
 // both Principal's and Secretary's CodesClient.tsx, with two problems:
 //
-//   1. The new code was `Math.floor(1000 + Math.random() * 9000)` — a
+//   1. The new code was `Math.floor(1000 + Math.random() * 9000)` - a
 //      4-digit number with only 9,000 possibilities. This is the exact
 //      weak-randomness issue already fixed once in secretary/create-user
 //      (see the comment there): the access code is the sole credential
@@ -13,7 +13,7 @@
 //      real user's first login.
 //   2. The update carried no `school_id` scoping and relied entirely on
 //      whatever RLS UPDATE policy exists live on `profiles` (unverified
-//      from code alone, per SECURITY_RLS_AUDIT_AND_POLICIES.sql) — the
+//      from code alone, per SECURITY_RLS_AUDIT_AND_POLICIES.sql) - the
 //      documented `profiles_update_own` policy only allows a user to
 //      update their own row, which would make this silently no-op in
 //      production, or, if a more permissive live policy exists, would let
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       .from('profiles').select('id, role, school_id').eq('id', profileId).single()
 
     if (!target || target.school_id !== caller.school_id) {
-      // Same error either way — don't reveal whether the id exists in
+      // Same error either way - don't reveal whether the id exists in
       // another school.
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }

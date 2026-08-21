@@ -10,6 +10,7 @@
 
 import { NextResponse }      from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -20,6 +21,15 @@ export async function GET(request: Request) {
   }
 
   const supabase = createAdminClient()
+
+  // Public + unauthenticated, so rate limit by IP only. Generous limit —
+  // this backs live-as-you-type search on the "Find Your School" page,
+  // it just needs to stop scripted enumeration of the whole `schools`
+  // table, not slow down a real visitor typing.
+  const rl = await checkRateLimit(supabase, 'schools_search', getClientIp(request), 60, 60)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: rl.errorResponse!.error }, { status: rl.errorResponse!.status })
+  }
 
   const { data: schools, error } = await supabase
     .from('schools')

@@ -275,13 +275,13 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     const chosenClass = classes.find(c => c.id === assignClassId)
     const className   = chosenClass?.name ?? null
 
-    // Update profiles.class_level (text) — used for display & grouping
+    // Update profiles.class_level (text) - used for display & grouping
     const { error: profErr } = await supabase
       .from('profiles')
       .update({ class_level: className })
       .eq('id', assignTarget.id)
 
-    // Update student_profiles.class_id (uuid) — used for results/attendance joins
+    // Update student_profiles.class_id (uuid) - used for results/attendance joins
     await supabase
       .from('student_profiles')
       .upsert({ id: assignTarget.id, class_id: assignClassId }, { onConflict: 'id' })

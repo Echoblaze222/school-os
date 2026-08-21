@@ -4,7 +4,7 @@
 //
 // Backed by the `check_rate_limit` Postgres function (see
 // hotfix-01-rate-limit-schema.sql) so the check-and-increment is atomic
-// and correct across every serverless instance — an in-memory counter
+// and correct across every serverless instance - an in-memory counter
 // would reset on every cold start and wouldn't be shared across
 // concurrent Vercel invocations.
 //
@@ -23,7 +23,7 @@ export interface RateLimitResult {
 
 /**
  * Checks and records one attempt against a scope+identifier pair.
- * Call once per dimension you want to protect — e.g. once keyed by the
+ * Call once per dimension you want to protect - e.g. once keyed by the
  * caller's IP (catches distributed guessing across many codes) and once
  * keyed by the code itself (catches hammering one specific code).
  */

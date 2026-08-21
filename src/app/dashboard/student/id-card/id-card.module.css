@@ -93,7 +93,7 @@
   gap: var(--space-5);
 }
 
-/* ── Card wrapper — perspective + shine ──────────────────── */
+/* ── Card wrapper - perspective + shine ──────────────────── */
 .cardWrapper {
   width: 100%;
   max-width: 380px;
@@ -102,7 +102,7 @@
   animation: fade-up 0.5s ease;
 }
 
-/* ── THE CARD — credit-card ratio 85.6mm × 54mm = 1.586 ─── */
+/* ── THE CARD - credit-card ratio 85.6mm × 54mm = 1.586 ─── */
 .card {
   width: 100%;
   /* Credit-card aspect ratio */

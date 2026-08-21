@@ -25,7 +25,7 @@ export default async function CodesPage() {
     .order('role')
     .order('full_name')
 
-  // Student roster for the "New Parent Code" form — lets the secretary link
+  // Student roster for the "New Parent Code" form - lets the secretary link
   // a freshly-created parent account to the right child without typing an ID.
   const { data: studentRows } = await supabase
     .from('profiles')
@@ -35,7 +35,7 @@ export default async function CodesPage() {
     .eq('is_active', true)
     .order('full_name')
 
-  // Classes for the "New Student Code" / bulk student rows — lets the
+  // Classes for the "New Student Code" / bulk student rows - lets the
   // secretary assign a class right at enrolment time.
   const { data: classRows } = await supabase
     .from('classes')

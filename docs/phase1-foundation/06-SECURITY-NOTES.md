@@ -1,8 +1,7 @@
-# SchoolOS — Phase 1 Security Pass
+# SchoolOS - Phase 1 Security Pass
 
 Adversarial read of the live code, not a checklist audit. Ranked by
-severity. This is descriptive (what's wrong and why) and remediation-only —
-no exploit tooling, since the goal is fixing your own app.
+severity. This is descriptive (what's wrong and why) and remediation-only - no exploit tooling, since the goal is fixing your own app.
 
 ## Critical: principal account takeover on new schools
 
@@ -22,7 +21,7 @@ window) is working with a search space in the low hundreds of thousands,
 not the ~2 billion+ a real random code should force.
 
 That code is then usable at `src/app/api/auth/first-login/route.ts`, which
-has **no rate limiting at all** — it accepts unlimited POSTs with different
+has **no rate limiting at all** - it accepts unlimited POSTs with different
 `code` guesses, and a correct guess lets the caller set that principal
 account's password and immediately get the returned email to sign in. There
 is no CAPTCHA, no attempt counter, no lockout, no delay.
@@ -31,7 +30,7 @@ Put together: a weak, guessable code plus an unthrottled endpoint that
 grants full account control on a correct guess is a real path to taking
 over a school's principal account before the real principal ever logs in.
 This is worse than the 4-digit-code issue your own comments say was already
-fixed once in `secretary/create-user` — that fix didn't reach this route.
+fixed once in `secretary/create-user` - that fix didn't reach this route.
 
 **Fix:** generate `defaultCode` here the same way `admin/create-user` and
 `staff-codes/regenerate` already do (`crypto.randomBytes`, not `Date.now()`),
@@ -78,10 +77,10 @@ only. That public-facing submission endpoint should get the same rate
 limiting called out above before it ships, since it's a second public entry
 point that writes to the database from an unauthenticated caller.
 
-## Note on the "—" character
+## Note on the " - " character
 
 Checked every `.tsx`/`.ts` file for em dashes in actual rendered UI text
-(JSX children, `placeholder`, `label`, `title`, `alt`) — found none. The
+(JSX children, `placeholder`, `label`, `title`, `alt`) - found none. The
 182 occurrences that exist are all in code comments and in one AI
 system-prompt string (`api/ai/chat/route.ts`), neither of which a user
 ever sees on screen. Nothing to change here unless you want comments

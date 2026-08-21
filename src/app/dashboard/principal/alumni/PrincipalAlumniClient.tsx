@@ -4,7 +4,7 @@
 //
 // FIX: this page previously rendered its own hardcoded bottom nav
 // (bottom-nav-mobile / nav-item / nav-home-btn markup) instead of the
-// canonical <RoleNav> every other dashboard page uses — so it didn't
+// canonical <RoleNav> every other dashboard page uses - so it didn't
 // share the desktop sidebar, active-state highlighting, or (in some
 // themes) the school's brand colour. Switched to <RoleNav> below,
 // matching the pattern already used by NotificationsPageClient.tsx.
@@ -202,7 +202,7 @@ export default function PrincipalAlumniClient({ alumni, userId, profile, school,
         )}
       </main>
 
-      {/* Canonical RoleNav — same as every other dashboard page */}
+      {/* Canonical RoleNav - same as every other dashboard page */}
       <RoleNav
         userId={userId}
         profile={profile}

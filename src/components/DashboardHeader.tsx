@@ -21,11 +21,10 @@ interface Props {
   schoolColor?: string
 }
 
-// Sub-page header — same prop API as before, but now the compact sibling
+// Sub-page header - same prop API as before, but now the compact sibling
 // of RoleHeroHeader: same brand gradient band, same crest/pill treatment,
 // same icon set, just shorter (no greeting/headline copy, since a sub-page
-// needs a title bar, not a hero). Consuming pages need zero changes —
-// this only replaces what RolePageWrapper renders internally.
+// needs a title bar, not a hero). Consuming pages need zero changes - // this only replaces what RolePageWrapper renders internally.
 export default function DashboardHeader({
   userId, role, profile, school,
   title, showBack = false, schoolColor = '#800020',

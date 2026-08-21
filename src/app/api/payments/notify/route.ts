@@ -6,7 +6,7 @@ import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: Request) {
-  // 1. Auth + role check — the comment above always claimed this required
+  // 1. Auth + role check - the comment above always claimed this required
   // "a logged-in bursar (or any school staff)" but the code never actually
   // checked role, only that *someone* was logged in. Combined with the
   // admin client below (which bypasses RLS) and a client-supplied
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
 
-  // 2. Fetch the payment row — join to student name and invoice description
+  // 2. Fetch the payment row - join to student name and invoice description
   const { data: payment, error: pmtErr } = await admin
     .from('payments')
     .select(`
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     .in('role', ['principal', 'bursar'])
 
   if (staffErr || !staff?.length) {
-    // Nothing to notify — still return 200 so the client doesn't surface an error
+    // Nothing to notify - still return 200 so the client doesn't surface an error
     return NextResponse.json({ ok: true, notified: 0 })
   }
 

@@ -75,7 +75,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
   // ── Load an AI-drafted reminder message ───────────────────────────────────
   // Only prefills the message text. Recipients are ALWAYS picked manually by
   // the bursar from the debtor checklist below, and nothing sends until they
-  // tick recipients and tap Send themselves — the AI never selects who gets
+  // tick recipients and tap Send themselves - the AI never selects who gets
   // a financial message.
   useEffect(() => {
     const draftId = searchParams.get('draftId')
@@ -165,7 +165,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
     }
 
     // Aggregate outstanding per student (one student may have multiple invoices)
-    // Also re-verify term/year client-side — the .eq('fee_structures.term', ...)
+    // Also re-verify term/year client-side - the .eq('fee_structures.term', ...)
     // filter above targets a nested embed that PostgREST doesn't always honor reliably.
     const studentMap = new Map<string, any>()
     for (const inv of (data ?? [])) {
@@ -221,7 +221,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
           debtor.parent_name = link?.parent_name ?? null
         }
       } catch {
-        // Leave parent_id/parent_name as null — UI already handles that case
+        // Leave parent_id/parent_name as null - UI already handles that case
         // by flagging "No parent linked" rather than crashing.
       }
     }
@@ -311,7 +311,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       // parent_id resolved from parent_student_links during loadDebtors
       const parentId: string | null = debtor.parent_id ?? null
 
-      // fee_reminders.parent_id is NOT NULL — skip students with no linked parent
+      // fee_reminders.parent_id is NOT NULL - skip students with no linked parent
       if (!parentId) {
         setError(prev =>
           (prev ? prev + '; ' : '') +
@@ -322,7 +322,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         continue
       }
 
-      // Insert one fee_reminder per invoice for this student — now with a REAL
+      // Insert one fee_reminder per invoice for this student - now with a REAL
       // outbound send via /api/notifications/send (WhatsApp first, SMS fallback)
       // instead of the previous 'email' placeholder.
       let invoiceErrors = 0
@@ -351,8 +351,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             sentChannel = delivery.channel
             sentStatus  = 'sent'
           } else {
-            // Nothing delivered (no phone on file, both channels failed/disabled) —
-            // the in-app notification still went out via notifyUser regardless.
+            // Nothing delivered (no phone on file, both channels failed/disabled) - // the in-app notification still went out via notifyUser regardless.
             sentStatus = 'pending'
           }
         } catch (sendErr: any) {
@@ -530,7 +529,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             </div>
           )}
 
-          {/* Composer — shown when students selected */}
+          {/* Composer - shown when students selected */}
           {selected.size > 0 && (
             <div style={{
               background: 'var(--glass-bg)', border: `1px solid ${sc}40`,

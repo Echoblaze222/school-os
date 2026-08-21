@@ -1,5 +1,5 @@
 -- ============================================================
--- SchoolOS — Trial & Subscription Schema
+-- SchoolOS - Trial & Subscription Schema
 -- Run this in Supabase SQL Editor
 -- ============================================================
 

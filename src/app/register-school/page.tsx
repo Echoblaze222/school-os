@@ -128,7 +128,7 @@ export default function RegisterSchoolPage() {
     setStep(s => Math.min(s + 1, 4) as 1 | 2 | 3 | 4)
   }
 
-  // Final submission — create school + initiate Paystack payment
+  // Final submission - create school + initiate Paystack payment
   async function handleSubmit() {
     if (!validateStep4()) return
     setLoading(true)
@@ -218,7 +218,7 @@ export default function RegisterSchoolPage() {
           <ArrowLeftIcon size={15} /> Select School
         </button>
 
-        {/* Brand — logo + wordmark, matching the select-school entry screen */}
+        {/* Brand - logo + wordmark, matching the select-school entry screen */}
         <div className={styles.brandBlock}>
           <AnimatedLogo size={52} variant="dark-bg" className={styles.brandLogo} />
           <h1 className={styles.brandName}>School<span className={styles.brandAccent}>OS</span></h1>

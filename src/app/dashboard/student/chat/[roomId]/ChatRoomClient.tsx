@@ -13,9 +13,9 @@ import motion from '@/components/dashboard-motion.module.css'
 import styles from './chat-room.module.css'
 import { logActivity } from '@/lib/logActivity'
 
-// REDESIGN PASS (Lane 3 — Student): all chrome/status emoji converted to
+// REDESIGN PASS (Lane 3 - Student): all chrome/status emoji converted to
 // Icons.tsx components below. The EMOJIS reaction-picker array a few lines
-// down stays untouched — per EMOJI-ICON-MAP.md, emoji used as actual chat
+// down stays untouched - per EMOJI-ICON-MAP.md, emoji used as actual chat
 // reactions are the one exception to the conversion.
 
 interface Message {
@@ -31,7 +31,7 @@ interface Message {
   reply_to_id?: string | null
   reply_to?:    { content: string; sender_name: string } | null
   sender?:      { full_name: string; avatar_url?: string }
-  // client-only fields — never sent to the server
+  // client-only fields - never sent to the server
   _status?:     'sending' | 'uploading' | 'sent' | 'failed'
   _progress?:   number
 }
@@ -75,7 +75,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [isModerator,   setIsModerator]   = useState(false)
   const [savingMode,    setSavingMode]    = useState(false)
 
-  // Attachment picked but not yet sent — shown in a preview sheet so people
+  // Attachment picked but not yet sent - shown in a preview sheet so people
   // can add a caption before it goes out (like WhatsApp's photo caption).
   const [pendingFile,    setPendingFile]    = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
@@ -99,8 +99,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // Guards against the "ghost click": on touch devices, when the long-press
   // timer opens the context menu WHILE the finger is still down, lifting the
   // finger fires a trailing click at that same point. Since the menu now
-  // covers that point, that click would otherwise close the menu instantly —
-  // this flag swallows exactly that one click.
+  // covers that point, that click would otherwise close the menu instantly - // this flag swallows exactly that one click.
   const suppressNextCloseClick = useRef(false)
 
   const schoolColor = school?.primary_color ?? '#800020'
@@ -139,8 +138,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           m.id === payload.new.id ? { ...m, ...(payload.new as Message) } : m
         ))
       })
-      // Someone (the other person) marked one of our messages as read —
-      // flip that message's ticks from sent to seen.
+      // Someone (the other person) marked one of our messages as read - // flip that message's ticks from sent to seen.
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public',
         table: 'message_read_receipts',
@@ -207,11 +205,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // ── Keyboard-aware input bar ───────────────────────────────
   // .page already uses 100dvh so most modern mobile browsers reflow on their
   // own, but Android Chrome / older Safari fire visualViewport resize
-  // *before* dvh settles — this keeps the input bar glued above the keyboard
+  // *before* dvh settles - this keeps the input bar glued above the keyboard
   // in every case by nudging it with a CSS var instead of guessing layout.
   //
   // Only 'resize' is listened to here. visualViewport also fires 'scroll'
-  // during ordinary page/list scrolling (not just keyboard show/hide) — that
+  // during ordinary page/list scrolling (not just keyboard show/hide) - that
   // was previously wired up too and caused every scroll gesture to
   // re-trigger the offset calc and snap the view back to the bottom,
   // which is why scrolling up felt broken.
@@ -221,7 +219,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
     function onViewportChange() {
       const offset = Math.max(0, window.innerHeight - vv!.height - vv!.offsetTop)
-      // Ignore tiny fluctuations (URL bar show/hide) — only react to a real keyboard
+      // Ignore tiny fluctuations (URL bar show/hide) - only react to a real keyboard
       setKbOffset(offset > 80 ? offset : 0)
     }
 
@@ -263,7 +261,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       return
     }
 
-    // Plain 1:1 DM — find the other participant
+    // Plain 1:1 DM - find the other participant
     const { data: members } = await supabase
       .from('chat_room_members')
       .select('user_id')
@@ -355,7 +353,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   }
 
   // ── QUEUE: enqueue + background processor ──────────────────
-  // Sends never block the input — press send/attach and keep typing/tapping
+  // Sends never block the input - press send/attach and keep typing/tapping
   // the next thing. Jobs run one at a time in the background; failures show
   // a retry affordance instead of silently vanishing.
   function enqueue(job: QueueJob) {
@@ -414,7 +412,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     const content  = caption.trim() || (fileType === 'file' ? fallback : null)
     const fname    = `files/${userId}/${Date.now()}.${ext}`
 
-    // Simulated progress while the upload is in flight — supabase-js's
+    // Simulated progress while the upload is in flight - supabase-js's
     // storage client doesn't expose real byte progress, so this gives
     // the person visible motion instead of a frozen spinner.
     let fakeProgress = 8
@@ -452,8 +450,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
     pushNotification(content || fallback)
 
-    // Log as activity only for file/photo/video shares, not plain text —
-    // recent_activities shows the last 15 items across the whole account,
+    // Log as activity only for file/photo/video shares, not plain text - // recent_activities shows the last 15 items across the whole account,
     // and someone in an active text conversation could easily send more
     // than that in a single sitting. A shared file is a much rarer,
     // genuinely activity-worthy event than routine text chatter.
@@ -469,7 +466,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   function retry(msg: Message) {
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: msg.file_url ? 'uploading' : 'sending', _progress: 0 } : m))
-    if (msg.file_url) return // failed uploads that already produced a url are effectively sent — nothing to retry
+    if (msg.file_url) return // failed uploads that already produced a url are effectively sent - nothing to retry
     enqueue({ kind: 'text', tempId: msg.id, content: msg.content, replyId: msg.reply_to_id ?? null })
   }
 
@@ -613,14 +610,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   // ── Swipe-to-reply + long-press context menu ────────────
   // The CSS already scaffolds swipe (.msgGroup has overflow:visible and a
-  // centered .replyIndicator) — this wires up the actual touch drag.
-  // Drag the row sideways — past SWIPE_TRIGGER, release to reply. Vertical
+  // centered .replyIndicator) - this wires up the actual touch drag.
+  // Drag the row sideways - past SWIPE_TRIGGER, release to reply. Vertical
   // scrolling is left untouched: the gesture only engages once horizontal
   // movement clearly outpaces vertical movement.
   //
   // A long-press (no meaningful movement for ~450ms) opens a context menu
   // with Reply / React / Edit / Delete. Those action buttons are hover-only
-  // and hidden entirely on mobile — swipe alone only covers reply, so
+  // and hidden entirely on mobile - swipe alone only covers reply, so
   // edit/delete/react had no touch affordance at all before this.
   function onTouchStart(msg: Message, e: React.TouchEvent) {
     if (msg.is_deleted) return
@@ -659,7 +656,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (swipeLocked.current !== 'h') return
 
     e.preventDefault()
-    // Only reveal rightward (WhatsApp-style) — reads naturally for both
+    // Only reveal rightward (WhatsApp-style) - reads naturally for both
     // sides since .msgGroupMe is row-reversed but translateX is absolute.
     const clamped = Math.max(0, Math.min(SWIPE_MAX, dx))
     setSwipeX(clamped)
@@ -853,7 +850,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                   onTouchMove={onTouchMove}
                   onTouchEnd={onTouchEnd}
                 >
-                  {/* Centered swipe-to-reply cue — fades/scales in past the trigger distance */}
+                  {/* Centered swipe-to-reply cue - fades/scales in past the trigger distance */}
                   <span className={`${styles.replyIndicator} ${showReplyCue ? styles.replyIndicatorVisible : ''}`}>
                     ↩
                   </span>
@@ -876,7 +873,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       <p className={styles.senderName}>{msg.sender?.full_name}</p>
                     )}
 
-                    {/* Reply preview — same hue as the bubble below it (darkened a touch)
+                    {/* Reply preview - same hue as the bubble below it (darkened a touch)
                         so this reads as the top strip of ONE message, not a second bubble */}
                     {msg.reply_to && (
                       <div
@@ -969,7 +966,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       </div>
                     )}
 
-                    {/* Action buttons — hover-reveal on desktop; hidden on mobile
+                    {/* Action buttons - hover-reveal on desktop; hidden on mobile
                         in favor of the long-press context menu below */}
                     <div className={`${styles.msgActions} ${isMe ? styles.msgActionsMe : ''}`}>
                       {canPost && (
@@ -996,7 +993,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       )}
                     </div>
 
-                    {/* Long-press context menu (mobile) — same actions as above */}
+                    {/* Long-press context menu (mobile) - same actions as above */}
                     {contextMenuId === msg.id && (
                       <div className={styles.contextMenuOverlay}
                         onClick={() => {
@@ -1081,7 +1078,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
-      {/* ── ATTACHMENT PREVIEW — add a caption before it actually sends ── */}
+      {/* ── ATTACHMENT PREVIEW - add a caption before it actually sends ── */}
       {pendingFile && (
         <div className={styles.attachSheet}>
           <div className={styles.attachSheetHeader}>
@@ -1119,7 +1116,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
-      {/* ── INPUT BAR — nudged above the keyboard via --kb-offset ── */}
+      {/* ── INPUT BAR - nudged above the keyboard via --kb-offset ── */}
       {canPost ? (
         <div className={styles.inputBar}>
           <input ref={fileRef} type="file" className={styles.fileInput} onChange={pickFile}

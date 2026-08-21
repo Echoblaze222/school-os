@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
     // Seed the default subject list so this school isn't left with an
 
-    // empty curriculum — without this, subjects, class-subject
+    // empty curriculum - without this, subjects, class-subject
 
     // assignments, live classes, notes, and results all silently fail
 
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
 
       console.error('Subject seeding error (non-fatal):', seedError)
 
-      // Don't fail registration over this — the school can still add
+      // Don't fail registration over this - the school can still add
 
       // subjects manually if seeding didn't work for some reason.
 
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
     // ── 3. Create principal profile ───────────────────────
 
     // SECURITY FIX: this used to be `SCH-${Date.now().toString().slice(-6)}`
-    // — the last 6 digits of the server clock, which repeats on a ~16.7
+    // - the last 6 digits of the server clock, which repeats on a ~16.7
     // minute cycle and is trivially guessable by anyone with a rough idea
     // of when the school registered. That code is the sole credential
     // /api/auth/first-login accepts to set the principal's password, so a

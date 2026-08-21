@@ -1,7 +1,7 @@
 // src/app/api/auth/set-pin/route.ts
 //
 // Receives the user's 6-digit PIN + secret identifier during onboarding stage 2.
-// Hashes the PIN with bcrypt before writing to profiles — the raw PIN never
+// Hashes the PIN with bcrypt before writing to profiles - the raw PIN never
 // touches the database. This is a server route specifically to prevent PIN
 // exposure through client-side Supabase calls.
 //
@@ -14,7 +14,7 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate the caller — must be a logged-in user mid-onboarding
+    // 1. Authenticate the caller - must be a logged-in user mid-onboarding
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -50,11 +50,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // 4. Hash the PIN — salt rounds 12 is appropriate for a 6-digit PIN
+    // 4. Hash the PIN - salt rounds 12 is appropriate for a 6-digit PIN
     //    (high entropy via salt compensates for the small PIN space)
     const pinHash = await bcrypt.hash(pin, 12)
 
-    // 5. Write the hashed PIN — raw PIN never persists anywhere
+    // 5. Write the hashed PIN - raw PIN never persists anywhere
     const { error: updateErr } = await admin.from('profiles').update({
       pin_hash:          pinHash,
       secret_identifier: secretIdentifier.trim().toLowerCase(),

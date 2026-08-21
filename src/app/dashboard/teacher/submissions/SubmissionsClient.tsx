@@ -65,7 +65,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
     if (!scoreStr) { setSaveErrors(e => ({ ...e, [sub.id]: 'Enter a score' })); return }
     const score = Number(scoreStr)
     if (isNaN(score) || score < 0 || score > sub.max_score) {
-      setSaveErrors(e => ({ ...e, [sub.id]: `Score must be 0–${sub.max_score}` }))
+      setSaveErrors(e => ({ ...e, [sub.id]: `Score must be 0 - ${sub.max_score}` }))
       return
     }
     setSaving(sub.id)
@@ -198,7 +198,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                             type="number" min={0} max={sub.max_score}
                             value={scores[sub.id] ?? (sub.score !== null ? String(sub.score) : '')}
                             onChange={e => setScores(s => ({ ...s, [sub.id]: e.target.value }))}
-                            placeholder={`0–${sub.max_score}`}
+                            placeholder={`0 - ${sub.max_score}`}
                             style={{ borderColor: saveErrors[sub.id] ? 'var(--danger)' : undefined }}
                           />
                           <span className={styles.maxScore}>/ {sub.max_score}</span>

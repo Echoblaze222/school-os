@@ -1,6 +1,6 @@
 'use client'
 // src/app/splash/page.tsx
-// "Signature Reveal" splash — same technique as the Trybe Focus reference:
+// "Signature Reveal" splash - same technique as the Trybe Focus reference:
 // pen-stroke SVG text draw → chrome/gradient fill crossfade → shine sweep →
 // glow pulse → wordmark steps back → second word slides out from behind it →
 // tagline fades in → hold → cross-fade out. Re-colored to SchoolOS's own
@@ -9,11 +9,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
-// SchoolOS's own tokens — not Trybe's blue/purple
-const CYAN           = '#00B4D8'   // shield/linework color — the dominant logo color
+// SchoolOS's own tokens - not Trybe's blue/purple
+const CYAN           = '#00B4D8'   // shield/linework color - the dominant logo color
 const CYAN_SOFT       = 'rgba(0,180,216,0.16)'
 const BURGUNDY        = '#800020'   // glow accent color from the logo
-const WHITE          = '#F5F3FF'   // "School" fill — soft white, not a brand hue
+const WHITE          = '#F5F3FF'   // "School" fill - soft white, not a brand hue
 const BG_DEEP        = '#060608'
 const BG_PRIMARY     = '#0D0E16'
 const TEXT_SECONDARY = '#8A94B8'
@@ -33,7 +33,7 @@ export default function SplashPage() {
   const flourishRef   = useRef<SVGPathElement>(null)
   const [strokeLen, setStrokeLen]     = useState(420)
   const [flourishLen, setFlourishLen] = useState(160)
-  // Where "OS" starts, and how far "School" shifts left to meet it — both
+  // Where "OS" starts, and how far "School" shifts left to meet it - both
   // computed together so the COMBINED word "SchoolOS" ends up centered in
   // the 280-wide viewBox, not just "School" alone. Fixing "OS" at a flat
   // x=140 (dead center of the viewBox) was the actual bug: once "School"
@@ -59,7 +59,7 @@ export default function SplashPage() {
 
       // "School" is centered at x=42% of the viewBox with textAnchor="middle";
       // shift it left by exactly enough that its right edge lands on the new
-      // (centered) OS start point — same zero-gap logic as before, just
+      // (centered) OS start point - same zero-gap logic as before, just
       // targeting a computed point instead of a hardcoded one.
       const schoolCenterX = 0.42 * viewBoxWidth
       const schoolRightEdge = schoolCenterX + schoolWidth / 2
@@ -132,7 +132,7 @@ export default function SplashPage() {
             </mask>
           </defs>
 
-          {/* "School" — stroke draw, chrome fill, shine sweep — shifts left as a
+          {/* "School" - stroke draw, chrome fill, shine sweep - shifts left as a
               rigid unit once landed. The flourish below is NOT part of this
               group: it stays fixed the whole time. */}
           <g
@@ -141,7 +141,7 @@ export default function SplashPage() {
               transition: reduced ? 'none' : 'transform 0.5s cubic-bezier(0.65,0,0.35,1)',
             }}
           >
-            {/* Stroke layer — the actual pen line, measured and traced */}
+            {/* Stroke layer - the actual pen line, measured and traced */}
             <text
               ref={strokeTextRef}
               x="42%" y="56" textAnchor="middle"
@@ -157,7 +157,7 @@ export default function SplashPage() {
               School
             </text>
 
-            {/* Gradient fill layer — crossfades in once the stroke completes */}
+            {/* Gradient fill layer - crossfades in once the stroke completes */}
             <text
               x="42%" y="56" textAnchor="middle"
               style={{
@@ -172,7 +172,7 @@ export default function SplashPage() {
               School
             </text>
 
-            {/* Shine sweep — moving highlight clipped to the letterforms via the mask above */}
+            {/* Shine sweep - moving highlight clipped to the letterforms via the mask above */}
             <rect
               x={(['shine', 'glow', 'out'] as Stage[]).includes(stage) ? 260 : -80}
               y="0" width="60" height="92"
@@ -182,7 +182,7 @@ export default function SplashPage() {
             />
           </g>
 
-          {/* Flourish — the hand-signed underline. Fixed in place at all times. */}
+          {/* Flourish - the hand-signed underline. Fixed in place at all times. */}
           <path
             ref={flourishRef}
             d="M28,70 C74,80 176,80 220,68"
@@ -198,7 +198,7 @@ export default function SplashPage() {
             }}
           />
 
-          {/* "OS" — starts at the computed osStartX (not a fixed x=140),
+          {/* "OS" - starts at the computed osStartX (not a fixed x=140),
               so the combined "SchoolOS" word is centered in the viewBox as
               a whole, not just "School" on its own. "School"'s shift
               distance (shiftPx) is computed the same way, so the two still

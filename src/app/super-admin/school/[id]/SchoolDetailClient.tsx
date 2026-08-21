@@ -76,6 +76,8 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   const [complianceNotes,        setComplianceNotes]        = useState(compliance?.verification_notes ?? '')
   const [isVerified,             setIsVerified]             = useState(compliance?.is_verified ?? false)
   const [verifiedAt,             setVerifiedAt]             = useState(compliance?.verified_at ?? null)
+  const [publicVerifiedStatus,   setPublicVerifiedStatus]   = useState<string>(school.verified_status ?? 'unverified')
+  const [savingVerifiedStatus,   setSavingVerifiedStatus]   = useState(false)
 
   const daysLeft = schoolStatus === 'trial'
     ? Math.max(0, Math.ceil(school.trial_days_left ?? 0))
@@ -177,6 +179,14 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
       }
     }
     setSaving(false)
+  }
+
+  async function saveVerifiedStatus(next: string) {
+    setSavingVerifiedStatus(true)
+    const data = await manageSchool({ action: 'set_verified_status', school_id: school.id, verified_status: next })
+    if (data.ok) { setPublicVerifiedStatus(next); flash('Public profile verification updated \u2713') }
+    else flash(data.error ?? 'Failed to update verification status', true)
+    setSavingVerifiedStatus(false)
   }
 
   const TABS = [
@@ -576,7 +586,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
             <h3 className={styles.cardTitle}>School Information</h3>
             {[
               ['Name',          school.name],
-              ['Slug / URL',    `schoolos.ng/${school.slug}`],
+              ['Slug / URL',    `/schools/${school.slug}`],
               ['Status',        schoolStatus],
               ['Plan',          school.subscription_plan ? PLAN_LABEL[school.subscription_plan] : 'None'],
               ['Total Students',school.total_students ?? 0],
@@ -587,6 +597,32 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
                 <span style={{ fontWeight:600, color:'var(--text-primary)' }}>{value}</span>
               </div>
             ))}
+          </div>
+
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Public Profile Verification</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'var(--space-4)', lineHeight:1.5 }}>
+              The &quot;Verified&quot; badge shown to parents on this school&apos;s public
+              profile page. Separate from Paystack compliance verification above:
+              this is a statement about the school itself, not its banking
+              details. The school cannot set this on its own.
+            </p>
+            <label style={{ display:'block', fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:4 }}>Status</label>
+            <select
+              value={publicVerifiedStatus}
+              onChange={e => saveVerifiedStatus(e.target.value)}
+              disabled={savingVerifiedStatus}
+              style={{ width:'100%', height:40, borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'0 12px', fontSize:'0.85rem', opacity: savingVerifiedStatus ? 0.6 : 1 }}
+            >
+              <option value="unverified">Unverified</option>
+              <option value="pending">Pending review</option>
+              <option value="verified">Verified</option>
+            </select>
+            {school.is_publicly_listed === false && (
+              <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:8 }}>
+                This school has not turned on its public profile yet, so this badge is not visible to anyone right now.
+              </p>
+            )}
           </div>
 
           <div className={styles.card}>

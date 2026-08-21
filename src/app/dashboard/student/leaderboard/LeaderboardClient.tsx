@@ -1,5 +1,5 @@
 'use client'
-// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, medal emoji →
+// REDESIGN PASS (Lane 3 - Student): RolePageWrapper chrome, medal emoji →
 // TrophyIcon with CSS-driven gold/silver/bronze color (per EMOJI-ICON-MAP.md
 // rule: rank badges use icon + color, not medal glyphs), glass-card/motion.
 // The Quiz/Assignment/Results legend colors are an intentional 3-item
@@ -54,7 +54,7 @@ function safePct(score: number | null, max: number | null): number {
   return Math.min(100, (s / m) * 100)
 }
 
-// Medal rank colors — gold / silver / bronze
+// Medal rank colors - gold / silver / bronze
 const MEDAL_COLORS = ['#F59E0B', '#94A3B8', '#B45309']
 
 export default function LeaderboardClient({ profile, school, userId, childIds = [] }: Props) {
@@ -102,7 +102,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     const term = getCurrentTerm()
     const year = getCurrentYear()
 
-    // 1a. Students — plain query, no joins
+    // 1a. Students - plain query, no joins
     const { data: students, error: sErr } = await supabase
       .from('profiles')
       .select('id, full_name, avatar_url, class_id')
@@ -119,7 +119,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     const studentIds = students.map((s: any) => s.id)
 
     // student_profiles.class_id is what every real write flow updates
-    // (creation, edit modal, promotion/transfer) — it's the CURRENT value.
+    // (creation, edit modal, promotion/transfer) - it's the CURRENT value.
     // profiles.class_id is never touched by promotion, so it goes stale
     // for any promoted student; used only as a fallback when a student has
     // no student_profiles row at all.

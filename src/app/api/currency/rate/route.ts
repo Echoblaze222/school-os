@@ -86,6 +86,6 @@ export async function GET(request: Request) {
     }
   }
 
-  console.error('[currency/rate] All providers failed — returning fallback rate')
+  console.error('[currency/rate] All providers failed - returning fallback rate')
   return NextResponse.json({ rate: FALLBACK_RATE, provider: 'fallback' })
 }

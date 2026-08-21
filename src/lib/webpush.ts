@@ -5,7 +5,7 @@
 // Why this file exists (fixes audit #104):
 //   `sendPushToUsers` previously lived inside `app/api/push/send/route.ts` and
 //   was imported from `lib/pushNotify.ts`. Importing a function from a
-//   `route.ts` file is an anti-pattern in the Next.js App Router — it can pull
+//   `route.ts` file is an anti-pattern in the Next.js App Router - it can pull
 //   the Node-only `web-push` module into bundles/runtimes where it doesn't
 //   belong and breaks the route's module contract (route files should only
 //   export HTTP method handlers + route config).
@@ -56,8 +56,7 @@ export interface PushPayload {
  * Looks up each user's stored push subscriptions, sends to all of them,
  * and prunes any subscriptions the browser has revoked (410/404).
  *
- * Safe to call even if VAPID env vars are missing or no subscriptions exist —
- * in both cases it resolves without throwing.
+ * Safe to call even if VAPID env vars are missing or no subscriptions exist - * in both cases it resolves without throwing.
  */
 export async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<void> {
   if (!userIds.length) return
@@ -65,7 +64,7 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload): 
   try {
     ensureVapidConfigured()
   } catch {
-    // Push not configured for this environment — skip silently.
+    // Push not configured for this environment - skip silently.
     return
   }
 
@@ -79,11 +78,11 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload): 
 
   // WHATSAPP FIX: previously defaulted to a single static tag ('schoolos') when
   // a caller didn't pass one. Android/Chrome collapses same-tag notifications
-  // into one slot — each new push silently *replaced* the last instead of
+  // into one slot - each new push silently *replaced* the last instead of
   // showing/alerting as a new notification. WhatsApp gives every message its
   // own tag so they stack; we do the same by default. Callers that WANT
   // grouping/replacement (e.g. "3 new messages in this chat") can still pass
-  // an explicit tag — renotify below ensures even that still re-alerts.
+  // an explicit tag - renotify below ensures even that still re-alerts.
   const tag = payload.tag ?? `schoolos-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
   const message = JSON.stringify({

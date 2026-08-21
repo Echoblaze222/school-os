@@ -2,11 +2,11 @@
 //
 // Creates a Paystack Subaccount for a school, so fee payments can be
 // auto-split: 97% settles to the school's bank account, 3% stays with the
-// platform — all within a single Paystack transaction, no manual transfers.
+// platform - all within a single Paystack transaction, no manual transfers.
 //
 // Called from SettingsClient.tsx (Banking tab) once the principal has saved
 // bank_name / account_number / account_name. Requires PAYSTACK_SECRET_KEY
-// (your own Paystack account — schools never need their own Paystack login).
+// (your own Paystack account - schools never need their own Paystack login).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // guidance for marketplace/aggregator platforms (due diligence on each
     // school before onboarding them to split payments). Uses the admin
     // client because school_compliance_records is locked to platform_admins
-    // by RLS — this server route reads it on the principal's behalf.
+    // by RLS - this server route reads it on the principal's behalf.
     const adminSupabase = createAdminClient()
     const { data: compliance } = await adminSupabase
       .from('school_compliance_records')

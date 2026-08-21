@@ -17,7 +17,7 @@ export default async function BursarAIPage() {
   ])
 
   // Bursar dashboard reads from staff_profiles/school_settings rather than
-  // profiles/schools — shim both into the shape UniversalAIPage expects.
+  // profiles/schools - shim both into the shape UniversalAIPage expects.
   const profile = { full_name: profileRes.data?.full_name ?? 'Bursar' }
   const school  = {
     id:            schoolRes.data?.id,

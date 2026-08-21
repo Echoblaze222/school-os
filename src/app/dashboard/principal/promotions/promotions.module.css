@@ -1,0 +1,222 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: var(--space-12);
+}
+
+.intro {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.newButton {
+  align-self: flex-start;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.newButton:hover { background: var(--brand-light); }
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--nav-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form input,
+.form select,
+.form textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.checkboxLabel {
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--space-2) !important;
+}
+
+.errorText {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.cancelButton {
+  background: transparent;
+  border: 1px solid var(--nav-border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.saveButton {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  font-weight: 600;
+  cursor: pointer;
+}
+.saveButton:disabled { opacity: 0.6; cursor: default; }
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.emptyState {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: var(--space-6) 0;
+  text-align: center;
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--nav-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.statusBadge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-xs);
+}
+.statusDraft   { background: var(--text-faint); color: var(--text-inverse); }
+.statusPending { background: var(--warning-subtle); color: var(--warning); }
+.statusLive    { background: var(--success-subtle); color: var(--success); }
+.statusRejected{ background: var(--danger-subtle); color: var(--danger); }
+.statusPaused  { background: var(--info-subtle); color: var(--info); }
+
+.sponsoredBadge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-xs);
+  padding: 2px var(--space-2);
+}
+
+.typeLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.cardSummary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+}
+
+.cardDates {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+.rejectionReason {
+  font-size: 13px;
+  color: var(--danger);
+  margin: 0 0 var(--space-3);
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cardActions button {
+  background: transparent;
+  border: 1px solid var(--nav-border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cardActions button:disabled { opacity: 0.6; cursor: default; }
+
+.deleteButton {
+  border-color: var(--danger-subtle) !important;
+  color: var(--danger) !important;
+}
+
+.analyticsPanel {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--nav-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.analyticsRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+.analyticsRow strong { color: var(--text-primary); }

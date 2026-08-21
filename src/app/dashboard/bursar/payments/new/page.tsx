@@ -1,5 +1,5 @@
 // src/app/dashboard/bursar/payments/new/page.tsx
-// Server Component — auth guard only; all data fetching done client-side via Supabase search
+// Server Component - auth guard only; all data fetching done client-side via Supabase search
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'

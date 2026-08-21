@@ -1,4 +1,4 @@
-/* Assignments — Principal */
+/* Assignments - Principal */
 .container { padding: var(--space-5); max-width: 860px; margin: 0 auto; }
 
 .statsRow { display:flex; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-5); }

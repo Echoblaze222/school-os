@@ -1,15 +1,15 @@
 // src/app/dashboard/student/alumni-archive/page.tsx
 //
-// NOTE: this is a NEW route — StudentAlumniClient.tsx existed in the repo
+// NOTE: this is a NEW route - StudentAlumniClient.tsx existed in the repo
 // but nothing rendered it. AlumniClient.tsx (the alumni *network* directory)
 // keeps the /dashboard/student/alumni URL since it's already working; this
 // "My Records" archive (own results / fee receipts / transcript request)
 // gets its own route instead.
 //
-// ASSUMPTIONS — please confirm against your actual schema:
+// ASSUMPTIONS - please confirm against your actual schema:
 //   1. `transcript_requests` table exists (StudentAlumniClient already
 //      inserts into it) with columns: student_id, status, requested_at.
-//   2. Fee history comes from `fee_payments` (confirmed real table — used by
+//   2. Fee history comes from `fee_payments` (confirmed real table - used by
 //      bursar/parent), NOT a separate `receipts` table. `fee_payments` has
 //      no `description` or `receipt_url` column in the rest of the app, so
 //      those are best-effort here: `description` falls back to the payment
@@ -37,7 +37,7 @@ export default async function StudentAlumniArchivePage() {
 
   // student_profiles is what the promotion/graduation flow actually
   // updates (lifecycle_stage, graduation_year, class_id all get written
-  // there when a student graduates or is promoted) — it's the CURRENT
+  // there when a student graduates or is promoted) - it's the CURRENT
   // value. profiles fields are never touched by that flow, so they go
   // stale after a promotion/graduation; used only as a fallback when a
   // student has no student_profiles row at all.
@@ -95,7 +95,7 @@ export default async function StudentAlumniArchivePage() {
       .maybeSingle(),
   ])
 
-  // results.select doesn't carry subject name directly — resolve via class_subjects if you
+  // results.select doesn't carry subject name directly - resolve via class_subjects if you
   // track it there; left as class_subject_id for now since the exact join wasn't confirmed.
   const results: AlumniResult[] = (resultRows ?? []).map((r: any) => ({
     id:            r.id,
@@ -113,7 +113,7 @@ export default async function StudentAlumniArchivePage() {
     description:    p.payment_method ?? 'Fee payment',
     paid_at:        p.payment_date,
     receipt_number: p.receipt_number ?? 'N/A',
-    receipt_url:    null,   // not yet wired — see note above
+    receipt_url:    null,   // not yet wired - see note above
   }))
 
   return (

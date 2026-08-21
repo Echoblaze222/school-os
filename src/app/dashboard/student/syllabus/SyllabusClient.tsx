@@ -2,19 +2,19 @@
 // src/app/dashboard/student/syllabus/SyllabusClient.tsx
 //
 // FIX (carried over):
-//   1. `term` is a Postgres ENUM ('first'|'second'|'third') — this file was
+//   1. `term` is a Postgres ENUM ('first'|'second'|'third') - this file was
 //      sending 'First Term' directly, which would be silently rejected.
 //      Friendly labels stay in the UI; only the enum value is sent/queried.
 //   2. Replaced the nested join `class_subjects(subjects(name))` with a
-//      local lookup — consistent with the teacher-side fix, doesn't depend
+//      local lookup - consistent with the teacher-side fix, doesn't depend
 //      on PostgREST FK cache timing.
-//   3. Syllabus PDF section — this page only ever read `syllabus_topics`
+//   3. Syllabus PDF section - this page only ever read `syllabus_topics`
 //      (the topic tracker), never the `syllabus` table (the PDF teachers
 //      upload), so a teacher-uploaded PDF was completely invisible to
 //      students. Both are now shown.
 //   4. Visible error banner instead of silent failure.
 //
-// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// REDESIGN PASS (Lane 3 - Student): RolePageWrapper chrome, emoji → Icons,
 // glass-card/motion treatment, hardcoded status hex → design tokens.
 
 import { useState, useEffect } from 'react'
@@ -67,7 +67,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
 
     if (csIds.length === 0) { setTopics([]); setPdfUrl(null); setLoading(false); return }
 
-    // FIX: no nested join — select class_subject_id directly, resolve via subjectMap
+    // FIX: no nested join - select class_subject_id directly, resolve via subjectMap
     const [{ data: topicData, error: topicErr }, { data: syllabusData, error: sylErr }] = await Promise.all([
       supabase
         .from('syllabus_topics')
@@ -75,7 +75,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
         .in('class_subject_id', csIds)
         .eq('term', term) // FIX: now sends the enum value ('first'/'second'/'third')
         .order('week_number', { ascending: true }),
-      // FIX: also fetch the syllabus PDF — previously never queried at all
+      // FIX: also fetch the syllabus PDF - previously never queried at all
       supabase
         .from('syllabus')
         .select('file_url')
@@ -85,7 +85,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
     ])
 
     if (topicErr) { console.error('[student syllabus] topics error:', topicErr.message); setError(topicErr.message) }
-    if (sylErr)   { console.error('[student syllabus] pdf error:', sylErr.message) } // not fatal — PDF may just not exist yet
+    if (sylErr)   { console.error('[student syllabus] pdf error:', sylErr.message) } // not fatal - PDF may just not exist yet
 
     if (topicData) {
       const withSubject = topicData.map((t: any) => ({
@@ -107,7 +107,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   const pct      = filtered.length > 0 ? Math.round((covered / filtered.length) * 100) : 0
   const termLabel = TERM_OPTIONS.find(t => t.value === term)?.label ?? term
 
-  // Categorical per-subject tag palette — unrelated to brand color, intentionally varied
+  // Categorical per-subject tag palette - unrelated to brand color, intentionally varied
   const SUBJECT_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6', '#F97316', '#14B8A6']
 
   return (
@@ -115,7 +115,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
         <>
 
           <div className={`${styles.tabs} ${motion.riseIn}`} style={{ marginBottom: 'var(--space-3)' }}>
-            {/* FIX: tabs map over TERM_OPTIONS — value sent to DB, label shown to student */}
+            {/* FIX: tabs map over TERM_OPTIONS - value sent to DB, label shown to student */}
             {TERM_OPTIONS.map(t => (
               <button key={t.value} onClick={() => setTerm(t.value)}
                 className={`${styles.tab} ${term === t.value ? styles.tabActive : ''} ${motion.pressable}`}

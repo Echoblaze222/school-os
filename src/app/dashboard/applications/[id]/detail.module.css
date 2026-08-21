@@ -1,0 +1,58 @@
+.page { max-width: 640px; margin: 0 auto; padding: var(--space-5,20px) var(--space-4,16px) 100px; }
+
+.back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 700; color: var(--text-muted,#7a7a85);
+  text-decoration: none; margin-bottom: var(--space-4,16px);
+}
+
+.headerCard {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--glass-bg, rgba(255,255,255,0.03));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: var(--radius-lg, 16px);
+  padding: 16px; margin-bottom: var(--space-5, 20px);
+}
+
+.headerIcon { width: 44px; height: 44px; border-radius: var(--radius-md,12px); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.schoolName { font-size: 1.05rem; font-weight: 800; margin: 0; color: var(--text-primary,#fff); }
+.schoolLoc { font-size: 0.75rem; color: var(--text-muted,#7a7a85); margin: 2px 0 0; }
+.statusPill { margin-left: auto; font-size: 0.68rem; font-weight: 800; padding: 6px 12px; border-radius: var(--radius-full,999px); white-space: nowrap; }
+
+.section { margin-bottom: var(--space-5, 20px); }
+.sectionTitle { font-size: 0.85rem; font-weight: 800; color: var(--text-primary,#fff); margin: 0 0 10px; }
+
+.detailGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.detailLabel { font-size: 0.68rem; font-weight: 700; color: var(--text-muted,#7a7a85); text-transform: uppercase; letter-spacing: 0.04em; }
+.detailGrid p { font-size: 0.85rem; color: var(--text-primary,#fff); margin: 2px 0 0; }
+
+.emptyHint { font-size: 0.8rem; color: var(--text-muted,#7a7a85); margin: 0; }
+
+.timeline { display: flex; flex-direction: column; gap: 14px; }
+.timelineItem { display: flex; gap: 12px; }
+.timelineDot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.timelineStatus { font-size: 0.85rem; font-weight: 700; color: var(--text-primary,#fff); margin: 0; }
+.timelineNote { font-size: 0.78rem; color: var(--text-secondary,#a0a0ab); margin: 2px 0 0; }
+.timelineDate { font-size: 0.7rem; color: var(--text-muted,#7a7a85); margin: 2px 0 0; }
+
+.messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.msgMe, .msgSchool {
+  max-width: 80%; padding: 10px 12px; border-radius: var(--radius-md,12px);
+}
+.msgMe { align-self: flex-end; background: var(--accent, #800020); color: #fff; border-bottom-right-radius: 4px; }
+.msgSchool { align-self: flex-start; background: var(--glass-bg, rgba(255,255,255,0.06)); border-bottom-left-radius: 4px; }
+.msgBody { font-size: 0.85rem; margin: 0; line-height: 1.4; }
+.msgDate { font-size: 0.65rem; opacity: 0.7; margin: 4px 0 0; }
+
+.msgInputRow { display: flex; gap: 8px; }
+.msgInput {
+  flex: 1; background: var(--glass-bg, rgba(255,255,255,0.03));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: var(--radius-full, 999px); padding: 11px 16px;
+  font-size: 0.85rem; color: var(--text-primary,#fff); outline: none;
+}
+.msgSendBtn {
+  width: 42px; height: 42px; border-radius: 50%; border: none;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+}
+.msgSendBtn:disabled { opacity: 0.5; cursor: not-allowed; }

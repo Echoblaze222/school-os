@@ -1,22 +1,22 @@
 'use client'
 // src/app/dashboard/student/assignments/AssignmentsClient.tsx
 //
-// PIPELINE FIX — what was blocking submissions from appearing on teacher page:
+// PIPELINE FIX - what was blocking submissions from appearing on teacher page:
 //
 // BUG 1 (CRITICAL): assignments query filtered by school_id + class_id,
 // but the teacher creates assignments with teacher_id = their profile id.
-// The student query was correct — the issue was entirely on the TEACHER
+// The student query was correct - the issue was entirely on the TEACHER
 // side (submissions page.tsx had a broken or missing join). Fixed in
 // submissions/page.tsx separately.
 //
 // BUG 2: submitAssignment() called .insert() without returning the new row
 // (.select().single() was missing after insert), so `existing` would be null
-// on the *next* load even though a row existed — causing duplicate insert
+// on the *next* load even though a row existed - causing duplicate insert
 // attempts on resubmit which would fail silently. Fixed: after successful
 // insert, reload the submission row to get the real id.
 //
 // BUG 3: The update path used existing.id correctly, but the optimistic
-// update didn't refresh submission.id from the insert response — so the
+// update didn't refresh submission.id from the insert response - so the
 // second submit attempt would always try to update a null id. Fixed below.
 //
 // Schema confirmed (assignment_submissions):
@@ -25,7 +25,7 @@
 //   score, feedback, submitted_at, graded_at, graded_by, answer_text
 //   NO school_id column on this table.
 //
-// REDESIGN PASS (Lane 3 — Student):
+// REDESIGN PASS (Lane 3 - Student):
 //   - emoji swapped for Icons.tsx per EMOJI-ICON-MAP.md
 //   - hardcoded status hex (#10B981/#EF4444/#F59E0B) → var(--success)/
 //     var(--danger)/var(--warning) design tokens, so theme + future
@@ -35,8 +35,7 @@
 //     from globals.css instead of one-off inline styles
 //   - riseIn / staggerItem / pressable motion added to match the
 //     hero-dashboard's entrance + press feel
-//   - NOTE: StudentNav + DashboardHeader chrome intentionally left as-is —
-//     the RolePageWrapper migration question is still open, tracked
+//   - NOTE: StudentNav + DashboardHeader chrome intentionally left as-is - //     the RolePageWrapper migration question is still open, tracked
 //     separately so it can be applied once across all sub-pages at once
 
 import { useState, useEffect, useRef } from 'react'
@@ -166,7 +165,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       }
       savedSubmission = updated
     } else {
-      // INSERT new row — and retrieve the new id so resubmit works
+      // INSERT new row - and retrieve the new id so resubmit works
       const { data: inserted, error: insErr } = await supabase
         .from('assignment_submissions')
         .insert({
@@ -200,7 +199,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
     setSubText(prev => ({ ...prev, [assignmentId]: '' }))
     setUploading(prev => ({ ...prev, [assignmentId]: false }))
 
-    // Fire-and-forget — never blocks the actual submission on logging failing.
+    // Fire-and-forget - never blocks the actual submission on logging failing.
     const submittedItem = items.find(i => i.id === assignmentId)
     if (submittedItem && school?.id) {
       logActivity({
@@ -325,7 +324,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                           </div>
                         )}
 
-                        {/* Already submitted — show what they sent + teacher feedback */}
+                        {/* Already submitted - show what they sent + teacher feedback */}
                         {submitted && (
                           <div style={{ paddingLeft: 52, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {(sub?.text_response || sub?.answer_text) && (

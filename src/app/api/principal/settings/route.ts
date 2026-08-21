@@ -1,6 +1,6 @@
 // src/app/api/principal/settings/route.ts
 // Saves school settings for the authenticated principal.
-// Validates ownership before writing — a principal can only update their own school.
+// Validates ownership before writing - a principal can only update their own school.
 
 import { NextResponse }    from 'next/server'
 import { createClient }    from '@/lib/supabase/server'
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   // ── 5. Build update payload (only fields provided) ────────────────────────
   // secondary_color now lives directly on the `schools` table (see the
   // schools-branding-columns migration referenced in dashboard/principal/layout.tsx),
-  // which is also what SchoolBrandInjector reads via each role's layout — so it's
+  // which is also what SchoolBrandInjector reads via each role's layout - so it's
   // written here just like primary_color. Step 6b additionally mirrors it into
   // school_branding for older readers that still query that table.
   const update: Record<string, unknown> = {}
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
   if (update.font_family     !== undefined) brandingUpdate.font_family     = update.font_family
 
   if (Object.keys(brandingUpdate).length > 0) {
-    // school_branding.school_name is NOT NULL with no default — if this
+    // school_branding.school_name is NOT NULL with no default - if this
     // school doesn't have a school_branding row yet, an upsert with only
     // colour fields would fail on insert. Carry the name across so the
     // first-ever branding save for a school succeeds instead of erroring.
@@ -147,7 +147,7 @@ export async function POST(req: Request) {
 
     if (brandingError) {
       console.error('[principal/settings] school_branding sync error:', brandingError)
-      // Don't fail the whole request — schools table is already saved.
+      // Don't fail the whole request - schools table is already saved.
       // The theme just won't reflect the change until this is retried.
     }
   }

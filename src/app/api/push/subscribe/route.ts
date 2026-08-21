@@ -1,6 +1,9 @@
 // src/app/api/push/subscribe/route.ts
-// Saves or removes a browser Web Push subscription for the current user.
-// Called by the usePushNotifications hook on the client side.
+// Saves or removes a push registration for the current user, either a
+// browser Web Push subscription or a native Android FCM token. One
+// endpoint, one table, branching on the shape of the request body —
+// see docs/phase5-lane-mobile-sql/01-push-subscriptions-fcm.sql for why
+// this stays one table instead of a second device_tokens table.
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -21,11 +24,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { subscription, oldEndpoint } = await req.json()
-  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-    return NextResponse.json({ error: 'Invalid subscription object' }, { status: 400 })
-  }
-
+  const body = await req.json()
   const { data: profile } = await supabase
     .from('profiles')
     .select('school_id')
@@ -33,6 +32,37 @@ export async function POST(req: Request) {
     .single()
 
   const admin = adminClient()
+
+  // Native Android path: { platform: 'android', fcmToken }, sent by
+  // the Capacitor app's @capacitor/push-notifications registration
+  // listener, no service worker / VAPID keys involved.
+  if (body.platform === 'android') {
+    const fcmToken = body.fcmToken
+    if (!fcmToken || typeof fcmToken !== 'string') {
+      return NextResponse.json({ error: 'fcmToken is required' }, { status: 400 })
+    }
+
+    const { error } = await admin.from('push_subscriptions').upsert({
+      user_id:      user.id,
+      school_id:    profile?.school_id ?? null,
+      platform:     'android',
+      endpoint:     `fcm:${fcmToken}`,
+      fcm_token:    fcmToken,
+      p256dh:       null,
+      auth:         null,
+      user_agent:   req.headers.get('user-agent') ?? null,
+      last_used_at: new Date().toISOString(),
+    }, { onConflict: 'endpoint' })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  // Web path: unchanged from before this route supported android too.
+  const { subscription, oldEndpoint } = body
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return NextResponse.json({ error: 'Invalid subscription object' }, { status: 400 })
+  }
 
   // If this is a subscription renewal (pushsubscriptionchange event),
   // delete the old endpoint first — scoped to this user, so a request
@@ -46,6 +76,7 @@ export async function POST(req: Request) {
   const { error } = await admin.from('push_subscriptions').upsert({
     user_id:     user.id,
     school_id:   profile?.school_id ?? null,
+    platform:    'web',
     endpoint:    subscription.endpoint,
     p256dh:      subscription.keys.p256dh,
     auth:        subscription.keys.auth,

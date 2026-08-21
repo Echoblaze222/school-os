@@ -88,7 +88,7 @@ export default function AnnouncementsClient({
   const [aiDraftBanner, setAiDraftBanner] = useState<string | null>(null)
 
   // ── Load an AI-generated announcement draft ───────────────────────────────
-  // Only prefills the form — nothing is posted until this user clicks the
+  // Only prefills the form - nothing is posted until this user clicks the
   // real "Post announcement" button below, same as if they'd typed it.
   useEffect(() => {
     const draftId = searchParams.get('draftId')
@@ -203,7 +203,7 @@ export default function AnnouncementsClient({
       {/* ── Two-column body ── */}
       <div className={styles.layoutBody}>
 
-        {/* LEFT — list */}
+        {/* LEFT - list */}
         <section className={styles.listSection}>
           <p className={styles.sectionLabel}>
             {announcements.length} announcement{announcements.length !== 1 ? 's' : ''}
@@ -246,10 +246,10 @@ export default function AnnouncementsClient({
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       {a.class_name && <span className={styles.classTag}>{a.class_name}</span>}
-                      <button className="pressable"
+                      <button
                         onClick={e => { e.stopPropagation(); setConfirmDel(a) }}
                         title="Delete announcement"
-                        className={styles.deleteIconBtn}
+                        className={`pressable ${styles.deleteIconBtn}`}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
                       </button>
@@ -261,7 +261,7 @@ export default function AnnouncementsClient({
           )}
         </section>
 
-        {/* RIGHT — compose */}
+        {/* RIGHT - compose */}
         <section className={styles.composePanel}>
           <div className={styles.composePanelHeader}>
             <p className={styles.composePanelTitle}>New Announcement</p>

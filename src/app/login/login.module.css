@@ -105,8 +105,7 @@
 
 .changeSchoolBtn:hover { color: #fff; }
 
-/* ── Sign-in heading (replaces the old Login/Register tab toggle —
-   registration now lives at its own route, /register-school) ── */
+/* ── Sign-in heading (replaces the old Login/Register tab toggle - registration now lives at its own route, /register-school) ── */
 .signInHeading {
   margin: 20px 20px 4px;
   font-size: 1.05rem;
@@ -637,7 +636,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SPLASH OVERLAY — baked into login page
+   SPLASH OVERLAY - baked into login page
    ═══════════════════════════════════════════════════════════════ */
 
 .splashOverlay {
@@ -1064,7 +1063,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SITE FOOTER — below login card
+   SITE FOOTER - below login card
    ══════════════════════════════════════════════════════════════ */
 
 .siteFooter {

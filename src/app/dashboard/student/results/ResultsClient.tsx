@@ -9,7 +9,7 @@
 // ADDED: percentage label on progress bar
 // ADDED: graceful fallback when class_subjects join is null (data posted without class link)
 //
-// REDESIGN PASS (Lane 3 — Student): emoji → Icons, hardcoded grade hex →
+// REDESIGN PASS (Lane 3 - Student): emoji → Icons, hardcoded grade hex →
 // design tokens where a matching token exists, glass-card/motion treatment.
 // Chrome was already on RolePageWrapper, so no chrome change needed here.
 
@@ -50,7 +50,7 @@ const TERMS = ['All Terms', 'First Term', 'Second Term', 'Third Term'] as const
 // FIX: results.term is stored in the DB as the raw enum 'first' | 'second' |
 // 'third' (confirmed in PostResultsClient.tsx), NOT as 'First Term' etc.
 // The filter tabs show the friendly label, but must compare against the
-// raw value — without this map, r.term === 'First Term' never matches
+// raw value - without this map, r.term === 'First Term' never matches
 // r.term === 'first', so every term tab except "All Terms" always came
 // back empty.
 const TERM_LABEL_TO_DB: Record<string, string> = {
@@ -104,7 +104,7 @@ function resolveClassName(r: ResultRow): string {
 export default function ResultsClient({ profile, school, userId, results, reportCards = [] }: ResultsClientProps) {
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null)
 
-  // Log once per page visit when there are actual results to see — landing
+  // Log once per page visit when there are actual results to see - landing
   // on this page with real result rows already IS "viewing your results";
   // there's no per-row detail click to hook into instead (results render
   // as a flat table/grouped list, not expandable cards). Deliberately runs

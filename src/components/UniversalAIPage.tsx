@@ -13,7 +13,7 @@ import styles from '@/app/dashboard/student/ai/ai.module.css'
 interface Message { role: 'user' | 'assistant'; content: string; ts: number; imageUrl?: string | null }
 interface Props   { profile: any; school: any; userId: string; role: string }
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB — keeps rows small and uploads fast on mobile data
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB, keeps rows small and uploads fast on mobile data
 
 function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> {
   return new Promise((resolve, reject) => {
@@ -28,7 +28,7 @@ function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> 
   })
 }
 
-// Escape before rendering as text — msg.content can come from the model
+// Escape before rendering as text, msg.content can come from the model
 // or from student/parent free text, neither of which is trusted HTML.
 function escapeHtml(text: string) {
   return text
@@ -269,6 +269,62 @@ const ROLE_CONFIG: Record<string, { title: string; subtitle: string; context: st
       '🎯 How do I motivate a teenager who has lost interest in school?',
     ],
   },
+  counselor: {
+    title:    'AI Counseling Assistant',
+    subtitle: 'Caseload navigation and discreet drafting support',
+    context:  'counselor',
+    starters: [
+      '📋 Which of my students have pending follow-ups right now?',
+      '🗓️ Show me my upcoming counseling appointments',
+      '✉️ Help me draft a neutral note requesting a meeting with a parent',
+      '📊 Summarise my caseload by status and risk level',
+      '🧭 Walk me through reviewing a referral in my queue',
+    ],
+  },
+  ict: {
+    title:    'AI ICT Assistant',
+    subtitle: 'Triage tickets, track devices, and manage requests',
+    context:  'ict',
+    starters: [
+      '🚨 Which critical tickets are unresolved?',
+      '🖥️ Which devices need maintenance?',
+      '📍 Which location has the most reported problems?',
+      '👤 How many account requests and applications are waiting on me?',
+    ],
+  },
+  vice_principal: {
+    title:    'AI VP Assistant',
+    subtitle: 'Academic oversight, departments, and staff support',
+    context:  'vice_principal',
+    starters: [
+      '📊 Summarise this term\'s average performance across the school',
+      '🗂️ Draft an agenda for a department heads meeting',
+      '📋 What should I check before approving a department report?',
+      '✉️ Write a memo to teachers about upcoming exam preparation',
+    ],
+  },
+  hostel: {
+    title:    'AI Hostel Assistant',
+    subtitle: 'Occupancy, roll call, and boarding student welfare',
+    context:  'hostel',
+    starters: [
+      '🛏️ What is our current bed occupancy?',
+      '🚨 Are there any open hostel incidents right now?',
+      '🔧 Which maintenance requests are still outstanding?',
+      '📋 Draft a notice reminding boarders about curfew',
+    ],
+  },
+  examination: {
+    title:    'AI Examination Assistant',
+    subtitle: 'Timetables, invigilation, and results verification',
+    context:  'examination',
+    starters: [
+      '📅 What exams are scheduled this week?',
+      '✅ How many results are still waiting on verification?',
+      '🚨 Are there any open exam incidents?',
+      '📋 Draft an invigilation duty reminder for staff',
+    ],
+  },
 }
 
 export default function UniversalAIPage({ profile, school, userId, role }: Props) {
@@ -315,7 +371,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
           try { localStorage.setItem(storageKey, JSON.stringify(restored.slice(-30))) } catch {}
         }
       } catch {
-        // Offline or first load — the local cache (if any) already rendered above.
+        // Offline or first load, the local cache (if any) already rendered above.
       } finally {
         if (!cancelled) setHistoryLoaded(true)
       }
@@ -416,7 +472,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  // Escape before rendering as text — msg.content can come from the model
+  // Escape before rendering as text, msg.content can come from the model
   // or from student/parent free text, neither of which is trusted HTML.
 
   return (
@@ -424,7 +480,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
       {/* Outer flex column fills the mainFull container */}
       <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0 }}>
 
-        {/* Scrollable message area — leaves room for inputBar + bottom nav */}
+        {/* Scrollable message area, leaves room for inputBar + bottom nav */}
         <div
           className={styles.messages}
           style={{

@@ -1,6 +1,6 @@
 'use client'
 // src/app/dashboard/secretary/codes/CodesClient.tsx
-// Access Codes — secretary can view/manage every code, and generate new
+// Access Codes - secretary can view/manage every code, and generate new
 // student or parent access codes one at a time ("New Code") or in bulk.
 
 import { useState, useMemo } from 'react'
@@ -47,8 +47,7 @@ function roleMeta(role: string) {
   return ROLE_META[role] ?? { color: '#6B7280', icon: '?', label: role }
 }
 
-// The secretary only ever mints codes for students and their parents —
-// other staff roles are enrolled from the Principal dashboard.
+// The secretary only ever mints codes for students and their parents - // other staff roles are enrolled from the Principal dashboard.
 const ROLES_ASSIGNABLE = ['student', 'parent'] as const
 type AssignableRole = typeof ROLES_ASSIGNABLE[number]
 
@@ -168,11 +167,11 @@ function CodeSuccessScreen({
         </p>
       </div>
 
-      <button className="pressable" onClick={copyCode} className={styles.copyBothBtn}>
+      <button onClick={copyCode} className={`pressable ${styles.copyBothBtn}`}>
         Copy Details
       </button>
 
-      <button className="pressable" onClick={onGenerateAnother} className={styles.enrolAnotherBtn}>
+      <button onClick={onGenerateAnother} className={`pressable ${styles.enrolAnotherBtn}`}>
         + Generate Another Code
       </button>
     </div>
@@ -255,7 +254,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
     // Regeneration goes through /api/staff-codes/regenerate (added while
     // hardening Principal's identical CodesClient.tsx) rather than writing
     // directly from the browser. The old approach generated a 4-digit code
-    // (only 9,000 possibilities) with no school scoping on the write — the
+    // (only 9,000 possibilities) with no school scoping on the write - the
     // access code is the sole credential needed to activate an account, so
     // a short, guessable one let anyone brute-force account takeover
     // before the real user's first login. The route also verifies the
@@ -432,7 +431,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
     const isActive = roleTab === r
     const count    = r === 'all' ? entries.length : entries.filter(e => e.role === r).length
     return (
-      <button className="pressable" onClick={() => setRoleTab(r)} className={styles.roleChip}
+      <button onClick={() => setRoleTab(r)} className={`pressable ${styles.roleChip}`}
         style={{
           background:  isActive ? m.color + '22' : 'var(--glass-bg)',
           borderColor: isActive ? m.color : 'var(--glass-border)',
@@ -697,7 +696,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
 
               {nError && <p className={styles.errorMsg}>{nError}</p>}
 
-              <button className="pressable" onClick={handleGenerate} disabled={nLoading} className={styles.generateBtn}>
+              <button onClick={handleGenerate} disabled={nLoading} className={`pressable ${styles.generateBtn}`}>
                 {nLoading ? 'Saving...' : `Generate ${roleMeta(nRole).label} Code`}
               </button>
             </div>
@@ -959,7 +958,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                   <p className={styles.formSub}>{bLoading ? 'Creating accounts, please wait...' : 'Codes below are live. Share them now.'}</p>
                 </div>
                 <div className={styles.bulkActions}>
-                  <button className="pressable" onClick={() => copyAllCodes(bResults)} className={styles.copyAllBtn}
+                  <button onClick={() => copyAllCodes(bResults)} className={`pressable ${styles.copyAllBtn}`}
                     disabled={bLoading}
                     style={copiedAll ? { borderColor: '#10B981', color: '#10B981' } : {}}>
                     {copiedAll ? 'All Copied' : 'Copy All'}

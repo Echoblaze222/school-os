@@ -4,7 +4,7 @@
 // Status is derived from is_live (boolean) + ended_at (timestamp).
 // teacher join uses teacher_id FK (not profiles directly).
 //
-// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// REDESIGN PASS (Lane 3 - Student): RolePageWrapper chrome, emoji → Icons,
 // glass-card/motion treatment, hardcoded status hex → design tokens.
 
 import { useState, useEffect } from 'react'
@@ -42,7 +42,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
       return
     }
 
-    // Fetch all classes for this student's class — derive status client-side
+    // Fetch all classes for this student's class - derive status client-side
     const { data } = await supabase
       .from('online_classes')
       .select('id, title, description, is_live, meeting_url, recording_url, scheduled_at, ended_at, teacher_id')

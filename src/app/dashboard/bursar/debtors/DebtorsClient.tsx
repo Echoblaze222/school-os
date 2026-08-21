@@ -2,9 +2,8 @@
 // src/app/dashboard/bursar/debtors/DebtorsClient.tsx
 //
 // Fixed: was reading from `school_fees` and `fee_payments`, tables nothing
-// writes to anymore. Now reads directly from `payment_invoices` — the same
-// table InvoicesClient, RemindersClient, and the principal dashboard use —
-// so debtor totals stay in sync with everything else in the app.
+// writes to anymore. Now reads directly from `payment_invoices` - the same
+// table InvoicesClient, RemindersClient, and the principal dashboard use - // so debtor totals stay in sync with everything else in the app.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -67,7 +66,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
       return
     }
 
-    // Aggregate per student — a student may have multiple invoices for the
+    // Aggregate per student - a student may have multiple invoices for the
     // same term (e.g. school fees + uniform + PTA), so sum across all of them.
     // Embeds can come back as object OR 1-element array, so unwrap before
     // reading, and verify term/year client-side since PostgREST doesn't

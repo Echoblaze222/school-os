@@ -1,7 +1,7 @@
 // app/api/super-admin/settings/route.ts
 //
 // ALL writes to trial_config, subscription_plans, setup_fee_config, and
-// installment_config go through here — never from the browser anon client.
+// installment_config go through here - never from the browser anon client.
 //
 // Guard: session must exist AND user must be in the super_admins table.
 // Writes use the service-role admin client so RLS is bypassed safely on the
@@ -29,7 +29,7 @@ async function verifySuperAdmin() {
   return admin
 }
 
-// ── GET — load all four config tables ────────────────────────────────────────
+// ── GET - load all four config tables ────────────────────────────────────────
 
 export async function GET() {
   const admin = await verifySuperAdmin()
@@ -56,7 +56,7 @@ export async function GET() {
   return NextResponse.json({ plans, trial, installment, setupFee })
 }
 
-// ── POST — dispatch by action ─────────────────────────────────────────────────
+// ── POST - dispatch by action ─────────────────────────────────────────────────
 
 export async function POST(req: Request) {
   const admin = await verifySuperAdmin()

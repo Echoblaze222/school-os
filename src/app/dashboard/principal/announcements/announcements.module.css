@@ -1,5 +1,5 @@
 /* ============================================================
-   announcements.module.css  — Unified SchoolOS Announcements
+   announcements.module.css - Unified SchoolOS Announcements
    Used by: principal, secretary, teacher dashboards
    ============================================================ */
 
@@ -369,7 +369,7 @@ select.fieldInput {
   margin: 0 0 var(--space-2);
 }
 
-/* Card body — clamped by default, full when expanded */
+/* Card body - clamped by default, full when expanded */
 .cardBody {
   font-size: 0.85rem;
   color: var(--text-secondary);
@@ -537,7 +537,7 @@ select.fieldInput {
 }
 
 /* ============================================================
-   MISSING CLASSES — Added to match AnnouncementsClient.tsx
+   MISSING CLASSES - Added to match AnnouncementsClient.tsx
    ============================================================ */
 
 /* ── Page shell ─────────────────────────────────────────── */

@@ -2,7 +2,7 @@
 // src/components/NoteBook.tsx
 //
 // Cinematic 3D "flip book" reader for typed/pasted study notes.
-// Pure CSS 3D transforms (perspective + rotateY) — no external animation
+// Pure CSS 3D transforms (perspective + rotateY) - no external animation
 // library, so it stays light and fast on low-end Android devices.
 //
 // Usage:

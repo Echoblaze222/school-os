@@ -51,7 +51,12 @@ export async function checkSubscription(userId: string): Promise<SubscriptionChe
   }
 
   const hardLocked = !school.is_platform_active || school.setup_status === 'locked'
-  const billingLocked = school.setup_status === 'expired' || school.setup_status === 'suspended'
+  // grace_period is deliberately NOT here - full access continues through
+  // the configured grace window (see lib/subscriptionExpiry.ts). 'expired'
+  // (trial), 'suspended' (grace period exhausted), and 'cancelled' (the
+  // school explicitly chose not to renew, and that period has now ended)
+  // all restrict the same way.
+  const billingLocked = ['expired', 'suspended', 'cancelled'].includes(school.setup_status)
 
   // Principals bypass the BILLING lock (they need to reach the renewal
   // page) but never the HARD lock — a manual super-admin suspension blocks

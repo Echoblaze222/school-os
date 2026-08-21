@@ -35,7 +35,7 @@ export default function OnboardingStage1() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    // Update profile — password was already set during the first-login flow
+    // Update profile - password was already set during the first-login flow
     // (access code → /api/auth/first-login). Stage 1 only collects profile info.
     const { error: profileErr } = await supabase.from('profiles')
       .update({

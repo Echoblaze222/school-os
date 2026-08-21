@@ -3,7 +3,7 @@
 // Rebuilt against real `online_classes` schema:
 //   is_live (boolean), ended_at (timestamp), meeting_url, scheduled_at, class_id, teacher_id
 // Status is derived (not a stored column): is_live→live, ended_at→ended, else→scheduled
-// teacher_name/subject/duration_mins/student_count do not exist — removed.
+// teacher_name/subject/duration_mins/student_count do not exist - removed.
 
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -150,8 +150,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
       {/* Tabs */}
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {TABS.map(t => (
-          <button className="pressable" key={t.key} onClick={() => setTab(t.key)}
-            className={`${styles.tab} ${tab === t.key ? styles.tabActive : ''}`}
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`pressable ${styles.tab} ${tab === t.key ? styles.tabActive : ''}`}
             style={tab === t.key ? { background: sc, color: '#fff', borderColor: sc } : {}}>
             {t.label}
             {t.badge ? (

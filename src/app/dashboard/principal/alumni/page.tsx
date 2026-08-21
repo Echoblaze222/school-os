@@ -26,7 +26,7 @@ export default async function PrincipalAlumniPage() {
   // FIX: was querying school_branding separately, which is a different
   // table from `schools` and can hold a stale/unset primary_color. The
   // main dashboard (principal/page.tsx) sources school + primary_color via
-  // profiles.select('*, schools(*)) — mirrored here so the brand colour
+  // profiles.select('*, schools(*)) - mirrored here so the brand colour
   // actually matches what's shown everywhere else.
   const { data: profile } = await supabase
     .from('profiles')
@@ -41,7 +41,7 @@ export default async function PrincipalAlumniPage() {
   // student_profiles has no school_id column and no FK Supabase can use
   // for a nested select into profiles/classes, so: first get this school's
   // student ids from `profiles`, then pull matching graduated rows from
-  // student_profiles, then fetch classes — merging everything in JS. Same
+  // student_profiles, then fetch classes - merging everything in JS. Same
   // separate-query pattern used across the rest of the app.
   const { data: schoolStudentProfiles } = await supabase
     .from('profiles')

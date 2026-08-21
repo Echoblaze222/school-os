@@ -8,17 +8,16 @@ import {
   ArrowLeftIcon, SunIcon, MoonIcon, XIcon,
 } from '@/components/Icons'
 import styles from './subscription.module.css'
+import { getSubscriptionTier, computeSubscriptionAmount, type BillingCycle } from '@/lib/billing'
 
 // ── School-size-based pricing ──────────────────────────────
 // Replaces the old per-plan price selector. Every school gets the same
 // full feature set; the per-student rate is determined automatically by
 // how many active students the school has — matching what the server
 // (subscription/renew) computes independently and authoritatively.
-function pricePerStudentForSize(n: number): { rate: number; tierLabel: string } {
-  if (n <= 150) return { rate: 1000, tierLabel: 'Starter' }
-  if (n <= 250) return { rate: 2000, tierLabel: 'Growth' }
-  return { rate: 3000, tierLabel: 'Scale' }
-}
+// Sourced from lib/billing.ts, not reimplemented here - this file and
+// renew/route.ts each had their own copy of this before, and the two had
+// already drifted apart (both on the wrong thresholds too).
 
 const ALL_FEATURES = [
   'Student & staff portal',
@@ -41,17 +40,31 @@ const ALL_FEATURES = [
 
 const REGISTRATION_FEE = 150000 // One-time only
 
+interface BillingSnapshot {
+  id: string
+  billing_cycle: string
+  billable_student_count: number
+  rate_per_student: number
+  tier_label: string
+  amount_ngn: number
+  discount_applied_ngn: number
+  period_start: string
+  period_end: string
+  created_at: string
+}
+
 interface Props {
-  school:         any
-  subscription:   any
-  studentCount:   number
-  paymentHistory: any[]
-  userId:         string
-  principalName:  string
+  school:           any
+  subscription:     any
+  studentCount:     number
+  paymentHistory:   any[]
+  billingSnapshots: BillingSnapshot[]
+  userId:           string
+  principalName:    string
 }
 
 export default function SubscriptionClient({
-  school, subscription, studentCount, paymentHistory, userId, principalName,
+  school, subscription, studentCount, paymentHistory, billingSnapshots, userId, principalName,
 }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -60,6 +73,9 @@ export default function SubscriptionClient({
   const [theme,        setTheme]        = useState<'dark' | 'light'>('dark')
   const [tab,          setTab]          = useState<'status' | 'renew' | 'history'>('status')
   const [toast,        setToast]        = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('termly')
+  const [cancelBusy,   setCancelBusy]   = useState(false)
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(!!subscription?.cancel_at_period_end)
 
   // Read ?status= from Paystack callback redirect
   useEffect(() => {
@@ -115,8 +131,11 @@ export default function SubscriptionClient({
   // School pays: number of active students × the size-based rate. This
   // display figure is informational only — the server recomputes the
   // authoritative amount itself from real active student counts.
-  const { rate: pricePerStudent, tierLabel } = pricePerStudentForSize(studentCount)
-  const renewalAmount    = studentCount * pricePerStudent
+  const { rate: pricePerStudent, tierLabel } = getSubscriptionTier(studentCount)
+  const termlyBreakdown = useMemo(() => computeSubscriptionAmount(studentCount, 'termly'), [studentCount])
+  const yearlyBreakdown = useMemo(() => computeSubscriptionAmount(studentCount, 'yearly'), [studentCount])
+  const selectedBreakdown = billingCycle === 'yearly' ? yearlyBreakdown : termlyBreakdown
+  const renewalAmount = selectedBreakdown.amount
 
   // Status color
   const statusColor = isExpired ? 'var(--error)'
@@ -140,7 +159,7 @@ export default function SubscriptionClient({
       const response = await fetch('/api/subscription/renew', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({}), // pricing and student count are computed server-side
+        body:    JSON.stringify({ billingCycle }), // amount and student count are still computed server-side
       })
 
       const data = await response.json()
@@ -159,6 +178,42 @@ export default function SubscriptionClient({
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
+    }
+  }
+
+  // ── Toggle auto-renewal ────────────────────────────────
+  async function handleCancelToggle(nextAction: 'cancel' | 'resume') {
+    if (cancelBusy) return
+    if (nextAction === 'cancel' && !confirm(
+      "Stop auto-renewal? You'll keep full access until the current period ends on " +
+      `${subscription?.expiry_date ? fmtDate(subscription.expiry_date) : 'the end of this term'}, ` +
+      'then the subscription will end instead of renewing. You can resume any time before then.'
+    )) return
+
+    setCancelBusy(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/subscription/cancel', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: nextAction }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Could not update auto-renewal. Please try again.')
+        return
+      }
+      setCancelAtPeriodEnd(nextAction === 'cancel')
+      setToast({
+        type: 'success',
+        message: nextAction === 'cancel'
+          ? 'Auto-renewal turned off. Your access continues until the current period ends.'
+          : 'Auto-renewal turned back on.',
+      })
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setCancelBusy(false)
     }
   }
 
@@ -318,10 +373,31 @@ export default function SubscriptionClient({
               <p className={styles.pricingNoteBody}>
                 Your rate is based on school size. You're currently on the <strong>{tierLabel}</strong> tier
                 at <strong>₦{pricePerStudent.toLocaleString()} per student per term</strong>.
-                With <strong>{studentCount} active students</strong>, your renewal costs <strong>{fmtAmount(renewalAmount)}</strong> this term.
+                With <strong>{studentCount} active students</strong>, your renewal costs <strong>{fmtAmount(termlyBreakdown.amount)}</strong> per term
+                {' '}(or <strong>{fmtAmount(yearlyBreakdown.amount)}/year</strong>, paid yearly — a {Math.round((yearlyBreakdown.discountApplied / (termlyBreakdown.amount * 3)) * 100)}% saving over paying termly three times).
                 As your school grows past a tier boundary, your rate adjusts automatically, and every school gets the full feature set regardless of size.
               </p>
             </div>
+
+            {/* Auto-renewal control */}
+            {subscription?.status === 'Active' && (
+              <div className={styles.pricingNote}>
+                <p className={styles.pricingNoteTitle}>Auto-renewal</p>
+                <p className={styles.pricingNoteBody}>
+                  {cancelAtPeriodEnd
+                    ? `Auto-renewal is off. Your access continues until ${subscription?.expiry_date ? fmtDate(subscription.expiry_date) : 'the end of this period'}, then the subscription will end.`
+                    : "Auto-renewal is on. You'll be prompted to pay again when this period ends."}
+                </p>
+                <button
+                  className={`${styles.backBtn} pressable`}
+                  style={{ width: 'auto', padding: '8px 16px', marginTop: 8 }}
+                  disabled={cancelBusy}
+                  onClick={() => handleCancelToggle(cancelAtPeriodEnd ? 'resume' : 'cancel')}
+                >
+                  {cancelBusy ? 'Updating…' : cancelAtPeriodEnd ? 'Resume auto-renewal' : 'Stop auto-renewal'}
+                </button>
+              </div>
+            )}
 
             {/* Current features */}
             <div className={styles.featuresCard}>
@@ -358,6 +434,22 @@ export default function SubscriptionClient({
               </p>
             </div>
 
+            {/* Billing cycle choice */}
+            <div className={styles.tabs} style={{ marginBottom: 16 }}>
+              <button
+                className={`${styles.tab} ${billingCycle === 'termly' ? styles.tabActive : ''} pressable`}
+                onClick={() => setBillingCycle('termly')}
+              >
+                Pay termly
+              </button>
+              <button
+                className={`${styles.tab} ${billingCycle === 'yearly' ? styles.tabActive : ''} pressable`}
+                onClick={() => setBillingCycle('yearly')}
+              >
+                Pay yearly — save 20%
+              </button>
+            </div>
+
             {/* Current tier summary card — replaces the old plan picker.
                 Pricing is no longer a choice; it's determined automatically
                 by school size, so there's nothing to select here. */}
@@ -374,14 +466,21 @@ export default function SubscriptionClient({
                 </div>
 
                 <div className={styles.planTotal}>
-                  <p className={styles.planTotalLabel}>Your total ({studentCount} students)</p>
+                  <p className={styles.planTotalLabel}>
+                    Your total ({studentCount} students, {billingCycle === 'yearly' ? 'billed yearly' : 'billed this term'})
+                  </p>
                   <p className={styles.planTotalAmount} style={{ color: schoolColor }}>
                     {fmtAmount(renewalAmount)}
                   </p>
+                  {billingCycle === 'yearly' && (
+                    <p className={styles.planRateLabel}>
+                      You save {fmtAmount(selectedBreakdown.discountApplied)} vs. paying termly three times
+                    </p>
+                  )}
                 </div>
 
                 <p className={styles.planMaxStudents}>
-                  Up to 150: ₦1,000/student &middot; 151-250: ₦2,000/student &middot; 251+: ₦3,000/student
+                  Up to 250: ₦1,000/student &middot; 251-500: ₦2,000/student &middot; 501+: ₦3,000/student
                 </p>
               </div>
             </div>
@@ -403,9 +502,15 @@ export default function SubscriptionClient({
                 <strong>₦{pricePerStudent.toLocaleString()}/term</strong>
               </div>
               <div className={styles.summaryRow}>
-                <span>Term coverage</span>
-                <strong>4 months</strong>
+                <span>Billing cycle</span>
+                <strong>{billingCycle === 'yearly' ? '12 months (paid yearly)' : '4 months (one term)'}</strong>
               </div>
+              {billingCycle === 'yearly' && (
+                <div className={styles.summaryRow}>
+                  <span>Yearly discount (20%)</span>
+                  <strong style={{ color: 'var(--success)' }}>&minus;{fmtAmount(selectedBreakdown.discountApplied)}</strong>
+                </div>
+              )}
 
               <div className={styles.summaryDivider} />
 
@@ -415,7 +520,8 @@ export default function SubscriptionClient({
               </div>
 
               <p className={styles.summaryNote}>
-                Payment processed securely via Paystack. After payment your subscription extends by one full term (4 months).
+                Payment processed securely via Paystack. After payment your subscription extends by
+                {' '}{billingCycle === 'yearly' ? 'a full year (12 months)' : 'one full term (4 months)'}.
               </p>
             </div>
 
@@ -456,7 +562,41 @@ export default function SubscriptionClient({
         {/* ── HISTORY TAB ── */}
         {tab === 'history' && (
           <>
-            <p className={styles.sectionLabel}>Payment History</p>
+            <p className={styles.sectionLabel}>Billing Periods</p>
+
+            {billingSnapshots.length === 0 ? (
+              <div className={styles.emptyHistory}>
+                <FileTextIcon size={32} color="var(--text-muted)" />
+                <p>No billing periods recorded yet</p>
+              </div>
+            ) : (
+              billingSnapshots.map(snap => (
+                <div key={snap.id} className={styles.historyCard}>
+                  <div className={styles.historyLeft}>
+                    <div className={styles.historyIcon}>
+                      <CalendarIcon size={16} color={schoolColor} />
+                    </div>
+                    <div>
+                      <p className={styles.historyTerm}>
+                        {snap.tier_label} &middot; {snap.billing_cycle === 'yearly' ? 'Yearly' : 'Termly'}
+                      </p>
+                      <p className={styles.historyDate}>
+                        {fmtDate(snap.period_start)} – {fmtDate(snap.period_end)}
+                      </p>
+                      <p className={styles.historyReceipt}>
+                        {snap.billable_student_count} students &middot; ₦{snap.rate_per_student.toLocaleString()}/student
+                        {snap.discount_applied_ngn > 0 && ` · saved ${fmtAmount(snap.discount_applied_ngn)}`}
+                      </p>
+                    </div>
+                  </div>
+                  <p className={styles.historyAmount} style={{ color: 'var(--success)' }}>
+                    {fmtAmount(snap.amount_ngn)}
+                  </p>
+                </div>
+              ))
+            )}
+
+            <p className={styles.sectionLabel} style={{ marginTop: 24 }}>Payment History</p>
 
             {paymentHistory.length === 0 ? (
               <div className={styles.emptyHistory}>

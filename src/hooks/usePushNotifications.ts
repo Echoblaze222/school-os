@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // Returns ArrayBuffer (not Uint8Array) so TypeScript accepts it anywhere
-// BufferSource is expected — including applicationServerKey in pushManager.subscribe()
+// BufferSource is expected - including applicationServerKey in pushManager.subscribe()
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
@@ -102,7 +102,7 @@ export function usePushNotifications(): PushNotificationHook {
       // 2. Get SW registration (with timeout guard so we never stall)
       const reg = await getSwRegistration()
 
-      // 3. Subscribe — applicationServerKey accepts ArrayBuffer directly
+      // 3. Subscribe - applicationServerKey accepts ArrayBuffer directly
       const pushSub = await reg.pushManager.subscribe({
         userVisibleOnly:      true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),

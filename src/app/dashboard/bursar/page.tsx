@@ -36,7 +36,7 @@ export default async function BursarDashboardPage() {
   const schoolId = profile.school_id
 
   // ── Counts for stats cards ────────────────────────────────────────────────
-  // NOTE: fee_payments has no `status`/`paid_at` columns — the source of truth
+  // NOTE: fee_payments has no `status`/`paid_at` columns - the source of truth
   // for what's owed/paid per student is `school_fees` (amount_ngn, paid_ngn, status).
   // fee_payments is just an append-only log of recorded transactions.
   const [

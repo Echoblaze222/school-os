@@ -1,21 +1,21 @@
 'use client'
 // src/app/dashboard/student/quizzes/[id]/QuizTakeClient.tsx
 //
-// FIX: loadQuiz() never checked or surfaced errors — if the quiz_questions
+// FIX: loadQuiz() never checked or surfaced errors - if the quiz_questions
 // query failed for any reason, it failed silently and the page just showed
 // "No questions yet", indistinguishable from a genuinely empty quiz. Added
 // visible error banners on every query so failures are diagnosable instead
 // of looking identical to "teacher hasn't added questions."
 //
-// REDESIGN: mobile-first visual pass — glass-card question surface, school-color
+// REDESIGN: mobile-first visual pass - glass-card question surface, school-color
 // themed progress ring instead of a flat bar, larger touch targets on options,
 // softer haptic-feeling transitions between questions, refined results screen
 // with a radial score ring instead of a flat bar.
 //
-// REDESIGN PASS (Lane 3 — Student): emoji → Icons, hardcoded status hex →
+// REDESIGN PASS (Lane 3 - Student): emoji → Icons, hardcoded status hex →
 // design tokens, glass-card + motion touches. This page is intentionally a
 // standalone full-screen experience (own sticky header/timer, no
-// RolePageWrapper) — same pattern as the AI/Chat pages — so chrome is
+// RolePageWrapper) - same pattern as the AI/Chat pages - so chrome is
 // untouched, only content styling changed.
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -27,8 +27,8 @@ import motion from '@/components/dashboard-motion.module.css'
 
 interface DbQuestion {
   id: string
-  text: string       // NOT NULL column — primary source
-  question: string   // nullable column — fallback
+  text: string       // NOT NULL column - primary source
+  question: string   // nullable column - fallback
   options: { label: string; text: string }[]
   answer: string
   marks: number
@@ -87,8 +87,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     ] = await Promise.all([
       supabase.from('quizzes').select('*').eq('id', quizId).single(),
       supabase.from('quiz_questions')
-        // FIX: select both `text` (NOT NULL) and `question` (nullable) —
-        // older rows may only have `text`, newer rows have both.
+        // FIX: select both `text` (NOT NULL) and `question` (nullable) - // older rows may only have `text`, newer rows have both.
         .select('id, text, question, options, answer, marks, position')
         .eq('quiz_id', quizId)
         .order('position', { ascending: true }),
@@ -220,7 +219,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     </div>
   )
 
-  // ── No questions yet (no error — genuinely empty) ────────
+  // ── No questions yet (no error - genuinely empty) ────────
   if (questions.length === 0) return (
     <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
       <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--glass-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

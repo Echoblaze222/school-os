@@ -24,7 +24,7 @@ export default async function SecretaryPage() {
   }
 
   // ── Profile + school (single query, join inline like principal/page.tsx) ──
-  // FIX: join schools(*) inline — separate schools query returned null due to RLS
+  // FIX: join schools(*) inline - separate schools query returned null due to RLS
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -60,11 +60,14 @@ export default async function SecretaryPage() {
       .select('id', { count: 'exact', head: true })
       .eq('school_id', schoolId)
       .eq('is_active', true),
+    // Repointed from legacy public.admissions to the canonical
+    // admission_applications table (Phase 4, Lane D). 'submitted' +
+    // 'under_review' are this table's equivalent of the old 'pending'.
     supabase
-      .from('admissions')
+      .from('admission_applications')
       .select('id', { count: 'exact', head: true })
       .eq('school_id', schoolId)
-      .eq('status', 'pending'),
+      .in('status', ['submitted', 'under_review']),
     supabase
       .from('notifications')
       .select('id, title, body, type, created_at, action_url, link_url')

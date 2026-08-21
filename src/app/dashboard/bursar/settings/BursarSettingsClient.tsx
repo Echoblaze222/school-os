@@ -32,7 +32,7 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
 
   return (
     <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Settings">
-      {/* School info — read only */}
+      {/* School info - read only */}
       <div style={{ padding:'var(--space-5)', background:'var(--glass-bg)',
         border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)',
         marginBottom:'var(--space-6)' }}>

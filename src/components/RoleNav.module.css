@@ -1,4 +1,4 @@
-/* RoleNav.module.css — identical nav look across ALL roles */
+/* RoleNav.module.css - identical nav look across ALL roles */
 
 /* ── Desktop Sidebar ─────────────────────────────────────── */
 .sidebar {
@@ -65,7 +65,7 @@
 }
 .navItem:hover { background: var(--glass-bg); color: var(--text-primary); }
 
-/* Active state — same pill style for every role, brand-2 accent to match
+/* Active state - same pill style for every role, brand-2 accent to match
    the hero header's crest/eyebrow accent and the dock's active state */
 .active {
   background: var(--brand-subtle) !important;

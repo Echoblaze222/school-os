@@ -1,7 +1,7 @@
 'use client'
 // src/app/dashboard/student/live/LiveClient.tsx
 //
-// REDESIGN PASS (Lane 3 — Student): emoji → Icons, hardcoded status hex →
+// REDESIGN PASS (Lane 3 - Student): emoji → Icons, hardcoded status hex →
 // design tokens, glass-card/motion treatment. Chrome was already on
 // RolePageWrapper, so no chrome change needed here.
 

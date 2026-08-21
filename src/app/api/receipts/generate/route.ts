@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const RATE = 1600 // fallback NGN/USD rate
 
@@ -24,6 +25,14 @@ export async function POST(request: Request) {
     const { data: { user }, error: authErr } = await supabase.auth.getUser()
     if (authErr || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    // Chromium/puppeteer PDF rendering is expensive per-call; cap how
+    // often one account can trigger it so a compromised or scripted
+    // account can't run the function bill up or starve concurrency.
+    const rl = await checkRateLimit(createAdminClient(), 'receipt_generate', user.id, 30, 300)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: rl.errorResponse!.error }, { status: rl.errorResponse!.status })
     }
 
     const { data: callerProfile } = await supabase

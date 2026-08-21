@@ -1,5 +1,5 @@
 // src/app/dashboard/student/announcements/page.tsx
-// Server Component — student reads announcements (no write access)
+// Server Component - student reads announcements (no write access)
 
 import { createClient }       from '@/lib/supabase/server'
 import { redirect }           from 'next/navigation'

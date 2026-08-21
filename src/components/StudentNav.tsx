@@ -193,8 +193,15 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
               </Link>
             )
           }
-          const Icon   = item.Icon
-          const active = isActive(item.href)
+          // Explicit narrowing: `if (item.home)` above already proves this
+          // is the NavItem branch of the union at runtime, but the
+          // installed TS/React type versions weren't resolving that
+          // discriminant automatically, which surfaced as "Icon does not
+          // have any construct or call signatures." Assert instead of
+          // silently loosening the type.
+          const navItem = item as unknown as NavItem
+          const Icon   = navItem.Icon
+          const active = isActive(navItem.href)
           return (
             <Link
               key={item.href}

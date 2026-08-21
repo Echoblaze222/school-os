@@ -8,9 +8,9 @@
 // available to every component via useCurrency().
 //
 // Supports 3 exchange rate providers:
-//   1. Paystack       — preferred if school uses Paystack
-//   2. Flutterwave    — preferred if school uses Flutterwave
-//   3. ExchangeRate-API — free fallback, always works
+//   1. Paystack - preferred if school uses Paystack
+//   2. Flutterwave - preferred if school uses Flutterwave
+//   3. ExchangeRate-API - free fallback, always works
 //
 // The school picks their provider via feature_flags table.
 // If the chosen provider fails, it auto-falls back to the
@@ -82,7 +82,7 @@ const FALLBACK_RATE_NGN_PER_USD = 1600
 
 interface CurrencyProviderProps {
   children: ReactNode
-  // Which provider to try first — set from school's feature_flags
+  // Which provider to try first - set from school's feature_flags
   preferredProvider?: CurrencyProvider
   // The school's Paystack secret key (server-side only, passed via API route)
   // The school's Flutterwave secret key (server-side only, passed via API route)
@@ -116,10 +116,10 @@ export function CurrencyProvider({
 
     for (const provider of providerOrder) {
       try {
-        // Call our internal API route — never call external APIs directly
+        // Call our internal API route - never call external APIs directly
         // from the browser (keys would be exposed)
         const response = await fetch(`/api/currency/rate?provider=${provider}`, {
-          // Cache for 10 minutes — rates don't change that fast
+          // Cache for 10 minutes - rates don't change that fast
           next: { revalidate: 600 },
         } as RequestInit)
 
@@ -131,16 +131,16 @@ export function CurrencyProvider({
           setExchangeRate(data.rate)
           setActiveProvider(provider)
           setIsLoading(false)
-          return // Success — stop trying other providers
+          return // Success - stop trying other providers
         }
       } catch (error) {
-        // This provider failed — try the next one silently
+        // This provider failed - try the next one silently
         console.warn(`SchoolOS Currency: ${provider} failed, trying next provider...`)
         continue
       }
     }
 
-    // All providers failed — use fallback rate
+    // All providers failed - use fallback rate
     console.warn('SchoolOS Currency: All providers failed. Using fallback rate.')
     setExchangeRate(FALLBACK_RATE_NGN_PER_USD)
     setActiveProvider(null)

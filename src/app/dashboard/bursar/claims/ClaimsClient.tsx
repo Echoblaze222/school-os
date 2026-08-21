@@ -61,7 +61,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
   async function confirm(claim: any) {
     setReviewing(claim.id)
     try {
-      // 1. Call server action to confirm — it deducts from student balance
+      // 1. Call server action to confirm - it deducts from student balance
       const res = await fetch('/api/payments/confirm-claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -248,7 +248,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                     </div>
                   )}
 
-                  {/* ACTION BUTTONS — pending only */}
+                  {/* ACTION BUTTONS - pending only */}
                   {tab === 'pending' && (
                     <>
                       {/* Reject reason input */}

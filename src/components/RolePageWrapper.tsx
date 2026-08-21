@@ -16,7 +16,7 @@ interface Props {
   school:      any
   title:       string
   showBack?:   boolean
-  fullHeight?: boolean   // removes padding/max-width, stretches to fill — used by AI & Chat
+  fullHeight?: boolean   // removes padding/max-width, stretches to fill - used by AI & Chat
   children:    React.ReactNode
 }
 
@@ -41,7 +41,7 @@ export default function RolePageWrapper({
         schoolColor={schoolColor}
       />
 
-      {/* Main content — offset from sidebar on desktop */}
+      {/* Main content - offset from sidebar on desktop */}
       <div className={styles.content}>
         <DashboardHeader
           userId={userId}

@@ -1,4 +1,4 @@
-/* transfer.module.css — secretary "New Transfer" flow card
+/* transfer.module.css - secretary "New Transfer" flow card
    NOTE: previously copied from the principal version, which referenced
    --color-* / --font-size-* / --shadow-* tokens that don't exist anywhere
    in globals.css. That meant --color-brand never resolved to the school's

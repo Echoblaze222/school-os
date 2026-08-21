@@ -1,6 +1,6 @@
 'use client'
 // src/app/dashboard/principal/reports/ReportsClient.tsx
-// Mirrors the bursar ReportsClient — full fee collection report with
+// Mirrors the bursar ReportsClient - full fee collection report with
 // Summary / By Class / By Type tabs. Role switched to "principal".
 
 import { useState, useEffect } from 'react'
@@ -143,8 +143,8 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             width: 110, flexShrink: 0 }} />
         <div className={styles.tabs} style={{ flex: 1 }}>
           {TERMS.map(t => (
-            <button className="pressable" key={t} onClick={() => setTerm(t)}
-              className={`${styles.tab} ${term === t ? styles.tabActive : ''}`}
+            <button key={t} onClick={() => setTerm(t)}
+              className={`pressable ${styles.tab} ${term === t ? styles.tabActive : ''}`}
               style={term === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
               {t.replace(' Term', '')}
             </button>
@@ -155,8 +155,8 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-5)' }}>
         {([['summary', 'Summary'], ['by_class', 'By Class'], ['by_type', 'By Type']] as const)
           .map(([key, lbl]) => (
-            <button className="pressable" key={key} onClick={() => setTab(key)}
-              className={`${styles.tab} ${tab === key ? styles.tabActive : ''}`}
+            <button key={key} onClick={() => setTab(key)}
+              className={`pressable ${styles.tab} ${tab === key ? styles.tabActive : ''}`}
               style={tab === key ? { background: sc, color: '#fff', borderColor: sc } : {}}>
               {lbl}
             </button>

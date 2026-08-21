@@ -1,5 +1,5 @@
 // src/components/SchoolBrandInjector.tsx
-// Server component — renders an inline <script> that overrides --brand
+// Server component - renders an inline <script> that overrides --brand
 // and related CSS variables with the school's saved primary_color.
 // Runs before React hydration so there is zero colour flash.
 //
@@ -9,14 +9,13 @@
 
 interface Props {
   primaryColor:   string   // e.g. "#800020"
-  secondaryColor?: string  // e.g. "#C99A3B" — the school's second brand colour
+  secondaryColor?: string  // e.g. "#C99A3B" - the school's second brand colour
   fontFamily?:    string   // e.g. "Poppins"
 }
 
 /** Hex → HSL, used only to keep the fixed status colours from landing in
  *  the same hue family as whatever a school picks for its brand colours
- *  (e.g. a green-branded school shouldn't also get a green "on track" pill —
- *  they'd read as the same signal). */
+ *  (e.g. a green-branded school shouldn't also get a green "on track" pill - *  they'd read as the same signal). */
 function hueOf(hex: string): number | null {
   const rgb = hexToRgb(hex)
   if (!rgb) return null
@@ -37,7 +36,7 @@ function hueDistance(a: number, b: number): number {
   return Math.min(d, 360 - d)
 }
 
-/** Lighten a hex colour by mixing it toward white at the given ratio (0–1). */
+/** Lighten a hex colour by mixing it toward white at the given ratio (0-1). */
 function hexToRgb(hex: string): [number, number, number] | null {
   const clean = hex.replace('#', '')
   if (clean.length !== 6) return null
@@ -79,7 +78,7 @@ export default function SchoolBrandInjector({ primaryColor, secondaryColor, font
   const glassActive = rgba(primaryColor, 0.15)
   const glassBorderHover = rgba(primaryColor, 0.4)
 
-  // Second brand colour — falls back to a warm gold if the school hasn't
+  // Second brand colour - falls back to a warm gold if the school hasn't
   // set one, since most school brand kits are a primary + one accent.
   const brand2 = secondaryColor || '#C99A3B'
   const brand2Light  = lighten(brand2, 0.25)
@@ -87,7 +86,7 @@ export default function SchoolBrandInjector({ primaryColor, secondaryColor, font
   const brand2Subtle = rgba(brand2, 0.14)
 
   // Fixed "status" colours (on-track / needs-attention pills, gauge fills)
-  // are NOT derived from the brand — they're a separate signal and must
+  // are NOT derived from the brand - they're a separate signal and must
   // stay legible as one regardless of what the school picked. But we do
   // steer them away from the brand's own hue family: e.g. a school whose
   // primary is green shouldn't also get a green "on track" indicator,
@@ -96,7 +95,7 @@ export default function SchoolBrandInjector({ primaryColor, secondaryColor, font
   const greenHue = 150, blueHue = 205
   const okHue = (primaryHue !== null && hueDistance(primaryHue, greenHue) < 40) ? blueHue : greenHue
   const statusOk   = okHue === greenHue ? '#3FA66B' : '#2F86D3'
-  const statusWarn = '#E4572E' // warm red-orange — reserved for alerts only, never a brand default
+  const statusWarn = '#E4572E' // warm red-orange - reserved for alerts only, never a brand default
 
   // Build the CSS variable block as a string
   const css = [

@@ -3,21 +3,21 @@
 // src/app/dashboard/student/alumni/StudentAlumniClient.tsx
 //
 // FIX (carried over): this page previously rendered its own hardcoded
-// bottom nav (bottom-nav / nav-item / nav-home classes — none of which
+// bottom nav (bottom-nav / nav-item / nav-home classes - none of which
 // exist in globals.css, so it rendered unstyled) instead of the canonical
 // nav pair every other student page uses. Also replaced the leftover
 // --burgundy-* / --error inline styles with the real tokens (--brand-*,
 // --danger) now that alumni-student.module.css has been rebuilt on the
 // actual design system.
 //
-// REDESIGN PASS (Lane 3 — Student):
+// REDESIGN PASS (Lane 3 - Student):
 //   - StudentNav + DashboardHeader → RolePageWrapper (matches every other
 //     converted sub-page; also fixes the same "nested <main>" mistake by
 //     rendering content as direct children, not another <main> wrapper)
 //   - 🎓 / ⭐ emoji → GraduationCapIcon / AwardIcon
 //   - FIX: `gradeColor(r.grade)+'1A'` concatenated a hex-alpha suffix onto
 //     a var(--success)-style CSS variable reference, producing invalid CSS
-//     (`var(--success)1A`) — the grade badge background was silently
+//     (`var(--success)1A`) - the grade badge background was silently
 //     falling back to transparent. Now uses gradeColorSubtle() instead.
 
 import { useEffect, useState } from 'react'

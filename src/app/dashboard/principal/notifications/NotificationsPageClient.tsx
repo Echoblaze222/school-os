@@ -12,12 +12,12 @@
 //      every other dashboard page uses.
 //
 //      Problems with the old nav:
-//      1. Emoji icons instead of SVG icons — looked visually different
+//      1. Emoji icons instead of SVG icons - looked visually different
 //      2. "bottom-nav" CSS class doesn't exist in globals.css for most roles
-//      3. Home button used "nav-home" / "nav-home-btn" — different classes
+//      3. Home button used "nav-home" / "nav-home-btn" - different classes
 //      4. No active-state highlighting driven by usePathname()
 //      5. No school color theming
-//      6. Bursar page had NO bottom nav at all — it was missing entirely
+//      6. Bursar page had NO bottom nav at all - it was missing entirely
 //
 //      Fix: import <RoleNav> (the same component every other page uses) and
 //      pass the same props. The notification page already has userId, profile,
@@ -523,7 +523,7 @@ export default function NotificationsPageClient({
         </div>
       )}
 
-      {/* ── Canonical RoleNav — same as every other dashboard page ── */}
+      {/* ── Canonical RoleNav - same as every other dashboard page ── */}
       <RoleNav
         userId={userId}
         profile={profile}

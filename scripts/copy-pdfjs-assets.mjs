@@ -4,12 +4,12 @@
 // into /public so DocumentViewer.tsx can load them as plain static
 // assets ("/pdf.worker.min.mjs", "/pdf-standard-fonts/", "/pdf-cmaps/")
 // instead of relying on webpack/Turbopack to resolve them at bundle
-// time — that resolution path (new URL(..., import.meta.url)) is known
+// time - that resolution path (new URL(..., import.meta.url)) is known
 // to be flaky across different Next.js/Vercel build configurations.
 //
 // Runs automatically after every `npm install` (see package.json's
 // "postinstall" script) so /public always has the assets matching
-// whatever pdfjs-dist version is in node_modules — no manual step,
+// whatever pdfjs-dist version is in node_modules - no manual step,
 // no risk of drifting out of sync after a dependency bump.
 //
 // Safe to run repeatedly; it just overwrites the target files.
@@ -23,7 +23,7 @@ const root = join(__dirname, '..')
 const pkgDir = join(root, 'node_modules', 'pdfjs-dist')
 
 if (!existsSync(pkgDir)) {
-  console.warn('[copy-pdfjs-assets] pdfjs-dist not found in node_modules — skipping. Run `npm install pdfjs-dist` first.')
+  console.warn('[copy-pdfjs-assets] pdfjs-dist not found in node_modules - skipping. Run `npm install pdfjs-dist` first.')
   process.exit(0)
 }
 

@@ -1,11 +1,10 @@
 /* src/app/dashboard/student/alumni/alumni-student.module.css
    Rebuilt on the real SchoolOS design tokens (see globals.css). The old
    version referenced --burgundy-*, --text-accent, --font-display, --font-body,
-   --warning-bg, --success-bg, --error, --z-card — none of which exist, so the
+   --warning-bg, --success-bg, --error, --z-card - none of which exist, so the
    page rendered unstyled. This version uses --brand (school-colour-driven via
    SchoolBrandInjector) for accents, --gold for the "alumni" badge, and the
-   shared spacing/radius/text tokens used across the rest of the app —
-   matching the pattern in principal/alumni/alumni.module.css. */
+   shared spacing/radius/text tokens used across the rest of the app - matching the pattern in principal/alumni/alumni.module.css. */
 
 .page{display:flex;min-height:100dvh;background:var(--bg-base);}
 .content{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;overflow-x:hidden;padding-bottom:120px;}

@@ -1,5 +1,5 @@
 /* ============================================================
-   SchoolOS — Teacher Grade Submissions
+   SchoolOS - Teacher Grade Submissions
    src/app/dashboard/teacher/grades/grades.module.css
    ============================================================ */
 .page { min-height: 100dvh; background: var(--bg-base); font-family: var(--font-body); padding-bottom: 60px; overflow-x: hidden; position: relative; }

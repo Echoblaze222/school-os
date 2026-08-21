@@ -1,0 +1,24 @@
+/* src/components/org/DepartmentCard.module.css */
+
+.card { padding: var(--space-4); border-radius: var(--radius-xl); }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-3); }
+.name { font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
+.nameLink { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+.nameLink:hover .name { color: var(--brand-light); }
+.nameLink svg { color: var(--text-muted); flex-shrink: 0; }
+.description { font-size: 0.74rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
+.headerActions { display: flex; gap: 4px; flex-shrink: 0; }
+.iconBtn { width: 28px; height: 28px; border-radius: var(--radius-md); background: var(--glass-bg); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; }
+.iconBtn.danger:hover { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+
+.hodRow { display: flex; align-items: center; gap: 8px; width: 100%; padding: var(--space-2) var(--space-3); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: var(--space-3); cursor: pointer; text-align: left; }
+.hodRow:disabled { cursor: default; }
+.hodIcon { flex-shrink: 0; display: flex; color: var(--brand); }
+.hodName { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.hodMissing { font-size: 0.78rem; font-weight: 600; color: var(--status-warn, #E4572E); }
+
+.footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.memberCount { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-muted); }
+.footerActions { display: flex; gap: 6px; }
+.pillBtn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--brand-subtle); border: 1px solid var(--brand-border); border-radius: 999px; color: var(--brand-light); font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+.pillDanger { background: var(--danger-subtle, rgba(239,68,68,0.1)); border-color: rgba(239,68,68,0.25); color: var(--danger, #EF4444); }

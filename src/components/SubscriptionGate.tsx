@@ -3,7 +3,7 @@
 // SubscriptionGate.tsx
 // Shown to students (and optionally other roles) when the school's
 // subscription has lapsed. Replaces the dashboard content entirely.
-// The principal must renew — then setup_status goes back to 'active'
+// The principal must renew - then setup_status goes back to 'active'
 // and this gate disappears automatically on next page load.
 
 import { PhoneIcon } from '@/components/Icons'
@@ -60,7 +60,7 @@ export default function SubscriptionGate({ schoolName, schoolColor = '#7C3AED', 
           </ol>
         </div>
 
-        {/* WhatsApp support button — uses PhoneIcon from Icons.tsx */}
+        {/* WhatsApp support button - uses PhoneIcon from Icons.tsx */}
         <a
           href={`https://wa.me/2348086883144?text=Hello%2C%20my%20school%20(${encodeURIComponent(schoolName)})%20subscription%20has%20expired.%20Please%20help%20me%20renew.`}
           target="_blank"

@@ -1,11 +1,11 @@
 // src/lib/utils/slideify.ts
 // Turns raw typed/pasted note text into an array of "slides" for the
-// 3D book viewer. Pure function, no dependencies — safe to run on the
+// 3D book viewer. Pure function, no dependencies - safe to run on the
 // client at render time (memoized by the caller).
 //
 // Splitting strategy, in priority order:
 //   1. If the teacher used markdown-style headings ("# ", "## "), each
-//      heading starts a new slide — this respects intentional structure.
+//      heading starts a new slide - this respects intentional structure.
 //   2. Otherwise, split on blank-line paragraph breaks.
 //   3. Any single paragraph longer than CHARS_PER_SLIDE is further
 //      broken up on sentence boundaries so no slide overflows the page.

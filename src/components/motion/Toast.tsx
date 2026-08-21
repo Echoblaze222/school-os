@@ -1,6 +1,6 @@
 'use client'
 
-// Reusable toast — a drop-in replacement for the inline toast state/JSX
+// Reusable toast - a drop-in replacement for the inline toast state/JSX
 // that many screens (bursar Claims, etc.) previously hand-rolled with
 // slightly different timing and no enter/exit animation. Local hook, no
 // context/provider wiring required, so it's safe to adopt one screen at a

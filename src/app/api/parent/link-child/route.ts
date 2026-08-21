@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (!child_code)
     return NextResponse.json({ error: 'child_code required' }, { status: 400 })
 
-  // Find child by code — FIX: no class_level on profiles, removed it
+  // Find child by code - FIX: no class_level on profiles, removed it
   const { data: child } = await supabase
     .from('profiles')
     .select('id, full_name, role, school_id')
@@ -43,14 +43,14 @@ export async function POST(req: Request) {
   if (existing)
     return NextResponse.json({ ok: true, already_linked: true })
 
-  // FIX: insert into parent_student_links — NOT profiles.parent_id (column doesn't exist)
+  // FIX: insert into parent_student_links - NOT profiles.parent_id (column doesn't exist)
   const { error } = await supabase
     .from('parent_student_links')
     .insert({ parent_id: user.id, student_id: child.id })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Notify child — non-critical, ignore errors
+  // Notify child - non-critical, ignore errors
   try {
     await supabase.from('notifications').insert({
       user_id:   child.id,

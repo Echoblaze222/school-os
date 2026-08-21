@@ -1,0 +1,13 @@
+.shell { min-height: 100dvh; background: var(--bg-primary, #0b0b0f); }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  position: sticky; top: 0; backdrop-filter: blur(20px);
+  background: rgba(11,11,15,0.7); z-index: 10;
+}
+
+.brand { font-size: 1rem; font-weight: 800; color: var(--text-primary, #fff); text-decoration: none; }
+.myAppsLink { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary, #a0a0ab); text-decoration: none; }
+
+.main { max-width: 720px; margin: 0 auto; padding: var(--space-5, 20px) var(--space-4, 16px) 80px; }

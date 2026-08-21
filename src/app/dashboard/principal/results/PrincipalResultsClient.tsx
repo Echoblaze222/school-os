@@ -3,10 +3,10 @@
 //
 // REDESIGNED: replaced principal.module.css table (which had no mobile CSS)
 //   with inline-styled card list matching the rest of the app design system.
-//   On mobile each result is a card — no horizontal scrolling table.
-// FIXED: term filter labels ('First Term') vs DB values ('first') — now shows
+//   On mobile each result is a card - no horizontal scrolling table.
+// FIXED: term filter labels ('First Term') vs DB values ('first') - now shows
 //   correct labels but filters using DB enum values
-// FIXED: typeFilter toggle — clicking active type now clears it (shows All)
+// FIXED: typeFilter toggle - clicking active type now clears it (shows All)
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRealtimeTable }             from '@/hooks/useRealtimeTable'

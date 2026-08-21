@@ -77,7 +77,7 @@
 
 /* ── inputBar sits flush at the bottom ──
    The floating pill nav (RoleNav.tsx) is hidden on /ai and /chat routes,
-   so there's no reserved space to clear anymore — the bar just sits at
+   so there's no reserved space to clear anymore - the bar just sits at
    the true bottom of the screen, clearing only the safe-area inset. */
 .inputBarFloating {
   position: sticky;

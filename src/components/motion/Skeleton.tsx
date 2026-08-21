@@ -1,6 +1,6 @@
 'use client'
 
-// Reusable skeleton loading primitives — replaces the generic dot-spinner
+// Reusable skeleton loading primitives - replaces the generic dot-spinner
 // or blank-screen loading states scattered across screens with a shimmer
 // that resembles the shape of the real content, per the app's existing
 // `.skeleton` shimmer keyframe in globals.css.
@@ -11,7 +11,7 @@ export function SkeletonBlock({
   return <div className="skeleton" style={{ width, height, borderRadius: radius, ...style }} />
 }
 
-/** A generic card skeleton — header line + subtitle line + one content block.
+/** A generic card skeleton - header line + subtitle line + one content block.
  *  Good default for list-of-cards screens (claims, invoices, payments, etc). */
 export function SkeletonCard() {
   return (
@@ -31,7 +31,7 @@ export function SkeletonCard() {
   )
 }
 
-/** Row-style skeleton — avatar/name/subtitle, for list rows (students,
+/** Row-style skeleton - avatar/name/subtitle, for list rows (students,
  *  staff, notifications). */
 export function SkeletonRow() {
   return (

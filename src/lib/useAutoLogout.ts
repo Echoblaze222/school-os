@@ -60,14 +60,14 @@ export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
       if (document.visibilityState === 'hidden') {
         sessionStorage.setItem(HIDDEN_SINCE_KEY, Date.now().toString())
       } else {
-        // came back — check if away too long
+        // came back - check if away too long
         const hiddenSince = sessionStorage.getItem(HIDDEN_SINCE_KEY)
         sessionStorage.removeItem(HIDDEN_SINCE_KEY)
         if (hiddenSince) {
           const awayMs = Date.now() - parseInt(hiddenSince, 10)
           if (awayMs >= AWAY_LIMIT_MS) { doLogout(); return }
         }
-        // not too long — re-stamp so inactivity clock resets
+        // not too long - re-stamp so inactivity clock resets
         stamp()
         warningFired.current = false
       }
@@ -83,7 +83,7 @@ export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
     // Instead of relying on setTimeout (which drifts when tab is backgrounded),
     // we poll every 10s and compare against the stored timestamp.
     const interval = setInterval(() => {
-      // Skip check if tab is hidden — visibilitychange handles that
+      // Skip check if tab is hidden - visibilitychange handles that
       if (document.visibilityState === 'hidden') return
 
       const raw = sessionStorage.getItem(LAST_ACTIVITY_KEY)
@@ -107,5 +107,5 @@ export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
       window.removeEventListener('beforeunload', onUnload)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])   // empty deps — refs keep values stable, no re-registration needed
+  }, [])   // empty deps - refs keep values stable, no re-registration needed
       }

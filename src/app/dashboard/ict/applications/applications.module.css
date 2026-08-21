@@ -1,0 +1,39 @@
+.pageHeader {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--bg-overlay); backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 40;
+}
+.backBtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  color: var(--text-primary); cursor: pointer; flex-shrink: 0; text-decoration: none; font-size: 1.1rem;
+}
+.pageTitle { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; color: var(--text-primary); flex: 1; }
+.pageBody  { padding: var(--space-5) var(--space-5) 96px; max-width: 800px; margin: 0 auto; width: 100%; }
+
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: var(--space-4); }
+.tab  { flex-shrink: 0; padding: 6px 14px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-muted); cursor: pointer; }
+.tabActive { color: #fff; border-color: transparent; }
+
+.card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+  padding: var(--space-4); margin-bottom: var(--space-3); }
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.cardName { font-size: 0.9rem; font-weight: 700; margin: 0; }
+.cardMeta { font-size: 0.75rem; color: var(--text-muted); margin: 2px 0 0; }
+.badge { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: var(--radius-full); color: #fff; flex-shrink: 0; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn { font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: var(--radius-md); border: none; color: #fff; cursor: pointer; }
+.btnGhost { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.codeBox { margin-top: 10px; padding: 12px; border-radius: var(--radius-md); background: rgba(63,166,107,0.12);
+  border: 1px solid rgba(63,166,107,0.35); text-align: center; }
+.codeVal { font-family: monospace; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.05em; }
+
+.emptyState { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); font-size: 0.85rem; }
+.errorText  { color: var(--status-warn, #E4572E); font-size: 0.75rem; margin-top: 6px; }

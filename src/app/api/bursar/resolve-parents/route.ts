@@ -4,7 +4,7 @@
 // WHY THIS EXISTS: parent_student_links has RLS that (correctly) only lets a
 // parent read their OWN link row (auth.uid() = parent_id). Every parent-side
 // page in the app queries that table as the parent, which works fine. The
-// Reminders page needs the bursar to read OTHER people's links — querying
+// Reminders page needs the bursar to read OTHER people's links - querying
 // parent_student_links directly from the browser as the bursar silently
 // returns 0 rows because of that same RLS, even when the link exists. That's
 // why "Reminders" showed "No parent linked" for students who were, in fact,
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
 
-  // Scope to this school only — don't let a staff member fish for links
+  // Scope to this school only - don't let a staff member fish for links
   // belonging to students at other schools.
   const { data: schoolStudents } = await admin
     .from('profiles')

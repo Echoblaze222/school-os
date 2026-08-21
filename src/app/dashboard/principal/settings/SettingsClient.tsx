@@ -168,7 +168,7 @@ export default function SettingsClient({ profile, school }: Props) {
         setSigUrl(url)
         setSigPreview(url)
         // Signature is a personal (profile) field, not part of the school
-        // branding form — save it immediately rather than waiting for the
+        // branding form - save it immediately rather than waiting for the
         // main "Save" button.
         const { error } = await supabase.from('profiles').update({ signature_url: url }).eq('id', profile.id)
         if (error) setSigError(error.message)
@@ -264,7 +264,7 @@ export default function SettingsClient({ profile, school }: Props) {
 
     try {
       if (tab === 'banking') {
-        // Validate NUBAN length before writing — a partial number is worse than none
+        // Validate NUBAN length before writing - a partial number is worse than none
         if (accountNumber && accountNumber.length !== 10) {
           throw new Error('Account number must be exactly 10 digits.')
         }

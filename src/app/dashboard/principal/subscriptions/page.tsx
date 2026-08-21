@@ -100,6 +100,23 @@ export default async function SubscriptionPage() {
 
     .limit(10)
 
+  // Get billing snapshots — the locked "what this period cost and why"
+  // record, distinct from the payment-attempt rows above (one payment
+  // attempt could in principle fail and retry; a snapshot is only ever
+  // written once, at successful activation).
+
+  const { data: billingSnapshots } = await supabase
+
+    .from('subscription_billing_snapshots')
+
+    .select('id, billing_cycle, billable_student_count, rate_per_student, tier_label, amount_ngn, discount_applied_ngn, period_start, period_end, created_at')
+
+    .eq('school_id', profile.school_id)
+
+    .order('created_at', { ascending: false })
+
+    .limit(10)
+
 
 
   return (
@@ -113,6 +130,8 @@ export default async function SubscriptionPage() {
       studentCount={studentCount ?? 0}
 
       paymentHistory={paymentHistory ?? []}
+
+      billingSnapshots={billingSnapshots ?? []}
 
       userId={user.id}
 

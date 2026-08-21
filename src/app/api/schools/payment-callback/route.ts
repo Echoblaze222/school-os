@@ -47,7 +47,11 @@ export async function GET(request: Request) {
     }
 
     // 3. Activate school + send notification
-    await activateSchool(schoolId, plan, amountKobo)
+    const result = await activateSchool(schoolId, plan, amountKobo, reference)
+    if (!result.activated) {
+      console.warn(`[schools/payment-callback] activation refused: ${result.reason}`)
+      return NextResponse.redirect(new URL('/register-school/failed', request.url))
+    }
 
     return NextResponse.redirect(
       new URL(`/register-school/success?school=${schoolId}`, request.url)

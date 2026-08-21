@@ -8,7 +8,7 @@
 // Fixed vs the old broken version:
 //   - Searches `profiles` (not the nonexistent `student_profiles`)
 //   - Loads `payment_invoices` (not the nonexistent `fee_invoices`)
-//   - Writes to `payments` table — the one actually wired to payment_invoices
+//   - Writes to `payments` table - the one actually wired to payment_invoices
 //     via invoice_id FK and to digital_receipts. (`fee_payments` has no link
 //     to invoices at all and was the wrong target.)
 //   - Supports NGN + USD using the real exchange_rates-driven usdRate prop,
@@ -81,7 +81,7 @@ function fmtCurrency(amount: number, currency: 'NGN' | 'USD'): string {
 }
 
 const PAYMENT_METHODS = [
-  // native <select><option> can't render SVG icons — text-only by necessity
+  // native <select><option> can't render SVG icons - text-only by necessity
   { value: 'cash',          label: 'Cash' },
   { value: 'bank_transfer', label: 'Bank Transfer' },
   { value: 'pos',           label: 'POS / Card' },
@@ -189,7 +189,7 @@ export default function RecordPaymentClient({
     setLoadingInvoices(false)
   }
 
-  // Debounced search — queries `profiles` (correct table; was `student_profiles`)
+  // Debounced search - queries `profiles` (correct table; was `student_profiles`)
   useEffect(() => {
     if (selectedStudent) return
     if (searchQuery.length < 2) { setSearchResults([]); setShowDropdown(false); return }
@@ -214,7 +214,7 @@ export default function RecordPaymentClient({
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current) }
   }, [searchQuery, selectedStudent, schoolId])
 
-  // Load invoices when student selected — queries `payment_invoices` (correct table; was `fee_invoices`)
+  // Load invoices when student selected - queries `payment_invoices` (correct table; was `fee_invoices`)
   const loadInvoices = useCallback(async (studentId: string) => {
     setLoadingInvoices(true)
     const { data } = await supabase
@@ -365,7 +365,7 @@ export default function RecordPaymentClient({
     setIsSubmitting(false)
     loadInvoices(selectedStudent.id)
 
-    // Fire-and-forget — never blocks the receipt/UI on logging failing.
+    // Fire-and-forget - never blocks the receipt/UI on logging failing.
     logActivity({
       userId: bursarId, schoolId,
       type:  'fee_paid',

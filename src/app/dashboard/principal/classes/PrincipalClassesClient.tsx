@@ -111,7 +111,7 @@ export default function PrincipalClassesClient({
       is_primary: assignIsPrimary,
     }, { onConflict: 'teacher_id,class_id,subject' })
 
-    // FIX: class_teachers only stores the subject as free text — it was
+    // FIX: class_teachers only stores the subject as free text - it was
     // never linked to `class_subjects`, which is the table quizzes,
     // results, notes, live classes, assignments, timetable, and syllabus
     // all actually read from to get class_subject_id. Without this, every

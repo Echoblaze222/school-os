@@ -43,7 +43,7 @@ interface SetupFeeConfig {
   description: string
 }
 
-// ── API helpers — all writes go server-side ───────────────────────────────────
+// ── API helpers - all writes go server-side ───────────────────────────────────
 
 async function apiGet() {
   const res = await fetch('/api/super-admin/settings')

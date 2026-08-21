@@ -8,16 +8,22 @@ import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
+import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   PeopleIcon, ClipboardIcon, BarChartIcon,
   VideoIcon, BookIcon, BellIcon, CalendarIcon,
   AwardIcon, MessageIcon, BookOpenIcon, ClockIcon,
-  MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon,
+  MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon, AwardIcon as ExamIcon,
 } from '@/components/Icons'
 import styles from './teacher.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
+// Built once statically; the exam-committee item is spliced in below only
+// for teachers who actually hold an active exam appointment, a teacher
+// with none of these appointments never sees it, per "one user, multiple
+// contexts": the extra dashboard only appears while the appointment is
+// active, base teacher functionality is unaffected either way.
 const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Teaching', items: [
     { id: 'classes',     label: 'My classes',  href: '/dashboard/teacher/classes',     Icon: PeopleIcon },
@@ -58,6 +64,10 @@ interface Props {
     quizCount:       number
   }
   activities: ActivityItem[]
+  /** Label of this teacher's active exam-committee appointment, if any
+   *  (e.g. "Examination Officer"). Undefined/null = not on the committee,
+   *  the whole affordance stays hidden, see teacher/page.tsx for the query. */
+  examAppointmentLabel?: string | null
 }
 
 function buildInsight(counts: any): string {
@@ -70,7 +80,7 @@ function buildInsight(counts: any): string {
   return `You're fully caught up on grading. ${counts.assignmentCount ?? 0} assignments are currently open across your classes.`
 }
 
-export default function TeacherDashboardClient({ profile, school, userId, counts = {} as any, activities }: Props) {
+export default function TeacherDashboardClient({ profile, school, userId, counts = {} as any, activities, examAppointmentLabel }: Props) {
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName   = profile?.full_name?.split(' ')[0] ?? 'Teacher'
 
@@ -81,6 +91,12 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+  const featureGroups: FeatureGroup[] = examAppointmentLabel
+    ? FEATURE_GROUPS.map(g => g.name === 'Account'
+        ? { ...g, items: [...g.items, { id: 'examination', label: 'Examination Team', href: '/dashboard/examination', Icon: ExamIcon }] }
+        : g)
+    : FEATURE_GROUPS
 
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
@@ -99,8 +115,10 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
         greeting={`${greeting}, ${firstName}`}
         headline="Your classroom, today."
         sub={`${counts.studentCount ?? 0} students across ${counts.classCount ?? 0} classes`}
-        featureGroups={FEATURE_GROUPS}
+        featureGroups={featureGroups}
       />
+
+      <ContextSwitcher />
 
       <main className={styles.main}>
 
@@ -130,6 +148,32 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           />
         </div>
 
+        {examAppointmentLabel && (
+          <Link
+            href="/dashboard/examination"
+            className={`glass-card ${motion.pressable}`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: 14,
+              borderRadius: 'var(--radius-xl)', marginBottom: 'var(--space-4)',
+              textDecoration: 'none', color: 'inherit',
+            }}
+          >
+            <div style={{
+              width: 40, height: 40, borderRadius: 'var(--radius-full)',
+              background: 'var(--brand-subtle)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <ExamIcon size={20} color="var(--brand)" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontWeight: 600 }}>Examination Team</p>
+              <p style={{ margin: 0, fontSize: 13, opacity: 0.7 }}>
+                You're appointed {examAppointmentLabel}, open the committee dashboard →
+              </p>
+            </div>
+          </Link>
+        )}
+
         <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
           {[
             { label: 'Classes',  value: counts.classCount   ?? 0 },
@@ -156,7 +200,7 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
         <div className={styles.spacer} />
       </main>
 
-      <BottomDock aiHref="/dashboard/teacher/ai" groups={FEATURE_GROUPS} role="teacher" />
+      <BottomDock aiHref="/dashboard/teacher/ai" groups={featureGroups} role="teacher" />
       <ChatWidget userId={userId} role="teacher" schoolColor={schoolColor} />
     </div>
   )

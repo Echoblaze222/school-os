@@ -1,0 +1,58 @@
+-- ============================================================
+-- SchoolOS, Lane 5: reminders push, Android coverage
+--
+-- fire_pending_reminders() is NOT in this repo. It only exists in the
+-- live Postgres database — this repo's sql/ files are structure dumps
+-- (CREATE TABLE only, confirmed: zero CREATE FUNCTION statements in
+-- sql/s.sql), same "no migration history" situation the docs/ schema
+-- files already warn about elsewhere. This file can't safely rewrite
+-- that function wholesale without seeing its current body first —
+-- doing so blind risks silently dropping whatever it already does
+-- around scheduled_reminders.fired, retry/backoff, or logging.
+--
+-- Pull the current definition first:
+--
+--   select pg_get_functiondef('public.fire_pending_reminders'::regproc);
+--
+-- What needs to change in it, conceptually:
+--
+--   The function currently joins due scheduled_reminders rows to
+--   push_subscriptions on user_id, and for each match calls
+--   /api/push/send via pg_net with { endpoint, p256dh, auth, title,
+--   body, url, tag } — the web-only shape.
+--
+--   With push_subscriptions.platform now present (see
+--   01-push-subscriptions-fcm.sql), that join returns android rows
+--   too, but sending them through the old payload shape will fail:
+--   android rows have p256dh/auth = null, and /api/push/send now
+--   requires { platform: 'android', fcmToken } instead for those.
+--
+--   The fix is to branch the payload per row, something like:
+--
+--     select net.http_post(
+--       url := <push/send URL>,
+--       headers := jsonb_build_object(
+--         'Content-Type', 'application/json',
+--         'x-internal-secret', <INTERNAL_SECRET>
+--       ),
+--       body := case
+--         when sub.platform = 'android' then jsonb_build_object(
+--           'platform', 'android',
+--           'fcmToken', sub.fcm_token,
+--           'title', r.title, 'body', r.body, 'url', r.url
+--         )
+--         else jsonb_build_object(
+--           'endpoint', sub.endpoint, 'p256dh', sub.p256dh, 'auth', sub.auth,
+--           'title', r.title, 'body', r.body, 'url', r.url
+--         )
+--       end
+--     )
+--     from scheduled_reminders r
+--     join push_subscriptions sub on sub.user_id = r.user_id
+--     where r.fire_at <= now() and not r.fired;
+--
+--   Adapt to whatever the real function's variable names, cursor/loop
+--   structure, and existing error handling actually look like once
+--   you've pulled it with pg_get_functiondef above — this is the
+--   logic to fold in, not a drop-in replacement.
+-- ============================================================

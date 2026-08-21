@@ -1,0 +1,86 @@
+/* src/components/public/PublicFooter.module.css */
+
+.footer {
+  border-top: 1px solid var(--glass-border);
+  background: var(--bg-elevated);
+  margin-top: var(--space-8);
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-5) var(--space-6);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+.brandCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 320px;
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brandName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.brandAccent {
+  color: var(--gold);
+}
+
+.tagline {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.linkCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.colTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: var(--space-1);
+}
+
+.footerLink {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+  width: fit-content;
+}
+
+.footerLink:hover {
+  color: var(--brand);
+}
+
+.bottomBar {
+  border-top: 1px solid var(--glass-border);
+  padding: var(--space-4) var(--space-5);
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+@media (min-width: 768px) {
+  .inner {
+    grid-template-columns: 1.4fr 1fr 1fr;
+  }
+}

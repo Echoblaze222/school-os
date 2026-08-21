@@ -168,9 +168,9 @@ function CodeSuccessScreen({
         <p className={styles.credLabel}>Access Code</p>
         <div className={styles.credRow}>
           <code className={styles.credValue} style={{ color: sc }}>{result.code}</code>
-          <button className="pressable"
+          <button
             onClick={() => { navigator.clipboard.writeText(result.code).catch(() => {}); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }}
-            className={styles.credCopy}
+            className={`pressable ${styles.credCopy}`}
             style={copiedCode ? { background: '#10B98122', borderColor: '#10B981', color: '#10B981' } : { borderColor: sc + '55', color: sc }}
           >
             {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
@@ -320,7 +320,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
     setSLoading(false)
   }
 
-  // ── FIX: Bulk Add now saves directly — no more "Preview Codes" stage that
+  // ── FIX: Bulk Add now saves directly - no more "Preview Codes" stage that
   // showed fake, unsaved codes which looked real but didn't work at login.
   // One click = real users created in the database immediately.
   async function handleBulkSave() {
@@ -411,8 +411,8 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
       <div className={styles.tabRow}>
         {(['existing','enrol','bulk'] as const).map(t => (
-          <button className="pressable" key={t} onClick={() => { setTab(t); setSResult(null) }}
-            className={`${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
+          <button key={t} onClick={() => { setTab(t); setSResult(null) }}
+            className={`pressable ${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
             {t === 'existing' && 'All Codes'}
             {t === 'enrol'    && 'Enrol / Add User'}
             {t === 'bulk'     && 'Bulk Add'}
@@ -500,8 +500,8 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   {ROLES_ASSIGNABLE.map(r => {
                     const m = roleMeta(r)
                     return (
-                      <button className="pressable" key={r} onClick={() => setSRole(r)}
-                        className={styles.roleOption}
+                      <button key={r} onClick={() => setSRole(r)}
+                        className={`pressable ${styles.roleOption}`}
                         style={{
                           background:  sRole === r ? m.color + '22' : 'var(--glass-bg)',
                           borderColor: sRole === r ? m.color : 'var(--glass-border)',

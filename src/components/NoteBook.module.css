@@ -1,5 +1,5 @@
 /* src/components/NoteBook.module.css
-   3D flip-book reader. Pure CSS transforms — perspective + rotateY.
+   3D flip-book reader. Pure CSS transforms - perspective + rotateY.
    Kept GPU-cheap: only `transform` and `opacity` are animated. */
 
 .overlay {

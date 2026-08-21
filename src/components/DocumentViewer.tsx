@@ -3,23 +3,22 @@
 //
 // In-portal document reader for uploaded note files (PDF / Word / PPT).
 //
-// PDF rendering strategy — IMPORTANT:
+// PDF rendering strategy - IMPORTANT:
 // We do NOT rely on <iframe src="the.pdf"> and the browser's native PDF
 // engine. Mobile Chrome (and several other mobile browsers) frequently
-// refuses to render a PDF inline inside an iframe — especially when the
-// file is on a different origin, as it is here (Supabase Storage) — and
+// refuses to render a PDF inline inside an iframe - especially when the
+// file is on a different origin, as it is here (Supabase Storage) - and
 // instead shows its own "can't preview this file, tap Open" chrome, which
 // defeats the whole point of an in-app reader.
 //
 // Instead we render the PDF ourselves using pdfjs-dist: fetch the bytes,
 // decode with PDF.js, and paint each page to a <canvas>. This is what
 // Google Drive's and most other in-app PDF viewers do under the hood, and
-// it behaves identically across iOS Safari, mobile Chrome, and desktop —
-// no dependency on the host browser's built-in PDF plugin at all.
+// it behaves identically across iOS Safari, mobile Chrome, and desktop - // no dependency on the host browser's built-in PDF plugin at all.
 //
 // For Office formats (.doc/.docx/.ppt/.pptx/.xls/.xlsx) we still use
 // Microsoft's public Office Online embed viewer, which requires the file
-// to be publicly reachable — true here since Supabase Storage URLs
+// to be publicly reachable - true here since Supabase Storage URLs
 // already are.
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -112,7 +111,7 @@ function PdfShell({ title, fileUrl, accentColor, onClose }: Props) {
       try {
         const pdfjs: any = await import('pdfjs-dist')
         // Served as a static file from /public/pdf.worker.min.mjs (see setup
-        // note below) rather than resolved via import.meta.url — the latter
+        // note below) rather than resolved via import.meta.url - the latter
         // is flaky across different webpack/Turbopack configs on Vercel,
         // while a static /public path always just works.
         pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'

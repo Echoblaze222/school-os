@@ -1,5 +1,5 @@
 /* ============================================================
-   viewer.module.css — Read-only Announcements Feed
+   viewer.module.css - Read-only Announcements Feed
    Used by: student, teacher, parent, bursar dashboards
    ============================================================ */
 
@@ -27,7 +27,7 @@
   border-color: var(--glass-border-hover);
 }
 
-/* Urgent card — red accent */
+/* Urgent card - red accent */
 .cardUrgent {
   border-color: rgba(239, 68, 68, 0.4) !important;
   background: rgba(239, 68, 68, 0.04) !important;

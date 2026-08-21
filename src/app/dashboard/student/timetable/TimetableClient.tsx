@@ -2,12 +2,11 @@
 // src/app/dashboard/student/timetable/TimetableClient.tsx
 // FIX (this round): `day_of_week` is an INTEGER (1=Monday...5=Friday), not
 // text. The previous version compared `t.day_of_week === 'Monday'`, which
-// never matched the stored integer — so the page always showed "No classes"
+// never matched the stored integer - so the page always showed "No classes"
 // even when teachers had created periods. This is why nothing appeared.
 //
 // Also: queries class_id directly instead of relying on a nested join
-// (class_subjects(subjects(name))), resolving names via a local lookup —
-// consistent with the teacher-side fix, works regardless of PostgREST FK
+// (class_subjects(subjects(name))), resolving names via a local lookup - // consistent with the teacher-side fix, works regardless of PostgREST FK
 // cache timing.
 
 import { useState, useEffect } from 'react'
@@ -40,7 +39,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   async function load() {
     setLoading(true)
 
-    // FIX: no nested join — select class_subject_id directly, resolve subject
+    // FIX: no nested join - select class_subject_id directly, resolve subject
     // name via a separate lookup query instead of relying on a PostgREST join
     const { data, error: err } = await supabase
       .from('timetable')
@@ -112,7 +111,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                       </p>
                       <div className={styles.periodDuration}>
                         <ClockIcon size={11} color="var(--text-muted)" />
-                        {slot.start_time?.slice(0, 5)} – {slot.end_time?.slice(0, 5)}
+                        {slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}
                       </div>
                     </div>
                   </div>

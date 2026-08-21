@@ -94,7 +94,7 @@ export default function UniversalChatPage({
     return () => { supabase.removeChannel(ch) }
   }, [userId])
 
-  // ── Load rooms — flat queries, no nested joins ────────────
+  // ── Load rooms - flat queries, no nested joins ────────────
   async function loadRooms() {
     setLoading(true)
 
@@ -129,7 +129,7 @@ export default function UniversalChatPage({
       roomsData.map(async (room: any) => {
         let otherUser = null
 
-        // Group rooms (class/school community) have their own name — looking
+        // Group rooms (class/school community) have their own name - looking
         // up "the other member" doesn't make sense with 3+ people and was
         // picking an arbitrary member's name to display instead of the
         // group's actual name.
@@ -186,7 +186,7 @@ export default function UniversalChatPage({
   }
 
   // ── Live suggestions as you type an access code ────────────
-  // Everyone else is scoped to their own school — a secretary shouldn't be
+  // Everyone else is scoped to their own school - a secretary shouldn't be
   // able to browse codes from a school they're not part of. Principals are
   // the one exception: they can also match other schools' principals, since
   // principal-to-principal is the one cross-school conversation that's
@@ -260,7 +260,7 @@ export default function UniversalChatPage({
       return
     }
 
-    // Fuzzy fallback — strip dashes, match last 6 chars
+    // Fuzzy fallback - strip dashes, match last 6 chars
     const stripped = cleaned.replace(/-/g, '').slice(-6)
     let fuzzy = supabase
       .from('profiles')
@@ -302,7 +302,7 @@ export default function UniversalChatPage({
         .in('room_id', myRoomIds)
 
       if (theirMemberships?.length) {
-        // Found shared room — check it's a DM (not a group)
+        // Found shared room - check it's a DM (not a group)
         const sharedIds = theirMemberships.map((m: any) => m.room_id)
         const { data: existingRoom } = await supabase
           .from('chat_rooms')
@@ -313,7 +313,7 @@ export default function UniversalChatPage({
           .single()
 
         if (existingRoom) {
-          // DM already exists — navigate to it
+          // DM already exists - navigate to it
           router.push(`/dashboard/${role}/chat/${existingRoom.id}`)
           setFinding(false)
           return
@@ -408,7 +408,7 @@ export default function UniversalChatPage({
             </button>
           </div>
 
-          {/* Search bar — only when there are rooms */}
+          {/* Search bar - only when there are rooms */}
           {!showFind && rooms.length > 0 && (
             <div className={styles.searchBar}>
               <SearchIcon size={14} color="var(--text-muted)" />
@@ -454,7 +454,7 @@ export default function UniversalChatPage({
                 </button>
               </div>
 
-              {/* Live suggestions — same-school only, except a principal also
+              {/* Live suggestions - same-school only, except a principal also
                   sees principals from other schools */}
               {!foundUser && code.trim().length >= 2 && (suggesting || suggestions.length > 0) && (
                 <div className={styles.suggestList}>

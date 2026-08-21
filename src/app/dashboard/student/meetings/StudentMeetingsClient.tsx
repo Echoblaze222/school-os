@@ -102,7 +102,7 @@ export default function StudentMeetingsClient({
                 <h2 className={styles.sectionTitle}>Upcoming</h2>
                 <div className={styles.meetingList}>
                   {upcoming.map((m, i) => (
-                    <MeetingCard key={m.id} meeting={m} index={i} />
+                    <MeetingCard key={m.id} meeting={m} index={i} userId={userId} schoolId={schoolId} profile={profile} />
                   ))}
                 </div>
               </section>
@@ -112,7 +112,7 @@ export default function StudentMeetingsClient({
                 <h2 className={styles.sectionTitle}>Past</h2>
                 <div className={styles.meetingList}>
                   {past.map((m, i) => (
-                    <MeetingCard key={m.id} meeting={m} index={i} isPast />
+                    <MeetingCard key={m.id} meeting={m} index={i} isPast userId={userId} schoolId={schoolId} profile={profile} />
                   ))}
                 </div>
               </section>
@@ -127,9 +127,10 @@ export default function StudentMeetingsClient({
 }
 
 function MeetingCard({
-  meeting, index, isPast = false,
+  meeting, index, isPast = false, userId, schoolId, profile,
 }: {
   meeting: MeetingRow; index: number; isPast?: boolean
+  userId: string; schoolId: string; profile: any
 }) {
   const typeLabel = MEETING_TYPE_LABELS[meeting.meeting_type] ?? meeting.meeting_type
 

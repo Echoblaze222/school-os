@@ -12,7 +12,7 @@ import { CrownIcon }                    from '@/components/Icons'
 
 interface Props {
   teachers: TeacherRow[]
-  // RolePageWrapper props — page.tsx must forward these
+  // RolePageWrapper props - page.tsx must forward these
   profile?: any
   school?:  any
   userId?:  string

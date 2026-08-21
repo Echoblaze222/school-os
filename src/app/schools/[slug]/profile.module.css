@@ -1,0 +1,188 @@
+/* src/app/schools/[slug]/profile.module.css */
+
+.coverBanner {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+}
+
+.headerCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: -48px;
+  position: relative;
+  z-index: 1;
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+}
+
+.logo {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-lg);
+  border: 3px solid var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.headerText { flex: 1; min-width: 0; }
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.inlineBadge { flex-shrink: 0; }
+
+.tagline {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.headerActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+  padding-bottom: var(--space-8);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.section {
+  padding: var(--space-5);
+}
+
+.section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+
+.description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.eventRow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+}
+
+.eventDate {
+  flex-shrink: 0;
+  width: 52px;
+  padding: 6px 0;
+  border-radius: var(--radius-md);
+  background: var(--brand-subtle);
+  color: var(--brand-light);
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.eventTitle {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.eventDesc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.sidebarLine { margin-bottom: var(--space-2); }
+
+.sidebarDetail {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.contactList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.contactRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.contactRow:hover { color: var(--brand); }
+
+@media (min-width: 900px) {
+  .headerCard { flex-direction: row; align-items: center; }
+  .headerActions { align-items: flex-end; }
+  .layout { grid-template-columns: 2fr 1fr; }
+}

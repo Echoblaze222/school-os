@@ -81,7 +81,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
 
     const studList = studs ?? []
 
-    // Filter to the selected term/year client-side — embeds can come back
+    // Filter to the selected term/year client-side - embeds can come back
     // as object OR 1-element array, and PostgREST doesn't reliably apply
     // filters on a 2nd-level nested embed, so we verify here instead.
     const termInvoices = (invoices ?? []).filter((inv: any) => {
@@ -107,7 +107,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       byClass[cl].expected  += inv.amount_due_ngn  ?? 0
     }
 
-    // Collected by fee type — fee type lives on fee_structures.description
+    // Collected by fee type - fee type lives on fee_structures.description
     // (e.g. 'school_fees', 'other', 'uniform'), not on payments directly.
     const byType: Record<string, number> = {}
     for (const inv of termInvoices) {

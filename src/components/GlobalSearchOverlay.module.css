@@ -1,0 +1,109 @@
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.sheet {
+  background: var(--bg-surface);
+  width: 100%;
+  max-width: 640px;
+  border-radius: 0 0 22px 22px;
+  padding: 16px 16px 20px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideDown 0.22s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes slideDown {
+  from { transform: translateY(-16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg, 14px);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+.input::placeholder { color: var(--text-muted); }
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+}
+
+.results {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.groupLabel {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 14px 4px 6px;
+}
+.groupLabel:first-child { margin-top: 4px; }
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: var(--radius-lg, 12px);
+  text-decoration: none;
+  color: inherit;
+}
+.resultRow:hover, .resultRow:active { background: var(--glass-bg); }
+
+.resultIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  color: var(--brand);
+}
+
+.resultBody { flex: 1; min-width: 0; }
+.resultTitle { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.resultSubtitle { margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.emptyState { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 0.85rem; }
+.hint { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 0.8rem; }

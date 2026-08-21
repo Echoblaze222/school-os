@@ -37,6 +37,25 @@ export default async function TeacherDashboardPage() {
 
   const school = (profile as any)?.schools ?? null
 
+  // ── Exam-committee appointment (Phase 2, Lane C) ──────────────────────────
+  // Only used to decide whether to show the "Examination Team" link on this
+  // dashboard, actual access control for /dashboard/examination lives in
+  // that route's own layout.tsx, this is discoverability only, not a
+  // security boundary.
+  const { EXAM_APPOINTMENT_TYPES, APPOINTMENT_TYPES } = await import('@/lib/supabase/appointments-types')
+  const { data: examAppointment } = await supabase
+    .from('appointments')
+    .select('appointment_type')
+    .eq('profile_id', userId)
+    .eq('status', 'active')
+    .in('appointment_type', EXAM_APPOINTMENT_TYPES)
+    .limit(1)
+    .maybeSingle()
+
+  const examAppointmentLabel = examAppointment
+    ? APPOINTMENT_TYPES[examAppointment.appointment_type as keyof typeof APPOINTMENT_TYPES]?.label ?? null
+    : null
+
   // ── Parallel count queries ────────────────────────────────────────────────
   const [
     { count: classCount },
@@ -128,6 +147,7 @@ export default async function TeacherDashboardPage() {
       userId={userId}
       counts={counts}
       activities={activities}
+      examAppointmentLabel={examAppointmentLabel}
     />
   )
 }

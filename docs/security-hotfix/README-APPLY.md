@@ -17,7 +17,7 @@
 
 1. Run `hotfix-01-rate-limit-schema.sql` against your live Supabase
    database (adds `rate_limit_attempts` table + `check_rate_limit`
-   function, nothing else — does not touch `profiles` or any existing
+   function, nothing else - does not touch `profiles` or any existing
    table).
 2. Copy the 4 files under `patched-files/` into the matching paths in
    your repo, overwriting the originals:
@@ -28,8 +28,7 @@
 3. Deploy.
 
 No schema changes to `profiles`, no changes to the access code *format*
-(still `PREFIX-XXXXXXXX`), so nothing else in the app needs to change —
-existing valid codes for already-created accounts keep working exactly as
+(still `PREFIX-XXXXXXXX`), so nothing else in the app needs to change - existing valid codes for already-created accounts keep working exactly as
 before. This only affects codes generated from now on, and how many
 guesses an attacker gets.
 
@@ -37,12 +36,11 @@ guesses an attacker gets.
 
 `super-admin/create-school/route.ts` generates its access code with
 `Math.random()` (not cryptographically secure), not `Date.now()`, so it's
-not the same critical bug — with a 33-character charset and 6 characters,
+not the same critical bug - with a 33-character charset and 6 characters,
 that's about 1.29 billion combinations, and it's now also protected by the
 same throttling on `first-login`/`code-signin`. But `Math.random()` is
 still not a secure source for anything credential-like. Worth swapping to
-`crypto.randomBytes` for consistency the next time that file is touched —
-didn't fix it now since it wasn't part of what you asked for and I'd
+`crypto.randomBytes` for consistency the next time that file is touched - didn't fix it now since it wasn't part of what you asked for and I'd
 rather you say yes to that one explicitly too.
 
 ## Not fixed, flagged only

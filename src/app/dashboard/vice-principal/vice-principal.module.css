@@ -1,0 +1,41 @@
+/* src/app/dashboard/vice-principal/vice-principal.module.css */
+/* Same design tokens and class shapes as principal.module.css - kept as
+   its own file (not a shared import) because every other role dashboard
+   in this codebase follows the same one-module-per-route convention, and
+   diverging from that here would make this the one dashboard a future
+   editor has to look in two places for. */
+
+.page { min-height: 100dvh; background: var(--bg-base); }
+.main { padding: var(--space-6) var(--space-5) 0; max-width: 800px; margin: 0 auto; }
+
+.statsRow { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-3); margin-bottom: var(--space-6); }
+@media(max-width:480px) { .statsRow { grid-template-columns: repeat(2,1fr); } }
+.statCard { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; backdrop-filter: blur(12px); }
+.statVal { font-size: 1.5rem; font-weight: 800; margin: 0 0 2px; }
+.statLbl { font-size: 0.62rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
+
+.sectionLabel { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-4); }
+.spacer { height: 110px; }
+
+/* ── Pending notifications preview ── */
+.notifCard { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); backdrop-filter: blur(12px); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-6); }
+.notifCardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.notifCountBadge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 5px; margin-left: 6px; background: var(--danger, #EF4444); color: #fff; border-radius: 999px; font-size: 0.6rem; font-weight: 800; }
+.notifViewAll { font-size: 0.72rem; font-weight: 700; color: var(--brand); text-decoration: none; }
+.notifRow { display: flex; align-items: flex-start; gap: 10px; padding: var(--space-2) 0; text-decoration: none; border-top: 1px solid var(--glass-border); }
+.notifRow:first-of-type { border-top: none; }
+.notifDot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 999px; margin-top: 6px; }
+.notifBody { flex: 1; min-width: 0; }
+.notifTitle { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
+.notifText { font-size: 0.72rem; color: var(--text-muted); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notifTime { flex-shrink: 0; font-size: 0.65rem; color: var(--text-faint, var(--text-muted)); white-space: nowrap; }
+
+/* ── Your departments ── */
+.deptGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-6); }
+.deptCard { display: block; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: var(--space-4); text-decoration: none; transition: transform var(--transition-fast), border-color var(--transition-fast); }
+.deptCard:hover { transform: translateY(-2px); border-color: var(--glass-border-hover); }
+.deptName { font-size: 0.86rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+.deptMeta { font-size: 0.7rem; color: var(--text-muted); margin: 0; }
+.deptHodMissing { color: var(--status-warn, #E4572E); font-weight: 700; }
+.emptyState { background: var(--glass-bg); border: 1px dashed var(--glass-border); border-radius: var(--radius-lg); padding: var(--space-5); text-align: center; margin-bottom: var(--space-6); }
+.emptyState p { font-size: 0.78rem; color: var(--text-muted); margin: 0; line-height: 1.5; }

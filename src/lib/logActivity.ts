@@ -15,8 +15,7 @@ export interface LogActivityInput {
 /**
  * Fire-and-forget activity logger. Call this right after a meaningful
  * user action completes successfully (e.g. after a Supabase insert/update
- * for the actual action succeeds). Never blocks or throws into the caller —
- * a failed activity log should never break the user's actual task.
+ * for the actual action succeeds). Never blocks or throws into the caller - * a failed activity log should never break the user's actual task.
  *
  * Example:
  *   await supabase.from('assignment_submissions').insert({...})
@@ -41,7 +40,7 @@ export async function logActivity(input: LogActivityInput) {
       metadata:   input.metadata ?? null,
     })
   } catch (err) {
-    // Swallow errors — activity logging is a nice-to-have, never critical path
+    // Swallow errors - activity logging is a nice-to-have, never critical path
     console.warn('logActivity failed (non-critical):', err)
   }
 }
@@ -49,7 +48,7 @@ export async function logActivity(input: LogActivityInput) {
 /**
  * Server-side variant for API routes and webhooks, which have no browser
  * session for the client-side createClient() to attach to. Pass in
- * whichever Supabase client the caller already has — typically the
+ * whichever Supabase client the caller already has - typically the
  * service-role admin client, since webhooks (e.g. the Paystack webhook)
  * act on behalf of the system rather than an authenticated browser user.
  *

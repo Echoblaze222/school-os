@@ -5,7 +5,7 @@
 -- Generalized so it can be reused anywhere an unauthenticated endpoint
 -- needs throttling, not just auth. Mirrors the existing pattern in
 -- ai_check_rate_limit (atomic check-and-increment inside one Postgres
--- function, so it's correct across every serverless instance — an
+-- function, so it's correct across every serverless instance - an
 -- in-memory counter is not, since each Vercel invocation can land on a
 -- different instance).
 -- ============================================================
@@ -17,7 +17,7 @@ create table if not exists public.rate_limit_attempts (
   attempted_at timestamptz not null default now()
 );
 
--- Only ever queried by (scope, identifier, attempted_at) — no RLS needed
+-- Only ever queried by (scope, identifier, attempted_at) - no RLS needed
 -- since this table is never touched by client-side queries, only by the
 -- function below running as the route's admin client.
 create index if not exists idx_rate_limit_scope_identifier_time
@@ -25,7 +25,7 @@ create index if not exists idx_rate_limit_scope_identifier_time
 
 -- Cheap cleanup so this table doesn't grow forever. Call this from the
 -- existing hourly cron (cron/unread-digest already runs hourly) or as its
--- own scheduled job — not required for correctness, just housekeeping.
+-- own scheduled job - not required for correctness, just housekeeping.
 create or replace function public.cleanup_old_rate_limit_attempts()
 returns void
 language sql

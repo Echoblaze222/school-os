@@ -27,7 +27,7 @@ const TERM_KEY_MAP: Record<string, string> = {
 
 function flatten(row: any) {
   // Embedded relations from Supabase can come back as either an object
-  // or a 1-element array depending on inferred cardinality — unwrap both
+  // or a 1-element array depending on inferred cardinality - unwrap both
   // shapes safely instead of assuming one or the other.
   const inv     = unwrapEmbed(row.payment_invoices)
   const fs      = unwrapEmbed(inv?.fee_structures)

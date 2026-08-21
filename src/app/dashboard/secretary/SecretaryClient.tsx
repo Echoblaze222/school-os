@@ -21,8 +21,9 @@ import motion from '@/components/dashboard-motion.module.css'
 const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Front desk', items: [
     { id: 'students',    label: 'Students',    href: '/dashboard/secretary/students',    Icon: UsersIcon },
+    // 'Applications' was a duplicate of 'Admissions' pointed at a
+    // separate, disconnected table - consolidated (Phase 4, Lane D).
     { id: 'admissions',  label: 'Admissions',  href: '/dashboard/secretary/admissions',  Icon: GraduationCapIcon },
-    { id: 'applications',label: 'Applications',href: '/dashboard/secretary/applications',Icon: FileTextIcon },
     { id: 'transfers',   label: 'Transfers',   href: '/dashboard/secretary/transfers',   Icon: RefreshIcon },
     { id: 'clinic',      label: 'Clinic',      href: '/dashboard/secretary/clinic',      Icon: ActivityIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/secretary/codes',       Icon: CheckCircleIcon },

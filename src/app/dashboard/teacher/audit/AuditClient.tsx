@@ -223,7 +223,7 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
       <div className={styles.statsStrip}>
         <span className={styles.statsText}>
           {totalCount > 0
-            ? `Showing ${startRow}–${endRow} of ${totalCount.toLocaleString()}`
+            ? `Showing ${startRow} - ${endRow} of ${totalCount.toLocaleString()}`
             : 'No entries found'
           }
         </span>

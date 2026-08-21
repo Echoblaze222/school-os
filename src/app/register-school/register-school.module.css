@@ -1,5 +1,5 @@
 /* src/app/register-school/register-school.module.css */
-/* Restyled to match select-school's dark, pill-based aesthetic — same
+/* Restyled to match select-school's dark, pill-based aesthetic - same
    near-black backdrop, red glow + cyan grid, pill inputs/buttons, and
    Orbitron wordmark treatment. This module is fully self-contained
    (hardcoded colors, no dependency on the shared light/dark tokens) so
@@ -37,7 +37,7 @@
   pointer-events: none;
 }
 
-/* ── Content column — fades/rises in on mount, like select-school ── */
+/* ── Content column - fades/rises in on mount, like select-school ── */
 .content {
   width: 100%;
   max-width: 560px;
@@ -56,7 +56,7 @@
   transform: translateY(0);
 }
 
-/* ── Top back link — returns to select-school ── */
+/* ── Top back link - returns to select-school ── */
 .topBackBtn {
   display: flex;
   align-items: center;
@@ -247,7 +247,7 @@
   line-height: 1.4;
 }
 
-/* ── Pill inputs — matches select-school's searchBox ── */
+/* ── Pill inputs - matches select-school's searchBox ── */
 .formInput {
   width: 100%;
   height: 46px;
@@ -648,7 +648,7 @@
   padding: 12px 16px;
 }
 
-/* ── Buttons — pill style matching select-school's submitBtn/ghostPill ── */
+/* ── Buttons - pill style matching select-school's submitBtn/ghostPill ── */
 .btnRow {
   display: flex;
   gap: 10px;

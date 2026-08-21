@@ -30,7 +30,7 @@ const PLANS: Record<string, string> = {
   installment_3month:'Installment Plan',
 }
 
-// ─── Single helper — all mutations go server-side ────────────────────────────
+// ─── Single helper - all mutations go server-side ────────────────────────────
 async function manageSchool(payload: Record<string, unknown>) {
   const res = await fetch('/api/super-admin/manage-school', {
     method:  'POST',

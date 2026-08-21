@@ -1,18 +1,18 @@
 // src/lib/notify/termii.ts
 // Server-only adapter for Termii's Messaging API (https://developers.termii.com).
-// NEVER import this from a client component — TERMII_API_KEY must stay server-side.
+// NEVER import this from a client component - TERMII_API_KEY must stay server-side.
 //
 // Verified against Termii's current docs (Aug 2026):
 //   POST https://api.ng.termii.com/api/sms/send
 //   Body: { api_key, to, from, sms, type: "plain", channel }
 //   channel:
-//     "dnd"     — transactional SMS route. USE THIS for attendance/results/fee
-//                 alerts — bypasses Nigeria's Do-Not-Disturb registry, which
+//     "dnd" - transactional SMS route. USE THIS for attendance/results/fee
+//                 alerts - bypasses Nigeria's Do-Not-Disturb registry, which
 //                 the "generic" (promotional) route does not. Using "generic"
 //                 for transactional messages risks delivery failure or the
 //                 sender ID getting blocked.
-//     "generic" — promotional/marketing SMS only. Not used by this app.
-//     "whatsapp"— single-recipient WhatsApp message.
+//     "generic" - promotional/marketing SMS only. Not used by this app.
+//     "whatsapp" - single-recipient WhatsApp message.
 //
 // ── WhatsApp caveat (read before relying on this in production) ───────────
 // WhatsApp Business messaging that YOU initiate (not a reply to the parent)
@@ -25,7 +25,7 @@
 // switch to their Template API (POST /api/send/template). That requires
 // WhatsApp Business template approval, which happens in the Termii
 // dashboard, not in this code. This file is built so swapping to templates
-// later only means changing sendWhatsApp's internals — callers don't change.
+// later only means changing sendWhatsApp's internals - callers don't change.
 
 const TERMII_BASE_URL = 'https://api.ng.termii.com/api'
 
@@ -52,7 +52,7 @@ export function normalizeNigerianPhone(raw: string): string | null {
   if (digits.startsWith('234') && digits.length === 13) return digits
   if (digits.startsWith('0') && digits.length === 11) return `234${digits.slice(1)}`
   if (digits.length === 10) return `234${digits}` // e.g. 8012345678 with no leading 0
-  return null // unrecognized shape — caller should treat as invalid and skip/fallback
+  return null // unrecognized shape - caller should treat as invalid and skip/fallback
 }
 
 async function termiiSend(payload: Record<string, unknown>): Promise<TermiiResult> {

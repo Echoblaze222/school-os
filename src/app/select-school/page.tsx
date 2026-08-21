@@ -144,7 +144,7 @@ export default function SelectSchoolPage() {
 
       <div className={`${styles.centerCol} ${mounted ? styles.visible : ''}`}>
 
-        {/* SchoolOS logo — top, centered, ChatGPT-style */}
+        {/* SchoolOS logo - top, centered, ChatGPT-style */}
         <div className={styles.brandBlock}>
           <AnimatedLogo size={64} variant="dark-bg" className={styles.brandLogo} />
           <h1 className={styles.brandName}>School<span className={styles.brandAccent}>OS</span></h1>
@@ -158,7 +158,7 @@ export default function SelectSchoolPage() {
 
         <div className={styles.actionStack}>
 
-          {/* Continue with recent school — only if one exists */}
+          {/* Continue with recent school - only if one exists */}
           {recent && (
             <button className={styles.continuePill} onClick={continueWithRecent} type="button">
               <span
@@ -289,7 +289,7 @@ export default function SelectSchoolPage() {
             </div>
           )}
 
-          {/* Register school link — always visible, under everything */}
+          {/* Register school link - always visible, under everything */}
           <div className={styles.registerRow}>
             <span>Are you a school administrator?</span>
             <Link href="/register-school" className={styles.registerLink}>

@@ -1,0 +1,33 @@
+.page { min-height: 100dvh; background: var(--bg-base, #0B0B10); padding: var(--space-6, 24px) var(--space-5, 20px) 60px; }
+.wrap { max-width: 460px; margin: 0 auto; }
+.title { font-family: var(--font-display, inherit); font-size: 1.4rem; font-weight: 700; margin: 0 0 4px; color: var(--text-primary, #fff); }
+.sub   { font-size: 0.85rem; color: var(--text-muted, #999); margin: 0 0 24px; }
+
+.field { margin-bottom: 16px; }
+.label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-muted, #999); margin-bottom: 6px; }
+.input, .select, .textarea {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-md, 10px);
+  background: var(--glass-bg, rgba(255,255,255,0.05)); border: 1px solid var(--glass-border, rgba(255,255,255,0.12));
+  color: var(--text-primary, #fff); font-size: 0.9rem; box-sizing: border-box;
+}
+.textarea { resize: vertical; min-height: 70px; }
+.hint  { font-size: 0.7rem; color: var(--text-muted, #999); margin-top: 4px; }
+.error { font-size: 0.75rem; color: #E4574B; margin-top: 4px; }
+
+.searchResult { padding: 12px 14px; border-radius: var(--radius-md, 10px); background: var(--glass-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.12)); margin-bottom: 8px; cursor: pointer; }
+.searchResult:hover { background: var(--glass-bg-hover, rgba(255,255,255,0.08)); }
+.schoolChip { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px;
+  border-radius: var(--radius-md, 10px); background: var(--glass-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.12)); margin-bottom: 20px; }
+.changeBtn { background: none; border: none; color: var(--brand, #800020); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+
+.submitBtn {
+  width: 100%; padding: 14px; border-radius: var(--radius-md, 10px); border: none;
+  background: var(--brand, #800020); color: #fff; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+}
+.submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.successBox { text-align: center; padding: 40px 20px; }
+.successBox p { color: var(--text-muted, #999); font-size: 0.85rem; margin-top: 8px; line-height: 1.5; }

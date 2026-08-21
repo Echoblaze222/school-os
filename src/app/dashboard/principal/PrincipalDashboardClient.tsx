@@ -19,7 +19,7 @@ import {
 import styles from './principal.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
-// Real routes for this role — grouped for the All-features sheet.
+// Real routes for this role - grouped for the All-features sheet.
 // Kept in one place so the sheet can never drift from what actually exists.
 const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'People', items: [
@@ -123,7 +123,7 @@ export default function PrincipalDashboardClient({
 
       <main className={styles.main} style={{ maxWidth: 880 }}>
 
-        {/* Animated graphical stats — the numbers that matter most, as gauges */}
+        {/* Animated graphical stats - the numbers that matter most, as gauges */}
         <div className={motion.riseIn} style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
@@ -142,7 +142,7 @@ export default function PrincipalDashboardClient({
           </div>
         </div>
 
-        {/* AI Insight — one concrete, current observation, not a static blurb */}
+        {/* AI Insight - one concrete, current observation, not a static blurb */}
         <div style={{ marginBottom: 'var(--space-4)' }}>
           <AiInsightBanner
             insight={buildInsight(counts)}
@@ -173,7 +173,7 @@ export default function PrincipalDashboardClient({
           </div>
         )}
 
-        {/* Light-weight roll counts — plain, since these are just counts, not rates */}
+        {/* Light-weight roll counts - plain, since these are just counts, not rates */}
         <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))' }}>
           {miniStats.map((s, i) => (
             <div

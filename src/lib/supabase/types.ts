@@ -56,7 +56,7 @@ export interface Profile {
   default_code: string | null
   secret_identifier: string | null
   passport_url: string | null
-  // ✅ correct column names — nin_number does NOT exist
+  // ✅ correct column names - nin_number does NOT exist
   nin_screenshot_url: string | null
   nin_verified: boolean
   nin_verified_at: string | null
@@ -83,7 +83,7 @@ export interface School {
   name: string
   slug: string
   school_type: 'primary' | 'secondary' | 'combined' | string | null
-  // ✅ correct column name — was 'status' in the old interface
+  // ✅ correct column name - was 'status' in the old interface
   setup_status: 'trial' | 'active' | 'expired' | 'suspended' | 'locked'
   address: string | null
   city: string | null
@@ -102,7 +102,7 @@ export interface School {
   currency_primary: string
   currency_secondary: string | null
   is_platform_active: boolean
-  // ✅ correct column name — was 'registered_at' in old interface
+  // ✅ correct column name - was 'registered_at' in old interface
   created_at: string
   updated_at: string
   // Trial / subscription fields (added by trial-subscription-schema.sql)

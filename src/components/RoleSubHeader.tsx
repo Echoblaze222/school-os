@@ -31,9 +31,9 @@ interface Props {
   title:         string
   backHref?:     string          // defaults to the role's dashboard home
   featureGroups: FeatureGroup[]
-  homeHref?:     string          // for BottomDock — defaults to the role's dashboard home
-  aiHref?:       string          // for BottomDock — defaults to `${role}/ai`
-  hideDock?:     boolean         // opt out of the floating dock (rare — e.g. a page that already has heavy fixed UI of its own)
+  homeHref?:     string          // for BottomDock - defaults to the role's dashboard home
+  aiHref?:       string          // for BottomDock - defaults to `${role}/ai`
+  hideDock?:     boolean         // opt out of the floating dock (rare - e.g. a page that already has heavy fixed UI of its own)
   children:      React.ReactNode
 }
 

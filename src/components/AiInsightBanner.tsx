@@ -1,7 +1,6 @@
 'use client'
 // components/AiInsightBanner.tsx
-// The prominent full-width "AI Insight" card from the approved prototype —
-// distinct from the AI Insights page link, this surfaces one concrete,
+// The prominent full-width "AI Insight" card from the approved prototype - // distinct from the AI Insights page link, this surfaces one concrete,
 // specific observation right on the home screen.
 
 import Link from 'next/link'

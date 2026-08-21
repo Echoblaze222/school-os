@@ -30,7 +30,7 @@ const TERM_LABELS: Record<string, string> = {
 
 /** Flattens a payments row + its nested joins into the flat shape the UI expects */
 function flatten(row: any) {
-  // Embeds can come back as object OR 1-element array — unwrap both shapes.
+  // Embeds can come back as object OR 1-element array - unwrap both shapes.
   const inv     = unwrapEmbed(row.payment_invoices)
   const fs      = unwrapEmbed(inv?.fee_structures)
   const student = unwrapEmbed(row.profiles)

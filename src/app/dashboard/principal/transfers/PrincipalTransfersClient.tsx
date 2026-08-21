@@ -1,6 +1,6 @@
 'use client'
 // src/app/dashboard/principal/transfers/PrincipalTransfersClient.tsx
-// Mirrors the secretary TransfersClient exactly — same UI, same flow.
+// Mirrors the secretary TransfersClient exactly - same UI, same flow.
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -386,9 +386,9 @@ export default function PrincipalTransfersClient({
               </div>
             ))}
 
-            <button className="pressable"
+            <button
               onClick={() => { setViewStudent(null); setStudentSearch(viewStudent.full_name); setModal(true) }}
-              className={styles.btnPrimary}
+              className={`pressable ${styles.btnPrimary}`}
               style={{ width: '100%', marginTop: 'var(--space-5)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <TransferIcon size={16} /> Initiate Transfer for this Student
             </button>

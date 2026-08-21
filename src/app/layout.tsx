@@ -19,6 +19,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { ToastProvider } from '@/contexts/ToastContext'
 
 const inter = Inter({
   subsets:  ['latin'],
@@ -59,7 +60,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
           <script
             dangerouslySetInnerHTML={{
               __html: `

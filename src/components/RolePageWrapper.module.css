@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* Mobile: no offset — sidebar is hidden, bottom nav is floating */
+  /* Mobile: no offset - sidebar is hidden, bottom nav is floating */
 }
 
 @media (min-width: 1024px) {
@@ -47,7 +47,7 @@
   }
 }
 
-/* Full-height variant — used by chat and AI pages */
+/* Full-height variant - used by chat and AI pages */
 .mainFull {
   flex: 1;
   display: flex;

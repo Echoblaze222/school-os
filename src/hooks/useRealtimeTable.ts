@@ -47,8 +47,8 @@ interface Options<T extends { id: string }> {
 /**
  * Returns [rows, setRows].
  *
- * `rows`    — always up-to-date list, auto-synced with Supabase Realtime.
- * `setRows` — escape hatch for local optimistic updates (deletes, etc.).
+ * `rows` - always up-to-date list, auto-synced with Supabase Realtime.
+ * `setRows` - escape hatch for local optimistic updates (deletes, etc.).
  */
 export function useRealtimeTable<T extends { id: string }>({
   table,

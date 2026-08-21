@@ -47,8 +47,7 @@ function TransferPageContent() {
     const schoolId = (p as any)?.school_id ?? null
     setMySchoolId(schoolId)
 
-    // Coming from the Students page with a specific student already chosen —
-    // load them directly instead of making the principal search again.
+    // Coming from the Students page with a specific student already chosen - // load them directly instead of making the principal search again.
     const studentId = searchParams.get('studentId')
     if (studentId) await loadStudentById(studentId)
   }
@@ -192,7 +191,7 @@ function TransferPageContent() {
       </header>
 
       <main className={styles.main}>
-        {/* Step 1: Search student — skipped if we arrived with a student already chosen */}
+        {/* Step 1: Search student - skipped if we arrived with a student already chosen */}
         {!preselected && (
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>Step 1: Find Student</h2>

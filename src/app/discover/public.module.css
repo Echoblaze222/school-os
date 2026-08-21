@@ -1,0 +1,176 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--nav-border);
+  background: var(--bg-surface);
+}
+
+.logoLink { display: flex; align-items: center; }
+
+.headerNav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.navLink, .navActive {
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.navLink { color: var(--text-secondary); }
+.navActive { color: var(--brand); }
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 640px;
+}
+
+.filterRow {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  border: 1px solid var(--nav-border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-4);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.filterChipActive {
+  border-color: var(--brand);
+  background: var(--brand-subtle);
+  color: var(--brand);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--nav-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-decoration: none;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sponsoredTag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-xs);
+  padding: 2px var(--space-2);
+}
+
+.typeTag {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cardSchool {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cardSummary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.emptyState {
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-10) 0;
+}
+
+.categoryBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.categoryLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.categoryMethodology {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--nav-border);
+}
+.table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--nav-border);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.insufficientTag {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}

@@ -1,0 +1,18 @@
+/* src/app/dashboard/vice-principal/profile/profile.module.css */
+
+.avatarSection { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5); }
+.avatarWrap { position: relative; flex-shrink: 0; width: 64px; height: 64px; border-radius: 999px; background: var(--brand-subtle); border: none; display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--brand-light); cursor: pointer; padding: 0; }
+.avatarWrap img { width: 100%; height: 100%; object-fit: cover; }
+.cameraBadge { position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; border-radius: 999px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg-base); }
+.roleTag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand); margin: 0 0 2px; }
+.email { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+
+.msg { font-size: 0.76rem; color: var(--brand-light); background: var(--brand-subtle); border: 1px solid var(--brand-border); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: var(--space-4); }
+
+.label { display: block; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: var(--space-4) 0 6px; }
+.input { width: 100%; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 10px 12px; font-size: 0.84rem; color: var(--text-primary); font-family: inherit; }
+.input:disabled { color: var(--text-muted); }
+
+.saveBtn { width: 100%; margin-top: var(--space-5); padding: 11px; background: var(--brand); color: #fff; border: none; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.saveBtn:disabled { opacity: 0.5; cursor: default; }
+.signOutBtn { width: 100%; margin-top: var(--space-3); padding: 11px; background: none; border: 1px solid var(--glass-border); border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; color: var(--danger, #EF4444); cursor: pointer; }

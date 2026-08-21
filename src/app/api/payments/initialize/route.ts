@@ -4,8 +4,7 @@
 // creates a Paystack transaction split between the school's subaccount (97%)
 // and the platform (3%), and returns the authorization_url to redirect to.
 //
-// Money settles directly to the SCHOOL's bank account via their subaccount —
-// your Paystack account is only the processor, never holds the school's share.
+// Money settles directly to the SCHOOL's bank account via their subaccount - // your Paystack account is only the processor, never holds the school's share.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Load the invoice and confirm it actually belongs to one of this
-    // parent's linked children — never trust invoiceId alone.
+    // parent's linked children - never trust invoiceId alone.
     const { data: invoice, error: invErr } = await supabase
       .from('payment_invoices')
       .select(`
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This invoice is already fully paid.' }, { status: 400 })
     }
 
-    // Load the school's subaccount — required for the split to work
+    // Load the school's subaccount - required for the split to work
     const { data: school, error: schoolErr } = await supabase
       .from('schools')
       .select('id, name, paystack_subaccount_code, paystack_subaccount_active')
@@ -81,7 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine how much to charge. The parent may pay any amount from ₦100
-    // up to the full balance — always validated server-side against the
+    // up to the full balance - always validated server-side against the
     // invoice's actual balance_ngn, never trusted from the client alone.
     let amountToCharge = invoice.balance_ngn
 

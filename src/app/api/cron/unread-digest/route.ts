@@ -1,11 +1,11 @@
 // src/app/api/cron/unread-digest/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Vercel/cron-job.org Cron Job — runs hourly.
+// Vercel/cron-job.org Cron Job - runs hourly.
 // Sends a SPECIFIC push to users who have unread notifications sitting in
-// their inbox — not a generic "something's waiting," but e.g.:
+// their inbox - not a generic "something's waiting," but e.g.:
 //   "3 new assignments"              (all unread items are one type)
-//   "New result posted"               (exactly one unread item — its real title)
-//   "2 new messages + 3 more"         (mixed types — leads with the dominant one)
+//   "New result posted"               (exactly one unread item - its real title)
+//   "2 new messages + 3 more"         (mixed types - leads with the dominant one)
 // Follows a professional backoff schedule (see lib/supabase/unread_digest.sql)
 // instead of nagging every run:
 //   1st nudge → at least 4h since their unread items started piling up
@@ -38,7 +38,7 @@ function adminClient() {
   )
 }
 
-// Same type vocabulary as NotificationsBell.tsx's TYPE_COLORS — kept in
+// Same type vocabulary as NotificationsBell.tsx's TYPE_COLORS - kept in
 // sync manually since one lives client-side and one server-side. Used to
 // turn "3 unread" into "3 new assignments" instead of staying generic.
 const TYPE_LABELS: Record<string, { singular: string; plural: string }> = {
@@ -58,7 +58,7 @@ function labelFor(type: string, count: number) {
 }
 
 // How long an unread notification has to sit before it's eligible to
-// trigger a nudge at all — avoids nudging someone 2 minutes after a
+// trigger a nudge at all - avoids nudging someone 2 minutes after a
 // notification lands, before they've had any real chance to see it.
 const MIN_UNREAD_AGE_MS = 30 * 60 * 1000 // 30 minutes
 
@@ -72,7 +72,7 @@ interface UserUnread {
 }
 
 export async function GET(req: Request) {
-  // Verify cron secret — same convention as /api/cron/reminders
+  // Verify cron secret - same convention as /api/cron/reminders
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -83,7 +83,7 @@ export async function GET(req: Request) {
   const unreadCutoff = new Date(now.getTime() - MIN_UNREAD_AGE_MS).toISOString()
 
   // 1. Find every unread notification old enough to count, with enough
-  //    detail (type, title) to build a specific message — not just a count.
+  //    detail (type, title) to build a specific message - not just a count.
   const { data: unreadRows, error: unreadErr } = await admin
     .from('notifications')
     .select('user_id, type, title, action_url, created_at')
@@ -100,7 +100,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, nudged: 0, reason: 'no eligible unread notifications' })
   }
 
-  // Aggregate per user in JS (small result sets — this table is scoped to
+  // Aggregate per user in JS (small result sets - this table is scoped to
   // a school's user base, not global; fine to aggregate here rather than
   // adding a Postgres view for it). Rows arrive newest-first, so the first
   // row seen per user is their most recent unread item.
@@ -147,7 +147,7 @@ export async function GET(req: Request) {
     const unread = perUser.get(userId)!
 
     if (!state || !state.last_nudged_at) {
-      // Never nudged before — eligible immediately (the 30-min unread-age
+      // Never nudged before - eligible immediately (the 30-min unread-age
       // filter above already ensures we're not nudging too eagerly).
       toNudge.push({ userId, unread, stage: 0 })
       continue
@@ -157,7 +157,7 @@ export async function GET(req: Request) {
       stage <= 0 ? 4 :
       stage === 1 ? 24 :
       stage === 2 ? 48 :
-      168 // 7 days — settles here for anyone still ignoring it
+      168 // 7 days - settles here for anyone still ignoring it
 
     const elapsedMs = now.getTime() - new Date(state.last_nudged_at).getTime()
     if (elapsedMs >= cooldownHours * 60 * 60 * 1000) {
@@ -193,7 +193,7 @@ export async function GET(req: Request) {
       nudged++
     } catch (err) {
       console.error(`[cron/unread-digest] push failed for user ${userId}:`, err)
-      // Don't advance their stage if the push itself failed — try again
+      // Don't advance their stage if the push itself failed - try again
       // next run rather than silently skipping them for a week.
     }
   }
@@ -205,7 +205,7 @@ export async function GET(req: Request) {
 function composeDigestMessage(unread: UserUnread): { title: string; body: string; url: string } {
   const url = unread.mostRecentUrl ?? '/dashboard'
 
-  // Exactly one unread item — use its real title verbatim, like a normal
+  // Exactly one unread item - use its real title verbatim, like a normal
   // single push would, rather than wrapping it in digest language at all.
   if (unread.count === 1) {
     return {
@@ -218,7 +218,7 @@ function composeDigestMessage(unread: UserUnread): { title: string; body: string
   const typesUsed = Array.from(unread.byType.entries()) // [type, count][]
   typesUsed.sort((a, b) => b[1] - a[1]) // dominant type first
 
-  // Every unread item is the same type — fully specific, no hedging.
+  // Every unread item is the same type - fully specific, no hedging.
   if (typesUsed.length === 1) {
     const [type, count] = typesUsed[0]
     return {
@@ -228,7 +228,7 @@ function composeDigestMessage(unread: UserUnread): { title: string; body: string
     }
   }
 
-  // Mixed types — lead with the dominant type by name, fold the rest into
+  // Mixed types - lead with the dominant type by name, fold the rest into
   // "and N more" rather than staying vague about all of it.
   const [dominantType, dominantCount] = typesUsed[0]
   const remaining = unread.count - dominantCount

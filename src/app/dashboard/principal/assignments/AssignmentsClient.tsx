@@ -3,11 +3,11 @@
 //
 // FIX: this file filtered/wrote assignments.class_level (a display string)
 // instead of assignments.class_id (the real FK), and referenced a
-// teacher_name column that doesn't exist on assignments — teacher identity
+// teacher_name column that doesn't exist on assignments - teacher identity
 // is via teacher_id/created_by/posted_by → profiles.full_name, confirmed
 // against the teacher grading pages and parent/student assignment fixes.
 //
-// ADDED: a school-wide overview — for each assignment, a per-class
+// ADDED: a school-wide overview - for each assignment, a per-class
 // breakdown of how many students have submitted/been graded vs. the total
 // roster for that class (profiles.class_id), so the principal can see
 // completion at a glance without opening every teacher's gradebook.

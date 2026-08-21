@@ -96,7 +96,7 @@ export async function POST(req: Request) {
   // Critical: this must NOT be derived from anything public. It previously
   // sliced the school's own UUID (PRIN-${school.id.slice(0,6)}), and
   // schools/search publicly returns that same id to any unauthenticated
-  // visitor — meaning the principal's activation code, the
+  // visitor - meaning the principal's activation code, the
   // highest-privilege account for the entire school, was directly
   // computable by anyone who searched for the school by name, with no
   // guessing required at all. It must be independently random.
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
     type:    'system',
   })
 
-  // Send welcome email — non-fatal if it fails
+  // Send welcome email - non-fatal if it fails
   try {
     const loginUrl  = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
     const planLabel = setupType === 'trial' ? `${trialDays}-Day Free Trial` : 'Active (1 Month Free)'

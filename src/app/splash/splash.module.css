@@ -172,7 +172,7 @@
   50%       { opacity: 0.9; transform: scale(1.04); }
 }
 
-/* Logo image — 3D float + glow */
+/* Logo image - 3D float + glow */
 .logo {
   width: 128px; height: 128px;
   border-radius: 28px;

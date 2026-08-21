@@ -1,5 +1,5 @@
 // src/app/api/cron/reminders/route.ts
-// Vercel Cron Job — fires every minute.
+// Vercel Cron Job - fires every minute.
 // Configure in vercel.json:
 // {
 //   "crons": [{ "path": "/api/cron/reminders", "schedule": "* * * * *" }]
@@ -77,7 +77,7 @@ export async function GET(req: Request) {
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             payload
           ).catch(err => {
-            // 410 = subscription expired — clean it up
+            // 410 = subscription expired - clean it up
             if (err.statusCode === 410) {
               admin.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
             }

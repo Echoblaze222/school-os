@@ -3,7 +3,7 @@
 // Brought up to parity with the principal enrolment page:
 //   - Full detail fields (phone, gender, DOB, admission no., guardian info)
 //   - Fast Day/Month/Year DOB picker instead of native calendar
-//   - Bulk Add tab — saves directly, no fake "preview" codes
+//   - Bulk Add tab - saves directly, no fake "preview" codes
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -13,7 +13,6 @@ import { GraduationCapIcon, EditIcon, TrashIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
-import motion from '@/components/dashboard-motion.module.css'
 
 interface Student {
   id: string
@@ -132,7 +131,7 @@ export default function StudentsClient({ students: init, profile, school, userId
 
     if (editItem) {
       // CLASS FIX: previously wrote class_id straight into `profiles`, but
-      // nothing reads that column — parent/student dashboards, results, and
+      // nothing reads that column - parent/student dashboards, results, and
       // attendance all join through `student_profiles.class_id`. Principal's
       // "Assign class" flow already does this correctly (profiles.class_level
       // for display + student_profiles.class_id as the real FK); mirroring
@@ -206,7 +205,7 @@ export default function StudentsClient({ students: init, profile, school, userId
     setDelItem(null); setSaving(false)
   }
 
-  // ── Bulk save — direct, no fake preview-only codes ──────────
+  // ── Bulk save - direct, no fake preview-only codes ──────────
   async function handleBulkSave() {
     const validRows = bRows.filter(r => r.full_name.trim() && r.email.trim())
     if (!validRows.length) return

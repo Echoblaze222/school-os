@@ -1,13 +1,14 @@
 // src/app/api/report-card/generate/route.ts
 // Generates a printable term report card (school logo, subject scores,
 // attendance summary, class teacher + principal remarks, principal's
-// signature image) using @react-pdf/renderer — pure JS, no headless
+// signature image) using @react-pdf/renderer, pure JS, no headless
 // browser/Chromium binary, which is what made puppeteer unreliable on
 // Vercel serverless.
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rateLimit'
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from '@react-pdf/renderer'
 import React from 'react'
 
@@ -172,6 +173,13 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
+    // PDF rendering is real CPU/memory work; cap per-account throughput
+    // so one script can't hammer this into a cost/availability problem.
+    const rl = await checkRateLimit(createAdminClient(), 'report_card_generate', user.id, 60, 300)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: rl.errorResponse!.error }, { status: rl.errorResponse!.status })
+    }
+
     const { data: rc, error: rcErr } = await supabase
       .from('report_cards')
       .select(`
@@ -191,7 +199,7 @@ export async function POST(request: Request) {
     const admin = createAdminClient()
 
     // FIX: branding (name, logo, colors, tagline) is written directly to
-    // the `schools` table by /api/principal/settings — school_branding is
+    // the `schools` table by /api/principal/settings, school_branding is
     // a separate, unused table in this app. Reading from the wrong table
     // was why the logo and brand color never showed up.
     const { data: branding } = await admin

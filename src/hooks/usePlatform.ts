@@ -4,7 +4,7 @@
 // data-platform="ios" | "android" | "desktop" on <html> so globals.css
 // can apply Material-ish (bolder shadow/icons) vs iOS-style (lighter
 // shadow, more whitespace, iOS-style transitions) treatment via CSS
-// alone — no forked component trees per platform.
+// alone - no forked component trees per platform.
 //
 // Usage (call once, e.g. in each dashboard layout.tsx):
 //   'use client'

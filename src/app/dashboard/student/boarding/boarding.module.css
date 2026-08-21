@@ -1,0 +1,142 @@
+.main {
+  padding: var(--space-4);
+  padding-bottom: 60px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.topBar { margin-bottom: var(--space-3); }
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.errorCard {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--danger);
+}
+.errorCard p { margin: 0; flex: 1; color: var(--text-secondary); font-size: 14px; }
+
+.locationCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.locationMain { font-weight: 700; font-size: 16px; color: var(--text-primary); }
+.locationSub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+.section {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.roommateList { font-size: 14px; color: var(--text-primary); margin: 0; }
+
+.rollCallStatus { font-size: 14px; color: var(--text-primary); margin: 0; font-weight: 600; }
+.rollCallMeta { font-weight: 400; color: var(--text-faint); }
+
+.pendingNote { font-size: 13px; color: var(--text-faint); margin: 0; }
+
+.leaveHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.leaveError {
+  font-size: 12px;
+  color: var(--danger);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.leaveForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) 0 var(--space-3) 0;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: var(--space-2);
+}
+
+.leaveInput {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--input-bg, var(--glass-bg));
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.leaveDateLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.emergencyLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.leaveRow {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+.leaveRow:last-child { border-bottom: none; }
+
+.leaveRowTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leaveStatus {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.leaveStatus_pending   { background: var(--warning-subtle); color: var(--warning); }
+.leaveStatus_approved  { background: var(--success-subtle); color: var(--success); }
+.leaveStatus_rejected  { background: var(--danger-subtle);  color: var(--danger); }
+.leaveStatus_cancelled { background: var(--glass-bg); color: var(--text-faint); }
+
+.leaveReason { font-size: 13px; color: var(--text-primary); margin: var(--space-1) 0 2px 0; }
+.leaveDates { font-size: 12px; color: var(--text-faint); margin: 0; }
+.leaveRejection { font-size: 12px; color: var(--danger); margin: 2px 0 0 0; }

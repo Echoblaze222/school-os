@@ -1,6 +1,6 @@
 'use client'
 // src/app/login/page.tsx
-// The cinematic splash now lives solely at /splash — it plays once, then
+// The cinematic splash now lives solely at /splash - it plays once, then
 // routes to /select-school, which routes here only after a school is chosen.
 // This page enforces that a school must already be selected: if someone
 // lands here directly (deep link, back button, bookmark) with no school in
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
     const stored = localStorage.getItem(SCHOOL_KEY)
     if (!stored) {
-      // No school selected — this page can't be reached without one.
+      // No school selected - this page can't be reached without one.
       // Send them to pick a school first (deep link, back button, bookmark, etc.)
       router.replace('/select-school')
       return
@@ -73,13 +73,13 @@ export default function LoginPage() {
       return
     }
 
-    // secondary_color only lives on school_branding — best-effort fetch so
+    // secondary_color only lives on school_branding - best-effort fetch so
     // the login screen can use the school's full two-colour brand, not just
     // the one colour already cached in localStorage from /select-school.
     //
     // primary_color IS cached in localStorage (set when the school was
     // originally picked on /select-school), but that cache goes stale the
-    // moment a principal changes their brand colour in Settings — this page
+    // moment a principal changes their brand colour in Settings - this page
     // would otherwise keep showing whatever colour was current back when
     // the school was first selected, potentially sessions/days earlier. So
     // re-fetch it fresh here too and let it override the cached value.
@@ -125,7 +125,7 @@ export default function LoginPage() {
         const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
         if (signInErr) { setLoginError('Wrong password. Please try again.'); return }
         // Hard navigation, not router.replace: this is a fresh sign-in, and
-        // the client Router Cache doesn't reset on auth changes — a soft
+        // the client Router Cache doesn't reset on auth changes - a soft
         // nav here can briefly hand back a PREVIOUS session's cached
         // dashboard (e.g. another role's, on a shared device) before it
         // catches up. window.location guarantees a clean, fully fresh load.
@@ -176,8 +176,7 @@ export default function LoginPage() {
         await supabase.auth.getSession()
 
         const stage = data.onboarding_stage
-        // Hard navigation for the same reason as handleExistingLogin above —
-        // this is a fresh sign-in and must not reuse a cached page from
+        // Hard navigation for the same reason as handleExistingLogin above - // this is a fresh sign-in and must not reuse a cached page from
         // whoever was previously signed in on this device.
         window.location.href =
           stage === 'stage_1_pending' ? '/onboarding/stage-1' :
@@ -187,7 +186,7 @@ export default function LoginPage() {
     } finally { setNewUserLoading(false) }
   }
 
-  // Still resolving whether a school is selected — render nothing rather
+  // Still resolving whether a school is selected - render nothing rather
   // than flash the login form before a possible redirect to /select-school.
   if (checkingSchool) {
     return <div className={styles.schoolCheckGate} />
@@ -268,7 +267,7 @@ export default function LoginPage() {
                       // character typed before the @ got force-uppercased,
                       // and that stuck permanently once @ was typed, since
                       // the old logic only stopped transforming going
-                      // forward — it never fixed what was already wrong.
+                      // forward - it never fixed what was already wrong.
                       // Checking the whole current value on every keystroke
                       // avoids that: nothing gets uppercased until a hyphen
                       // actually appears, and once it does, the full value

@@ -2,14 +2,14 @@
 // src/app/dashboard/principal/students/promote/PromoteClient.tsx
 //
 // Two destinations for a batch of students:
-//   1. "Promote to class"   — move to another (non-terminal) class, same school year cycle.
-//   2. "Graduate to Alumni" — move out of the class list entirely: writes a graduation_records
+//   1. "Promote to class" - move to another (non-terminal) class, same school year cycle.
+//   2. "Graduate to Alumni" - move out of the class list entirely: writes a graduation_records
 //      row per student, flips student_profiles.lifecycle_stage to 'graduated', and stamps
 //      graduation_year. These students then show up on the Alumni page instead of a class roster.
 //
 // Classes whose label looks like a terminal class (SSS3, JSS3-leaver streams, Year 13, Grade 12…)
 // are flagged so the "Graduate" option is suggested automatically, but the principal can pick
-// either path for any class — schools name their final year differently.
+// either path for any class - schools name their final year differently.
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'

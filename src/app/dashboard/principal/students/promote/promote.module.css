@@ -1,7 +1,6 @@
 /* src/app/dashboard/principal/students/promote/promote.module.css
    Rebuilt on the real SchoolOS design tokens (see globals.css) so the
-   page inherits each school's brand colour via --brand / --brand-* —
-   these are set at runtime by SchoolBrandInjector in layout.tsx. */
+   page inherits each school's brand colour via --brand / --brand-* - these are set at runtime by SchoolBrandInjector in layout.tsx. */
 
 .page {
   min-height: 100dvh;

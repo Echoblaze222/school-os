@@ -8,7 +8,6 @@ import { ActivityIcon, UserIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
-import motion from '@/components/dashboard-motion.module.css'
 
 interface StudentOpt { id: string; full_name: string; default_code: string | null }
 interface Visit {
@@ -55,7 +54,7 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
   const recordByStudent = new Map(records.map(r => [r.student_id, r]))
   const filteredStudents = students.filter(s => s.full_name.toLowerCase().includes(search.toLowerCase()))
 
-  // Search by name OR access code — lets the secretary find a student fast
+  // Search by name OR access code - lets the secretary find a student fast
   // even in a 500+ roster, instead of scrolling a giant dropdown.
   const visitSearchQ = visitSearch.trim().toLowerCase()
   const visitMatches = visitSearchQ
@@ -124,7 +123,7 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
       updated_by: userId,
     }
 
-    // One row per student — upsert on the unique student_id constraint.
+    // One row per student - upsert on the unique student_id constraint.
     const { data, error } = await supabase.from('student_medical_records')
       .upsert(payload, { onConflict: 'student_id' })
       .select('*, profiles!student_medical_records_student_id_fkey(full_name, default_code)')

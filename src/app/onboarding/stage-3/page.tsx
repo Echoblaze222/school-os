@@ -2,7 +2,7 @@
 //
 // FIX: When DOJAH_APP_ID / DOJAH_API_KEY env vars are not set, the NIN
 // verification API returns "Identity verification is not configured" and the
-// user is permanently blocked from completing onboarding — the submit button
+// user is permanently blocked from completing onboarding - the submit button
 // never enables because ninStatus never becomes 'verified'.
 //
 // Solution: treat the "not configured" 503 response as a BYPASS signal.
@@ -13,7 +13,7 @@
 //   4. Mark onboarding complete so the user reaches their dashboard
 //
 // Once you add DOJAH_APP_ID + DOJAH_API_KEY to Vercel env vars,
-// the full live verification flow resumes automatically — no code change needed.
+// the full live verification flow resumes automatically - no code change needed.
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -49,7 +49,7 @@ export default function OnboardingStage3() {
   const [ninStatus,  setNinStatus]  = useState<NinStatus>('idle')
   const [ninError,   setNinError]   = useState('')
   const [verifiedId, setVerifiedId] = useState<VerifiedIdentity | null>(null)
-  // True when API keys aren't configured — unlocks submit without verification
+  // True when API keys aren't configured - unlocks submit without verification
   const [ninBypassed, setNinBypassed] = useState(false)
 
   const router   = useRouter()
@@ -204,7 +204,7 @@ export default function OnboardingStage3() {
           ))}
         </div>
 
-        {/* Bypass info banner — only shown when API keys not set */}
+        {/* Bypass info banner - only shown when API keys not set */}
         {ninBypassed && (
           <div style={{
             background: 'rgba(245,158,11,0.08)',

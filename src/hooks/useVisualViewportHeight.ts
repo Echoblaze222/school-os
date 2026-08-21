@@ -11,7 +11,7 @@ import { useEffect } from 'react'
  * shrink when the on-screen keyboard opens. A layout built on `100dvh` keeps
  * thinking it has the full screen, so a "sticky" input bar pinned to the
  * bottom of that (now too-tall) layout ends up pushed below the visible
- * area — the whole page has to scroll to reach it, instead of it staying
+ * area - the whole page has to scroll to reach it, instead of it staying
  * put right above the keyboard.
  *
  * Usage: call this once near the root of any full-height chat-style layout,
@@ -22,7 +22,7 @@ import { useEffect } from 'react'
 export function useVisualViewportHeight() {
   useEffect(() => {
     const vv = window.visualViewport
-    // Captured once on mount — the "resting" height before any keyboard has
+    // Captured once on mount - the "resting" height before any keyboard has
     // ever opened. Used purely as a baseline to detect a keyboard opening;
     // orientation changes are handled separately by re-reading it on resize.
     let restingHeight = window.innerHeight

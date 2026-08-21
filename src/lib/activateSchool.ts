@@ -1,6 +1,30 @@
-// src/lib/activateSchool.ts
+// src/app/api/schools/paystack-webhook/route.ts and
+// src/app/api/schools/payment-callback/route.ts both call activateSchool()
+// keyed off nothing but metadata.school_id from a *verified* Paystack
+// transaction. "Verified" only means Paystack confirms a real charge
+// succeeded - it does NOT mean the charge was for THIS. Any successful
+// transaction on the platform's Paystack account carries a school_id in
+// its metadata (the parent-fee-payment flow puts one there too, see
+// src/app/api/payments/initialize/route.ts), and neither of those two
+// callers checked that the reference they received actually came from
+// THIS flow before activating. A ₦100 fee payment's reference, replayed
+// against either endpoint, activated the school for free.
+//
+// The fix: /api/schools/register/route.ts always generates references as
+// `SCH-REG-${schoolId}-${timestamp}` (server-side, never client-influenced -
+// see that file). Requiring that prefix here means only a reference that
+// this exact flow generated can ever activate a school, regardless of what
+// else metadata.school_id might say. Centralized here rather than at each
+// call site so no future caller can reintroduce the gap by forgetting it.
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
+
+const REGISTRATION_REFERENCE_PREFIX = 'SCH-REG-'
+
+export interface ActivateSchoolResult {
+  activated: boolean
+  reason?: string
+}
 
 let _resend: Resend | null = null
 
@@ -13,7 +37,17 @@ export function getResend(): Resend {
   return _resend
 }
 
-export async function activateSchool(schoolId: string, plan: string, amountKobo: number) {
+export async function activateSchool(
+  schoolId: string, plan: string, amountKobo: number, reference: string
+): Promise<ActivateSchoolResult> {
+  if (!reference || !reference.startsWith(REGISTRATION_REFERENCE_PREFIX)) {
+    console.warn(
+      `[activateSchool] Refusing to activate ${schoolId}: reference "${reference}" ` +
+      `did not come from the registration payment flow.`
+    )
+    return { activated: false, reason: 'reference_not_from_registration_flow' }
+  }
+
   const supabase = createAdminClient()
 
   // 1. Pull school + principal info
@@ -160,4 +194,6 @@ export async function activateSchool(schoolId: string, plan: string, amountKobo:
       </div>
     `,
   })
+
+  return { activated: true }
 }

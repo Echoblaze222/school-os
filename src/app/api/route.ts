@@ -57,17 +57,17 @@ Subjects to cover: ${subjectList}
 Return ONLY a valid JSON array. No markdown fences, no explanation. Each object must have exactly these keys:
 - "day_of_week": string (one of: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday)
 - "subject": string (from the list above)
-- "topic": string (a specific, focused study topic — e.g. "Quadratic Equations Practice" not just "Maths")
+- "topic": string (a specific, focused study topic - e.g. "Quadratic Equations Practice" not just "Maths")
 - "start_time": string (24-hour format "HH:MM", between 06:00 and 22:00)
 - "duration_minutes": number (one of: 30, 45, 60, 90)
 
 Rules:
-- 3–4 sessions per weekday (Monday–Friday), 1–2 on Saturday
+- 3-4 sessions per weekday (Monday-Friday), 1-2 on Saturday
 - No two sessions on the same day may overlap (check start_time + duration_minutes)
 - Spread subjects evenly across the week
 - Topics must be specific and academic
 - Start times must be realistic (e.g. mornings from 07:00, evening cap at 20:30)
-- Output the JSON array directly — nothing else`
+- Output the JSON array directly - nothing else`
 
   let aiBlocks: GeneratedBlock[] = []
 

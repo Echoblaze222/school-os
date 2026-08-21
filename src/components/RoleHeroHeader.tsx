@@ -7,6 +7,7 @@
 import Link from 'next/link'
 import NotificationsBell from './NotificationsBell'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
+import GlobalSearchOverlay from './GlobalSearchOverlay'
 import { SunIcon, MoonIcon, UserIcon, TagIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
 import { ripple } from '@/lib/ripple'
@@ -61,6 +62,8 @@ export default function RoleHeroHeader({
                 <TagIcon size={17} />
               </Link>
             )}
+
+            <GlobalSearchOverlay triggerClassName={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`} />
 
             <button
               className={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`}

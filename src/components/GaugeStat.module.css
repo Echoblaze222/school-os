@@ -35,7 +35,7 @@
 }
 
 /* On narrow cards (small phones, 3-up grids) the ring plus text no longer
-   fit on one line — let the text wrap onto its own line under the ring
+   fit on one line - let the text wrap onto its own line under the ring
    instead of spilling past the card edge, and shrink both a touch so the
    card doesn't need to grow tall to compensate. */
 @media (max-width: 420px) {

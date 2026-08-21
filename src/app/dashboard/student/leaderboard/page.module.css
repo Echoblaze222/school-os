@@ -1,4 +1,4 @@
-/* page.module.css — Leaderboard */
+/* page.module.css - Leaderboard */
 
 /* ── Layout ─────────────────────────────────────────────── */
 .page    { display: flex; min-height: 100vh; background: var(--bg-primary); }

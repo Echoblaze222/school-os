@@ -46,7 +46,7 @@ export default async function StudentDashboardPage() {
   const school = (profile as any)?.schools ?? null
 
   // student_profiles.class_id is what every real write flow updates
-  // (creation, edit modal, promotion/transfer) — it's the CURRENT value,
+  // (creation, edit modal, promotion/transfer) - it's the CURRENT value,
   // especially after a promotion. profiles.class_id is never touched by
   // promotion, so it goes stale; used only as a fallback when a student
   // has no student_profiles row at all.

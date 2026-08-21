@@ -8,7 +8,6 @@ import { TransferIcon, GraduationCapIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
-import motion from '@/components/dashboard-motion.module.css'
 
 type TransferStatus = 'requested' | 'approved' | 'rejected' | 'completed'
 
@@ -24,7 +23,7 @@ interface TransferRow {
   outstanding_amount: number | null
   debt_acknowledged: boolean
   debt_note: string | null
-  // FIX: removed from_class / to_class — those columns don't exist in student_transfers
+  // FIX: removed from_class / to_class - those columns don't exist in student_transfers
   origin_school_id: string
   destination_school_id: string
 }
@@ -128,7 +127,7 @@ export default function TransfersClient({
 
   async function searchStudents() {
     if (!studentSearch.trim()) return
-    // FIX: query profiles directly (not student_profiles join) — student_profiles has no school_id
+    // FIX: query profiles directly (not student_profiles join) - student_profiles has no school_id
     const { data } = await supabase
       .from('profiles')
       .select('id, full_name, admission_number, class_id')

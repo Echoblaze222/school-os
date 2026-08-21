@@ -8,9 +8,9 @@ import styles from './ChatWidget.module.css'
 // ── Types ─────────────────────────────────────────────────
 interface Message {
   id:         string
-  content:    string   // correct field — NOT 'body'
+  content:    string   // correct field - NOT 'body'
   sender_id:  string
-  sent_at:    string   // correct field — NOT 'created_at'
+  sent_at:    string   // correct field - NOT 'created_at'
   file_type?: string | null
   file_url?:  string | null
   is_deleted: boolean
@@ -93,7 +93,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Load rooms (flat queries — no nested joins) ──────────
+  // ── Load rooms (flat queries - no nested joins) ──────────
   async function loadRooms() {
     const { data: memberships } = await supabase
       .from('chat_room_members')
@@ -129,7 +129,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
       })
     )
 
-    // Deduplicate by room id — prevents showing duplicates
+    // Deduplicate by room id - prevents showing duplicates
     const seen = new Set<string>()
     const unique = result.filter(r => {
       if (seen.has(r.id)) return false
@@ -339,7 +339,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
                 <div ref={bottomRef} />
               </div>
 
-              {/* Input row — NO mic button */}
+              {/* Input row - NO mic button */}
               <div className={styles.inputRow}>
                 <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={sendFile}
                   accept="image/*,.pdf,.doc,.docx,.txt" />

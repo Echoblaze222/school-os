@@ -1,0 +1,141 @@
+.main {
+  padding: var(--space-4);
+  padding-bottom: 60px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.topBar { margin-bottom: var(--space-3); }
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.scopeNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: var(--space-4);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.select {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--input-bg, var(--glass-bg));
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+}
+
+.sessionTabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--glass-bg);
+  border-radius: var(--radius-full);
+  padding: 4px;
+}
+
+.sessionTab {
+  flex: 1;
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.sessionTabActive {
+  background: var(--brand);
+  color: #fff;
+}
+
+.errorCard {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--danger);
+}
+.errorCard p { margin: 0; flex: 1; color: var(--text-secondary); font-size: 14px; }
+
+.closedBanner, .warningBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  margin-bottom: var(--space-3);
+}
+
+.closedBanner {
+  background: var(--success-subtle);
+  color: var(--success);
+}
+
+.warningBanner {
+  background: var(--warning-subtle);
+  color: var(--warning);
+}
+
+.entryList { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.entryName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.entryStatusChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.statusChip {
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+
+.statusChip_present   { background: var(--success-subtle); border-color: var(--success); color: var(--success); }
+.statusChip_absent    { background: var(--danger-subtle);  border-color: var(--danger);  color: var(--danger); }
+.statusChip_excused   { background: var(--info-subtle);    border-color: var(--info);    color: var(--info); }
+.statusChip_on_leave  { background: var(--info-subtle);    border-color: var(--info);    color: var(--info); }
+.statusChip_late      { background: var(--warning-subtle); border-color: var(--warning); color: var(--warning); }

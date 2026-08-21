@@ -9,7 +9,7 @@ export default async function TransfersPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // FIX: join schools(*) inline — same pattern as principal/page.tsx
+  // FIX: join schools(*) inline - same pattern as principal/page.tsx
   // Old code queried school_branding which is a different table entirely
   const { data: profile } = await supabase
     .from('profiles')
@@ -22,7 +22,7 @@ export default async function TransfersPage() {
   const school   = (profile as any).schools ?? null
   const schoolId = profile.school_id
 
-  // FIX: removed from_class, to_class — those columns don't exist in student_transfers
+  // FIX: removed from_class, to_class - those columns don't exist in student_transfers
   const [sentRes, receivedRes] = await Promise.all([
     supabase
       .from('student_transfers')

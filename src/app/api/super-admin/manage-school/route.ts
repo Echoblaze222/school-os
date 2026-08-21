@@ -250,7 +250,7 @@ export async function POST(req: Request) {
 
     // ── save_compliance ──────────────────────────────────────────────────────
     // Updates (or creates, via upsert) the school's compliance contact + bank
-    // snapshot. Does NOT mark it verified — that's a separate explicit action
+    // snapshot. Does NOT mark it verified: that's a separate explicit action
     // (verify_compliance) so editing details doesn't silently re-approve a
     // record that should be re-reviewed.
     if (action === 'save_compliance') {
@@ -287,7 +287,7 @@ export async function POST(req: Request) {
     // ── verify_compliance ────────────────────────────────────────────────────
     // Explicit due-diligence sign-off. This is the gate checked by
     // /api/paystack/create-subaccount before a school is allowed to connect
-    // Paystack — Alfa's compliance team specifically asked that schools be
+    // Paystack: Alfa's compliance team specifically asked that schools be
     // verified before going live with split payments.
     if (action === 'verify_compliance') {
       const { data: record } = await adminSupabase
@@ -333,6 +333,35 @@ export async function POST(req: Request) {
       await adminSupabase.from('portal_audit_log').insert({
         actor_id: adminId, action: 'unverify_compliance',
         target_table: 'school_compliance_records', target_id: school_id,
+      })
+      return NextResponse.json({ ok: true })
+    }
+
+    // ── set_verified_status ──────────────────────────────────────────────────
+    // Public-profile "Verified" badge (Lane B, S45): distinct from
+    // compliance verification above, which gates Paystack split payments.
+    // This one only controls what a parent sees on the school's public
+    // profile page. schools.verified_status is protected from principal
+    // self-editing at the database level (see
+    // prevent_school_protected_field_update trigger); this route, running
+    // with the service-role client, is the intended way to change it.
+    if (action === 'set_verified_status') {
+      const { verified_status } = body
+      if (!['unverified', 'pending', 'verified'].includes(verified_status)) {
+        return NextResponse.json({ ok: false, error: 'Invalid verified_status value.' }, { status: 400 })
+      }
+
+      const { error } = await adminSupabase
+        .from('schools')
+        .update({ verified_status, updated_at: new Date().toISOString() })
+        .eq('id', school_id)
+
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+
+      await adminSupabase.from('portal_audit_log').insert({
+        actor_id: adminId, action: 'set_verified_status',
+        target_table: 'schools', target_id: school_id,
+        metadata: { verified_status },
       })
       return NextResponse.json({ ok: true })
     }

@@ -1,0 +1,48 @@
+.schoolCard { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid; border-radius: var(--radius-lg,16px); background: var(--glass-bg, rgba(255,255,255,0.03)); margin-bottom: 14px; }
+.schoolIcon { width: 48px; height: 48px; border-radius: var(--radius-md,12px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.schoolName { font-size: 1.1rem; font-weight: 800; margin: 0; color: var(--text-primary,#fff); }
+.schoolLoc { font-size: 0.75rem; color: var(--text-muted,#7a7a85); margin: 3px 0 0; display: flex; align-items: center; gap: 4px; }
+
+.infoRow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.infoPill { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary,#a0a0ab); background: var(--glass-bg, rgba(255,255,255,0.04)); border: 1px solid var(--glass-border, rgba(255,255,255,0.08)); padding: 6px 12px; border-radius: var(--radius-full,999px); display: flex; align-items: center; gap: 5px; }
+
+.eligibility { font-size: 0.82rem; color: var(--text-secondary,#a0a0ab); line-height: 1.5; margin: 0 0 20px; }
+
+.authGate { text-align: center; padding: 24px; background: var(--glass-bg, rgba(255,255,255,0.03)); border-radius: var(--radius-lg,16px); }
+.authGateText { font-size: 0.85rem; color: var(--text-secondary,#a0a0ab); margin: 0 0 16px; }
+.authGateActions { display: flex; gap: 10px; justify-content: center; }
+
+.primaryBtn {
+  display: block; width: 100%; text-align: center; color: #fff; border: none; border-radius: var(--radius-md,12px);
+  padding: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+.primaryBtn:active { transform: scale(0.98); }
+.primaryBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.secondaryBtn {
+  display: block; padding: 14px 20px; border-radius: var(--radius-md,12px); border: 1px solid var(--glass-border, rgba(255,255,255,0.12));
+  color: var(--text-primary,#fff); font-size: 0.9rem; font-weight: 700; text-decoration: none;
+}
+
+.form { display: flex; flex-direction: column; gap: 22px; }
+.section { display: flex; flex-direction: column; gap: 12px; }
+.sectionTitle { font-size: 0.85rem; font-weight: 800; color: var(--text-primary,#fff); margin: 0; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary,#a0a0ab); }
+.input { background: var(--glass-bg, rgba(255,255,255,0.03)); border: 1px solid var(--glass-border, rgba(255,255,255,0.08)); border-radius: var(--radius-md,10px); padding: 11px 14px; font-size: 0.88rem; color: var(--text-primary,#fff); outline: none; }
+.input:focus { border-color: var(--accent, #800020); }
+
+.docRow { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--glass-bg, rgba(255,255,255,0.03)); border: 1px solid var(--glass-border, rgba(255,255,255,0.08)); border-radius: var(--radius-md,10px); }
+.docInfo { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-primary,#fff); }
+.uploadBtn { font-size: 0.72rem; font-weight: 700; color: var(--text-primary,#fff); background: var(--glass-bg, rgba(255,255,255,0.08)); padding: 8px 14px; border-radius: var(--radius-full,999px); cursor: pointer; white-space: nowrap; }
+
+.errorBanner { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #ef4444; background: rgba(239,68,68,0.1); padding: 10px 14px; border-radius: var(--radius-md,10px); margin: 0; }
+.hintBanner { font-size: 0.78rem; color: var(--text-muted,#7a7a85); margin: 0; }
+
+.successWrap { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; }
+.successIcon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.successTitle { font-size: 1.2rem; font-weight: 800; color: var(--text-primary,#fff); margin: 0 0 8px; }
+.successHint { font-size: 0.85rem; color: var(--text-secondary,#a0a0ab); max-width: 340px; margin: 0 0 20px; line-height: 1.5; }
+.successCta { color: #fff; font-size: 0.85rem; font-weight: 700; padding: 12px 24px; border-radius: var(--radius-full,999px); text-decoration: none; }

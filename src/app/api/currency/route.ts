@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   // Static fallback rates (update periodically or use an API)
   const RATES: Record<string, number> = {
     NGN: 1,
-    USD: 0.00065,   // ~₦1,540/$ — update as needed
+    USD: 0.00065,   // ~₦1,540/$ - update as needed
     GBP: 0.00052,
     EUR: 0.00060,
   }

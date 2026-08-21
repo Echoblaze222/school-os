@@ -1,5 +1,5 @@
 // app/api/trial/check/route.ts
-// On-demand check for a single school — still useful for instant UI feedback
+// On-demand check for a single school - still useful for instant UI feedback
 // right after a student/teacher/etc. loads their dashboard. The authoritative,
 // always-runs-regardless-of-who-logs-in check is the cron job at
 // /api/cron/check-subscriptions (see vercel.json).

@@ -61,7 +61,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
   // Sync from the parent whenever it re-fetches with new/changed data (e.g.
   // after router.refresh() following a server-side re-render, or a parent
   // that re-fetches activities client-side). The previous version of this
-  // was an `if` block with an empty body — it never actually updated
+  // was an `if` block with an empty body - it never actually updated
   // localItems, so once mounted this list was frozen at whatever `items`
   // was on first render, no matter what the parent later passed in. Skip
   // syncing while a delete animation is in flight so the exit animation

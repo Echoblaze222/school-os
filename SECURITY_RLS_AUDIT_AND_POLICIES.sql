@@ -1,5 +1,5 @@
 -- ============================================================================
--- SchoolOS — Row Level Security audit & draft policies
+-- SchoolOS - Row Level Security audit & draft policies
 -- ============================================================================
 -- WHY THIS FILE EXISTS
 -- ----------------------------------------------------------------------------
@@ -12,13 +12,13 @@
 -- PaymentClaimClient.tsx), which means the ENTIRE security boundary for
 -- those tables is whatever RLS policies exist in the live Supabase project.
 --
--- No RLS policies exist anywhere in this codebase's SQL files — sql/s.sql is
+-- No RLS policies exist anywhere in this codebase's SQL files - sql/s.sql is
 -- a schema-only dump with no CREATE POLICY statements. That does not
 -- necessarily mean your live database is unprotected (policies are commonly
 -- managed by hand in the Supabase dashboard and never checked into git), but
 -- it does mean this could not be verified from the code alone.
 --
--- STEP 1 — RUN THIS FIRST, before applying anything below, to see what
+-- STEP 1 - RUN THIS FIRST, before applying anything below, to see what
 -- actually exists in your live project:
 --
 --   select schemaname, tablename, policyname, cmd, qual, with_check
@@ -33,10 +33,9 @@
 --
 -- If `rowsecurity` is false for profiles/payments/payment_invoices/
 -- payment_claims/schools, or the policy list above is empty/thin for them,
--- those tables are currently wide open to anyone holding the anon key —
--- i.e. anyone who has ever loaded the app in a browser. Treat that as
+-- those tables are currently wide open to anyone holding the anon key - -- i.e. anyone who has ever loaded the app in a browser. Treat that as
 -- urgent. If policies already exist, compare them against the intent below
--- rather than blindly running this script — it is a draft matching what the
+-- rather than blindly running this script - it is a draft matching what the
 -- application code assumes, not a verified replacement for your existing
 -- setup.
 -- ============================================================================
@@ -86,7 +85,7 @@ create policy "profiles_update_own" on public.profiles
   using (id = auth.uid())
   with check (id = auth.uid());
 
--- RLS is row-scoped, not column-scoped — the policy above lets a user
+-- RLS is row-scoped, not column-scoped - the policy above lets a user
 -- update THEIR OWN row, but nothing stops them from also setting
 -- role='principal' or school_id=<some other school> in that same request
 -- (e.g. secretary/create-user's frontend pattern replayed by hand against
@@ -119,7 +118,7 @@ create trigger trg_prevent_self_privilege_escalation
 
 -- No DELETE policy previously existed for profiles anywhere in this repo's
 -- SQL. With RLS enabled and no policy for a given command, Postgres denies
--- that command outright for ordinary (non-service-role) callers — so this
+-- that command outright for ordinary (non-service-role) callers - so this
 -- was either (a) silently broken (Principal's Staff/Students screens call
 -- supabase.from('profiles').delete() directly from the browser and would
 -- get 0 rows affected with no policy at all), or (b) covered by a
@@ -151,7 +150,7 @@ create policy "schools_select_own" on public.schools
 -- Only the principal of THIS school may update it directly from the
 -- browser (e.g. SettingsClient.tsx branding/colors). Billing/lock fields
 -- (setup_status, is_platform_active, paystack_subaccount_*) are intended to
--- change only through server routes using the service-role key — this
+-- change only through server routes using the service-role key - this
 -- policy does not need to special-case them since a principal updating
 -- their own school row through the UI shouldn't be touching those columns
 -- anyway; consider a column-level guard trigger here too if you want the
@@ -201,8 +200,7 @@ create policy "payments_select_school_or_own_child" on public.payments
   );
 
 -- RecordPaymentClient.tsx inserts here directly as bursar/principal. This
--- is the same class of gap already fixed in confirm-claim/route.ts —
--- without this policy, ANY authenticated user (not just bursars) could
+-- is the same class of gap already fixed in confirm-claim/route.ts - -- without this policy, ANY authenticated user (not just bursars) could
 -- insert an arbitrary payments row for any school by calling
 -- supabase.from('payments').insert(...) directly in a browser console.
 drop policy if exists "payments_insert_staff_own_school" on public.payments;
@@ -212,7 +210,7 @@ create policy "payments_insert_staff_own_school" on public.payments
 
 -- Payments should generally be immutable once recorded (edit history should
 -- go through a correction workflow, not a silent UPDATE). No update/delete
--- policy is defined here on purpose — that means neither is allowed for
+-- policy is defined here on purpose - that means neither is allowed for
 -- ordinary authenticated users; only service-role server routes (which
 -- bypass RLS) can adjust them. If the app genuinely needs bursar-side
 -- edits, add a scoped update policy rather than leaving this open-ended.
@@ -241,7 +239,7 @@ create policy "claims_insert_own_parent" on public.payment_claims
   );
 
 -- Confirming/rejecting a claim is deliberately NOT exposed as a client-side
--- RLS-governed update — it goes through /api/payments/confirm-claim and
+-- RLS-governed update - it goes through /api/payments/confirm-claim and
 -- /api/payments/reject-claim, both of which now verify the claim's real
 -- school_id server-side before touching it (see this session's fixes).
 -- No update policy is defined here on purpose, so a direct
@@ -254,7 +252,7 @@ create policy "claims_insert_own_parent" on public.payment_claims
 -- CALLER'S OWN session (not the service-role client), relying on RLS to
 -- enforce that students/parents can only reach an approved report card
 -- that is theirs, while staff can preview any status for their own
--- school. That is a correct, well-designed pattern — but it means this
+-- school. That is a correct, well-designed pattern - but it means this
 -- route's entire security depends on these policies being right. Verify/
 -- adapt rather than assume; exact shape depends on report_cards' real
 -- columns (student_id, school_id, status, approved_by, etc. per sql/s.sql).
@@ -284,7 +282,7 @@ create policy "claims_insert_own_parent" on public.payment_claims
 -- you're in with the pg_policies query at the top of this file before
 -- assuming either.
 
--- study_plans — a student's own private AI-generated/manual study schedule.
+-- study_plans - a student's own private AI-generated/manual study schedule.
 -- No staff role ever reads or writes this in the app; scope it to the
 -- owning student only.
 alter table public.study_plans enable row level security;
@@ -295,7 +293,7 @@ create policy "study_plans_own_student" on public.study_plans
   using (student_id = auth.uid())
   with check (student_id = auth.uid() and school_id = public.my_school_id());
 
--- behaviour_records — secretary/principal/teacher write, student/parent
+-- behaviour_records - secretary/principal/teacher write, student/parent
 -- should NOT see these directly (they're staff-facing conduct notes, not
 -- published to the student). RecordsClient.tsx is secretary-only in this
 -- app, so scope both read and write to staff of the same school.
@@ -307,7 +305,7 @@ create policy "behaviour_records_staff_own_school" on public.behaviour_records
   using (school_id = public.my_school_id() and public.is_staff())
   with check (school_id = public.my_school_id() and public.is_staff());
 
--- library_books / library_loans — every role reads its own school's
+-- library_books / library_loans - every role reads its own school's
 -- catalog (student browses, secretary manages), but only staff add, edit,
 -- issue, or delete.
 alter table public.library_books enable row level security;
@@ -351,7 +349,7 @@ create policy "library_loans_write_staff_own_school" on public.library_loans
   using (school_id = public.my_school_id() and public.is_staff())
   with check (school_id = public.my_school_id() and public.is_staff());
 
--- applications / admissions — admissions intake, staff-only (secretary
+-- applications / admissions - admissions intake, staff-only (secretary
 -- reviews/admits/rejects/deletes; applicants aren't authenticated users of
 -- this table, they apply through a public form handled elsewhere).
 alter table public.applications enable row level security;
@@ -370,7 +368,7 @@ create policy "admissions_staff_own_school" on public.admissions
   using (school_id = public.my_school_id() and public.is_staff())
   with check (school_id = public.my_school_id() and public.is_staff());
 
--- school_documents — staff-authored internal documents (policies, forms,
+-- school_documents - staff-authored internal documents (policies, forms,
 -- circulars). Scope read to the whole school (any authenticated staff or
 -- student at that school may need to open a shared document), write to
 -- staff only.
@@ -389,10 +387,10 @@ create policy "school_documents_write_staff_own_school" on public.school_documen
 
 
 -- ============================================================================
--- STEP 2 — after applying, verify nothing above conflicts with policies you
+-- STEP 2 - after applying, verify nothing above conflicts with policies you
 -- already had (re-run the pg_policies query from the top of this file).
--- STEP 3 — test as each role (bursar, principal, parent, student) using the
+-- STEP 3 - test as each role (bursar, principal, parent, student) using the
 -- Supabase dashboard's "Impersonate user" / a real session, not just the
--- SQL editor as postgres — the postgres role bypasses RLS entirely and
+-- SQL editor as postgres - the postgres role bypasses RLS entirely and
 -- will make broken policies look like they work.
 -- ============================================================================

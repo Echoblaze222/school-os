@@ -5,8 +5,7 @@
 //   1. Uploaded files (PDF/Word/PPT) now open in an in-portal
 //      DocumentViewer modal instead of a raw new-tab download link.
 //   2. Typed/pasted notes now render as a cinematic 3D flip-book
-//      (NoteBook component) instead of a plain scrolling text modal —
-//      the content is auto-paginated into "slides" client-side.
+//      (NoteBook component) instead of a plain scrolling text modal - //      the content is auto-paginated into "slides" client-side.
 //   3. Card badge shows "Read" for text notes and "View" for files
 //      so students know what tapping will do before they tap.
 //
@@ -19,7 +18,7 @@
 //   4. Guard against profile.class_id being undefined/null when building
 //      the .or() filter string
 //
-// REDESIGN PASS (Lane 3 — Student): RolePageWrapper chrome, emoji → Icons,
+// REDESIGN PASS (Lane 3 - Student): RolePageWrapper chrome, emoji → Icons,
 // brand fallback fixed, glass-card/motion treatment to match main dashboard.
 
 import { useState, useEffect } from 'react'

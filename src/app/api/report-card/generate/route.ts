@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // FIX: Vercel's default function timeout (10s Hobby / 15s Pro) is often not
 // enough for a cold Chromium launch + page render. Without this, a slow
 // cold start gets killed mid-generation, which looks identical to Chromium
-// failing to launch — both end up silently falling back to HTML.
+// failing to launch - both end up silently falling back to HTML.
 export const maxDuration = 60
 
 const TERM_LABEL: Record<string, string> = {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     // From here on use the admin client for the supporting reads (results,
-    // attendance, branding) — the report_cards row itself was already
+    // attendance, branding) - the report_cards row itself was already
     // access-checked above via the user's own RLS-scoped client.
     const admin = createAdminClient()
 
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
     let pdfError: string | null = null
     try {
       // FIX: previously these used `.catch(() => null)`, which swallowed
-      // import errors with ZERO trace anywhere — not even a console.warn.
+      // import errors with ZERO trace anywhere - not even a console.warn.
       // If puppeteer-core/@sparticuz/chromium failed to import at runtime,
       // we'd never have known. Now the actual error is captured either way.
       const puppeteer = await import('puppeteer-core')
@@ -249,7 +249,7 @@ export async function POST(request: Request) {
 
     // pdfError is included (only when generation actually failed) so the
     // real cause is visible in the browser Network tab without needing
-    // Vercel log access — remove this once PDF generation is confirmed
+    // Vercel log access - remove this once PDF generation is confirmed
     // working reliably.
     return NextResponse.json({ url: signed?.signedUrl ?? fileName, pdfError })
 

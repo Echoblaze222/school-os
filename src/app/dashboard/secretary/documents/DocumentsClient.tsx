@@ -143,7 +143,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
         ))
       )}
 
-      {/* Preview modal — images stay inline (fastest, no extra chrome);
+      {/* Preview modal - images stay inline (fastest, no extra chrome);
           PDFs and Office docs (Word/Excel/PPT) open in the shared
           in-portal DocumentViewer, same one used on the student Notes page,
           so secretary staff get native PDF rendering plus Office Online

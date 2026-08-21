@@ -8,7 +8,7 @@ export default async function RecordsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // FIX: use profiles → schools(*) — same pattern as every other dashboard page
+  // FIX: use profiles → schools(*) - same pattern as every other dashboard page
   // school_branding.id !== school_id so querying school_branding by profile.school_id was wrong
   const { data: profile } = await supabase
     .from('profiles')

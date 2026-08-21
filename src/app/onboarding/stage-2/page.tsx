@@ -34,7 +34,7 @@ export default function OnboardingStage2() {
         attempts++
         setTimeout(check, 300) // retry every 300ms, up to 3s total
       } else {
-        router.push('/login') // gave up — send back to login
+        router.push('/login') // gave up - send back to login
       }
     }
     check()
@@ -53,7 +53,7 @@ export default function OnboardingStage2() {
     if (!user) { router.push('/login'); return }
 
     // ✅ SECURITY FIX: PIN is hashed server-side via a dedicated API route.
-    // Never write raw PINs from the client — the anon key could expose them
+    // Never write raw PINs from the client - the anon key could expose them
     // to anyone with read access to the profiles table.
     const res = await fetch('/api/auth/set-pin', {
       method:  'POST',

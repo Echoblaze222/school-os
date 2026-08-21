@@ -1,4 +1,4 @@
-/* DashboardHeader.module.css — compact sibling of RoleHeroHeader.module.css.
+/* DashboardHeader.module.css - compact sibling of RoleHeroHeader.module.css.
    Same gradient band + pill button language, shrunk to a sticky title bar
    for sub-pages. Keeping structure separate from the hero (rather than
    reusing it directly) because sub-pages need sticky positioning and a

@@ -4,7 +4,7 @@
 // Fixed: was reading from `fee_payments`, a table nothing writes to
 // anymore. Now reads from `payments` joined through payment_invoices ->
 // fee_structures (for term/fee description) and profiles (for student
-// name) — same pattern already proven in HistoryClient.tsx.
+// name) - same pattern already proven in HistoryClient.tsx.
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -22,7 +22,7 @@ const CUR_YEAR = getCurrentAcademicYear()
 
 function flatten(row: any) {
   // Embedded relations from Supabase can come back as either an object
-  // or a 1-element array depending on inferred cardinality — unwrap both
+  // or a 1-element array depending on inferred cardinality - unwrap both
   // shapes safely instead of assuming one or the other.
   const inv     = unwrapEmbed(row.payment_invoices)
   const fs      = unwrapEmbed(inv?.fee_structures)

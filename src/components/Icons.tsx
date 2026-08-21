@@ -522,6 +522,14 @@ export function ShieldIcon({ size = 24, color = 'currentColor', strokeWidth = 1.
   )
 }
 
+export function HeartIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75, className }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth, className)}>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+    </svg>
+  )
+}
+
 // ── Image placeholder (matches Image 1 wireframe) ────────────
 export function ImageIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75, className }: IconProps) {
   return (
@@ -1114,6 +1122,15 @@ export function WaveIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75
       <path d="M7 12V6a2 2 0 0 1 4 0v5"/>
       <path d="M11 11V4a2 2 0 0 1 4 0v7"/>
       <path d="M15 11V6a2 2 0 0 1 4 0v8c0 3.5-2.5 7-7 7s-6-2-7.5-5L3 13.5a1.7 1.7 0 0 1 2.6-2.1L7 13"/>
+    </svg>
+  )
+}
+
+// Menu (hamburger) — public site nav toggle (Phase 4, Lane A)
+export function MenuIcon({ size = 24, color = 'currentColor', strokeWidth = 1.75, className }: IconProps) {
+  return (
+    <svg {...ic(size, color, strokeWidth, className)}>
+      <path d="M3 6h18M3 12h18M3 18h18"/>
     </svg>
   )
 }

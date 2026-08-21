@@ -1,0 +1,19 @@
+.page  { display: flex; flex-direction: column; min-height: 100dvh; background: var(--bg-base); overflow-x: hidden; }
+.main  { padding: var(--space-6) var(--space-5) 96px; max-width: 800px; margin: 0 auto; width: 100%; }
+
+.statsRow { display: grid; grid-template-columns: repeat(2,1fr); gap: var(--space-3); margin-bottom: var(--space-5); }
+.statCard { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; backdrop-filter: blur(12px); }
+.statVal  { font-size: 1.5rem; font-weight: 800; margin: 0 0 2px; }
+.statLbl  { font-size: 0.62rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
+
+.sectionLabel { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-4); }
+
+.ticketRow  { display: flex; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--glass-border); text-decoration: none; color: inherit; }
+.ticketDot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ticketBody { flex: 1; min-width: 0; }
+.ticketTitle{ font-size: 0.85rem; font-weight: 600; margin: 0; color: var(--text-primary); text-transform: capitalize; }
+.ticketText { font-size: 0.75rem; color: var(--text-muted); margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticketMeta { font-size: 0.65rem; color: var(--text-muted); flex-shrink: 0; text-transform: capitalize; }
+
+.emptyState { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.emptyState p { font-size: 0.85rem; margin: 4px 0 0; }

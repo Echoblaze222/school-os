@@ -3,9 +3,9 @@
 //
 // FIXED: TERMS used 'First Term' etc but DB enum is 'first' | 'second' | 'third'
 //        Separated display labels from DB values
-// FIXED: assignment_submissions has no school_id column — removed that filter
-// FIXED: assignments table has no 'term' column — removed that filter too
-// FIXED: class_subjects join returns array in some Supabase versions — handle both
+// FIXED: assignment_submissions has no school_id column - removed that filter
+// FIXED: assignments table has no 'term' column - removed that filter too
+// FIXED: class_subjects join returns array in some Supabase versions - handle both
 
 import { useState, useEffect } from 'react'
 import { createClient }        from '@/lib/supabase/client'
@@ -123,13 +123,13 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
         .not('score', 'is', null)
         .limit(3000),
 
-      // assignments has no 'term' column — fetch all for this school
+      // assignments has no 'term' column - fetch all for this school
       supabase.from('assignments')
         .select('id')
         .eq('school_id', school.id)
         .eq('status', 'active'),
 
-      // assignment_submissions has no school_id — join via assignment_id
+      // assignment_submissions has no school_id - join via assignment_id
       // Fetch all submissions for this school's assignments
       supabase.from('assignment_submissions')
         .select('status, assignment_id'),

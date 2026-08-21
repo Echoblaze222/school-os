@@ -110,7 +110,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
       setLoanForm({ book_id: '', student_id: '', due_at: '' })
     } else {
       // Most likely cause: the DB trigger rejected it because there are no
-      // available copies left — surface that plainly rather than a raw error.
+      // available copies left - surface that plainly rather than a raw error.
       setMsg(error?.message?.includes('No available copies') ? 'No copies of this book are available right now.' : (error?.message ?? 'Could not issue loan'))
     }
     setSaving(false)

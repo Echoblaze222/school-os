@@ -93,7 +93,7 @@ function LockedContent() {
           {info.body}
         </p>
 
-        {/* WhatsApp CTA — uses PhoneIcon from Icons.tsx */}
+        {/* WhatsApp CTA - uses PhoneIcon from Icons.tsx */}
         <a
           href="https://wa.me/2348086883144?text=Hello%2C%20my%20school%20portal%20has%20been%20locked.%20Please%20help%20me%20restore%20access."
           target="_blank"

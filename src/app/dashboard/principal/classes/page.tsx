@@ -67,7 +67,7 @@ export default async function PrincipalClassesPage() {
       entry.teacher_count++
 
       if (a.is_primary) {
-        // Class teacher — owns this class
+        // Class teacher - owns this class
         entry.class_teacher = {
           teacher_id: a.teacher_id,
           full_name:  a.profiles?.full_name ?? 'Unknown',

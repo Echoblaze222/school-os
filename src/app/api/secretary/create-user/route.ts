@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Role-escalation guard — the frontend dropdown already limits which
+    // Role-escalation guard - the frontend dropdown already limits which
     // roles each caller can assign, but that is a UI convenience only.
     // A secretary token replayed with role: "principal" (or any other
     // elevated role) must be rejected here too, or the client-side
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     const code   = `${prefix}-${year}-${rand}`
 
     // Supabase auth requires a password on user creation, but this account is
-    // never meant to be signed into with it — activation happens entirely via
+    // never meant to be signed into with it - activation happens entirely via
     // the access code + a password the user sets themselves on first login
     // (see /api/auth/first-login). So this is thrown away immediately: long,
     // random, never logged, never emailed, never shown in any UI.
@@ -127,12 +127,12 @@ export async function POST(request: Request) {
 
     if (!userId) return NextResponse.json({ error: 'Failed to create auth user' }, { status: 500 })
 
-    // Every account created via access code — regardless of role — must
+    // Every account created via access code - regardless of role - must
     // start at 'stage_1_pending'. That's the ONLY stage /api/auth/first-login
     // accepts for activation (see isFirstLogin there); anything else causes
     // an immediate, permanent "Account already activated" error the very
     // first time the person ever tries their code. Onboarding then advances
-    // them to stage 2 itself once activation succeeds — this route should
+    // them to stage 2 itself once activation succeeds - this route should
     // never pre-skip that step for any role.
     const onboardingStage = 'stage_1_pending'
 
@@ -144,8 +144,8 @@ export async function POST(request: Request) {
       resolvedClassName = classRow?.name ?? null
     }
 
-    // Build profile update payload — only include fields with values
-    // school_id is always the caller's own school — never trust a
+    // Build profile update payload - only include fields with values
+    // school_id is always the caller's own school - never trust a
     // client-supplied schoolId here, or a secretary at School A could
     // create accounts inside School B by editing the request body.
     const profileUpdate: Record<string, any> = {
@@ -210,8 +210,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // ✅ Send welcome email with access code (activation is code-only — no password is ever surfaced)
-    // Non-fatal — user is already created, email failure should not block the response
+    // ✅ Send welcome email with access code (activation is code-only - no password is ever surfaced)
+    // Non-fatal - user is already created, email failure should not block the response
     try {
       const resendKey = process.env.RESEND_API_KEY
       if (resendKey) {

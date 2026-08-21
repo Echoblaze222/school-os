@@ -7,7 +7,7 @@
 //  2. Clears the active-school key so /login can't be reached without
 //     re-selecting a school first.
 //  3. Signs out of Supabase.
-//  4. Sends the user to /select-school (not /login) — they must pick a
+//  4. Sends the user to /select-school (not /login) - they must pick a
 //     school again before they can log back in.
 //
 // Optional `reason` (e.g. 'timeout') is stashed in sessionStorage and
@@ -44,7 +44,7 @@ export async function signOutFlow(
       }))
     }
   } catch {
-    // Non-fatal — worst case, no "continue with" pill shows next time.
+    // Non-fatal - worst case, no "continue with" pill shows next time.
   }
 
   localStorage.removeItem(SCHOOL_KEY)
@@ -57,8 +57,7 @@ export async function signOutFlow(
 
   const nav = router.replace ?? router.push
   // A hard navigation, not a client-side route change: signing out is an
-  // identity change, and Next's client Router Cache doesn't know that —
-  // it can keep a signed-in dashboard page cached and hand it straight
+  // identity change, and Next's client Router Cache doesn't know that - // it can keep a signed-in dashboard page cached and hand it straight
   // back to whoever logs in next on this device. window.location forces
   // a full page load, which throws that cache away completely.
   if (typeof window !== 'undefined') {

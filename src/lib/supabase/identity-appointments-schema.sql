@@ -1,5 +1,5 @@
 -- ============================================================
--- SchoolOS — Phase 1 Foundation
+-- SchoolOS - Phase 1 Foundation
 -- Extended identity / appointment / committee / org-hierarchy model
 -- + access-code self-service application pipeline
 --
@@ -12,17 +12,17 @@
 --   - Reuse before inventing: extends `profiles` and reuses
 --     `portal_audit_log`; does not duplicate either.
 -- Not yet run against the live database. Review against the actual
--- Supabase schema (see audit §4 — this repo has no migration history)
+-- Supabase schema (see audit §4 - this repo has no migration history)
 -- before applying.
 -- ============================================================
 
 -- ---------------------------------------------------------------
 -- 1. Role / appointment enum, as config, not a hardcoded route list.
 --    Extends the existing 6-value UserRole with the roles the codebase
---    already promises (librarian, nurse, counselor — see audit §2) plus
+--    already promises (librarian, nurse, counselor - see audit §2) plus
 --    the new appointment-style titles this phase introduces.
 --    Base `profiles.role` stays the 6 structural roles unless you want
---    to promote these to first-class roles too — that's the confirm-with-
+--    to promote these to first-class roles too - that's the confirm-with-
 --    user item the phase doc itself flags for the admin-issued pathway.
 -- ---------------------------------------------------------------
 create table if not exists public.appointment_types (
@@ -68,8 +68,7 @@ create table if not exists public.departments (
 -- ---------------------------------------------------------------
 -- 3. Appointments: the additive "extra context" a profile can hold.
 --    A profile keeps exactly one base `role`. This table is where every
---    senior title, committee seat, and scope-limited authority lives —
---    so "one user, multiple contexts" is enforced structurally, not by
+--    senior title, committee seat, and scope-limited authority lives - --    so "one user, multiple contexts" is enforced structurally, not by
 --    convention.
 -- ---------------------------------------------------------------
 create table if not exists public.appointments (
@@ -126,7 +125,7 @@ create table if not exists public.committee_members (
 -- 5. Access-code self-service application pipeline (ICT-managed).
 --    Load-bearing security decision, restated from the phase doc:
 --    submission writes ONLY this row. No auth account, no default_code,
---    exists until ICT clicks Generate Code — at which point the auth user
+--    exists until ICT clicks Generate Code - at which point the auth user
 --    and the code are created atomically from the password_hash already
 --    on file. No half-authenticated "ghost account" ever exists.
 -- ---------------------------------------------------------------
@@ -165,14 +164,14 @@ create index if not exists idx_access_apps_school_status
   on public.access_code_applications(school_id, status);
 
 comment on table public.access_code_applications is
-  'Self-service application only. Does NOT create an auth.users row or a profiles row at submission. Both are created together, atomically, when an ICT reviewer clicks Generate Code — see application code, not this schema, for that transaction.';
+  'Self-service application only. Does NOT create an auth.users row or a profiles row at submission. Both are created together, atomically, when an ICT reviewer clicks Generate Code - see application code, not this schema, for that transaction.';
 
 -- ---------------------------------------------------------------
--- 6. RLS — enable, deny by default, and only allow same-school access
+-- 6. RLS - enable, deny by default, and only allow same-school access
 --    through the existing profiles.school_id linkage. Mirrors the pattern
 --    already documented in SECURITY_RLS_AUDIT_AND_POLICIES.sql; written
 --    against a get_my_school_id()/get_my_role() style helper if one
---    already exists live — confirm the actual helper function names
+--    already exists live - confirm the actual helper function names
 --    against the live database before applying, since this repo has no
 --    migration history to check against directly (see audit §4).
 -- ---------------------------------------------------------------
@@ -191,7 +190,7 @@ create policy appointment_types_read on public.appointment_types
 -- departments / appointments / committees / committee_members: same-school
 -- read for any authenticated member of that school; writes restricted to
 -- principal/secretary/admin server routes only (service-role key bypasses
--- RLS by design — these policies are the browser-facing floor, not the
+-- RLS by design - these policies are the browser-facing floor, not the
 -- only check; every write must still be re-verified server-side per the
 -- phase doc's "server-side authorization only" rule).
 create policy departments_same_school on public.departments

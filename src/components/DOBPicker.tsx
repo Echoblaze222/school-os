@@ -1,6 +1,6 @@
 'use client'
 // DOBPicker.tsx
-// Fast date-of-birth picker — 3 dropdowns (Day / Month / Year) instead of
+// Fast date-of-birth picker - 3 dropdowns (Day / Month / Year) instead of
 // the native <input type="date"> calendar, which forces many clicks to
 // reach a year like 2010. Years are ordered newest-first but biased so
 // school-age birth years (last ~25 years) are reachable instantly.

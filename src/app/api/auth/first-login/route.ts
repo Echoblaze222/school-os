@@ -30,13 +30,12 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Look up the profile by access code. Trim whitespace defensively —
-    // copy-pasted or auto-filled codes can carry leading/trailing spaces
+    // Look up the profile by access code. Trim whitespace defensively - // copy-pasted or auto-filled codes can carry leading/trailing spaces
     // that silently fail an exact match.
     const normalizedCode = code.trim().toUpperCase()
 
     // SECURITY: this endpoint sets a password from nothing but a guessed
-    // code — it's the exact endpoint an account-takeover attempt would
+    // code - it's the exact endpoint an account-takeover attempt would
     // hammer. Throttle on two dimensions: the caller's IP (catches one
     // attacker guessing across many codes) and the code itself (catches
     // many attackers/requests hammering one target code).
@@ -101,7 +100,7 @@ export async function POST(request: Request) {
 
     // Advance past the pending-activation stage now that the password is set.
     // onboarding_stage is a string enum ('stage_1_pending' | 'stage_2_pending' |
-    // 'stage_3_pending' | 'complete') everywhere else in the app — writing the
+    // 'stage_3_pending' | 'complete') everywhere else in the app - writing the
     // integer 2 here broke every downstream check that compares against those
     // string values (e.g. the login page's redirect, and stage-gating in
     // middleware), silently routing people to /dashboard instead of onboarding.

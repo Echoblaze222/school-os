@@ -100,7 +100,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
 
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
 
-    // They've caught up — reset the unread-digest backoff so a future
+    // They've caught up - reset the unread-digest backoff so a future
     // quiet period starts the nudge schedule fresh rather than picking up
     // at whatever stage they'd reached before.
     supabase.rpc('clear_unread_digest_state').then(() => {}, () => {})
@@ -117,7 +117,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
     )
 
     // Only reset the backoff if this was genuinely their last unread item
-    // system-wide — the loaded list here is capped at 20, so checking
+    // system-wide - the loaded list here is capped at 20, so checking
     // against it alone could reset the schedule while unread items still
     // exist beyond that page.
     const { count } = await supabase
@@ -153,8 +153,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
           // FIX: calculate viewport position so the fixed panel appears below the button,
           // clamped so it can never overflow the left or right edge of the screen.
           // (Aligning strictly to the button's right edge breaks when the bell isn't
-          // the rightmost icon in its header — e.g. the main dashboard hero header —
-          // since the 340px panel then spills off the left side of the viewport.)
+          // the rightmost icon in its header - e.g. the main dashboard hero header - // since the 340px panel then spills off the left side of the viewport.)
           if (!open && btnRef.current) {
             const rect = btnRef.current.getBoundingClientRect()
             const panelWidth = 340
@@ -177,7 +176,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
         )}
       </button>
 
-      {/* Panel — FIX: position:fixed to escape the sticky header's backdrop-filter
+      {/* Panel - FIX: position:fixed to escape the sticky header's backdrop-filter
            stacking context. backdrop-filter creates a new stacking context that traps
            any absolutely-positioned children regardless of their z-index.
            Fixed positioning breaks out of it and renders at viewport level. */}

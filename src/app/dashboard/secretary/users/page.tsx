@@ -72,7 +72,7 @@ export default async function UsersPage() {
 
   if (error) console.error('[users] fetch error:', error.message)
 
-  // `last_sign_in` doesn't exist on `profiles` — it lives on Supabase Auth's
+  // `last_sign_in` doesn't exist on `profiles` - it lives on Supabase Auth's
   // user records as `last_sign_in_at`. Pull it from there and merge it in.
   const lastSignInMap = new Map<string, string | null>()
   try {

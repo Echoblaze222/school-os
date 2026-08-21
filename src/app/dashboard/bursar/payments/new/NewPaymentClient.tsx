@@ -309,7 +309,7 @@ export default function NewPaymentClient({ bursarId, bursarName }: Props) {
       {/* ── Body ────────────────────────────────────────── */}
       <div className={styles.body}>
 
-        {/* Left — search + form */}
+        {/* Left - search + form */}
         <div className={styles.panel}>
           <div className={styles.panelHeader}>
             <p className={styles.panelTitle}>Payment Details</p>
@@ -503,7 +503,7 @@ export default function NewPaymentClient({ bursarId, bursarName }: Props) {
           </div>
         </div>
 
-        {/* Right — receipt preview */}
+        {/* Right - receipt preview */}
         <div className={styles.receiptPanel}>
           <div className={styles.receiptHeader}>
             <p className={styles.receiptTitle}>Receipt Preview</p>

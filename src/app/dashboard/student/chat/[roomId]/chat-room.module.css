@@ -1,4 +1,4 @@
-/* chat-room.module.css — SchoolOS MVP Chat Room */
+/* chat-room.module.css - SchoolOS MVP Chat Room */
 
 .page {
   display: flex;
@@ -715,7 +715,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Keyboard-safe input bar ──────────────────────────────── */
-/* No position:fixed on .inputBar — it's the last flex child of a 100dvh
+/* No position:fixed on .inputBar - it's the last flex child of a 100dvh
    column so it naturally sits above the keyboard. The transform below is
    set inline from JS (visualViewport) as a defensive nudge for browsers
    that reflow dvh late when the keyboard opens. */
@@ -833,7 +833,7 @@
   flex-shrink: 0;
 }
 
-/* ── Attachment preview sheet — caption before send ──────── */
+/* ── Attachment preview sheet - caption before send ──────── */
 .attachSheet {
   display: flex;
   flex-direction: column;
@@ -890,4 +890,4 @@
   width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
   border: none; display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-}
+}

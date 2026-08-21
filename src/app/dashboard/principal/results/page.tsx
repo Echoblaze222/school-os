@@ -1,7 +1,7 @@
 // src/app/dashboard/principal/results/page.tsx
 //
 // FIXED: results.student_id + results.posted_by have no named FK constraints
-//        so Supabase can't join profiles inline — fetch students + teachers separately
+//        so Supabase can't join profiles inline - fetch students + teachers separately
 // FIXED: class_id resolved from class_subjects join (results has no class_id column)
 // FIXED: all display fields (student_name, subject_name, class_name, teacher_name)
 //        flattened into ResultRow before passing to client

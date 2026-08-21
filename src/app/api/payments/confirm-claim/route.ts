@@ -4,13 +4,13 @@
 // Steps:
 //  1. Mark claim as confirmed
 //  2. Find the CORRECT invoice for this student/term/year (was: any school's
-//     oldest unpaid invoice — a real bug that could deduct from the wrong
+//     oldest unpaid invoice - a real bug that could deduct from the wrong
 //     student's balance)
 //  3. Insert into `payments` (same table RecordPaymentClient writes to, so
 //     this flows through to Receipts/History/Reports/Export automatically)
 //  4. Update payment_invoices.amount_paid_ngn + balance_ngn + status
 //     (status now uses 'completed', matching the rest of the app's enum
-//     usage — was incorrectly using 'paid')
+//     usage - was incorrectly using 'paid')
 //  5. Notify parent via notifications table
 
 import { NextResponse }      from 'next/server'
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   // come from THIS row, never from the request body. Trusting client-sent
   // copies of these fields would let anyone with bursar/principal access
   // confirm a fabricated payment for any school, any student, and any
-  // amount — creating a real payments row and marking real invoices paid
+  // amount - creating a real payments row and marking real invoices paid
   // for money that never moved.
   const { data: claimRow, error: claimFetchErr } = await admin
     .from('payment_claims')
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Claim not found' }, { status: 404 })
   }
 
-  // Tenant boundary — a bursar/principal may only confirm claims that
+  // Tenant boundary - a bursar/principal may only confirm claims that
   // belong to their own school.
   if (claimRow.school_id !== me.school_id) {
     return NextResponse.json({ error: 'This claim does not belong to your school.' }, { status: 403 })
@@ -93,12 +93,12 @@ export async function POST(req: Request) {
 
   if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 })
 
-  // ── 2. Resolve invoice — scoped to THIS student + term + year ──
+  // ── 2. Resolve invoice - scoped to THIS student + term + year ──
   // payment_invoices has no direct term/year columns; those live on the
   // linked fee_structures row. We join through that to filter correctly.
   // If the client supplied an invoice_id (the parent linked a specific
   // invoice when filing the claim), verify it actually belongs to this
-  // student and school before trusting it — otherwise a crafted request
+  // student and school before trusting it - otherwise a crafted request
   // could redirect a confirmed payment onto someone else's invoice.
   let resolvedInvoiceId: string | null = null
   if (invoice_id) {
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
       .order('created_at', { ascending: true })
 
     // Filter on the nested fee_structures term/year. Embeds can come back
-    // as object OR 1-element array, so unwrap before reading — this was
+    // as object OR 1-element array, so unwrap before reading - this was
     // previously read directly as `inv.fee_structures`, which silently
     // returned undefined whenever PostgREST returned an array shape,
     // making every match fail even when a valid invoice existed.
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
     resolvedInvoiceId = match?.id ?? (candidateInvoices?.[0]?.id ?? null)
 
     // If we STILL have nothing, this payment is about to be recorded with
-    // no invoice link at all — meaning it won't show up in any term/year-
+    // no invoice link at all - meaning it won't show up in any term/year-
     // filtered view (History, Receipts, Reports, Principal dashboard),
     // even though it correctly counts toward the unfiltered bursar home
     // total. Surface this clearly instead of letting it happen silently,
@@ -213,10 +213,10 @@ export async function POST(req: Request) {
     is_read:    false,
   })
 
-  // Log to the parent's Recent Activity — this is the confirmed-payment
+  // Log to the parent's Recent Activity - this is the confirmed-payment
   // moment for the manual/bank-transfer claim flow (as opposed to the
   // instant online-checkout flow, which logs from the Paystack webhook
-  // instead). Deliberately NOT logged at claim-submission time — a claim
+  // instead). Deliberately NOT logged at claim-submission time - a claim
   // is unconfirmed until a bursar reviews it, so logging "fee_paid" before
   // that would show something as paid that might still get rejected.
   await logActivityWithClient(admin, {

@@ -1,14 +1,14 @@
 // src/app/api/internal/push-on-notification/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Internal route — called automatically by a Postgres trigger (see
+// Internal route - called automatically by a Postgres trigger (see
 // lib/supabase/notifications_push_trigger.sql) the instant a row is
 // inserted into `notifications`, from ANYWHERE: server API routes, client
 // components, admin tooling, everything. This guarantees every notification
 // fires an instant push, without relying on every call site remembering to
 // call pushNotify()/notifyRoles() manually.
 //
-// Protected the same way api/push/send/route.ts already is — an
-// x-internal-secret header checked against INTERNAL_SECRET — since this
+// Protected the same way api/push/send/route.ts already is - an
+// x-internal-secret header checked against INTERNAL_SECRET - since this
 // endpoint is only ever meant to be hit by the database itself via pg_net,
 // never by a browser or an authenticated user session.
 //
@@ -24,7 +24,7 @@ import { NextResponse } from 'next/server'
 import { sendPushToUsers } from '@/lib/webpush'
 
 export async function POST(req: Request) {
-  // Verify internal secret — same convention as api/push/send/route.ts
+  // Verify internal secret - same convention as api/push/send/route.ts
   const secret = req.headers.get('x-internal-secret')
   if (secret !== process.env.INTERNAL_SECRET) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     console.error('[internal/push-on-notification] error:', err.message)
-    // Don't fail loudly — the trigger fires this fire-and-forget from
+    // Don't fail loudly - the trigger fires this fire-and-forget from
     // Postgres and shouldn't roll back the notifications insert itself
     // just because push delivery had a hiccup.
     return NextResponse.json({ error: err.message }, { status: 500 })

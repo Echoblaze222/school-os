@@ -1,6 +1,6 @@
 // src/middleware.ts
 // ─────────────────────────────────────────────────────────────
-// 1. Protects all dashboard/private routes — redirects to /login if no session
+// 1. Protects all dashboard/private routes, redirects to /login if no session
 // 2. Redirects authenticated users away from auth pages
 // 3. Sets session timeout: user is logged out after INACTIVITY_MINUTES of no activity
 // 4. Enforces school lock:
@@ -19,10 +19,10 @@ const INACTIVITY_MS = INACTIVITY_MINUTES * 60 * 1000
 
 // Routes that do NOT require authentication
 const PUBLIC_PATHS = [
-  '/',                                   // root — handled by its own redirect logic below;
+  '/',                                   // root - now the public landing page (Phase 4, Lane A); see the '/' handling below in the main function, which no longer redirects it to /splash for signed-out visitors
                                           // must NOT be caught by the generic route-protection
                                           // check or it gets sent to /login before ever reaching
-                                          // the splash redirect
+                                          // the landing page
   '/splash',
   '/select-school',
   '/login',
@@ -32,14 +32,43 @@ const PUBLIC_PATHS = [
   '/terms',
   '/privacy',
   '/offline',
-  '/api/auth',                          // code-signin, first-login — must be public
+  '/api/auth',                          // code-signin, first-login, must be public
   '/api/schools/register',
   '/api/schools/payment-callback',
   '/api/schools/paystack-webhook',
   '/api/webhooks/paystack',            // Paystack payment webhook
+  '/api/internal/push-on-notification', // pg_net → push trigger, no session cookie; gated by its own x-internal-secret check below, not this middleware
+  '/api/push/send',                     // pg_net → fire_pending_reminders, same reasoning
   '/api/cron', 
   '/super-admin/login',                 // super admin login must be publicly reachable
   '/school-locked',                     // lock page itself must be reachable
+
+  // ── Public platform (Phase 4, Lane C) ──────────────────────
+  // Self-service signup - the one path that creates a SchoolOS
+  // identity WITHOUT an admin-issued access code. Distinct from
+  // /login (existing code-based staff/student/parent onboarding),
+  // which is untouched.
+  '/join',
+  '/api/auth/self-register',
+  // Public school discovery and the admission-request flow itself.
+  // Actually submitting an application still requires a session -
+  // that check happens in the page/API layer, not here - this only
+  // allows an unauthenticated visitor to browse and start the flow.
+  '/find-school',
+  '/apply',
+  '/api/admission/schools',
+
+  // ── Public platform (Phase 4, Lane E/F) ────────────────────
+  '/api/public',                        // Lane E/F/G/H public discovery, promotions, rankings, reports, content - read/track endpoints only
+  '/discover',                          // public promotions feed (Lane E)
+  '/rankings',                          // public rankings (Lane F)
+
+  // ── Public platform (Phase 4, Lane H) ───────────────────────
+  '/blog',                              // public SchoolOS editorial content
+
+  // ── Public platform (Phase 4, Lane A/B) ─────────────────────
+  '/find-schools',                      // Lane A - general public discovery (distinct from Lane C's /find-school, the admission-flow entry point)
+  '/schools',                           // Lane B - public school profile pages (/schools/[slug])
 ]
 
 // Routes that authenticated users should be bounced away from
@@ -50,6 +79,7 @@ const AUTH_ONLY_PATHS = [
   '/register-school',
   '/forgot-password',
   '/super-admin/login',                 // logged-in super admins go straight to dashboard
+  '/join',                              // logged-in users don't need self-signup, go to dashboard
 ]
 
 // ── Role-based dashboard access ────────────────────────────────
@@ -67,6 +97,31 @@ const ROLE_HOME: Record<string, string> = {
   secretary:   '/dashboard/secretary',
   parent:      '/dashboard/parent',
   super_admin: '/admin',
+}
+
+// ── Appointment-gated dashboards (Phase 2) ─────────────────────
+// New top-level dashboards that aren't keyed to a base profiles.role at
+// all, access depends on holding an ACTIVE row in `appointments`, not on
+// a role string. Kept separate from DASHBOARD_ROLE_SEGMENTS above since
+// the check is structurally different (appointments table, not
+// profiles.role).
+//
+// 'counselor' and 'ict' added here retroactively: both dashboards
+// originally shipped with only a page-level appointment check (see the
+// comment at the top of dashboard/counselor/page.tsx), documented at the
+// time as "middleware doesn't understand appointment-based roles yet."
+// This dict is exactly the mechanism that was missing, so both are
+// registered now that it exists; the page-level checks stay in place
+// too; middleware is the outer floor, the route's own check is the
+// inner one, neither alone is enough.
+const APPOINTMENT_DASHBOARD_SEGMENTS: Record<string, string[]> = {
+  examination: [
+    'examination_officer', 'examination_coordinator', 'examination_secretary',
+    'exam_setter', 'invigilator', 'result_officer', 'result_verification_officer',
+  ],
+  counselor: ['counselor'],
+  ict: ['ict_officer', 'ict_administrator'],
+  'vice-principal': ['vice_principal'],
 }
 
 export async function middleware(request: NextRequest) {
@@ -105,7 +160,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ── Get user (validated server-side — never trusts a stale/forged cookie) ──
+  // ── Get user (validated server-side, never trusts a stale/forged cookie) ──
   // getUser() contacts Supabase Auth on every call, making it the only
   // correct choice for route protection. getSession() is client-side only
   // and must never be used for access control decisions.
@@ -122,7 +177,7 @@ export async function middleware(request: NextRequest) {
     if (lastActivity) {
       const elapsed = now - parseInt(lastActivity, 10)
       if (elapsed > INACTIVITY_MS) {
-        // Session has been idle too long — sign out and redirect to login
+        // Session has been idle too long, sign out and redirect to login
         await supabase.auth.signOut()
 
         const loginUrl = new URL('/login', request.url)
@@ -154,7 +209,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isAuthOnlyPath) {
-    // Already logged in but hitting auth pages — send to the right dashboard
+    // Already logged in but hitting auth pages, send to the right dashboard
     const dest = pathname.startsWith('/super-admin') ? '/super-admin' : '/dashboard'
     return NextResponse.redirect(new URL(dest, request.url))
   }
@@ -169,7 +224,7 @@ export async function middleware(request: NextRequest) {
   //  - BILLING lock ('expired' trial or 'suspended' subscription): all
   //    non-principal roles go to /school-locked as before. The principal
   //    is allowed to stay logged in, but is confined to
-  //    /dashboard/principal/subscriptions so they can renew — any other
+  //    /dashboard/principal/subscriptions so they can renew, any other
   //    /dashboard/principal/* route redirects them there instead.
   //
   // Previously principals were exempted from this check entirely, so an
@@ -192,6 +247,32 @@ export async function middleware(request: NextRequest) {
       const userRole = profile?.role
       if (userRole !== roleSegment) {
         const home = ROLE_HOME[userRole ?? ''] ?? '/login'
+        return NextResponse.redirect(new URL(home, request.url))
+      }
+    }
+
+    // ── Enforce appointment boundary (Phase 2) ─────────────────
+    // Principal always passes (school-wide default scope, same as every
+    // other lane's assumption), everyone else needs a live, active row
+    // in `appointments` for one of the types this segment permits.
+    // Repeated here even though the segment's own layout.tsx/page.tsx
+    // also re-checks server-side, because "a hidden nav item is never a
+    // security boundary" cuts both ways: middleware is the outer floor,
+    // the route's own check is the inner one, neither alone is enough.
+    const appointmentTypes = APPOINTMENT_DASHBOARD_SEGMENTS[roleSegment]
+    if (appointmentTypes && profile?.role !== 'principal') {
+      const { data: appt } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('school_id', profile?.school_id ?? '')
+        .eq('status', 'active')
+        .in('appointment_type', appointmentTypes)
+        .limit(1)
+        .maybeSingle()
+
+      if (!appt) {
+        const home = ROLE_HOME[profile?.role ?? ''] ?? '/login'
         return NextResponse.redirect(new URL(home, request.url))
       }
     }
@@ -247,10 +328,13 @@ export async function middleware(request: NextRequest) {
     if (user) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-    // First-time visitors go through the splash → select-school flow.
-    // Auto-logout redirects already land on /login directly (see above),
-    // so this only runs when someone opens the root URL fresh.
-    return NextResponse.redirect(new URL('/splash', request.url))
+    // Phase 4, Lane A (S38): '/' is now the public marketing landing
+    // page (src/app/page.tsx renders it directly for a signed-out
+    // visitor) - it must NOT be redirected away. The cinematic /splash
+    // entrance still exists; it now plays when a visitor actually
+    // chooses to log in (from the landing page's own CTA), rather than
+    // gating everyone before they have seen anything about the product.
+    return NextResponse.next()
   }
 
   return response

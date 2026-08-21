@@ -1,4 +1,4 @@
-/* transfer.module.css — rebuilt on the real design tokens (was referencing
+/* transfer.module.css - rebuilt on the real design tokens (was referencing
    undefined --color-* / --font-size-* / --header-height / --shadow-sm vars
    that don't exist anywhere in globals.css, so this page was silently
    rendering with unset/broken styling). Now matches the glass-card
