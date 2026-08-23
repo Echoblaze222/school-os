@@ -5,6 +5,9 @@
 import { NextResponse }    from 'next/server'
 import { createClient }    from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sanitizeOptionalUrl } from '@/lib/validation/safeUrl'
+
+const ADMISSION_STATUSES = ['open', 'closed', 'waitlist']
 
 interface SettingsBody {
   name?:            string
@@ -20,6 +23,16 @@ interface SettingsBody {
   font_family?:     string
   logo_url?:        string | null
   build_image_url?: string | null
+  is_publicly_listed?:   boolean
+  description?:          string | null
+  website_url?:          string | null
+  public_email?:         string | null
+  public_phone?:         string | null
+  admission_status?:     string
+  application_deadline?: string | null
+  founded_year?:          number | null
+  facilities?:            string[]
+  programs?:              string[]
 }
 
 export async function POST(req: Request) {
@@ -77,6 +90,23 @@ export async function POST(req: Request) {
     )
   }
 
+  if (body.admission_status !== undefined && !ADMISSION_STATUSES.includes(body.admission_status)) {
+    return NextResponse.json(
+      { error: 'admission_status must be one of open, closed, waitlist.' },
+      { status: 400 },
+    )
+  }
+
+  if (body.founded_year !== undefined && body.founded_year !== null) {
+    const currentYear = new Date().getFullYear()
+    if (!Number.isInteger(body.founded_year) || body.founded_year < 1800 || body.founded_year > currentYear) {
+      return NextResponse.json(
+        { error: `founded_year must be a year between 1800 and ${currentYear}.` },
+        { status: 400 },
+      )
+    }
+  }
+
   // ── 5. Build update payload (only fields provided) ────────────────────────
   // secondary_color now lives directly on the `schools` table (see the
   // schools-branding-columns migration referenced in dashboard/principal/layout.tsx),
@@ -89,6 +119,9 @@ export async function POST(req: Request) {
     'name', 'tagline', 'address', 'city', 'state',
     'phone', 'email', 'school_type', 'primary_color', 'secondary_color',
     'font_family', 'logo_url', 'build_image_url',
+    'is_publicly_listed', 'description', 'website_url', 'public_email',
+    'public_phone', 'admission_status', 'application_deadline',
+    'founded_year', 'facilities', 'programs',
   ]
 
   for (const key of allowed) {
@@ -97,6 +130,13 @@ export async function POST(req: Request) {
       const val = body[key]
       update[key] = typeof val === 'string' ? val.trim() : val
     }
+  }
+
+  // website_url gets the same javascript:/data: scheme check every other
+  // public-facing link field on the platform uses (see safeUrl.ts) - this
+  // is rendered straight into an <a href> on the public school profile.
+  if ('website_url' in update) {
+    update.website_url = sanitizeOptionalUrl(update.website_url as string | null)
   }
 
   if (Object.keys(update).length === 0) {
