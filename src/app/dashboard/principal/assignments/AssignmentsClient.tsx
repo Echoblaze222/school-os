@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './assignments.module.css'
+import KpiCard from '@/components/KpiCard'
 import { AlertIcon, CheckIcon, XIcon, CalendarIcon, UserIcon, RefreshIcon } from '@/components/Icons'
 
 type Status = 'active' | 'draft' | 'closed'
@@ -188,17 +189,14 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
         {/* Stats */}
         <div className={styles.statsRow}>
           {(['active','draft','closed'] as Status[]).map(s => (
-            <div key={s} className={styles.statCard}>
-              <p className={styles.statVal} style={{ color: STATUS_COLOR[s] }}>{assignments.filter(a => a.status === s).length}</p>
-              <p className={styles.statLbl} style={{ textTransform:'capitalize' }}>{s}</p>
-            </div>
+            <KpiCard key={s} label={s.charAt(0).toUpperCase() + s.slice(1)}
+              value={assignments.filter(a => a.status === s).length}
+              icon={s === 'active' ? <CheckIcon size={16} /> : s === 'draft' ? <RefreshIcon size={16} /> : <XIcon size={16} />}
+              color={STATUS_COLOR[s]} valueColor={STATUS_COLOR[s]} />
           ))}
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#EF4444' }}>
-              {assignments.filter(a => a.due_date && new Date(a.due_date) < new Date() && a.status === 'active').length}
-            </p>
-            <p className={styles.statLbl}>Overdue</p>
-          </div>
+          <KpiCard label="Overdue"
+            value={assignments.filter(a => a.due_date && new Date(a.due_date) < new Date() && a.status === 'active').length}
+            icon={<AlertIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
         </div>
 
         {/* Toolbar */}

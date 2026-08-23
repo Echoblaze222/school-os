@@ -4,7 +4,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { BookIcon, BookOpenIcon, ClipboardIcon, TrashIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { BookIcon, BookOpenIcon, ClipboardIcon, TrashIcon, AlertCircleIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -139,18 +140,9 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
     <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Library">
       {/* Stats */}
       <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <p className={styles.statVal} style={{ color: sc }}>{books.length}</p>
-          <p className={styles.statLbl}>Titles</p>
-        </div>
-        <div className={styles.statCard}>
-          <p className={styles.statVal} style={{ color: '#3B82F6' }}>{activeLoans.length}</p>
-          <p className={styles.statLbl}>On loan</p>
-        </div>
-        <div className={styles.statCard}>
-          <p className={styles.statVal} style={{ color: overdueCount > 0 ? '#EF4444' : '#10B981' }}>{overdueCount}</p>
-          <p className={styles.statLbl}>Overdue</p>
-        </div>
+        <KpiCard label="Titles" value={books.length} icon={<BookIcon size={16} />} color={sc} />
+        <KpiCard label="On Loan" value={activeLoans.length} icon={<BookOpenIcon size={16} />} color="#3B82F6" />
+        <KpiCard label="Overdue" value={overdueCount} icon={<AlertCircleIcon size={16} />} color={overdueCount > 0 ? '#EF4444' : '#10B981'} valueColor={overdueCount > 0 ? '#EF4444' : '#10B981'} />
       </div>
 
       {/* Tabs */}

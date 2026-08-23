@@ -5,6 +5,8 @@ import Link from 'next/link'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
+import KpiCard from '@/components/KpiCard'
+import { GraduationCapIcon, PeopleIcon, LayersIcon } from '@/components/Icons'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ContextSwitcher from '@/components/ContextSwitcher'
@@ -62,12 +64,6 @@ export default function VicePrincipalDashboardClient({
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
   const roleLabel = (portfolio && PORTFOLIO_LABELS[portfolio]) ?? 'Vice Principal'
-
-  const miniStats = [
-    { label: 'Students', value: counts.studentCount },
-    { label: 'Teachers', value: counts.teacherCount },
-    { label: 'Classes',  value: counts.classCount },
-  ]
 
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
@@ -171,13 +167,10 @@ export default function VicePrincipalDashboardClient({
           </div>
         )}
 
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))' }}>
-          {miniStats.map((s, i) => (
-            <div key={s.label} className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`} style={{ animationDelay: `${i * 60}ms` }}>
-              <p className={styles.statVal}>{s.value}</p>
-              <p className={styles.statLbl}>{s.label}</p>
-            </div>
-          ))}
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+          <KpiCard label="Students" value={counts.studentCount ?? 0} icon={<GraduationCapIcon size={16} />} context="On roll" />
+          <KpiCard label="Teachers" value={counts.teacherCount ?? 0} icon={<PeopleIcon size={16} />} context="Active staff" />
+          <KpiCard label="Classes" value={counts.classCount ?? 0} icon={<LayersIcon size={16} />} context="This session" />
         </div>
 
         <RecentActivity

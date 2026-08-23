@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import KpiCard from '@/components/KpiCard'
 import {
   BarChartIcon, CreditCardIcon, AlertCircleIcon, UsersIcon,
   ArrowLeftIcon, SunIcon, MoonIcon, TrendingUpIcon, CheckCircleIcon,
@@ -285,34 +286,10 @@ export default function PrincipalFeesClient({
 
             {/* Stats grid */}
             <div className={styles.statsGrid}>
-              <div className={styles.statCard}>
-                <div className={styles.statIcon} style={{ background: '#10B98118' }}>
-                  <CheckCircleIcon size={16} color="#10B981" />
-                </div>
-                <p className={styles.statVal}>{stats.fullyPaid}</p>
-                <p className={styles.statLbl}>Fully Paid</p>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statIcon} style={{ background: '#F5940018' }}>
-                  <TrendingUpIcon size={16} color="#F59400" />
-                </div>
-                <p className={styles.statVal}>{stats.partial}</p>
-                <p className={styles.statLbl}>Partial</p>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statIcon} style={{ background: '#3B82F618' }}>
-                  <UsersIcon size={16} color="#3B82F6" />
-                </div>
-                <p className={styles.statVal}>{stats.pending}</p>
-                <p className={styles.statLbl}>Pending</p>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statIcon} style={{ background: '#EF444418' }}>
-                  <AlertCircleIcon size={16} color="#EF4444" />
-                </div>
-                <p className={styles.statVal}>{stats.overdue}</p>
-                <p className={styles.statLbl}>Overdue</p>
-              </div>
+              <KpiCard label="Fully Paid" value={stats.fullyPaid} icon={<CheckCircleIcon size={16} />} color="#10B981" context="Settled in full" />
+              <KpiCard label="Partial" value={stats.partial} icon={<TrendingUpIcon size={16} />} color="#F59400" context="Part payment made" />
+              <KpiCard label="Pending" value={stats.pending} icon={<UsersIcon size={16} />} color="#3B82F6" context="Not yet paid" />
+              <KpiCard label="Overdue" value={stats.overdue} icon={<AlertCircleIcon size={16} />} color="#EF4444" valueColor="#EF4444" context="Past due date" />
             </div>
 
             {/* Balance summary */}

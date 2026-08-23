@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
-import { BookIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { BookIcon, ClockIcon, AlertCircleIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
 
@@ -96,20 +97,15 @@ export default function LibraryClient({ profile, school, userId }: Props) {
                 </div>
               )}
 
-              {activeLoans.length > 0 && (
-                <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
-                  <div className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color: sc }}>{activeLoans.length}</p>
-                    <p className={styles.statLbl}>Books out</p>
+              {activeLoans.length > 0 && (() => {
+                const overdueCount = activeLoans.filter(l => new Date(l.due_at) < new Date()).length
+                return (
+                  <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
+                    <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} color={sc} context="Currently borrowed" />
+                    <KpiCard label="Overdue" value={overdueCount} icon={<AlertCircleIcon size={16} />} color={overdueCount > 0 ? '#EF4444' : '#10B981'} valueColor={overdueCount > 0 ? '#EF4444' : '#10B981'} context={overdueCount > 0 ? 'Return needed' : 'All on time'} />
                   </div>
-                  <div className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color: activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981' }}>
-                      {activeLoans.filter(l => new Date(l.due_at) < new Date()).length}
-                    </p>
-                    <p className={styles.statLbl}>Overdue</p>
-                  </div>
-                </div>
-              )}
+                )
+              })()}
 
               {loans.length === 0 ? (
                 <div className={styles.empty}>{child.full_name?.split(' ')[0]} hasn't borrowed any books yet.</div>

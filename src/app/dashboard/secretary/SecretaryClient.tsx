@@ -6,6 +6,7 @@ import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
+import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
@@ -147,20 +148,9 @@ export default function SecretaryClient({
           </div>
         )}
 
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {[
-            { label: 'Total students', value: counts.totalStudents ?? 0 },
-            { label: 'Active users',   value: counts.activeUsers   ?? 0 },
-          ].map((s, i) => (
-            <div
-              key={s.label}
-              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <p className={styles.statVal}>{s.value}</p>
-              <p className={styles.statLbl}>{s.label}</p>
-            </div>
-          ))}
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+          <KpiCard label="Total Students" value={counts.totalStudents ?? 0} icon={<GraduationCapIcon size={16} />} context="On roll" />
+          <KpiCard label="Active Users" value={counts.activeUsers ?? 0} icon={<UsersIcon size={16} />} context="Logged in recently" />
         </div>
 
         <RecentActivity

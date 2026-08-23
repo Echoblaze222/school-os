@@ -6,7 +6,8 @@ import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from '@/app/dashboard/secretary/secretary.module.css'
-import { GraduationCapIcon, TransferIcon, ClockIcon, AlertIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { GraduationCapIcon, TransferIcon, ClockIcon, AlertIcon, CheckCircleIcon } from '@/components/Icons'
 
 type TransferStatus = 'requested' | 'approved' | 'rejected' | 'completed'
 
@@ -250,17 +251,10 @@ export default function PrincipalTransfersClient({
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-            {[
-              { label: 'Total',     value: allStudents.length,                          color: '#10B981' },
-              { label: 'Active',    value: allStudents.filter(s => s.is_active).length, color: '#3B82F6' },
-              { label: 'Transfers', value: sent.length,                                 color: '#F59E0B' },
-            ].map(s => (
-              <div key={s.label} className={styles.statCard}>
-                <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
-                <p className={styles.statLbl}>{s.label}</p>
-              </div>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+            <KpiCard label="Total" value={allStudents.length} icon={<GraduationCapIcon size={16} />} color="#10B981" />
+            <KpiCard label="Active" value={allStudents.filter(s => s.is_active).length} icon={<CheckCircleIcon size={16} />} color="#3B82F6" />
+            <KpiCard label="Transfers" value={sent.length} icon={<TransferIcon size={16} />} color="#F59E0B" />
           </div>
 
           {filteredStudents.length === 0 ? (

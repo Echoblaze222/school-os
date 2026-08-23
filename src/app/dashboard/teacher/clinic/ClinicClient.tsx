@@ -10,7 +10,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { ActivityIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { ActivityIcon, AlertCircleIcon, PeopleIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
 
@@ -66,14 +67,8 @@ export default function ClinicClient({ profile, school, userId }: Props) {
         <>
           {withAllergies.length > 0 && (
             <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
-              <div className={styles.statCard}>
-                <p className={styles.statVal} style={{ color: 'var(--danger)' }}>{withAllergies.length}</p>
-                <p className={styles.statLbl}>With allergies noted</p>
-              </div>
-              <div className={styles.statCard}>
-                <p className={styles.statVal} style={{ color: sc }}>{rows.length}</p>
-                <p className={styles.statLbl}>Students</p>
-              </div>
+              <KpiCard label="With Allergies Noted" value={withAllergies.length} icon={<AlertCircleIcon size={16} />} color="var(--danger)" valueColor="var(--danger)" />
+              <KpiCard label="Students" value={rows.length} icon={<PeopleIcon size={16} />} color={sc} />
             </div>
           )}
 

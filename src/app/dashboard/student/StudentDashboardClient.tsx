@@ -7,6 +7,7 @@ import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import GaugeStat from '@/components/GaugeStat'
+import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
@@ -134,20 +135,9 @@ export default function StudentDashboardClient({ profile, school, userId, counts
           />
         </div>
 
-        <div className={styles.statsGrid} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {[
-            { label: 'Open quizzes', value: c.upcomingQuizzes },
-            { label: 'Class rank',   value: c.rank ? `#${c.rank}` : 'N/A' },
-          ].map((s, i) => (
-            <div
-              key={s.label}
-              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <p className={styles.statVal}>{s.value}</p>
-              <p className={styles.statLbl}>{s.label}</p>
-            </div>
-          ))}
+        <div className={styles.statsGrid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+          <KpiCard label="Open Quizzes" value={c.upcomingQuizzes} icon={<ClipboardIcon size={16} />} context="Not yet taken" />
+          <KpiCard label="Class Rank" value={c.rank ? `#${c.rank}` : 'N/A'} icon={<TrophyIcon size={16} />} context="Current standing" />
         </div>
 
         <RecentActivity

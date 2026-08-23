@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import KpiCard from '@/components/KpiCard'
 import { VideoIcon, ClockIcon, BarChartIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -137,13 +138,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       {/* Stats row */}
       <div className={styles.statsRow} style={{ marginBottom: 'var(--space-5)' }}>
         {stats.map(s => (
-          <div key={s.label} className={styles.statCard}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <s.Icon size={14} color={s.color} />
-              <p className={styles.statLbl} style={{ margin: 0 }}>{s.label}</p>
-            </div>
-            <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
-          </div>
+          <KpiCard key={s.label} label={s.label} value={s.value} icon={<s.Icon size={16} />} color={s.color} valueColor={s.color} />
         ))}
       </div>
 

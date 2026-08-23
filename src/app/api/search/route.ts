@@ -249,7 +249,7 @@ async function keywordSearch(
   const term = likeTerm(q)
 
   if (role === 'principal' || role === 'secretary') {
-    const [students, teachers, classes, subjects, invoices, announcements, events, books] = await Promise.all([
+    const [students, teachers, classes, subjects, invoices, announcements, events, books, ictTickets, hostelIncidents, examSessions] = await Promise.all([
       searchProfiles(supabase, schoolId, term, 'student', '/dashboard/principal/students'),
       searchProfiles(supabase, schoolId, term, 'teacher', '/dashboard/principal/teachers'),
       searchClasses(supabase, schoolId, term, '/dashboard/principal/classes'),
@@ -258,8 +258,11 @@ async function keywordSearch(
       searchAnnouncements(supabase, schoolId, term, role === 'secretary' ? '/dashboard/secretary/notices' : '/dashboard/principal/announcements'),
       searchEvents(supabase, schoolId, term),
       searchBooks(supabase, schoolId, term, role === 'secretary' ? '/dashboard/secretary/library' : '/dashboard/student/library'),
+      searchIctTickets(supabase, schoolId, term),
+      searchHostelIncidents(supabase, schoolId, term),
+      searchExamSessions(supabase, schoolId, term),
     ])
-    return [...students, ...teachers, ...classes, ...subjects, ...invoices, ...announcements, ...events, ...books]
+    return [...students, ...teachers, ...classes, ...subjects, ...invoices, ...announcements, ...events, ...books, ...ictTickets, ...hostelIncidents, ...examSessions]
   }
 
   if (role === 'teacher') {
@@ -443,4 +446,47 @@ async function searchBooks(supabase: any, schoolId: string, term: string, href: 
   const { data } = await supabase.from('library_books')
     .select('id, title, author').eq('school_id', schoolId).ilike('title', term).limit(MAX_PER_ENTITY)
   return (data ?? []).map((b: any) => ({ type: 'book', id: b.id, title: b.title, subtitle: b.author ?? 'Library book', href }))
+}
+
+// Principal/secretary only (see keywordSearch) - both already have full
+// read access to these tables directly (requireHostelStaff, ICT routes),
+// so surfacing them in search exposes nothing new, just makes what's
+// already visible findable by name/description instead of only by
+// browsing to the specific dashboard.
+async function searchIctTickets(supabase: any, schoolId: string, term: string): Promise<SearchResult[]> {
+  const { data } = await supabase.from('ict_tickets')
+    .select('id, category, description, status').eq('school_id', schoolId)
+    .or(`category.ilike.${term},description.ilike.${term}`).limit(MAX_PER_ENTITY)
+  return (data ?? []).map((t: any) => ({
+    type: 'ict_ticket', id: t.id, title: t.category ?? 'ICT ticket',
+    subtitle: `${t.status} · ${(t.description ?? '').slice(0, 60)}`, href: '/dashboard/ict/tickets',
+  }))
+}
+
+// Deliberately no raw `description` in the subtitle - hostel_incidents can
+// carry sensitive detail (health, altercations), and a search dropdown is
+// a more exposed surface (visible on a shared screen, screenshot-able)
+// than the dedicated incidents page. Matches the same "fixed safe
+// template, never raw description" caution hostel/incidents/route.ts
+// already applies to parent notifications.
+async function searchHostelIncidents(supabase: any, schoolId: string, term: string): Promise<SearchResult[]> {
+  const { data } = await supabase.from('hostel_incidents')
+    .select('id, incident_type, status, occurred_at, profiles:student_id(full_name)')
+    .eq('school_id', schoolId).ilike('incident_type', term).limit(MAX_PER_ENTITY)
+  return (data ?? []).map((i: any) => {
+    const p = Array.isArray(i.profiles) ? i.profiles[0] : i.profiles
+    return {
+      type: 'hostel_incident', id: i.id, title: `${i.incident_type} incident`,
+      subtitle: `${i.status}${p?.full_name ? ` · ${p.full_name}` : ''}`, href: '/dashboard/hostel/incidents',
+    }
+  })
+}
+
+async function searchExamSessions(supabase: any, schoolId: string, term: string): Promise<SearchResult[]> {
+  const { data } = await supabase.from('exam_sessions')
+    .select('id, name, term, academic_year, status').eq('school_id', schoolId).ilike('name', term).limit(MAX_PER_ENTITY)
+  return (data ?? []).map((e: any) => ({
+    type: 'exam_session', id: e.id, title: e.name,
+    subtitle: `${e.term} ${e.academic_year} · ${e.status}`, href: '/dashboard/examination',
+  }))
 }

@@ -5,6 +5,8 @@ import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { AssignmentMeta, SubmissionRow } from './page'
+import KpiCard from '@/components/KpiCard'
+import { PeopleIcon, CheckCircleIcon, AwardIcon, PercentIcon } from '@/components/Icons'
 
 interface Props {
   assignment: AssignmentMeta
@@ -143,10 +145,10 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
       <div style={c.content}>
         {/* Stats */}
         <div style={c.statsRow}>
-          <div style={c.statCard}><span style={c.statVal}>{subs.length}</span><span style={c.statLbl}>Students</span></div>
-          <div style={c.statCard}><span style={c.statVal}>{counts.submitted}</span><span style={c.statLbl}>Submitted</span></div>
-          <div style={c.statCard}><span style={c.statVal}>{counts.graded}</span><span style={c.statLbl}>Graded</span></div>
-          <div style={c.statCard}><span style={{ ...c.statVal, color: 'var(--text-accent)' }}>{gradedPct}%</span><span style={c.statLbl}>Graded Rate</span></div>
+          <KpiCard label="Students" value={subs.length} icon={<PeopleIcon size={16} />} />
+          <KpiCard label="Submitted" value={counts.submitted} icon={<CheckCircleIcon size={16} />} color="#10B981" />
+          <KpiCard label="Graded" value={counts.graded} icon={<AwardIcon size={16} />} />
+          <KpiCard label="Graded Rate" value={`${gradedPct}%`} icon={<PercentIcon size={16} />} color="var(--brand)" valueColor="var(--text-accent)" />
         </div>
 
         {/* Progress bar */}

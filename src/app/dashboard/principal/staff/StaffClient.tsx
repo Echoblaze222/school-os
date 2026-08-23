@@ -5,7 +5,8 @@ import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './staff.module.css'
-import { CheckIcon, XIcon, AlertIcon, EditIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { CheckIcon, XIcon, AlertIcon, EditIcon, PeopleIcon } from '@/components/Icons'
 
 const ROLES = ['teacher', 'bursar', 'secretary', 'librarian', 'counselor', 'nurse', 'admin']
 const ROLE_COLORS: Record<string, string> = {
@@ -372,15 +373,9 @@ export default function StaffClient({ profile, school, userId }: Props) {
       <div className={styles.container}>
         {/* Stats strip */}
         <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: sc }}>{staff.length}</p>
-            <p className={styles.statLbl}>Total Staff</p>
-          </div>
+          <KpiCard label="Total Staff" value={staff.length} icon={<PeopleIcon size={16} />} color={sc} />
           {Object.entries(roleCounts).filter(([, c]) => c > 0).map(([r, c]) => (
-            <div key={r} className={styles.statCard}>
-              <p className={styles.statVal} style={{ color: ROLE_COLORS[r] ?? sc }}>{c}</p>
-              <p className={styles.statLbl} style={{ textTransform: 'capitalize' }}>{r}s</p>
-            </div>
+            <KpiCard key={r} label={`${r.charAt(0).toUpperCase() + r.slice(1)}s`} value={c} icon={<PeopleIcon size={16} />} color={ROLE_COLORS[r] ?? sc} valueColor={ROLE_COLORS[r] ?? sc} />
           ))}
         </div>
 

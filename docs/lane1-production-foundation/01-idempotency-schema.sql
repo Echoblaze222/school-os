@@ -39,6 +39,16 @@ create table if not exists public.idempotency_keys (
 create index if not exists idx_idempotency_scope_key
   on public.idempotency_keys (scope, key);
 
+-- Defense-in-depth, not a functional requirement: this table is only
+-- ever reached through reserve_idempotency_key/complete_idempotency_key
+-- below (both security definer, service_role-only), same shape as
+-- rate_limit_attempts in the auth hotfix. RLS with zero policies here
+-- means "default-deny for anon/authenticated," service_role is
+-- unaffected either way - this only matters if some future code path
+-- ever queries the table directly instead of going through the
+-- functions.
+alter table public.idempotency_keys enable row level security;
+
 -- Cheap housekeeping — old completed/failed keys don't need to stay
 -- forever. Call from the same hourly cron that cleans up rate-limit
 -- attempts. Keep in_progress rows regardless of age; a stuck

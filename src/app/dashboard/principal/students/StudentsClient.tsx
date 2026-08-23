@@ -7,7 +7,8 @@ import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DOBPicker from '@/components/DOBPicker'
 import styles from './students.module.css'
-import { CheckIcon, XIcon, AlertIcon, TransferIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { CheckIcon, XIcon, AlertIcon, TransferIcon, GraduationCapIcon, LayersIcon } from '@/components/Icons'
 
 const GENDER_OPTS = ['Male', 'Female', 'Other']
 
@@ -430,22 +431,10 @@ export default function StudentsClient({ profile, school, userId }: Props) {
       <div className={styles.container}>
         {/* Summary */}
         <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: sc }}>{students.length}</p>
-            <p className={styles.statLbl}>Total Students</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#10B981' }}>{students.filter(s => s.gender?.toLowerCase() === 'male').length}</p>
-            <p className={styles.statLbl}>Male</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#EC4899' }}>{students.filter(s => s.gender?.toLowerCase() === 'female').length}</p>
-            <p className={styles.statLbl}>Female</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#8B5CF6' }}>{classes.length}</p>
-            <p className={styles.statLbl}>Classes</p>
-          </div>
+          <KpiCard label="Total Students" value={students.length} icon={<GraduationCapIcon size={16} />} color={sc} />
+          <KpiCard label="Male" value={students.filter(s => s.gender?.toLowerCase() === 'male').length} icon={<GraduationCapIcon size={16} />} color="#10B981" />
+          <KpiCard label="Female" value={students.filter(s => s.gender?.toLowerCase() === 'female').length} icon={<GraduationCapIcon size={16} />} color="#EC4899" />
+          <KpiCard label="Classes" value={classes.length} icon={<LayersIcon size={16} />} color="#8B5CF6" />
         </div>
 
         {/* Toolbar */}

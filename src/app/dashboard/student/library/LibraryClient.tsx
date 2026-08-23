@@ -3,7 +3,8 @@
 
 import { useState } from 'react'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { BookIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { BookIcon, AlertCircleIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -37,16 +38,8 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
     <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Library">
       {activeLoans.length > 0 && (
         <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: sc }}>{activeLoans.length}</p>
-            <p className={styles.statLbl}>Books out</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981' }}>
-              {activeLoans.filter(l => new Date(l.due_at) < new Date()).length}
-            </p>
-            <p className={styles.statLbl}>Overdue</p>
-          </div>
+          <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} color={sc} />
+          <KpiCard label="Overdue" value={activeLoans.filter(l => new Date(l.due_at) < new Date()).length} icon={<AlertCircleIcon size={16} />} color={activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981'} valueColor={activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981'} />
         </div>
       )}
 

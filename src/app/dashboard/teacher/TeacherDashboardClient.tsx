@@ -6,6 +6,7 @@ import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
+import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ContextSwitcher from '@/components/ContextSwitcher'
@@ -174,20 +175,9 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           </Link>
         )}
 
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {[
-            { label: 'Classes',  value: counts.classCount   ?? 0 },
-            { label: 'Students', value: counts.studentCount ?? 0 },
-          ].map((s, i) => (
-            <div
-              key={s.label}
-              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <p className={styles.statVal}>{s.value}</p>
-              <p className={styles.statLbl}>{s.label}</p>
-            </div>
-          ))}
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+          <KpiCard label="Classes" value={counts.classCount ?? 0} icon={<BookOpenIcon size={16} />} context="You teach" />
+          <KpiCard label="Students" value={counts.studentCount ?? 0} icon={<PeopleIcon size={16} />} context="Across your classes" />
         </div>
 
         <RecentActivity

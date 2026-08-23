@@ -64,6 +64,15 @@ export default async function PrincipalDashboardPage() {
     ? Math.round((feeTotals.paid / feeTotals.due) * 100)
     : 0
 
+  // Currency formatting, not just the rate - prompt §6 wants the actual
+  // amounts ("Fees Collected ₦24.8M", "Outstanding Fees ₦4.2M"), and both
+  // numbers already exist in feeTotals above, no extra query needed.
+  const nairaCompact = (n: number) => new Intl.NumberFormat('en-NG', {
+    style: 'currency', currency: 'NGN', notation: 'compact', maximumFractionDigits: 1,
+  }).format(n)
+  const feesCollectedDisplay = nairaCompact(feeTotals.paid)
+  const outstandingFeesDisplay = nairaCompact(Math.max(0, feeTotals.due - feeTotals.paid))
+
   const pendingNotifications = (notifRows ?? []).map((n: any) => ({
     id:         n.id,
     title:      n.title,
@@ -112,6 +121,8 @@ export default async function PrincipalDashboardPage() {
         avgScore,
         healthScore,
         feeCollectionRate,
+        feesCollectedDisplay,
+        outstandingFeesDisplay,
         pendingActions: (unreadNotifCount ?? 0),
       }}
       activities={activities}

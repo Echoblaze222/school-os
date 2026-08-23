@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import GaugeStat from '@/components/GaugeStat'
-import { PlusIcon, XIcon, UserIcon, CheckCircleIcon, TrashIcon, ClockIcon } from '@/components/Icons'
+import { PlusIcon, XIcon, UserIcon, CheckCircleIcon, TrashIcon, ClockIcon, PeopleIcon, BookOpenIcon } from '@/components/Icons'
 import { VP_FEATURE_GROUPS } from '../../featureGroups'
 import type { Department } from '@/lib/supabase/appointments'
 import type {
@@ -157,12 +157,18 @@ export default function DepartmentDetailClient({
               )}
             </div>
             <div className={`glass-card ${styles.perfCard}`}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <PeopleIcon size={14} color="var(--brand)" />
+                <p className={styles.statLbl} style={{ margin: 0 }}>Members</p>
+              </div>
               <p className={styles.statVal}>{members.length}</p>
-              <p className={styles.statLbl}>Members</p>
             </div>
             <div className={`glass-card ${styles.perfCard}`}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <BookOpenIcon size={14} color="var(--brand)" />
+                <p className={styles.statLbl} style={{ margin: 0 }}>Subjects</p>
+              </div>
               <p className={styles.statVal}>{performance.subjectCount}</p>
-              <p className={styles.statLbl}>Subjects</p>
             </div>
           </div>
 

@@ -39,6 +39,14 @@ create index if not exists idx_job_queue_pending
 create index if not exists idx_job_queue_school
   on public.job_queue (school_id, created_at desc);
 
+-- Defense-in-depth (see idempotency_keys' identical comment) - this one
+-- matters slightly more since job_queue is multi-tenant (school_id can
+-- differ per row), so a direct client-side query without RLS would be a
+-- real cross-school leak, not just an internal-detail leak. Only ever
+-- reached through the enqueue/claim/complete functions below
+-- (service_role-only), so this is a fail-safe, not a functional change.
+alter table public.job_queue enable row level security;
+
 -- Enqueue a job. Called from route handlers instead of doing the work
 -- synchronously inline — e.g. a school-wide announcement inserts one
 -- 'bulk_notification' job here instead of looping and sending in the

@@ -7,6 +7,7 @@ import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
+import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
@@ -165,20 +166,9 @@ export default function BursarDashboardClient({
           </div>
         )}
 
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {[
-            { label: 'Total collected', value: `₦${((counts.totalCollected ?? 0) / 1000).toFixed(0)}k` },
-            { label: 'Paid students',   value: counts.paidCount ?? 0 },
-          ].map((s, i) => (
-            <div
-              key={s.label}
-              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <p className={styles.statVal}>{s.value}</p>
-              <p className={styles.statLbl}>{s.label}</p>
-            </div>
-          ))}
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+          <KpiCard label="Total Collected" value={`₦${((counts.totalCollected ?? 0) / 1000).toFixed(0)}k`} icon={<WalletIcon size={16} />} context="This term" />
+          <KpiCard label="Paid Students" value={counts.paidCount ?? 0} icon={<CheckCircleIcon size={16} />} context="Fully settled" />
         </div>
 
         <RecentActivity

@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
-import { CalendarIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { CalendarIcon, PercentIcon, CheckCircleIcon, XIcon, ClockIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -125,18 +126,11 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
               </p>
 
               {/* Summary row */}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:'var(--space-5)' }}>
-                {[
-                  { label: 'Rate',    value: `${rate}%`,        color: rate >= 75 ? '#10B981' : '#EF4444' },
-                  { label: 'Present', value: summary.present,   color: '#10B981' },
-                  { label: 'Absent',  value: summary.absent,    color: '#EF4444' },
-                  { label: 'Late',    value: summary.late,      color: '#F59E0B' },
-                ].map(s => (
-                  <div key={s.label} className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color: s.color }}>{s.value}</p>
-                    <p className={styles.statLbl}>{s.label}</p>
-                  </div>
-                ))}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:8, marginBottom:'var(--space-5)' }}>
+                <KpiCard label="Rate" value={`${rate}%`} icon={<PercentIcon size={16} />} color={rate >= 75 ? '#10B981' : '#EF4444'} valueColor={rate >= 75 ? '#10B981' : '#EF4444'} context="This term" />
+                <KpiCard label="Present" value={summary.present} icon={<CheckCircleIcon size={16} />} color="#10B981" context="Days" />
+                <KpiCard label="Absent" value={summary.absent} icon={<XIcon size={16} />} color="#EF4444" context="Days" />
+                <KpiCard label="Late" value={summary.late} icon={<ClockIcon size={16} />} color="#F59E0B" context="Days" />
               </div>
 
               {rows.length === 0

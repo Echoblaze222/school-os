@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './notices.module.css'
-import { CheckIcon, XIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { CheckIcon, XIcon, MegaphoneIcon, AlertIcon, CalendarIcon } from '@/components/Icons'
 
 type Priority = 'low' | 'normal' | 'urgent'
 type Audience = 'all' | 'students' | 'teachers' | 'parents' | 'staff'
@@ -137,18 +138,9 @@ export default function NoticesClient({ profile, school, userId }: Props) {
       <div className={styles.container}>
         {/* Stats */}
         <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: sc }}>{notices.length}</p>
-            <p className={styles.statLbl}>Total</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#EF4444' }}>{urgentCount}</p>
-            <p className={styles.statLbl}>Urgent</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statVal} style={{ color: '#10B981' }}>{notices.filter(n => { const d = Date.now()-new Date(n.created_at).getTime(); return d < 86400000*7 }).length}</p>
-            <p className={styles.statLbl}>This Week</p>
-          </div>
+          <KpiCard label="Total" value={notices.length} icon={<MegaphoneIcon size={16} />} color={sc} />
+          <KpiCard label="Urgent" value={urgentCount} icon={<AlertIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
+          <KpiCard label="This Week" value={notices.filter(n => { const d = Date.now()-new Date(n.created_at).getTime(); return d < 86400000*7 }).length} icon={<CalendarIcon size={16} />} color="#10B981" />
         </div>
 
         {/* Toolbar */}

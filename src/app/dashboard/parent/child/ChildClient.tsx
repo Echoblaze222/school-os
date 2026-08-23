@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
-import { UserIcon, BarChartIcon, CalendarIcon, TrophyIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { UserIcon, BarChartIcon, CalendarIcon, TrophyIcon, CheckCircleIcon, XIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
 
@@ -15,6 +16,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
   const [children,   setChildren]   = useState<any[]>([])
   const [results,    setResults]    = useState<any[]>([])
   const [attendance, setAttendance] = useState({ present:0, absent:0, late:0 })
+  const [boarding,   setBoarding]   = useState<any>(null)
   const [loading,    setLoading]    = useState(true)
   const supabase    = createClient()
   const schoolColor = school?.primary_color ?? '#7C3AED'
@@ -97,6 +99,51 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
         late:    att.filter(a => a.status==='late').length,
       })
     }
+
+    // §21 Hostel + Parent connection: only for boarding students (no bed
+    // assignment = day student, section stays hidden). Deliberately no
+    // incident data here - incidents reach parents only through the
+    // explicit opt-in notify_parent action in hostel/incidents/route.ts,
+    // which sends a fixed safe template. This is presence/location
+    // reassurance only, not a second channel into incident detail.
+    const { data: bedRow } = await supabase
+      .from('hostel_bed_assignments')
+      .select('hostel_beds!inner(label, hostel_rooms!inner(name, hostel_blocks!inner(name, hostels!inner(id, name))))')
+      .eq('student_id', target.id).eq('status', 'active').maybeSingle()
+
+    if (bedRow) {
+      const bed   = Array.isArray((bedRow as any).hostel_beds) ? (bedRow as any).hostel_beds[0] : (bedRow as any).hostel_beds
+      const room  = Array.isArray(bed?.hostel_rooms) ? bed.hostel_rooms[0] : bed?.hostel_rooms
+      const block = Array.isArray(room?.hostel_blocks) ? room.hostel_blocks[0] : room?.hostel_blocks
+      const hostelRow = Array.isArray(block?.hostels) ? block.hostels[0] : block?.hostels
+
+      const [{ data: todayEntry }, { data: activeLeave }] = await Promise.all([
+        hostelRow?.id
+          ? supabase.from('hostel_roll_call_entries')
+              .select('status, recorded_at, hostel_roll_call_sessions!inner(hostel_id, session_date)')
+              .eq('student_id', target.id)
+              .eq('hostel_roll_call_sessions.session_date', new Date().toISOString().slice(0, 10))
+              .eq('hostel_roll_call_sessions.hostel_id', hostelRow.id)
+              .order('recorded_at', { ascending: false }).limit(1).maybeSingle()
+          : Promise.resolve({ data: null }),
+        supabase.from('hostel_leave_requests')
+          .select('status, destination, departure_expected, return_expected')
+          .eq('student_id', target.id).in('status', ['pending', 'approved'])
+          .order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      ])
+
+      setBoarding({
+        hostelName: hostelRow?.name ?? null,
+        blockName:  block?.name ?? null,
+        roomName:   room?.name ?? null,
+        bedLabel:   bed?.label ?? null,
+        todayStatus: (todayEntry as any)?.status ?? null,
+        leave: activeLeave ?? null,
+      })
+    } else {
+      setBoarding(null)
+    }
+
     setLoading(false)
   }
 
@@ -152,18 +199,33 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
 
               {/* Stats */}
               <div className={styles.statsRow} style={{ marginBottom:'var(--space-6)' }}>
-                {[
-                  { label:'Avg Score',    value:`${avgScore}%`,        color:avgScore>=60?'#10B981':'#EF4444' },
-                  { label:'Attendance',   value:`${attRate}%`,         color:attRate>=75?'#10B981':'#EF4444' },
-                  { label:'Days Present', value:attendance.present,    color:'#10B981' },
-                  { label:'Days Absent',  value:attendance.absent,     color:'#EF4444' },
-                ].map(s => (
-                  <div key={s.label} className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color:s.color }}>{s.value}</p>
-                    <p className={styles.statLbl}>{s.label}</p>
-                  </div>
-                ))}
+                <KpiCard label="Avg Score" value={`${avgScore}%`} icon={<BarChartIcon size={16} />} color={avgScore>=60?'#10B981':'#EF4444'} valueColor={avgScore>=60?'#10B981':'#EF4444'} context="This term" />
+                <KpiCard label="Attendance" value={`${attRate}%`} icon={<CalendarIcon size={16} />} color={attRate>=75?'#10B981':'#EF4444'} valueColor={attRate>=75?'#10B981':'#EF4444'} context="This term" />
+                <KpiCard label="Days Present" value={attendance.present} icon={<CheckCircleIcon size={16} />} color="#10B981" />
+                <KpiCard label="Days Absent" value={attendance.absent} icon={<XIcon size={16} />} color="#EF4444" />
               </div>
+
+              {/* Boarding / hostel status - §21, boarding students only */}
+              {boarding && (
+                <>
+                  <p className={styles.sectionLabel}>Boarding Status</p>
+                  <div style={{ padding:'var(--space-4)', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', marginBottom:'var(--space-6)' }}>
+                    <p style={{ fontSize:'0.85rem', fontWeight:700, color:'var(--text-primary)', margin:'0 0 4px' }}>
+                      {boarding.hostelName}{boarding.blockName ? ` · ${boarding.blockName}` : ''}{boarding.roomName ? ` · ${boarding.roomName}` : ''}{boarding.bedLabel ? ` · ${boarding.bedLabel}` : ''}
+                    </p>
+                    <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0 }}>
+                      {boarding.todayStatus
+                        ? `Today's roll call: ${boarding.todayStatus}`
+                        : 'No roll call recorded yet today'}
+                    </p>
+                    {boarding.leave && (
+                      <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:'4px 0 0' }}>
+                        Leave {boarding.leave.status}{boarding.leave.destination ? ` · ${boarding.leave.destination}` : ''}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Latest results */}
               <p className={styles.sectionLabel}>Latest Results</p>

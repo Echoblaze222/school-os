@@ -3,6 +3,8 @@ import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import type { ManagedUser, UserRole } from './page'
+import KpiCard from '@/components/KpiCard'
+import { UsersIcon, CheckCircleIcon, GraduationCapIcon, PeopleIcon } from '@/components/Icons'
 import styles from './users.module.css'
 
 interface Props {
@@ -82,13 +84,11 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
   return (
     <RolePageWrapper userId={currentUserId} role="secretary" profile={profile} school={school} title="User Management">
       {/* Stats */}
-      <div className={styles.statsStrip}>
-        {([['Total',stats.total],['Active',stats.active],['Students',stats.students],['Teachers',stats.teachers]] as [string,number][]).map(([l,v],i,arr)=>(
-          <div key={l} style={{display:'contents'}}>
-            <div className={styles.stat}><span className={styles.statVal}>{v}</span><span className={styles.statLbl}>{l}</span></div>
-            {i < arr.length-1 && <div className={styles.statDiv}/>}
-          </div>
-        ))}
+      <div className={styles.statsStrip} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-3)' }}>
+        <KpiCard label="Total" value={stats.total} icon={<UsersIcon size={16} />} />
+        <KpiCard label="Active" value={stats.active} icon={<CheckCircleIcon size={16} />} color="#10B981" />
+        <KpiCard label="Students" value={stats.students} icon={<GraduationCapIcon size={16} />} />
+        <KpiCard label="Teachers" value={stats.teachers} icon={<PeopleIcon size={16} />} />
       </div>
 
       {/* Filters */}

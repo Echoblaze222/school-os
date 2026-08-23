@@ -57,6 +57,7 @@ export async function GET(request: Request) {
     .select('id, reporter_id, location, category, description, priority, status, assigned_to, created_at, updated_at, profiles!ict_tickets_reporter_id_fkey(full_name)')
     .eq('school_id', caller.profile.school_id)
     .order('created_at', { ascending: false })
+    .limit(200) // §33 performance: tickets accumulate indefinitely, this list was unbounded
 
   if (status) query = query.eq('status', status)
   if (priority) query = query.eq('priority', priority)

@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import StudentNav from '@/components/StudentNav'
-import { FileTextIcon, CalendarIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { FileTextIcon, CalendarIcon, PercentIcon, CheckCircleIcon, XIcon, ClockIcon } from '@/components/Icons'
 import styles from './page.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -80,22 +81,10 @@ export default function RecordsClient({ profile, school, userId }: Props) {
             {tab === 'summary' && (
               <>
                 <div className={styles.statsRow} style={{ marginBottom:'var(--space-5)' }}>
-                  <div className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color:'#10B981' }}>{rate}%</p>
-                    <p className={styles.statLbl}>Attendance Rate</p>
-                  </div>
-                  <div className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color:'#10B981' }}>{present}</p>
-                    <p className={styles.statLbl}>Present</p>
-                  </div>
-                  <div className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color:'#EF4444' }}>{absent}</p>
-                    <p className={styles.statLbl}>Absent</p>
-                  </div>
-                  <div className={styles.statCard}>
-                    <p className={styles.statVal} style={{ color:'#F59E0B' }}>{late}</p>
-                    <p className={styles.statLbl}>Late</p>
-                  </div>
+                  <KpiCard label="Attendance Rate" value={`${rate}%`} icon={<PercentIcon size={16} />} color="#10B981" valueColor="#10B981" />
+                  <KpiCard label="Present" value={present} icon={<CheckCircleIcon size={16} />} color="#10B981" valueColor="#10B981" />
+                  <KpiCard label="Absent" value={absent} icon={<XIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
+                  <KpiCard label="Late" value={late} icon={<ClockIcon size={16} />} color="#F59E0B" valueColor="#F59E0B" />
                 </div>
                 <div className={styles.progressCard}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>

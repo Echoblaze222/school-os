@@ -59,6 +59,7 @@ export async function GET(request: Request) {
       : 'id, asset_tag, device_type, name, location, status, condition, assigned_to_profile, assigned_to_dept')
     .eq('school_id', caller.profile.school_id)
     .order('asset_tag', { ascending: true })
+    .limit(500) // §33 performance: was unbounded; asset count can grow into the hundreds for a large school
 
   if (status) query = query.eq('status', status)
   if (deviceType) query = query.eq('device_type', deviceType)

@@ -5,6 +5,7 @@ import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
+import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
@@ -91,12 +92,6 @@ export default function PrincipalDashboardClient({
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Principal'
 
-  const miniStats = [
-    { label: 'Students', value: counts.studentCount ?? 0 },
-    { label: 'Teachers', value: counts.teacherCount ?? 0 },
-    { label: 'Classes',  value: counts.classCount   ?? 0 },
-  ]
-
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
@@ -122,6 +117,19 @@ export default function PrincipalDashboardClient({
       />
 
       <main className={styles.main} style={{ maxWidth: 880 }}>
+
+        {/* Top-level school metrics as proper KPI cards - prompt §6/§7:
+            label + dominant number + icon + short context. No trend
+            shown here since there's no real prior-period comparison
+            queried yet - a fabricated trend would violate §6's "do not
+            fabricate numbers" rule more than an absent one costs us. */}
+        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+          <KpiCard label="Students" value={counts.studentCount ?? 0} icon={<SchoolIcon size={16} />} context="On roll" />
+          <KpiCard label="Teachers" value={counts.teacherCount ?? 0} icon={<UserIcon size={16} />} context="Active staff" />
+          <KpiCard label="Classes" value={counts.classCount ?? 0} icon={<LayersIcon size={16} />} context="This session" />
+          <KpiCard label="Fees Collected" value={counts.feesCollectedDisplay ?? '—'} icon={<WalletIcon size={16} />} context="This term" />
+          <KpiCard label="Outstanding Fees" value={counts.outstandingFeesDisplay ?? '—'} icon={<WalletIcon size={16} />} context="Requires attention" color="var(--status-warn, #E4572E)" />
+        </div>
 
         {/* Animated graphical stats - the numbers that matter most, as gauges */}
         <div className={motion.riseIn} style={{
@@ -172,20 +180,6 @@ export default function PrincipalDashboardClient({
             ))}
           </div>
         )}
-
-        {/* Light-weight roll counts - plain, since these are just counts, not rates */}
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))' }}>
-          {miniStats.map((s, i) => (
-            <div
-              key={s.label}
-              className={`${styles.statCard} ${motion.staggerItem} ${motion.pressable}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <p className={styles.statVal}>{s.value}</p>
-              <p className={styles.statLbl}>{s.label}</p>
-            </div>
-          ))}
-        </div>
 
         <RecentActivity
           items={activities}

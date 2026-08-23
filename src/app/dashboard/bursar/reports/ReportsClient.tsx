@@ -10,7 +10,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
-import { BarChartIcon } from '@/components/Icons'
+import KpiCard from '@/components/KpiCard'
+import { BarChartIcon, WalletIcon, CheckCircleIcon, XIcon, UsersIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -197,17 +198,10 @@ export default function ReportsClient({ profile, school, userId }: Props) {
               {tab === 'summary' && (
                 <>
                   <div className={`${styles.statsRow} stagger`} style={{ marginBottom:'var(--space-5)' }}>
-                    {[
-                      { label:'Collected',      value: fmtAmt(report.totalCollected), color:'#10B981' },
-                      { label:'Students Paid',  value: report.paidCount,              color: sc       },
-                      { label:'Not Paid',       value: report.unpaidCount,            color:'#EF4444' },
-                      { label:'Total Students', value: report.studentCount,           color:'#F59E0B' },
-                    ].map(s => (
-                      <div key={s.label} className={`${styles.statCard} animate-fade-up`}>
-                        <p className={styles.statVal} style={{ color:s.color }}>{s.value}</p>
-                        <p className={styles.statLbl}>{s.label}</p>
-                      </div>
-                    ))}
+                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} color="#10B981" valueColor="#10B981" context="This term" />
+                    <KpiCard label="Students Paid" value={report.paidCount} icon={<CheckCircleIcon size={16} />} color={sc} context="Fully settled" />
+                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} color="#EF4444" valueColor="#EF4444" context="Outstanding" />
+                    <KpiCard label="Total Students" value={report.studentCount} icon={<UsersIcon size={16} />} color="#F59E0B" context="On roll" />
                   </div>
 
                   <div className="animate-fade-up" style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
