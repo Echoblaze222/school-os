@@ -61,6 +61,17 @@ export default async function PrincipalSettingsPage() {
         subscription_plan: school.subscription_plan ?? null,
         paystack_subaccount_code:   school.paystack_subaccount_code   ?? null,
         paystack_subaccount_active: school.paystack_subaccount_active ?? false,
+        slug:                 school.slug                 ?? undefined,
+        is_publicly_listed:   school.is_publicly_listed   ?? false,
+        description:          school.description          ?? null,
+        website_url:          school.website_url          ?? null,
+        public_email:         school.public_email         ?? null,
+        public_phone:         school.public_phone         ?? null,
+        admission_status:     school.admission_status     ?? 'closed',
+        application_deadline: school.application_deadline ?? null,
+        founded_year:         school.founded_year         ?? null,
+        facilities:           school.facilities           ?? [],
+        programs:             school.programs             ?? [],
       }}
     />
   )

@@ -25,6 +25,7 @@ interface Profile {
 interface School {
   id:              string
   name:            string
+  slug?:           string
   tagline:         string | null
   address:         string | null
   city:            string | null
@@ -42,6 +43,16 @@ interface School {
   subscription_plan: string | null
   paystack_subaccount_code:   string | null
   paystack_subaccount_active: boolean | null
+  is_publicly_listed?: boolean
+  description?:        string | null
+  website_url?:         string | null
+  public_email?:        string | null
+  public_phone?:         string | null
+  admission_status?:    string | null
+  application_deadline?: string | null
+  founded_year?:         number | null
+  facilities?:            string[]
+  programs?:              string[]
 }
 
 interface Props {
@@ -49,7 +60,7 @@ interface Props {
   school:  School
 }
 
-type Tab = 'identity' | 'branding' | 'contact' | 'banking'
+type Tab = 'identity' | 'branding' | 'contact' | 'public' | 'banking'
 
 export default function SettingsClient({ profile, school }: Props) {
   const supabase = createClient()
@@ -69,6 +80,21 @@ export default function SettingsClient({ profile, school }: Props) {
   const [primaryColor,setPrimaryColor]= useState(school.primary_color ?? '#800020')
   const [secondaryColor,setSecondaryColor]= useState(school.secondary_color ?? '#C99A3B')
   const [fontFamily,  setFontFamily]  = useState(school.font_family ?? 'Inter')
+
+  // ── Public directory profile (find-schools listing) ──────────────────────
+  // Off by default: a school only appears on /find-schools once a principal
+  // explicitly turns this on here, after filling in the fields visitors
+  // will see. Nothing here overrides super-admin's separate verified_status.
+  const [isPubliclyListed, setIsPubliclyListed] = useState(school.is_publicly_listed ?? false)
+  const [publicDescription, setPublicDescription] = useState(school.description ?? '')
+  const [websiteUrl,   setWebsiteUrl]   = useState(school.website_url ?? '')
+  const [publicEmail,  setPublicEmail]  = useState(school.public_email ?? '')
+  const [publicPhone,  setPublicPhone]  = useState(school.public_phone ?? '')
+  const [admissionStatus, setAdmissionStatus] = useState(school.admission_status ?? 'closed')
+  const [applicationDeadline, setApplicationDeadline] = useState(school.application_deadline ?? '')
+  const [foundedYear,  setFoundedYear]  = useState(school.founded_year ? String(school.founded_year) : '')
+  const [facilitiesText, setFacilitiesText] = useState((school.facilities ?? []).join(', '))
+  const [programsText,   setProgramsText]   = useState((school.programs ?? []).join(', '))
 
   // ── Banking fields ───────────────────────────────────────────────────────────
   const [bankName,      setBankName]      = useState((school as any).bank_name      ?? '')
@@ -298,6 +324,16 @@ export default function SettingsClient({ profile, school }: Props) {
             font_family:     fontFamily,
             logo_url:        logoUrl,
             build_image_url: buildImageUrl,
+            is_publicly_listed:    isPubliclyListed,
+            description:           publicDescription,
+            website_url:           websiteUrl,
+            public_email:          publicEmail,
+            public_phone:          publicPhone,
+            admission_status:      admissionStatus,
+            application_deadline:  applicationDeadline || null,
+            founded_year:          foundedYear ? Number(foundedYear) : null,
+            facilities:            facilitiesText.split(',').map(s => s.trim()).filter(Boolean),
+            programs:              programsText.split(',').map(s => s.trim()).filter(Boolean),
           }),
         })
 
@@ -445,6 +481,7 @@ export default function SettingsClient({ profile, school }: Props) {
           { key: 'identity', label: 'Identity', Icon: SchoolIcon },
           { key: 'branding', label: 'Branding', Icon: LayersIcon },
           { key: 'contact',  label: 'Contact',  Icon: PhoneIcon  },
+          { key: 'public',   label: 'Public Profile', Icon: SchoolIcon },
           { key: 'banking',  label: 'Banking',  Icon: WalletIcon },
         ] as { key: Tab; label: string; Icon: typeof SchoolIcon }[]).map(({ key, label, Icon }) => (
           <button
@@ -904,6 +941,141 @@ export default function SettingsClient({ profile, school }: Props) {
                   title="Contact support to change your email"
                 />
                 <p className={styles.fieldHint}>Contact support to update your login email.</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ════════════════ PUBLIC PROFILE TAB ════════════════ */}
+        {tab === 'public' && (
+          <>
+            <p className={styles.sectionLabel}>Find a School Listing</p>
+            <div className={`glass-card ${styles.card}`}>
+              <div className={styles.fieldGroup} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <label className={styles.label} style={{ marginBottom: 2 }}>List this school publicly</label>
+                  <p className={styles.fieldHint} style={{ margin: 0 }}>
+                    Turns on your profile at /schools/{school.slug ?? '...'} and makes you searchable on /find-schools.
+                    Off by default — nothing below is visible to parents until this is on.
+                  </p>
+                </div>
+                <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={isPubliclyListed}
+                    onChange={e => setIsPubliclyListed(e.target.checked)}
+                    style={{ width: 20, height: 20 }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <p className={styles.sectionLabel}>Public Description</p>
+            <div className={`glass-card ${styles.card}`}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>About this school</label>
+                <textarea
+                  className={styles.input}
+                  rows={4}
+                  value={publicDescription}
+                  onChange={e => setPublicDescription(e.target.value)}
+                  placeholder="What makes your school stand out to prospective parents?"
+                />
+              </div>
+              <div className={styles.twoCol}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Website</label>
+                  <input
+                    className={styles.input}
+                    value={websiteUrl}
+                    onChange={e => setWebsiteUrl(e.target.value)}
+                    placeholder="https://yourschool.edu.ng"
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Founded Year</label>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    value={foundedYear}
+                    onChange={e => setFoundedYear(e.target.value)}
+                    placeholder="1998"
+                  />
+                </div>
+              </div>
+              <div className={styles.twoCol}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Public Email</label>
+                  <input
+                    className={styles.input}
+                    type="email"
+                    value={publicEmail}
+                    onChange={e => setPublicEmail(e.target.value)}
+                    placeholder="admissions@yourschool.edu.ng"
+                  />
+                  <p className={styles.fieldHint}>Shown to visitors — separate from your private official email in Contact.</p>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Public Phone</label>
+                  <input
+                    className={styles.input}
+                    type="tel"
+                    value={publicPhone}
+                    onChange={e => setPublicPhone(e.target.value)}
+                    placeholder="+234 801 234 5678"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <p className={styles.sectionLabel}>Admissions</p>
+            <div className={`glass-card ${styles.card}`}>
+              <div className={styles.twoCol}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Admission Status</label>
+                  <select
+                    className={styles.input}
+                    value={admissionStatus}
+                    onChange={e => setAdmissionStatus(e.target.value)}
+                  >
+                    <option value="closed">Closed</option>
+                    <option value="open">Open</option>
+                    <option value="waitlist">Waitlist</option>
+                  </select>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Application Deadline</label>
+                  <input
+                    className={styles.input}
+                    type="date"
+                    value={applicationDeadline}
+                    onChange={e => setApplicationDeadline(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <p className={styles.sectionLabel}>Facilities &amp; Programs</p>
+            <div className={`glass-card ${styles.card}`}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Facilities</label>
+                <input
+                  className={styles.input}
+                  value={facilitiesText}
+                  onChange={e => setFacilitiesText(e.target.value)}
+                  placeholder="Library, Science Lab, Sports Field"
+                />
+                <p className={styles.fieldHint}>Comma-separated.</p>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Programs</label>
+                <input
+                  className={styles.input}
+                  value={programsText}
+                  onChange={e => setProgramsText(e.target.value)}
+                  placeholder="STEM, Boarding, Sports Scholarship"
+                />
+                <p className={styles.fieldHint}>Comma-separated.</p>
               </div>
             </div>
           </>
