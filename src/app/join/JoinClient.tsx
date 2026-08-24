@@ -1,5 +1,5 @@
 'use client'
-// src/app/join/page.tsx
+// src/app/join/JoinClient.tsx
 // Public platform (Phase 4, Lane C) - §58 self-service SchoolOS identity.
 // Distinct from /login: this page never asks for a school access code.
 // It exists so a visitor who wants to send an admission request can get
