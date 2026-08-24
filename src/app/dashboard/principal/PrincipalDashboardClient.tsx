@@ -24,11 +24,12 @@ import motion from '@/components/dashboard-motion.module.css'
 // Kept in one place so the sheet can never drift from what actually exists.
 const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'People', items: [
-    { id: 'staff',    label: 'Staff',    href: '/dashboard/principal/staff',    Icon: PeopleIcon },
-    { id: 'teachers', label: 'Teachers', href: '/dashboard/principal/teachers', Icon: UserIcon },
-    { id: 'students', label: 'Students', href: '/dashboard/principal/students', Icon: SchoolIcon },
-    { id: 'alumni',   label: 'Alumni',   href: '/dashboard/principal/alumni',   Icon: GlobeIcon },
-    { id: 'transfers',label: 'Transfers',href: '/dashboard/principal/transfers',Icon: RefreshIcon },
+    { id: 'staff',      label: 'Staff',      href: '/dashboard/principal/staff',      Icon: PeopleIcon },
+    { id: 'teachers',   label: 'Teachers',   href: '/dashboard/principal/teachers',   Icon: UserIcon },
+    { id: 'students',   label: 'Students',   href: '/dashboard/principal/students',   Icon: SchoolIcon },
+    { id: 'leadership', label: 'Leadership', href: '/dashboard/principal/leadership', Icon: TrophyIcon },
+    { id: 'alumni',     label: 'Alumni',     href: '/dashboard/principal/alumni',     Icon: GlobeIcon },
+    { id: 'transfers',  label: 'Transfers',  href: '/dashboard/principal/transfers',  Icon: RefreshIcon },
   ]},
   { name: 'Academics', items: [
     { id: 'classes',     label: 'Classes',     href: '/dashboard/principal/classes',     Icon: LayersIcon },
