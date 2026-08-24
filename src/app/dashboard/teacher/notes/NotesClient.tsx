@@ -177,7 +177,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
     if (err) {
       // FIX: surface the error to the UI instead of failing silently
       console.error('[notes] insert error:', err.message)
-      setError(err.message)
+      setError("We couldn't save that note. Try again.")
       setSaving(false)
       return
     }
@@ -192,7 +192,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   async function deleteNote(id: string) {
     if (!confirm('Delete this note?')) return
     const { error: err } = await supabase.from('school_notes').delete().eq('id', id).eq('uploaded_by', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[notes] delete error:', err.message); setError("We couldn't delete that note. Try again."); return }
     setRows(prev => prev.filter(r => r.id !== id))
   }
 

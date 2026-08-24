@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       .select('id, full_name, email, phone, role_applied_for, verification_method, status, submitted_at, reviewed_at, rejection_reason')
       .eq('school_id', callerProfile.school_id)
       .order('submitted_at', { ascending: false })
+      .limit(200) // §33 performance: applications accumulate indefinitely
 
     if (status) query = query.eq('status', status)
 

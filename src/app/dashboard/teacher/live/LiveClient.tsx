@@ -56,7 +56,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       .eq('teacher_id', userId)
       .eq('school_id', school?.id)
 
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher live] load classes error:', err.message); setError("We couldn't load your classes. Try again."); return }
     if (!ct?.length) return
 
     const list: TeacherClass[] = await Promise.all(
@@ -90,7 +90,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       .eq('teacher_id', userId)
       .order('scheduled_at', { ascending: false })
       .limit(50)
-    if (err) { setError(err.message) }
+    if (err) { console.error('[teacher live] load sessions error:', err.message); setError("We couldn't load your live classes. Try again.") }
     if (data) setSessions(data)
     setLoading(false)
   }
@@ -120,7 +120,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
       setTab('scheduled')
       load()
     } else {
-      setError(err.message)
+      console.error('[teacher live] create error:', err.message)
+      setError("We couldn't schedule that class. Try again.")
     }
     setSaving(false)
   }
@@ -130,7 +131,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
     const { error: err } = await supabase.from('online_classes')
       .update({ is_live: true, started_at: new Date().toISOString() })
       .eq('id', id).eq('teacher_id', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher live] start error:', err.message); setError("We couldn't start that class. Try again."); return }
     setTab('live')
     load()
   }
@@ -140,7 +141,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
     const { error: err } = await supabase.from('online_classes')
       .update({ is_live: false, ended_at: new Date().toISOString() })
       .eq('id', id).eq('teacher_id', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher live] end error:', err.message); setError("We couldn't end that class. Try again."); return }
     setTab('ended')
     load()
   }
@@ -148,7 +149,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   async function deleteSession(id: string) {
     setError(null)
     const { error: err } = await supabase.from('online_classes').delete().eq('id', id).eq('teacher_id', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher live] delete error:', err.message); setError("We couldn't delete that session. Try again."); return }
     setSessions(prev => prev.filter(s => s.id !== id))
   }
 

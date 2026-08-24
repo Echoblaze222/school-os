@@ -81,7 +81,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       .eq('teacher_id', userId)
       .eq('school_id', school.id)
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) { console.error('[teacher syllabus] load classes error:', err.message); setError("We couldn't load your classes. Try again."); setLoading(false); return }
     if (!ct?.length) { setLoading(false); return }
 
     const list: TeacherClass[] = await Promise.all(
@@ -115,7 +115,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       .eq('term', term)
       .eq('school_id', school.id)
       .order('week_number')
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher syllabus] load topics error:', err.message); setError("We couldn't load syllabus topics. Try again."); return }
     setTopics(data ?? [])
   }
 
@@ -147,7 +147,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       created_by: userId,
       is_covered: false,
     })
-    if (err) { setError(err.message); setSaving(false); return }
+    if (err) { console.error('[teacher syllabus] add topic error:', err.message); setError("We couldn't add that topic. Try again."); setSaving(false); return }
     setNewTopic({ title: '', description: '', week_number: topics.length + 2 })
     setShowAddTopic(false)
     await loadTopics()
@@ -163,7 +163,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       description: editTopic.description || null,
       week_number: editTopic.week_number,
     }).eq('id', editTopicId).eq('created_by', userId)
-    if (err) { setError(err.message); setSaving(false); return }
+    if (err) { console.error('[teacher syllabus] edit topic error:', err.message); setError("We couldn't save that change. Try again."); setSaving(false); return }
     setTopics(prev => prev.map(t =>
       t.id === editTopicId
         ? { ...t, title: editTopic.title, description: editTopic.description || null, week_number: editTopic.week_number }
@@ -178,7 +178,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       is_covered: !current,
       covered_at: !current ? new Date().toISOString() : null,
     }).eq('id', id).eq('created_by', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher syllabus] toggle covered error:', err.message); setError("We couldn't update that topic. Try again."); return }
     setTopics(prev => prev.map(t =>
       t.id === id ? { ...t, is_covered: !current, covered_at: !current ? new Date().toISOString() : null } : t
     ))
@@ -187,7 +187,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   async function deleteTopic(id: string) {
     if (!confirm('Delete this topic?')) return
     const { error: err } = await supabase.from('syllabus_topics').delete().eq('id', id).eq('created_by', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher syllabus] delete topic error:', err.message); setError("We couldn't delete that topic. Try again."); return }
     setTopics(prev => prev.filter(t => t.id !== id))
   }
 
@@ -198,13 +198,13 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
     const ext = file.name.split('.').pop()
     const path = `${school?.id}/${selectedClass.class_id}/${term.replace(/ /g, '_')}_${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('syllabus').upload(path, file, { upsert: true })
-    if (upErr) { setError(`Upload failed: ${upErr.message}`); setUploadingPdf(false); return }
+    if (upErr) { console.error('[teacher syllabus] upload error:', upErr.message); setError("We couldn't upload that file. Try again."); setUploadingPdf(false); return }
     const { data: urlData } = supabase.storage.from('syllabus').getPublicUrl(path)
     const fileUrl = urlData?.publicUrl ?? ''
 
     if (syllabusPdf?.id) {
       const { error: err } = await supabase.from('syllabus').update({ file_url: fileUrl }).eq('id', syllabusPdf.id)
-      if (err) { setError(err.message); setUploadingPdf(false); return }
+      if (err) { console.error('[teacher syllabus] update PDF error:', err.message); setError("We couldn't save that file. Try again."); setUploadingPdf(false); return }
     } else {
       // FIX: `syllabus` table has NO school_id column - only `syllabus_topics` does.
       // The previous "FIXED: added school_id" comment was based on a wrong assumption;
@@ -217,7 +217,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
         file_url: fileUrl,
         uploaded_by: userId,
       })
-      if (err) { setError(err.message); setUploadingPdf(false); return }
+      if (err) { console.error('[teacher syllabus] save PDF error:', err.message); setError("We couldn't save that file. Try again."); setUploadingPdf(false); return }
     }
     await loadSyllabusPdf()
     setUploadingPdf(false)

@@ -159,7 +159,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       .gt('balance_ngn', 0)
 
     if (err) {
-      setError(err.message)
+      console.error('[bursar reminders] load error:', err.message)
+      setError("We couldn't load fee reminders. Try again in a moment.")
       setLoading(false)
       return
     }

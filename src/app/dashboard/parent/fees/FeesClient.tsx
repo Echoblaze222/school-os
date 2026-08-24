@@ -118,7 +118,11 @@ export default function FeesClient({ profile, school, userId }: Props) {
       .eq('parent_id', userId)
       .order('full_name')
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      console.error('[parent fees] load children error:', err.message)
+      setError("We couldn't load your children's records. Try again in a moment.")
+      setLoading(false); return
+    }
 
     if (!childData || childData.length === 0) {
       setChildren([])
@@ -167,7 +171,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
       .eq('student_id', id)
 
     if (invErr) {
-      setError(invErr.message)
+      console.error('[parent fees] load invoices error:', invErr.message)
+      setError("We couldn't load the fee balance. Try again in a moment.")
       setInvoices([]); setPayments([]); setReminders([])
       setLoading(false)
       return
@@ -198,7 +203,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
       .limit(50)
 
     if (payErr) {
-      setError(payErr.message)
+      console.error('[parent fees] load payments error:', payErr.message)
+      setError("We couldn't load payment history. Try again in a moment.")
       setPayments([])
     } else {
       // .eq() filters above target a 2nd-level nested embed

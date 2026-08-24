@@ -8,6 +8,7 @@ import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon } from '@/components/Ico
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
 import type { DepartmentWithStats } from '@/lib/supabase/appointments'
+import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 import styles from './leadership.module.css'
 
 interface StaffOption { id: string; full_name: string; avatar_url: string | null; department_id: string | null }
@@ -22,6 +23,11 @@ interface HostelPrefect {
   appointmentId: string; profileId: string; fullName: string
   avatarUrl: string | null; hostelIds: string[]; assignedAt: string
 }
+interface ClassOption { id: string; name: string }
+interface GenericAppointee {
+  appointmentId: string; profileId: string; fullName: string
+  avatarUrl: string | null; hostelIds: string[]; classIds: string[]; assignedAt: string
+}
 
 interface Props {
   profile: any; school: any; userId: string
@@ -29,6 +35,8 @@ interface Props {
   initialVicePrincipals: VicePrincipal[]
   initialHostels: Hostel[]
   initialHostelPrefects: HostelPrefect[]
+  initialClasses: ClassOption[]
+  initialGenericAppointments: Record<string, GenericAppointee[]>
 }
 
 const PORTFOLIOS = [
@@ -39,7 +47,25 @@ const PORTFOLIOS = [
   { value: 'operations', label: 'Operations' },
 ]
 
-export default function LeadershipClient({ profile, school, userId, initialDepartments, initialVicePrincipals, initialHostels, initialHostelPrefects }: Props) {
+// Bespoke sections above (Vice Principal, HOD, Hostel Prefect) each need
+// their own scope input (departments / hostel-per-department / hostels).
+// Everything else renders through the generic section below, one row per
+// type, grouped by category - built once and reused for all 19 rather
+// than 19 near-identical bespoke blocks.
+const GENERIC_TYPES = (Object.keys(APPOINTMENT_TYPES) as AppointmentTypeId[])
+  .filter(id => !['vice_principal', 'hod', 'hostel_prefect'].includes(id))
+const CATEGORY_ORDER: string[] = ['welfare', 'ict', 'operations', 'hostel', 'academic', 'student_leadership']
+const CATEGORY_LABELS: Record<string, string> = {
+  welfare: 'Welfare', ict: 'ICT', operations: 'Operations',
+  hostel: 'Hostel Staff', academic: 'Examination Committee', student_leadership: 'Student Leadership',
+}
+const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
+const CLASS_SCOPED_TYPES = new Set<AppointmentTypeId>(['class_prefect'])
+
+export default function LeadershipClient({
+  profile, school, userId, initialDepartments, initialVicePrincipals, initialHostels, initialHostelPrefects,
+  initialClasses, initialGenericAppointments,
+}: Props) {
   const [departments, setDepartments] = useState(initialDepartments)
   const [vicePrincipals, setVicePrincipals] = useState(initialVicePrincipals)
   const [hostelPrefects, setHostelPrefects] = useState(initialHostelPrefects)
@@ -58,6 +84,8 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
   // HOD picker (shared for any department, Principal has no scope limit)
   const [hodPicker, setHodPicker] = useState<DepartmentWithStats | null>(null)
   const [eligibleHods, setEligibleHods] = useState<StaffOption[]>([]); const [loadingEligible, setLoadingEligible] = useState(false)
+  const [assigningHodId, setAssigningHodId] = useState<string | null>(null)
+  const [revokingHodDeptId, setRevokingHodDeptId] = useState<string | null>(null)
 
   // VP appointment picker
   const [showVpPicker, setShowVpPicker] = useState(false)
@@ -67,6 +95,8 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
   const [vpPortfolio, setVpPortfolio] = useState('')
   const [vpDeptIds, setVpDeptIds] = useState<string[]>([])
   const [appointing, setAppointing] = useState(false)
+  const [editingVpAppointmentId, setEditingVpAppointmentId] = useState<string | null>(null)
+  const [revokingVpId, setRevokingVpId] = useState<string | null>(null)
 
   // Hostel Prefect appointment picker (same two-step shape as VP: pick
   // the student, then configure scope - here that's which hostel(s)
@@ -77,6 +107,22 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
   const [selectedHpCandidate, setSelectedHpCandidate] = useState<StaffOption | null>(null)
   const [hpHostelIds, setHpHostelIds] = useState<string[]>([])
   const [appointingHp, setAppointingHp] = useState(false)
+  const [revokingHpId, setRevokingHpId] = useState<string | null>(null)
+
+  // Generic appointment picker: shared by all 19 types that don't need
+  // their own bespoke section (see GENERIC_TYPES above). Most have no
+  // scope at all (click a name, done); the hostel-staff and class-prefect
+  // types add a 'configure' step for picking which hostel(s)/class the
+  // appointment applies to, same shape as the HP picker above.
+  const [genericAppointments, setGenericAppointments] = useState(initialGenericAppointments)
+  const [genericPicker, setGenericPicker] = useState<{ type: AppointmentTypeId; step: 'pick' | 'configure' } | null>(null)
+  const [genericCandidates, setGenericCandidates] = useState<StaffOption[]>([])
+  const [loadingGenericCandidates, setLoadingGenericCandidates] = useState(false)
+  const [selectedGenericCandidate, setSelectedGenericCandidate] = useState<StaffOption | null>(null)
+  const [genericScopeIds, setGenericScopeIds] = useState<string[]>([])
+  const [appointingGeneric, setAppointingGeneric] = useState(false)
+  const [assigningGenericCandidateId, setAssigningGenericCandidateId] = useState<string | null>(null)
+  const [revokingGenericId, setRevokingGenericId] = useState<string | null>(null)
 
   async function refreshDepartments() {
     const res = await fetch('/api/org/departments'); const json = await res.json()
@@ -128,19 +174,24 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
     } finally { setLoadingEligible(false) }
   }
   async function assignHod(staffId: string) {
-    if (!hodPicker) return
-    setError('')
-    const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: staffId, appointmentType: 'hod', departmentId: hodPicker.id }) })
-    const json = await res.json()
-    if (!json.ok) { setError(json.error ?? 'Could not assign Head of Department.'); return }
-    setHodPicker(null); await refreshDepartments()
+    if (!hodPicker || assigningHodId) return
+    setAssigningHodId(staffId); setError('')
+    try {
+      const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: staffId, appointmentType: 'hod', departmentId: hodPicker.id }) })
+      const json = await res.json()
+      if (!json.ok) { setError(json.error ?? 'Could not assign Head of Department.'); return }
+      setHodPicker(null); await refreshDepartments()
+    } finally { setAssigningHodId(null) }
   }
   async function revokeHod(d: DepartmentWithStats) {
     if (!d.hod || !confirm(`Remove ${d.hod.full_name} as Head of Department of ${d.name}?`)) return
-    const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: d.hod.appointment_id }) })
-    const json = await res.json()
-    if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
-    await refreshDepartments()
+    setRevokingHodDeptId(d.id); setError('')
+    try {
+      const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: d.hod.appointment_id }) })
+      const json = await res.json()
+      if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
+      await refreshDepartments()
+    } finally { setRevokingHodDeptId(null) }
   }
 
   // ── Vice Principal appointment ──
@@ -153,10 +204,37 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
   }
   function pickVpCandidate(s: StaffOption) { setSelectedVpCandidate(s); setVpPortfolio(''); setVpDeptIds([]); setVpStep('configure') }
   function toggleVpDept(id: string) { setVpDeptIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+  // Reopen an already-appointed VP straight on the configure step,
+  // pre-filled with their current scope - this is what was missing:
+  // previously the only way to change a VP's departments after the
+  // fact was Revoke + re-appoint from scratch.
+  function openEditVp(vp: VicePrincipal) {
+    setSelectedVpCandidate({ id: vp.profileId, full_name: vp.fullName, avatar_url: vp.avatarUrl, department_id: null })
+    setVpPortfolio(vp.portfolio ?? '')
+    setVpDeptIds(vp.departmentIds)
+    setEditingVpAppointmentId(vp.appointmentId)
+    setVpStep('configure')
+    setShowVpPicker(true)
+    setError('')
+  }
+  function closeVpModal() { setShowVpPicker(false); setEditingVpAppointmentId(null) }
   async function confirmAppointVp() {
     if (!selectedVpCandidate) return
     setAppointing(true); setError('')
     try {
+      if (editingVpAppointmentId) {
+        const res = await fetch('/api/appointments', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ appointmentId: editingVpAppointmentId, portfolio: vpPortfolio || undefined, departmentIds: vpDeptIds }),
+        })
+        const json = await res.json()
+        if (!json.ok) { setError(json.error ?? 'Could not update Vice Principal.'); return }
+        setVicePrincipals(prev => prev.map(x => x.appointmentId === editingVpAppointmentId
+          ? { ...x, portfolio: vpPortfolio || null, departmentIds: vpDeptIds }
+          : x))
+        closeVpModal()
+        return
+      }
       const res = await fetch('/api/appointments', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileId: selectedVpCandidate.id, appointmentType: 'vice_principal', portfolio: vpPortfolio || undefined, departmentIds: vpDeptIds }),
@@ -172,10 +250,13 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
   }
   async function revokeVp(vp: VicePrincipal) {
     if (!confirm(`Remove ${vp.fullName} as Vice Principal? They will lose access to the Vice Principal dashboard immediately.`)) return
-    const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: vp.appointmentId }) })
-    const json = await res.json()
-    if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
-    setVicePrincipals(prev => prev.filter(x => x.appointmentId !== vp.appointmentId))
+    setRevokingVpId(vp.appointmentId); setError('')
+    try {
+      const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: vp.appointmentId }) })
+      const json = await res.json()
+      if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
+      setVicePrincipals(prev => prev.filter(x => x.appointmentId !== vp.appointmentId))
+    } finally { setRevokingVpId(null) }
   }
 
   // ── Hostel Prefect appointment ──
@@ -208,10 +289,78 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
   }
   async function revokeHp(hp: HostelPrefect) {
     if (!confirm(`Remove ${hp.fullName} as Hostel Prefect? They will immediately lose access to the roll call view.`)) return
-    const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: hp.appointmentId }) })
-    const json = await res.json()
-    if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
-    setHostelPrefects(prev => prev.filter(x => x.appointmentId !== hp.appointmentId))
+    setRevokingHpId(hp.appointmentId); setError('')
+    try {
+      const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: hp.appointmentId }) })
+      const json = await res.json()
+      if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
+      setHostelPrefects(prev => prev.filter(x => x.appointmentId !== hp.appointmentId))
+    } finally { setRevokingHpId(null) }
+  }
+
+  // ── Generic appointment types (everything but VP / HOD / Hostel Prefect) ──
+  async function openGenericPicker(type: AppointmentTypeId) {
+    setGenericPicker({ type, step: 'pick' }); setSelectedGenericCandidate(null); setGenericScopeIds([])
+    setLoadingGenericCandidates(true); setError('')
+    try {
+      const res = await fetch(`/api/org/eligible-staff?appointmentType=${type}`)
+      const json = await res.json()
+      setGenericCandidates(json.ok ? json.staff : [])
+    } finally { setLoadingGenericCandidates(false) }
+  }
+  function closeGenericPicker() { setGenericPicker(null); setSelectedGenericCandidate(null); setGenericScopeIds([]) }
+  function toggleGenericScope(id: string) { setGenericScopeIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+  function pickGenericCandidate(s: StaffOption) {
+    if (!genericPicker) return
+    // Unscoped types assign immediately on click - no second step to
+    // click through for a role that has nothing to configure.
+    if (HOSTEL_SCOPED_TYPES.has(genericPicker.type) || CLASS_SCOPED_TYPES.has(genericPicker.type)) {
+      setSelectedGenericCandidate(s); setGenericPicker({ type: genericPicker.type, step: 'configure' })
+    } else {
+      assignGeneric(genericPicker.type, s)
+    }
+  }
+  async function assignGeneric(type: AppointmentTypeId, candidate: StaffOption, scopeIds?: string[]) {
+    setAppointingGeneric(true); setAssigningGenericCandidateId(candidate.id); setError('')
+    try {
+      const body: Record<string, unknown> = { profileId: candidate.id, appointmentType: type }
+      if (HOSTEL_SCOPED_TYPES.has(type)) {
+        if (!scopeIds || scopeIds.length === 0) { setError('Select at least one hostel.'); return }
+        body.hostelIds = scopeIds
+      }
+      if (CLASS_SCOPED_TYPES.has(type)) {
+        if (!scopeIds || scopeIds.length === 0) { setError('Select at least one class.'); return }
+        body.classIds = scopeIds
+      }
+      const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const json = await res.json()
+      if (!json.ok) { setError(json.error ?? `Could not appoint ${APPOINTMENT_TYPES[type].label}.`); return }
+      setGenericAppointments(prev => ({
+        ...prev,
+        [type]: [...(prev[type] ?? []), {
+          appointmentId: json.appointment.id, profileId: candidate.id, fullName: candidate.full_name,
+          avatarUrl: candidate.avatar_url,
+          hostelIds: HOSTEL_SCOPED_TYPES.has(type) ? (scopeIds ?? []) : [],
+          classIds: CLASS_SCOPED_TYPES.has(type) ? (scopeIds ?? []) : [],
+          assignedAt: new Date().toISOString(),
+        }],
+      }))
+      closeGenericPicker()
+    } finally { setAppointingGeneric(false); setAssigningGenericCandidateId(null) }
+  }
+  function confirmGenericConfigure() {
+    if (!genericPicker || !selectedGenericCandidate) return
+    assignGeneric(genericPicker.type, selectedGenericCandidate, genericScopeIds)
+  }
+  async function revokeGeneric(type: AppointmentTypeId, appointmentId: string, fullName: string) {
+    if (!confirm(`Remove ${fullName} as ${APPOINTMENT_TYPES[type].label}?`)) return
+    setRevokingGenericId(appointmentId); setError('')
+    try {
+      const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId }) })
+      const json = await res.json()
+      if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
+      setGenericAppointments(prev => ({ ...prev, [type]: (prev[type] ?? []).filter(a => a.appointmentId !== appointmentId) }))
+    } finally { setRevokingGenericId(null) }
   }
 
   const deptName = (id: string) => departments.find(d => d.id === id)?.name ?? id
@@ -240,10 +389,15 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
                 <p className={styles.vpName}>{vp.fullName}</p>
                 <p className={styles.vpMeta}>
                   {vp.portfolio ? PORTFOLIOS.find(p => p.value === vp.portfolio)?.label ?? vp.portfolio : 'No portfolio set'}
-                  {vp.departmentIds.length > 0 && ` · ${vp.departmentIds.map(deptName).join(', ')}`}
+                  {vp.departmentIds.length > 0 ? ` · ${vp.departmentIds.map(deptName).join(', ')}` : ' · No departments assigned'}
                 </p>
               </div>
-              <button className={styles.revokeBtn} onClick={() => revokeVp(vp)}>Revoke</button>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button className={styles.editBtn} onClick={() => openEditVp(vp)} disabled={revokingVpId === vp.appointmentId}>Edit</button>
+                <button className={styles.revokeBtn} onClick={() => revokeVp(vp)} disabled={revokingVpId === vp.appointmentId}>
+                  {revokingVpId === vp.appointmentId ? 'Removing…' : 'Revoke'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -268,7 +422,9 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
                 <p className={styles.vpName}>{hp.fullName}</p>
                 <p className={styles.vpMeta}>{hp.hostelIds.map(hostelName).join(', ')}</p>
               </div>
-              <button className={styles.revokeBtn} onClick={() => revokeHp(hp)}>Revoke</button>
+              <button className={styles.revokeBtn} onClick={() => revokeHp(hp)} disabled={revokingHpId === hp.appointmentId}>
+                {revokingHpId === hp.appointmentId ? 'Removing…' : 'Revoke'}
+              </button>
             </div>
           ))}
         </div>
@@ -290,10 +446,59 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
             <DepartmentCard key={d.id} department={d}
               onEdit={() => openEdit(d)} onDelete={() => handleDelete(d)} onOpenMembers={() => openMembers(d)}
               onAssignHod={() => openHodPicker(d)} onRevokeHod={d.hod ? () => revokeHod(d) : undefined}
+              revokingHod={revokingHodDeptId === d.id}
             />
           ))}
         </div>
       )}
+
+      {/* ── Generic appointment types, grouped by category ── */}
+      {CATEGORY_ORDER.map(category => {
+        const typesInCategory = GENERIC_TYPES.filter(t => APPOINTMENT_TYPES[t].category === category)
+        if (typesInCategory.length === 0) return null
+        return (
+          <div key={category}>
+            <p className={styles.categoryTitle} style={{ marginTop: 'var(--space-6)' }}>{CATEGORY_LABELS[category]}</p>
+            {typesInCategory.map(type => {
+              const holders = genericAppointments[type] ?? []
+              return (
+                <div key={type} className={styles.genericTypeRow}>
+                  <div className={styles.genericTypeHeader}>
+                    <p className={styles.genericTypeLabel}>{APPOINTMENT_TYPES[type].label}</p>
+                    <button className={`${styles.newBtn} ${motion.rippleHost}`} onClick={() => openGenericPicker(type)} onMouseDown={ripple(motion)}>
+                      <PlusIcon size={12} /> Appoint
+                    </button>
+                  </div>
+                  {holders.length === 0 ? (
+                    <p className={styles.hint}>No one appointed yet.</p>
+                  ) : (
+                    <div className={styles.genericHolderList}>
+                      {holders.map(h => (
+                        <div key={h.appointmentId} className={styles.genericHolderChip}>
+                          <div className={styles.memberAvatar}>{h.avatarUrl ? <img src={h.avatarUrl} alt="" /> : <UserIcon size={12} />}</div>
+                          <span>
+                            {h.fullName}
+                            {HOSTEL_SCOPED_TYPES.has(type) && h.hostelIds.length > 0 && ` · ${h.hostelIds.map(hostelName).join(', ')}`}
+                            {CLASS_SCOPED_TYPES.has(type) && h.classIds.length > 0 && ` · ${h.classIds.map(id => initialClasses.find(c => c.id === id)?.name ?? id).join(', ')}`}
+                          </span>
+                          <button
+                            className={styles.chipRevokeBtn}
+                            onClick={() => revokeGeneric(type, h.appointmentId, h.fullName)}
+                            disabled={revokingGenericId === h.appointmentId}
+                            aria-label={`Revoke ${h.fullName}`}
+                          >
+                            <XIcon size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
 
       {/* ── Modals ── */}
       {showCreate && (
@@ -347,9 +552,9 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
             {loadingEligible ? <p className={styles.hint}>Loading…</p> : (
               <div className={styles.memberList}>
                 {eligibleHods.map(s => (
-                  <button key={s.id} className={styles.pickRow} onClick={() => assignHod(s.id)}>
+                  <button key={s.id} className={styles.pickRow} onClick={() => assignHod(s.id)} disabled={!!assigningHodId}>
                     <div className={styles.memberAvatar}>{s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
-                    <p className={styles.memberName}>{s.full_name}</p>
+                    <p className={styles.memberName}>{assigningHodId === s.id ? 'Assigning…' : s.full_name}</p>
                   </button>
                 ))}
               </div>
@@ -359,11 +564,13 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
       )}
 
       {showVpPicker && (
-        <div className={styles.overlay} onClick={() => setShowVpPicker(false)}>
+        <div className={styles.overlay} onClick={closeVpModal}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <p className={styles.modalTitle}>{vpStep === 'pick' ? 'Appoint Vice Principal' : `Configure - ${selectedVpCandidate?.full_name}`}</p>
-              <button className={styles.closeBtn} onClick={() => setShowVpPicker(false)}><XIcon size={16} /></button>
+              <p className={styles.modalTitle}>
+                {editingVpAppointmentId ? `Edit - ${selectedVpCandidate?.full_name}` : vpStep === 'pick' ? 'Appoint Vice Principal' : `Configure - ${selectedVpCandidate?.full_name}`}
+              </p>
+              <button className={styles.closeBtn} onClick={closeVpModal}><XIcon size={16} /></button>
             </div>
 
             {vpStep === 'pick' ? (
@@ -395,7 +602,9 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
                     ))}
                   </div>
                 )}
-                <button className={styles.primaryBtn} onClick={confirmAppointVp} disabled={appointing}>{appointing ? 'Appointing…' : 'Confirm appointment'}</button>
+                <button className={styles.primaryBtn} onClick={confirmAppointVp} disabled={appointing}>
+                  {appointing ? (editingVpAppointmentId ? 'Saving…' : 'Appointing…') : editingVpAppointmentId ? 'Save changes' : 'Confirm appointment'}
+                </button>
               </>
             )}
           </div>
@@ -436,6 +645,68 @@ export default function LeadershipClient({ profile, school, userId, initialDepar
                   </div>
                 )}
                 <button className={styles.primaryBtn} onClick={confirmAppointHp} disabled={appointingHp || hpHostelIds.length === 0}>{appointingHp ? 'Appointing…' : 'Confirm appointment'}</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {genericPicker && (
+        <div className={styles.overlay} onClick={closeGenericPicker}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <p className={styles.modalTitle}>
+                {genericPicker.step === 'pick' ? `Appoint ${APPOINTMENT_TYPES[genericPicker.type].label}` : `Configure - ${selectedGenericCandidate?.full_name}`}
+              </p>
+              <button className={styles.closeBtn} onClick={closeGenericPicker}><XIcon size={16} /></button>
+            </div>
+
+            {genericPicker.step === 'pick' ? (
+              loadingGenericCandidates ? <p className={styles.hint}>Loading…</p> : genericCandidates.length === 0 ? (
+                <p className={styles.hint}>
+                  No eligible {APPOINTMENT_TYPES[genericPicker.type].baseRoleScope.includes('student') ? 'students' : 'staff'} found.
+                </p>
+              ) : (
+                <div className={styles.memberList}>
+                  {genericCandidates.map(s => (
+                    <button key={s.id} className={styles.pickRow} onClick={() => pickGenericCandidate(s)} disabled={appointingGeneric}>
+                      <div className={styles.memberAvatar}>{s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                      <p className={styles.memberName}>{assigningGenericCandidateId === s.id ? 'Assigning…' : s.full_name}</p>
+                    </button>
+                  ))}
+                </div>
+              )
+            ) : (
+              <>
+                <label className={styles.label}>
+                  {HOSTEL_SCOPED_TYPES.has(genericPicker.type) ? 'Hostel(s)' : 'Class'}
+                </label>
+                {HOSTEL_SCOPED_TYPES.has(genericPicker.type) ? (
+                  initialHostels.length === 0 ? <p className={styles.hint}>No hostels exist yet.</p> : (
+                    <div className={styles.checkList}>
+                      {initialHostels.map(h => (
+                        <label key={h.id} className={styles.checkRow}>
+                          <input type="checkbox" checked={genericScopeIds.includes(h.id)} onChange={() => toggleGenericScope(h.id)} />
+                          {h.name}
+                        </label>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  initialClasses.length === 0 ? <p className={styles.hint}>No classes exist yet.</p> : (
+                    <div className={styles.checkList}>
+                      {initialClasses.map(c => (
+                        <label key={c.id} className={styles.checkRow}>
+                          <input type="checkbox" checked={genericScopeIds.includes(c.id)} onChange={() => toggleGenericScope(c.id)} />
+                          {c.name}
+                        </label>
+                      ))}
+                    </div>
+                  )
+                )}
+                <button className={styles.primaryBtn} onClick={confirmGenericConfigure} disabled={appointingGeneric || genericScopeIds.length === 0}>
+                  {appointingGeneric ? 'Appointing…' : 'Confirm appointment'}
+                </button>
               </>
             )}
           </div>

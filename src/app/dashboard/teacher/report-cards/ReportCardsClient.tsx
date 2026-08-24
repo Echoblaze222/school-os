@@ -80,7 +80,8 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
       : await supabase.from('report_cards').insert(payload).select('id').single()
 
     if (err) {
-      setError(err.message)
+      console.error('[teacher report cards] submit error:', err.message)
+      setError("We couldn't submit that report card. Try again.")
     } else {
       setStatuses(s => ({ ...s, [studentId]: 'pending_approval' }))
       if (data) setRowIds(ids => ({ ...ids, [studentId]: data.id }))

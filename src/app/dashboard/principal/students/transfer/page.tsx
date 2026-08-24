@@ -142,7 +142,8 @@ function TransferPageContent() {
     })
 
     if (err) {
-      setError(err.message)
+      console.error('[principal transfer] request error:', err.message)
+      setError("We couldn't submit the transfer request. Try again.")
     } else {
       setSuccess(true)
     }

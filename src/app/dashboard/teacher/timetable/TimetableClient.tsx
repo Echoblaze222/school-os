@@ -66,7 +66,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       .eq('teacher_id', userId)
       .eq('school_id', school?.id)
 
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher timetable] load classes error:', err.message); setError("We couldn't load your classes. Try again."); return }
     if (!ct?.length) return
 
     const list: TeacherClass[] = ct.map((row: any) => ({
@@ -118,7 +118,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       .eq('day_of_week', DAY_TO_NUM[day])
       .order('start_time')
 
-    if (err) { setError(err.message) }
+    if (err) { console.error('[teacher timetable] load periods error:', err.message); setError("We couldn't load the timetable. Try again.") }
     if (data) {
       setPeriods(data)
       const unknownIds = [...new Set(data.map((p: any) => p.class_subject_id).filter((id: string) => id && !subjectMap[id]))]
@@ -159,7 +159,8 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       setShowForm(false)
       load()
     } else {
-      setError(err.message)
+      console.error('[teacher timetable] create period error:', err.message)
+      setError("We couldn't add that period. Try again.")
     }
     setSaving(false)
   }
@@ -167,7 +168,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   async function deletePeriod(id: string) {
     setError(null)
     const { error: err } = await supabase.from('timetable').delete().eq('id', id).eq('teacher_id', userId)
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[teacher timetable] delete period error:', err.message); setError("We couldn't remove that period. Try again."); return }
     setPeriods(prev => prev.filter(p => p.id !== id))
   }
 

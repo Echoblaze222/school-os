@@ -54,6 +54,23 @@
 }
 
 /* ── Brand block - logo + wordmark, centered like ChatGPT's mark ── */
+.backHomeLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  margin-bottom: 24px;
+  font-family: 'Inter', sans-serif;
+}
+.backHomeLink:hover { color: #fff; }
+
 .brandBlock {
   display: flex;
   flex-direction: column;

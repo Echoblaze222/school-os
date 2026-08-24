@@ -64,7 +64,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
       .eq('student_id', userId)
       .eq('school_id', school?.id)
       .order('created_at', { ascending: true })
-    if (err) { console.error('[schedule] load error:', err.message); setError(err.message) }
+    if (err) { console.error('[schedule] load error:', err.message); setError("We couldn't load your study schedule. Try again.") }
     if (data) setPlan(data)
     setLoading(false)
   }
@@ -92,7 +92,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
       if (err.message.includes('duplicate key') || err.message.includes('unique constraint')) {
         setError('A session with those details already exists. Change the day or time and try again.')
       } else {
-        setError(err.message)
+        setError("We couldn't add that session. Try again.")
       }
       setSaving(false)
       return
@@ -106,7 +106,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
   async function deleteSession(id: string) {
     setError(null)
     const { error: err } = await supabase.from('study_plans').delete().eq('id', id)
-    if (err) { console.error('[schedule] delete error:', err.message); setError(err.message); return }
+    if (err) { console.error('[schedule] delete error:', err.message); setError("We couldn't remove that session. Try again."); return }
     setPlan(prev => prev.filter(p => p.id !== id))
   }
 
@@ -139,7 +139,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
           .from('study_plans')
           .insert(inserts)
           .select()
-        if (insErr) { setError(insErr.message); setGenerating(false); return }
+        if (insErr) { console.error('[schedule] auto-generate error:', insErr.message); setError("We couldn't generate a schedule. Try again."); setGenerating(false); return }
         if (inserted) setPlan(prev => [...prev, ...inserted])
       } else {
         setError('AI couldn\'t generate a plan. Try adding sessions manually.')

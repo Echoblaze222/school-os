@@ -78,7 +78,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
     if (subsErr) {
       console.error('[assignments] load submissions error:', subsErr.message)
-      setError(subsErr.message)
+      setError("We couldn't load your submissions. Try again.")
     }
 
     // Build a lookup map by assignment_id
@@ -96,7 +96,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
     if (asgErr) {
       console.error('[assignments] load assignments error:', asgErr.message)
-      setError(asgErr.message)
+      setError("We couldn't load assignments. Try again.")
     }
 
     if (assignments) {
@@ -159,7 +159,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
         .single()
       if (updErr) {
         console.error('[assignments] update error:', updErr.message)
-        setError(updErr.message)
+        setError("We couldn't update your submission. Try again.")
         setUploading(prev => ({ ...prev, [assignmentId]: false }))
         return
       }
@@ -181,7 +181,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
         .single()
       if (insErr) {
         console.error('[assignments] insert error:', insErr.message)
-        setError(insErr.message)
+        setError("We couldn't submit your work. Try again before leaving this page.")
         setUploading(prev => ({ ...prev, [assignmentId]: false }))
         return
       }

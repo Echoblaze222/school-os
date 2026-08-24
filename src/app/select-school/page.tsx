@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon } from '@/components/Icons'
+import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon, ArrowLeftIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
 import AnimatedLogo from '@/components/AnimatedLogo'
@@ -143,6 +143,10 @@ export default function SelectSchoolPage() {
       <div className={styles.bgGrid} />
 
       <div className={`${styles.centerCol} ${mounted ? styles.visible : ''}`}>
+
+        <button className={styles.backHomeLink} onClick={() => router.push('/')} type="button">
+          <ArrowLeftIcon size={13} /> Back to home
+        </button>
 
         {/* SchoolOS logo - top, centered, ChatGPT-style */}
         <div className={styles.brandBlock}>

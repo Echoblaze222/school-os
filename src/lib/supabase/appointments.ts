@@ -386,6 +386,71 @@ export async function assignAppointment(
   return created as Appointment
 }
 
+/**
+ * Update the scope (departments/portfolio) of an already-active Vice
+ * Principal appointment, in place - without revoking and re-issuing it.
+ *
+ * Principal-only for now (mirrors assignAppointment's principal branch):
+ * a VP can configure HODs within their scope, but not widen their own
+ * scope. Narrowed to 'vice_principal' deliberately rather than any
+ * appointment type - HOD/hostel-prefect scope changes go through
+ * revoke-and-reassign (the existing, exercised path) until there's a
+ * concrete need to edit those in place too.
+ */
+export async function updateAppointmentScope(
+  ctx: UserContext,
+  appointmentId: string,
+  updates: { portfolio?: string; departmentIds?: string[] },
+): Promise<Appointment> {
+  const admin = createAdminClient()
+
+  if (can('principal', 'manage') !== true) {
+    throw new PermissionError('You do not have permission to edit appointments.')
+  }
+
+  const { data: appt } = await admin.from('appointments').select('*').eq('id', appointmentId).single()
+  if (!appt || appt.school_id !== ctx.schoolId || appt.status !== 'active') {
+    throw new PermissionError('Appointment not found.')
+  }
+  if (appt.appointment_type !== 'vice_principal') {
+    throw new PermissionError('Only a Vice Principal appointment can be edited this way.')
+  }
+
+  if (updates.departmentIds && updates.departmentIds.length > 0) {
+    const { data: owned } = await admin
+      .from('departments').select('id').eq('school_id', ctx.schoolId).in('id', updates.departmentIds)
+    const validIds = new Set((owned ?? []).map((d: { id: string }) => d.id))
+    const invalid = updates.departmentIds.filter(id => !validIds.has(id))
+    if (invalid.length > 0) throw new PermissionError('One or more selected departments could not be found at your school.')
+  }
+
+  const nextScope: Record<string, unknown> = { ...(appt.scope ?? {}) }
+  if (updates.portfolio !== undefined) {
+    if (updates.portfolio) nextScope.portfolio = updates.portfolio
+    else delete nextScope.portfolio
+  }
+  if (updates.departmentIds !== undefined) {
+    nextScope.department_ids = updates.departmentIds
+  }
+
+  const { data: saved, error } = await admin
+    .from('appointments')
+    .update({ scope: nextScope })
+    .eq('id', appointmentId)
+    .select('*')
+    .single()
+
+  if (error) throw new Error(`Could not update appointment: ${error.message}`)
+
+  await auditLog(admin, {
+    actorId: ctx.userId, action: 'appointment.update_scope',
+    targetTable: 'appointments', targetId: appointmentId,
+    metadata: { appointment_type: appt.appointment_type, scope: nextScope },
+  })
+
+  return saved as Appointment
+}
+
 export async function revokeAppointment(
   ctx: UserContext,
   subject: 'principal' | 'vice_principal',

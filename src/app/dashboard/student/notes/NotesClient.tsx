@@ -63,7 +63,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
     if (err) {
       console.error('[student notes] load error:', err.message)
-      setError(err.message)
+      setError("We couldn't load notes. Try again.")
     }
     if (data) {
       setNotes(data)

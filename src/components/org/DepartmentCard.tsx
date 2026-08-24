@@ -22,10 +22,15 @@ interface Props {
   onAssignHod?: (department: DepartmentWithStats) => void
   onRevokeHod?: (department: DepartmentWithStats) => void
   onOpenMembers?: (department: DepartmentWithStats) => void
+  /** True while this specific department's HOD revoke is in flight -
+   * disables both HOD action buttons so a slow request can't be fired
+   * twice, and shows a "Removing…" label instead of leaving the button
+   * looking inert. */
+  revokingHod?: boolean
 }
 
 export default function DepartmentCard({
-  department, detailHref, onEdit, onDelete, onAssignHod, onRevokeHod, onOpenMembers,
+  department, detailHref, onEdit, onDelete, onAssignHod, onRevokeHod, onOpenMembers, revokingHod,
 }: Props) {
   return (
     <div className={`${styles.card} glass-card ${motion.staggerItem}`}>
@@ -75,13 +80,13 @@ export default function DepartmentCard({
         </span>
         <div className={styles.footerActions}>
           {onAssignHod && (
-            <button className={`${styles.pillBtn} ${motion.rippleHost}`} onClick={() => onAssignHod(department)}>
+            <button className={`${styles.pillBtn} ${motion.rippleHost}`} onClick={() => onAssignHod(department)} disabled={revokingHod}>
               {department.hod ? 'Change HOD' : 'Assign HOD'}
             </button>
           )}
           {onRevokeHod && department.hod && (
-            <button className={`${styles.pillBtn} ${styles.pillDanger} ${motion.rippleHost}`} onClick={() => onRevokeHod(department)}>
-              <XIcon size={11} /> Revoke
+            <button className={`${styles.pillBtn} ${styles.pillDanger} ${motion.rippleHost}`} onClick={() => onRevokeHod(department)} disabled={revokingHod}>
+              <XIcon size={11} /> {revokingHod ? 'Removing…' : 'Revoke'}
             </button>
           )}
         </div>

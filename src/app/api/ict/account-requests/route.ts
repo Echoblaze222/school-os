@@ -55,6 +55,7 @@ export async function GET() {
     .select('id, requested_by, request_type, description, status, handled_by, resolution_note, created_at, resolved_at, profiles!ict_account_requests_requested_by_fkey(full_name, role)')
     .eq('school_id', caller.profile.school_id)
     .order('created_at', { ascending: false })
+    .limit(200) // §33 performance: account requests accumulate indefinitely
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ requests: data })

@@ -37,6 +37,7 @@ export async function GET() {
       schools:school_id ( name, logo_url, primary_color )
     `)
     .order('created_at', { ascending: false })
+    .limit(200) // §33 performance: applications accumulate every admission cycle
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ applications: data })

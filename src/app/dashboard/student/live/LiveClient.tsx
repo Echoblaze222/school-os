@@ -64,7 +64,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       .order('scheduled_at', { ascending: false })
       .limit(50)
 
-    if (err) { setError(err.message) }
+    if (err) { console.error('[student live] load error:', err.message); setError("We couldn't load live classes. Try again.") }
     if (data) setSessions(data)
     setLoading(false)
   }

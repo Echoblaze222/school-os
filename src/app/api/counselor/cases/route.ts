@@ -28,6 +28,7 @@ export async function GET(request: Request) {
     `)
     .eq('counselor_profile_id', caller.userId)
     .order('opened_at', { ascending: false })
+    .limit(200) // §33 performance: caseload accumulates indefinitely
 
   query = status ? query.eq('status', status) : query.in('status', ['open', 'monitoring'])
 

@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveUserContext } from '@/lib/permissions'
-import { assignAppointment, revokeAppointment, PermissionError } from '@/lib/supabase/appointments'
+import { assignAppointment, revokeAppointment, updateAppointmentScope, PermissionError } from '@/lib/supabase/appointments'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 
 function resolveSubject(ctx: Awaited<ReturnType<typeof resolveUserContext>>): 'principal' | 'vice_principal' | null {
@@ -43,6 +43,9 @@ export async function POST(req: Request) {
     : undefined
   const hostelIds = Array.isArray(body?.hostelIds)
     ? body.hostelIds.filter((id: unknown): id is string => typeof id === 'string')
+    : undefined
+  const classIds = Array.isArray(body?.classIds)
+    ? body.classIds.filter((id: unknown): id is string => typeof id === 'string')
     : undefined
 
   if (!profileId || !appointmentType || !APPOINTMENT_TYPES[appointmentType]) {
@@ -78,6 +81,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'One or more selected hostels could not be found at your school.' }, { status: 400 })
     }
     scope.hostel_ids = hostelIds
+  }
+  if (classIds && classIds.length > 0) {
+    // Same re-derive-don't-trust pattern as hostel_ids above.
+    const admin = createAdminClient()
+    const { data: ownedClasses } = await admin
+      .from('classes')
+      .select('id')
+      .eq('school_id', ctx.schoolId)
+      .in('id', classIds)
+    const validIds = new Set((ownedClasses ?? []).map((c: { id: string }) => c.id))
+    const invalidIds = classIds.filter((id: string) => !validIds.has(id))
+    if (invalidIds.length > 0) {
+      return NextResponse.json({ ok: false, error: 'One or more selected classes could not be found at your school.' }, { status: 400 })
+    }
+    scope.class_ids = classIds
   }
 
   try {
@@ -115,5 +133,38 @@ export async function DELETE(req: Request) {
     if (err instanceof PermissionError) return NextResponse.json({ ok: false, error: err.message }, { status: 403 })
     console.error('[api/appointments] revoke error:', err)
     return NextResponse.json({ ok: false, error: 'Could not revoke appointment.' }, { status: 500 })
+  }
+}
+
+// Principal-only: edit an existing Vice Principal's department scope /
+// portfolio without revoking and re-appointing them (see
+// updateAppointmentScope's doc comment for why this is narrower than
+// POST/DELETE - VP only, for now).
+export async function PATCH(req: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
+
+  const ctx = await resolveUserContext(supabase, user.id)
+  if (!ctx || ctx.baseRole !== 'principal') {
+    return NextResponse.json({ ok: false, error: 'You do not have permission to edit appointments.' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => null)
+  const appointmentId = typeof body?.appointmentId === 'string' ? body.appointmentId : null
+  if (!appointmentId) return NextResponse.json({ ok: false, error: 'appointmentId is required.' }, { status: 400 })
+
+  const portfolio = typeof body?.portfolio === 'string' ? body.portfolio : undefined
+  const departmentIds = Array.isArray(body?.departmentIds)
+    ? body.departmentIds.filter((id: unknown): id is string => typeof id === 'string')
+    : undefined
+
+  try {
+    const appointment = await updateAppointmentScope(ctx, appointmentId, { portfolio, departmentIds })
+    return NextResponse.json({ ok: true, appointment })
+  } catch (err) {
+    if (err instanceof PermissionError) return NextResponse.json({ ok: false, error: err.message }, { status: 403 })
+    console.error('[api/appointments] update error:', err)
+    return NextResponse.json({ ok: false, error: 'Could not update appointment.' }, { status: 500 })
   }
 }

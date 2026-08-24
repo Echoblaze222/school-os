@@ -62,7 +62,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         .eq('student_id', userId),
     ])
 
-    if (qErr) { console.error('[student quizzes] load error:', qErr.message); setError(qErr.message) }
+    if (qErr) { console.error('[student quizzes] load error:', qErr.message); setError("We couldn't load quizzes. Try again.") }
     if (aErr)   console.error('[student quizzes] attempts error:', aErr.message)
 
     if (q) setQuizzes(q)

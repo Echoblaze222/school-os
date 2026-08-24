@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       .select('*, profiles:student_id ( id, full_name )')
       .eq('hostel_id', hostelId)
       .order('occurred_at', { ascending: false })
+      .limit(200) // §33 performance: incidents accumulate indefinitely
     if (status) query = query.eq('status', status)
 
     const { data: incidents, error } = await query

@@ -57,7 +57,11 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       .select('student_id')
       .eq('parent_id', userId)
 
-    if (linksErr) { setError(linksErr.message); setLoading(false); return }
+    if (linksErr) {
+      console.error('[parent timetable] load links error:', linksErr.message)
+      setError("We couldn't load your children's records. Try again.")
+      setLoading(false); return
+    }
 
     const ids = (links ?? []).map((l: any) => l.student_id)
     if (!ids.length) {
@@ -73,7 +77,11 @@ export default function TimetableClient({ profile, school, userId }: Props) {
       .in('id', ids)
       .order('full_name')
 
-    if (childErr) { setError(childErr.message); setLoading(false); return }
+    if (childErr) {
+      console.error('[parent timetable] load children error:', childErr.message)
+      setError("We couldn't load your children's records. Try again.")
+      setLoading(false); return
+    }
 
     if (!childData || childData.length === 0) {
       setChildren([])

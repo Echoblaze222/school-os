@@ -9,7 +9,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { listDepartments } from '@/lib/supabase/appointments'
+import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 import LeadershipClient from './LeadershipClient'
+
+// Every AppointmentTypeId this page doesn't already give bespoke UI to
+// (Vice Principal, HOD, Hostel Prefect each have their own section/modal
+// with type-specific scope inputs). Everything else renders through the
+// generic AppointmentTypeSection below, grouped by category.
+const GENERIC_TYPES = (Object.keys(APPOINTMENT_TYPES) as AppointmentTypeId[])
+  .filter(id => !['vice_principal', 'hod', 'hostel_prefect'].includes(id))
 
 export default async function LeadershipPage() {
   const supabase = await createClient()
@@ -21,7 +29,7 @@ export default async function LeadershipPage() {
   const school = (profile as any)?.schools ?? null
   const schoolId = (profile as any).school_id
 
-  const [departments, { data: vpAppointments }, { data: hostels }, { data: hpAppointments }] = await Promise.all([
+  const [departments, { data: vpAppointments }, { data: hostels }, { data: hpAppointments }, { data: classes }, { data: genericAppointments }] = await Promise.all([
     listDepartments(supabase, schoolId),
     supabase
       .from('appointments')
@@ -35,6 +43,13 @@ export default async function LeadershipPage() {
       .select('id, scope, assigned_at, profiles(id, full_name, avatar_url)')
       .eq('school_id', schoolId)
       .eq('appointment_type', 'hostel_prefect')
+      .eq('status', 'active'),
+    supabase.from('classes').select('id, name').eq('school_id', schoolId).eq('is_active', true).order('name'),
+    supabase
+      .from('appointments')
+      .select('id, appointment_type, scope, assigned_at, profiles(id, full_name, avatar_url)')
+      .eq('school_id', schoolId)
+      .in('appointment_type', GENERIC_TYPES)
       .eq('status', 'active'),
   ])
 
@@ -67,6 +82,24 @@ export default async function LeadershipPage() {
     }
   })
 
+  // Group the 16 "generic" types' appointments by type so the client
+  // doesn't have to - GENERIC_TYPES.filter keeps every type present as a
+  // key even with zero holders, so each section renders its empty state
+  // instead of not rendering at all.
+  const genericAppointmentsByType: Record<string, any[]> = Object.fromEntries(GENERIC_TYPES.map(t => [t, []]))
+  for (const a of genericAppointments ?? []) {
+    const person = Array.isArray((a as any).profiles) ? (a as any).profiles[0] : (a as any).profiles
+    genericAppointmentsByType[(a as any).appointment_type].push({
+      appointmentId: a.id,
+      profileId: person?.id,
+      fullName: person?.full_name ?? 'Unknown',
+      avatarUrl: person?.avatar_url ?? null,
+      hostelIds: Array.isArray((a as any).scope?.hostel_ids) ? (a as any).scope.hostel_ids : [],
+      classIds: Array.isArray((a as any).scope?.class_ids) ? (a as any).scope.class_ids : [],
+      assignedAt: a.assigned_at,
+    })
+  }
+
   return (
     <LeadershipClient
       profile={profile} school={school} userId={user.id}
@@ -74,6 +107,8 @@ export default async function LeadershipPage() {
       initialVicePrincipals={vicePrincipals}
       initialHostels={hostels ?? []}
       initialHostelPrefects={hostelPrefects}
+      initialClasses={classes ?? []}
+      initialGenericAppointments={genericAppointmentsByType}
     />
   )
 }

@@ -132,9 +132,18 @@ export default function TimetableClient({
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <input type="date" value={form.exam_date} onChange={e => setForm(f => ({ ...f, exam_date: e.target.value }))} required style={inputStyle} />
-            <input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} required style={inputStyle} />
-            <input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} required style={inputStyle} />
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+              Exam Date
+              <input type="date" value={form.exam_date} onChange={e => setForm(f => ({ ...f, exam_date: e.target.value }))} required style={{ ...inputStyle, display: 'block', marginTop: 4, width: '100%' }} />
+            </label>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+              Start Time
+              <input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} required style={{ ...inputStyle, display: 'block', marginTop: 4, width: '100%' }} />
+            </label>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+              End Time
+              <input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} required style={{ ...inputStyle, display: 'block', marginTop: 4, width: '100%' }} />
+            </label>
           </div>
           <input type="number" min={1} placeholder="Max score (default 100)" value={form.max_score}
             onChange={e => setForm(f => ({ ...f, max_score: e.target.value }))} style={inputStyle} />

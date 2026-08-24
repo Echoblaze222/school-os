@@ -5,7 +5,7 @@ import Link from 'next/link'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon, ClockIcon } from '@/components/Icons'
 import styles from './leave.module.css'
-import motion from '@/components/dashboard-motion.module.css'
+import { SkeletonCard } from '@/components/motion/Skeleton'
 
 interface Hostel { id: string; name: string }
 interface LeaveRequest {
@@ -95,7 +95,9 @@ export default function LeaveClient({ hostels }: { hostels: Hostel[] }) {
         </div>
 
         {status === 'loading' && (
-          <div className="glass-card" style={{ padding: 16 }}><span className={motion.shimmer}>Loading...</span></div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          </div>
         )}
         {status === 'error' && (
           <div className={`glass-card ${styles.errorCard}`}>

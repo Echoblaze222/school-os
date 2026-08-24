@@ -60,7 +60,8 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
       .eq('school_id', school?.id)
 
     if (err) {
-      setError(err.message)
+      console.error('[bursar debtors] load error:', err.message)
+      setError("We couldn't load the debtors list. Try again in a moment.")
       setDebtors([])
       setLoading(false)
       return

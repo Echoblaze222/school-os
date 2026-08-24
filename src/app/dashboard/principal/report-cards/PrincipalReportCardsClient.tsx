@@ -42,7 +42,8 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
       .eq('id', id)
 
     if (err) {
-      setError(err.message)
+      console.error('[principal report cards] approve error:', err.message)
+      setError("We couldn't approve that report card. Try again.")
     } else {
       setCards((prev: any) => prev.map((c: any) => c.id === id ? { ...c, status: 'approved' } : c))
     }

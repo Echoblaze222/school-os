@@ -106,14 +106,15 @@ const ROLE_HOME: Record<string, string> = {
 // the check is structurally different (appointments table, not
 // profiles.role).
 //
-// 'counselor' and 'ict' added here retroactively: both dashboards
-// originally shipped with only a page-level appointment check (see the
-// comment at the top of dashboard/counselor/page.tsx), documented at the
-// time as "middleware doesn't understand appointment-based roles yet."
-// This dict is exactly the mechanism that was missing, so both are
-// registered now that it exists; the page-level checks stay in place
-// too; middleware is the outer floor, the route's own check is the
-// inner one, neither alone is enough.
+// 'counselor', 'ict', and 'hostel' added here retroactively: all three
+// dashboards originally shipped with only a page-level appointment check
+// (see the comment at the top of dashboard/counselor/page.tsx and
+// dashboard/hostel/page.tsx), documented at the time as "middleware
+// doesn't understand appointment-based roles yet." This dict is exactly
+// the mechanism that was missing, so all three are registered now that
+// it exists; the page-level checks stay in place too; middleware is the
+// outer floor, the route's own check is the inner one, neither alone is
+// enough.
 const APPOINTMENT_DASHBOARD_SEGMENTS: Record<string, string[]> = {
   examination: [
     'examination_officer', 'examination_coordinator', 'examination_secretary',
@@ -122,6 +123,7 @@ const APPOINTMENT_DASHBOARD_SEGMENTS: Record<string, string[]> = {
   counselor: ['counselor'],
   ict: ['ict_officer', 'ict_administrator'],
   'vice-principal': ['vice_principal'],
+  hostel: ['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'],
 }
 
 export async function middleware(request: NextRequest) {

@@ -97,7 +97,8 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       .limit(200)
 
     if (err) {
-      setError(err.message)
+      console.error('[bursar receipts] load error:', err.message)
+      setError("We couldn't load receipts. Try again in a moment.")
       setPayments([])
       setLoading(false)
       return

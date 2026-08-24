@@ -75,7 +75,8 @@ export default function PrincipalClassesClient({
       academic_year: newYear,
     })
     if (err) {
-      setError(err.message)
+      console.error('[principal classes] create error:', err.message)
+      setError("We couldn't create that class. Try again.")
     } else {
       setShowCreate(false)
       // Re-fetch classes from Supabase so state is fresh (avoids router.refresh roundtrip)
@@ -145,7 +146,8 @@ export default function PrincipalClassesClient({
     }
 
     if (err) {
-      setError(err.message)
+      console.error('[principal classes] assign error:', err.message)
+      setError("We couldn't assign that teacher. Try again.")
     } else {
       setShowAssign(false)
       const { data: fresh } = await supabase

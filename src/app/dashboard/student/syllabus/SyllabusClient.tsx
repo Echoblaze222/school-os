@@ -57,7 +57,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       .select('id, subject_id, subjects(name)')
       .eq('class_id', profile?.class_id)
 
-    if (csErr) { console.error('[student syllabus] class_subjects error:', csErr.message); setError(csErr.message) }
+    if (csErr) { console.error('[student syllabus] class_subjects error:', csErr.message); setError("We couldn't load your subjects. Try again.") }
 
     const csIds = (classSubjects ?? []).map((cs: any) => cs.id)
     // FIX: build local lookup instead of relying on nested join in the topics query
@@ -84,7 +84,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
         .maybeSingle(),
     ])
 
-    if (topicErr) { console.error('[student syllabus] topics error:', topicErr.message); setError(topicErr.message) }
+    if (topicErr) { console.error('[student syllabus] topics error:', topicErr.message); setError("We couldn't load the syllabus. Try again.") }
     if (sylErr)   { console.error('[student syllabus] pdf error:', sylErr.message) } // not fatal - PDF may just not exist yet
 
     if (topicData) {

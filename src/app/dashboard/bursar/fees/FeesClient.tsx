@@ -110,7 +110,11 @@ export default function FeesClient({ profile, school, userId }: Props) {
         .from('fee_structures')
         .update({ amount_ngn: parseFloat(form.amount), description: form.description || form.fee_type })
         .eq('id', existing.id)
-      if (updErr) { setError(updErr.message); setSaving(false); return }
+      if (updErr) {
+        console.error('[bursar fees] update error:', updErr.message)
+        setError("We couldn't save that fee structure. Try again.")
+        setSaving(false); return
+      }
     } else {
       // Insert new
       const { error: insErr } = await supabase
@@ -124,7 +128,11 @@ export default function FeesClient({ profile, school, userId }: Props) {
           amount_ngn:    parseFloat(form.amount),
           created_by:    userId,
         })
-      if (insErr) { setError(insErr.message); setSaving(false); return }
+      if (insErr) {
+        console.error('[bursar fees] insert error:', insErr.message)
+        setError("We couldn't create that fee structure. Try again.")
+        setSaving(false); return
+      }
     }
 
     setForm({ ...BLANK })

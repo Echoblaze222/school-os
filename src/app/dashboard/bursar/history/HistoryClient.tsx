@@ -95,7 +95,8 @@ export default function HistoryClient({ profile, school, userId }: Props) {
     const { data, error: err } = await q
 
     if (err) {
-      setError(err.message)
+      console.error('[bursar history] load error:', err.message)
+      setError("We couldn't load payment history. Try again in a moment.")
       setPayments([])
       setLoading(false)
       return

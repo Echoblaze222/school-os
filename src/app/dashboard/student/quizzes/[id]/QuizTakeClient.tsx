@@ -139,7 +139,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
     if (err) {
       console.error('[quiz take] submit error:', err.message)
-      setError(err.message)
+      setError("We couldn't submit your quiz. Try again before leaving this page.")
       setSubmitting(false)
       return
     }

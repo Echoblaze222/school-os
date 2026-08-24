@@ -173,6 +173,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
   const [loading,     setLoading]     = useState(true)
   const [search,      setSearch]      = useState('')
   const [classFilter, setClassFilter] = useState('')
+  const [sortAsc,      setSortAsc]     = useState(true)
   const [classes,     setClasses]     = useState<any[]>([])
   const [showForm,    setShowForm]    = useState(false)
   const [confirmDel,  setConfirmDel]  = useState<any | null>(null)
@@ -320,6 +321,12 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     if (!byClass[key]) byClass[key] = []
     byClass[key].push(s)
   })
+  // §19 Table UX: sort within each class group by name - other columns
+  // (attendance/performance) aren't fetched on this page, and sorting by
+  // a number that doesn't exist would mean fabricating it.
+  Object.values(byClass).forEach(list => list.sort((a, b) =>
+    sortAsc ? (a.full_name ?? '').localeCompare(b.full_name ?? '') : (b.full_name ?? '').localeCompare(a.full_name ?? '')
+  ))
 
   return (
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Students">
@@ -447,6 +454,14 @@ export default function StudentsClient({ profile, school, userId }: Props) {
             <option value="">All Classes</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+          <button
+            className={`${styles.filterSelect} pressable`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+            onClick={() => setSortAsc(v => !v)}
+            title="Sort by name"
+          >
+            Name {sortAsc ? '↑' : '↓'}
+          </button>
           <button className={`${styles.addBtn} pressable`} style={{ background: sc }} onClick={() => setShowForm(v => !v)}>
             {showForm ? <><XIcon size={14} /> Close</> : '+ Enrol Student'}
           </button>

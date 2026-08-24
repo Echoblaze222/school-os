@@ -57,7 +57,11 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       .select('student_id')
       .eq('parent_id', userId)
 
-    if (linksErr) { setError(linksErr.message); setLoading(false); return }
+    if (linksErr) {
+      console.error('[parent assignments] load links error:', linksErr.message)
+      setError("We couldn't load your children's records. Try again.")
+      setLoading(false); return
+    }
 
     const ids = (links ?? []).map((l: any) => l.student_id)
     if (!ids.length) {
@@ -73,7 +77,11 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       .in('id', ids)
       .order('full_name')
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      console.error('[parent assignments] load children error:', err.message)
+      setError("We couldn't load your children's records. Try again.")
+      setLoading(false); return
+    }
 
     if (!childData || childData.length === 0) {
       setChildren([])
@@ -114,7 +122,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
     if (subsErr) {
       console.error('[parent assignments] load submissions error:', subsErr.message)
-      setError(subsErr.message)
+      setError("We couldn't load assignment submissions. Try again.")
     }
 
     const subMap: Record<string, any> = {}
@@ -131,7 +139,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
     if (asgErr) {
       console.error('[parent assignments] load assignments error:', asgErr.message)
-      setError(asgErr.message)
+      setError("We couldn't load assignments. Try again.")
     }
 
     if (assignments) {
