@@ -23,9 +23,9 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
     }
 
-    const schoolId   = verifyData.data?.metadata?.school_id
-    const plan       = verifyData.data?.metadata?.plan ?? 'Basic'
-    const amountKobo = verifyData.data?.amount ?? 0
+    const schoolId    = verifyData.data?.metadata?.school_id
+    const paymentMode = verifyData.data?.metadata?.payment_mode ?? 'full'
+    const amountKobo  = verifyData.data?.amount ?? 0
 
     if (!schoolId) {
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     }
 
     // 3. Activate school + send notification
-    const result = await activateSchool(schoolId, plan, amountKobo, reference)
+    const result = await activateSchool(schoolId, paymentMode, amountKobo, reference)
     if (!result.activated) {
       console.warn(`[schools/payment-callback] activation refused: ${result.reason}`)
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
