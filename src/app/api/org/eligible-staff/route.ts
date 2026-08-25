@@ -50,5 +50,23 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: 'Could not load staff.' }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, staff: data ?? [] })
+  // Exclude people who already actively hold this exact type - matches
+  // the duplicate guard in assignAppointment, so the picker never offers
+  // a name that would just bounce off that check. Skipped for 'hod':
+  // HOD uniqueness is per-department (enforced separately, department by
+  // department), not global - someone already HOD of Science should
+  // still be selectable as HOD of Math.
+  let eligible = data ?? []
+  if (appointmentType !== 'hod') {
+    const { data: existingHolders } = await supabase
+      .from('appointments')
+      .select('profile_id')
+      .eq('school_id', ctx.schoolId)
+      .eq('appointment_type', appointmentType)
+      .eq('status', 'active')
+    const alreadyHeld = new Set((existingHolders ?? []).map((h: { profile_id: string }) => h.profile_id))
+    eligible = eligible.filter(p => !alreadyHeld.has(p.id))
+  }
+
+  return NextResponse.json({ ok: true, staff: eligible })
 }
