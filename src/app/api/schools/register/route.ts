@@ -186,15 +186,33 @@ export async function POST(request: Request) {
 
     // The DB trigger handle_new_user may have already created a blank profile row
 
-    // on auth user creation. Use upsert (INSERT ... ON CONFLICT DO UPDATE) so we
+    // on auth user creation. This USED to be an upsert (INSERT ... ON CONFLICT
 
-    // don't get a duplicate-key error regardless of trigger timing.
+    // DO UPDATE) to handle that without a duplicate-key error - but this table
+
+    // also has a role-change guard trigger ("Changing your own role is not
+
+    // permitted") that fires on UPDATE, and an upsert against an existing row
+
+    // IS an update under the hood. The guard can't distinguish "registration
+
+    // legitimately setting the role for the first time" from "a user changing
+
+    // their own role" - it saw every registration as the latter and blocked it.
+
+    // Deleting the trigger-created row first makes this a plain INSERT instead,
+
+    // which a BEFORE UPDATE trigger never sees.
+
+    await supabase.from('profiles').delete().eq('id', authUser.user.id)
+
+
 
     const { error: profileError } = await supabase
 
       .from('profiles')
 
-      .upsert({
+      .insert({
 
         id:               authUser.user.id,
 
@@ -214,13 +232,28 @@ export async function POST(request: Request) {
 
         is_active:        true,
 
-      }, { onConflict: 'id' })
+      })
 
 
 
     if (profileError) {
 
-      console.error('Profile creation error:', profileError)
+      // Every other error branch in this route (school creation, auth
+      // account creation) already surfaces the real Postgres/Auth error
+      // message to the client - this branch was the one exception,
+      // hardcoding a generic string instead. That's why the two failed
+      // registration attempts so far showed the same unhelpful text with
+      // no way to tell what actually broke. Logging the full error object
+      // (not just .message) because Supabase/PostgREST errors carry
+      // .code, .details, and .hint - those three are usually what
+      // actually pins down a constraint violation vs. an RLS block vs.
+      // something else, and .message alone often isn't enough on its own.
+      console.error('Profile creation error:', {
+        message: profileError.message,
+        code:    profileError.code,
+        details: profileError.details,
+        hint:    profileError.hint,
+      })
 
       await supabase.auth.admin.deleteUser(authUser.user.id)
 
@@ -228,7 +261,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
 
-        { error: 'Failed to create principal profile.' },
+        { error: profileError?.message ?? 'Failed to create principal profile.' },
 
         { status: 500 }
 
