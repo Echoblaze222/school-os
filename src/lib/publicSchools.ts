@@ -22,7 +22,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // contact-for-login, or internal-operations data.
 export const PUBLIC_SCHOOL_FIELDS = `
   id, name, slug, city, state, country, school_type,
-  logo_url, cover_image_url, tagline, description, website_url,
+  logo_url, cover_image_url, build_image_url, tagline, description, website_url,
   education_levels, is_boarding, is_day, verified_status,
   facilities, programs, admission_status, application_deadline,
   public_email, public_phone, social_links, founded_year,
@@ -33,10 +33,20 @@ export const PUBLIC_SCHOOL_FIELDS = `
 // text and full facility/program arrays for every row of a search result.
 export const PUBLIC_SCHOOL_LIST_FIELDS = `
   id, name, slug, city, state, school_type,
-  logo_url, cover_image_url, tagline,
+  logo_url, cover_image_url, build_image_url, tagline,
   education_levels, is_boarding, is_day, verified_status,
   primary_color
 `.replace(/\s+/g, ' ').trim()
+
+// Falls back to the school-branding "Build Image" (settings' own hint text
+// already says it's shown on "the login page, welcome screens, and school
+// profile" - the two fields were meant to be the same asset, just added by
+// separate lanes that never connected them). This means an existing school
+// that already uploaded a build image gets a real public cover photo
+// immediately, with zero extra action - no second, redundant upload UI.
+function withCoverFallback<T extends { cover_image_url: string | null; build_image_url?: string | null }>(row: T): T {
+  return { ...row, cover_image_url: row.cover_image_url ?? row.build_image_url ?? null }
+}
 
 export interface PublicSchoolListItem {
   id: string
@@ -138,7 +148,8 @@ export async function searchPublicSchools(
   const { data, error, count } = await query
   if (error) throw error
 
-  return { schools: (data ?? []) as unknown as PublicSchoolListItem[], total: count ?? 0 }
+  const schools = (data ?? []).map(row => withCoverFallback(row as unknown as PublicSchoolListItem))
+  return { schools, total: count ?? 0 }
 }
 
 /** Single public school profile by slug (§45). Null if not found, not
@@ -158,7 +169,7 @@ export async function getPublicSchoolBySlug(
     .maybeSingle()
 
   if (error) throw error
-  return (data as unknown as PublicSchoolProfile) ?? null
+  return data ? withCoverFallback(data as unknown as PublicSchoolProfile) : null
 }
 
 /** Upcoming public events for a school profile: only rows explicitly
