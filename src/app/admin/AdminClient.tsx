@@ -19,11 +19,12 @@ interface Props {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active:  'badge-success',
-  pending: 'badge-warning',
-  expired: 'badge-error',
-  Trial:   'badge-info',
-  Active:  'badge-success',
+  active:    'badge-success',
+  pending:   'badge-warning',
+  abandoned: 'badge-error', // set by cron/expire-pending-schools once a registration goes stale
+  expired:   'badge-error',
+  Trial:     'badge-info',
+  Active:    'badge-success',
 }
 
 export default function AdminClient({ stats, recentSchools, subscriptions, recentPayments, adminEmail }: Props) {
