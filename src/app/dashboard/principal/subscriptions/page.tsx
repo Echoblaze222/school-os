@@ -40,7 +40,7 @@ export default async function SubscriptionPage() {
 
     .from('schools')
 
-    .select('id, name, primary_color, logo_url, status, is_platform_active')
+    .select('id, name, primary_color, logo_url, status, setup_status, is_platform_active')
 
     .eq('id', profile.school_id)
 
@@ -86,15 +86,24 @@ export default async function SubscriptionPage() {
 
 
 
-  // Get payment history
+  // Get payment history — only CONFIRMED payments (paid_at set). renew/
+  // route.ts pre-logs a row the instant Paystack returns a checkout URL,
+  // before the person has actually paid, so unfiltered this table shows
+  // abandoned/failed attempts identically to real successes. `term` and
+  // `academic_year` were never written by either the pre-log insert or
+  // activateSubscription's upsert - selecting them here always returned
+  // null, which is what produced "NaN Term" client-side. plan_type +
+  // billing_cycle are the fields that are actually populated.
 
   const { data: paymentHistory } = await supabase
 
     .from('subscription_payments')
 
-    .select('id, amount_paid, currency_used, paid_at, term, academic_year, receipt_number')
+    .select('id, amount_paid, currency_used, paid_at, plan_type, billing_cycle, receipt_number')
 
     .eq('school_id', profile.school_id)
+
+    .not('paid_at', 'is', null)
 
     .order('paid_at', { ascending: false })
 

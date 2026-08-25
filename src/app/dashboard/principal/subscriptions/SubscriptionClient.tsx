@@ -116,6 +116,13 @@ export default function SubscriptionClient({
   }
 
   // ── Calculate days remaining ──────────────────────────
+  // This is a countdown display only - it does NOT determine whether
+  // access is actually restricted. That's decided server-side by
+  // middleware.ts, purely from schools.setup_status / is_platform_active
+  // (flipped by evaluateSchoolSubscription via the check-subscriptions
+  // cron). Those two things can legitimately disagree for a while - the
+  // grace period is real, deliberate access even past expiry_date - so
+  // isExpired below reflects what's actually locked, not just the date.
   const daysRemaining = useMemo(() => {
     if (!subscription?.expiry_date) return 0
     const expiry = new Date(subscription.expiry_date)
@@ -123,9 +130,13 @@ export default function SubscriptionClient({
     return Math.max(0, Math.floor((expiry.getTime() - now.getTime()) / 86400000))
   }, [subscription])
 
-  const isExpired = daysRemaining === 0
-  const isUrgent  = daysRemaining > 0 && daysRemaining <= 10
-  const isWarning = daysRemaining > 10 && daysRemaining <= 30
+  const isBillingLocked = school?.setup_status === 'expired' || school?.setup_status === 'suspended'
+  const isHardLocked     = school?.is_platform_active === false || school?.setup_status === 'locked'
+  const isGracePeriod    = school?.setup_status === 'grace_period'
+
+  const isExpired = isBillingLocked || isHardLocked
+  const isUrgent  = !isExpired && (isGracePeriod || (daysRemaining > 0 && daysRemaining <= 10))
+  const isWarning = !isExpired && !isUrgent && daysRemaining > 10 && daysRemaining <= 30
 
   // ── Calculate renewal amount ──────────────────────────
   // School pays: number of active students × the size-based rate. This
@@ -144,6 +155,7 @@ export default function SubscriptionClient({
     : 'var(--success)'
 
   const statusLabel = isExpired ? 'Expired'
+    : isGracePeriod ? 'Grace period'
     : isUrgent  ? `${daysRemaining} days left`
     : isWarning ? `${daysRemaining} days left`
     : `${daysRemaining} days remaining`
@@ -281,6 +293,8 @@ export default function SubscriptionClient({
           <p style={{ color: isExpired ? 'var(--error)' : 'var(--warning)' }}>
             {isExpired
               ? 'Your subscription has expired. Renew now to restore access for all users.'
+              : isGracePeriod
+              ? 'Your subscription period has ended. Staff and students still have access for a short grace period — renew now to avoid any interruption.'
               : `Your subscription expires in ${daysRemaining} days. Renew before it expires to avoid disruption.`
             }
           </p>
@@ -612,8 +626,8 @@ export default function SubscriptionClient({
                     </div>
                     <div>
                       <p className={styles.historyTerm}>
-                        {payment.term?.charAt(0).toUpperCase() + payment.term?.slice(1)} Term
-                        {payment.academic_year ? ` · ${payment.academic_year}` : ''}
+                        {payment.plan_type ?? 'Subscription'}
+                        {payment.billing_cycle ? ` · ${payment.billing_cycle === 'yearly' ? 'Yearly' : 'Termly'}` : ''}
                       </p>
                       <p className={styles.historyDate}>{fmtDate(payment.paid_at)}</p>
                       {payment.receipt_number && (
