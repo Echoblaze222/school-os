@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
+import { RefreshIcon, TrashIcon, ImageIcon } from '@/components/Icons'
 import type { PromotionRow } from './page'
 import styles from './promotions.module.css'
 
@@ -43,14 +45,20 @@ const EMPTY_FORM = {
   start_date: '',
   end_date: '',
   is_sponsored: false,
+  image_url: '' as string | null,
 }
 
 export default function PromotionsClient({ promotions, userId, profile, school }: Props) {
+  const supabase = createClient()
   const [rows, setRows] = useState<PromotionRow[]>(promotions)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [imagePreview,   setImagePreview]   = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageError,     setImageError]     = useState<string | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [analyticsFor, setAnalyticsFor] = useState<string | null>(null)
   const [analytics, setAnalytics] = useState<{ totals: Record<string, number> } | null>(null)
@@ -79,12 +87,63 @@ export default function PromotionsClient({ promotions, userId, profile, school }
       }
       setRows((prev) => [data.promotion, ...prev])
       setForm(EMPTY_FORM)
+      setImagePreview(null)
+      setImageError(null)
       setShowForm(false)
     } catch {
       setFormError('Couldn\'t reach the server. Check your connection and try again.')
     } finally {
       setSaving(false)
     }
+  }
+
+  // Optional - a promotion posts fine with no image at all, matching the
+  // API route's own `image_url: image_url || null`. Same upload pattern
+  // as the school settings branding uploads (school-assets bucket, public
+  // URL written back into form state, nothing forced).
+  async function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const MAX_MB = 5
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setImageError(`File too large. Maximum size is ${MAX_MB} MB.`)
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      setImageError('Only image files are accepted.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = ev => setImagePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+
+    setImageError(null)
+    setImageUploading(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const filePath = `promotions/${school.id}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('school-assets')
+        .upload(filePath, file, { upsert: true, contentType: file.type })
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage.from('school-assets').getPublicUrl(filePath)
+      setForm(f => ({ ...f, image_url: publicUrl }))
+      setImagePreview(publicUrl)
+    } catch (err: any) {
+      setImageError(err?.message ?? 'Upload failed. Please try again.')
+    } finally {
+      setImageUploading(false)
+    }
+  }
+
+  function removeImage() {
+    setForm(f => ({ ...f, image_url: '' }))
+    setImagePreview(null)
+    setImageError(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
   }
 
   async function runAction(id: string, action: 'submit' | 'pause' | 'resume', method: 'PATCH' = 'PATCH') {
@@ -215,6 +274,47 @@ export default function PromotionsClient({ promotions, userId, profile, school }
             </label>
 
             <label>
+              Image (optional)
+              {imagePreview ? (
+                <div className={styles.imagePreviewWrapper}>
+                  <img src={imagePreview} alt="Promotion image preview" className={styles.imagePreview} />
+                  <div className={styles.imageActions}>
+                    <button
+                      type="button"
+                      className={styles.changeBtn}
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={imageUploading}
+                    >
+                      {imageUploading ? <><RefreshIcon size={14} /> Uploading…</> : <><RefreshIcon size={14} /> Change</>}
+                    </button>
+                    <button type="button" className={styles.removeBtn} onClick={removeImage}>
+                      <TrashIcon size={14} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={styles.imageDropZone}
+                  onClick={() => !imageUploading && imageInputRef.current?.click()}
+                >
+                  {imageUploading ? (
+                    <><RefreshIcon size={20} /><span>Uploading…</span></>
+                  ) : (
+                    <><ImageIcon size={20} /><span>Click to add an image (JPG, PNG, WebP · max 5 MB)</span></>
+                  )}
+                </div>
+              )}
+              {imageError && <p className={styles.errorText}>{imageError}</p>}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={onImageChange}
+              />
+            </label>
+
+            <label>
               Link (optional)
               <input
                 type="url"
@@ -246,7 +346,7 @@ export default function PromotionsClient({ promotions, userId, profile, school }
             {formError && <p className={styles.errorText}>{formError}</p>}
 
             <div className={styles.formActions}>
-              <button type="button" className={styles.cancelButton} onClick={() => { setShowForm(false); setFormError(null) }}>
+              <button type="button" className={styles.cancelButton} onClick={() => { setShowForm(false); setFormError(null); setImagePreview(null); setImageError(null) }}>
                 Cancel
               </button>
               <button type="submit" className={styles.saveButton} disabled={saving}>
