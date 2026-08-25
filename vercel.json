@@ -1,0 +1,10 @@
+{
+  "crons": [
+    { "path": "/api/cron/check-subscriptions",   "schedule": "0 * * * *" },
+    { "path": "/api/cron/expire-pending-schools", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/ict-asset-checks",       "schedule": "0 6 * * *" },
+    { "path": "/api/cron/process-queue",          "schedule": "* * * * *" },
+    { "path": "/api/cron/reminders",              "schedule": "* * * * *" },
+    { "path": "/api/cron/unread-digest",          "schedule": "0 * * * *" }
+  ]
+}
