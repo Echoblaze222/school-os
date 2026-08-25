@@ -13,35 +13,36 @@ import styles from './register-school.module.css'
 
 const SCHOOL_TYPES = ['secondary', 'primary', 'combined']
 
-const PLANS = [
+// Every school gets the SAME full feature set (AI tutor, bulk SMS, live
+// classes, NIN verification, custom domain, everything) - there is no
+// tiered plan to pick anymore. Recurring per-student/per-term billing is
+// computed automatically after onboarding, based on active student count
+// (see lib/billing.ts: getSubscriptionTier). This screen only collects
+// how the ONE-TIME setup fee is paid.
+const SETUP_FEE = 150000 // ₦150,000 one-time, in full or via installment plan
+
+const PAYMENT_OPTIONS = [
   {
-    id:       'Basic',
-    label:    'Basic',
-    price:    50000,
-    students: 'Up to 200 students',
-    features: ['Core portal', 'Fee management', 'Results system', 'Assignments', 'Timetable'],
-    color:    '#2471A3',
+    id:          'full',
+    label:       'Pay in Full',
+    amountDue:   SETUP_FEE,
+    description: `₦${SETUP_FEE.toLocaleString()} today — setup fee fully settled`,
+    color:       '#800020',
   },
   {
-    id:       'Premium',
-    label:    'Premium',
-    price:    120000,
-    students: 'Up to 500 students',
-    features: ['Everything in Basic', 'AI Tutor for all roles', 'Bulk SMS reminders', 'Live online classes', 'WhatsApp notifications'],
-    color:    '#800020',
-    popular:  true,
-  },
-  {
-    id:       'Elite',
-    label:    'Elite',
-    price:    250000,
-    students: 'Unlimited students',
-    features: ['Everything in Premium', 'AI face-match NIN verification', 'Custom domain', 'Priority support', 'Advanced analytics'],
-    color:    '#2D8B55',
+    id:          'installment',
+    label:       '3-Month Installment',
+    amountDue:   Math.round(SETUP_FEE / 3),
+    description: `₦${Math.round(SETUP_FEE / 3).toLocaleString()} today, then 2 more monthly payments of the same amount`,
+    color:       '#2471A3',
   },
 ]
 
-const REGISTRATION_FEE = 25000 // One-time setup fee
+const ALL_FEATURES_INCLUDED = [
+  'Full student, staff & parent portal', 'Fee management', 'Results & assignments',
+  'AI Tutor for all roles', 'Live online classes', 'WhatsApp & SMS notifications',
+  'AI face-match NIN verification', 'Priority support',
+]
 
 export default function RegisterSchoolPage() {
   const router   = useRouter()
@@ -69,8 +70,8 @@ export default function RegisterSchoolPage() {
   const [bgPreview,     setBgPreview]     = useState<string | null>(null)
   const [fontFamily,    setFontFamily]    = useState('DM Sans')
 
-  // Step 3: Plan selection
-  const [selectedPlan,  setSelectedPlan]  = useState('Premium')
+  // Step 3: Setup fee payment mode
+  const [paymentMode,  setPaymentMode]  = useState<'full' | 'installment'>('full')
 
   // Step 4: Principal account
   const [principalName,     setPrincipalName]     = useState('')
@@ -151,7 +152,7 @@ export default function RegisterSchoolPage() {
             primary_color: primaryColor,
             font_family:  fontFamily,
           },
-          plan:      selectedPlan,
+          paymentMode,
           principal: {
             full_name: principalName.trim(),
             email:     principalEmail.trim(),
@@ -190,8 +191,8 @@ export default function RegisterSchoolPage() {
     }
   }
 
-  const selectedPlanData = PLANS.find(p => p.id === selectedPlan)
-  const totalAmount = REGISTRATION_FEE + (selectedPlanData?.price ?? 0)
+  const selectedOption = PAYMENT_OPTIONS.find(p => p.id === paymentMode)!
+  const amountDueToday  = selectedOption.amountDue
 
   const NIGERIAN_STATES = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
@@ -227,7 +228,7 @@ export default function RegisterSchoolPage() {
 
         {/* Step indicator */}
         <div className={styles.stepIndicator}>
-          {['School Details', 'Branding', 'Choose Plan', 'Admin Account'].map((label, i) => (
+          {['School Details', 'Branding', 'Setup Fee', 'Admin Account'].map((label, i) => (
             <div key={i} className={`${styles.stepItem} ${step > i + 1 ? styles.stepDone : ''} ${step === i + 1 ? styles.stepActive : ''}`}>
               <div className={styles.stepDot}>
                 {step > i + 1 ? <CheckIcon size={14} color="#1C93AC" /> : i + 1}
@@ -432,58 +433,61 @@ export default function RegisterSchoolPage() {
             </div>
           )}
 
-          {/* ── STEP 3: Plan Selection ── */}
+          {/* ── STEP 3: Setup Fee Payment Mode ── */}
           {step === 3 && (
             <div className={styles.stepContent}>
-              <h2 className={styles.stepTitle}>Choose Your Plan</h2>
+              <h2 className={styles.stepTitle}>Setup Fee Payment</h2>
               <p className={styles.stepSubtitle}>
-                Billed per term. Registration fee of ₦{REGISTRATION_FEE.toLocaleString()} applies once.
+                Every school gets the full SchoolOS feature set — no tiers to choose.
+                One-time setup fee of ₦{SETUP_FEE.toLocaleString()}, paid in full or across 3 months.
               </p>
 
               <div className={styles.planGrid}>
-                {PLANS.map((plan, i) => (
+                {PAYMENT_OPTIONS.map((opt, i) => (
                   <div
-                    key={plan.id}
-                    className={`${styles.planCard} ${selectedPlan === plan.id ? styles.planSelected : ''} ${motion.staggerItem} ${motion.pressable}`}
-                    onClick={() => setSelectedPlan(plan.id)}
+                    key={opt.id}
+                    className={`${styles.planCard} ${paymentMode === opt.id ? styles.planSelected : ''} ${motion.staggerItem} ${motion.pressable}`}
+                    onClick={() => setPaymentMode(opt.id as 'full' | 'installment')}
                     style={{
                       animationDelay: `${i * 60}ms`,
-                      ...(selectedPlan === plan.id ? { borderColor: plan.color, boxShadow: `0 0 0 2px ${plan.color}40` } : {}),
+                      ...(paymentMode === opt.id ? { borderColor: opt.color, boxShadow: `0 0 0 2px ${opt.color}40` } : {}),
                     }}
                   >
-                    {plan.popular && <span className={styles.popularBadge}>Most Popular</span>}
-                    <h3 className={styles.planName} style={{ color: plan.color }}>{plan.label}</h3>
+                    {opt.id === 'full' && <span className={styles.popularBadge}>Recommended</span>}
+                    <h3 className={styles.planName} style={{ color: opt.color }}>{opt.label}</h3>
                     <div className={styles.planPrice}>
-                      <span className={styles.planAmount}>₦{plan.price.toLocaleString()}</span>
-                      <span className={styles.planPeriod}>/term</span>
+                      <span className={styles.planAmount}>₦{opt.amountDue.toLocaleString()}</span>
+                      <span className={styles.planPeriod}>{opt.id === 'installment' ? '/month × 3' : ' today'}</span>
                     </div>
-                    <p className={styles.planStudents}>{plan.students}</p>
-                    <ul className={styles.planFeatures}>
-                      {plan.features.map((f, i) => (
-                        <li key={i}>
-                          <CheckIcon size={13} color={plan.color} /> {f}
-                        </li>
-                      ))}
-                    </ul>
+                    <p className={styles.planStudents}>{opt.description}</p>
                   </div>
                 ))}
               </div>
 
+              {/* What's included, same for every school */}
+              <ul className={styles.planFeatures}>
+                {ALL_FEATURES_INCLUDED.map((f, i) => (
+                  <li key={i}>
+                    <CheckIcon size={13} color={selectedOption.color} /> {f}
+                  </li>
+                ))}
+              </ul>
+
               {/* Total */}
               <div className={styles.totalBox}>
                 <div className={styles.totalRow}>
-                  <span>Registration fee (one-time)</span>
-                  <span>₦{REGISTRATION_FEE.toLocaleString()}</span>
-                </div>
-                <div className={styles.totalRow}>
-                  <span>{selectedPlan} plan (first term)</span>
-                  <span>₦{selectedPlanData?.price.toLocaleString()}</span>
+                  <span>Setup fee ({paymentMode === 'installment' ? '1st of 3 installments' : 'paid in full'})</span>
+                  <span>₦{amountDueToday.toLocaleString()}</span>
                 </div>
                 <div className={`${styles.totalRow} ${styles.totalFinal}`}>
                   <span>Total due today</span>
-                  <span>₦{totalAmount.toLocaleString()}</span>
+                  <span>₦{amountDueToday.toLocaleString()}</span>
                 </div>
               </div>
+              <p className={styles.hint}>
+                Recurring per-student, per-term billing starts after onboarding and is based on
+                your active student count — you'll see that rate on your first billing cycle, not here.
+              </p>
             </div>
           )}
 
@@ -529,10 +533,10 @@ export default function RegisterSchoolPage() {
                   <span>School</span><strong>{schoolName}</strong>
                 </div>
                 <div className={styles.summaryRow}>
-                  <span>Plan</span><strong>{selectedPlan}</strong>
+                  <span>Setup fee</span><strong>{selectedOption.label}</strong>
                 </div>
                 <div className={styles.summaryRow}>
-                  <span>Total</span><strong>₦{totalAmount.toLocaleString()}</strong>
+                  <span>Due today</span><strong>₦{amountDueToday.toLocaleString()}</strong>
                 </div>
                 <p className={styles.summaryNote}>
                   You will be redirected to Paystack to complete payment after submitting.
@@ -577,7 +581,7 @@ export default function RegisterSchoolPage() {
                 disabled={loading}
                 type="button"
               >
-                {loading ? 'Processing...' : <>Pay ₦{totalAmount.toLocaleString()} & Register <ArrowRightIcon size={15} /></>}
+                {loading ? 'Processing...' : <>Pay ₦{amountDueToday.toLocaleString()} & Register <ArrowRightIcon size={15} /></>}
               </button>
             )}
           </div>
