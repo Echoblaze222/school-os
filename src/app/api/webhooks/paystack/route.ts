@@ -201,16 +201,18 @@ async function handleSubscriptionRenewal(admin: ReturnType<typeof createAdminCli
 async function handleSchoolRegistration(admin: ReturnType<typeof createAdminClient>, data: any, traceId: string) {
   const { reference, amount, metadata } = data
   const schoolId = metadata?.school_id
-  const plan = metadata?.plan ?? 'Basic'
+  // register/route.ts sends `payment_mode: 'full' | 'installment'` in
+  // metadata - there is no more per-tier `plan` at registration time.
+  const paymentMode = metadata?.payment_mode ?? 'full'
   if (!schoolId) throw new Error('Missing school_id in metadata for registration')
 
-  const result = await activateSchool(schoolId, plan, amount, reference)
+  const result = await activateSchool(schoolId, paymentMode, amount, reference)
 
   if (!result.activated) {
     throw new Error(`activateSchool refused: ${result.reason}`)
   }
 
-  logger.info('school registration webhook processed', { traceId, schoolId, plan })
+  logger.info('school registration webhook processed', { traceId, schoolId, paymentMode })
   return { handled: 'school_registration', schoolId }
 }
 
