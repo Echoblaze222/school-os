@@ -12,6 +12,16 @@ import { listDepartments } from '@/lib/supabase/appointments'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 import LeadershipClient from './LeadershipClient'
 
+// Belt-and-suspenders against a stale client Router Cache snapshot
+// showing after appointing someone then navigating away and back -
+// cookies() in createClient() already forces this route to render fresh
+// on the server every request, but that alone doesn't stop the browser
+// from reusing a cached RSC payload from before the mutation. Explicit
+// here rather than relying on the implicit cookies()-forces-dynamic
+// behavior, since that's easy to lose silently in a future refactor.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Every AppointmentTypeId this page doesn't already give bespoke UI to
 // (Vice Principal, HOD, Hostel Prefect each have their own section/modal
 // with type-specific scope inputs). Everything else renders through the

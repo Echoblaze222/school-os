@@ -2,6 +2,7 @@
 // src/app/dashboard/principal/leadership/LeadershipClient.tsx
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DepartmentCard from '@/components/org/DepartmentCard'
 import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon } from '@/components/Icons'
@@ -66,6 +67,7 @@ export default function LeadershipClient({
   profile, school, userId, initialDepartments, initialVicePrincipals, initialHostels, initialHostelPrefects,
   initialClasses, initialGenericAppointments,
 }: Props) {
+  const router = useRouter()
   const [departments, setDepartments] = useState(initialDepartments)
   const [vicePrincipals, setVicePrincipals] = useState(initialVicePrincipals)
   const [hostelPrefects, setHostelPrefects] = useState(initialHostelPrefects)
@@ -180,7 +182,7 @@ export default function LeadershipClient({
       const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: staffId, appointmentType: 'hod', departmentId: hodPicker.id }) })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Could not assign Head of Department.'); return }
-      setHodPicker(null); await refreshDepartments()
+      setHodPicker(null); await refreshDepartments(); router.refresh()
     } finally { setAssigningHodId(null) }
   }
   async function revokeHod(d: DepartmentWithStats) {
@@ -232,7 +234,7 @@ export default function LeadershipClient({
         setVicePrincipals(prev => prev.map(x => x.appointmentId === editingVpAppointmentId
           ? { ...x, portfolio: vpPortfolio || null, departmentIds: vpDeptIds }
           : x))
-        closeVpModal()
+        closeVpModal(); router.refresh()
         return
       }
       const res = await fetch('/api/appointments', {
@@ -245,7 +247,7 @@ export default function LeadershipClient({
         appointmentId: json.appointment.id, profileId: selectedVpCandidate.id, fullName: selectedVpCandidate.full_name,
         avatarUrl: selectedVpCandidate.avatar_url, email: '', portfolio: vpPortfolio || null, departmentIds: vpDeptIds, assignedAt: new Date().toISOString(),
       }])
-      setShowVpPicker(false)
+      setShowVpPicker(false); router.refresh()
     } finally { setAppointing(false) }
   }
   async function revokeVp(vp: VicePrincipal) {
@@ -255,7 +257,7 @@ export default function LeadershipClient({
       const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: vp.appointmentId }) })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
-      setVicePrincipals(prev => prev.filter(x => x.appointmentId !== vp.appointmentId))
+      setVicePrincipals(prev => prev.filter(x => x.appointmentId !== vp.appointmentId)); router.refresh()
     } finally { setRevokingVpId(null) }
   }
 
@@ -284,7 +286,7 @@ export default function LeadershipClient({
         appointmentId: json.appointment.id, profileId: selectedHpCandidate.id, fullName: selectedHpCandidate.full_name,
         avatarUrl: selectedHpCandidate.avatar_url, hostelIds: hpHostelIds, assignedAt: new Date().toISOString(),
       }])
-      setShowHpPicker(false)
+      setShowHpPicker(false); router.refresh()
     } finally { setAppointingHp(false) }
   }
   async function revokeHp(hp: HostelPrefect) {
@@ -294,7 +296,7 @@ export default function LeadershipClient({
       const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: hp.appointmentId }) })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
-      setHostelPrefects(prev => prev.filter(x => x.appointmentId !== hp.appointmentId))
+      setHostelPrefects(prev => prev.filter(x => x.appointmentId !== hp.appointmentId)); router.refresh()
     } finally { setRevokingHpId(null) }
   }
 
@@ -345,7 +347,7 @@ export default function LeadershipClient({
           assignedAt: new Date().toISOString(),
         }],
       }))
-      closeGenericPicker()
+      closeGenericPicker(); router.refresh()
     } finally { setAppointingGeneric(false); setAssigningGenericCandidateId(null) }
   }
   function confirmGenericConfigure() {
@@ -359,7 +361,7 @@ export default function LeadershipClient({
       const res = await fetch('/api/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId }) })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Could not revoke appointment.'); return }
-      setGenericAppointments(prev => ({ ...prev, [type]: (prev[type] ?? []).filter(a => a.appointmentId !== appointmentId) }))
+      setGenericAppointments(prev => ({ ...prev, [type]: (prev[type] ?? []).filter(a => a.appointmentId !== appointmentId) })); router.refresh()
     } finally { setRevokingGenericId(null) }
   }
 
