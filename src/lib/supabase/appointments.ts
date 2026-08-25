@@ -335,6 +335,26 @@ export async function assignAppointment(
     if (!dept || dept.school_id !== ctx.schoolId) throw new PermissionError('Department not found.')
   }
 
+  // Block re-appointing someone who already actively holds this exact
+  // type - but only for non-department-scoped types (vice_principal,
+  // counselor, nurse, the hostel/class-scoped types, etc). Department-
+  // scoped types (HOD) are deliberately excluded: their uniqueness is
+  // per-department, handled by the revoke-then-insert block right below,
+  // and a person can legitimately be HOD of two different departments -
+  // this check would otherwise block that by matching on type alone.
+  if (!input.departmentId) {
+    const { data: dupe } = await admin
+      .from('appointments')
+      .select('id')
+      .eq('school_id', ctx.schoolId)
+      .eq('appointment_type', input.appointmentType)
+      .eq('profile_id', input.profileId)
+      .eq('status', 'active')
+    if (dupe && dupe.length > 0) {
+      throw new PermissionError(`${target.full_name} already holds this appointment.`)
+    }
+  }
+
   // Enforce one active holder per (school, appointment_type, department) -
   // revoke whoever currently holds it before inserting the replacement, so
   // "who is the HOD of Science" never has two conflicting answers.
