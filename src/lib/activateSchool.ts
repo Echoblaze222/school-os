@@ -38,7 +38,7 @@ export function getResend(): Resend {
 }
 
 export async function activateSchool(
-  schoolId: string, plan: string, amountKobo: number, reference: string
+  schoolId: string, paymentMode: string, amountKobo: number, reference: string
 ): Promise<ActivateSchoolResult> {
   if (!reference || !reference.startsWith(REGISTRATION_REFERENCE_PREFIX)) {
     console.warn(
@@ -83,14 +83,17 @@ export async function activateSchool(
     })
     .eq('school_id', schoolId)
 
-  // 4. Feature flags based on plan
-  const features = ['core_portal', 'fee_management', 'results_system']
-  if (plan === 'Premium' || plan === 'Elite') {
-    features.push('ai_tutor', 'bulk_sms', 'live_classes', 'whatsapp_notifications')
-  }
-  if (plan === 'Elite') {
-    features.push('ai_face_match', 'custom_domain', 'advanced_analytics')
-  }
+  // 4. Feature flags - every school gets the full feature set now (no
+  // more Basic/Premium/Elite tiers; recurring billing is by student
+  // count instead, see lib/billing.ts). Keeping the insert, just
+  // unconditional, since nothing else in the codebase reads this table
+  // to gate anything - dropping it here would be a silent behavior
+  // change for whatever future caller starts reading it.
+  const features = [
+    'core_portal', 'fee_management', 'results_system', 'ai_tutor',
+    'bulk_sms', 'live_classes', 'whatsapp_notifications',
+    'ai_face_match', 'custom_domain', 'advanced_analytics',
+  ]
 
   await supabase.from('feature_flags').insert(
     features.map(f => ({
@@ -101,6 +104,7 @@ export async function activateSchool(
     }))
   )
 
+  const paymentModeLabel = paymentMode === 'installment' ? '3-month installment (1st payment)' : 'Paid in full'
   const amountNaira = (amountKobo / 100).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })
   const now         = new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })
   const loginUrl    = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
@@ -128,8 +132,8 @@ export async function activateSchool(
               <table style="width:100%;border-collapse:collapse;">
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">School</td>
                     <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name}</td></tr>
-                <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Plan</td>
-                    <td style="color:#a78bfa;font-weight:600;font-size:14px;">${plan}</td></tr>
+                <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Setup Fee</td>
+                    <td style="color:#a78bfa;font-weight:600;font-size:14px;">${paymentModeLabel}</td></tr>
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Email</td>
                     <td style="color:#fff;font-weight:600;font-size:14px;">${principal.email}</td></tr>
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Access Code</td>
@@ -173,8 +177,8 @@ export async function activateSchool(
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">School</td>
                 <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name ?? 'N/A'}</td></tr>
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Plan</td>
-                <td style="color:#a78bfa;font-weight:600;font-size:14px;">${plan}</td></tr>
+            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Setup Fee</td>
+                <td style="color:#a78bfa;font-weight:600;font-size:14px;">${paymentModeLabel}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Amount</td>
                 <td style="color:#10B981;font-weight:700;font-size:18px;">${amountNaira}</td></tr>
             <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal</td>
