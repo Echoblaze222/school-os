@@ -65,10 +65,28 @@ export async function activateSchool(
     .single()
 
   // 2. Activate the school
+  //
+  // setup_status + subscription_ends are what actually matter -
+  // middleware.ts and the check-subscriptions cron (evaluateSchoolSubscription)
+  // only ever look at these, never at the legacy `status` column below.
+  // This used to only set `status`/`is_platform_active`, which meant every
+  // school that paid via this registration flow was invisible to the
+  // entire expiry/locking system forever - setup_status stayed at
+  // whatever the column default is, with no subscription_ends for
+  // evaluateSchoolSubscription to ever compare against, so it could never
+  // flip to grace_period/suspended no matter how much time passed.
+  //
+  // Termly service period starting now, matching the 4-month cadence the
+  // placeholder subscription row (below) already uses.
+  const subscriptionEnds = new Date()
+  subscriptionEnds.setMonth(subscriptionEnds.getMonth() + 4)
+
   await supabase
     .from('schools')
     .update({
-      status:             'active',
+      status:             'active', // legacy column - kept for whatever still reads it
+      setup_status:       'active',
+      subscription_ends:  subscriptionEnds.toISOString(),
       is_platform_active: true,
       updated_at:         new Date().toISOString(),
     })
