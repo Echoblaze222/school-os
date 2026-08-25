@@ -15,7 +15,7 @@ import {
   SettingsIcon, MegaphoneIcon, VideoIcon,
   FileTextIcon, TrophyIcon, KeyIcon, UserIcon,
   LayersIcon, CalendarIcon, GlobeIcon, RefreshIcon,
-  ShieldIcon, TagIcon, BarChartIcon,
+  ShieldIcon, TagIcon, BarChartIcon, StarIcon,
 } from '@/components/Icons'
 import styles from './principal.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -24,12 +24,12 @@ import motion from '@/components/dashboard-motion.module.css'
 // Kept in one place so the sheet can never drift from what actually exists.
 const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'People', items: [
-    { id: 'staff',      label: 'Staff',      href: '/dashboard/principal/staff',      Icon: PeopleIcon },
-    { id: 'teachers',   label: 'Teachers',   href: '/dashboard/principal/teachers',   Icon: UserIcon },
-    { id: 'students',   label: 'Students',   href: '/dashboard/principal/students',   Icon: SchoolIcon },
+    { id: 'staff',    label: 'Staff',    href: '/dashboard/principal/staff',    Icon: PeopleIcon },
+    { id: 'teachers', label: 'Teachers', href: '/dashboard/principal/teachers', Icon: UserIcon },
+    { id: 'students', label: 'Students', href: '/dashboard/principal/students', Icon: SchoolIcon },
     { id: 'leadership', label: 'Leadership', href: '/dashboard/principal/leadership', Icon: TrophyIcon },
-    { id: 'alumni',     label: 'Alumni',     href: '/dashboard/principal/alumni',     Icon: GlobeIcon },
-    { id: 'transfers',  label: 'Transfers',  href: '/dashboard/principal/transfers',  Icon: RefreshIcon },
+    { id: 'alumni',   label: 'Alumni',   href: '/dashboard/principal/alumni',   Icon: GlobeIcon },
+    { id: 'transfers',label: 'Transfers',href: '/dashboard/principal/transfers',Icon: RefreshIcon },
   ]},
   { name: 'Academics', items: [
     { id: 'classes',     label: 'Classes',     href: '/dashboard/principal/classes',     Icon: LayersIcon },
@@ -48,6 +48,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/principal/chat',          Icon: MessageIcon },
     { id: 'notices',       label: 'Notices',       href: '/dashboard/principal/notices',       Icon: BellIcon },
     { id: 'announcements', label: 'Announcements', href: '/dashboard/principal/announcements', Icon: MegaphoneIcon },
+    { id: 'promotions',    label: 'Promotions',    href: '/dashboard/principal/promotions',    Icon: StarIcon },
     { id: 'meetings',      label: 'Meetings',      href: '/dashboard/principal/meetings',      Icon: CalendarIcon },
     { id: 'live',          label: 'Live classes',  href: '/dashboard/principal/live',          Icon: VideoIcon },
   ]},
