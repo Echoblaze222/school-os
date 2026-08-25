@@ -678,8 +678,10 @@ export default function SettingsClient({ profile, school }: Props) {
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
                 A wide photo of your school building, campus, or classrooms.
-                Shown on the login page, welcome screens, and school profile.
-                Recommended: landscape 16:9, min 1280×720 px, max 5 MB.
+                Shown on the login page, welcome screens, and — if your school is publicly
+                listed — as the cover photo on your public profile and discovery card.
+                Recommended: landscape 16:9, min 1280×720 px, max 5 MB. Optional — schools
+                without one just show their brand color instead.
               </p>
 
               {buildImagePreview ? (
