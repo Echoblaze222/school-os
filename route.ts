@@ -1,4 +1,4 @@
-// src/app/api/librarian/checkouts/route.ts
+// src/app/api/librarian/books/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -20,22 +20,15 @@ export async function GET(request: Request) {
   if (!caller) return NextResponse.json({ ok: false, error: 'Not authorized.' }, { status: 403 })
 
   const url = new URL(request.url)
-  const scope = url.searchParams.get('scope') // 'open' | 'overdue' | 'all'
+  const search = url.searchParams.get('search')?.trim()
 
   const admin = createAdminClient()
-  let query = admin
-    .from('library_checkouts')
-    .select('id, issued_at, due_at, returned_at, fine_kobo, fine_paid, book:library_books(id, title), borrower:profiles!library_checkouts_borrower_profile_id_fkey(id, full_name, avatar_url)')
-    .eq('school_id', caller.schoolId)
-    .order('issued_at', { ascending: false })
-    .limit(200)
-
-  if (scope === 'open') query = query.is('returned_at', null)
-  if (scope === 'overdue') query = query.is('returned_at', null).lt('due_at', new Date().toISOString())
+  let query = admin.from('library_books').select('*').eq('school_id', caller.schoolId).order('title').limit(300)
+  if (search) query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%`)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true, checkouts: data ?? [] })
+  return NextResponse.json({ ok: true, books: data ?? [] })
 }
 
 export async function POST(request: Request) {
@@ -43,37 +36,32 @@ export async function POST(request: Request) {
   if (!caller) return NextResponse.json({ ok: false, error: 'Not authorized.' }, { status: 403 })
 
   const body = await request.json().catch(() => null)
-  if (!body?.bookId || !body?.borrowerId || !body?.dueAt) {
-    return NextResponse.json({ ok: false, error: 'bookId, borrowerId and dueAt are required.' }, { status: 400 })
-  }
+  if (!body?.title) return NextResponse.json({ ok: false, error: 'Title is required.' }, { status: 400 })
+
+  const totalCopies = Math.max(1, Number(body.totalCopies ?? 1))
 
   const admin = createAdminClient()
-
-  const { data: book } = await admin.from('library_books').select('id, available_copies').eq('id', body.bookId).eq('school_id', caller.schoolId).single()
-  if (!book) return NextResponse.json({ ok: false, error: 'Book not found.' }, { status: 404 })
-  if (book.available_copies <= 0) return NextResponse.json({ ok: false, error: 'No copies available to check out.' }, { status: 400 })
-
-  const { data: borrower } = await admin.from('profiles').select('id').eq('id', body.borrowerId).eq('school_id', caller.schoolId).single()
-  if (!borrower) return NextResponse.json({ ok: false, error: 'Borrower not found at your school.' }, { status: 400 })
-
-  const { data: checkout, error } = await admin
-    .from('library_checkouts')
+  const { data: book, error } = await admin
+    .from('library_books')
     .insert({
       school_id: caller.schoolId,
-      book_id: body.bookId,
-      borrower_profile_id: body.borrowerId,
-      issued_by_profile_id: caller.userId,
-      due_at: body.dueAt,
+      title: String(body.title).trim(),
+      author: body.author ? String(body.author).trim() : null,
+      isbn: body.isbn ? String(body.isbn).trim() : null,
+      category: body.category ? String(body.category).trim() : null,
+      publisher: body.publisher ? String(body.publisher).trim() : null,
+      publication_year: body.publicationYear ? Number(body.publicationYear) : null,
+      total_copies: totalCopies,
+      available_copies: totalCopies,
+      shelf_location: body.shelfLocation ? String(body.shelfLocation).trim() : null,
       notes: body.notes ? String(body.notes).trim() : null,
+      created_by: caller.userId,
     })
     .select('*')
     .single()
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-
-  await admin.from('library_books').update({ available_copies: book.available_copies - 1 }).eq('id', body.bookId)
-
-  return NextResponse.json({ ok: true, checkout })
+  return NextResponse.json({ ok: true, book })
 }
 
 export async function PATCH(request: Request) {
@@ -81,29 +69,38 @@ export async function PATCH(request: Request) {
   if (!caller) return NextResponse.json({ ok: false, error: 'Not authorized.' }, { status: 403 })
 
   const body = await request.json().catch(() => null)
-  if (!body?.id || body?.action !== 'return') {
-    return NextResponse.json({ ok: false, error: "id and action: 'return' are required." }, { status: 400 })
-  }
+  if (!body?.id) return NextResponse.json({ ok: false, error: 'id is required.' }, { status: 400 })
 
   const admin = createAdminClient()
-  const { data: checkout } = await admin.from('library_checkouts').select('id, book_id, returned_at, due_at').eq('id', body.id).eq('school_id', caller.schoolId).single()
-  if (!checkout) return NextResponse.json({ ok: false, error: 'Checkout not found.' }, { status: 404 })
-  if (checkout.returned_at) return NextResponse.json({ ok: false, error: 'Already returned.' }, { status: 400 })
 
-  // Fine calculation left as a manual override (fineKobo in the request
-  // body) rather than a hardcoded per-day rate baked into the schema -
-  // schools set their own overdue policy; the librarian confirms the
-  // amount at return time.
-  const update: Record<string, unknown> = { returned_at: new Date().toISOString() }
-  if (body.fineKobo !== undefined) update.fine_kobo = Number(body.fineKobo)
-
-  const { data: updated, error } = await admin.from('library_checkouts').update(update).eq('id', body.id).select('*').single()
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-
-  const { data: book } = await admin.from('library_books').select('available_copies, total_copies').eq('id', checkout.book_id).single()
-  if (book) {
-    await admin.from('library_books').update({ available_copies: Math.min(book.total_copies, book.available_copies + 1) }).eq('id', checkout.book_id)
+  // Guard: never let total_copies drop below what's currently checked
+  // out, and keep available_copies in lockstep when total_copies changes.
+  if (body.totalCopies !== undefined) {
+    const { data: existing } = await admin.from('library_books').select('total_copies, available_copies').eq('id', body.id).eq('school_id', caller.schoolId).single()
+    if (!existing) return NextResponse.json({ ok: false, error: 'Book not found.' }, { status: 404 })
+    const checkedOut = existing.total_copies - existing.available_copies
+    const newTotal = Math.max(1, Number(body.totalCopies))
+    if (newTotal < checkedOut) {
+      return NextResponse.json({ ok: false, error: `Can't reduce copies below ${checkedOut}, the number currently checked out.` }, { status: 400 })
+    }
   }
 
-  return NextResponse.json({ ok: true, checkout: updated })
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  for (const [bodyKey, col] of [
+    ['title', 'title'], ['author', 'author'], ['isbn', 'isbn'], ['category', 'category'],
+    ['publisher', 'publisher'], ['shelfLocation', 'shelf_location'], ['notes', 'notes'],
+  ] as const) {
+    if (body[bodyKey] !== undefined) update[col] = body[bodyKey] ? String(body[bodyKey]).trim() : null
+  }
+  if (body.publicationYear !== undefined) update.publication_year = body.publicationYear ? Number(body.publicationYear) : null
+  if (body.totalCopies !== undefined) {
+    const { data: existing } = await admin.from('library_books').select('total_copies, available_copies').eq('id', body.id).single()
+    const delta = Number(body.totalCopies) - (existing?.total_copies ?? 0)
+    update.total_copies = Number(body.totalCopies)
+    update.available_copies = Math.max(0, (existing?.available_copies ?? 0) + delta)
+  }
+
+  const { data: book, error } = await admin.from('library_books').update(update).eq('id', body.id).eq('school_id', caller.schoolId).select('*').single()
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true, book })
 }
