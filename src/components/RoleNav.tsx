@@ -13,7 +13,7 @@ import {
   MegaphoneIcon, ClockIcon, BookOpenIcon, AwardIcon, SchoolIcon,
   CheckCircleIcon, DownloadIcon, TrophyIcon, SunIcon, MoonIcon,
   SettingsIcon, CreditCardIcon, ShieldIcon, UploadIcon, ActivityIcon,
-  HeartIcon, AlertCircleIcon, ArrowLeftIcon,
+  HeartIcon, AlertCircleIcon, ArrowLeftIcon, GridIcon, RefreshIcon,
   GlobeIcon,
 } from './Icons'
 import styles from './RoleNav.module.css'
@@ -215,6 +215,83 @@ const NAV: Record<string, {
       { home: true },
       { href: '/dashboard/ict/chat',    Icon: MessageIcon,   label: 'Chat'    },
       { href: '/dashboard/ict/ai',      Icon: AiIcon,        label: 'AI'      },
+    ],
+  },
+
+  nurse: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/nurse',               Icon: HomeIcon,   label: 'Dashboard'      },
+        { href: '/dashboard/nurse/ai',             Icon: AiIcon,     label: 'AI Assistant'   },
+        { href: '/dashboard/nurse/chat',           Icon: MessageIcon, label: 'Messages'      },
+        { href: '/dashboard/nurse/notifications',  Icon: BellIcon,   label: 'Notifications'  },
+      ]},
+      { label: 'Clinic', items: [
+        { href: '/dashboard/nurse/visits',        Icon: HeartIcon,  label: 'Clinic Visits'  },
+        { href: '/dashboard/nurse/health-records', Icon: ClipboardIcon, label: 'Health Records' },
+        { href: '/dashboard/nurse/medications',   Icon: ClockIcon,  label: 'Medications'    },
+        { href: '/dashboard/nurse/inventory',     Icon: GridIcon,   label: 'Inventory'      },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/nurse/profile',       Icon: UserIcon,   label: 'My Profile'     },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/nurse/visits',   Icon: HeartIcon,     label: 'Visits'  },
+      { href: '/dashboard/nurse/health-records', Icon: ClipboardIcon, label: 'Records' },
+      { home: true },
+      { href: '/dashboard/nurse/medications', Icon: ClockIcon,  label: 'Meds'    },
+      { href: '/dashboard/nurse/ai',          Icon: AiIcon,     label: 'AI'      },
+    ],
+  },
+
+  librarian: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/librarian',            Icon: HomeIcon,      label: 'Dashboard'  },
+        { href: '/dashboard/librarian/ai',         Icon: AiIcon,        label: 'AI Assistant' },
+        { href: '/dashboard/librarian/chat',       Icon: MessageIcon,   label: 'Messages'   },
+        { href: '/dashboard/librarian/notifications', Icon: BellIcon,   label: 'Notifications' },
+      ]},
+      { label: 'Library', items: [
+        { href: '/dashboard/librarian/catalog',    Icon: BookIcon,      label: 'Catalog'    },
+        { href: '/dashboard/librarian/checkouts',  Icon: RefreshIcon,   label: 'Checkouts'  },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/librarian/profile',    Icon: UserIcon,      label: 'My Profile' },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/librarian/catalog',   Icon: BookIcon,    label: 'Catalog'   },
+      { home: true },
+      { href: '/dashboard/librarian/checkouts', Icon: RefreshIcon, label: 'Checkouts' },
+      { href: '/dashboard/librarian/ai',        Icon: AiIcon,      label: 'AI'        },
+    ],
+  },
+
+  coach: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/coach',           Icon: HomeIcon,     label: 'Dashboard' },
+        { href: '/dashboard/coach/ai',        Icon: AiIcon,       label: 'AI Assistant' },
+        { href: '/dashboard/coach/chat',      Icon: MessageIcon,  label: 'Messages'  },
+        { href: '/dashboard/coach/notifications', Icon: BellIcon, label: 'Notifications' },
+      ]},
+      { label: 'Coaching', items: [
+        { href: '/dashboard/coach/teams',     Icon: PeopleIcon,   label: 'Teams'     },
+        { href: '/dashboard/coach/schedule',  Icon: CalendarIcon, label: 'Schedule'  },
+        { href: '/dashboard/coach/matches',   Icon: TrophyIcon,   label: 'Matches'   },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/coach/profile',   Icon: UserIcon,     label: 'My Profile' },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/coach/teams',    Icon: PeopleIcon,   label: 'Teams'    },
+      { href: '/dashboard/coach/schedule', Icon: CalendarIcon, label: 'Schedule' },
+      { home: true },
+      { href: '/dashboard/coach/matches',  Icon: TrophyIcon,   label: 'Matches'  },
+      { href: '/dashboard/coach/ai',       Icon: AiIcon,       label: 'AI'       },
     ],
   },
 
