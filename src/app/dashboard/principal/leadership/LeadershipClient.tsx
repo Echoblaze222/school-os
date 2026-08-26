@@ -1,7 +1,7 @@
 'use client'
 // src/app/dashboard/principal/leadership/LeadershipClient.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DepartmentCard from '@/components/org/DepartmentCard'
@@ -74,6 +74,20 @@ export default function LeadershipClient({
   const [hostelPrefects, setHostelPrefects] = useState(initialHostelPrefects)
   const [error, setError] = useState('')
 
+  // useState's initial value only applies on this component's very first
+  // mount - if Next.js's client-side router keeps this page instance
+  // alive across a "navigate away, then back" (it does this by default
+  // for layout stability), a fresh server render with newly-appointed
+  // people never reaches these lists, even though page.tsx is genuinely
+  // force-dynamic and re-queried the DB. This is what "I appoint someone,
+  // leave, come back, they're gone" actually was - not a data problem,
+  // a stale-client-state problem. Re-sync whenever the server actually
+  // sends a new prop reference; this never fires from the optimistic
+  // updates below, since those only touch local state, never these props.
+  useEffect(() => { setDepartments(initialDepartments) }, [initialDepartments])
+  useEffect(() => { setVicePrincipals(initialVicePrincipals) }, [initialVicePrincipals])
+  useEffect(() => { setHostelPrefects(initialHostelPrefects) }, [initialHostelPrefects])
+
   // Departments: create / edit
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState(''); const [newDesc, setNewDesc] = useState(''); const [creating, setCreating] = useState(false)
@@ -118,6 +132,7 @@ export default function LeadershipClient({
   // types add a 'configure' step for picking which hostel(s)/class the
   // appointment applies to, same shape as the HP picker above.
   const [genericAppointments, setGenericAppointments] = useState(initialGenericAppointments)
+  useEffect(() => { setGenericAppointments(initialGenericAppointments) }, [initialGenericAppointments])
   const [genericPicker, setGenericPicker] = useState<{ type: AppointmentTypeId; step: 'pick' | 'configure' } | null>(null)
   const [genericCandidates, setGenericCandidates] = useState<StaffOption[]>([])
   const [loadingGenericCandidates, setLoadingGenericCandidates] = useState(false)
