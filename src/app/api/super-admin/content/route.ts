@@ -29,13 +29,20 @@ async function assertSuperAdmin() {
 }
 
 function slugify(title: string) {
-  return title
+  const slug = title
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')   // strips punctuation, emoji, etc. - can leave a stray leading/trailing space where they were
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')        // drop hyphens left over from a stripped leading/trailing character (e.g. "USA & UK! 🇺🇸" -> trailing "-")
     .slice(0, 100)
+    .replace(/^-+|-+$/g, '')        // re-trim in case slice() cut mid hyphen-run
+
+  // A title that's entirely emoji/punctuation (or every char stripped)
+  // would otherwise produce an empty string, which also fails
+  // content_posts_slug_check (requires at least one a-z0-9 group).
+  return slug || 'post'
 }
 
 // GET - list all posts regardless of status, for the management table
