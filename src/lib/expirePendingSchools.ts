@@ -133,6 +133,15 @@ export async function expirePendingSchools(opts?: { dryRun?: boolean }): Promise
         .update({ status: 'abandoned', updated_at: new Date().toISOString() })
         .eq('id', school.id)
       if (error) throw error
+
+      // Close out the audit trail too - otherwise a swept school's last
+      // attempt sits at 'pending' forever, indistinguishable from one
+      // still genuinely in progress.
+      await admin
+        .from('school_registration_attempts')
+        .update({ status: 'abandoned', resolved_at: new Date().toISOString() })
+        .eq('school_id', school.id)
+        .eq('status', 'pending')
       result.flagged.push({ id: school.id, name: school.name, createdAt: school.created_at })
       logger.info('expirePendingSchools: flagged abandoned school', { schoolId: school.id })
     } catch (err: any) {
@@ -151,6 +160,13 @@ export async function expirePendingSchools(opts?: { dryRun?: boolean }): Promise
 // rest: Supabase delete calls on a non-matching filter are a no-op, not
 // an error, so this is naturally safe to re-run.
 async function deleteAbandonedSchool(admin: ReturnType<typeof createAdminClient>, schoolId: string) {
+  // 1b. Registration attempt log - has to go before the schools delete at
+  // the bottom (FK, no cascade). Once a school is hard-deleted its
+  // attempt-by-attempt history goes with it; paystack_webhook_events has
+  // no FK to schools and survives independently as the longer-term
+  // record if that's ever needed later.
+  await admin.from('school_registration_attempts').delete().eq('school_id', schoolId)
+
   // 1. Find the principal so we can delete their auth user too.
   const { data: principal } = await admin
     .from('profiles')

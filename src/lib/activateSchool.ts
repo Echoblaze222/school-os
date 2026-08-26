@@ -128,6 +128,20 @@ export async function activateSchool(
   const now         = new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })
   const loginUrl    = `${process.env.NEXT_PUBLIC_APP_URL}/select-school`
 
+  // 4b. Close out the attempt log. Matched on reference (not school_id),
+  // so this only ever touches the ONE attempt that actually succeeded -
+  // a school can have several failed/abandoned attempts before a
+  // successful one. Both the payment-callback redirect and the webhook
+  // call activateSchool() for the same successful payment sometimes, and
+  // this update is a no-op the second time (nothing left matching
+  // status='pending' for that reference), so no idempotency guard
+  // needed here beyond what's already in the WHERE clause.
+  await supabase
+    .from('school_registration_attempts')
+    .update({ status: 'succeeded', resolved_at: new Date().toISOString() })
+    .eq('reference', reference)
+    .eq('status', 'pending')
+
   // 5. Email the PRINCIPAL with their login credentials
   if (principal?.email) {
     await getResend().emails.send({
