@@ -246,6 +246,24 @@ export async function POST(req: Request) {
     .select('id')
     .single()
 
+  if (event.event === 'charge.failed' && event.data?.reference?.startsWith(REGISTRATION_REFERENCE_PREFIX)) {
+    // Server-side confirmation that a registration charge failed - the
+    // callback route only catches this if the person's browser actually
+    // makes it back to /api/schools/payment-callback, which doesn't
+    // happen for every failure mode (e.g. they close the tab on
+    // Paystack's own declined-card screen before it redirects). This is
+    // the one path guaranteed to fire regardless of what the browser does.
+    await admin
+      .from('school_registration_attempts')
+      .update({
+        status:         'failed',
+        failure_reason: event.data?.gateway_response ?? 'Charge failed',
+        resolved_at:    new Date().toISOString(),
+      })
+      .eq('reference', event.data.reference)
+      .eq('status', 'pending')
+  }
+
   if (event.event !== 'charge.success') {
     return NextResponse.json({ received: true })
   }
