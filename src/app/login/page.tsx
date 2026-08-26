@@ -8,11 +8,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import styles from './login.module.css'
 import {
-  MailIcon, EyeIcon, EyeOffIcon,
-  LockIcon, PlusIcon, ArrowLeftIcon,
+  MailIcon, GlobeIcon, SchoolIcon, UsersIcon, SparklesIcon,
+  CreditCardIcon, PhoneIcon, ShieldIcon, EyeIcon, EyeOffIcon,
+  LockIcon, ArrowRightIcon, PlusIcon,
 } from '@/components/Icons'
 
 type LoginMode = 'existing' | 'new-user'
@@ -334,11 +336,83 @@ export default function LoginPage() {
                 </form>
               )}
 
-              <button className={styles.backHomeLink} onClick={() => router.push('/')} type="button">
-                <ArrowLeftIcon size={13} /> Back to home
-              </button>
+              <p className={styles.loginFooterLinks}>
+                By signing in you agree to our{' '}
+                <Link href="/terms" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Terms &amp; Conditions</Link>
+                {' '}and{' '}
+                <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.termsLink}>Privacy Policy</Link>
+              </p>
+
+              <div className={styles.registerRow}>
+                <span>Setting up a new school?</span>
+                <Link href="/register-school" className={styles.registerLink}>
+                  Register your school <ArrowRightIcon size={13} />
+                </Link>
+              </div>
           </div>
         </div>{/* end .card */}
+
+        {/* ── SITE FOOTER ──────────────────────────────────────────────────── */}
+        <footer className={styles.siteFooter}>
+
+          {/* About */}
+          <div className={styles.footerAbout}>
+            <p className={styles.footerLogo}>
+              School<span className={styles.footerLogoAccent}>OS</span>
+            </p>
+            <p className={styles.footerTagline}>
+              Nigeria's most comprehensive multi-role school management platform, built for principals,
+              teachers, bursars, secretaries, students, and parents. Every role. One platform.
+            </p>
+          </div>
+
+          {/* Feature badges */}
+          <div className={styles.footerBadges}>
+            <span className={styles.footerBadge}><SchoolIcon size={11} /> Built for Nigeria</span>
+            <span className={styles.footerBadge}><UsersIcon size={11} /> 6 Role Dashboards</span>
+            <span className={styles.footerBadge}><SparklesIcon size={11} /> AI-Powered</span>
+            <span className={styles.footerBadge}><CreditCardIcon size={11} /> Paystack Payments</span>
+            <span className={styles.footerBadge}><PhoneIcon size={11} /> Mobile-First</span>
+            <span className={styles.footerBadge}><ShieldIcon size={11} /> Bank-Grade Security</span>
+          </div>
+
+          <div className={styles.footerDivider} />
+
+          {/* Contact */}
+          <div className={styles.footerContact}>
+            <a href="mailto:piussimon717@gmail.com" className={styles.footerContactLink}>
+              <MailIcon size={13} /> piussimon717@gmail.com
+            </a>
+            <div className={styles.footerDotSep} />
+            <a
+              href="https://school-os-j4bn.vercel.app"
+              className={styles.footerContactLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <GlobeIcon size={13} /> school-os-j4bn.vercel.app
+            </a>
+          </div>
+
+          {/* Nav links */}
+          <div className={styles.footerLinks}>
+            <Link href="/about" className={styles.footerLink}>About</Link>
+            <div className={styles.footerDotSep} />
+            <Link href="/pricing" className={styles.footerLink}>Pricing</Link>
+            <div className={styles.footerDotSep} />
+            <Link href="/terms" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>Terms</Link>
+            <div className={styles.footerDotSep} />
+            <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>Privacy</Link>
+            <div className={styles.footerDotSep} />
+            <a href="mailto:piussimon717@gmail.com" className={styles.footerLink}>Contact Us</a>
+          </div>
+
+          {/* Copyright */}
+          <p className={styles.footerCopy}>
+            © 2026 SchoolOS by Echoblaze · Built in Nigeria for Nigerian Schools
+          </p>
+
+        </footer>
 
         </div>{/* end .pageContent */}
       </div>{/* end .page */}
