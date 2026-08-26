@@ -124,6 +124,9 @@ const APPOINTMENT_DASHBOARD_SEGMENTS: Record<string, string[]> = {
   ict: ['ict_officer', 'ict_administrator'],
   'vice-principal': ['vice_principal'],
   hostel: ['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'],
+  nurse: ['nurse'],
+  librarian: ['librarian'],
+  coach: ['coach'],
 }
 
 export async function middleware(request: NextRequest) {
