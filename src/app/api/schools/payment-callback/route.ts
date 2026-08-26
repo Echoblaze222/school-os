@@ -12,6 +12,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    const supabase = createAdminClient()
+
     // 1. Verify with Paystack
     const verifyRes = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
@@ -20,6 +22,15 @@ export async function GET(request: Request) {
     const verifyData = await verifyRes.json()
 
     if (!verifyData.status || verifyData.data?.status !== 'success') {
+      await supabase
+        .from('school_registration_attempts')
+        .update({
+          status:         'failed',
+          failure_reason: verifyData.data?.gateway_response ?? verifyData.message ?? 'Payment verification failed',
+          resolved_at:    new Date().toISOString(),
+        })
+        .eq('reference', reference)
+        .eq('status', 'pending')
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
     }
 
@@ -28,11 +39,19 @@ export async function GET(request: Request) {
     const amountKobo  = verifyData.data?.amount ?? 0
 
     if (!schoolId) {
+      await supabase
+        .from('school_registration_attempts')
+        .update({
+          status:         'failed',
+          failure_reason: 'Verified payment was missing school_id in metadata',
+          resolved_at:    new Date().toISOString(),
+        })
+        .eq('reference', reference)
+        .eq('status', 'pending')
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
     }
 
     // 2. Check if already activated (webhook may have fired first)
-    const supabase = createAdminClient()
     const { data: existing } = await supabase
       .from('schools')
       .select('status, is_platform_active')
@@ -50,6 +69,15 @@ export async function GET(request: Request) {
     const result = await activateSchool(schoolId, paymentMode, amountKobo, reference)
     if (!result.activated) {
       console.warn(`[schools/payment-callback] activation refused: ${result.reason}`)
+      await supabase
+        .from('school_registration_attempts')
+        .update({
+          status:         'failed',
+          failure_reason: `Activation refused: ${result.reason}`,
+          resolved_at:    new Date().toISOString(),
+        })
+        .eq('reference', reference)
+        .eq('status', 'pending')
       return NextResponse.redirect(new URL('/register-school/failed', request.url))
     }
 
