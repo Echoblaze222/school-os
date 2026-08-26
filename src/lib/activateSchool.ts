@@ -86,6 +86,7 @@ export async function activateSchool(
     .update({
       status:             'active', // legacy column - kept for whatever still reads it
       setup_status:       'active',
+      setup_paid_at:      new Date().toISOString(), // shown on super-admin's school detail page - was never set for this (public registration) path before
       subscription_ends:  subscriptionEnds.toISOString(),
       is_platform_active: true,
       updated_at:         new Date().toISOString(),
