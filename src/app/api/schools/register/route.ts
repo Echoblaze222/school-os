@@ -327,6 +327,30 @@ export async function POST(request: Request) {
 
     if (paystackKey) {
 
+      // Generated once, up front, so the same reference goes to Paystack
+
+      // AND gets logged as an attempt - previously this was inlined
+
+      // straight into the fetch body below with no record kept anywhere.
+
+      const paystackReference = `SCH-REG-${newSchool.id.slice(0, 8)}-${Date.now()}`
+
+
+
+      await supabase.from('school_registration_attempts').insert({
+
+        school_id:    newSchool.id,
+
+        reference:    paystackReference,
+
+        payment_mode: paymentMode,
+
+        amount_kobo:  amountDue * 100,
+
+      })
+
+
+
       const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
 
         method:  'POST',
@@ -347,7 +371,7 @@ export async function POST(request: Request) {
 
           currency:     'NGN',
 
-          reference:    `SCH-REG-${newSchool.id.slice(0, 8)}-${Date.now()}`,
+          reference:    paystackReference,
 
           callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/schools/payment-callback`,
 
@@ -382,6 +406,30 @@ export async function POST(request: Request) {
       if (paystackData.status && paystackData.data?.authorization_url) {
 
         paymentUrl = paystackData.data.authorization_url
+
+      } else {
+
+        // Paystack rejected the initialize call itself (bad request, API
+
+        // key issue, etc) - the person never even got a checkout page, so
+
+        // this is a genuine failure, not a pending/abandoned attempt.
+
+        await supabase
+
+          .from('school_registration_attempts')
+
+          .update({
+
+            status:         'failed',
+
+            failure_reason: paystackData.message ?? 'Paystack failed to initialize the transaction',
+
+            resolved_at:    new Date().toISOString(),
+
+          })
+
+          .eq('reference', paystackReference)
 
       }
 
