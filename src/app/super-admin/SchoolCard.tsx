@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FlameIcon, CheckCircleIcon, ClockIcon, WalletIcon, PeopleIcon } from '@/components/Icons'
+import { FlameIcon, CheckCircleIcon, ClockIcon, WalletIcon, PeopleIcon, AlertCircleIcon, CreditCardIcon, FileTextIcon, LockIcon, EyeIcon, SettingsIcon } from '@/components/Icons'
 import styles from './school-card.module.css'
 
 interface School {
@@ -109,8 +109,8 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
     <div className={`${styles.card} ${styles[`status_${school.setup_status}`]}`}>
       {/* Error message */}
       {errMsg && (
-        <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:'8px 12px', marginBottom:8, fontSize:'0.78rem', color:'#EF4444', fontWeight:600 }}>
-          ⚠️ {errMsg}
+        <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:'8px 12px', marginBottom:8, fontSize:'0.78rem', color:'#EF4444', fontWeight:600, display:'flex', alignItems:'center', gap:6 }}>
+          <AlertCircleIcon size={13} /> {errMsg}
         </div>
       )}
 
@@ -177,16 +177,16 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
       <div className={styles.actions}>
         {/* Trial → confirm payment */}
         {(school.setup_status === 'trial' || school.setup_status === 'expired') && (
-          <button className={styles.actionBtn} style={{ background: '#10B981' }}
+          <button className={styles.actionBtn} style={{ background: '#10B981', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}
             onClick={() => { setShowPay(true); setPayAmount('') }}>
-            ✅ Confirm Payment
+            <CheckCircleIcon size={14} /> Confirm Payment
           </button>
         )}
         {/* Active free month → confirm subscription */}
         {school.setup_status === 'active' && school.subscription_plan === 'free_month' && (
-          <button className={styles.actionBtn} style={{ background: '#800020' }}
+          <button className={styles.actionBtn} style={{ background: '#800020', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}
             onClick={() => { setShowPay(true); setPayAmount('') }}>
-            💳 Activate Subscription
+            <CreditCardIcon size={14} /> Activate Subscription
           </button>
         )}
         {/* Extend trial */}
@@ -205,20 +205,20 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
       {/* Expanded: notes + lock */}
       {expanded && (
         <div className={styles.expanded}>
-          {school.notes && <p className={styles.notes}>📝 {school.notes}</p>}
+          {school.notes && <p className={styles.notes} style={{ display:'flex', alignItems:'flex-start', gap:6 }}><span style={{ flexShrink:0, marginTop:2 }}><FileTextIcon size={13} /></span> {school.notes}</p>}
           <div className={styles.expandActions}>
             <button className={styles.lockBtn}
-              style={{ color: school.setup_status === 'locked' ? '#10B981' : '#EF4444' }}
+              style={{ color: school.setup_status === 'locked' ? '#10B981' : '#EF4444', display:'flex', alignItems:'center', gap:6 }}
               onClick={toggleLock} disabled={loading}>
-              {school.setup_status === 'locked' ? '🔓 Unlock School' : '🔒 Lock School'}
+              <LockIcon size={13} /> {school.setup_status === 'locked' ? 'Unlock School' : 'Lock School'}
             </button>
             <a href={`/dashboard/principal?school=${school.id}`}
-              className={styles.viewBtn} target="_blank" rel="noreferrer">
-              👁 View Portal
+              className={styles.viewBtn} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <EyeIcon size={13} /> View Portal
             </a>
             <a href={`/super-admin/school/${school.id}`}
-              className={styles.viewBtn}>
-              ⚙️ Manage / Compliance
+              className={styles.viewBtn} style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <SettingsIcon size={13} /> Manage / Compliance
             </a>
           </div>
         </div>
@@ -240,8 +240,9 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
                   onChange={e => setPayRef(e.target.value)} placeholder="Paystack / bank ref" />
                 <button className={styles.confirmBtn}
                   disabled={!payAmount || loading}
-                  onClick={() => confirmPayment('setup')}>
-                  {loading ? '...' : '✅ Mark Setup as Paid → 1 Month Free'}
+                  onClick={() => confirmPayment('setup')}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  {loading ? '...' : <><CheckCircleIcon size={14} /> Mark Setup as Paid → 1 Month Free</>}
                 </button>
               </>
             )}

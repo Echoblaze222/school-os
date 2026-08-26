@@ -7,7 +7,7 @@ import {
   SchoolIcon, PlusIcon, BarChartIcon, WalletIcon,
   SearchIcon, RefreshIcon, CheckCircleIcon, ClockIcon,
   BellIcon, SettingsIcon, LogOutIcon, FlameIcon,
-  BookOpenIcon, AlertCircleIcon,
+  BookOpenIcon, AlertCircleIcon, XIcon, PauseIcon,
 } from '@/components/Icons'
 import SchoolSetupModal from './SchoolSetupModal'
 import SchoolCard from './SchoolCard'
@@ -30,7 +30,7 @@ export default function SuperAdminDashboard() {
   const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [showSetup,    setShowSetup]    = useState(false)
-  const [stats,        setStats]        = useState({ total: 0, trial: 0, active: 0, expired: 0, revenue: 0 })
+  const [stats,        setStats]        = useState({ total: 0, trial: 0, active: 0, expired: 0, suspended: 0, revenue: 0 })
   const supabase = createClient()
 
   useEffect(() => { loadSchools() }, [])
@@ -52,11 +52,12 @@ export default function SuperAdminDashboard() {
       setSchools(data as School[])
       setFiltered(data as School[])
       setStats({
-        total:   data.length,
-        trial:   data.filter(s => s.setup_status === 'trial').length,
-        active:  data.filter(s => s.setup_status === 'active').length,
-        expired: data.filter(s => s.setup_status === 'expired').length,
-        revenue: data.reduce((sum, s) => sum + (s.total_paid_ngn ?? 0), 0),
+        total:     data.length,
+        trial:     data.filter(s => s.setup_status === 'trial').length,
+        active:    data.filter(s => s.setup_status === 'active').length,
+        expired:   data.filter(s => s.setup_status === 'expired').length,
+        suspended: data.filter(s => s.setup_status === 'suspended').length,
+        revenue:   data.reduce((sum, s) => sum + (s.total_paid_ngn ?? 0), 0),
       })
     }
     setLoading(false)
@@ -68,11 +69,11 @@ export default function SuperAdminDashboard() {
   }
 
   const STATUS_TABS = [
-    { value: 'all',      label: `All (${stats.total})` },
-    { value: 'trial',    label: `🔥 Trial (${stats.trial})` },
-    { value: 'active',   label: `✅ Active (${stats.active})` },
-    { value: 'expired',  label: `❌ Expired (${stats.expired})` },
-    { value: 'suspended',label: '⏸ Suspended' },
+    { value: 'all',       label: 'All',       count: stats.total,     Icon: null },
+    { value: 'trial',     label: 'Trial',     count: stats.trial,     Icon: FlameIcon },
+    { value: 'active',    label: 'Active',    count: stats.active,    Icon: CheckCircleIcon },
+    { value: 'expired',   label: 'Expired',   count: stats.expired,   Icon: XIcon },
+    { value: 'suspended', label: 'Suspended', count: stats.suspended, Icon: PauseIcon },
   ]
 
   return (
@@ -182,7 +183,7 @@ export default function SuperAdminDashboard() {
               <button key={tab.value}
                 className={`${styles.tab} ${statusFilter === tab.value ? styles.tabActive : ''}`}
                 onClick={() => setStatusFilter(tab.value)}>
-                {tab.label}
+                {tab.Icon && <tab.Icon size={13} />} {tab.label} ({tab.count})
               </button>
             ))}
           </div>
