@@ -1,7 +1,0 @@
-{
-  "crons": [
-    { "path": "/api/cron/expire-pending-schools", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/ict-asset-checks",       "schedule": "0 6 * * *" }
-  ]
-}
-
