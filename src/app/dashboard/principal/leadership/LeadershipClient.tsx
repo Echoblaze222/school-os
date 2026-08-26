@@ -12,7 +12,7 @@ import type { DepartmentWithStats } from '@/lib/supabase/appointments'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 import styles from './leadership.module.css'
 
-interface StaffOption { id: string; full_name: string; avatar_url: string | null; department_id: string | null }
+interface StaffOption { id: string; full_name: string; avatar_url: string | null; department_id: string | null; email?: string | null; employee_id?: string | null; role?: string }
 interface Member { id: string; full_name: string; email: string; avatar_url: string | null; employee_id: string | null }
 interface VicePrincipal {
   appointmentId: string; profileId: string; fullName: string
@@ -28,6 +28,7 @@ interface ClassOption { id: string; name: string }
 interface GenericAppointee {
   appointmentId: string; profileId: string; fullName: string
   avatarUrl: string | null; hostelIds: string[]; classIds: string[]; assignedAt: string
+  email: string | null; employeeId: string | null; role: string | null; departmentId: string | null
 }
 
 interface Props {
@@ -342,6 +343,8 @@ export default function LeadershipClient({
         [type]: [...(prev[type] ?? []), {
           appointmentId: json.appointment.id, profileId: candidate.id, fullName: candidate.full_name,
           avatarUrl: candidate.avatar_url,
+          email: candidate.email ?? null, employeeId: candidate.employee_id ?? null,
+          role: candidate.role ?? null, departmentId: candidate.department_id ?? null,
           hostelIds: HOSTEL_SCOPED_TYPES.has(type) ? (scopeIds ?? []) : [],
           classIds: CLASS_SCOPED_TYPES.has(type) ? (scopeIds ?? []) : [],
           assignedAt: new Date().toISOString(),
@@ -476,21 +479,35 @@ export default function LeadershipClient({
                   ) : (
                     <div className={styles.genericHolderList}>
                       {holders.map(h => (
-                        <div key={h.appointmentId} className={styles.genericHolderChip}>
-                          <div className={styles.memberAvatar}>{h.avatarUrl ? <img src={h.avatarUrl} alt="" /> : <UserIcon size={12} />}</div>
-                          <span>
-                            {h.fullName}
-                            {HOSTEL_SCOPED_TYPES.has(type) && h.hostelIds.length > 0 && ` · ${h.hostelIds.map(hostelName).join(', ')}`}
-                            {CLASS_SCOPED_TYPES.has(type) && h.classIds.length > 0 && ` · ${h.classIds.map(id => initialClasses.find(c => c.id === id)?.name ?? id).join(', ')}`}
-                          </span>
-                          <button
-                            className={styles.chipRevokeBtn}
-                            onClick={() => revokeGeneric(type, h.appointmentId, h.fullName)}
-                            disabled={revokingGenericId === h.appointmentId}
-                            aria-label={`Revoke ${h.fullName}`}
-                          >
-                            <XIcon size={11} />
-                          </button>
+                        <div key={h.appointmentId} className={`${styles.genericHolderCard} glass-card`}>
+                          <div className={styles.genericHolderTop}>
+                            <div className={styles.memberAvatar}>{h.avatarUrl ? <img src={h.avatarUrl} alt="" /> : <UserIcon size={14} />}</div>
+                            <p className={styles.memberName}>{h.fullName}</p>
+                            <button
+                              className={styles.chipRevokeBtn}
+                              onClick={() => revokeGeneric(type, h.appointmentId, h.fullName)}
+                              disabled={revokingGenericId === h.appointmentId}
+                              aria-label={`Revoke ${h.fullName}`}
+                            >
+                              {revokingGenericId === h.appointmentId ? '…' : <XIcon size={12} />}
+                            </button>
+                          </div>
+                          {/* Their details, below the role they were just appointed to -
+                              role, department, and however to reach them, plus whatever
+                              this appointment type is scoped to. */}
+                          <div className={styles.genericHolderDetails}>
+                            {h.role && <span className={styles.detailPill}>{h.role.charAt(0).toUpperCase() + h.role.slice(1)}</span>}
+                            {h.departmentId && <span className={styles.detailPill}>{deptName(h.departmentId)}</span>}
+                            {(h.email || h.employeeId) && (
+                              <span className={styles.detailMeta}>{h.employeeId ?? h.email}</span>
+                            )}
+                            {HOSTEL_SCOPED_TYPES.has(type) && h.hostelIds.length > 0 && (
+                              <span className={styles.detailMeta}>{h.hostelIds.map(hostelName).join(', ')}</span>
+                            )}
+                            {CLASS_SCOPED_TYPES.has(type) && h.classIds.length > 0 && (
+                              <span className={styles.detailMeta}>{h.classIds.map(id => initialClasses.find(c => c.id === id)?.name ?? id).join(', ')}</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

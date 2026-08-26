@@ -57,7 +57,7 @@ export default async function LeadershipPage() {
     supabase.from('classes').select('id, name').eq('school_id', schoolId).eq('is_active', true).order('name'),
     supabase
       .from('appointments')
-      .select('id, appointment_type, scope, assigned_at, profiles(id, full_name, avatar_url)')
+      .select('id, appointment_type, scope, assigned_at, profiles(id, full_name, avatar_url, email, employee_id, role, department_id)')
       .eq('school_id', schoolId)
       .in('appointment_type', GENERIC_TYPES)
       .eq('status', 'active'),
@@ -104,6 +104,10 @@ export default async function LeadershipPage() {
       profileId: person?.id,
       fullName: person?.full_name ?? 'Unknown',
       avatarUrl: person?.avatar_url ?? null,
+      email: person?.email ?? null,
+      employeeId: person?.employee_id ?? null,
+      role: person?.role ?? null,
+      departmentId: person?.department_id ?? null,
       hostelIds: Array.isArray((a as any).scope?.hostel_ids) ? (a as any).scope.hostel_ids : [],
       classIds: Array.isArray((a as any).scope?.class_ids) ? (a as any).scope.class_ids : [],
       assignedAt: a.assigned_at,

@@ -28,8 +28,16 @@
 .genericTypeRow:last-child { border-bottom: none; }
 .genericTypeHeader { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .genericTypeLabel { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin: 0; }
-.genericHolderList { display: flex; flex-wrap: wrap; gap: 8px; }
+.genericHolderList { display: flex; flex-direction: column; gap: 8px; }
 .genericHolderChip { display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 4px; border-radius: 999px; background: var(--glass-bg); border: 1px solid var(--glass-border); font-size: 0.74rem; color: var(--text-primary); }
+.genericHolderCard { padding: 10px 12px; border-radius: var(--radius-md); }
+.genericHolderTop { display: flex; align-items: center; gap: 8px; }
+.genericHolderTop .memberName { flex: 1; min-width: 0; }
+/* The whole point of this section - their details, sitting below the
+   name/role row rather than crammed into the same line as before. */
+.genericHolderDetails { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding-left: 38px; }
+.detailPill { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 999px; padding: 2px 8px; }
+.detailMeta { font-size: 0.74rem; color: var(--text-muted); }
 .chipRevokeBtn { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 999px; border: none; background: var(--danger-subtle, rgba(239,68,68,0.1)); color: var(--danger, #EF4444); cursor: pointer; flex-shrink: 0; }
 .chipRevokeBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
