@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DepartmentCard from '@/components/org/DepartmentCard'
-import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon } from '@/components/Icons'
+import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon, ClockIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
 import type { DepartmentWithStats } from '@/lib/supabase/appointments'
@@ -30,6 +30,18 @@ interface GenericAppointee {
   avatarUrl: string | null; hostelIds: string[]; classIds: string[]; assignedAt: string
   email: string | null; employeeId: string | null; role: string | null; departmentId: string | null
 }
+// One row per appointment ever made, active or not - this IS the history,
+// not a summary of it. appointmentType is a plain string rather than
+// AppointmentTypeId because the appointments table can hold types (e.g.
+// the Lane F student_leadership rows) that APPOINTMENT_TYPES doesn't list
+// yet; indexing falls back to the raw id in that case, see historyDetail.
+interface HistoryEntry {
+  appointmentId: string; appointmentType: string; fullName: string
+  avatarUrl: string | null; departmentId: string | null; scope: Record<string, any>
+  status: 'active' | 'revoked' | 'expired'
+  assignedAt: string; assignedByName: string | null
+  revokedAt: string | null; revokedByName: string | null
+}
 
 interface Props {
   profile: any; school: any; userId: string
@@ -39,6 +51,7 @@ interface Props {
   initialHostelPrefects: HostelPrefect[]
   initialClasses: ClassOption[]
   initialGenericAppointments: Record<string, GenericAppointee[]>
+  initialHistory: HistoryEntry[]
 }
 
 const PORTFOLIOS = [
@@ -66,7 +79,7 @@ const CLASS_SCOPED_TYPES = new Set<AppointmentTypeId>(['class_prefect'])
 
 export default function LeadershipClient({
   profile, school, userId, initialDepartments, initialVicePrincipals, initialHostels, initialHostelPrefects,
-  initialClasses, initialGenericAppointments,
+  initialClasses, initialGenericAppointments, initialHistory,
 }: Props) {
   const router = useRouter()
   const [departments, setDepartments] = useState(initialDepartments)
@@ -133,6 +146,16 @@ export default function LeadershipClient({
   // appointment applies to, same shape as the HP picker above.
   const [genericAppointments, setGenericAppointments] = useState(initialGenericAppointments)
   useEffect(() => { setGenericAppointments(initialGenericAppointments) }, [initialGenericAppointments])
+
+  // History: same stale-client-state fix as departments/vicePrincipals/
+  // hostelPrefects above - re-synced from the server prop, never written
+  // to directly. Every appoint/revoke/edit handler below already calls
+  // router.refresh() on success, so a fresh history list (including
+  // whatever just happened) arrives here for free - no separate refetch
+  // or optimistic-append logic needed.
+  const [history, setHistory] = useState(initialHistory)
+  useEffect(() => { setHistory(initialHistory) }, [initialHistory])
+  const [showHistory, setShowHistory] = useState(false)
   const [genericPicker, setGenericPicker] = useState<{ type: AppointmentTypeId; step: 'pick' | 'configure' } | null>(null)
   const [genericCandidates, setGenericCandidates] = useState<StaffOption[]>([])
   const [loadingGenericCandidates, setLoadingGenericCandidates] = useState(false)
@@ -385,10 +408,51 @@ export default function LeadershipClient({
 
   const deptName = (id: string) => departments.find(d => d.id === id)?.name ?? id
   const hostelName = (id: string) => initialHostels.find(h => h.id === id)?.name ?? id
+  const className = (id: string) => initialClasses.find(c => c.id === id)?.name ?? id
+  const formatDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  // What scope this history row actually covered, in the same terms the
+  // live sections above already show (portfolio/departments for VP,
+  // department for HOD, hostel(s)/class for the scoped generic types) -
+  // so a revoked appointment's details don't go blank just because it's
+  // no longer active.
+  function historyDetail(h: HistoryEntry): string | null {
+    const type = h.appointmentType as AppointmentTypeId
+    if (type === 'hod' && h.departmentId) return deptName(h.departmentId)
+    if (type === 'vice_principal') {
+      const portfolio = h.scope?.portfolio ? PORTFOLIOS.find(p => p.value === h.scope.portfolio)?.label ?? h.scope.portfolio : null
+      const deptIds: string[] = Array.isArray(h.scope?.department_ids) ? h.scope.department_ids : []
+      return [portfolio, deptIds.length > 0 ? deptIds.map(deptName).join(', ') : null].filter(Boolean).join(' · ') || null
+    }
+    if (type === 'hostel_prefect' || HOSTEL_SCOPED_TYPES.has(type)) {
+      const ids: string[] = Array.isArray(h.scope?.hostel_ids) ? h.scope.hostel_ids : []
+      return ids.length > 0 ? ids.map(hostelName).join(', ') : null
+    }
+    if (CLASS_SCOPED_TYPES.has(type)) {
+      const ids: string[] = Array.isArray(h.scope?.class_ids) ? h.scope.class_ids : []
+      return ids.length > 0 ? ids.map(className).join(', ') : null
+    }
+    return null
+  }
+  const statusLabel: Record<HistoryEntry['status'], string> = { active: 'Active', revoked: 'Revoked', expired: 'Expired' }
+  const statusClass: Record<HistoryEntry['status'], string> = {
+    active: styles.historyBadgeActive, revoked: styles.historyBadgeRevoked, expired: styles.historyBadgeExpired,
+  }
+  // Most recent activity first - a just-revoked appointment should bubble
+  // up even if it was assigned long ago, not stay buried at its original
+  // assignedAt position.
+  const sortedHistory = [...history].sort((a, b) =>
+    new Date(b.revokedAt ?? b.assignedAt).getTime() - new Date(a.revokedAt ?? a.assignedAt).getTime())
 
   return (
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Leadership & Appointments">
       {error && <div className={styles.errorBanner}>{error}</div>}
+
+      <div className={styles.pageToolbar}>
+        <button className={`${styles.historyBtn} ${motion.rippleHost}`} onClick={() => setShowHistory(true)} onMouseDown={ripple(motion)}>
+          <ClockIcon size={13} /> History
+        </button>
+      </div>
 
       {/* ── Vice Principals ── */}
       <div className={styles.sectionHeader}>
@@ -535,6 +599,43 @@ export default function LeadershipClient({
       })}
 
       {/* ── Modals ── */}
+      {showHistory && (
+        <div className={styles.overlay} onClick={() => setShowHistory(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <p className={styles.modalTitle}>Appointment history</p>
+              <button className={styles.closeBtn} onClick={() => setShowHistory(false)}><XIcon size={16} /></button>
+            </div>
+            {sortedHistory.length === 0 ? (
+              <p className={styles.historyEmpty}>No appointments have been made yet.</p>
+            ) : (
+              <div className={styles.historyList}>
+                {sortedHistory.map(h => {
+                  const detail = historyDetail(h)
+                  return (
+                    <div key={h.appointmentId} className={styles.historyRow}>
+                      <div className={styles.historyTop}>
+                        <div className={styles.memberAvatar}>{h.avatarUrl ? <img src={h.avatarUrl} alt="" /> : <UserIcon size={14} />}</div>
+                        <p className={styles.memberName}>{h.fullName}</p>
+                        <span className={`${styles.historyBadge} ${statusClass[h.status]}`}>{statusLabel[h.status]}</span>
+                      </div>
+                      <p className={styles.historyDetail}>
+                        {APPOINTMENT_TYPES[h.appointmentType as AppointmentTypeId]?.label ?? h.appointmentType}
+                        {detail ? ` · ${detail}` : ''}
+                      </p>
+                      <p className={styles.historyTrail}>
+                        Appointed {formatDate(h.assignedAt)}{h.assignedByName ? ` by ${h.assignedByName}` : ''}
+                        {h.revokedAt && <><br />Revoked {formatDate(h.revokedAt)}{h.revokedByName ? ` by ${h.revokedByName}` : ''}</>}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showCreate && (
         <div className={styles.overlay} onClick={() => setShowCreate(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>

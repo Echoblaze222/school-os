@@ -39,7 +39,7 @@ export default async function LeadershipPage() {
   const school = (profile as any)?.schools ?? null
   const schoolId = (profile as any).school_id
 
-  const [departments, { data: vpAppointments }, { data: hostels }, { data: hpAppointments }, { data: classes }, { data: genericAppointments }] = await Promise.all([
+  const [departments, { data: vpAppointments }, { data: hostels }, { data: hpAppointments }, { data: classes }, { data: genericAppointments }, { data: allAppointments }] = await Promise.all([
     listDepartments(supabase, schoolId),
     supabase
       .from('appointments')
@@ -61,6 +61,19 @@ export default async function LeadershipPage() {
       .eq('school_id', schoolId)
       .in('appointment_type', GENERIC_TYPES)
       .eq('status', 'active'),
+    // History: every appointment ever made at this school, any status -
+    // deliberately unfiltered (unlike the five queries above, which only
+    // want the active holder) and spanning every appointment_type, not
+    // just GENERIC_TYPES, since VP/HOD/Hostel Prefect appointments belong
+    // in the history view too. Revoking never deletes the row (see
+    // revokeAppointment in lib/supabase/appointments.ts - it's a status
+    // flip), so this one query is the full record, no separate audit
+    // table to join.
+    supabase
+      .from('appointments')
+      .select('id, profile_id, appointment_type, department_id, scope, status, assigned_by, assigned_at, revoked_by, revoked_at')
+      .eq('school_id', schoolId)
+      .order('assigned_at', { ascending: false }),
   ])
 
   const vicePrincipals = (vpAppointments ?? []).map((a: any) => {
@@ -114,6 +127,38 @@ export default async function LeadershipPage() {
     })
   }
 
+  // Names for every profile touched by any appointment - the appointee,
+  // whoever assigned it, whoever revoked it. One batched query instead of
+  // three, since the same principal is very often both assigner and
+  // revoker across many rows. profiles RLS (profiles_select_own_or_school)
+  // already allows this: any same-school id resolves for a principal.
+  const involvedProfileIds = Array.from(new Set(
+    (allAppointments ?? []).flatMap((a: any) => [a.profile_id, a.assigned_by, a.revoked_by]).filter(Boolean),
+  )) as string[]
+  const { data: involvedProfiles } = involvedProfileIds.length > 0
+    ? await supabase.from('profiles').select('id, full_name, avatar_url').in('id', involvedProfileIds)
+    : { data: [] as any[] }
+  const profileById = new Map((involvedProfiles ?? []).map((p: any) => [p.id, p]))
+
+  const history = (allAppointments ?? []).map((a: any) => {
+    const appointee = profileById.get(a.profile_id)
+    const assignedByProfile = a.assigned_by ? profileById.get(a.assigned_by) : null
+    const revokedByProfile = a.revoked_by ? profileById.get(a.revoked_by) : null
+    return {
+      appointmentId: a.id,
+      appointmentType: a.appointment_type as string,
+      fullName: appointee?.full_name ?? 'Unknown (account removed)',
+      avatarUrl: appointee?.avatar_url ?? null,
+      departmentId: a.department_id,
+      scope: a.scope ?? {},
+      status: a.status as 'active' | 'revoked' | 'expired',
+      assignedAt: a.assigned_at,
+      assignedByName: assignedByProfile?.full_name ?? null,
+      revokedAt: a.revoked_at,
+      revokedByName: revokedByProfile?.full_name ?? null,
+    }
+  })
+
   return (
     <LeadershipClient
       profile={profile} school={school} userId={user.id}
@@ -123,6 +168,7 @@ export default async function LeadershipPage() {
       initialHostelPrefects={hostelPrefects}
       initialClasses={classes ?? []}
       initialGenericAppointments={genericAppointmentsByType}
+      initialHistory={history}
     />
   )
 }
