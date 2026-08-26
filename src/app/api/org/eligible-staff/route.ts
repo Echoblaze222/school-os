@@ -40,7 +40,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, avatar_url, role, department_id, employee_id')
+    .select('id, full_name, avatar_url, role, department_id, employee_id, email')
     .eq('school_id', ctx.schoolId)
     .in('role', config.baseRoleScope)
     .order('full_name', { ascending: true })
