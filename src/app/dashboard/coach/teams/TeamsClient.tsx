@@ -137,7 +137,7 @@ export default function TeamsClient({ profile, school, userId }: Props) {
                         </div>
                       )}
                       <div style={{ position: 'relative' }}>
-                        <SearchIcon size={13} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }} />
+                        <span style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }}><SearchIcon size={13} /></span>
                         <input
                           value={rosterTeamId === t.id ? studentQuery : ''}
                           onFocus={() => setRosterTeamId(t.id)}
