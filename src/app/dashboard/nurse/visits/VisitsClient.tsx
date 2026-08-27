@@ -148,7 +148,7 @@ export default function VisitsClient({ profile, school, userId }: Props) {
             {!selectedStudent ? (
               <div>
                 <div style={{ position: 'relative', marginBottom: 10 }}>
-                  <SearchIcon size={14} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                  <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                   <input
                     value={studentQuery} onChange={e => setStudentQuery(e.target.value)}
                     placeholder="Search student by name"
