@@ -85,7 +85,7 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
     <RolePageWrapper userId={userId} role="nurse" profile={profile} school={school} title="Health Records">
       <main className={styles.main}>
         <div style={{ position: 'relative', marginBottom: 14 }}>
-          <SearchIcon size={14} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+          <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search students by name"
