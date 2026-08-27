@@ -163,7 +163,7 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
             {!selectedStudent ? (
               <div>
                 <div style={{ position: 'relative', marginBottom: 10 }}>
-                  <SearchIcon size={14} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                  <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                   <input value={studentQuery} onChange={e => setStudentQuery(e.target.value)} placeholder="Search student by name"
                     style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 </div>
