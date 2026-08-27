@@ -165,7 +165,7 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
                 <div>
                   <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 6 }}>Book</p>
                   <div style={{ position: 'relative', marginBottom: 8 }}>
-                    <SearchIcon size={14} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                    <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                     <input value={bookQuery} onChange={e => setBookQuery(e.target.value)} placeholder="Search title"
                       style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                   </div>
@@ -189,7 +189,7 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
                 <div>
                   <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 6 }}>Borrower</p>
                   <div style={{ position: 'relative', marginBottom: 8 }}>
-                    <SearchIcon size={14} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                    <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                     <input value={borrowerQuery} onChange={e => setBorrowerQuery(e.target.value)} placeholder="Search student or teacher"
                       style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                   </div>
