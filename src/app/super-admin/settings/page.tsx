@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import {
   PlusIcon, TrashIcon, EditIcon,
-  CheckCircleIcon,
+  CheckCircleIcon, LayersIcon, WalletIcon, CalendarIcon,
+  AlertIcon, XIcon, StarIcon, SaveIcon, ClockIcon,
 } from '@/components/Icons'
 import styles from './settings.module.css'
 
@@ -104,7 +105,7 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       await apiPost('saveTrial', trial)
-      flash('Trial settings saved ✓')
+      flash('Trial settings saved')
     } catch (err) {
       flashError(err instanceof Error ? err.message : 'Save failed')
     } finally {
@@ -117,7 +118,7 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       await apiPost('saveInstallment', installment)
-      flash('Installment settings saved ✓')
+      flash('Installment settings saved')
     } catch (err) {
       flashError(err instanceof Error ? err.message : 'Save failed')
     } finally {
@@ -131,7 +132,7 @@ export default function SettingsPage() {
     try {
       const res = await apiPost('saveSetupFee', setupFee)
       if (res.data) setSetupFee(res.data)   // capture newly-assigned id on first insert
-      flash('Setup fee saved ✓')
+      flash('Setup fee saved')
     } catch (err) {
       flashError(err instanceof Error ? err.message : 'Save failed')
     } finally {
@@ -146,7 +147,7 @@ export default function SettingsPage() {
       await loadAll()
       setEditPlan(null)
       setShowAddPlan(false)
-      flash('Plan saved ✓')
+      flash('Plan saved')
     } catch (err) {
       flashError(err instanceof Error ? err.message : 'Save failed')
     } finally {
@@ -188,10 +189,10 @@ export default function SettingsPage() {
   }
 
   const TABS = [
-    { id: 'plans',       label: '📦 Subscription Plans' },
-    { id: 'setup',       label: '💰 Setup Fee' },
-    { id: 'trial',       label: '⏳ Trial Config' },
-    { id: 'installment', label: '📅 Installment' },
+    { id: 'plans',       label: 'Subscription Plans', Icon: LayersIcon },
+    { id: 'setup',       label: 'Setup Fee', Icon: WalletIcon },
+    { id: 'trial',       label: 'Trial Config', Icon: ClockIcon },
+    { id: 'installment', label: 'Installment', Icon: CalendarIcon },
   ] as const
 
   const blankPlan: Plan = {
@@ -209,10 +210,10 @@ export default function SettingsPage() {
           <h1 className={styles.title}>Subscription Settings</h1>
           <p className={styles.sub}>Customize all pricing, plans, trial, and fees</p>
         </div>
-        {saved     && <span className={styles.savedBadge}>✓ {saved}</span>}
+        {saved     && <span className={styles.savedBadge}><CheckCircleIcon size={13} /> {saved}</span>}
         {saveError && (
           <span className={styles.savedBadge} style={{ background:'var(--danger-subtle)', color:'var(--danger)', borderColor:'rgba(239,68,68,0.2)' }}>
-            ⚠ {saveError}
+            <AlertIcon size={13} /> {saveError}
           </span>
         )}
       </div>
@@ -221,8 +222,9 @@ export default function SettingsPage() {
       <div className={styles.tabs}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`${styles.tabBtn} ${tab===t.id ? styles.tabBtnActive : ''}`}>
-            {t.label}
+            className={`${styles.tabBtn} ${tab===t.id ? styles.tabBtnActive : ''}`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <t.Icon size={14} /> {t.label}
           </button>
         ))}
       </div>
@@ -291,7 +293,7 @@ export default function SettingsPage() {
                       <button onClick={() => togglePlanActive(plan.id, plan.is_active)}
                         className={styles.toggleBtn}
                         style={{ background: plan.is_active ? 'var(--success-subtle)' : 'var(--danger-subtle)', color: plan.is_active ? 'var(--success)' : 'var(--danger)', borderColor: plan.is_active ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)' }}>
-                        {plan.is_active ? '✅ Active' : '❌ Inactive'}
+                        {plan.is_active ? <><CheckCircleIcon size={12} /> Active</> : <><XIcon size={12} /> Inactive</>}
                       </button>
                     </div>
                   </div>
@@ -348,7 +350,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <button className={styles.saveBtn} onClick={saveSetupFee} disabled={saving}>
-              {saving ? 'Saving...' : '💾 Save Setup Fee'}
+              {saving ? 'Saving...' : <><SaveIcon size={14} /> Save Setup Fee</>}
             </button>
           </div>
         </div>
@@ -389,7 +391,7 @@ export default function SettingsPage() {
               </p>
             </div>
             <button className={styles.saveBtn} onClick={saveTrial} disabled={saving}>
-              {saving ? 'Saving...' : '💾 Save Trial Settings'}
+              {saving ? 'Saving...' : <><SaveIcon size={14} /> Save Trial Settings</>}
             </button>
           </div>
         </div>
@@ -424,17 +426,17 @@ export default function SettingsPage() {
                 <div className={styles.toggleRow}>
                   <button onClick={() => setInstallment(prev => prev ? { ...prev, is_active:true } : null)}
                     className={`${styles.toggleOption} ${installment.is_active ? styles.toggleOptionActive : ''}`}>
-                    ✅ Enabled
+                    <CheckCircleIcon size={13} /> Enabled
                   </button>
                   <button onClick={() => setInstallment(prev => prev ? { ...prev, is_active:false } : null)}
                     className={`${styles.toggleOption} ${!installment.is_active ? styles.toggleOptionActive : ''}`}>
-                    ❌ Disabled
+                    <XIcon size={13} /> Disabled
                   </button>
                 </div>
               </div>
             </div>
             <button className={styles.saveBtn} onClick={saveInstallment} disabled={saving}>
-              {saving ? 'Saving...' : '💾 Save Installment Settings'}
+              {saving ? 'Saving...' : <><SaveIcon size={14} /> Save Installment Settings</>}
             </button>
           </div>
         </div>
@@ -513,7 +515,7 @@ function PlanEditor({ plan, onChange, onSave, onCancel, saving }: {
             {([true, false] as const).map(v => (
               <button key={String(v)} onClick={() => onChange({ ...plan, is_popular: v })}
                 className={`${styles.toggleOption} ${plan.is_popular === v ? styles.toggleOptionActive : ''}`}>
-                {v ? '⭐ Yes' : 'No'}
+                {v ? <><StarIcon size={12} /> Yes</> : 'No'}
               </button>
             ))}
           </div>
@@ -547,7 +549,7 @@ function PlanEditor({ plan, onChange, onSave, onCancel, saving }: {
 
       <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
         <button className={styles.saveBtn} onClick={onSave} disabled={saving || !plan.name} style={{ flex:1 }}>
-          {saving ? 'Saving...' : '💾 Save Plan'}
+          {saving ? 'Saving...' : <><SaveIcon size={14} /> Save Plan</>}
         </button>
         <button onClick={onCancel}
           style={{ flex:1, height:42, background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-muted)', fontWeight:600, fontSize:'0.875rem', cursor:'pointer' }}>
