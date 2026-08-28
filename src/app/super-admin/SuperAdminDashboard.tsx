@@ -7,7 +7,7 @@ import {
   SchoolIcon, PlusIcon, BarChartIcon, WalletIcon,
   SearchIcon, RefreshIcon, CheckCircleIcon, ClockIcon,
   BellIcon, SettingsIcon, LogOutIcon, FlameIcon,
-  BookOpenIcon, AlertCircleIcon, XIcon, PauseIcon,
+  BookOpenIcon, AlertCircleIcon, XIcon, PauseIcon, StarIcon,
 } from '@/components/Icons'
 import SchoolSetupModal from './SchoolSetupModal'
 import SchoolCard from './SchoolCard'
@@ -98,6 +98,7 @@ export default function SuperAdminDashboard() {
             { icon: BarChartIcon, label: 'Analytics', href: null },
             { icon: WalletIcon,   label: 'Revenue',   href: '/super-admin/revenue' },
             { icon: BookOpenIcon, label: 'Content',   href: '/super-admin/content' },
+            { icon: StarIcon,     label: 'Promotions', href: '/super-admin/promotions' },
             { icon: AlertCircleIcon, label: 'Reports', href: '/super-admin/reports' },
             { icon: BellIcon,     label: 'Alerts',    href: null },
             { icon: SettingsIcon, label: 'Settings',  href: '/super-admin/settings' },

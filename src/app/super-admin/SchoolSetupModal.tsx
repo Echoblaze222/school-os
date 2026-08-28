@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SchoolIcon, ClockIcon, CheckCircleIcon } from '@/components/Icons'
+import { SchoolIcon, ClockIcon, CheckCircleIcon, XIcon, PartyPopperIcon, CheckIcon, ClipboardIcon, AlertCircleIcon, ArrowLeftIcon, ArrowRightIcon, ZapIcon, FlameIcon } from '@/components/Icons'
 import styles from './school-setup-modal.module.css'
 
 interface Props {
@@ -95,14 +95,14 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
             <SchoolIcon size={20} color="var(--brand-light)" />
             <h2>Add New School</h2>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button className={styles.closeBtn} onClick={onClose}><XIcon size={16} /></button>
         </div>
 
         {/* ── SUCCESS ── */}
         {credentials && (
           <div className={styles.body}>
             <div className={styles.stepContent} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+              <div style={{ display: 'flex', justifyContent: 'center', color: '#10B981', marginBottom: 12 }}><PartyPopperIcon size={40} /></div>
               <h3 style={{ color: '#10B981', marginBottom: 4 }}>School Activated!</h3>
               <p className={styles.stepDesc} style={{ marginBottom: 16 }}>
                 Share this access code with the principal. They'll tap "New User" on the login page and set their own password.
@@ -126,7 +126,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   <button
                     onClick={async () => { await navigator.clipboard.writeText(credentials!.defaultCode).catch(()=>{}); setCopiedCode(true); setTimeout(()=>setCopiedCode(false), 2000) }}
                     style={{ padding: '6px 14px', borderRadius: 8, border: copiedCode ? '1px solid #10B981' : '1px solid rgba(167,139,250,0.4)', background: copiedCode ? 'rgba(16,185,129,0.1)' : 'rgba(167,139,250,0.1)', color: copiedCode ? '#10B981' : '#a78bfa', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
-                    {copiedCode ? '✓ Copied' : 'Copy'}
+                    {copiedCode ? <><CheckIcon size={12} /> Copied</> : 'Copy'}
                   </button>
                 </div>
               </div>
@@ -139,16 +139,17 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   setCopiedAll(true); setTimeout(()=>setCopiedAll(false), 2500)
                 }}
                 style={{ width: '100%', padding: '12px', borderRadius: 10, border: copiedAll ? '1px solid #10B981' : '1px solid var(--glass-border)', background: copiedAll ? 'rgba(16,185,129,0.1)' : 'var(--glass-bg)', color: copiedAll ? '#10B981' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', marginBottom: 12 }}>
-                {copiedAll ? '✓ All credentials copied!' : '📋 Copy All Credentials'}
+                {copiedAll ? <><CheckIcon size={13} /> All credentials copied!</> : <><ClipboardIcon size={13} /> Copy All Credentials</>}
               </button>
 
-              <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
-                ⚠️ The principal sets their own password on first login using this access code. Keep it safe until then.
+              <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'left' }}>
+                <span style={{ flexShrink: 0, marginTop: 1 }}><AlertCircleIcon size={13} /></span>
+                <span>The principal sets their own password on first login using this access code. Keep it safe until then.</span>
               </p>
             </div>
             <div className={styles.footer}>
               <div style={{ flex: 1 }} />
-              <button className={styles.submitBtn} onClick={onSuccess}>Done ✓</button>
+              <button className={styles.submitBtn} onClick={onSuccess}>Done <CheckIcon size={13} /></button>
             </div>
           </div>
         )}
@@ -190,7 +191,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                       FREE · {form.trialDays} days
                     </div>
                   </div>
-                  {setupType === 'trial' && <div className={styles.typeCheck}>✓</div>}
+                  {setupType === 'trial' && <div className={styles.typeCheck}><CheckIcon size={12} /></div>}
                 </button>
 
                 <button
@@ -209,7 +210,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                       PAID · 1 month free
                     </div>
                   </div>
-                  {setupType === 'permanent' && <div className={styles.typeCheck}>✓</div>}
+                  {setupType === 'permanent' && <div className={styles.typeCheck}><CheckIcon size={12} /></div>}
                 </button>
               </div>
 
@@ -370,8 +371,8 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 <div className={styles.confirmRow}><span>Location</span><strong>{[form.city, form.state].filter(Boolean).join(', ') || 'N/A'}</strong></div>
                 <div className={styles.confirmRow}><span>Type</span><strong style={{ textTransform: 'capitalize' }}>{form.schoolType}</strong></div>
                 <div className={styles.confirmRow}><span>Setup Type</span>
-                  <strong style={{ color: setupType === 'trial' ? '#F59E0B' : '#10B981' }}>
-                    {setupType === 'trial' ? `🔥 Free Trial (${form.trialDays} days)` : '✅ Permanent Setup'}
+                  <strong style={{ color: setupType === 'trial' ? '#F59E0B' : '#10B981', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    {setupType === 'trial' ? <><FlameIcon size={13} /> Free Trial ({form.trialDays} days)</> : <><CheckCircleIcon size={13} /> Permanent Setup</>}
                   </strong>
                 </div>
                 {setupType === 'permanent' && (
@@ -404,7 +405,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 Continue →
               </button>
             : <button className={styles.submitBtn} onClick={handleSubmit} disabled={loading}>
-                {loading ? <span className={styles.spinner} /> : '🚀 Activate School'}
+                {loading ? <span className={styles.spinner} /> : <><ZapIcon size={14} /> Activate School</>}
               </button>
           }
         </div>

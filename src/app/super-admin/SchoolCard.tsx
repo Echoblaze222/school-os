@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FlameIcon, CheckCircleIcon, ClockIcon, WalletIcon, PeopleIcon, AlertCircleIcon, CreditCardIcon, FileTextIcon, LockIcon, EyeIcon, SettingsIcon } from '@/components/Icons'
+import { FlameIcon, CheckCircleIcon, ClockIcon, WalletIcon, PeopleIcon, AlertCircleIcon, CreditCardIcon, FileTextIcon, LockIcon, EyeIcon, SettingsIcon, ChevronUpIcon, ChevronDownIcon } from '@/components/Icons'
 import styles from './school-card.module.css'
 
 interface School {
@@ -198,7 +198,7 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
         )}
         {/* Toggle expand */}
         <button className={styles.expandBtn} onClick={() => setExpanded(!expanded)}>
-          {expanded ? '▲' : '▼'}
+          {expanded ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
         </button>
       </div>
 
@@ -264,8 +264,9 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
                   onChange={e => setPayRef(e.target.value)} placeholder="Paystack / bank ref" />
                 <button className={styles.confirmBtn}
                   disabled={!payAmount || loading}
-                  onClick={() => confirmPayment('subscription')}>
-                  {loading ? '...' : '💳 Activate Subscription'}
+                  onClick={() => confirmPayment('subscription')}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  {loading ? '...' : <><CreditCardIcon size={14} /> Activate Subscription</>}
                 </button>
               </>
             )}
