@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       .select(`
         id, receipt_number, amount_paid_ngn, amount_paid_usd,
         currency_used, payment_method, payment_reference, paid_at,
-        invoice_id, student_id, school_id, received_by,
+        invoice_id, student_id, school_id, received_by, paid_by_parent_id,
         payment_invoices (
           amount_due_ngn, status,
           fee_structures ( description, term, academic_year )
@@ -62,7 +62,8 @@ export async function POST(request: Request) {
           full_name, parent_id,
           student_profiles ( admission_number )
         ),
-        profiles!payments_received_by_fkey ( full_name )
+        profiles!payments_received_by_fkey ( full_name ),
+        payer:profiles!payments_paid_by_parent_id_fkey ( full_name )
       `)
       .eq('id', payment_id)
       .single()
@@ -161,6 +162,7 @@ export async function POST(request: Request) {
     <div class="section-title">Student Information</div>
     <div class="row"><span class="row-label">Full Name</span><span class="row-value">${studentRow?.full_name ?? "N/A"}</span></div>
     <div class="row"><span class="row-label">Admission No.</span><span class="row-value">${studentRow?.student_profiles?.admission_number ?? "N/A"}</span></div>
+    ${p.payer?.full_name ? `<div class="row"><span class="row-label">Paid By</span><span class="row-value">${p.payer.full_name}</span></div>` : ''}
   </div>
 
   <div class="section">
