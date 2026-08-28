@@ -33,7 +33,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
 
 interface Stats { visitsToday: number; pendingMeds: number; lowStockItems: number }
 interface RecentVisit {
-  id: string; reason: string; outcome: string; visited_at: string
+  id: string; reason: string; sent_home: boolean; visited_at: string
   profiles: { full_name: string } | { full_name: string }[] | null
 }
 interface Props {
@@ -67,7 +67,7 @@ export default function NurseDashboardClient({ userId, nurseName, school, stats,
       id: `visit-${v.id}`,
       type: 'clinic_visit',
       title: v.reason,
-      subtitle: `${studentName(v.profiles)} · ${v.outcome.replace(/_/g, ' ')}`,
+      subtitle: `${studentName(v.profiles)} · ${v.sent_home ? 'Sent home' : 'Returned to class'}`,
       href: '/dashboard/nurse/visits',
       created_at: v.visited_at,
     })))

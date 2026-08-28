@@ -55,7 +55,7 @@ export default async function NurseDashboardPage() {
       .eq('school_id', schoolId).eq('status', 'pending'),
     admin.from('clinic_inventory').select('quantity_on_hand, reorder_level').eq('school_id', schoolId),
     admin.from('clinic_visits')
-      .select('id, reason, outcome, visited_at, profiles!clinic_visits_student_id_fkey(full_name)')
+      .select('id, reason, sent_home, visited_at, profiles!clinic_visits_student_id_fkey(full_name)')
       .eq('school_id', schoolId)
       .order('visited_at', { ascending: false })
       .limit(5),
