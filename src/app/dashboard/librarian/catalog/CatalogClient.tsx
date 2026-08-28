@@ -10,6 +10,8 @@ import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../librarian.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
+const CATEGORIES = ['General', 'Fiction', 'Non-Fiction', 'Textbook', 'Reference', 'Periodical']
+
 interface Props { profile: any; school: any; userId: string }
 
 export default function CatalogClient({ profile, school, userId }: Props) {
@@ -23,7 +25,7 @@ export default function CatalogClient({ profile, school, userId }: Props) {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [isbn, setIsbn] = useState('')
-  const [category, setCategory] = useState('')
+  const [category, setCategory] = useState('General')
   const [totalCopies, setTotalCopies] = useState('1')
   const [shelfLocation, setShelfLocation] = useState('')
 
@@ -53,7 +55,7 @@ export default function CatalogClient({ profile, school, userId }: Props) {
       const json = await res.json()
       if (!json.ok) { showToast(json.error ?? 'Could not add book.'); return }
       showToast('Book added.')
-      setShowForm(false); setTitle(''); setAuthor(''); setIsbn(''); setCategory(''); setTotalCopies('1'); setShelfLocation('')
+      setShowForm(false); setTitle(''); setAuthor(''); setIsbn(''); setCategory('General'); setTotalCopies('1'); setShelfLocation('')
       loadBooks(search)
     } finally { setSaving(false) }
   }
@@ -107,8 +109,10 @@ export default function CatalogClient({ profile, school, userId }: Props) {
                 style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="ISBN (optional)" value={isbn} onChange={e => setIsbn(e.target.value)}
                 style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
-              <input placeholder="Category (e.g. Fiction)" value={category} onChange={e => setCategory(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
               <div style={{ display: 'flex', gap: 10 }}>
                 <input placeholder="Copies" type="number" value={totalCopies} onChange={e => setTotalCopies(e.target.value)}
                   style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
