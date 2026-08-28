@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeftIcon, SchoolIcon, PeopleIcon, WalletIcon,
   BellIcon, EditIcon, CheckCircleIcon, FlameIcon,
-  ClockIcon, RefreshIcon, TrashIcon,
+  ClockIcon, RefreshIcon, TrashIcon, LockIcon,
 } from '@/components/Icons'
 import styles from './school-detail.module.css'
 
@@ -96,7 +96,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   async function extendTrial() {
     setSaving(true)
     const data = await manageSchool({ action: 'extend_trial', school_id: school.id, days: extendDays })
-    if (data.ok) flash(`Trial extended by ${extendDays} days ✓`)
+    if (data.ok) flash(`Trial extended by ${extendDays} days.`)
     else flash(data.error ?? 'Failed to extend trial', true)
     setSaving(false)
   }
@@ -107,7 +107,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
     if (data.ok) {
       const next = data.setup_status as string
       setSchoolStatus(next)
-      flash(next === 'locked' ? 'School locked ✓' : 'School unlocked ✓')
+      flash(next === 'locked' ? 'School locked.' : 'School unlocked.')
     } else {
       flash(data.error ?? 'Failed to toggle lock', true)
     }
@@ -117,7 +117,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   async function saveNotes() {
     setSaving(true)
     const data = await manageSchool({ action: 'save_notes', school_id: school.id, notes })
-    if (data.ok) { setEditNotes(false); flash('Notes saved ✓') }
+    if (data.ok) { setEditNotes(false); flash('Notes saved.') }
     else flash(data.error ?? 'Failed to save notes', true)
     setSaving(false)
   }
@@ -125,7 +125,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   async function confirmPaymentAndActivate() {
     setSaving(true)
     const data = await manageSchool({ action: 'confirm_setup', school_id: school.id })
-    if (data.ok) { setSchoolStatus('active'); flash('School activated with 1 month free ✓') }
+    if (data.ok) { setSchoolStatus('active'); flash('School activated with 1 month free.') }
     else flash(data.error ?? 'Failed to activate school', true)
     setSaving(false)
   }
@@ -144,7 +144,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
       verified_account_name:   complianceAccountName,
       verification_notes:      complianceNotes,
     })
-    if (data.ok) flash('Compliance details saved ✓')
+    if (data.ok) flash('Compliance details saved.')
     else flash(data.error ?? 'Failed to save compliance details', true)
     setSaving(false)
   }
@@ -173,7 +173,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
       if (data.ok) {
         setIsVerified(true)
         setVerifiedAt(new Date().toISOString())
-        flash('School verified. Paystack can now be connected ✓')
+        flash('School verified. Paystack can now be connected.')
       } else {
         flash(data.error ?? 'Failed to verify', true)
       }
@@ -190,11 +190,11 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   }
 
   const TABS = [
-    { id:'overview',   label:'Overview'  },
-    { id:'staff',      label:`Staff (${staff.length})`       },
-    { id:'payments',   label:`Payments (${payments.length})` },
-    { id:'compliance', label: isVerified ? 'Compliance ✓' : 'Compliance' },
-    { id:'settings',   label:'Settings'  },
+    { id:'overview',   label:'Overview', Verified: false },
+    { id:'staff',      label:`Staff (${staff.length})`, Verified: false },
+    { id:'payments',   label:`Payments (${payments.length})`, Verified: false },
+    { id:'compliance', label: 'Compliance', Verified: isVerified },
+    { id:'settings',   label:'Settings', Verified: false },
   ] as const
 
   return (
@@ -227,7 +227,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
               <span className={styles.planBadge}>{PLAN_LABEL[school.subscription_plan] ?? school.subscription_plan}</span>
             )}
             {school.trial_extended && (
-              <span className={styles.extendedBadge}>⏰ Trial Extended</span>
+              <span className={styles.extendedBadge} style={{ display:'inline-flex', alignItems:'center', gap:4 }}><ClockIcon size={12} /> Trial Extended</span>
             )}
           </div>
         </div>
@@ -260,7 +260,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             className={`${styles.tabBtn} ${tab===t.id ? styles.tabActive : ''}`}>
-            {t.label}
+            {t.label}{t.Verified && <CheckCircleIcon size={12} />}
           </button>
         ))}
       </div>
@@ -289,7 +289,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
                   </div>
                   <button onClick={confirmPaymentAndActivate} disabled={saving}
                     style={{ width:'100%', height:40, background:'linear-gradient(135deg,#10B981,#059669)', color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
-                    ✅ Mark Setup Paid → Activate
+                    <CheckCircleIcon size={14} /> Mark Setup Paid → Activate
                   </button>
                 </>
               )}
@@ -297,13 +297,13 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
               {schoolStatus === 'expired' && (
                 <button onClick={confirmPaymentAndActivate} disabled={saving}
                   style={{ width:'100%', height:40, background:'linear-gradient(135deg,#10B981,#059669)', color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
-                  ✅ Confirm Payment & Reactivate
+                  <CheckCircleIcon size={14} /> Confirm Payment & Reactivate
                 </button>
               )}
 
               <button onClick={toggleLock} disabled={saving}
                 style={{ width:'100%', height:40, background: schoolStatus==='locked' ? 'var(--success-subtle)' : 'var(--danger-subtle)', border: `1px solid ${schoolStatus==='locked' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer', color: schoolStatus==='locked' ? '#10B981' : 'var(--danger)' }}>
-                {schoolStatus === 'locked' ? '🔓 Unlock School' : '🔒 Lock School'}
+                {schoolStatus === 'locked' ? <><LockIcon size={13} /> Unlock School</> : <><LockIcon size={13} /> Lock School</>}
               </button>
             </div>
           </div>
@@ -552,8 +552,8 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
 
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderTop:'1px solid var(--glass-border)' }}>
               <div>
-                <p style={{ fontSize:'0.85rem', fontWeight:700, color: isVerified ? '#10B981' : 'var(--text-muted)' }}>
-                  {isVerified ? '✓ Verified' : 'Not Verified'}
+                <p style={{ fontSize:'0.85rem', fontWeight:700, color: isVerified ? '#10B981' : 'var(--text-muted)', display:'flex', alignItems:'center', gap:5 }}>
+                  {isVerified ? <><CheckCircleIcon size={13} /> Verified</> : 'Not Verified'}
                 </p>
                 {isVerified && verifiedAt && (
                   <p style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>
@@ -644,7 +644,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
                   setSaving(false)
                 }
               }}>
-              {saving ? '⏳ Deleting...' : '🗑️ Delete School Permanently'}
+              {saving ? <><RefreshIcon size={14} /> Deleting...</> : <><TrashIcon size={14} /> Delete School Permanently</>}
             </button>
           </div>
         </div>
