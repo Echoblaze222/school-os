@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { SearchIcon, PlusIcon, FlameIcon, CheckCircleIcon, ClockIcon, SchoolIcon } from '@/components/Icons'
+import { SearchIcon, PlusIcon, FlameIcon, CheckCircleIcon, ClockIcon, SchoolIcon, XIcon, PauseIcon } from '@/components/Icons'
 import SchoolCard from '../SchoolCard'
 import SchoolSetupModal from '../SchoolSetupModal'
 import styles from '../super-admin.module.css'
@@ -9,11 +9,11 @@ import styles from '../super-admin.module.css'
 interface Props { schools: any[] }
 
 const STATUS_TABS = [
-  { value: 'all',       label: 'All'       },
-  { value: 'trial',     label: '🔥 Trial'  },
-  { value: 'active',    label: '✅ Active'  },
-  { value: 'expired',   label: '❌ Expired' },
-  { value: 'suspended', label: '⏸ Suspended'},
+  { value: 'all',       label: 'All',       Icon: null },
+  { value: 'trial',     label: 'Trial',     Icon: FlameIcon },
+  { value: 'active',    label: 'Active',    Icon: CheckCircleIcon },
+  { value: 'expired',   label: 'Expired',   Icon: XIcon },
+  { value: 'suspended', label: 'Suspended', Icon: PauseIcon },
 ]
 
 export default function SchoolsPageClient({ schools: initial }: Props) {
@@ -91,7 +91,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
                 color: status===tab.value ? '#EF4444' : 'var(--text-muted)',
                 cursor:'pointer', whiteSpace:'nowrap',
               }}>
-              {tab.label} {tab.value !== 'all' && `(${(counts as any)[tab.value] ?? 0})`}
+              {tab.Icon && <tab.Icon size={12} />} {tab.label} {tab.value !== 'all' && `(${(counts as any)[tab.value] ?? 0})`}
             </button>
           ))}
         </div>
