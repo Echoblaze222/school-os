@@ -39,12 +39,12 @@ export default async function LibrarianDashboardPage() {
     { data: recentCheckouts },
   ] = await Promise.all([
     admin.from('library_books').select('id', { count: 'exact', head: true }).eq('school_id', schoolId),
-    admin.from('library_checkouts').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).is('returned_at', null),
-    admin.from('library_checkouts').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).is('returned_at', null).lt('due_at', new Date().toISOString()),
-    admin.from('library_checkouts')
-      .select('id, issued_at, due_at, returned_at, book:library_books(title), borrower:profiles!library_checkouts_borrower_profile_id_fkey(full_name)')
+    admin.from('library_loans').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).is('returned_at', null),
+    admin.from('library_loans').select('id', { count: 'exact', head: true }).eq('school_id', schoolId).is('returned_at', null).lt('due_at', new Date().toISOString()),
+    admin.from('library_loans')
+      .select('id, borrowed_at, due_at, returned_at, book:library_books(title), borrower:profiles!library_loans_student_id_fkey(full_name)')
       .eq('school_id', schoolId)
-      .order('issued_at', { ascending: false })
+      .order('borrowed_at', { ascending: false })
       .limit(5),
   ])
 

@@ -29,7 +29,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
 
 interface Stats { totalBooks: number; openCheckouts: number; overdueCheckouts: number }
 interface RecentCheckout {
-  id: string; issued_at: string; due_at: string; returned_at: string | null
+  id: string; borrowed_at: string; due_at: string; returned_at: string | null
   book: { title: string } | { title: string }[] | null
   borrower: { full_name: string } | { full_name: string }[] | null
 }
@@ -60,7 +60,7 @@ export default function LibrarianDashboardClient({ userId, librarianName, school
         title: book?.title ?? 'A book',
         subtitle: `${borrower?.full_name ?? 'Borrower'} · ${c.returned_at ? 'Returned' : 'Checked out'}`,
         href: '/dashboard/librarian/checkouts',
-        created_at: c.issued_at,
+        created_at: c.borrowed_at,
       }
     }))
   }, [recentCheckouts])
