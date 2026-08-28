@@ -82,6 +82,12 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
   const amountNgn = amount / 100
   const platformFeeNgn = typeof metadata?.platform_fee_ngn === 'number' ? metadata.platform_fee_ngn : null
   const schoolAmountNgn = typeof metadata?.school_amount_ngn === 'number' ? metadata.school_amount_ngn : null
+  // Was already being sent to Paystack (initialize/route.ts's metadata)
+  // but had nowhere to land on the payments row until paid_by_parent_id
+  // existed - received_by stays null for these (that field means
+  // "recorded by a staff member", which self-service online payments
+  // never are).
+  const paidByParentId = typeof metadata?.parent_id === 'string' ? metadata.parent_id : null
 
   const { data: invoice, error: invErr } = await admin
     .from('payment_invoices')
@@ -96,6 +102,7 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
       invoice_id: invoiceId,
       student_id: studentId,
       received_by: null, // null = parent self-service via Paystack, not recorded by a bursar
+      paid_by_parent_id: paidByParentId,
       amount_paid_ngn: amountNgn,
       currency_used: 'NGN',
       receipt_number: generateReceiptNumber(),
