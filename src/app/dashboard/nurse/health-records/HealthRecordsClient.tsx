@@ -12,8 +12,7 @@ import motion from '@/components/dashboard-motion.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
-function toCsv(arr: string[]) { return (arr ?? []).join(', ') }
-function fromCsv(s: string) { return s.split(',').map(x => x.trim()).filter(Boolean) }
+function truncate(s: string, n: number) { return s.length > n ? s.slice(0, n) + '…' : s }
 
 export default function HealthRecordsClient({ profile, school, userId }: Props) {
   const { toast, showToast } = useToast()
@@ -29,6 +28,7 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
   const [currentMedications, setCurrentMedications] = useState('')
   const [emergencyContactName, setEmergencyContactName] = useState('')
   const [emergencyContactPhone, setEmergencyContactPhone] = useState('')
+  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState('')
   const [physicianName, setPhysicianName] = useState('')
   const [physicianPhone, setPhysicianPhone] = useState('')
   const [notes, setNotes] = useState('')
@@ -52,11 +52,12 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
     setSelected(r)
     const hp = r.healthProfile
     setBloodGroup(hp?.blood_group ?? '')
-    setAllergies(toCsv(hp?.allergies))
-    setChronicConditions(toCsv(hp?.chronic_conditions))
-    setCurrentMedications(toCsv(hp?.current_medications))
+    setAllergies(hp?.allergies ?? '')
+    setChronicConditions(hp?.chronic_conditions ?? '')
+    setCurrentMedications(hp?.current_medications ?? '')
     setEmergencyContactName(hp?.emergency_contact_name ?? '')
     setEmergencyContactPhone(hp?.emergency_contact_phone ?? '')
+    setEmergencyContactRelationship(hp?.emergency_contact_relationship ?? '')
     setPhysicianName(hp?.physician_name ?? '')
     setPhysicianPhone(hp?.physician_phone ?? '')
     setNotes(hp?.notes ?? '')
@@ -70,8 +71,8 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentId: selected.student.id, bloodGroup,
-          allergies: fromCsv(allergies), chronicConditions: fromCsv(chronicConditions), currentMedications: fromCsv(currentMedications),
-          emergencyContactName, emergencyContactPhone, physicianName, physicianPhone, notes,
+          allergies, chronicConditions: chronicConditions, currentMedications: currentMedications,
+          emergencyContactName, emergencyContactPhone, emergencyContactRelationship, physicianName, physicianPhone, notes,
         }),
       })
       const json = await res.json()
@@ -98,7 +99,7 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {records.map((r: any) => {
-              const hasFlags = (r.healthProfile?.allergies?.length ?? 0) > 0 || (r.healthProfile?.chronic_conditions?.length ?? 0) > 0
+              const hasFlags = !!(r.healthProfile?.allergies?.trim()) || !!(r.healthProfile?.chronic_conditions?.trim())
               return (
                 <button key={r.student.id} onClick={() => openRecord(r)}
                   className={`glass-card ${motion.pressable}`}
@@ -110,7 +111,7 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
                     <p style={{ fontWeight: 700, fontSize: '0.84rem', margin: 0 }}>{r.student.full_name}</p>
                     <p style={{ fontSize: '0.74rem', color: hasFlags ? 'var(--status-warn, #E4572E)' : 'var(--text-muted)', margin: '2px 0 0' }}>
                       {hasFlags
-                        ? [...(r.healthProfile?.allergies ?? []), ...(r.healthProfile?.chronic_conditions ?? [])].slice(0, 3).join(', ')
+                        ? truncate([r.healthProfile?.allergies, r.healthProfile?.chronic_conditions].filter(Boolean).join(' · '), 60)
                         : r.healthProfile ? 'No flags on file' : 'No health record yet'}
                     </p>
                   </div>
@@ -141,6 +142,8 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
               <input placeholder="Emergency contact name" value={emergencyContactName} onChange={e => setEmergencyContactName(e.target.value)}
                 style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Emergency contact phone" value={emergencyContactPhone} onChange={e => setEmergencyContactPhone(e.target.value)}
+                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+              <input placeholder="Relationship to student (e.g. Mother)" value={emergencyContactRelationship} onChange={e => setEmergencyContactRelationship(e.target.value)}
                 style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Physician name" value={physicianName} onChange={e => setPhysicianName(e.target.value)}
                 style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
