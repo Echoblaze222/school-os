@@ -1,4 +1,16 @@
 // src/app/api/librarian/checkouts/route.ts
+//
+// library_loans already existed in the live database (same story as
+// nurse/visits/route.ts) - rewritten to match it: the table is called
+// library_loans not library_checkouts, columns are student_id (not
+// borrower_profile_id - kept supporting teacher borrowers too since the
+// FK itself just references profiles broadly, the column name is just
+// student-oriented), issued_by (not issued_by_profile_id), borrowed_at
+// (not issued_at), and a status enum ('borrowed'/'returned'/'overdue'/
+// 'lost') that this route now keeps in sync instead of inferring
+// everything from returned_at alone. No fine_kobo/fine_paid columns
+// exist on the real table, so fine tracking isn't available here -
+// flagged in the client instead of silently dropped.
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -24,10 +36,10 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient()
   let query = admin
-    .from('library_checkouts')
-    .select('id, issued_at, due_at, returned_at, fine_kobo, fine_paid, book:library_books(id, title), borrower:profiles!library_checkouts_borrower_profile_id_fkey(id, full_name, avatar_url)')
+    .from('library_loans')
+    .select('id, borrowed_at, due_at, returned_at, status, notes, book:library_books(id, title), borrower:profiles!library_loans_student_id_fkey(id, full_name, avatar_url)')
     .eq('school_id', caller.schoolId)
-    .order('issued_at', { ascending: false })
+    .order('borrowed_at', { ascending: false })
     .limit(200)
 
   if (scope === 'open') query = query.is('returned_at', null)
@@ -57,13 +69,14 @@ export async function POST(request: Request) {
   if (!borrower) return NextResponse.json({ ok: false, error: 'Borrower not found at your school.' }, { status: 400 })
 
   const { data: checkout, error } = await admin
-    .from('library_checkouts')
+    .from('library_loans')
     .insert({
       school_id: caller.schoolId,
       book_id: body.bookId,
-      borrower_profile_id: body.borrowerId,
-      issued_by_profile_id: caller.userId,
+      student_id: body.borrowerId,
+      issued_by: caller.userId,
       due_at: body.dueAt,
+      status: 'borrowed',
       notes: body.notes ? String(body.notes).trim() : null,
     })
     .select('*')
@@ -86,18 +99,16 @@ export async function PATCH(request: Request) {
   }
 
   const admin = createAdminClient()
-  const { data: checkout } = await admin.from('library_checkouts').select('id, book_id, returned_at, due_at').eq('id', body.id).eq('school_id', caller.schoolId).single()
+  const { data: checkout } = await admin.from('library_loans').select('id, book_id, returned_at, due_at').eq('id', body.id).eq('school_id', caller.schoolId).single()
   if (!checkout) return NextResponse.json({ ok: false, error: 'Checkout not found.' }, { status: 404 })
   if (checkout.returned_at) return NextResponse.json({ ok: false, error: 'Already returned.' }, { status: 400 })
 
-  // Fine calculation left as a manual override (fineKobo in the request
-  // body) rather than a hardcoded per-day rate baked into the schema -
-  // schools set their own overdue policy; the librarian confirms the
-  // amount at return time.
-  const update: Record<string, unknown> = { returned_at: new Date().toISOString() }
-  if (body.fineKobo !== undefined) update.fine_kobo = Number(body.fineKobo)
-
-  const { data: updated, error } = await admin.from('library_checkouts').update(update).eq('id', body.id).select('*').single()
+  const { data: updated, error } = await admin
+    .from('library_loans')
+    .update({ returned_at: new Date().toISOString(), status: 'returned' })
+    .eq('id', body.id)
+    .select('*')
+    .single()
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
 
   const { data: book } = await admin.from('library_books').select('available_copies, total_copies').eq('id', checkout.book_id).single()
