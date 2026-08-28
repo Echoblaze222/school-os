@@ -166,8 +166,16 @@ export async function POST(req: Request) {
 
     // Supabase fires a trigger (handle_new_user) the moment auth.admin.createUser
     // succeeds, which auto-inserts a bare row into profiles with the new user's id.
-    // .upsert() ensures we write our full data whether or not the trigger beat us.
-    const { error: profileErr } = await adminSupabase.from('profiles').upsert({
+    // This USED to be an upsert (ON CONFLICT DO UPDATE) to handle that - but this
+    // table also has a role-change guard trigger ("Changing your own role is not
+    // permitted") that fires on UPDATE, and an upsert against the trigger's
+    // already-existing row IS an update under the hood. Same collision already
+    // fixed in api/schools/register/route.ts; this is the super-admin path hitting
+    // the identical bug. Deleting the trigger-created row first makes this a plain
+    // INSERT instead, which a BEFORE UPDATE trigger never sees.
+    await adminSupabase.from('profiles').delete().eq('id', authUser.user.id)
+
+    const { error: profileErr } = await adminSupabase.from('profiles').insert({
       id:               authUser.user.id,
       full_name:        principalName,
       email:            principalEmail,
@@ -176,7 +184,7 @@ export async function POST(req: Request) {
       school_id:        school.id,
       default_code:     defaultCode,
       onboarding_stage: 'stage_1_pending',  // ✅ was integer 2 - now canonical string enum
-    }, { onConflict: 'id' })
+    })
 
     if (profileErr) {
       await adminSupabase.auth.admin.deleteUser(authUser.user.id)
