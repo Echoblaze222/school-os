@@ -70,8 +70,9 @@ export default function SuperAdminLoginPage() {
           <p className={styles.sub}>SchoolOS Control Centre</p>
         </div>
 
-        <div className={styles.securityNote}>
-          🔒 This portal is for authorized personnel only. Unauthorized access is prohibited.
+        <div className={styles.securityNote} style={{ display:'flex', alignItems:'flex-start', gap:6 }}>
+          <span style={{ flexShrink:0, marginTop:2 }}><LockIcon size={13} /></span>
+          <span>This portal is for authorized personnel only. Unauthorized access is prohibited.</span>
         </div>
 
         {step === 'credentials' && (
