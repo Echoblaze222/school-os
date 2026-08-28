@@ -1,8 +1,17 @@
 // src/app/api/librarian/books/route.ts
+//
+// library_books already existed in the live database before this
+// feature was built (see nurse/visits/route.ts's comment for the full
+// story - same root cause here). Rewritten to match the real table:
+// category is CHECK-constrained to a fixed list (not free text),
+// cover_url not cover_image_url, added_by not created_by, and there's
+// no publication_year column.
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasActiveAppointment } from '@/lib/permissions'
+
+const CATEGORIES = ['General', 'Fiction', 'Non-Fiction', 'Textbook', 'Reference', 'Periodical']
 
 async function requireLibrarian() {
   const supabase = await createClient()
@@ -28,7 +37,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await query
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true, books: data ?? [] })
+  return NextResponse.json({ ok: true, books: data ?? [], categories: CATEGORIES })
 }
 
 export async function POST(request: Request) {
@@ -38,6 +47,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   if (!body?.title) return NextResponse.json({ ok: false, error: 'Title is required.' }, { status: 400 })
 
+  const category = body.category && CATEGORIES.includes(body.category) ? body.category : 'General'
   const totalCopies = Math.max(1, Number(body.totalCopies ?? 1))
 
   const admin = createAdminClient()
@@ -48,14 +58,12 @@ export async function POST(request: Request) {
       title: String(body.title).trim(),
       author: body.author ? String(body.author).trim() : null,
       isbn: body.isbn ? String(body.isbn).trim() : null,
-      category: body.category ? String(body.category).trim() : null,
+      category,
       publisher: body.publisher ? String(body.publisher).trim() : null,
-      publication_year: body.publicationYear ? Number(body.publicationYear) : null,
       total_copies: totalCopies,
       available_copies: totalCopies,
       shelf_location: body.shelfLocation ? String(body.shelfLocation).trim() : null,
-      notes: body.notes ? String(body.notes).trim() : null,
-      created_by: caller.userId,
+      added_by: caller.userId,
     })
     .select('*')
     .single()
@@ -73,8 +81,6 @@ export async function PATCH(request: Request) {
 
   const admin = createAdminClient()
 
-  // Guard: never let total_copies drop below what's currently checked
-  // out, and keep available_copies in lockstep when total_copies changes.
   if (body.totalCopies !== undefined) {
     const { data: existing } = await admin.from('library_books').select('total_copies, available_copies').eq('id', body.id).eq('school_id', caller.schoolId).single()
     if (!existing) return NextResponse.json({ ok: false, error: 'Book not found.' }, { status: 404 })
@@ -87,12 +93,12 @@ export async function PATCH(request: Request) {
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
   for (const [bodyKey, col] of [
-    ['title', 'title'], ['author', 'author'], ['isbn', 'isbn'], ['category', 'category'],
-    ['publisher', 'publisher'], ['shelfLocation', 'shelf_location'], ['notes', 'notes'],
+    ['title', 'title'], ['author', 'author'], ['isbn', 'isbn'],
+    ['publisher', 'publisher'], ['shelfLocation', 'shelf_location'],
   ] as const) {
     if (body[bodyKey] !== undefined) update[col] = body[bodyKey] ? String(body[bodyKey]).trim() : null
   }
-  if (body.publicationYear !== undefined) update.publication_year = body.publicationYear ? Number(body.publicationYear) : null
+  if (body.category !== undefined && CATEGORIES.includes(body.category)) update.category = body.category
   if (body.totalCopies !== undefined) {
     const { data: existing } = await admin.from('library_books').select('total_copies, available_copies').eq('id', body.id).single()
     const delta = Number(body.totalCopies) - (existing?.total_copies ?? 0)
