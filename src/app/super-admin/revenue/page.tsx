@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { WalletIcon, BarChartIcon, TrendingIcon, SchoolIcon } from '@/components/Icons'
+import { WalletIcon, BarChartIcon, TrendingIcon, SchoolIcon, SettingsIcon, CalendarIcon, LayersIcon } from '@/components/Icons'
 import styles from './revenue.module.css'
 
 export default function RevenuePage() {
@@ -15,38 +15,54 @@ export default function RevenuePage() {
 
   async function load() {
     setLoading(true)
-    let query = supabase.from('school_payments')
+
+    // Two independent queries, on purpose: the table below is a capped,
+    // most-recent-first browse list, but the summary totals must reflect
+    // every matching payment ever recorded, not just the newest 100 - a
+    // school with more than 100 payments would otherwise show a silently
+    // wrong "Total Revenue" that shrinks as more payments get added.
+    let listQuery = supabase.from('school_payments')
       .select('id, school_id, payment_type, amount_ngn, plan, confirmed_at, schools(name)')
       .order('confirmed_at', { ascending: false })
+    let summaryQuery = supabase.from('school_payments')
+      .select('school_id, amount_ngn, confirmed_at')
 
     if (period === 'month') {
       const start = new Date(); start.setDate(1); start.setHours(0,0,0,0)
-      query = query.gte('confirmed_at', start.toISOString())
+      listQuery = listQuery.gte('confirmed_at', start.toISOString())
+      summaryQuery = summaryQuery.gte('confirmed_at', start.toISOString())
     } else if (period === 'year') {
       const start = new Date(); start.setMonth(0,1); start.setHours(0,0,0,0)
-      query = query.gte('confirmed_at', start.toISOString())
+      listQuery = listQuery.gte('confirmed_at', start.toISOString())
+      summaryQuery = summaryQuery.gte('confirmed_at', start.toISOString())
     }
 
-    const { data } = await query.limit(100)
-    if (data) {
-      setPayments(data)
+    const [{ data }, { data: allForSummary }] = await Promise.all([
+      listQuery.limit(100),
+      summaryQuery,
+    ])
+
+    if (data) setPayments(data)
+    if (allForSummary) {
       const now   = new Date()
       const mStart = new Date(now.getFullYear(), now.getMonth(), 1)
       const lStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
       const lEnd   = new Date(now.getFullYear(), now.getMonth(), 0)
 
       setSummary({
-        total:     data.reduce((s, p) => s + p.amount_ngn, 0),
-        thisMonth: data.filter(p => new Date(p.confirmed_at) >= mStart).reduce((s,p) => s + p.amount_ngn, 0),
-        lastMonth: data.filter(p => { const d = new Date(p.confirmed_at); return d >= lStart && d <= lEnd }).reduce((s,p) => s + p.amount_ngn, 0),
-        schools:   new Set(data.map(p => p.school_id)).size,
+        total:     allForSummary.reduce((s, p) => s + p.amount_ngn, 0),
+        thisMonth: allForSummary.filter(p => new Date(p.confirmed_at) >= mStart).reduce((s,p) => s + p.amount_ngn, 0),
+        lastMonth: allForSummary.filter(p => { const d = new Date(p.confirmed_at); return d >= lStart && d <= lEnd }).reduce((s,p) => s + p.amount_ngn, 0),
+        schools:   new Set(allForSummary.map(p => p.school_id)).size,
       })
     }
     setLoading(false)
   }
 
-  const TYPE_LABELS: Record<string, string> = {
-    setup: '🏗️ Setup', subscription: '📅 Subscription', installment: '📦 Installment',
+  const TYPE_LABELS: Record<string, { Icon: typeof SettingsIcon; label: string }> = {
+    setup:        { Icon: SettingsIcon, label: 'Setup' },
+    subscription: { Icon: CalendarIcon, label: 'Subscription' },
+    installment:  { Icon: LayersIcon,   label: 'Installment' },
   }
   const PLAN_LABELS: Record<string, string> = {
     basic_500: 'Basic', standard_1000: 'Standard', premium_2000: 'Premium',
@@ -113,7 +129,9 @@ export default function RevenuePage() {
                 {payments.map(p => (
                   <tr key={p.id} className={styles.tr}>
                     <td className={styles.td}>{(p.schools as any)?.name ?? 'N/A'}</td>
-                    <td className={styles.td}>{TYPE_LABELS[p.payment_type] ?? p.payment_type}</td>
+                    <td className={styles.td} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {(() => { const t = TYPE_LABELS[p.payment_type]; return t ? <><t.Icon size={13} /> {t.label}</> : p.payment_type })()}
+                    </td>
                     <td className={styles.td}>{p.plan ? PLAN_LABELS[p.plan] ?? p.plan : 'N/A'}</td>
                     <td className={styles.td}>
                       <span style={{ fontWeight:700, color:'#10B981' }}>₦{Number(p.amount_ngn).toLocaleString()}</span>
