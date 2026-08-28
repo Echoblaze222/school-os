@@ -12,22 +12,6 @@ import motion from '@/components/dashboard-motion.module.css'
 
 interface Props { profile: any; school: any; userId: string }
 
-const OUTCOMES = [
-  { value: 'returned_to_class', label: 'Returned to class' },
-  { value: 'sent_home', label: 'Sent home' },
-  { value: 'hospital_referral', label: 'Hospital referral' },
-  { value: 'monitoring', label: 'Monitoring' },
-  { value: 'other', label: 'Other' },
-]
-
-const OUTCOME_COLOR: Record<string, string> = {
-  returned_to_class: 'var(--status-ok, #10B981)',
-  sent_home: 'var(--status-warn, #E4572E)',
-  hospital_referral: '#EF4444',
-  monitoring: 'var(--status-warn, #E4572E)',
-  other: 'var(--text-muted)',
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })
 }
@@ -45,10 +29,11 @@ export default function VisitsClient({ profile, school, userId }: Props) {
   const [reason, setReason] = useState('')
   const [symptoms, setSymptoms] = useState('')
   const [treatmentGiven, setTreatmentGiven] = useState('')
-  const [outcome, setOutcome] = useState('returned_to_class')
+  const [medicationAdministered, setMedicationAdministered] = useState('')
+  const [sentHome, setSentHome] = useState(false)
   const [parentNotified, setParentNotified] = useState(false)
   const [temperatureC, setTemperatureC] = useState('')
-  const [notes, setNotes] = useState('')
+  const [followUpNotes, setFollowUpNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function loadVisits() {
@@ -74,8 +59,8 @@ export default function VisitsClient({ profile, school, userId }: Props) {
 
   function resetForm() {
     setSelectedStudent(null); setStudentQuery(''); setReason(''); setSymptoms('')
-    setTreatmentGiven(''); setOutcome('returned_to_class'); setParentNotified(false)
-    setTemperatureC(''); setNotes('')
+    setTreatmentGiven(''); setMedicationAdministered(''); setSentHome(false); setParentNotified(false)
+    setTemperatureC(''); setFollowUpNotes('')
   }
 
   async function submitVisit() {
@@ -85,8 +70,8 @@ export default function VisitsClient({ profile, school, userId }: Props) {
       const res = await fetch('/api/nurse/visits', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentId: selectedStudent.id, reason, symptoms, treatmentGiven, outcome,
-          parentNotified, temperatureC: temperatureC ? Number(temperatureC) : undefined, notes,
+          studentId: selectedStudent.id, reason, symptoms, treatmentGiven, medicationAdministered,
+          sentHome, parentNotified, temperatureC: temperatureC ? Number(temperatureC) : undefined, followUpNotes,
         }),
       })
       const json = await res.json()
@@ -121,11 +106,12 @@ export default function VisitsClient({ profile, school, userId }: Props) {
                       <p style={{ fontWeight: 700, fontSize: '0.86rem', margin: 0 }}>{student?.full_name ?? 'Student'}</p>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{v.reason}</p>
                     </div>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: OUTCOME_COLOR[v.outcome] ?? 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {OUTCOMES.find(o => o.value === v.outcome)?.label ?? v.outcome}
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: v.sent_home ? 'var(--status-warn, #E4572E)' : 'var(--status-ok, #10B981)', whiteSpace: 'nowrap' }}>
+                      {v.sent_home ? 'Sent home' : 'Returned to class'}
                     </span>
                   </div>
                   {v.treatment_given && <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '8px 0 0' }}>{v.treatment_given}</p>}
+                  {v.medication_administered && <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>Medication: {v.medication_administered}</p>}
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>
                     {formatDate(v.visited_at)}{v.parent_notified ? ' · Parent notified' : ''}
                   </p>
@@ -138,7 +124,7 @@ export default function VisitsClient({ profile, school, userId }: Props) {
       </main>
 
       {showForm && (
-        <div className={styles.overlay ?? undefined} onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 100 }}>
+        <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Log a Clinic Visit</p>
@@ -178,14 +164,15 @@ export default function VisitsClient({ profile, school, userId }: Props) {
                   style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <textarea placeholder="Treatment given" value={treatmentGiven} onChange={e => setTreatmentGiven(e.target.value)} rows={2}
                   style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
-                <select value={outcome} onChange={e => setOutcome(e.target.value)}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}>
-                  {OUTCOMES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                <input placeholder="Medication administered (optional)" value={medicationAdministered} onChange={e => setMedicationAdministered(e.target.value)}
+                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                  <input type="checkbox" checked={sentHome} onChange={e => setSentHome(e.target.checked)} /> Sent home
+                </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
                   <input type="checkbox" checked={parentNotified} onChange={e => setParentNotified(e.target.checked)} /> Parent notified
                 </label>
-                <textarea placeholder="Additional notes" value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+                <textarea placeholder="Follow-up notes" value={followUpNotes} onChange={e => setFollowUpNotes(e.target.value)} rows={2}
                   style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <ActionButton onClick={submitVisit} loading={saving} loadingLabel="Saving…" fullWidth>Save Visit</ActionButton>
               </div>
