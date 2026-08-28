@@ -22,9 +22,27 @@ async function assertSuperAdmin() {
 async function unlockSchool(adminSupabase: any, school_id: string, adminId: string) {
   const now = new Date().toISOString()
 
+  // evaluateSchoolSubscription (the check-subscriptions cron) only ever
+  // re-evaluates an 'active' school by comparing subscription_ends against
+  // now - if that's null, the comparison never happens and the school
+  // stays 'active' forever, unconditionally, with nothing left to ever
+  // expire it again. This used to leave subscription_ends untouched
+  // (usually null, or a stale past date), which is exactly how T.E.S.T
+  // College ended up permanently active with zero payment record. Giving
+  // it a fresh 30-day window (same length confirm_setup already uses a
+  // few branches down) makes this a temporary reprieve instead of a
+  // silent permanent bypass - it still re-enters the normal lapse/grace/
+  // suspend cycle in 30 days rather than needing another manual unlock.
+  const newSubscriptionEnds = new Date(Date.now() + 30 * 86_400_000).toISOString()
+
   await adminSupabase
     .from('schools')
-    .update({ setup_status: 'active', is_platform_active: true, updated_at: now })
+    .update({
+      setup_status:       'active',
+      is_platform_active: true,
+      subscription_ends:  newSubscriptionEnds,
+      updated_at:         now,
+    })
     .eq('id', school_id)
 
   await adminSupabase
@@ -36,6 +54,7 @@ async function unlockSchool(adminSupabase: any, school_id: string, adminId: stri
   await adminSupabase.from('portal_audit_log').insert({
     actor_id: adminId, action: 'unlock_school',
     target_table: 'schools', target_id: school_id,
+    metadata: { new_subscription_ends: newSubscriptionEnds },
   })
 }
 
