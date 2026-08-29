@@ -9,7 +9,7 @@ import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
-    const { code, newPassword } = await request.json()
+    const { code, newPassword, schoolId } = await request.json()
 
     if (!code || !newPassword) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileErr } = await adminClient
       .from('profiles')
-      .select('id, email, role, onboarding_stage')
+      .select('id, email, role, onboarding_stage, school_id, schools ( id, name, primary_color )')
       .eq('default_code', normalizedCode)
       .maybeSingle()
 
@@ -71,6 +71,22 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Invalid access code. Please check and try again.' },
         { status: 404 }
+      )
+    }
+
+    // Same reasoning as the checkSchoolMatches check added to
+    // login/page.tsx's existing-user sign-in: this route was sent
+    // schoolId all along but never actually looked at it, so activating
+    // an account while the WRONG school was selected on /select-school
+    // silently succeeded anyway. Reject before touching the password or
+    // onboarding_stage - schoolId is optional here (only enforced when
+    // present) so a rolling deploy where an old client bundle briefly
+    // doesn't send it yet can't lock people out.
+    const school = (profile as any).schools
+    if (schoolId && profile.school_id !== schoolId) {
+      return NextResponse.json(
+        { error: `This access code isn't part of the school you selected. Go back and select ${school?.name ?? 'the correct school'} instead.` },
+        { status: 400 }
       )
     }
 
@@ -117,6 +133,7 @@ export async function POST(request: Request) {
       email:            profile.email,
       onboarding_stage: nextStage,
       role:             profile.role,
+      school: school ? { id: school.id, name: school.name, primaryColor: school.primary_color } : null,
     })
 
   } catch (e: unknown) {
