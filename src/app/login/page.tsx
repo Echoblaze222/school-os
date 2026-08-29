@@ -81,30 +81,67 @@ export default function LoginPage() {
     // would otherwise keep showing whatever colour was current back when
     // the school was first selected, potentially sessions/days earlier. So
     // re-fetch it fresh here too and let it override the cached value.
-    supabase
-      .from('schools')
-      .select('primary_color')
-      .eq('id', parsedSchool.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.primary_color) {
-          setSchool(s => s ? { ...s, primaryColor: data.primary_color } : s)
-          // Keep the cache in step so the next visit starts from the
-          // right colour even before this fetch resolves.
-          localStorage.setItem(SCHOOL_KEY, JSON.stringify({ ...parsedSchool, primaryColor: data.primary_color }))
-        }
-      })
+    //
+    // Both fetches are awaited (via a capped race, not a bare await - see
+    // below) BEFORE the skeleton drops. Previously they were fire-and-
+    // forget: checkingSchool flipped to false, and the form rendered with
+    // whatever was in localStorage, right as these were still in flight -
+    // so anyone whose cached colour was stale (or missing entirely, e.g.
+    // a school being logged into for the first time on this device) saw
+    // the wrong/default colour flash before it visibly swapped once the
+    // fetch resolved. The skeleton was built for exactly this kind of
+    // gap; it just wasn't actually covering this particular fetch.
+    const colorFetch = Promise.allSettled([
+      supabase
+        .from('schools')
+        .select('primary_color')
+        .eq('id', parsedSchool.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.primary_color) {
+            setSchool(s => s ? { ...s, primaryColor: data.primary_color } : s)
+            // Keep the cache in step so the next visit starts from the
+            // right colour even before this fetch resolves.
+            localStorage.setItem(SCHOOL_KEY, JSON.stringify({ ...parsedSchool, primaryColor: data.primary_color }))
+          }
+        }),
+      supabase
+        .from('school_branding')
+        .select('secondary_color')
+        .eq('id', parsedSchool.id)
+        .single()
+        .then(({ data }) => { if (data?.secondary_color) setSecondaryColor(data.secondary_color) }),
+    ])
 
-    supabase
-      .from('school_branding')
-      .select('secondary_color')
-      .eq('id', parsedSchool.id)
-      .single()
-      .then(({ data }) => { if (data?.secondary_color) setSecondaryColor(data.secondary_color) })
-
-    setCheckingSchool(false)
-    setMounted(true)
+    // Race against a timeout so a slow or failed request can't leave
+    // someone stuck on the skeleton forever - past 2.5s it just proceeds
+    // with whatever's cached, same as before this fix, rather than
+    // blocking indefinitely.
+    Promise.race([colorFetch, new Promise(resolve => setTimeout(resolve, 2500))]).then(() => {
+      setCheckingSchool(false)
+      setMounted(true)
+    })
   }, [router])
+
+  // After a successful signInWithPassword, this account is now genuinely
+  // authenticated - the ONLY thing left to check is whether it belongs to
+  // the school currently selected on this page. Previously nothing did:
+  // signing in just navigated straight to /dashboard, which would then
+  // resolve based on the account's REAL school_id regardless of what was
+  // picked on /select-school - so picking the wrong school silently
+  // still worked, just landing on a different school's dashboard than
+  // the one shown on screen. Signs back out and blocks navigation on a
+  // mismatch, rather than letting the wrong-school selection quietly
+  // succeed anyway.
+  async function checkSchoolMatches(userId: string): Promise<boolean> {
+    const { data: profile } = await supabase.from('profiles').select('school_id').eq('id', userId).single()
+    if (profile && school && profile.school_id !== school.id) {
+      await supabase.auth.signOut()
+      setLoginError(`This account isn't part of ${school.name}. Go back and select the correct school before signing in.`)
+      return true // mismatch
+    }
+    return false
+  }
 
   async function handleExistingLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -120,8 +157,12 @@ export default function LoginPage() {
         })
         const data = await res.json()
         if (!res.ok) { setLoginError(data.error || 'Invalid code or password.'); return }
-        const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
         if (signInErr) { setLoginError('Wrong password. Please try again.'); return }
+
+        const mismatch = await checkSchoolMatches(signInData.user.id)
+        if (mismatch) return
+
         // Hard navigation, not router.replace: this is a fresh sign-in, and
         // the client Router Cache doesn't reset on auth changes - a soft
         // nav here can briefly hand back a PREVIOUS session's cached
@@ -129,8 +170,12 @@ export default function LoginPage() {
         // catches up. window.location guarantees a clean, fully fresh load.
         window.location.href = '/dashboard'
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: value, password })
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: value, password })
         if (error) { setLoginError(error.message); return }
+
+        const mismatch = await checkSchoolMatches(signInData.user.id)
+        if (mismatch) return
+
         window.location.href = '/dashboard'
       }
     } catch { setLoginError('Something went wrong. Please try again.')
