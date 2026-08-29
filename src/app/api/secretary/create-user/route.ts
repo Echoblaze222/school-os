@@ -158,6 +158,7 @@ export async function POST(request: Request) {
     const profileInsert: Record<string, any> = {
       id:               userId,
       full_name:        fullName,
+      email:            email.toLowerCase(),
       role,
       // Always the caller's own school - never trust a client-supplied
       // schoolId here, or a secretary at School A could create accounts
