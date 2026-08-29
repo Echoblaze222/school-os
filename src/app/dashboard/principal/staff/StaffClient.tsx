@@ -8,6 +8,7 @@ import styles from './staff.module.css'
 import KpiCard from '@/components/KpiCard'
 import { CheckIcon, XIcon, AlertIcon, EditIcon, PeopleIcon } from '@/components/Icons'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
+import { HostelPicker } from '@/components/org/HostelPicker'
 
 // 'counselor' and 'admin' were never valid here - counselor is an
 // appointment type (see Leadership & Appointments / the Assign Role tab
@@ -39,23 +40,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   hostel: 'Hostel Staff', academic: 'Examination Committee',
 }
 const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
-
-// A non-JSON response (an HTML error/404 page) means the endpoint isn't
-// actually deployed, or the server threw before returning JSON - either
-// way "Unexpected token '<' is not valid JSON" is useless to see as an
-// error message. This gives a plain-language reason instead.
-async function safeJson(res: Response): Promise<any> {
-  const text = await res.text()
-  try {
-    return JSON.parse(text)
-  } catch {
-    throw new Error(
-      res.status === 404
-        ? `This feature isn't deployed yet on the server (404 at ${new URL(res.url).pathname}).`
-        : `Server error (status ${res.status}) - the response wasn't valid JSON.`
-    )
-  }
-}
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -277,12 +261,10 @@ export default function StaffClient({ profile, school, userId }: Props) {
       const body: Record<string, unknown> = { profileId: assignFor.id, appointmentType: assignType }
       if (HOSTEL_SCOPED_TYPES.has(assignType)) body.hostelIds = assignHostelIds
       const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      const json = await safeJson(res)
+      const json = await res.json()
       if (!json.ok) { setAssignError(json.error ?? 'Could not assign role.'); return }
       showToast(`${assignFor.full_name} is now ${APPOINTMENT_TYPES[assignType].label}.`)
       setAssignFor(null)
-    } catch (err: any) {
-      setAssignError(err.message ?? 'Could not assign role.')
     } finally { setAssigning(false) }
   }
 
@@ -360,7 +342,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
           } : {}),
         }),
       })
-      const json = await safeJson(res)
+      const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to add staff member')
       if (json.warning) showToast(json.warning, false)
 
@@ -593,16 +575,12 @@ export default function StaffClient({ profile, school, userId }: Props) {
                 {appointmentType && HOSTEL_SCOPED_TYPES.has(appointmentType) && (
                   <div style={{ marginTop: 10 }}>
                     <label className={styles.fieldLabel}>Hostel(s)</label>
-                    {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
-                        {hostels.map(h => (
-                          <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
-                            <input type="checkbox" checked={hostelIds.includes(h.id)} onChange={() => toggleHostelId(h.id)} />
-                            {h.name}
-                          </label>
-                        ))}
-                      </div>
-                    )}
+                    <HostelPicker
+                      hostels={hostels}
+                      selectedIds={hostelIds}
+                      onToggle={toggleHostelId}
+                      onCreated={h => setHostels(prev => [...prev, h])}
+                    />
                   </div>
                 )}
               </div>
@@ -872,16 +850,12 @@ export default function StaffClient({ profile, school, userId }: Props) {
             {assignType && HOSTEL_SCOPED_TYPES.has(assignType) && (
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Hostel(s)</label>
-                {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
-                    {hostels.map(h => (
-                      <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
-                        <input type="checkbox" checked={assignHostelIds.includes(h.id)} onChange={() => toggleAssignHostelId(h.id)} />
-                        {h.name}
-                      </label>
-                    ))}
-                  </div>
-                )}
+                <HostelPicker
+                  hostels={hostels}
+                  selectedIds={assignHostelIds}
+                  onToggle={toggleAssignHostelId}
+                  onCreated={h => setHostels(prev => [...prev, h])}
+                />
               </div>
             )}
 
