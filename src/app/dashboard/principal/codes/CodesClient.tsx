@@ -10,6 +10,7 @@ import DOBPicker from '@/components/DOBPicker'
 import styles from './codes.module.css'
 import { CheckIcon, BulbIcon, SearchIcon, UserIcon } from '@/components/Icons'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
+import { HostelPicker } from '@/components/org/HostelPicker'
 
 interface CodeEntry {
   id: string
@@ -72,23 +73,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   hostel: 'Hostel Staff', academic: 'Leadership & Examinations',
 }
 const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
-
-// A non-JSON response (an HTML error/404 page) means the endpoint isn't
-// actually deployed, or the server threw before returning JSON - either
-// way "Unexpected token '<' is not valid JSON" is useless to see as an
-// error message. This gives a plain-language reason instead.
-async function safeJson(res: Response): Promise<any> {
-  const text = await res.text()
-  try {
-    return JSON.parse(text)
-  } catch {
-    throw new Error(
-      res.status === 404
-        ? `This feature isn't deployed yet on the server (404 at ${new URL(res.url).pathname}).`
-        : `Server error (status ${res.status}) - the response wasn't valid JSON.`
-    )
-  }
-}
 
 // ── FIX 1: Table style objects that were missing in the new bulk grid UI ──────
 const thStyle: React.CSSProperties = {
@@ -310,12 +294,10 @@ export default function CodesClient({ entries: init, classes, profile, school, u
       const body: Record<string, unknown> = { profileId: arSelected.id, appointmentType: arType }
       if (HOSTEL_SCOPED_TYPES.has(arType)) body.hostelIds = arScopeIds
       const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      const json = await safeJson(res)
+      const json = await res.json()
       if (!json.ok) { setArError(json.error ?? 'Could not assign role.'); return }
       setArSuccess(`${arSelected.full_name} is now ${APPOINTMENT_TYPES[arType].label}.`)
       setArSelected(null); setArQuery(''); setArType(''); setArScopeIds([])
-    } catch (err: any) {
-      setArError(err.message ?? 'Could not assign role.')
     } finally { setArAssigning(false) }
   }
 
@@ -432,7 +414,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
           } : {}),
         }),
       })
-      const json = await safeJson(res)
+      const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to create user')
 
       setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code, warning: json.warning ?? null })
@@ -480,7 +462,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               guardianPhone:    r.role === 'student' ? (r.guardianPhone.trim() || null) : null,
             }),
           })
-          const json = await safeJson(res)
+          const json = await res.json()
           if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: json.error ?? 'Failed', saved: false }
           return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, saved: true, error: null }
         } catch (e: any) {
@@ -703,16 +685,12 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   {sAppointmentType && HOSTEL_SCOPED_TYPES.has(sAppointmentType) && (
                     <div style={{ marginTop: 10 }}>
                       <label className={styles.fieldLabel}>Hostel(s)</label>
-                      {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
-                          {hostels.map(h => (
-                            <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
-                              <input type="checkbox" checked={sHostelIds.includes(h.id)} onChange={() => toggleHostelId(h.id)} />
-                              {h.name}
-                            </label>
-                          ))}
-                        </div>
-                      )}
+                      <HostelPicker
+                        hostels={hostels}
+                        selectedIds={sHostelIds}
+                        onToggle={toggleHostelId}
+                        onCreated={h => setHostels(prev => [...prev, h])}
+                      />
                     </div>
                   )}
                 </div>
@@ -898,16 +876,12 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               {arType && HOSTEL_SCOPED_TYPES.has(arType) && (
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Hostel(s)</label>
-                  {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
-                      {hostels.map(h => (
-                        <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
-                          <input type="checkbox" checked={arScopeIds.includes(h.id)} onChange={() => toggleArScope(h.id)} />
-                          {h.name}
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                  <HostelPicker
+                    hostels={hostels}
+                    selectedIds={arScopeIds}
+                    onToggle={toggleArScope}
+                    onCreated={h => setHostels(prev => [...prev, h])}
+                  />
                 </div>
               )}
 
