@@ -7,12 +7,38 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './staff.module.css'
 import KpiCard from '@/components/KpiCard'
 import { CheckIcon, XIcon, AlertIcon, EditIcon, PeopleIcon } from '@/components/Icons'
+import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 
-const ROLES = ['teacher', 'bursar', 'secretary', 'librarian', 'counselor', 'nurse', 'admin']
+// 'counselor' and 'admin' were never valid here - counselor is an
+// appointment type (see Leadership & Appointments / the Assign Role tab
+// on Enrolment & Codes), never a profiles.role value, and 'admin' isn't
+// a role that exists anywhere in this app's schema. Neither was ever
+// accepted by secretary/create-user's own permission check
+// (ROLES_CALLER_CAN_ASSIGN.principal), so picking either here always
+// 403'd - this predates any of the appointment-role work.
+// librarian/nurse removed too, matching the same fix already made on
+// Enrolment & Codes: those are appointment types now (their dashboards
+// require an active appointment, not profiles.role), so creating them
+// as a base account here would be a dead end with nowhere to log into -
+// use the Assign Role tab on Enrolment & Codes for those instead.
+const ROLES = ['teacher', 'bursar', 'secretary']
 const ROLE_COLORS: Record<string, string> = {
   teacher: '#10B981', bursar: '#F59E0B', secretary: '#EC4899',
-  librarian: '#3B82F6', counselor: '#8B5CF6', nurse: '#EF4444', admin: '#6B7280',
 }
+
+// Same appointment-role set as Enrolment & Codes' Additional Role picker
+// and Assign Role tab - see that file for the full reasoning (excludes
+// vice_principal/hod, which need their own department/portfolio scope
+// UI, and the 4 student_leadership types, which need an existing
+// student picked from the roster, never a new account).
+const APPOINTMENT_ROLE_TYPES = (Object.keys(APPOINTMENT_TYPES) as AppointmentTypeId[])
+  .filter(id => APPOINTMENT_TYPES[id].baseRoleScope.includes('teacher') && !['vice_principal', 'hod'].includes(id))
+const CATEGORY_ORDER = ['welfare', 'ict', 'operations', 'hostel', 'academic']
+const CATEGORY_LABELS: Record<string, string> = {
+  welfare: 'Welfare', ict: 'ICT', operations: 'Operations',
+  hostel: 'Hostel Staff', academic: 'Examination Committee',
+}
+const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -20,7 +46,7 @@ interface Props { profile: any; school: any; userId: string }
 function StaffSuccessModal({
   result, sc, onClose,
 }: {
-  result: { full_name: string; email: string; role: string; code: string; password: string }
+  result: { full_name: string; email: string; role: string; code: string; password: string; appointedAs?: string | null }
   sc: string
   onClose: () => void
 }) {
@@ -79,6 +105,7 @@ function StaffSuccessModal({
             <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-base)' }}>{result.full_name}</p>
             <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               {result.email} · <span style={{ color: roleColor, fontWeight: 600 }}>{roleLabel}</span>
+              {result.appointedAs && <> · <span style={{ color: sc, fontWeight: 600 }}>{result.appointedAs}</span></>}
             </p>
           </div>
         </div>
@@ -184,7 +211,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
   const [toast,      setToast]      = useState<{ msg: string; ok: boolean } | null>(null)
   const [confirmDel, setConfirmDel] = useState<any | null>(null)
   const [saving,     setSaving]     = useState(false)
-  const [addResult,  setAddResult]  = useState<{ full_name: string; email: string; role: string; code: string; password: string } | null>(null)
+  const [addResult,  setAddResult]  = useState<{ full_name: string; email: string; role: string; code: string; password: string; appointedAs?: string | null } | null>(null)
   // ── Preview / Edit bottom sheets ───────────────────────────
   const [previewMember, setPreviewMember] = useState<any | null>(null)
   const [editMember,    setEditMember]    = useState<any | null>(null)
@@ -195,6 +222,50 @@ export default function StaffClient({ profile, school, userId }: Props) {
     full_name: '', email: '', phone: '', role: 'teacher',
     subject: '', qualification: '', gender: '', date_of_birth: '',
   })
+
+  // ── Additional appointment role (new-hire add flow) ─────
+  const [appointmentType, setAppointmentType] = useState<AppointmentTypeId | ''>('')
+  const [hostelIds, setHostelIds] = useState<string[]>([])
+  const [hostels, setHostels] = useState<{ id: string; name: string }[]>([])
+  const [hostelsLoaded, setHostelsLoaded] = useState(false)
+
+  async function ensureHostels() {
+    if (hostelsLoaded) return
+    setHostelsLoaded(true)
+    try {
+      const res = await fetch('/api/org/hostels')
+      const json = await res.json()
+      if (json.ok) setHostels(json.hostels)
+    } catch { /* hostel picker just shows empty state if this fails */ }
+  }
+  function toggleHostelId(id: string) { setHostelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+
+  // ── Assign Role: give an existing staff member an appointment ────
+  const [assignFor, setAssignFor] = useState<any | null>(null)
+  const [assignType, setAssignType] = useState<AppointmentTypeId | ''>('')
+  const [assignHostelIds, setAssignHostelIds] = useState<string[]>([])
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState<string | null>(null)
+
+  function openAssignRole(member: any) {
+    setAssignFor(member); setAssignType(''); setAssignHostelIds([]); setAssignError(null)
+  }
+  function toggleAssignHostelId(id: string) { setAssignHostelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+
+  async function submitAssignRole() {
+    if (!assignFor || !assignType) { setAssignError('Pick a role.'); return }
+    if (HOSTEL_SCOPED_TYPES.has(assignType) && assignHostelIds.length === 0) { setAssignError('Select at least one hostel.'); return }
+    setAssigning(true); setAssignError(null)
+    try {
+      const body: Record<string, unknown> = { profileId: assignFor.id, appointmentType: assignType }
+      if (HOSTEL_SCOPED_TYPES.has(assignType)) body.hostelIds = assignHostelIds
+      const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const json = await res.json()
+      if (!json.ok) { setAssignError(json.error ?? 'Could not assign role.'); return }
+      showToast(`${assignFor.full_name} is now ${APPOINTMENT_TYPES[assignType].label}.`)
+      setAssignFor(null)
+    } finally { setAssigning(false) }
+  }
 
   useEffect(() => {
     async function loadStaff() {
@@ -244,9 +315,14 @@ export default function StaffClient({ profile, school, userId }: Props) {
       showToast('Full name and email are required.', false)
       return
     }
+    if (appointmentType && HOSTEL_SCOPED_TYPES.has(appointmentType) && hostelIds.length === 0) {
+      showToast('Select at least one hostel for this role.', false)
+      return
+    }
     setSaving(true)
     try {
-      const res  = await fetch('/api/secretary/create-user', {
+      const usingAppointmentRoute = form.role === 'teacher' && !!appointmentType
+      const res  = await fetch(usingAppointmentRoute ? '/api/principal/enrol-with-role' : '/api/secretary/create-user', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
@@ -259,10 +335,15 @@ export default function StaffClient({ profile, school, userId }: Props) {
           dateOfBirth:      form.date_of_birth        || null,
           qualification:    form.qualification.trim() || null,
           subjectSpecialty: form.role === 'teacher' ? (form.subject.trim() || null) : null,
+          ...(usingAppointmentRoute ? {
+            appointmentType,
+            hostelIds: HOSTEL_SCOPED_TYPES.has(appointmentType) ? hostelIds : undefined,
+          } : {}),
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to add staff member')
+      if (json.warning) showToast(json.warning, false)
 
       // Refresh list
       const { data: fresh } = await supabase
@@ -273,7 +354,9 @@ export default function StaffClient({ profile, school, userId }: Props) {
       if (fresh) setStaff(fresh)
 
       const captured = { ...form }
+      const appointedAs = usingAppointmentRoute && appointmentType ? APPOINTMENT_TYPES[appointmentType].label : null
       setForm({ full_name: '', email: '', phone: '', role: 'teacher', subject: '', qualification: '', gender: '', date_of_birth: '' })
+      setAppointmentType(''); setHostelIds([])
       setShowForm(false)
       setAddResult({
         full_name: captured.full_name.trim(),
@@ -281,6 +364,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
         role:      captured.role,
         code:      json.code,
         password:  json.password,
+        appointedAs,
       })
     } catch (err: any) {
       showToast(err.message ?? 'Failed to add staff member', false)
@@ -458,6 +542,52 @@ export default function StaffClient({ profile, school, userId }: Props) {
                 </div>
               )}
             </div>
+
+            {form.role === 'teacher' && (
+              <div className={styles.fieldGroup} style={{ marginTop: 12 }}>
+                <label className={styles.fieldLabel}>Additional Role (optional)</label>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                  Give this teacher a leadership/welfare/operations role from day one, so their access code drops them straight into the right dashboard.
+                </p>
+                <select
+                  className={styles.fieldInput}
+                  value={appointmentType}
+                  onChange={e => {
+                    const val = e.target.value as AppointmentTypeId | ''
+                    setAppointmentType(val); setHostelIds([])
+                    if (val && HOSTEL_SCOPED_TYPES.has(val)) ensureHostels()
+                  }}>
+                  <option value="">No additional role</option>
+                  {CATEGORY_ORDER.map(cat => (
+                    <optgroup key={cat} label={CATEGORY_LABELS[cat]}>
+                      {APPOINTMENT_ROLE_TYPES.filter(t => APPOINTMENT_TYPES[t].category === cat).map(t => (
+                        <option key={t} value={t}>{APPOINTMENT_TYPES[t].label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                  Vice Principal and Head of Department need department/portfolio setup - use{' '}
+                  <a href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</a> for those.
+                </p>
+
+                {appointmentType && HOSTEL_SCOPED_TYPES.has(appointmentType) && (
+                  <div style={{ marginTop: 10 }}>
+                    <label className={styles.fieldLabel}>Hostel(s)</label>
+                    {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
+                        {hostels.map(h => (
+                          <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                            <input type="checkbox" checked={hostelIds.includes(h.id)} onChange={() => toggleHostelId(h.id)} />
+                            {h.name}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             <div className={styles.formActions}>
               <button className={`${styles.cancelFormBtn} pressable`} onClick={() => setShowForm(false)}>Cancel</button>
               <button
@@ -611,6 +741,12 @@ export default function StaffClient({ profile, school, userId }: Props) {
               </button>
               <button className={`${styles.cancelBtn} pressable`} onClick={() => setPreviewMember(null)}>Close</button>
             </div>
+            {previewMember.role === 'teacher' && (
+              <button className={`${styles.cancelBtn} pressable`} style={{ width: '100%', marginTop: 'var(--space-3)' }}
+                onClick={() => { openAssignRole(previewMember); setPreviewMember(null) }}>
+                Assign a Role…
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -672,6 +808,72 @@ export default function StaffClient({ profile, school, userId }: Props) {
               <button className={`${styles.saveBtn} pressable`} style={{ background:sc }} onClick={handleEditSave} disabled={editSaving}>
                 {editSaving ? 'Saving…' : 'Save Changes'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {assignFor && (
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'flex-end' }}
+          onClick={() => setAssignFor(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:'var(--bg-card)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl) var(--radius-xl) 0 0', padding:'var(--space-6)', width:'100%', maxHeight:'85vh', overflowY:'auto' }}
+          >
+            <div style={{ width:40, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto var(--space-5)' }}/>
+            <p style={{ fontWeight:800, fontSize:'1.05rem', color:'var(--text-primary)', margin:'0 0 4px' }}>Assign a Role</p>
+            <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', margin:'0 0 var(--space-4)' }}>{assignFor.full_name} - takes effect immediately, no code needed.</p>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Role</label>
+              <select
+                className={styles.fieldInput}
+                value={assignType}
+                onChange={e => {
+                  const val = e.target.value as AppointmentTypeId | ''
+                  setAssignType(val); setAssignHostelIds([])
+                  if (val && HOSTEL_SCOPED_TYPES.has(val)) ensureHostels()
+                }}>
+                <option value="">Select a role...</option>
+                {CATEGORY_ORDER.map(cat => (
+                  <optgroup key={cat} label={CATEGORY_LABELS[cat]}>
+                    {APPOINTMENT_ROLE_TYPES.filter(t => APPOINTMENT_TYPES[t].category === cat).map(t => (
+                      <option key={t} value={t}>{APPOINTMENT_TYPES[t].label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                Vice Principal and Head of Department need department/portfolio setup - use{' '}
+                <a href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</a> for those.
+              </p>
+            </div>
+
+            {assignType && HOSTEL_SCOPED_TYPES.has(assignType) && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Hostel(s)</label>
+                {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
+                    {hostels.map(h => (
+                      <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                        <input type="checkbox" checked={assignHostelIds.includes(h.id)} onChange={() => toggleAssignHostelId(h.id)} />
+                        {h.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {assignError && <p style={{ fontSize: '0.8rem', color: '#EF4444', margin: '8px 0 0' }}>{assignError}</p>}
+
+            <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-5)' }}>
+              <button className={`${styles.saveBtn} pressable`} style={{ flex:1, background:sc }}
+                onClick={submitAssignRole} disabled={assigning || !assignType}>
+                {assigning ? 'Assigning…' : 'Assign Role'}
+              </button>
+              <button className={`${styles.cancelBtn} pressable`} onClick={() => setAssignFor(null)}>Cancel</button>
             </div>
           </div>
         </div>
