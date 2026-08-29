@@ -144,26 +144,40 @@ export async function POST(request: Request) {
       resolvedClassName = classRow?.name ?? null
     }
 
-    // Build profile update payload - only include fields with values
-    // school_id is always the caller's own school - never trust a
-    // client-supplied schoolId here, or a secretary at School A could
-    // create accounts inside School B by editing the request body.
-    const profileUpdate: Record<string, any> = {
+    // handle_new_user auto-inserts a blank profiles row the instant
+    // auth.admin.createUser succeeds - this table has guard triggers
+    // blocking changes to your own role AND your own school_id via
+    // UPDATE (can't tell "system setting these for the first time" apart
+    // from "user tampering with their own row"), and this was hitting
+    // both at once. Same collision already fixed in
+    // api/schools/register/route.ts, api/super-admin/create-school/route.ts,
+    // and api/principal/enrol-with-role/route.ts - delete the trigger's
+    // row first and INSERT once instead of UPDATE(x2).
+    await adminClient.from('profiles').delete().eq('id', userId)
+
+    const profileInsert: Record<string, any> = {
+      id:               userId,
       full_name:        fullName,
       role,
+      // Always the caller's own school - never trust a client-supplied
+      // schoolId here, or a secretary at School A could create accounts
+      // inside School B by editing the request body.
       school_id:        (callerProfile as any).school_id,
       default_code:     code,
       onboarding_stage: onboardingStage,
     }
-    if (phone)             profileUpdate.phone         = phone
-    if (gender)            profileUpdate.gender        = gender
-    if (dateOfBirth)       profileUpdate.date_of_birth = dateOfBirth
-    if (address)           profileUpdate.address       = address
-    if (state)             profileUpdate.state         = state
-    // ✅ Write class_level (text name) to profiles so Students page groups correctly
-    if (resolvedClassName) profileUpdate.class_level   = resolvedClassName
+    if (phone)             profileInsert.phone         = phone
+    if (gender)            profileInsert.gender        = gender
+    if (dateOfBirth)       profileInsert.date_of_birth = dateOfBirth
+    if (address)           profileInsert.address       = address
+    if (state)             profileInsert.state         = state
+    if (resolvedClassName) profileInsert.class_level   = resolvedClassName
+    if (role !== 'student' && role !== 'parent') {
+      if (qualification)    profileInsert.qualification     = qualification
+      if (subjectSpecialty) profileInsert.subject_specialty = subjectSpecialty
+    }
 
-    const { error: profileErr } = await adminClient.from('profiles').update(profileUpdate).eq('id', userId)
+    const { error: profileErr } = await adminClient.from('profiles').insert(profileInsert)
 
     if (profileErr) {
       await adminClient.auth.admin.deleteUser(userId)
@@ -181,16 +195,6 @@ export async function POST(request: Request) {
       if (guardianName)  studentRow.guardian_name  = guardianName
       if (guardianPhone) studentRow.guardian_phone = guardianPhone
       await adminClient.from('student_profiles').insert(studentRow)
-    }
-
-    // Staff extra fields
-    if (role !== 'student' && role !== 'parent') {
-      const staffUpdate: Record<string, any> = {}
-      if (qualification)    staffUpdate.qualification     = qualification
-      if (subjectSpecialty) staffUpdate.subject_specialty = subjectSpecialty
-      if (Object.keys(staffUpdate).length > 0) {
-        await adminClient.from('profiles').update(staffUpdate).eq('id', userId)
-      }
     }
 
     // Parent profile row + link to the child this code was generated for.
