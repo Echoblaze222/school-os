@@ -169,6 +169,7 @@ export async function POST(request: Request) {
     const profileInsert: Record<string, any> = {
       id: userId,
       full_name: fullName,
+      email: email.toLowerCase(),
       role: 'teacher',
       school_id: schoolId,
       default_code: code,
