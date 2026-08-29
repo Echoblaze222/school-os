@@ -10,6 +10,7 @@ import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
 import type { DepartmentWithStats } from '@/lib/supabase/appointments'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
+import { HostelPicker } from '@/components/org/HostelPicker'
 import styles from './leadership.module.css'
 
 interface StaffOption { id: string; full_name: string; avatar_url: string | null; department_id: string | null; email?: string | null; employee_id?: string | null; role?: string }
@@ -85,6 +86,7 @@ export default function LeadershipClient({
   const [departments, setDepartments] = useState(initialDepartments)
   const [vicePrincipals, setVicePrincipals] = useState(initialVicePrincipals)
   const [hostelPrefects, setHostelPrefects] = useState(initialHostelPrefects)
+  const [hostels, setHostels] = useState(initialHostels)
   const [error, setError] = useState('')
 
   // useState's initial value only applies on this component's very first
@@ -407,7 +409,7 @@ export default function LeadershipClient({
   }
 
   const deptName = (id: string) => departments.find(d => d.id === id)?.name ?? id
-  const hostelName = (id: string) => initialHostels.find(h => h.id === id)?.name ?? id
+  const hostelName = (id: string) => hostels.find(h => h.id === id)?.name ?? id
   const className = (id: string) => initialClasses.find(c => c.id === id)?.name ?? id
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -769,16 +771,13 @@ export default function LeadershipClient({
               <>
                 <label className={styles.label}>Hostel(s) this prefect assists with</label>
                 <p className={styles.hint} style={{ marginBottom: 8 }}>Controls which hostel's roll call they can record attendance for. They get no other access - incidents, leave, and maintenance always stay staff-only regardless of what's selected here.</p>
-                {initialHostels.length === 0 ? <p className={styles.hint}>No hostels exist yet.</p> : (
-                  <div className={styles.checkList}>
-                    {initialHostels.map(h => (
-                      <label key={h.id} className={styles.checkRow}>
-                        <input type="checkbox" checked={hpHostelIds.includes(h.id)} onChange={() => toggleHpHostel(h.id)} />
-                        {h.name}
-                      </label>
-                    ))}
-                  </div>
-                )}
+                <HostelPicker
+                  hostels={hostels}
+                  selectedIds={hpHostelIds}
+                  onToggle={toggleHpHostel}
+                  onCreated={h => setHostels(prev => [...prev, h])}
+                  accentColor="var(--brand)"
+                />
                 <button className={styles.primaryBtn} onClick={confirmAppointHp} disabled={appointingHp || hpHostelIds.length === 0}>{appointingHp ? 'Appointing…' : 'Confirm appointment'}</button>
               </>
             )}
@@ -817,16 +816,13 @@ export default function LeadershipClient({
                   {HOSTEL_SCOPED_TYPES.has(genericPicker.type) ? 'Hostel(s)' : 'Class'}
                 </label>
                 {HOSTEL_SCOPED_TYPES.has(genericPicker.type) ? (
-                  initialHostels.length === 0 ? <p className={styles.hint}>No hostels exist yet.</p> : (
-                    <div className={styles.checkList}>
-                      {initialHostels.map(h => (
-                        <label key={h.id} className={styles.checkRow}>
-                          <input type="checkbox" checked={genericScopeIds.includes(h.id)} onChange={() => toggleGenericScope(h.id)} />
-                          {h.name}
-                        </label>
-                      ))}
-                    </div>
-                  )
+                  <HostelPicker
+                    hostels={hostels}
+                    selectedIds={genericScopeIds}
+                    onToggle={toggleGenericScope}
+                    onCreated={h => setHostels(prev => [...prev, h])}
+                    accentColor="var(--brand)"
+                  />
                 ) : (
                   initialClasses.length === 0 ? <p className={styles.hint}>No classes exist yet.</p> : (
                     <div className={styles.checkList}>
