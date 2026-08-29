@@ -40,6 +40,23 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
 
+// A non-JSON response (an HTML error/404 page) means the endpoint isn't
+// actually deployed, or the server threw before returning JSON - either
+// way "Unexpected token '<' is not valid JSON" is useless to see as an
+// error message. This gives a plain-language reason instead.
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(
+      res.status === 404
+        ? `This feature isn't deployed yet on the server (404 at ${new URL(res.url).pathname}).`
+        : `Server error (status ${res.status}) - the response wasn't valid JSON.`
+    )
+  }
+}
+
 interface Props { profile: any; school: any; userId: string }
 
 // ── Success modal shown after staff is added ─────────────────
@@ -260,10 +277,12 @@ export default function StaffClient({ profile, school, userId }: Props) {
       const body: Record<string, unknown> = { profileId: assignFor.id, appointmentType: assignType }
       if (HOSTEL_SCOPED_TYPES.has(assignType)) body.hostelIds = assignHostelIds
       const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      const json = await res.json()
+      const json = await safeJson(res)
       if (!json.ok) { setAssignError(json.error ?? 'Could not assign role.'); return }
       showToast(`${assignFor.full_name} is now ${APPOINTMENT_TYPES[assignType].label}.`)
       setAssignFor(null)
+    } catch (err: any) {
+      setAssignError(err.message ?? 'Could not assign role.')
     } finally { setAssigning(false) }
   }
 
@@ -341,7 +360,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
           } : {}),
         }),
       })
-      const json = await res.json()
+      const json = await safeJson(res)
       if (!res.ok) throw new Error(json.error ?? 'Failed to add staff member')
       if (json.warning) showToast(json.warning, false)
 
