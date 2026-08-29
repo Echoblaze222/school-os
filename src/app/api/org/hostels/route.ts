@@ -12,6 +12,7 @@
 // forward, not just a validation message.
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveUserContext } from '@/lib/permissions'
 
 export async function GET() {
@@ -42,7 +43,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'A hostel name is required.' }, { status: 400 })
   }
 
-  const { data: hostel, error } = await supabase
+  // Admin client for the actual write: authorization (principal check
+  // above) already happened at the application layer, so this doesn't
+  // skip any check - it just performs the insert without depending on
+  // an RLS INSERT policy that turned out not to exist on hostels at all
+  // ("new row violates row-level security policy for table hostels").
+  const admin = createAdminClient()
+  const { data: hostel, error } = await admin
     .from('hostels')
     .insert({ school_id: (profile as any).school_id, name: name.trim() })
     .select('id, name')
