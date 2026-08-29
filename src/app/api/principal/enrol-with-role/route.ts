@@ -152,30 +152,40 @@ export async function POST(request: Request) {
     }
     if (!userId) return NextResponse.json({ error: 'Failed to create auth user' }, { status: 500 })
 
-    const profileUpdate: Record<string, any> = {
+    // handle_new_user auto-inserts a blank profiles row the instant
+    // auth.admin.createUser succeeds - same collision already fixed
+    // twice elsewhere in this codebase (api/schools/register/route.ts,
+    // api/super-admin/create-school/route.ts): this table has guard
+    // triggers that block changing your own role AND your own school_id
+    // via UPDATE, and can't tell "system setting these for the first
+    // time" apart from "user tampering with their own row". This route
+    // was hitting BOTH guards at once (previously two separate .update()
+    // calls setting role/school_id, then qualification/subjectSpecialty
+    // afterward) - deleting the trigger-created row first and doing one
+    // plain INSERT avoids both, and folds what used to be two round
+    // trips into one.
+    await admin.from('profiles').delete().eq('id', userId)
+
+    const profileInsert: Record<string, any> = {
+      id: userId,
       full_name: fullName,
       role: 'teacher',
       school_id: schoolId,
       default_code: code,
       onboarding_stage: 'stage_1_pending',
     }
-    if (phone) profileUpdate.phone = phone
-    if (gender) profileUpdate.gender = gender
-    if (dateOfBirth) profileUpdate.date_of_birth = dateOfBirth
-    if (address) profileUpdate.address = address
-    if (state) profileUpdate.state = state
+    if (phone) profileInsert.phone = phone
+    if (gender) profileInsert.gender = gender
+    if (dateOfBirth) profileInsert.date_of_birth = dateOfBirth
+    if (address) profileInsert.address = address
+    if (state) profileInsert.state = state
+    if (qualification) profileInsert.qualification = qualification
+    if (subjectSpecialty) profileInsert.subject_specialty = subjectSpecialty
 
-    const { error: profileErr } = await admin.from('profiles').update(profileUpdate).eq('id', userId)
+    const { error: profileErr } = await admin.from('profiles').insert(profileInsert)
     if (profileErr) {
       await admin.auth.admin.deleteUser(userId)
       return NextResponse.json({ error: `Profile error: ${profileErr.message}` }, { status: 500 })
-    }
-
-    const staffUpdate: Record<string, any> = {}
-    if (qualification) staffUpdate.qualification = qualification
-    if (subjectSpecialty) staffUpdate.subject_specialty = subjectSpecialty
-    if (Object.keys(staffUpdate).length > 0) {
-      await admin.from('profiles').update(staffUpdate).eq('id', userId)
     }
 
     // ── Appointment (the actual new capability this route adds) ──
