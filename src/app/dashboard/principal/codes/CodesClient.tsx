@@ -3,12 +3,13 @@
 // FIXED: Added missing thStyle/tdStyle/cellInputStyle table style constants
 //        Fixed bSaved not resetting when bulk rows are edited after a save
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import DOBPicker from '@/components/DOBPicker'
 import styles from './codes.module.css'
-import { CheckIcon, BulbIcon } from '@/components/Icons'
+import { CheckIcon, BulbIcon, SearchIcon, UserIcon } from '@/components/Icons'
+import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 
 interface CodeEntry {
   id: string
@@ -46,7 +47,7 @@ const ROLE_META: Record<string, { color: string; icon: string; label: string }> 
   principal: { color: '#800020', icon: 'P',  label: 'Principal' },
   parent:    { color: '#06B6D4', icon: 'Pa', label: 'Parent'    },
 }
-const ROLES_ASSIGNABLE = ['student','teacher','bursar','secretary','librarian','nurse','parent']
+const ROLES_ASSIGNABLE = ['student','teacher','bursar','secretary','parent']
 const GENDERS = ['Male', 'Female', 'Other']
 const STATES_NG = [
   'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
@@ -55,6 +56,39 @@ const STATES_NG = [
   'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba',
   'Yobe','Zamfara',
 ]
+
+// Appointment roles selectable as an "Additional Role" when enrolling a
+// new Teacher, and in the separate "Assign Role" tab for existing staff.
+// Excludes vice_principal/hod (need their own scope UI, added separately
+// below) and the 4 student_leadership types (those go to an existing
+// student picked from the roster in Leadership & Appointments, never
+// created as a new account here - see enrol-with-role/route.ts's own
+// guard for why).
+const APPOINTMENT_ROLE_TYPES = (Object.keys(APPOINTMENT_TYPES) as AppointmentTypeId[])
+  .filter(id => APPOINTMENT_TYPES[id].baseRoleScope.includes('teacher') && !['vice_principal', 'hod'].includes(id))
+const CATEGORY_ORDER = ['welfare', 'ict', 'operations', 'hostel', 'academic']
+const CATEGORY_LABELS: Record<string, string> = {
+  welfare: 'Welfare', ict: 'ICT', operations: 'Operations',
+  hostel: 'Hostel Staff', academic: 'Leadership & Examinations',
+}
+const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
+
+// A non-JSON response (an HTML error/404 page) means the endpoint isn't
+// actually deployed, or the server threw before returning JSON - either
+// way "Unexpected token '<' is not valid JSON" is useless to see as an
+// error message. This gives a plain-language reason instead.
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(
+      res.status === 404
+        ? `This feature isn't deployed yet on the server (404 at ${new URL(res.url).pathname}).`
+        : `Server error (status ${res.status}) - the response wasn't valid JSON.`
+    )
+  }
+}
 
 // ── FIX 1: Table style objects that were missing in the new bulk grid UI ──────
 const thStyle: React.CSSProperties = {
@@ -124,7 +158,7 @@ interface GeneratedEntry extends BulkRow { code: string; saved: boolean; error: 
 function CodeSuccessScreen({
   result, sc, onEnrolAnother,
 }: {
-  result: { full_name: string; email: string; role: string; code: string }
+  result: { full_name: string; email: string; role: string; code: string; warning?: string | null }
   sc: string
   onEnrolAnother: () => void
 }) {
@@ -150,6 +184,12 @@ function CodeSuccessScreen({
       <p className={styles.successSub}>
         Share the access code below with <strong>{result.full_name}</strong>. They will use it on the <strong>New User</strong> page to set their own password and complete setup.
       </p>
+
+      {result.warning && (
+        <div className={styles.errorMsg} style={{ marginBottom: 'var(--space-3)' }}>
+          {result.warning}
+        </div>
+      )}
 
       <div className={styles.successBadge}>
         <div className={styles.successAvatar} style={{ background: m.color + '22', color: m.color }}>
@@ -201,13 +241,89 @@ export default function CodesClient({ entries: init, classes, profile, school, u
   const [roleTab,  setRoleTab]  = useState('all')
   const [copied,   setCopied]   = useState<string | null>(null)
   const [regen,    setRegen]    = useState<string | null>(null)
-  const [tab,      setTab]      = useState<'existing' | 'enrol' | 'bulk'>('existing')
+  const [tab,      setTab]      = useState<'existing' | 'enrol' | 'bulk' | 'assign-role'>('existing')
+
+  // ── Additional appointment role (new-hire enrol flow) ─────
+  const [sAppointmentType, setSAppointmentType] = useState<AppointmentTypeId | ''>('')
+  const [sDepartmentId,    setSDepartmentId]    = useState('')   // HOD
+  const [sDepartmentIds,   setSDepartmentIds]   = useState<string[]>([])  // VP
+  const [sPortfolio,       setSPortfolio]       = useState('')            // VP
+  const [sHostelIds,       setSHostelIds]       = useState<string[]>([])  // warden-tier
+  const [departments,      setDepartments]      = useState<{ id: string; name: string }[]>([])
+  const [hostels,          setHostels]          = useState<{ id: string; name: string }[]>([])
+  const [scopeDataLoaded,  setScopeDataLoaded]  = useState(false)
+
+  // Departments/hostels are only needed once a scoped role is actually
+  // picked - fetched lazily on first need rather than on every page load,
+  // since most enrolments never touch this path.
+  async function ensureScopeData() {
+    if (scopeDataLoaded) return
+    setScopeDataLoaded(true)
+    try {
+      const [deptRes, hostelRes] = await Promise.all([fetch('/api/org/departments'), fetch('/api/org/hostels')])
+      const deptJson = await deptRes.json()
+      const hostelJson = await hostelRes.json()
+      if (deptJson.ok) setDepartments(deptJson.departments)
+      if (hostelJson.ok) setHostels(hostelJson.hostels)
+    } catch { /* scope pickers just show empty state if this fails */ }
+  }
+  function toggleDeptId(id: string) { setSDepartmentIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+  function toggleHostelId(id: string) { setSHostelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+
+  // ── Assign Role tab: existing staff member gets an appointment ────
+  const [arQuery,     setArQuery]     = useState('')
+  const [arCandidates, setArCandidates] = useState<any[]>([])
+  const [arLoading,   setArLoading]   = useState(false)
+  const [arSelected,  setArSelected]  = useState<any | null>(null)
+  const [arType,      setArType]      = useState<AppointmentTypeId | ''>('')
+  const [arScopeIds,  setArScopeIds]  = useState<string[]>([])
+  const [arAssigning, setArAssigning] = useState(false)
+  const [arError,     setArError]     = useState<string | null>(null)
+  const [arSuccess,   setArSuccess]   = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!arType || !HOSTEL_SCOPED_TYPES.has(arType)) return
+    ensureScopeData()
+  }, [arType])
+
+  useEffect(() => {
+    if (!arQuery.trim() || arSelected || !arType) { setArCandidates([]); return }
+    const t = setTimeout(async () => {
+      setArLoading(true)
+      try {
+        const res = await fetch(`/api/org/eligible-staff?appointmentType=${arType}`)
+        const json = await res.json()
+        const staff = json.ok ? json.staff : []
+        setArCandidates(staff.filter((s: any) => s.full_name.toLowerCase().includes(arQuery.toLowerCase())))
+      } finally { setArLoading(false) }
+    }, 250)
+    return () => clearTimeout(t)
+  }, [arQuery, arType, arSelected])
+
+  function toggleArScope(id: string) { setArScopeIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+
+  async function submitAssignRole() {
+    if (!arSelected || !arType) { setArError('Pick a staff member and a role.'); return }
+    if (HOSTEL_SCOPED_TYPES.has(arType) && arScopeIds.length === 0) { setArError('Select at least one hostel.'); return }
+    setArAssigning(true); setArError(null)
+    try {
+      const body: Record<string, unknown> = { profileId: arSelected.id, appointmentType: arType }
+      if (HOSTEL_SCOPED_TYPES.has(arType)) body.hostelIds = arScopeIds
+      const res = await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const json = await safeJson(res)
+      if (!json.ok) { setArError(json.error ?? 'Could not assign role.'); return }
+      setArSuccess(`${arSelected.full_name} is now ${APPOINTMENT_TYPES[arType].label}.`)
+      setArSelected(null); setArQuery(''); setArType(''); setArScopeIds([])
+    } catch (err: any) {
+      setArError(err.message ?? 'Could not assign role.')
+    } finally { setArAssigning(false) }
+  }
 
   // ── Enrol single ──────────────────────────────────────────
   const [sRole,    setSRole]    = useState('student')
   const [sLoading, setSLoading] = useState(false)
   const [sError,   setSError]   = useState<string | null>(null)
-  const [sResult,  setSResult]  = useState<{ full_name: string; email: string; role: string; code: string } | null>(null)
+  const [sResult,  setSResult]  = useState<{ full_name: string; email: string; role: string; code: string; warning?: string | null } | null>(null)
 
   // Common fields
   const [fName,    setFName]    = useState('')
@@ -250,6 +366,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
     setFName(''); setFEmail(''); setFPhone(''); setFGender(''); setFDOB('')
     setFAddress(''); setFState(''); setFClass(''); setFAdmNo('')
     setFGuardian(''); setFGuardPh(''); setFQual(''); setFSubject('')
+    setSAppointmentType(''); setSDepartmentId(''); setSDepartmentIds([]); setSPortfolio(''); setSHostelIds([])
     setSError(null)
   }
 
@@ -280,9 +397,14 @@ export default function CodesClient({ entries: init, classes, profile, school, u
 
   async function handleEnrol() {
     if (!fName.trim() || !fEmail.trim()) { setSError('Full name and email are required.'); return }
+    if (sRole === 'teacher' && sAppointmentType === 'hod' && !sDepartmentId) { setSError('Select a department for Head of Department.'); return }
+    if (sRole === 'teacher' && sAppointmentType && HOSTEL_SCOPED_TYPES.has(sAppointmentType) && sHostelIds.length === 0) {
+      setSError('Select at least one hostel.'); return
+    }
     setSError(null); setSLoading(true)
     try {
-      const res  = await fetch('/api/secretary/create-user', {
+      const usingAppointmentRoute = sRole === 'teacher' && !!sAppointmentType
+      const res = await fetch(usingAppointmentRoute ? '/api/principal/enrol-with-role' : '/api/secretary/create-user', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
@@ -301,12 +423,19 @@ export default function CodesClient({ entries: init, classes, profile, school, u
           guardianPhone:    sRole === 'student' ? (fGuardPh.trim() || null) : null,
           qualification:    sRole !== 'student' ? (fQual.trim() || null) : null,
           subjectSpecialty: sRole !== 'student' ? (fSubject.trim() || null) : null,
+          ...(usingAppointmentRoute ? {
+            appointmentType: sAppointmentType,
+            departmentId:    sAppointmentType === 'hod' ? sDepartmentId : undefined,
+            departmentIds:   sAppointmentType === 'vice_principal' ? sDepartmentIds : undefined,
+            portfolio:       sAppointmentType === 'vice_principal' ? sPortfolio : undefined,
+            hostelIds:       sAppointmentType && HOSTEL_SCOPED_TYPES.has(sAppointmentType) ? sHostelIds : undefined,
+          } : {}),
         }),
       })
-      const json = await res.json()
+      const json = await safeJson(res)
       if (!res.ok) throw new Error(json.error ?? 'Failed to create user')
 
-      setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code })
+      setSResult({ full_name: fName.trim(), email: fEmail.trim(), role: sRole, code: json.code, warning: json.warning ?? null })
 
       const { data: fresh } = await supabase
         .from('profiles').select('id,full_name,email,role,default_code,is_active,created_at')
@@ -351,7 +480,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               guardianPhone:    r.role === 'student' ? (r.guardianPhone.trim() || null) : null,
             }),
           })
-          const json = await res.json()
+          const json = await safeJson(res)
           if (!res.ok) return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: '', error: json.error ?? 'Failed', saved: false }
           return { ...r, full_name: r.full_name.trim(), email: r.email.trim(), code: json.code, saved: true, error: null }
         } catch (e: any) {
@@ -410,12 +539,13 @@ export default function CodesClient({ entries: init, classes, profile, school, u
     <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Enrolment & Codes">
 
       <div className={styles.tabRow}>
-        {(['existing','enrol','bulk'] as const).map(t => (
-          <button key={t} onClick={() => { setTab(t); setSResult(null) }}
+        {(['existing','enrol','assign-role','bulk'] as const).map(t => (
+          <button key={t} onClick={() => { setTab(t); setSResult(null); setArError(null); setArSuccess(null) }}
             className={`pressable ${styles.tabBtn} ${tab === t ? styles.tabActive : ''}`}>
-            {t === 'existing' && 'All Codes'}
-            {t === 'enrol'    && 'Enrol / Add User'}
-            {t === 'bulk'     && 'Bulk Add'}
+            {t === 'existing'    && 'All Codes'}
+            {t === 'enrol'       && 'Enrol / Add User'}
+            {t === 'assign-role' && 'Assign Role'}
+            {t === 'bulk'        && 'Bulk Add'}
           </button>
         ))}
       </div>
@@ -514,6 +644,80 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                 </div>
               </div>
 
+              {sRole === 'teacher' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Additional Role (optional)</label>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                    Give this teacher a leadership/welfare/operations role from day one, so their access code drops them straight into the right dashboard.
+                  </p>
+                  <select
+                    className={`${styles.fieldInput} ${styles.fieldSelect}`}
+                    value={sAppointmentType}
+                    onChange={e => {
+                      const val = e.target.value as AppointmentTypeId | ''
+                      setSAppointmentType(val)
+                      setSDepartmentId(''); setSDepartmentIds([]); setSPortfolio(''); setSHostelIds([])
+                      if (val && (val === 'hod' || val === 'vice_principal' || HOSTEL_SCOPED_TYPES.has(val))) ensureScopeData()
+                    }}>
+                    <option value="">No additional role</option>
+                    <option value="vice_principal">Vice Principal</option>
+                    <option value="hod">Head of Department</option>
+                    {CATEGORY_ORDER.map(cat => (
+                      <optgroup key={cat} label={CATEGORY_LABELS[cat]}>
+                        {APPOINTMENT_ROLE_TYPES.filter(t => APPOINTMENT_TYPES[t].category === cat).map(t => (
+                          <option key={t} value={t}>{APPOINTMENT_TYPES[t].label}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+
+                  {sAppointmentType === 'hod' && (
+                    <div style={{ marginTop: 10 }}>
+                      <label className={styles.fieldLabel}>Department</label>
+                      <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={sDepartmentId} onChange={e => setSDepartmentId(e.target.value)}>
+                        <option value="">Select department...</option>
+                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {sAppointmentType === 'vice_principal' && (
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <input className={styles.fieldInput} placeholder="Portfolio (optional, e.g. Academics)" value={sPortfolio} onChange={e => setSPortfolio(e.target.value)} />
+                      {departments.length > 0 && (
+                        <div>
+                          <label className={styles.fieldLabel}>Departments overseen (optional)</label>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
+                            {departments.map(d => (
+                              <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                                <input type="checkbox" checked={sDepartmentIds.includes(d.id)} onChange={() => toggleDeptId(d.id)} />
+                                {d.name}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {sAppointmentType && HOSTEL_SCOPED_TYPES.has(sAppointmentType) && (
+                    <div style={{ marginTop: 10 }}>
+                      <label className={styles.fieldLabel}>Hostel(s)</label>
+                      {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
+                          {hostels.map(h => (
+                            <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                              <input type="checkbox" checked={sHostelIds.includes(h.id)} onChange={() => toggleHostelId(h.id)} />
+                              {h.name}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className={styles.formDivider}>
                 <span>Personal Information</span>
               </div>
@@ -607,11 +811,114 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               {sError && <p className={styles.errorMsg}>{sError}</p>}
 
               <button onClick={handleEnrol} disabled={sLoading} className={`${styles.generateBtn} pressable`}>
-                {sLoading ? 'Saving...' : `Enrol ${roleMeta(sRole).label} & Get Code`}
+                {sLoading ? 'Saving...' : `Enrol ${sRole === 'teacher' && sAppointmentType ? APPOINTMENT_TYPES[sAppointmentType].label : roleMeta(sRole).label} & Get Code`}
               </button>
             </div>
           )}
         </>
+      )}
+
+      {/* ── ASSIGN ROLE (existing staff, instant, no code) ── */}
+      {tab === 'assign-role' && (
+        <div className={styles.formCard}>
+          <div className={styles.formHeader}>
+            <p className={styles.formTitle}>Assign a Role to Existing Staff</p>
+            <p className={styles.formSub}>Pick a teacher who already has an account and give them an appointment role. Takes effect immediately - no code, no new account.</p>
+          </div>
+
+          {arSuccess && (
+            <div className={styles.errorMsg} style={{ borderColor: '#10B98144', background: '#10B9810a', color: '#10B981', marginBottom: 'var(--space-3)' }}>
+              {arSuccess}
+            </div>
+          )}
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Role</label>
+            <select
+              className={`${styles.fieldInput} ${styles.fieldSelect}`}
+              value={arType}
+              onChange={e => { setArType(e.target.value as AppointmentTypeId | ''); setArSelected(null); setArQuery(''); setArScopeIds([]); setArError(null); setArSuccess(null) }}>
+              <option value="">Select a role...</option>
+              <option value="vice_principal">Vice Principal</option>
+              <option value="hod">Head of Department</option>
+              {CATEGORY_ORDER.map(cat => (
+                <optgroup key={cat} label={CATEGORY_LABELS[cat]}>
+                  {APPOINTMENT_ROLE_TYPES.filter(t => APPOINTMENT_TYPES[t].category === cat).map(t => (
+                    <option key={t} value={t}>{APPOINTMENT_TYPES[t].label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {arType === 'hod' || arType === 'vice_principal' ? (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              {arType === 'hod' ? 'Head of Department' : 'Vice Principal'} has its own department/portfolio setup - use{' '}
+              <a href="/dashboard/principal/leadership" style={{ color: 'var(--brand)' }}>Leadership &amp; Appointments</a> for this one.
+            </p>
+          ) : arType ? (
+            <>
+              {!arSelected ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Staff Member</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
+                    <input
+                      className={styles.fieldInput}
+                      style={{ paddingLeft: 32 }}
+                      value={arQuery}
+                      onChange={e => setArQuery(e.target.value)}
+                      placeholder="Search by name"
+                    />
+                  </div>
+                  {arLoading && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>Searching…</p>}
+                  {!arLoading && arQuery.trim() && arCandidates.length === 0 && (
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>No eligible teacher found (already holding this role is excluded).</p>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                    {arCandidates.map(s => (
+                      <button key={s.id} onClick={() => setArSelected(s)}
+                        className="pressable"
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderRadius: 8, border: 'none', background: 'var(--glass-bg)', cursor: 'pointer', textAlign: 'left' }}>
+                        <UserIcon size={14} /> {s.full_name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Staff Member</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--glass-bg)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.86rem' }}>{arSelected.full_name}</span>
+                    <button onClick={() => setArSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.78rem', cursor: 'pointer' }}>Change</button>
+                  </div>
+                </div>
+              )}
+
+              {arType && HOSTEL_SCOPED_TYPES.has(arType) && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Hostel(s)</label>
+                  {hostels.length === 0 ? <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No hostels exist yet.</p> : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: '30vh', overflowY: 'auto' }}>
+                      {hostels.map(h => (
+                        <label key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                          <input type="checkbox" checked={arScopeIds.includes(h.id)} onChange={() => toggleArScope(h.id)} />
+                          {h.name}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {arError && <p className={styles.errorMsg}>{arError}</p>}
+
+              <button onClick={submitAssignRole} disabled={arAssigning || !arSelected} className={`${styles.generateBtn} pressable`}>
+                {arAssigning ? 'Assigning…' : `Assign ${APPOINTMENT_TYPES[arType].label}`}
+              </button>
+            </>
+          ) : null}
+        </div>
       )}
 
       {/* ── BULK ADD ── */}
