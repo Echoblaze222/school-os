@@ -387,6 +387,7 @@ const NAV: Record<string, {
         { href: '/dashboard/student/leaderboard',   Icon: TrophyIcon,    label: 'Leaderboard'   },
         { href: '/dashboard/student/library',       Icon: SchoolIcon,    label: 'Library'       },
         { href: '/dashboard/student/alumni',        Icon: AwardIcon,     label: 'Alumni'        },
+        { href: '/dashboard/student/certificates',  Icon: GraduationCapIcon, label: 'Certificate'},
         { href: '/dashboard/student/meetings',      Icon: CalendarIcon,  label: 'Meetings'      },
         { href: '/dashboard/student/id-card',       Icon: CreditCardIcon,label: 'ID Card'       },
         { href: '/dashboard/student/profile',       Icon: UserIcon,      label: 'My Profile'    },
