@@ -6,6 +6,7 @@ import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
+import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   CalendarIcon, ClockIcon, ShieldIcon, CheckCircleIcon,
@@ -97,6 +98,8 @@ export default function ExaminationDashboardClient({
           : 'No exam session currently scheduled'}
         featureGroups={FEATURE_GROUPS}
       />
+
+      <ContextSwitcher />
 
       <main className={styles.main}>
         {activeSession ? (
