@@ -4,6 +4,7 @@ import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getResend }         from '@/lib/activateSchool'
 import crypto                from 'crypto'
+import { generateAccessCode } from '@/lib/supabase/access-code-generator'
 
 export async function POST(req: Request) {
   const supabase      = await createClient()
@@ -93,14 +94,6 @@ export async function POST(req: Request) {
   }
 
   const tempPassword = `SchoolOS@${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-  // Critical: this must NOT be derived from anything public. It previously
-  // sliced the school's own UUID (PRIN-${school.id.slice(0,6)}), and
-  // schools/search publicly returns that same id to any unauthenticated
-  // visitor - meaning the principal's activation code, the
-  // highest-privilege account for the entire school, was directly
-  // computable by anyone who searched for the school by name, with no
-  // guessing required at all. It must be independently random.
-  const defaultCode  = `PRIN-${crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)}`
 
   const { data: authUser, error: authErr } = await adminSupabase.auth.admin.createUser({
     email:         principalEmail,
@@ -111,6 +104,30 @@ export async function POST(req: Request) {
   if (authErr) {
     await adminSupabase.from('schools').delete().eq('id', school.id)
     return NextResponse.json({ ok: false, error: `Auth error: ${authErr.message}` }, { status: 500 })
+  }
+
+  // Critical: this must NOT be derived from anything public. It previously
+  // sliced the school's own UUID (PRIN-${school.id.slice(0,6)}), and
+  // schools/search publicly returns that same id to any unauthenticated
+  // visitor - meaning the principal's activation code, the
+  // highest-privilege account for the entire school, was directly
+  // computable by anyone who searched for the school by name, with no
+  // guessing required at all. generateAccessCode's sequence value plus the
+  // name-derived prefix keeps that same independence: nothing here is
+  // derivable from school.id.
+  let defaultCode: string
+  try {
+    const generated = await generateAccessCode(adminSupabase, {
+      schoolId:    school.id,
+      fullName:    principalName,
+      profileId:   authUser.user.id,
+      generatedBy: user.id,
+    })
+    defaultCode = generated.code
+  } catch (codeErr: any) {
+    await adminSupabase.auth.admin.deleteUser(authUser.user.id)
+    await adminSupabase.from('schools').delete().eq('id', school.id)
+    return NextResponse.json({ ok: false, error: `Access code generation failed: ${codeErr.message}` }, { status: 500 })
   }
 
   const { error: profileErr } = await adminSupabase.from('profiles').insert({
