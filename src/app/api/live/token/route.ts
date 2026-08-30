@@ -19,6 +19,7 @@ import { auditLog } from '@/lib/auditLog'
 import { logger, newTraceId } from '@/lib/logger'
 import {
   decideLiveClassAccess,
+  isDenied,
   loadCallerProfile,
   loadOnlineClass,
   isAssignedClassTeacher,
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
     schoolLock: { locked: schoolLock.locked },
   })
 
-  if (!decision.ok) {
+  if (isDenied(decision)) {
     logger.warn('live token denied', {
       traceId,
       userId: user.id,
