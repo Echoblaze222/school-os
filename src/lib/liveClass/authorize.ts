@@ -41,6 +41,25 @@ export type AuthorizeResult =
   | { ok: true; role: LiveClassRole; userId: string; schoolId: string; onlineClassId: string; classId: string }
   | { ok: false; reason: AuthorizeDenyReason }
 
+/**
+ * Explicit type-guard for the deny branch of AuthorizeResult. Exists
+ * because this repo's tsconfig has `strict: false`, and TypeScript's
+ * control-flow narrowing for discriminated unions (e.g. `if (!decision.ok)
+ * decision.reason`) depends on strictNullChecks — without it, that
+ * ordinary-looking pattern silently fails to narrow and `next build`'s
+ * type-check step fails with "Property 'reason' does not exist" even
+ * though the logic is correct at runtime. A named type predicate narrows
+ * reliably regardless of strict mode. Verified against the real
+ * TypeScript compiler with this project's exact tsconfig settings before
+ * relying on it here — see the build failure this was introduced to fix.
+ * Always use this (or an equivalent `result.ok === false` check assigned
+ * to its own guarded variable) instead of `!result.ok` at any call site
+ * that then reads `.reason`.
+ */
+export function isDenied(result: AuthorizeResult): result is Extract<AuthorizeResult, { ok: false }> {
+  return result.ok === false
+}
+
 export interface CallerProfile {
   userId: string
   role: string
