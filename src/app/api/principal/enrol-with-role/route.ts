@@ -29,6 +29,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
+import { generateAccessCode } from '@/lib/supabase/access-code-generator'
 
 const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
 
@@ -111,10 +112,6 @@ export async function POST(request: Request) {
     }
 
     // ── Account creation (mirrors secretary/create-user/route.ts) ──
-    const year   = new Date().getFullYear()
-    const rand   = crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-    const prefix = (appointmentType ? String(appointmentType).slice(0, 3) : 'TEA').toUpperCase()
-    const code   = `${prefix}-${year}-${rand}`
     const tempPass = crypto.randomUUID() + crypto.randomUUID()
 
     let userId: string | null = null
@@ -151,6 +148,20 @@ export async function POST(request: Request) {
       userId = adminCreateData.user.id
     }
     if (!userId) return NextResponse.json({ error: 'Failed to create auth user' }, { status: 500 })
+
+    let code: string
+    try {
+      const generated = await generateAccessCode(admin, {
+        schoolId:    schoolId,
+        fullName,
+        profileId:   userId,
+        generatedBy: user.id,
+      })
+      code = generated.code
+    } catch (codeErr: any) {
+      await admin.auth.admin.deleteUser(userId)
+      return NextResponse.json({ error: `Access code generation failed: ${codeErr.message}` }, { status: 500 })
+    }
 
     // handle_new_user auto-inserts a blank profiles row the instant
     // auth.admin.createUser succeeds - same collision already fixed
