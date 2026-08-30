@@ -14,7 +14,7 @@ import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon,
   BookIcon, MessageIcon, CalendarIcon, FileTextIcon, BookOpenIcon,
-  GlobeIcon, TrophyIcon, IdCardIcon,
+  GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon,
 } from '@/components/Icons'
 import styles from './student-dashboard.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -35,6 +35,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'id-card',     label: 'My ID card',  href: '/dashboard/student/id-card',     Icon: IdCardIcon },
     { id: 'records',     label: 'Records',     href: '/dashboard/student/records',     Icon: FileTextIcon },
     { id: 'alumni',      label: 'Alumni',      href: '/dashboard/student/alumni',      Icon: GlobeIcon },
+    { id: 'certificates',label: 'Certificate', href: '/dashboard/student/certificates',Icon: GraduationCapIcon },
   ]},
   { name: 'Communication', items: [
     { id: 'chat',     label: 'Messages', href: '/dashboard/student/chat',     Icon: MessageIcon },
