@@ -19,6 +19,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { requireIctAccess } from '@/lib/permissions'
+import { generateAccessCode } from '@/lib/supabase/access-code-generator'
 
 export async function POST(
   request: Request,
@@ -131,11 +132,22 @@ export async function POST(
     }
 
     // Access code, same generator as every other issuance path in the
-    // app (crypto.randomBytes, not Date.now()/Math.random()).
-    const year   = new Date().getFullYear()
-    const rand   = crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-    const prefix = baseRole.slice(0, 3).toUpperCase()
-    const code   = `${prefix}-${year}-${rand}`
+    // app now (the atomic per-school-per-year sequence, see
+    // access-code-sequence-and-lifecycle.sql), not a standalone random
+    // suffix specific to this route.
+    let code: string
+    try {
+      const generated = await generateAccessCode(admin, {
+        schoolId:    callerProfile.school_id,
+        fullName:    application.full_name,
+        profileId:   userId,
+        generatedBy: user.id,
+      })
+      code = generated.code
+    } catch (codeErr: any) {
+      await admin.auth.admin.deleteUser(userId)
+      return NextResponse.json({ error: `Access code generation failed: ${codeErr.message}` }, { status: 500 })
+    }
 
     // stage_2_pending (not stage_1_pending): the applicant already set
     // their real password at application time, so they skip the
