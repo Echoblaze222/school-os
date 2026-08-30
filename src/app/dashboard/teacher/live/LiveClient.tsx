@@ -2,6 +2,7 @@
 // src/app/dashboard/teacher/live/LiveClient.tsx
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
@@ -27,6 +28,7 @@ function deriveStatus(s: any): Tab {
 }
 
 export default function LiveClient({ profile, school, userId }: Props) {
+  const router = useRouter()
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
   const [sessions, setSessions] = useState<any[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -291,16 +293,40 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
                   <div style={{ display: 'flex', gap: 'var(--space-2)', paddingLeft: 56, flexWrap: 'wrap', alignItems: 'center' }}>
                     {status === 'scheduled' && (
-                      <button className="pressable" onClick={() => startClass(s.id)}
-                        style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
-                        <PlayIcon size={13} color="#fff" /> Start Now
-                      </button>
+                      s.meeting_url ? (
+                        <button className="pressable" onClick={() => startClass(s.id)}
+                          style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          <PlayIcon size={13} color="#fff" /> Start Now
+                        </button>
+                      ) : (
+                        // No external meeting link on this session -> the new
+                        // embedded LiveKit flow. Deliberately NOT calling
+                        // startClass() here: that does a raw is_live=true
+                        // update from the client, bypassing token minting,
+                        // room provisioning, and the school-lock check that
+                        // /api/live/token performs. The room page itself is
+                        // what actually starts the session.
+                        <button className="pressable" onClick={() => router.push(`/dashboard/teacher/live/room/${s.id}`)}
+                          style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          <PlayIcon size={13} color="#fff" /> Start Live Session
+                        </button>
+                      )
                     )}
                     {status === 'live' && (
-                      <button className="pressable" onClick={() => endClass(s.id)}
-                        style={{ padding: '6px 14px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
-                        <StopIcon size={13} color="#fff" /> End Class
-                      </button>
+                      s.meeting_url ? (
+                        <button className="pressable" onClick={() => endClass(s.id)}
+                          style={{ padding: '6px 14px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          <StopIcon size={13} color="#fff" /> End Class
+                        </button>
+                      ) : (
+                        // Ending a LiveKit session happens inside the room
+                        // (it needs to close the actual LiveKit room, not
+                        // just flip a database flag) — from here, rejoin it.
+                        <button className="pressable" onClick={() => router.push(`/dashboard/teacher/live/room/${s.id}`)}
+                          style={{ padding: '6px 14px', background: 'var(--warning, #B45309)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          <VideoIcon size={13} color="#fff" /> Rejoin Live Class
+                        </button>
+                      )
                     )}
                     {s.meeting_url && (
                       <a href={s.meeting_url} target="_blank" rel="noreferrer"
