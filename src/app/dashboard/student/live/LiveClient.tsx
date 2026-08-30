@@ -6,6 +6,7 @@
 // RolePageWrapper, so no chrome change needed here.
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import ReminderButton from '@/components/ReminderButton'
@@ -36,6 +37,7 @@ const STATUS_BG: Record<Tab, string> = {
 }
 
 export default function LiveClient({ profile, school, userId }: Props) {
+  const router = useRouter()
   const [sessions, setSessions] = useState<any[]>([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
@@ -161,6 +163,18 @@ export default function LiveClient({ profile, school, userId }: Props) {
                             background: 'var(--success)', color: '#fff', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
                           <StatusDotIcon size={8} color="#fff" /> Join Now
                         </a>
+                      )}
+                      {status === 'live' && !s.meeting_url && (
+                        // No external link on this session -> the embedded
+                        // LiveKit flow. Authorization happens entirely
+                        // server-side once this navigates into the room
+                        // page and it calls /api/live/token — nothing here
+                        // grants access, it's just a link.
+                        <button className={motion.pressable} onClick={() => router.push(`/dashboard/student/live/room/${s.id}`)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                            background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                          <StatusDotIcon size={8} color="#fff" /> Join Now
+                        </button>
                       )}
                       {status === 'ended' && s.recording_url && (
                         <a href={s.recording_url} target="_blank" rel="noreferrer" className={motion.pressable}
