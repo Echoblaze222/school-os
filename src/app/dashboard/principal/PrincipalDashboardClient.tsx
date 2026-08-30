@@ -14,7 +14,7 @@ import {
   MessageIcon, BellIcon, ClipboardIcon,
   SettingsIcon, MegaphoneIcon, VideoIcon,
   FileTextIcon, TrophyIcon, KeyIcon, UserIcon,
-  LayersIcon, CalendarIcon, GlobeIcon, RefreshIcon,
+  LayersIcon, CalendarIcon, GlobeIcon, RefreshIcon, GraduationCapIcon,
   ShieldIcon, TagIcon, BarChartIcon, StarIcon,
 } from '@/components/Icons'
 import styles from './principal.module.css'
@@ -29,6 +29,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'students', label: 'Students', href: '/dashboard/principal/students', Icon: SchoolIcon },
     { id: 'leadership', label: 'Leadership', href: '/dashboard/principal/leadership', Icon: TrophyIcon },
     { id: 'alumni',   label: 'Alumni',   href: '/dashboard/principal/alumni',   Icon: GlobeIcon },
+    { id: 'certificates', label: 'Certificates', href: '/dashboard/principal/certificates', Icon: GraduationCapIcon },
     { id: 'transfers',label: 'Transfers',href: '/dashboard/principal/transfers',Icon: RefreshIcon },
   ]},
   { name: 'Academics', items: [
