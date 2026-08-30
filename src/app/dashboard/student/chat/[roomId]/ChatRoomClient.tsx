@@ -8,6 +8,7 @@ import {
   ArrowLeftIcon, SmileIcon, MoreIcon, XIcon,
   BanIcon, PeopleIcon, UserIcon, RefreshIcon, ClockIcon,
   UploadIcon, CheckIcon, AlertIcon, EditIcon, TrashIcon, LockIcon, MessageIcon,
+  MicIcon, StopIcon, StickerIcon, CrownIcon, PlusIcon, SearchIcon,
 } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './chat-room.module.css'
@@ -25,6 +26,7 @@ interface Message {
   sent_at:      string
   file_url?:    string | null
   file_type?:   string | null
+  duration_seconds?: number | null
   is_deleted:   boolean
   is_edited:    boolean
   reactions?:   Record<string, string[]>
@@ -43,9 +45,33 @@ interface Props {
   school?: any
 }
 
+// Same palette UniversalChatPage.tsx uses for role-colored avatars, kept in
+// sync manually since the two components don't share a constants module.
+const ROLE_COLORS: Record<string, string> = {
+  student:   '#3B82F6',
+  teacher:   '#10B981',
+  principal: '#8B5CF6',
+  bursar:    '#F59E0B',
+  secretary: '#EC4899',
+  parent:    '#F97316',
+}
+
 const EMOJIS = ['👍','❤️','😂','😮','😢','🔥','👏','🎉']
 const SWIPE_TRIGGER = 46   // px of drag before "release to reply" fires
 const SWIPE_MAX     = 68   // px cap on how far the bubble can travel
+
+// Original sticker artwork shipped with the app (public/stickers) - not
+// user uploads, so sending one is a plain insert, no storage round trip.
+const STICKERS = [
+  { id: 'laugh-cry',  src: '/stickers/laugh-cry.svg',  alt: 'Laughing with tears' },
+  { id: 'mind-blown', src: '/stickers/mind-blown.svg', alt: 'Mind blown' },
+  { id: 'cool',       src: '/stickers/cool.svg',       alt: 'Cool with sunglasses' },
+  { id: 'heart-eyes', src: '/stickers/heart-eyes.svg', alt: 'Heart eyes' },
+  { id: 'side-eye',   src: '/stickers/side-eye.svg',   alt: 'Side eye' },
+  { id: 'shocked',    src: '/stickers/shocked.svg',    alt: 'Shocked' },
+  { id: 'party',      src: '/stickers/party.svg',      alt: 'Party' },
+  { id: 'facepalm',   src: '/stickers/facepalm.svg',   alt: 'Facepalm' },
+]
 
 // ── Background send queue ─────────────────────────────────────────────────
 // Text + file sends are pushed here and processed one at a time in the
@@ -53,6 +79,8 @@ const SWIPE_MAX     = 68   // px cap on how far the bubble can travel
 type QueueJob =
   | { kind: 'text'; tempId: string; content: string; replyId: string | null }
   | { kind: 'file'; tempId: string; file: File; caption: string }
+  | { kind: 'voice'; tempId: string; blob: Blob; durationSeconds: number }
+  | { kind: 'sticker'; tempId: string; url: string }
 
 export default function ChatRoomClient({ roomId, userId, role, school }: Props) {
   const [messages,    setMessages]    = useState<Message[]>([])
@@ -82,12 +110,39 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [pendingKind,    setPendingKind]    = useState<'image' | 'video' | 'file'>('file')
   const [caption,        setCaption]        = useState('')
 
+  // Voice note recording -> preview (mirrors the attach-then-caption flow above)
+  const [isRecording,     setIsRecording]     = useState(false)
+  const [recordSeconds,   setRecordSeconds]   = useState(0)
+  const [voiceBlob,       setVoiceBlob]       = useState<Blob | null>(null)
+  const [voicePreviewUrl, setVoicePreviewUrl] = useState<string | null>(null)
+  const [voiceError,      setVoiceError]      = useState('')
+
+  // Sticker picker
+  const [showStickers, setShowStickers] = useState(false)
+
+  // Peer-group management - only meaningful when roomInfo.room_type === 'peer_group'
+  const [isGroupAdmin,     setIsGroupAdmin]     = useState(false)
+  const [groupMembers,     setGroupMembers]     = useState<any[]>([])
+  const [showAddMember,    setShowAddMember]    = useState(false)
+  const [memberSearch,     setMemberSearch]     = useState('')
+  const [memberResults,    setMemberResults]    = useState<any[]>([])
+  const [memberSearching,  setMemberSearching]  = useState(false)
+  const [groupNameEdit,    setGroupNameEdit]    = useState(false)
+  const [groupNameInput,   setGroupNameInput]   = useState('')
+  const [groupActionError, setGroupActionError] = useState('')
+  const [groupActionBusy,  setGroupActionBusy]  = useState(false)
+
   const router     = useRouter()
   const supabase   = createClient()
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
   const fileRef    = useRef<HTMLInputElement>(null)
   const pageRef    = useRef<HTMLDivElement>(null)
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef   = useRef<Blob[]>([])
+  const recordTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const recordStreamRef  = useRef<MediaStream | null>(null)
 
   const queueRef      = useRef<QueueJob[]>([])
   const processingRef = useRef(false)
@@ -168,6 +223,16 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
+  // Leaving the room mid-recording must not leave the mic hot in the background.
+  useEffect(() => {
+    return () => {
+      if (recordTimerRef.current) clearInterval(recordTimerRef.current)
+      recordStreamRef.current?.getTracks().forEach(t => t.stop())
+      if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Mark the other person's messages read, and pick up who's already read ours
   async function markAsRead(messageIds: string[]) {
     if (messageIds.length === 0) return
@@ -196,7 +261,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   useEffect(() => {
     const handler = () => {
       if (suppressNextCloseClick.current) { suppressNextCloseClick.current = false; return }
-      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null)
+      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null); setShowStickers(false)
     }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
@@ -256,6 +321,16 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         .eq('room_id', roomId)
       setMemberCount(count ?? 0)
 
+      if (room.room_type === 'peer_group') {
+        const { data: myMembership } = await supabase
+          .from('chat_room_members')
+          .select('role')
+          .eq('room_id', roomId).eq('user_id', userId)
+          .maybeSingle()
+        setIsGroupAdmin(myMembership?.role === 'admin')
+        return
+      }
+
       const { data: mod } = await supabase.rpc('is_room_moderator', { _room_id: roomId, _user_id: userId })
       setIsModerator(!!mod)
       return
@@ -290,6 +365,116 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setRoomInfo((prev: any) => ({ ...prev, posting_mode: mode }))
     await supabase.from('chat_rooms').update({ posting_mode: mode }).eq('id', roomId)
     setSavingMode(false)
+  }
+
+  // ── Peer group management (create_peer_group's siblings) ────────────
+  async function loadGroupMembers() {
+    const { data: members } = await supabase
+      .from('chat_room_members')
+      .select('user_id, role')
+      .eq('room_id', roomId)
+
+    if (!members?.length) { setGroupMembers([]); return }
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, role, default_code')
+      .in('id', members.map(m => m.user_id))
+
+    const roleByUser = new Map(members.map(m => [m.user_id, m.role]))
+    const merged = (profiles ?? [])
+      .map(p => ({ ...p, groupRole: roleByUser.get(p.id) ?? 'member' }))
+      .sort((a, b) => (a.groupRole === b.groupRole ? 0 : a.groupRole === 'admin' ? -1 : 1))
+    setGroupMembers(merged)
+  }
+
+  useEffect(() => {
+    if (showProfile && roomInfo?.room_type === 'peer_group') loadGroupMembers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showProfile, roomInfo?.room_type])
+
+  async function searchMembersToAdd(query: string) {
+    setMemberSearching(true)
+    const existingIds = new Set(groupMembers.map(m => m.id))
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
+      .or(`full_name.ilike.%${query}%,default_code.ilike.%${query.toUpperCase()}%`)
+      .eq('school_id', school?.id)
+      .limit(8)
+    setMemberResults((data ?? []).filter(u => !existingIds.has(u.id)))
+    setMemberSearching(false)
+  }
+
+  useEffect(() => {
+    if (!showAddMember) { setMemberResults([]); return }
+    const trimmed = memberSearch.trim()
+    if (trimmed.length < 2) { setMemberResults([]); return }
+    const handle = setTimeout(() => searchMembersToAdd(trimmed), 250)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberSearch, showAddMember])
+
+  async function addMemberToGroup(memberId: string) {
+    setGroupActionBusy(true)
+    setGroupActionError('')
+    const { error } = await supabase.rpc('add_group_member', { _room_id: roomId, _user_id: memberId })
+    if (error) {
+      setGroupActionError(error.message)
+    } else {
+      setMemberSearch('')
+      setMemberResults([])
+      await loadGroupMembers()
+      setMemberCount(c => c + 1)
+    }
+    setGroupActionBusy(false)
+  }
+
+  async function removeMemberFromGroup(memberId: string) {
+    setGroupActionBusy(true)
+    setGroupActionError('')
+    const { error } = await supabase.rpc('remove_group_member', { _room_id: roomId, _user_id: memberId })
+    if (error) {
+      setGroupActionError(error.message)
+    } else {
+      setGroupMembers(prev => prev.filter(m => m.id !== memberId))
+      setMemberCount(c => Math.max(0, c - 1))
+    }
+    setGroupActionBusy(false)
+  }
+
+  async function leaveGroup() {
+    setGroupActionBusy(true)
+    setGroupActionError('')
+    const { error } = await supabase.rpc('leave_peer_group', { _room_id: roomId })
+    if (error) {
+      setGroupActionError(error.message)
+      setGroupActionBusy(false)
+      return
+    }
+    router.push(`/dashboard/${role}/chat`)
+  }
+
+  async function saveGroupName() {
+    if (!groupNameInput.trim()) return
+    setGroupActionBusy(true)
+    setGroupActionError('')
+    const { error } = await supabase.rpc('rename_peer_group', { _room_id: roomId, _new_name: groupNameInput.trim() })
+    if (error) {
+      setGroupActionError(error.message)
+    } else {
+      setRoomInfo((prev: any) => ({ ...prev, name: groupNameInput.trim() }))
+      setGroupNameEdit(false)
+    }
+    setGroupActionBusy(false)
+  }
+
+  function closeProfileCard() {
+    setShowProfile(false)
+    setShowAddMember(false)
+    setMemberSearch('')
+    setGroupNameEdit(false)
+    setGroupActionError('')
   }
 
   // ── Load messages ────────────────────────────────────────
@@ -328,9 +513,17 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   // a blank line.
   function displayLabel(m: Message) {
     if (m.content?.trim()) return m.content
-    if (m.file_type === 'image') return 'Photo'
-    if (m.file_type === 'video') return 'Video'
+    if (m.file_type === 'image')   return 'Photo'
+    if (m.file_type === 'video')   return 'Video'
+    if (m.file_type === 'voice')   return `Voice message${m.duration_seconds ? ` (${formatDuration(m.duration_seconds)})` : ''}`
+    if (m.file_type === 'sticker') return 'Sticker'
     return m.content ?? ''
+  }
+
+  function groupTypeLabel() {
+    if (roomInfo?.room_type === 'school_group') return 'School Community'
+    if (roomInfo?.room_type === 'peer_group')   return 'Group'
+    return 'Class Group'
   }
 
   function getRoomDisplayName() {
@@ -369,7 +562,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       const job = queueRef.current.shift()!
       try {
         if (job.kind === 'text') await runTextJob(job)
-        else await runFileJob(job)
+        else if (job.kind === 'file') await runFileJob(job)
+        else if (job.kind === 'voice') await runVoiceJob(job)
+        else await runStickerJob(job)
       } catch {
         setMessages(prev => prev.map(m =>
           m.id === job.tempId ? { ...m, _status: 'failed' } : m
@@ -464,7 +659,86 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
   }
 
+  // Voice notes upload to their own bucket, otherwise this mirrors runFileJob
+  // exactly - same optimistic temp bubble, same fake-progress ticker, same
+  // fallback-to-chat-files behavior if the dedicated bucket write fails.
+  async function runVoiceJob(job: Extract<QueueJob, { kind: 'voice' }>) {
+    const { blob, tempId, durationSeconds } = job
+    const ext   = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
+    const fname = `files/${userId}/${Date.now()}.${ext}`
+
+    let fakeProgress = 8
+    const tick = setInterval(() => {
+      fakeProgress = Math.min(fakeProgress + Math.random() * 18, 92)
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _progress: fakeProgress } : m))
+    }, 220)
+
+    const { error: uploadError } = await supabase.storage.from('chat-voice').upload(fname, blob, {
+      contentType: blob.type || 'audio/webm',
+    })
+    let finalBucket = 'chat-voice'
+    if (uploadError) {
+      const { error: fallbackError } = await supabase.storage.from('chat-files').upload(fname, blob, {
+        contentType: blob.type || 'audio/webm',
+      })
+      if (fallbackError) {
+        clearInterval(tick)
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _status: 'failed' } : m))
+        return
+      }
+      finalBucket = 'chat-files'
+    }
+
+    const { data: urlData } = supabase.storage.from(finalBucket).getPublicUrl(fname)
+
+    const { data: newMsg, error: insertError } = await supabase
+      .from('chat_messages')
+      .insert({
+        room_id: roomId, sender_id: userId,
+        file_url: urlData.publicUrl, file_type: 'voice',
+        duration_seconds: durationSeconds,
+      })
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
+
+    clearInterval(tick)
+
+    if (insertError || !newMsg) {
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _status: 'failed', _progress: 100 } : m))
+      return
+    }
+    setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
+    pushNotification('Voice message')
+  }
+
+  // Stickers reference a static asset already shipped with the app, so
+  // there's nothing to upload - this is a plain insert, same queue pattern
+  // as runTextJob so it gets the same retry-on-failure behavior.
+  async function runStickerJob(job: Extract<QueueJob, { kind: 'sticker' }>) {
+    const { url, tempId } = job
+
+    const { data: newMsg, error } = await supabase
+      .from('chat_messages')
+      .insert({ room_id: roomId, sender_id: userId, file_url: url, file_type: 'sticker' })
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .single()
+
+    if (error || !newMsg) {
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _status: 'failed' } : m))
+      return
+    }
+    setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
+    pushNotification('Sent a sticker')
+  }
+
   function retry(msg: Message) {
+    // Stickers point at a permanent static asset (never a temporary blob
+    // preview), so unlike uploaded files this can genuinely be resent.
+    if (msg.file_type === 'sticker' && msg.file_url) {
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: 'sending', _progress: 0 } : m))
+      enqueue({ kind: 'sticker', tempId: msg.id, url: msg.file_url! })
+      return
+    }
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: msg.file_url ? 'uploading' : 'sending', _progress: 0 } : m))
     if (msg.file_url) return // failed uploads that already produced a url are effectively sent - nothing to retry
     enqueue({ kind: 'text', tempId: msg.id, content: msg.content, replyId: msg.reply_to_id ?? null })
@@ -685,6 +959,110 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
+  function formatDuration(totalSeconds: number) {
+    const s = Math.max(0, Math.round(totalSeconds))
+    const mins = Math.floor(s / 60)
+    const secs = s % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // ── Voice notes: record -> preview -> send ──────────────────────────
+  async function startRecording() {
+    setVoiceError('')
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setVoiceError('Voice notes are not supported in this browser.')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      recordStreamRef.current = stream
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : ''
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
+      mediaRecorderRef.current = recorder
+      audioChunksRef.current = []
+
+      recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        recordStreamRef.current?.getTracks().forEach(t => t.stop())
+        recordStreamRef.current = null
+        if (audioChunksRef.current.length === 0) return // cancelled - nothing to preview
+        setVoiceBlob(blob)
+        setVoicePreviewUrl(URL.createObjectURL(blob))
+      }
+
+      recorder.start()
+      setIsRecording(true)
+      setRecordSeconds(0)
+      recordTimerRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000)
+    } catch {
+      setVoiceError('Microphone access is blocked. Enable it in your browser settings to send voice notes.')
+    }
+  }
+
+  // Stop and move to the listen-before-send preview.
+  function stopRecording() {
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null }
+    setIsRecording(false)
+    mediaRecorderRef.current?.stop()
+  }
+
+  // Abandon mid-recording - no preview, nothing sent.
+  function cancelRecording() {
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null }
+    setIsRecording(false)
+    audioChunksRef.current = []
+    if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current?.stop()
+    recordStreamRef.current?.getTracks().forEach(t => t.stop())
+    recordStreamRef.current = null
+  }
+
+  function discardVoicePreview() {
+    if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl)
+    setVoiceBlob(null)
+    setVoicePreviewUrl(null)
+    setRecordSeconds(0)
+  }
+
+  function confirmSendVoice() {
+    if (!voiceBlob) return
+    const blob = voiceBlob
+    const durationSeconds = recordSeconds
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const localUrl = voicePreviewUrl ?? undefined
+
+    const temp: Message = {
+      id: tempId, content: '', sender_id: userId, sent_at: new Date().toISOString(),
+      is_deleted: false, is_edited: false,
+      file_url: localUrl, file_type: 'voice', duration_seconds: durationSeconds,
+      _status: 'uploading', _progress: 5,
+    }
+    setMessages(prev => [...prev, temp])
+    enqueue({ kind: 'voice', tempId, blob, durationSeconds })
+
+    setVoiceBlob(null)
+    setVoicePreviewUrl(null)
+    setRecordSeconds(0)
+  }
+
+  // ── Stickers: tap to send immediately, like WhatsApp ────────────────
+  function sendSticker(url: string) {
+    setShowStickers(false)
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+
+    const temp: Message = {
+      id: tempId, content: '', sender_id: userId, sent_at: new Date().toISOString(),
+      is_deleted: false, is_edited: false,
+      file_url: url, file_type: 'sticker',
+      _status: 'sending',
+    }
+    setMessages(prev => [...prev, temp])
+    enqueue({ kind: 'sticker', tempId, url })
+  }
+
   function formatDate(d: string) {
     const date = new Date(d), today = new Date(), yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
@@ -730,7 +1108,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
             <p className={styles.roomName}>{displayName}</p>
             <p className={styles.roomMeta} style={{ color: (!roomInfo?.is_group && isOnline) ? '#22c55e' : undefined }}>
               {roomInfo?.is_group
-                ? `${roomInfo.room_type === 'school_group' ? 'School Community' : 'Class Group'} · ${memberCount} member${memberCount === 1 ? '' : 's'}`
+                ? `${groupTypeLabel()} · ${memberCount} member${memberCount === 1 ? '' : 's'}`
                 : (isOnline ? '● Online' : (otherUser?.role ?? ''))
               }
             </p>
@@ -757,11 +1135,13 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
       {/* ── PROFILE / GROUP INFO CARD ──────────────────── */}
       {showProfile && (
-        <div className={styles.profileOverlay} onClick={() => setShowProfile(false)}>
+        <div className={styles.profileOverlay} onClick={closeProfileCard}>
           <div className={styles.profileCard} onClick={e => e.stopPropagation()}>
             <div className={styles.profileAvatar} style={{ background: schoolColor }}>
               {roomInfo?.room_type === 'school_group' && school?.logo_url
                 ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                : roomInfo?.room_type === 'peer_group'
+                ? <PeopleIcon size={28} color="#fff" />
                 : otherUser?.avatar_url
                 ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                 : <span style={{ color:'#fff', fontWeight:700, fontSize:'1.6rem' }}>{displayName[0]?.toUpperCase() ?? '#'}</span>
@@ -769,10 +1149,104 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
             </div>
             <p className={styles.profileName}>{displayName}</p>
 
-            {roomInfo?.is_group ? (
+            {roomInfo?.is_group && roomInfo.room_type === 'peer_group' ? (
+              <>
+                {groupNameEdit ? (
+                  <div className={styles.groupNameEditRow}>
+                    <input
+                      className={styles.groupNameInput}
+                      value={groupNameInput}
+                      onChange={e => setGroupNameInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && saveGroupName()}
+                      autoFocus
+                    />
+                    <button className={styles.inlineEditBtn} onClick={saveGroupName} disabled={groupActionBusy || !groupNameInput.trim()}>
+                      <CheckIcon size={14} />
+                    </button>
+                    <button className={styles.inlineEditBtn} onClick={() => setGroupNameEdit(false)}>
+                      <XIcon size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <p className={styles.profileMeta} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                    Group · {memberCount} member{memberCount === 1 ? '' : 's'}
+                    {isGroupAdmin && (
+                      <button
+                        className={styles.inlineEditBtn}
+                        onClick={() => { setGroupNameInput(roomInfo.name ?? ''); setGroupNameEdit(true) }}
+                        title="Rename group"
+                      >
+                        <EditIcon size={12} />
+                      </button>
+                    )}
+                  </p>
+                )}
+
+                {groupActionError && <p className={styles.findError} style={{ marginTop: 8 }}>{groupActionError}</p>}
+
+                <div className={styles.memberList}>
+                  {groupMembers.map(m => (
+                    <div key={m.id} className={styles.memberRow}>
+                      <div className={styles.memberAvatar} style={{ background: ROLE_COLORS[m.role] ?? schoolColor }}>
+                        {m.avatar_url
+                          ? <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                          : <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.7rem' }}>{m.full_name?.[0]}</span>
+                        }
+                      </div>
+                      <p className={styles.memberName}>{m.full_name}{m.id === userId ? ' (You)' : ''}</p>
+                      {m.groupRole === 'admin' && <CrownIcon size={13} color="#f59e0b" />}
+                      {isGroupAdmin && m.groupRole !== 'admin' && m.id !== userId && (
+                        <button className={styles.removeMemberBtn} title="Remove" onClick={() => removeMemberFromGroup(m.id)} disabled={groupActionBusy}>
+                          <XIcon size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {isGroupAdmin && (
+                  showAddMember ? (
+                    <div className={styles.addMemberPanel}>
+                      <input
+                        className={styles.groupNameInput}
+                        value={memberSearch}
+                        onChange={e => setMemberSearch(e.target.value)}
+                        placeholder="Search by name or code"
+                        autoFocus
+                      />
+                      {memberSearch.trim().length >= 2 && (memberSearching || memberResults.length > 0) && (
+                        <div className={styles.suggestList}>
+                          {memberResults.map(u => (
+                            <button key={u.id} className={styles.suggestItem} onClick={() => addMemberToGroup(u.id)} disabled={groupActionBusy}>
+                              <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
+                                <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>{u.full_name?.[0]}</span>
+                              </div>
+                              <div className={styles.suggestInfo}>
+                                <p className={styles.suggestName}>{u.full_name}</p>
+                                <p className={styles.suggestMeta}>{u.role} · {u.default_code}</p>
+                              </div>
+                              <PlusIcon size={13} color="var(--text-muted)" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <button className={styles.profileClose} onClick={() => { setShowAddMember(false); setMemberSearch('') }}>Done</button>
+                    </div>
+                  ) : (
+                    <button className={styles.addMemberBtn} onClick={() => setShowAddMember(true)}>
+                      <PlusIcon size={13} /> Add members
+                    </button>
+                  )
+                )}
+
+                <button className={styles.leaveGroupBtn} onClick={leaveGroup} disabled={groupActionBusy}>
+                  Leave group
+                </button>
+              </>
+            ) : roomInfo?.is_group ? (
               <>
                 <p className={styles.profileMeta}>
-                  {roomInfo.room_type === 'school_group' ? 'School Community' : 'Class Group'} · {memberCount} member{memberCount === 1 ? '' : 's'}
+                  {groupTypeLabel()} · {memberCount} member{memberCount === 1 ? '' : 's'}
                 </p>
                 {isModerator ? (
                   <div className={styles.postingModeRow}>
@@ -809,7 +1283,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               </>
             )}
 
-            <button className={styles.profileClose} onClick={() => setShowProfile(false)}>Close</button>
+            <button className={styles.profileClose} onClick={closeProfileCard}>Close</button>
           </div>
         </div>
       )}
@@ -889,8 +1363,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     )}
 
                     <div
-                      className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem} ${msg._status === 'failed' ? styles.bubbleFailed : ''}`}
-                      style={isMe ? { background: schoolColor } : undefined}
+                      className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem} ${msg._status === 'failed' ? styles.bubbleFailed : ''} ${msg.file_type === 'sticker' ? styles.bubbleSticker : ''}`}
+                      style={isMe && msg.file_type !== 'sticker' ? { background: schoolColor } : undefined}
                       onDoubleClick={e => { e.stopPropagation(); setEmojiTarget(emojiTarget === msg.id ? null : msg.id) }}
                     >
                       {msg.file_type === 'image' && msg.file_url && (
@@ -915,6 +1389,20 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                             </div>
                           )}
                         </div>
+                      )}
+                      {msg.file_type === 'voice' && msg.file_url && (
+                        <div className={styles.mediaWrap}>
+                          <audio src={msg.file_url} controls className={styles.audio} />
+                          {msg._status === 'uploading' && (
+                            <div className={styles.mediaOverlay}>
+                              <div className={styles.spinner} />
+                              <span>{Math.round(msg._progress ?? 0)}%</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {msg.file_type === 'sticker' && msg.file_url && (
+                        <img src={msg.file_url} alt="Sticker" className={styles.stickerMsg} />
                       )}
                       {(msg.file_type === 'image' || msg.file_type === 'video') && msg.content?.trim() && (
                         <p className={styles.captionText}>{msg.content}</p>
@@ -1116,31 +1604,91 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
+      {/* ── STICKER PICKER ──────────────────────────────────────────── */}
+      {showStickers && (
+        <div className={styles.stickerPicker} onClick={e => e.stopPropagation()}>
+          <div className={styles.stickerPickerHeader}>
+            <span>Stickers</span>
+            <button onClick={() => setShowStickers(false)}><XIcon size={14} /></button>
+          </div>
+          <div className={styles.stickerGrid}>
+            {STICKERS.map(s => (
+              <button key={s.id} className={styles.stickerItem} onClick={() => sendSticker(s.src)} title={s.alt}>
+                <img src={s.src} alt={s.alt} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {voiceError && (
+        <div className={styles.voiceError}>
+          <AlertIcon size={13} /> {voiceError}
+        </div>
+      )}
+
       {/* ── INPUT BAR - nudged above the keyboard via --kb-offset ── */}
       {canPost ? (
-        <div className={styles.inputBar}>
-          <input ref={fileRef} type="file" className={styles.fileInput} onChange={pickFile}
-            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-          <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
-            <PaperclipIcon size={18} color="var(--text-muted)" />
-          </button>
-          <input
-            ref={inputRef}
-            className={styles.textInput}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder={editingId ? 'Edit message...' : replyTo ? `Replying to ${replyTo.sender?.full_name ?? 'message'}...` : 'Message...'}
-          />
-          <button
-            className={styles.sendBtn}
-            style={{ background: schoolColor, opacity: !text.trim() ? 0.5 : 1 }}
-            onClick={sendText}
-            disabled={!text.trim()}
-          >
-            <SendIcon size={16} color="white" />
-          </button>
-        </div>
+        isRecording ? (
+          <div className={styles.recordingBar}>
+            <span className={styles.recDot} />
+            <span className={styles.recTimer}>{formatDuration(recordSeconds)}</span>
+            <span className={styles.recWave}>
+              {Array.from({ length: 5 }).map((_, i) => <span key={i} className={styles.recWaveBar} />)}
+            </span>
+            <button className={styles.recCancelBtn} onClick={cancelRecording}>Cancel</button>
+            <button className={styles.recSendBtn} style={{ background: schoolColor }} onClick={stopRecording} title="Stop and review">
+              <StopIcon size={14} color="white" />
+            </button>
+          </div>
+        ) : voicePreviewUrl ? (
+          <div className={styles.previewBar}>
+            <audio src={voicePreviewUrl} controls className={styles.previewAudio} />
+            <span className={styles.recTimer}>{formatDuration(recordSeconds)}</span>
+            <button className={styles.discardBtn} onClick={discardVoicePreview} title="Discard">
+              <TrashIcon size={15} />
+            </button>
+            <button className={styles.sendVoiceBtn} style={{ background: schoolColor }} onClick={confirmSendVoice} title="Send">
+              <SendIcon size={15} color="white" />
+            </button>
+          </div>
+        ) : (
+          <div className={styles.inputBar}>
+            <input ref={fileRef} type="file" className={styles.fileInput} onChange={pickFile}
+              accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
+            <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
+              <PaperclipIcon size={18} color="var(--text-muted)" />
+            </button>
+            <button
+              className={styles.attachBtn}
+              onClick={e => { e.stopPropagation(); setShowStickers(p => !p) }}
+              title="Stickers"
+            >
+              <StickerIcon size={18} color={showStickers ? schoolColor : 'var(--text-muted)'} />
+            </button>
+            <input
+              ref={inputRef}
+              className={styles.textInput}
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder={editingId ? 'Edit message...' : replyTo ? `Replying to ${replyTo.sender?.full_name ?? 'message'}...` : 'Message...'}
+            />
+            {text.trim() ? (
+              <button
+                className={styles.sendBtn}
+                style={{ background: schoolColor }}
+                onClick={sendText}
+              >
+                <SendIcon size={16} color="white" />
+              </button>
+            ) : (
+              <button className={styles.micBtn} onClick={startRecording} title="Record a voice note">
+                <MicIcon size={17} color="var(--text-muted)" />
+              </button>
+            )}
+          </div>
+        )
       ) : (
         <div className={styles.readOnlyBar} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
           <LockIcon size={13} /> Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here, you can still react and comment with emoji
