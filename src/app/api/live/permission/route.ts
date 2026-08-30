@@ -24,6 +24,7 @@ import { auditLog } from '@/lib/auditLog'
 import { logger, newTraceId } from '@/lib/logger'
 import {
   decideLiveClassAccess,
+  isDenied,
   loadCallerProfile,
   loadOnlineClass,
   isAssignedClassTeacher,
@@ -90,11 +91,20 @@ export async function POST(req: Request) {
   // (even a legitimately-connected one) gets the same denial a
   // cross-school caller would — this endpoint has exactly one authorized
   // caller per session: its host.
-  if (!decision.ok || decision.role !== 'host') {
-    logger.warn('live permission change denied', {
-      traceId, userId: user.id, onlineClassId,
-      reason: decision.ok ? 'not_host' : decision.reason,
-    })
+  //
+  // Split into two separate ifs (rather than one `||`) deliberately: this
+  // repo's tsconfig has strict:false, under which TypeScript's
+  // discriminated-union narrowing does not reliably survive a compound
+  // `||` condition mixing checks on two different branches of the union
+  // (confirmed against the real compiler with this project's exact
+  // tsconfig — see isDenied()'s doc comment in authorize.ts). Two single-
+  // condition ifs each narrow cleanly on their own.
+  if (isDenied(decision)) {
+    logger.warn('live permission change denied', { traceId, userId: user.id, onlineClassId, reason: decision.reason })
+    return NextResponse.json({ error: 'Only the class host can change participant permissions.' }, { status: 403 })
+  }
+  if (decision.role !== 'host') {
+    logger.warn('live permission change denied', { traceId, userId: user.id, onlineClassId, reason: 'not_host' })
     return NextResponse.json({ error: 'Only the class host can change participant permissions.' }, { status: 403 })
   }
 
