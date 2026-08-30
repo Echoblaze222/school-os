@@ -77,6 +77,12 @@ export async function GET() {
       } else if (a.appointment_type === 'ict_officer' || a.appointment_type === 'ict_administrator') {
         // Lane D shipped after this route was first written, same story.
         href = '/dashboard/ict'
+      } else if (a.appointment_type === 'nurse') {
+        href = '/dashboard/nurse'
+      } else if (a.appointment_type === 'librarian') {
+        href = '/dashboard/librarian'
+      } else if (a.appointment_type === 'coach') {
+        href = '/dashboard/coach'
       } else if (config.category !== 'student_leadership') {
         // Any other non-hostel, non-leadership appointment types belong
         // to a lane that hasn't shipped yet: link there once it does.
