@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import {
   MessageIcon, SearchIcon, PlusIcon,
-  UserIcon, XIcon, ArrowLeftIcon,
+  UserIcon, XIcon, ArrowLeftIcon, PeopleIcon,
 } from '@/components/Icons'
 import styles from './chat.module.css'
 
@@ -75,6 +75,16 @@ export default function UniversalChatPage({
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggesting,  setSuggesting]  = useState(false)
+
+  // ── New Group creation (separate flow from the New Message find-by-code above) ──
+  const [showNewGroup,      setShowNewGroup]      = useState(false)
+  const [groupName,         setGroupName]         = useState('')
+  const [groupSearch,       setGroupSearch]       = useState('')
+  const [groupSuggestions,  setGroupSuggestions]  = useState<any[]>([])
+  const [groupSuggesting,   setGroupSuggesting]   = useState(false)
+  const [groupSelected,     setGroupSelected]     = useState<any[]>([])
+  const [creatingGroup,     setCreatingGroup]     = useState(false)
+  const [groupError,        setGroupError]        = useState('')
 
   const supabase = createClient()
   const router   = useRouter()
@@ -226,6 +236,72 @@ export default function UniversalChatPage({
     setCode(user.default_code ?? '')
     setSuggestions([])
     setFindError('')
+  }
+
+  // ── New Group: live suggestions as you type a name or code ─────────
+  useEffect(() => {
+    if (!showNewGroup) { setGroupSuggestions([]); return }
+    const trimmed = groupSearch.trim()
+    if (trimmed.length < 2) { setGroupSuggestions([]); return }
+    const handle = setTimeout(() => searchGroupSuggestions(trimmed), 250)
+    return () => clearTimeout(handle)
+  }, [groupSearch, showNewGroup, groupSelected])
+
+  async function searchGroupSuggestions(query: string) {
+    setGroupSuggesting(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, role, default_code, avatar_url, school_id')
+      .or(`full_name.ilike.%${query}%,default_code.ilike.%${query.toUpperCase()}%`)
+      .eq('school_id', profile?.school_id)
+      .neq('id', userId)
+      .limit(8)
+
+    const selectedIds = new Set(groupSelected.map(m => m.id))
+    setGroupSuggestions((data ?? []).filter(u => !selectedIds.has(u.id)))
+    setGroupSuggesting(false)
+  }
+
+  function addGroupMember(user: any) {
+    setGroupSelected(prev => (prev.find(m => m.id === user.id) ? prev : [...prev, user]))
+    setGroupSuggestions([])
+    setGroupSearch('')
+  }
+
+  function removeGroupMember(id: string) {
+    setGroupSelected(prev => prev.filter(m => m.id !== id))
+  }
+
+  function closeAllComposePanels() {
+    setShowFind(false)
+    setShowNewGroup(false)
+    setFoundUser(null)
+    setCode('')
+    setFindError('')
+    setGroupName('')
+    setGroupSearch('')
+    setGroupSelected([])
+    setGroupSuggestions([])
+    setGroupError('')
+  }
+
+  async function createGroup() {
+    if (!groupName.trim() || groupSelected.length === 0 || creatingGroup) return
+    setCreatingGroup(true)
+    setGroupError('')
+
+    const { data: roomId, error } = await supabase.rpc('create_peer_group', {
+      _name: groupName.trim(),
+      _member_ids: groupSelected.map(m => m.id),
+    })
+
+    if (error || !roomId) {
+      setGroupError(`Could not create group: ${error?.message ?? 'Unknown error'}`)
+      setCreatingGroup(false)
+      return
+    }
+
+    router.push(`/dashboard/${role}/chat/${roomId}`)
   }
 
 
@@ -391,13 +467,26 @@ export default function UniversalChatPage({
             </button>
             <p className={styles.sidebarTitle}>Chats</p>
             <button
+              className={styles.newGroupBtn}
+              title="New group"
+              onClick={() => {
+                const opening = !showNewGroup
+                closeAllComposePanels()
+                setShowNewGroup(opening)
+              }}
+            >
+              {showNewGroup
+                ? <XIcon size={15} color="var(--text-muted)" />
+                : <PeopleIcon size={15} color="var(--text-muted)" />
+              }
+            </button>
+            <button
               className={styles.newChatBtn}
               style={{ background: schoolColor }}
               onClick={() => {
-                setShowFind(p => !p)
-                setFoundUser(null)
-                setCode('')
-                setFindError('')
+                const opening = !showFind
+                closeAllComposePanels()
+                setShowFind(opening)
                 setTimeout(() => codeRef.current?.focus(), 100)
               }}
             >
@@ -408,8 +497,84 @@ export default function UniversalChatPage({
             </button>
           </div>
 
+          {/* New Group panel */}
+          {showNewGroup && (
+            <div className={styles.findPanel}>
+              <p className={styles.findTitle}>New Group</p>
+              <p className={styles.findDesc}>Add people from your school, then name the group.</p>
+              <div className={styles.findRow}>
+                <input
+                  className={styles.findInput}
+                  style={{ textTransform: 'none', letterSpacing: 0 }}
+                  value={groupSearch}
+                  onChange={e => setGroupSearch(e.target.value)}
+                  placeholder="Search by name or ID code"
+                />
+              </div>
+
+              {groupSearch.trim().length >= 2 && (groupSuggesting || groupSuggestions.length > 0) && (
+                <div className={styles.suggestList}>
+                  {groupSuggesting && groupSuggestions.length === 0 && (
+                    <div className={styles.suggestLoading}>
+                      <span/><span/><span/>
+                    </div>
+                  )}
+                  {groupSuggestions.map(u => (
+                    <button key={u.id} className={styles.suggestItem} onClick={() => addGroupMember(u)}>
+                      <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
+                        {u.avatar_url
+                          ? <img src={u.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                          : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.75rem' }}>{u.full_name?.[0]}</span>
+                        }
+                      </div>
+                      <div className={styles.suggestInfo}>
+                        <p className={styles.suggestName}>{u.full_name}</p>
+                        <p className={styles.suggestMeta}>{u.role} · {u.default_code}</p>
+                      </div>
+                      <PlusIcon size={14} color="var(--text-muted)" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {groupSelected.length > 0 && (
+                <div className={styles.groupChips}>
+                  {groupSelected.map(u => (
+                    <span key={u.id} className={styles.groupChip}>
+                      {u.full_name}
+                      <button onClick={() => removeGroupMember(u.id)} title="Remove">
+                        <XIcon size={10} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className={styles.findRow}>
+                <input
+                  className={styles.findInput}
+                  style={{ textTransform: 'none', letterSpacing: 0 }}
+                  value={groupName}
+                  onChange={e => setGroupName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && createGroup()}
+                  placeholder="Group name"
+                />
+                <button
+                  className={styles.findBtn}
+                  style={{ background: schoolColor }}
+                  onClick={createGroup}
+                  disabled={creatingGroup || !groupName.trim() || groupSelected.length === 0}
+                >
+                  {creatingGroup ? '…' : <PeopleIcon size={15} color="white" />}
+                </button>
+              </div>
+
+              {groupError && <p className={styles.findError}>{groupError}</p>}
+            </div>
+          )}
+
           {/* Search bar - only when there are rooms */}
-          {!showFind && rooms.length > 0 && (
+          {!showFind && !showNewGroup && rooms.length > 0 && (
             <div className={styles.searchBar}>
               <SearchIcon size={14} color="var(--text-muted)" />
               <input
@@ -552,6 +717,8 @@ export default function UniversalChatPage({
                     {room.room_type === 'school_group' && school?.logo_url
                       ? <img src={school.logo_url} alt=""
                           style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                      : room.room_type === 'peer_group'
+                      ? <PeopleIcon size={18} color="#fff" />
                       : room.other_user?.avatar_url
                       ? <img src={room.other_user.avatar_url} alt=""
                           style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
