@@ -80,6 +80,7 @@ const NAV: Record<string, {
         { href: '/dashboard/principal/report-cards',Icon: FileTextIcon,  label: 'Report Cards'},
         { href: '/dashboard/principal/fees',        Icon: WalletIcon,    label: 'Fees'        },
         { href: '/dashboard/principal/reports',     Icon: FileTextIcon,  label: 'Reports'     },
+        { href: '/dashboard/principal/meetings',    Icon: CalendarIcon,  label: 'Meetings'    },
         { href: '/dashboard/principal/promotions',  Icon: GlobeIcon,     label: 'Promotions'  },
         { href: '/dashboard/principal/profile',     Icon: UserIcon,      label: 'My Profile'  },
       ]},
@@ -143,6 +144,7 @@ const NAV: Record<string, {
         { href: '/dashboard/counselor/appointments',   Icon: CalendarIcon,  label: 'Appointments'  },
         { href: '/dashboard/counselor/referrals',      Icon: ShieldIcon,    label: 'Referrals'     },
         { href: '/dashboard/counselor/reports',        Icon: BarChartIcon,  label: 'Reports'       },
+        { href: '/dashboard/counselor/meetings',       Icon: CalendarIcon,  label: 'Meetings'      },
       ]},
       { label: 'Account', items: [
         { href: '/dashboard/counselor/profile',        Icon: UserIcon,      label: 'My Profile'    },
@@ -166,6 +168,9 @@ const NAV: Record<string, {
     sidebar: [
       { label: 'Main', items: [
         { href: '/dashboard/examination',            Icon: HomeIcon,        label: 'Committee Home' },
+        { href: '/dashboard/examination/ai',         Icon: AiIcon,          label: 'AI Assistant'  },
+        { href: '/dashboard/examination/chat',       Icon: MessageIcon,     label: 'Messages'      },
+        { href: '/dashboard/examination/notifications', Icon: BellIcon,     label: 'Notifications' },
         { href: '/dashboard/teacher',                Icon: ArrowLeftIcon,   label: 'Teacher Dashboard' },
       ]},
       { label: 'Examinations', items: [
@@ -175,9 +180,13 @@ const NAV: Record<string, {
         { href: '/dashboard/examination/attendance', Icon: CheckCircleIcon, label: 'Exam Attendance' },
         { href: '/dashboard/examination/documents',  Icon: FileTextIcon,    label: 'Question Papers' },
         { href: '/dashboard/examination/incidents',  Icon: AlertCircleIcon, label: 'Incidents'     },
+        { href: '/dashboard/examination/meetings',   Icon: CalendarIcon,    label: 'Meetings'      },
       ]},
       { label: 'Results', items: [
         { href: '/dashboard/examination/results',    Icon: BarChartIcon,    label: 'Verify & Publish' },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/examination/profile',    Icon: UserIcon,        label: 'My Profile'    },
       ]},
     ],
     bottom: [
@@ -207,6 +216,7 @@ const NAV: Record<string, {
         { href: '/dashboard/ict/chat',                Icon: MessageIcon,   label: 'Messages'      },
         { href: '/dashboard/ict/ai',                  Icon: AiIcon,        label: 'AI Assistant'  },
         { href: '/dashboard/ict/notifications',       Icon: BellIcon,      label: 'Notifications' },
+        { href: '/dashboard/ict/meetings',            Icon: CalendarIcon,  label: 'Meetings'      },
         { href: '/dashboard/ict/profile',             Icon: UserIcon,      label: 'My Profile'    },
       ]},
     ],
@@ -232,6 +242,7 @@ const NAV: Record<string, {
         { href: '/dashboard/nurse/health-records', Icon: ClipboardIcon, label: 'Health Records' },
         { href: '/dashboard/nurse/medications',   Icon: ClockIcon,  label: 'Medications'    },
         { href: '/dashboard/nurse/inventory',     Icon: GridIcon,   label: 'Inventory'      },
+        { href: '/dashboard/nurse/meetings',      Icon: CalendarIcon, label: 'Meetings'     },
       ]},
       { label: 'Account', items: [
         { href: '/dashboard/nurse/profile',       Icon: UserIcon,   label: 'My Profile'     },
@@ -257,6 +268,7 @@ const NAV: Record<string, {
       { label: 'Library', items: [
         { href: '/dashboard/librarian/catalog',    Icon: BookIcon,      label: 'Catalog'    },
         { href: '/dashboard/librarian/checkouts',  Icon: RefreshIcon,   label: 'Checkouts'  },
+        { href: '/dashboard/librarian/meetings',   Icon: CalendarIcon,  label: 'Meetings'   },
       ]},
       { label: 'Account', items: [
         { href: '/dashboard/librarian/profile',    Icon: UserIcon,      label: 'My Profile' },
@@ -282,6 +294,7 @@ const NAV: Record<string, {
         { href: '/dashboard/coach/teams',     Icon: PeopleIcon,   label: 'Teams'     },
         { href: '/dashboard/coach/schedule',  Icon: CalendarIcon, label: 'Schedule'  },
         { href: '/dashboard/coach/matches',   Icon: TrophyIcon,   label: 'Matches'   },
+        { href: '/dashboard/coach/meetings',  Icon: ClipboardIcon,label: 'Meetings'  },
       ]},
       { label: 'Account', items: [
         { href: '/dashboard/coach/profile',   Icon: UserIcon,     label: 'My Profile' },
@@ -401,6 +414,62 @@ const NAV: Record<string, {
       { home: true },
       { href: '/dashboard/student/chat',        Icon: MessageIcon,   label: 'Chat'    },
       { href: '/dashboard/student/ai',          Icon: AiIcon,        label: 'AI'      },
+    ],
+  },
+
+  hostel: {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/hostel',                Icon: HomeIcon,      label: 'Dashboard'     },
+        { href: '/dashboard/hostel/ai',              Icon: AiIcon,        label: 'AI Assistant'  },
+        { href: '/dashboard/hostel/chat',            Icon: MessageIcon,   label: 'Messages'      },
+        { href: '/dashboard/hostel/notifications',   Icon: BellIcon,      label: 'Notifications' },
+      ]},
+      { label: 'Hostel', items: [
+        { href: '/dashboard/hostel/rooms',           Icon: GridIcon,      label: 'Rooms'         },
+        { href: '/dashboard/hostel/roll-call',       Icon: CheckCircleIcon, label: 'Roll Call'   },
+        { href: '/dashboard/hostel/leave',           Icon: ClockIcon,     label: 'Leave/Outpass' },
+        { href: '/dashboard/hostel/incidents',       Icon: AlertCircleIcon, label: 'Incidents'   },
+        { href: '/dashboard/hostel/maintenance',     Icon: ActivityIcon,  label: 'Maintenance'   },
+        { href: '/dashboard/hostel/meetings',        Icon: CalendarIcon,  label: 'Meetings'      },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/hostel/profile',         Icon: UserIcon,      label: 'My Profile'    },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/hostel/rooms',     Icon: GridIcon,     label: 'Rooms'  },
+      { href: '/dashboard/hostel/roll-call', Icon: CheckCircleIcon, label: 'Roll' },
+      { home: true },
+      { href: '/dashboard/hostel/chat',      Icon: MessageIcon,  label: 'Chat'   },
+      { href: '/dashboard/hostel/ai',        Icon: AiIcon,       label: 'AI'     },
+    ],
+  },
+
+  'vice-principal': {
+    sidebar: [
+      { label: 'Main', items: [
+        { href: '/dashboard/vice-principal',               Icon: HomeIcon,      label: 'Dashboard'     },
+        { href: '/dashboard/vice-principal/ai',             Icon: AiIcon,        label: 'AI Assistant'  },
+        { href: '/dashboard/vice-principal/chat',           Icon: MessageIcon,   label: 'Messages'      },
+        { href: '/dashboard/vice-principal/notifications',  Icon: BellIcon,      label: 'Notifications' },
+      ]},
+      { label: 'Management', items: [
+        { href: '/dashboard/vice-principal/staff',          Icon: PeopleIcon,    label: 'Teachers and Staff' },
+        { href: '/dashboard/vice-principal/departments',    Icon: SchoolIcon,    label: 'Departments'   },
+        { href: '/dashboard/vice-principal/announcements',  Icon: MegaphoneIcon, label: 'Announcements' },
+        { href: '/dashboard/vice-principal/meetings',       Icon: CalendarIcon,  label: 'Meetings'      },
+      ]},
+      { label: 'Account', items: [
+        { href: '/dashboard/vice-principal/profile',        Icon: UserIcon,      label: 'My Profile'    },
+      ]},
+    ],
+    bottom: [
+      { href: '/dashboard/vice-principal/staff',         Icon: PeopleIcon,   label: 'Staff' },
+      { href: '/dashboard/vice-principal/departments',   Icon: SchoolIcon,   label: 'Depts' },
+      { home: true },
+      { href: '/dashboard/vice-principal/chat',          Icon: MessageIcon,  label: 'Chat'  },
+      { href: '/dashboard/vice-principal/ai',            Icon: AiIcon,       label: 'AI'    },
     ],
   },
 }
