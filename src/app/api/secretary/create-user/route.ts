@@ -4,6 +4,7 @@ import { createClient }       from '@supabase/supabase-js'
 import { cookies }            from 'next/headers'
 import { NextResponse }       from 'next/server'
 import crypto                 from 'crypto'
+import { generateAccessCode } from '@/lib/supabase/access-code-generator'
 
 export async function POST(request: Request) {
   try {
@@ -71,17 +72,14 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Generate access code, e.g. STU-2026-K7XQPM
-    // The random segment MUST be long and cryptographically random. It is
-    // the sole credential needed to activate an account (see
-    // auth/first-login), so a short Math.random() suffix (previously a
-    // 4-digit number with only 9,000 possibilities and no rate limiting)
-    // let anyone brute-force their way into hijacking any unactivated
-    // account before the real user's first login.
-    const year   = new Date().getFullYear()
-    const rand   = crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-    const prefix = role.slice(0, 3).toUpperCase()
-    const code   = `${prefix}-${year}-${rand}`
+    // Access code now comes from the atomic per-school-per-year sequence
+    // (see access-code-sequence-and-lifecycle.sql) instead of a random
+    // suffix, matching the XXX-YYYY-NNNN format the security spec defines.
+    // The randomBytes suffix this replaced was never actually insecure on
+    // its own (it was long and cryptographically random), this switch is
+    // about spec compliance and giving the code a lifecycle row, not about
+    // fixing a vulnerability.
+    const year = new Date().getFullYear()
 
     // Supabase auth requires a password on user creation, but this account is
     // never meant to be signed into with it - activation happens entirely via
@@ -126,6 +124,20 @@ export async function POST(request: Request) {
     }
 
     if (!userId) return NextResponse.json({ error: 'Failed to create auth user' }, { status: 500 })
+
+    let code: string
+    try {
+      const generated = await generateAccessCode(adminClient, {
+        schoolId:    (callerProfile as any).school_id,
+        fullName,
+        profileId:   userId,
+        generatedBy: user.id,
+      })
+      code = generated.code
+    } catch (codeErr: any) {
+      await adminClient.auth.admin.deleteUser(userId)
+      return NextResponse.json({ error: `Access code generation failed: ${codeErr.message}` }, { status: 500 })
+    }
 
     // Every account created via access code - regardless of role - must
     // start at 'stage_1_pending'. That's the ONLY stage /api/auth/first-login
@@ -191,7 +203,7 @@ export async function POST(request: Request) {
         id:               userId,
         class_id:         classId || null,
         year_of_entry:    year,
-        admission_number: admissionNumber || `STU-${year}-${rand}`,
+        admission_number: admissionNumber || `STU-${year}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
       }
       if (guardianName)  studentRow.guardian_name  = guardianName
       if (guardianPhone) studentRow.guardian_phone = guardianPhone
