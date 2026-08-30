@@ -6,6 +6,7 @@ import RoleHeroHeader from '@/components/RoleHeroHeader'
 import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
+import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   ClipboardIcon, ActivityIcon, UserIcon, CheckCircleIcon,
@@ -79,6 +80,8 @@ export default function IctClient({ profile, school, userId, appointment, counts
         sub={`${counts.openTickets} open ticket${counts.openTickets === 1 ? '' : 's'} · ${counts.assetsUnderRepair} device${counts.assetsUnderRepair === 1 ? '' : 's'} under repair`}
         featureGroups={FEATURE_GROUPS}
       />
+
+      <ContextSwitcher />
 
       <main className={styles.main}>
         <div className={motion.riseIn} style={{
