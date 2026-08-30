@@ -26,7 +26,7 @@
 import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import crypto                 from 'crypto'
+import { generateAccessCode, revokeAccessCode } from '@/lib/supabase/access-code-generator'
 
 export async function POST(request: Request) {
   try {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     const { data: target } = await admin
-      .from('profiles').select('id, role, school_id').eq('id', profileId).single()
+      .from('profiles').select('id, role, school_id, full_name').eq('id', profileId).single()
 
     if (!target || target.school_id !== caller.school_id) {
       // Same error either way - don't reveal whether the id exists in
@@ -71,10 +71,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not permitted to regenerate this code' }, { status: 403 })
     }
 
-    const year   = new Date().getFullYear()
-    const rand   = crypto.randomBytes(6).toString('base64url').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-    const prefix = target.role.slice(0, 3).toUpperCase()
-    const code   = `${prefix}-${year}-${rand}`
+    // Revoke whatever access_codes row is currently active for this
+    // profile before issuing a new one, so a regenerated code can never
+    // leave the old one still usable. Best-effort: a target with no prior
+    // access_codes row (accounts created before this table existed) simply
+    // has nothing to revoke, which is fine, not an error.
+    const { data: priorCodes } = await admin
+      .from('access_codes')
+      .select('code')
+      .eq('profile_id', profileId)
+      .in('status', ['unused', 'active'])
+
+    for (const prior of priorCodes ?? []) {
+      try {
+        await revokeAccessCode(admin, { code: prior.code, revokedBy: user.id })
+      } catch { /* non-critical, new code below is still issued either way */ }
+    }
+
+    let code: string
+    try {
+      const generated = await generateAccessCode(admin, {
+        schoolId:    caller.school_id,
+        fullName:    (target as any).full_name ?? target.role,
+        profileId,
+        generatedBy: user.id,
+      })
+      code = generated.code
+    } catch (codeErr: any) {
+      return NextResponse.json({ error: `Access code generation failed: ${codeErr.message}` }, { status: 500 })
+    }
 
     const { error: updateError } = await admin
       .from('profiles')
