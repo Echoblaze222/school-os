@@ -166,8 +166,14 @@ export async function POST(req: Request) {
             school_id: parsed.schoolId,
             online_class_id: parsed.onlineClassId,
             storage_key: file.location,
-            duration_seconds: Number(file.duration ?? 0n) || null,
-            size_bytes: Number(file.size ?? 0n) || null,
+            // Number(bigint | undefined ?? 0) — plain 0, not the 0n BigInt
+            // literal: this project's tsconfig targets ES2017, which
+            // doesn't support BigInt literal syntax. Number() accepts a
+            // bigint argument at runtime regardless of target (it's a
+            // library call, not literal syntax), so this is just as
+            // correct without tripping the target-version restriction.
+            duration_seconds: Number(file.duration ?? 0) || null,
+            size_bytes: Number(file.size ?? 0) || null,
             status: 'ready',
           },
           { onConflict: 'storage_key' }
