@@ -11,7 +11,7 @@
 // have caught the underlying attempt.
 
 import { describe, it, expect } from 'vitest'
-import { decideLiveClassAccess, type CallerProfile, type OnlineClassRow } from '../authorize'
+import { decideLiveClassAccess, isDenied, type CallerProfile, type OnlineClassRow } from '../authorize'
 
 const greenwoodSchoolId = '11111111-1111-1111-1111-111111111111'
 const riversideSchoolId = '22222222-2222-2222-2222-222222222222'
@@ -209,5 +209,41 @@ describe('decideLiveClassAccess', () => {
       schoolLock: unlocked,
     })
     expect(result).toEqual({ ok: false, reason: 'not_authorized_role' })
+  })
+})
+
+describe('isDenied', () => {
+  // This type guard exists specifically to work around a real build
+  // failure: this project's tsconfig has strict:false, under which
+  // TypeScript's discriminated-union narrowing for `if (!decision.ok)
+  // decision.reason` silently fails type-checking (confirmed against the
+  // real compiler with the project's exact tsconfig — see this function's
+  // doc comment in authorize.ts, and the `next build` failure it was
+  // added to fix). isDenied() is what every route now uses instead. These
+  // tests aren't about the type-level fix (that's a compile-time
+  // concern, verified separately via tsc, not vitest) — they confirm the
+  // function's actual runtime behavior matches what every call site
+  // depends on.
+  it('returns true and the reason is accessible for a denied result', () => {
+    const result = decideLiveClassAccess({
+      caller: caller({ schoolId: null }),
+      session: session(),
+      isClassTeacher: false,
+      isEnrolledStudent: false,
+      schoolLock: unlocked,
+    })
+    expect(isDenied(result)).toBe(true)
+    if (isDenied(result)) expect(result.reason).toBe('no_profile')
+  })
+
+  it('returns false for a granted result', () => {
+    const result = decideLiveClassAccess({
+      caller: caller({ role: 'principal' }),
+      session: session(),
+      isClassTeacher: false,
+      isEnrolledStudent: false,
+      schoolLock: unlocked,
+    })
+    expect(isDenied(result)).toBe(false)
   })
 })
