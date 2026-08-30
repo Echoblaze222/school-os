@@ -170,6 +170,9 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
   const [form,           setForm]           = useState({
     title: '', class_id: '', class_subject_id: '',
     total_marks: 10, starts_at: '', ends_at: '', attempt_limit: 1,
+    mode: 'quiz' as 'quiz' | 'cbt', duration_mins: 30,
+    randomize_questions: false, randomize_options: false,
+    pass_mark: '' as number | '', allow_resume: true,
   })
 
   const supabase = createClient()
@@ -391,6 +394,12 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         title:            form.title,
         total_marks:      form.total_marks,
         attempt_limit:    form.attempt_limit,
+        mode:                 form.mode,
+        duration_mins:        form.duration_mins,
+        randomize_questions:  form.mode === 'cbt' ? form.randomize_questions : false,
+        randomize_options:    form.mode === 'cbt' ? form.randomize_options : false,
+        allow_resume:         form.allow_resume,
+        pass_mark:            form.pass_mark === '' ? null : form.pass_mark,
         starts_at:        form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
         ends_at:          form.ends_at   ? new Date(form.ends_at).toISOString()   : defaultEnd.toISOString(),
         scheduled_at:     form.starts_at ? new Date(form.starts_at).toISOString() : now.toISOString(),
@@ -605,6 +614,48 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
               {[1, 2, 3, 5].map(n => <option key={n} value={n}>{n === 1 ? '1 attempt' : `${n} attempts`}</option>)}
             </select>
           </div>
+        </div>
+
+        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: 'var(--space-4)' }}>
+          <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 var(--space-3)' }}>Exam Mode</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: form.mode === 'cbt' ? 'var(--space-3)' : 0 }}>
+            {(['quiz', 'cbt'] as const).map(m => (
+              <button key={m} type="button" className="pressable" onClick={() => setForm(f => ({ ...f, mode: m }))}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                  background: form.mode === m ? sc : 'var(--input-bg)', color: form.mode === m ? '#fff' : 'var(--text-secondary)',
+                  border: `1px solid ${form.mode === m ? sc : 'var(--input-border)'}` }}>
+                {m === 'quiz' ? 'Practice Quiz' : 'CBT Examination'}
+              </button>
+            ))}
+          </div>
+          {form.mode === 'cbt' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Duration (minutes)</label>
+                <input type="number" min={5} max={300} value={form.duration_mins}
+                  onChange={e => setForm(f => ({ ...f, duration_mins: Number(e.target.value) }))}
+                  style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Pass Mark (%)</label>
+                <input type="number" min={0} max={100} value={form.pass_mark}
+                  onChange={e => setForm(f => ({ ...f, pass_mark: e.target.value === '' ? '' : Number(e.target.value) }))}
+                  placeholder="Optional" style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.randomize_questions} onChange={e => setForm(f => ({ ...f, randomize_questions: e.target.checked }))} />
+                Randomize question order
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.randomize_options} onChange={e => setForm(f => ({ ...f, randomize_options: e.target.checked }))} />
+                Randomize answer options
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', gridColumn: '1 / -1' }}>
+                <input type="checkbox" checked={form.allow_resume} onChange={e => setForm(f => ({ ...f, allow_resume: e.target.checked }))} />
+                Allow students to resume if they disconnect
+              </label>
+            </div>
+          )}
         </div>
 
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: 'var(--space-4)' }}>
