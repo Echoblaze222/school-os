@@ -14,7 +14,7 @@ export interface EligibilityStudent {
   lifecycle_stage: string | null // profiles.lifecycle_stage
 }
 
-export interface EligibilityGraduationRecord {
+export type EligibilityGraduationRecord = {
   id: string
   student_id: string
   school_id: string
@@ -22,7 +22,7 @@ export interface EligibilityGraduationRecord {
   final_class: string
 } | null
 
-export interface EligibilityExistingCertificate {
+export type EligibilityExistingCertificate = {
   id: string
   status: 'draft' | 'pending_approval' | 'issued' | 'revoked'
 } | null
