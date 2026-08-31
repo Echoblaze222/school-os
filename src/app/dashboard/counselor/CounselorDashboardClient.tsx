@@ -22,6 +22,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'appointments', label: 'Appointments',  href: '/dashboard/counselor/appointments',  Icon: CalendarIcon },
     { id: 'referrals',    label: 'Referrals',     href: '/dashboard/counselor/referrals',     Icon: ShieldIcon },
     { id: 'reports',      label: 'Reports',       href: '/dashboard/counselor/reports',       Icon: BarChartIcon },
+    { id: 'meetings',     label: 'Meetings',      href: '/dashboard/counselor/meetings',      Icon: CalendarIcon },
   ]},
   { name: 'Communication', items: [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/counselor/chat',          Icon: MessageIcon },
