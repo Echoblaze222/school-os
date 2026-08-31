@@ -8,16 +8,21 @@
 // Principal pages, add them here, not as a one-off in a single page.
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import { LayersIcon, UsersIcon, BellIcon, UserIcon, MegaphoneIcon } from '@/components/Icons'
+import { LayersIcon, UsersIcon, BellIcon, UserIcon, MegaphoneIcon, MessageIcon, AiIcon, CalendarIcon } from '@/components/Icons'
 
 export const VP_FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'Main', items: [
+    { id: 'chat',          label: 'Messages',      href: '/dashboard/vice-principal/chat',          Icon: MessageIcon },
+    { id: 'ai',            label: 'AI Assistant',  href: '/dashboard/vice-principal/ai',             Icon: AiIcon },
+    { id: 'notifications', label: 'Notifications', href: '/dashboard/vice-principal/notifications', Icon: BellIcon },
+  ]},
   { name: 'Organization', items: [
     { id: 'departments',    label: 'Departments',    href: '/dashboard/vice-principal/departments',    Icon: LayersIcon },
     { id: 'staff',          label: 'Staff',          href: '/dashboard/vice-principal/staff',          Icon: UsersIcon },
     { id: 'announcements',  label: 'Announcements',  href: '/dashboard/vice-principal/announcements',  Icon: MegaphoneIcon },
+    { id: 'meetings',       label: 'Meetings',       href: '/dashboard/vice-principal/meetings',       Icon: CalendarIcon },
   ]},
   { name: 'Account', items: [
-    { id: 'notifications', label: 'Notifications', href: '/dashboard/vice-principal/notifications', Icon: BellIcon },
     { id: 'profile',       label: 'Profile',       href: '/dashboard/vice-principal/profile',       Icon: UserIcon },
   ]},
 ]
