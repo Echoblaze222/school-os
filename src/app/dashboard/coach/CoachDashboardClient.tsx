@@ -8,7 +8,7 @@ import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import { PeopleIcon, CalendarIcon, TrophyIcon, AiIcon, MessageIcon, BellIcon, UserIcon } from '@/components/Icons'
+import { PeopleIcon, CalendarIcon, TrophyIcon, AiIcon, MessageIcon, BellIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
 import styles from './coach.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -17,6 +17,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'teams',    label: 'Teams',    href: '/dashboard/coach/teams',    Icon: PeopleIcon },
     { id: 'schedule', label: 'Schedule', href: '/dashboard/coach/schedule', Icon: CalendarIcon },
     { id: 'matches',  label: 'Matches',  href: '/dashboard/coach/matches',  Icon: TrophyIcon },
+    { id: 'meetings', label: 'Meetings', href: '/dashboard/coach/meetings', Icon: ClipboardIcon },
   ]},
   { name: 'Communication', items: [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/coach/chat',          Icon: MessageIcon },
