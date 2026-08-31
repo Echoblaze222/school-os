@@ -10,7 +10,7 @@ import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   CalendarIcon, ClockIcon, ShieldIcon, CheckCircleIcon,
-  FileTextIcon, AlertCircleIcon, BarChartIcon,
+  FileTextIcon, AlertCircleIcon, BarChartIcon, MessageIcon, AiIcon, BellIcon, UserIcon,
 } from '@/components/Icons'
 import styles from './examination.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -41,6 +41,11 @@ interface Props {
 }
 
 const FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'Main', items: [
+    { id: 'chat',          label: 'Messages',      href: '/dashboard/examination/chat',          Icon: MessageIcon },
+    { id: 'ai',            label: 'AI Assistant',  href: '/dashboard/examination/ai',             Icon: AiIcon },
+    { id: 'notifications', label: 'Notifications', href: '/dashboard/examination/notifications',  Icon: BellIcon },
+  ]},
   { name: 'Exams', items: [
     { id: 'sessions',   label: 'Exam Sessions', href: '/dashboard/examination/sessions',   Icon: CalendarIcon },
     { id: 'timetable',  label: 'Timetable',     href: '/dashboard/examination/timetable',  Icon: ClockIcon },
@@ -49,10 +54,14 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'invigilation', label: 'Invigilation',    href: '/dashboard/examination/invigilation', Icon: ShieldIcon },
     { id: 'attendance',   label: 'Exam Attendance', href: '/dashboard/examination/attendance',   Icon: CheckCircleIcon },
     { id: 'incidents',    label: 'Incidents',       href: '/dashboard/examination/incidents',    Icon: AlertCircleIcon },
+    { id: 'meetings',     label: 'Meetings',        href: '/dashboard/examination/meetings',     Icon: CalendarIcon },
   ]},
   { name: 'Results', items: [
     { id: 'documents', label: 'Question Papers',  href: '/dashboard/examination/documents', Icon: FileTextIcon },
     { id: 'results',   label: 'Verify & Publish', href: '/dashboard/examination/results',   Icon: BarChartIcon },
+  ]},
+  { name: 'Account', items: [
+    { id: 'profile', label: 'My Profile', href: '/dashboard/examination/profile', Icon: UserIcon },
   ]},
 ]
 
