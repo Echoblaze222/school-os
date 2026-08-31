@@ -8,6 +8,7 @@ import GaugeStat from '@/components/GaugeStat'
 import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
+import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   PeopleIcon, SchoolIcon, WalletIcon,
@@ -118,6 +119,8 @@ export default function PrincipalDashboardClient({
         featureGroups={FEATURE_GROUPS}
         showBranding
       />
+
+      <ContextSwitcher />
 
       <main className={styles.main} style={{ maxWidth: 880 }}>
 
