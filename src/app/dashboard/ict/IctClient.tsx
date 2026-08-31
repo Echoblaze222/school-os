@@ -10,15 +10,21 @@ import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   ClipboardIcon, ActivityIcon, UserIcon, CheckCircleIcon,
-  MessageIcon, BellIcon, SettingsIcon, AiIcon,
+  MessageIcon, BellIcon, AiIcon, CalendarIcon,
 } from '@/components/Icons'
 import styles from './ict.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
 const FEATURE_GROUPS: FeatureGroup[] = [
+  { name: 'Main', items: [
+    { id: 'chat',          label: 'Messages',      href: '/dashboard/ict/chat',          Icon: MessageIcon },
+    { id: 'ai',            label: 'AI Assistant',  href: '/dashboard/ict/ai',             Icon: AiIcon },
+    { id: 'notifications', label: 'Notifications', href: '/dashboard/ict/notifications',  Icon: BellIcon },
+  ]},
   { name: 'Support', items: [
     { id: 'tickets',  label: 'Tickets',           href: '/dashboard/ict/tickets',          Icon: ClipboardIcon },
     { id: 'accounts', label: 'Account Requests',  href: '/dashboard/ict/account-requests',  Icon: UserIcon },
+    { id: 'meetings', label: 'Meetings',           href: '/dashboard/ict/meetings',          Icon: CalendarIcon },
   ]},
   { name: 'Infrastructure', items: [
     { id: 'assets', label: 'Assets & Devices', href: '/dashboard/ict/assets', Icon: ActivityIcon },
@@ -26,12 +32,8 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Onboarding', items: [
     { id: 'applications', label: 'Applications', href: '/dashboard/ict/applications', Icon: CheckCircleIcon },
   ]},
-  { name: 'Communication', items: [
-    { id: 'chat',          label: 'Messages',      href: '/dashboard/ict/chat',          Icon: MessageIcon },
-    { id: 'notifications', label: 'Notifications', href: '/dashboard/ict/notifications', Icon: BellIcon },
-  ]},
   { name: 'Account', items: [
-    { id: 'settings', label: 'Settings', href: '/dashboard/ict/settings', Icon: SettingsIcon },
+    { id: 'profile', label: 'My Profile', href: '/dashboard/ict/profile', Icon: UserIcon },
   ]},
 ]
 
