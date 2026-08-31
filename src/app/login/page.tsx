@@ -351,8 +351,8 @@ export default function LoginPage() {
                   <label className={styles.label}>Access Code</label>
                   <input
                     type="text" value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())}
-                    className={`${styles.input} ${styles.codeInput}`} placeholder="e.g. TCH-AB12-XY"
-                    required autoComplete="off" maxLength={16}
+                    className={`${styles.input} ${styles.codeInput}`} placeholder="e.g. TEA-2026-XXXX"
+                    required autoComplete="off"
                   />
                   <label className={styles.label}>Set New Password</label>
                   <div className={styles.passWrap}>
