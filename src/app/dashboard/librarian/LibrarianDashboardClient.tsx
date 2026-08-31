@@ -8,7 +8,7 @@ import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import { BookIcon, RefreshIcon, AiIcon, MessageIcon, BellIcon, UserIcon } from '@/components/Icons'
+import { BookIcon, RefreshIcon, AiIcon, MessageIcon, BellIcon, UserIcon, CalendarIcon } from '@/components/Icons'
 import styles from './librarian.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -16,6 +16,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Library', items: [
     { id: 'catalog',   label: 'Catalog',   href: '/dashboard/librarian/catalog',   Icon: BookIcon },
     { id: 'checkouts', label: 'Checkouts', href: '/dashboard/librarian/checkouts', Icon: RefreshIcon },
+    { id: 'meetings',  label: 'Meetings',  href: '/dashboard/librarian/meetings',  Icon: CalendarIcon },
   ]},
   { name: 'Communication', items: [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/librarian/chat',          Icon: MessageIcon },
