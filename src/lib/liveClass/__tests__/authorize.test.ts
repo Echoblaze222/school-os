@@ -11,7 +11,7 @@
 // have caught the underlying attempt.
 
 import { describe, it, expect } from 'vitest'
-import { decideLiveClassAccess, isDenied, type CallerProfile, type OnlineClassRow } from '../authorize'
+import { decideLiveClassAccess, isDenied, recordingsScopeFor, type CallerProfile, type OnlineClassRow } from '../authorize'
 
 const greenwoodSchoolId = '11111111-1111-1111-1111-111111111111'
 const riversideSchoolId = '22222222-2222-2222-2222-222222222222'
@@ -245,5 +245,30 @@ describe('isDenied', () => {
       schoolLock: unlocked,
     })
     expect(isDenied(result)).toBe(false)
+  })
+})
+
+describe('recordingsScopeFor (Phase 3)', () => {
+  it('gives staff roles (principal, bursar, secretary, admin) school-wide visibility, mirroring is_staff() from the Phase 0 SQL migration', () => {
+    expect(recordingsScopeFor('principal')).toBe('all_school')
+    expect(recordingsScopeFor('bursar')).toBe('all_school')
+    expect(recordingsScopeFor('secretary')).toBe('all_school')
+    expect(recordingsScopeFor('admin')).toBe('all_school')
+  })
+
+  it('scopes a teacher to their own classes', () => {
+    expect(recordingsScopeFor('teacher')).toBe('teacher_classes')
+  })
+
+  it('scopes a student to their single enrolled class', () => {
+    expect(recordingsScopeFor('student')).toBe('single_class')
+  })
+
+  it('gives a parent NO visibility yet (safer default until a verified parent-child link exists) — not a silent grant of everything', () => {
+    expect(recordingsScopeFor('parent')).toBe('none')
+  })
+
+  it('any unrecognized role defaults to none, not all_school — an unknown role must never be treated as broader access than a known one', () => {
+    expect(recordingsScopeFor('some_future_role')).toBe('none')
   })
 })
