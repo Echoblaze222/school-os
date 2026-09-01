@@ -188,11 +188,15 @@ create policy "invoices_write_staff_own_school" on public.payment_invoices
 -- ── payments ──────────────────────────────────────────────────────────────
 alter table public.payments enable row level security;
 
+-- Financial records: staff-wide access was too broad here (a teacher, nurse,
+-- coach, etc. could query every family's payment history school-wide via
+-- the anon key directly). Scoped to bursar/principal only - the two roles
+-- that actually have payment-recording screens in the app.
 drop policy if exists "payments_select_school_or_own_child" on public.payments;
 create policy "payments_select_school_or_own_child" on public.payments
   for select
   using (
-    school_id = public.my_school_id()
+    (school_id = public.my_school_id() and public.my_role() in ('bursar', 'principal'))
     or student_id = auth.uid()
     or student_id in (
       select student_id from public.parent_student_links where parent_id = auth.uid()
@@ -203,10 +207,12 @@ create policy "payments_select_school_or_own_child" on public.payments
 -- is the same class of gap already fixed in confirm-claim/route.ts - -- without this policy, ANY authenticated user (not just bursars) could
 -- insert an arbitrary payments row for any school by calling
 -- supabase.from('payments').insert(...) directly in a browser console.
+-- Scoped the same way as the select policy above - bursar/principal only,
+-- not all of is_staff() (a teacher has no legitimate reason to write here).
 drop policy if exists "payments_insert_staff_own_school" on public.payments;
 create policy "payments_insert_staff_own_school" on public.payments
   for insert
-  with check (school_id = public.my_school_id() and public.is_staff());
+  with check (school_id = public.my_school_id() and public.my_role() in ('bursar', 'principal'));
 
 -- Payments should generally be immutable once recorded (edit history should
 -- go through a correction workflow, not a silent UPDATE). No update/delete

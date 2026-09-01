@@ -101,7 +101,8 @@ export default function BursarDashboardClient({
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   async function handleDeleteActivity(id: string) {
-    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+    const { error } = await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+    if (error) throw error
   }
 
   return (

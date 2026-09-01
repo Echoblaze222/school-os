@@ -213,7 +213,8 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
   }
 
   async function handleDeleteActivity(id: string) {
-    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+    const { error } = await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+    if (error) throw error
   }
 
   // ── Loading ──

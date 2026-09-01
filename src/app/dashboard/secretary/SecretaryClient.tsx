@@ -82,7 +82,8 @@ export default function SecretaryClient({
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
-    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+    const { error } = await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
+    if (error) throw error
   }
 
   return (

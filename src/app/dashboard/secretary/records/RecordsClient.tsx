@@ -129,7 +129,12 @@ export default function RecordsClient({ records: init, profile, school, userId, 
   }
 
   async function deleteRecord(id: string) {
-    await supabase.from('behaviour_records').delete().eq('id', id)
+    const { error } = await supabase.from('behaviour_records').delete().eq('id', id)
+    if (error) {
+      setMsg(error.message ?? 'Failed to delete record')
+      setConfirmDeleteId(null)
+      return
+    }
     setRecords(p => p.filter(r => r.id !== id))
     setViewItem(null)
     setConfirmDeleteId(null)

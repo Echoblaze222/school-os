@@ -36,9 +36,12 @@ export default async function BursarDashboardPage() {
   const schoolId = profile.school_id
 
   // ── Counts for stats cards ────────────────────────────────────────────────
-  // NOTE: fee_payments has no `status`/`paid_at` columns - the source of truth
-  // for what's owed/paid per student is `school_fees` (amount_ngn, paid_ngn, status).
-  // fee_payments is just an append-only log of recorded transactions.
+  // Source of truth for what's owed/paid per student is `school_fees`
+  // (amount_ngn, paid_ngn, status). `payments` is the append-only log of
+  // recorded transactions used for the "paid this month" count below.
+  // (fee_payments is a dead table - nothing writes to it anymore; every other
+  // bursar screen was already migrated off it, this stat card was the one
+  // that got missed.)
   const [
     { data: feeRows },
     { count: totalStudents },
@@ -56,10 +59,10 @@ export default async function BursarDashboardPage() {
       .eq('role', 'student'),
 
     supabase
-      .from('fee_payments')
+      .from('payments')
       .select('*', { count: 'exact', head: true })
       .eq('school_id', schoolId)
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+      .gte('paid_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
   ])
 
   const rows = feeRows ?? []

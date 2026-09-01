@@ -74,20 +74,28 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
       term,
       academic_year: year,
     }
-    if (editId) {
-      await supabase.from('school_expenses').update(payload).eq('id', editId)
-    } else {
-      await supabase.from('school_expenses').insert(payload)
+    const { error } = editId
+      ? await supabase.from('school_expenses').update(payload).eq('id', editId)
+      : await supabase.from('school_expenses').insert(payload)
+
+    setSaving(false)
+    if (error) {
+      showToast(error.message || 'Could not save expense. Please try again.')
+      return
     }
-    setShowForm(false); setSaving(false); setEditId(null); setForm({ ...BLANK })
+    setShowForm(false); setEditId(null); setForm({ ...BLANK })
     showToast(editId ? 'Expense updated' : 'Expense saved')
     load()
   }
 
   async function del(id: string) {
     setDeleting(id)
-    await supabase.from('school_expenses').delete().eq('id', id)
+    const { error } = await supabase.from('school_expenses').delete().eq('id', id)
     setDeleting(null); setConfirmDeleteId(null)
+    if (error) {
+      showToast(error.message || 'Could not delete expense. Please try again.')
+      return
+    }
     showToast('Expense deleted')
     load()
   }

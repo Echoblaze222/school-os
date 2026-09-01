@@ -791,16 +791,23 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (!editingId) return
     const newContent = text.trim()
     const msgId = editingId
+    const original = messages.find(m => m.id === msgId)
     setText('')
     setEditingId(null)
 
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, content: newContent, is_edited: true } : m
     ))
-    await supabase
+    const { error } = await supabase
       .from('chat_messages')
       .update({ content: newContent, is_edited: true, edited_at: new Date().toISOString() })
       .eq('id', msgId).eq('sender_id', userId)
+
+    if (error && original) {
+      // edit didn't actually persist - put the original content back so
+      // the UI doesn't show an edit that isn't real
+      setMessages(prev => prev.map(m => m.id === msgId ? original : m))
+    }
   }
 
   // ── Pick a file → show caption preview (doesn't send yet) ────
@@ -853,6 +860,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   async function addReaction(msgId: string, emoji: string) {
     const msg = messages.find(m => m.id === msgId)
     if (!msg) return
+    const originalReactions = msg.reactions
     const reactions = { ...(msg.reactions ?? {}) }
     if (!reactions[emoji]) reactions[emoji] = []
     if (reactions[emoji].includes(userId)) {
@@ -863,19 +871,26 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m))
     setEmojiTarget(null)
-    await supabase.from('chat_messages').update({ reactions }).eq('id', msgId)
+    const { error } = await supabase.from('chat_messages').update({ reactions }).eq('id', msgId)
+    if (error) {
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions: originalReactions } : m))
+    }
   }
 
   // ── Delete ───────────────────────────────────────────────
   async function deleteMessage(msgId: string) {
     setContextMenuId(null)
+    const original = messages.find(m => m.id === msgId)
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, is_deleted: true, content: 'This message was deleted' } : m
     ))
-    await supabase
+    const { error } = await supabase
       .from('chat_messages')
       .update({ is_deleted: true, content: 'This message was deleted' })
       .eq('id', msgId).eq('sender_id', userId)
+    if (error && original) {
+      setMessages(prev => prev.map(m => m.id === msgId ? original : m))
+    }
   }
 
   function handleKey(e: React.KeyboardEvent) {

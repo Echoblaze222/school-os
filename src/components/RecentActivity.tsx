@@ -72,11 +72,18 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
 
   async function handleDelete(id: string) {
     setRemovingId(id)
-    // let the exit animation play before removing from DOM
+    // let the exit animation play, then attempt the real delete. Only commit
+    // the removal from local state if it actually succeeded - otherwise put
+    // the item back so the UI doesn't lie about what happened.
     setTimeout(async () => {
-      setLocalItems(prev => prev.filter(i => i.id !== id))
-      setRemovingId(null)
-      if (onDelete) await onDelete(id)
+      try {
+        if (onDelete) await onDelete(id)
+        setLocalItems(prev => prev.filter(i => i.id !== id))
+      } catch {
+        // deletion failed - leave the item in place
+      } finally {
+        setRemovingId(null)
+      }
     }, 260)
   }
 

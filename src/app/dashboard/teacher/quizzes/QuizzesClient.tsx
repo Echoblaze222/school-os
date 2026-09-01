@@ -470,28 +470,42 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     const newEndsAt = isActive
       ? now.toISOString()
       : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    await supabase.from('quizzes').update({ ends_at: newEndsAt, closes_at: newEndsAt })
+    const { error } = await supabase.from('quizzes').update({ ends_at: newEndsAt, closes_at: newEndsAt })
       .eq('id', id).eq('created_by', userId)
+    if (error) { setSaveError("Couldn't update that quiz. Try again."); return }
     loadQuizzes()
   }
 
   async function deleteQuiz(id: string) {
     if (!confirm('Delete this quiz and all its questions and attempts?')) return
-    // Delete (and verify ownership of) the parent row first. Scoping this to
-    // created_by means an attempt on a quiz that isn't this teacher's simply
-    // matches zero rows - nothing downstream gets touched.
+
+    // Verify ownership before touching anything - an attempt on a quiz that
+    // isn't this teacher's matches zero rows and we bail immediately.
     const { data: owned, error: ownErr } = await supabase
       .from('quizzes')
-      .delete()
+      .select('id')
       .eq('id', id)
       .eq('created_by', userId)
-      .select('id')
-    if (ownErr || !owned?.length) {
+      .maybeSingle()
+    if (ownErr || !owned) {
       setSaveError(ownErr?.message ?? "Couldn't delete that quiz.")
       return
     }
-    await supabase.from('quiz_questions').delete().eq('quiz_id', id)
-    await supabase.from('quiz_attempts').delete().eq('quiz_id', id)
+
+    // quiz_questions and quiz_attempts both have a plain (non-cascading)
+    // FK to quizzes.id, so the parent row can't be deleted while either
+    // still references it - children must go first, and each step needs
+    // its own error check or a partial failure leaves things inconsistent
+    // (e.g. attempts deleted but the quiz and its questions still there).
+    const { error: attemptsErr } = await supabase.from('quiz_attempts').delete().eq('quiz_id', id)
+    if (attemptsErr) { setSaveError("Couldn't delete that quiz's attempts."); return }
+
+    const { error: questionsErr } = await supabase.from('quiz_questions').delete().eq('quiz_id', id)
+    if (questionsErr) { setSaveError("Couldn't delete that quiz's questions."); return }
+
+    const { error: quizErr } = await supabase.from('quizzes').delete().eq('id', id).eq('created_by', userId)
+    if (quizErr) { setSaveError(quizErr.message ?? "Couldn't delete that quiz."); return }
+
     setQuizzes(prev => prev.filter(q => q.id !== id))
   }
 

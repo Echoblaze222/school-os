@@ -143,9 +143,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
   async function del(id: string) {
     setDeleting(id)
-    await supabase.from('fee_structures').delete().eq('id', id)
+    const { error: delErr } = await supabase.from('fee_structures').delete().eq('id', id)
     setDeleting(null)
     setConfirmDeleteId(null)
+    if (delErr) {
+      setError("We couldn't delete that fee structure. Try again.")
+      return
+    }
     load()
   }
 

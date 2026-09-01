@@ -111,7 +111,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   let pdfBuffer: Buffer
   try {
     pdfBuffer = await renderToBuffer(
-      React.createElement(CertificateDocument, { data: snapshot, primary: school?.primary_color ?? '#800020' }),
+      // @react-pdf/renderer's renderToBuffer types want a literal <Document>
+      // element; a named wrapper component that renders one (this pattern)
+      // renders identically at runtime but doesn't satisfy that strict type.
+      React.createElement(CertificateDocument, { data: snapshot, primary: school?.primary_color ?? '#800020' }) as React.ReactElement<any>,
     )
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: `PDF generation failed: ${err.message}` }, { status: 500 })

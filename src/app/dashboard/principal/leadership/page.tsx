@@ -39,25 +39,34 @@ export default async function LeadershipPage() {
   const school = (profile as any)?.schools ?? null
   const schoolId = (profile as any).school_id
 
-  const [departments, { data: vpAppointments }, { data: hostels }, { data: hpAppointments }, { data: classes }, { data: genericAppointments }, { data: allAppointments }] = await Promise.all([
+  const [departments, { data: vpAppointments, error: vpErr }, { data: hostels }, { data: hpAppointments, error: hpErr }, { data: classes }, { data: genericAppointments, error: genErr }, { data: allAppointments }] = await Promise.all([
     listDepartments(supabase, schoolId),
     supabase
       .from('appointments')
-      .select('id, department_id, scope, assigned_at, profiles(id, full_name, avatar_url, email)')
+      // `profiles!profile_id` disambiguates which of appointments' FOUR
+      // foreign keys to profiles (profile_id, reports_to_profile_id,
+      // assigned_by, revoked_by) to embed through. Without this hint
+      // PostgREST can't tell which relationship you mean and errors -
+      // which supabase-js surfaces as `{ data: null, error }`, not a
+      // thrown exception, so it silently became an empty list here
+      // (matching "I appoint someone, it shows, then disappears": the
+      // optimistic UI update was correct, this query was what returned
+      // nothing on the next refresh).
+      .select('id, department_id, scope, assigned_at, profiles!profile_id(id, full_name, avatar_url, email)')
       .eq('school_id', schoolId)
       .eq('appointment_type', 'vice_principal')
       .eq('status', 'active'),
     supabase.from('hostels').select('id, name').eq('school_id', schoolId).order('name'),
     supabase
       .from('appointments')
-      .select('id, scope, assigned_at, profiles(id, full_name, avatar_url)')
+      .select('id, scope, assigned_at, profiles!profile_id(id, full_name, avatar_url)')
       .eq('school_id', schoolId)
       .eq('appointment_type', 'hostel_prefect')
       .eq('status', 'active'),
     supabase.from('classes').select('id, name').eq('school_id', schoolId).eq('is_active', true).order('name'),
     supabase
       .from('appointments')
-      .select('id, appointment_type, scope, assigned_at, profiles(id, full_name, avatar_url, email, employee_id, role, department_id)')
+      .select('id, appointment_type, scope, assigned_at, profiles!profile_id(id, full_name, avatar_url, email, employee_id, role, department_id)')
       .eq('school_id', schoolId)
       .in('appointment_type', GENERIC_TYPES)
       .eq('status', 'active'),
@@ -75,6 +84,10 @@ export default async function LeadershipPage() {
       .eq('school_id', schoolId)
       .order('assigned_at', { ascending: false }),
   ])
+
+  if (vpErr) console.error('[leadership] vice_principal query error:', vpErr.message)
+  if (hpErr) console.error('[leadership] hostel_prefect query error:', hpErr.message)
+  if (genErr) console.error('[leadership] generic appointments query error:', genErr.message)
 
   const vicePrincipals = (vpAppointments ?? []).map((a: any) => {
     const person = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles

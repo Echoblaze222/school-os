@@ -62,10 +62,14 @@ export async function listDepartments(
 
   const deptIds = departments.map((d: any) => d.id)
 
-  const [{ data: hodAppointments }, { data: members }] = await Promise.all([
+  const [{ data: hodAppointments, error: hodErr }, { data: members }] = await Promise.all([
     supabase
       .from('appointments')
-      .select('id, department_id, profile_id, profiles(id, full_name)')
+      // See the same fix/comment in dashboard/principal/leadership/page.tsx -
+      // profile_id must be specified since appointments has multiple FKs
+      // to profiles (profile_id, reports_to_profile_id, assigned_by,
+      // revoked_by), and an unqualified `profiles(...)` embed is ambiguous.
+      .select('id, department_id, profile_id, profiles!profile_id(id, full_name)')
       .eq('school_id', schoolId)
       .eq('appointment_type', 'hod')
       .eq('status', 'active')
@@ -76,6 +80,7 @@ export async function listDepartments(
       .eq('school_id', schoolId)
       .in('department_id', deptIds),
   ])
+  if (hodErr) console.error('[appointments] listDepartments HOD query error:', hodErr.message)
 
   const hodByDept = new Map<string, { id: string; full_name: string; appointment_id: string }>()
   for (const a of (hodAppointments ?? []) as any[]) {

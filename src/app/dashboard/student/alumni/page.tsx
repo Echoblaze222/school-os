@@ -9,12 +9,14 @@
 // ASSUMPTIONS - please confirm against your actual schema:
 //   1. `transcript_requests` table exists (StudentAlumniClient already
 //      inserts into it) with columns: student_id, status, requested_at.
-//   2. Fee history comes from `fee_payments` (confirmed real table - used by
-//      bursar/parent), NOT a separate `receipts` table. `fee_payments` has
-//      no `description` or `receipt_url` column in the rest of the app, so
-//      those are best-effort here: `description` falls back to the payment
-//      method, and `receipt_url` is left null until receipt PDFs are wired
-//      up (the download button simply won't render without it).
+//   2. Fee history comes from `payments` (the live table every other
+//      payment screen writes/reads - `fee_payments` is dead, nothing
+//      writes to it, and it has no status/payment_date columns at all,
+//      so the original query here would have errored at runtime).
+//      `payments` has no `description` or `receipt_url` column either:
+//      `description` falls back to the payment method, and `receipt_url`
+//      is left null until receipt PDFs are wired up (the download button
+//      simply won't render without it).
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import StudentAlumniClient from './StudentAlumniClient'
@@ -80,11 +82,10 @@ export default async function StudentAlumniArchivePage() {
       .order('academic_year', { ascending: false }),
 
     supabase
-      .from('fee_payments')
-      .select('id, amount, payment_method, payment_date, receipt_number')
+      .from('payments')
+      .select('id, amount_paid_ngn, payment_method, paid_at, receipt_number')
       .eq('student_id', user.id)
-      .eq('status', 'paid')
-      .order('payment_date', { ascending: false }),
+      .order('paid_at', { ascending: false }),
 
     supabase
       .from('transcript_requests')
@@ -109,9 +110,9 @@ export default async function StudentAlumniArchivePage() {
 
   const receipts: AlumniReceipt[] = (paymentRows ?? []).map((p: any) => ({
     id:             p.id,
-    amount_ngn:     p.amount,
+    amount_ngn:     p.amount_paid_ngn,
     description:    p.payment_method ?? 'Fee payment',
-    paid_at:        p.payment_date,
+    paid_at:        p.paid_at,
     receipt_number: p.receipt_number ?? 'N/A',
     receipt_url:    null,   // not yet wired - see note above
   }))

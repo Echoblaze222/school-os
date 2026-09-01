@@ -465,7 +465,7 @@ export default function LeadershipClient({
       </div>
 
       {vicePrincipals.length === 0 ? (
-        <div className={styles.emptyState}><p>No Vice Principal appointed yet. Appointing one gives them their own dashboard with school-wide operational visibility and HOD authority over whichever departments you assign them.</p></div>
+        <div className={styles.emptyState}><p>No Vice Principal appointed yet.</p></div>
       ) : (
         <div className={styles.vpGrid}>
           {vicePrincipals.map(vp => (
@@ -498,7 +498,7 @@ export default function LeadershipClient({
       </div>
 
       {hostelPrefects.length === 0 ? (
-        <div className={styles.emptyState}><p>No Hostel Prefect appointed yet. Appointing one lets a student assist with roll call in their assigned hostel only - they never see incidents, leave requests, or maintenance, which stay staff-only.</p></div>
+        <div className={styles.emptyState}><p>No Hostel Prefect appointed yet.</p></div>
       ) : (
         <div className={styles.vpGrid}>
           {hostelPrefects.map(hp => (
@@ -525,7 +525,7 @@ export default function LeadershipClient({
       </div>
 
       {departments.length === 0 ? (
-        <div className={styles.emptyState}><p>No departments created yet. Start with the ones your school already organizes staff by - e.g. Sciences, Languages, or Sports.</p></div>
+        <div className={styles.emptyState}><p>No departments created yet.</p></div>
       ) : (
         <div className={styles.deptGrid}>
           {departments.map(d => (

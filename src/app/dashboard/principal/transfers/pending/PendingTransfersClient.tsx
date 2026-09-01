@@ -47,9 +47,15 @@ export default function PendingTransfersClient({
     setLoading(p => new Set(p).add(t.id))
     const now = new Date().toISOString()
 
-    await supabase.from('student_transfers')
+    const { error: statusErr } = await supabase.from('student_transfers')
       .update({ status: 'approved', approved_at: now, approved_by: principalId })
       .eq('id', t.id)
+
+    if (statusErr) {
+      setLoading(p => { const n = new Set(p); n.delete(t.id); return n })
+      showToast(`Couldn't approve the transfer for ${t.student_name}. Try again.`)
+      return
+    }
 
     let error = null
     try {
@@ -77,10 +83,16 @@ export default function PendingTransfersClient({
     setLoading(p => new Set(p).add(t.id))
     const now = new Date().toISOString()
 
-    await supabase.from('student_transfers').update({
+    const { error: statusErr } = await supabase.from('student_transfers').update({
       status: 'rejected', rejection_reason: reason || null,
       rejected_at: now, rejected_by: principalId,
     }).eq('id', t.id)
+
+    if (statusErr) {
+      setLoading(p => { const n = new Set(p); n.delete(t.id); return n })
+      showToast(`Couldn't reject the transfer for ${t.student_name}. Try again.`)
+      return
+    }
 
     await supabase.from('notifications').insert({
       user_id: t.student_id, title: 'Transfer Rejected',

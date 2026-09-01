@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon, ArrowLeftIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
@@ -35,11 +34,11 @@ const SIGNOUT_REASON_KEY = 'schoolos_signout_reason'
 
 export default function SelectSchoolPage() {
   const router   = useRouter()
-  const supabase = createClient()
 
   const [query,    setQuery]    = useState('')
   const [results,  setResults]  = useState<School[]>([])
   const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
   const [selected, setSelected] = useState<School | null>(null)
   const [mounted,  setMounted]  = useState(false)
   const [recent,   setRecent]   = useState<RecentSchool | null>(null)
@@ -79,6 +78,7 @@ export default function SelectSchoolPage() {
   function handleSearch(value: string) {
     setQuery(value)
     setSelected(null)
+    setSearchError('')
     clearTimeout(debounceRef.current)
 
     if (value.trim().length < 2) {
@@ -88,14 +88,28 @@ export default function SelectSchoolPage() {
 
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
-      const { data } = await supabase
-        .from('schools')
-        .select('id, name, city, state, primary_color, logo_url, tagline, school_type, is_platform_active')
-        .ilike('name', `%${value.trim()}%`)
-        .eq('is_platform_active', true)
-        .limit(8)
-      setResults(data ?? [])
-      setSearching(false)
+      try {
+        // Uses the server-side search route, not a direct table query -
+        // `schools` is RLS-protected, and this route already handles the
+        // right visibility rules (trial schools included, only truly
+        // suspended/locked/expired ones hidden) plus IP rate limiting.
+        // A prior version queried the table directly from here with the
+        // anon key and no error handling, which could silently return
+        // nothing depending on the visitor's auth state.
+        const res  = await fetch(`/api/schools/search?q=${encodeURIComponent(value.trim())}`)
+        const json = await res.json()
+        if (!res.ok) {
+          setSearchError(json.error || "Search failed. Try again.")
+          setResults([])
+        } else {
+          setResults(json.schools ?? [])
+        }
+      } catch {
+        setSearchError("Couldn't reach the server. Check your connection and try again.")
+        setResults([])
+      } finally {
+        setSearching(false)
+      }
     }, 350)
   }
 
@@ -245,8 +259,15 @@ export default function SelectSchoolPage() {
                 </div>
               )}
 
+              {/* Search failed - distinct from a genuine no-results state */}
+              {searchError && !searching && (
+                <div className={styles.noResults}>
+                  <p>{searchError}</p>
+                </div>
+              )}
+
               {/* No results */}
-              {query.length >= 2 && !searching && results.length === 0 && !selected && (
+              {query.length >= 2 && !searching && !searchError && results.length === 0 && !selected && (
                 <div className={styles.noResults}>
                   <p>No school found for &quot;<strong>{query}</strong>&quot;</p>
                   <p className={styles.noResultsHint}>

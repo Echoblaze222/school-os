@@ -147,11 +147,12 @@ export default function NotificationsPageClient({
 
   // ── Actions ───────────────────────────────────────────────
   async function markAllRead() {
-    await supabase
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', userId)
       .eq('is_read', false)
+    if (error) return
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
     setLocalUnread(0)
   }
@@ -159,14 +160,16 @@ export default function NotificationsPageClient({
   async function markOneRead(id: string) {
     // Scoped to this user's own id, matching the ownership check every other
     // mutation in this app uses - never trust the row id alone.
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', userId)
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', userId)
+    if (error) return
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
     setLocalUnread(prev => Math.max(prev - 1, 0))
   }
 
   async function deleteNotif(id: string, e: React.MouseEvent) {
     e.stopPropagation()
-    await supabase.from('notifications').delete().eq('id', id).eq('user_id', userId)
+    const { error } = await supabase.from('notifications').delete().eq('id', id).eq('user_id', userId)
+    if (error) return
     setNotifications(prev => prev.filter(n => n.id !== id))
   }
 

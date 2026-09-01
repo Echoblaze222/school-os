@@ -68,6 +68,7 @@ export default function StudentsClient({ students: init, profile, school, userId
   const [modal,    setModal]    = useState(false)
   const [editItem, setEditItem] = useState<Student | null>(null)
   const [delItem,  setDelItem]  = useState<Student | null>(null)
+  const [delError, setDelError] = useState('')
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState('')
   const [tab,      setTab]      = useState<'list' | 'bulk'>('list')
@@ -200,9 +201,14 @@ export default function StudentsClient({ students: init, profile, school, userId
   async function deleteStudent() {
     if (!delItem) return
     setSaving(true)
-    await supabase.from('profiles').update({ is_active: false }).eq('id', delItem.id)
+    const { error } = await supabase.from('profiles').update({ is_active: false }).eq('id', delItem.id)
+    setSaving(false)
+    if (error) {
+      setDelError("Couldn't deactivate that student. Try again.")
+      return
+    }
     setStudents(p => p.filter(s => s.id !== delItem.id))
-    setDelItem(null); setSaving(false)
+    setDelItem(null)
   }
 
   // ── Bulk save - direct, no fake preview-only codes ──────────
@@ -597,14 +603,17 @@ export default function StudentsClient({ students: init, profile, school, userId
 
       {/* Delete confirm */}
       {delItem && (
-        <div className={styles.modalOverlay} onClick={() => setDelItem(null)}>
+        <div className={styles.modalOverlay} onClick={() => { setDelItem(null); setDelError('') }}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Remove Student?</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>
               This will deactivate <strong>{delItem.full_name}</strong>'s account. This action cannot easily be undone.
             </p>
+            {delError && (
+              <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: '0 0 var(--space-3)' }}>{delError}</p>
+            )}
             <div className={styles.modalActions}>
-              <button className={styles.btnGhost} onClick={() => setDelItem(null)}>Cancel</button>
+              <button className={styles.btnGhost} onClick={() => { setDelItem(null); setDelError('') }}>Cancel</button>
               <button className={styles.btnDanger} onClick={deleteStudent} disabled={saving}>{saving ? 'Removing…' : 'Remove Student'}</button>
             </div>
           </div>
