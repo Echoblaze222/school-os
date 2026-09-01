@@ -57,6 +57,7 @@ const PUBLIC_PATHS = [
   '/find-school',
   '/apply',
   '/api/admission/schools',
+  '/api/schools/search',                // "Find Your School" live search - public, unauthenticated (route already scopes columns + rate-limits internally)
 
   // ── Public platform (Phase 4, Lane E/F) ────────────────────
   '/api/public',                        // Lane E/F/G/H public discovery, promotions, rankings, reports, content - read/track endpoints only
