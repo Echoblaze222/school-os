@@ -1268,14 +1268,19 @@ ${perChild}
     }
 
     if (role === 'ict') {
-      const { data: assets } = await supabase.from('ict_assets').select('status, condition').eq('school_id', schoolId)
+      const [{ data: assets }, { data: tickets }] = await Promise.all([
+        supabase.from('ict_assets').select('status, condition').eq('school_id', schoolId),
+        supabase.from('ict_tickets').select('status, assigned_to').eq('school_id', schoolId),
+      ])
       const inRepair = (assets ?? []).filter((a: any) => a.status === 'in_repair' || a.condition === 'needs_repair').length
+      const openTickets = (tickets ?? []).filter((t: any) => !['resolved', 'closed'].includes(t.status)).length
+      const unassignedOpen = (tickets ?? []).filter((t: any) => !['resolved', 'closed'].includes(t.status) && !t.assigned_to).length
 
       return `
 ## Live ICT Data (fetched just now - use these real numbers, don't invent your own)
 - Tracked assets: ${(assets ?? []).length}
 - Assets flagged for repair: ${inRepair}
-- Note: ticket queue and account requests aren't summarized here yet - RLS currently only lets this account see tickets/requests it personally filed, not the full school queue, so a count here would be misleading. Direct the user to the Tickets / Account Requests pages for the current queue.
+- Open tickets (school-wide): ${openTickets} (${unassignedOpen} unassigned)
 `.trim()
     }
 
