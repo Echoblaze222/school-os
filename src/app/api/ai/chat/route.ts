@@ -1186,6 +1186,157 @@ ${perChild}
 `.trim()
     }
 
+    if (role === 'vice_principal') {
+      const [{ count: deptCount }, { count: staffCount }] = await Promise.all([
+        supabase.from('departments').select('*', { count: 'exact', head: true }).eq('school_id', schoolId),
+        supabase.from('profiles').select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId).in('role', ['teacher', 'bursar', 'secretary', 'librarian', 'nurse']),
+      ])
+
+      return `
+## Live School Data (fetched just now - use these real numbers, don't invent your own)
+- Departments: ${deptCount ?? 'unknown'}
+- Staff (teachers + support roles): ${staffCount ?? 'unknown'}
+`.trim()
+    }
+
+    if (role === 'counselor') {
+      const [{ data: cases }, { data: sessions }, { data: referrals }] = await Promise.all([
+        supabase.from('counseling_cases').select('status')
+          .eq('school_id', schoolId).eq('counselor_profile_id', effectiveUserId),
+        supabase.from('counseling_sessions').select('status, scheduled_at')
+          .eq('school_id', schoolId).eq('counselor_profile_id', effectiveUserId)
+          .gte('scheduled_at', new Date().toISOString()).order('scheduled_at').limit(10),
+        supabase.from('counseling_referrals').select('status')
+          .eq('school_id', schoolId)
+          .or(`referred_to_profile_id.eq.${effectiveUserId},referred_to_profile_id.is.null`),
+      ])
+
+      const openCases = (cases ?? []).filter((c: any) => c.status !== 'closed').length
+      const upcomingSessions = (sessions ?? []).length
+      const pendingReferrals = (referrals ?? []).filter((r: any) => r.status === 'pending' || r.status === 'open').length
+
+      return `
+## Live Counseling Data (fetched just now for this counselor - use these real numbers, don't invent your own)
+- Open cases: ${openCases}
+- Upcoming scheduled sessions: ${upcomingSessions}
+- Pending referrals awaiting review: ${pendingReferrals}
+`.trim()
+    }
+
+    if (role === 'nurse') {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      const [{ data: visits }, { data: inventory }, { data: meds }] = await Promise.all([
+        supabase.from('clinic_visits').select('visited_at, sent_home')
+          .eq('school_id', schoolId).gte('visited_at', sevenDaysAgo),
+        supabase.from('clinic_inventory').select('item_name, quantity_on_hand, reorder_level')
+          .eq('school_id', schoolId),
+        supabase.from('medication_administrations').select('status')
+          .eq('school_id', schoolId).eq('status', 'pending'),
+      ])
+
+      const visitsThisWeek = (visits ?? []).length
+      const sentHomeThisWeek = (visits ?? []).filter((v: any) => v.sent_home === true).length
+      const lowStock = (inventory ?? []).filter((i: any) => (i.quantity_on_hand ?? 0) <= (i.reorder_level ?? 0))
+      const pendingMeds = (meds ?? []).length
+
+      return `
+## Live Clinic Data (fetched just now - use these real numbers, don't invent your own)
+- Clinic visits in the last 7 days: ${visitsThisWeek} (${sentHomeThisWeek} sent home)
+- Items at or below reorder level: ${lowStock.length}${lowStock.length ? ` (${lowStock.map((i: any) => i.item_name).slice(0, 5).join(', ')})` : ''}
+- Medications pending administration: ${pendingMeds}
+`.trim()
+    }
+
+    if (role === 'librarian') {
+      const [{ data: books }, { data: loans }] = await Promise.all([
+        supabase.from('library_books').select('total_copies, available_copies').eq('school_id', schoolId),
+        supabase.from('library_loans').select('status, due_at, returned_at').eq('school_id', schoolId).is('returned_at', null),
+      ])
+
+      const totalCopies = (books ?? []).reduce((a: number, b: any) => a + (b.total_copies ?? 0), 0)
+      const availableCopies = (books ?? []).reduce((a: number, b: any) => a + (b.available_copies ?? 0), 0)
+      const activeLoans = (loans ?? []).length
+      const overdueLoans = (loans ?? []).filter((l: any) => l.due_at && new Date(l.due_at) < new Date()).length
+
+      return `
+## Live Library Data (fetched just now - use these real numbers, don't invent your own)
+- Titles in catalog: ${(books ?? []).length}, total copies: ${totalCopies}, currently available: ${availableCopies}
+- Active loans (not yet returned): ${activeLoans}
+- Overdue loans: ${overdueLoans}
+`.trim()
+    }
+
+    if (role === 'ict') {
+      const { data: assets } = await supabase.from('ict_assets').select('status, condition').eq('school_id', schoolId)
+      const inRepair = (assets ?? []).filter((a: any) => a.status === 'in_repair' || a.condition === 'needs_repair').length
+
+      return `
+## Live ICT Data (fetched just now - use these real numbers, don't invent your own)
+- Tracked assets: ${(assets ?? []).length}
+- Assets flagged for repair: ${inRepair}
+- Note: ticket queue and account requests aren't summarized here yet - RLS currently only lets this account see tickets/requests it personally filed, not the full school queue, so a count here would be misleading. Direct the user to the Tickets / Account Requests pages for the current queue.
+`.trim()
+    }
+
+    if (role === 'examination') {
+      const [{ data: sessions }, { data: incidents }, { data: invigilations }] = await Promise.all([
+        supabase.from('exam_sessions').select('status').eq('school_id', schoolId),
+        supabase.from('exam_incidents').select('status').eq('school_id', schoolId),
+        supabase.from('invigilator_assignments').select('status')
+          .eq('school_id', schoolId).eq('profile_id', effectiveUserId),
+      ])
+
+      const activeSessions = (sessions ?? []).filter((s: any) => s.status === 'active' || s.status === 'ongoing').length
+      const openIncidents = (incidents ?? []).filter((i: any) => i.status !== 'resolved').length
+      const myAssignments = (invigilations ?? []).length
+
+      return `
+## Live Examination Data (fetched just now - use these real numbers, don't invent your own)
+- Active/ongoing exam sessions: ${activeSessions} (${(sessions ?? []).length} total)
+- Open incidents (unresolved): ${openIncidents}
+- This officer's invigilation assignments: ${myAssignments}
+`.trim()
+    }
+
+    if (role === 'hostel') {
+      const [{ data: incidents }, { data: leaveReqs }, { data: maintenance }] = await Promise.all([
+        supabase.from('hostel_incidents').select('status').eq('school_id', schoolId),
+        supabase.from('hostel_leave_requests').select('status').eq('school_id', schoolId),
+        supabase.from('hostel_maintenance_requests').select('status').eq('school_id', schoolId),
+      ])
+
+      const openIncidents = (incidents ?? []).filter((i: any) => i.status !== 'resolved').length
+      const pendingLeave = (leaveReqs ?? []).filter((l: any) => l.status === 'pending').length
+      const openMaintenance = (maintenance ?? []).filter((m: any) => m.status !== 'resolved' && m.status !== 'completed').length
+
+      return `
+## Live Hostel Data (fetched just now - use these real numbers, don't invent your own)
+- Open incidents (unresolved): ${openIncidents}
+- Leave requests awaiting decision: ${pendingLeave}
+- Open maintenance requests: ${openMaintenance}
+`.trim()
+    }
+
+    if (role === 'coach') {
+      const { data: teams } = await supabase.from('sports_teams').select('id, name')
+        .eq('school_id', schoolId).eq('coach_profile_id', effectiveUserId)
+      const teamIds = (teams ?? []).map((t: any) => t.id)
+
+      let upcomingMatches = 0
+      if (teamIds.length) {
+        const { data: matches } = await supabase.from('sports_matches').select('scheduled_at')
+          .in('team_id', teamIds).gte('scheduled_at', new Date().toISOString())
+        upcomingMatches = (matches ?? []).length
+      }
+
+      return `
+## Live Coaching Data (fetched just now for this coach - use these real numbers, don't invent your own)
+- Teams coached: ${(teams ?? []).length}${teams?.length ? ` (${teams.map((t: any) => t.name).join(', ')})` : ''}
+- Upcoming matches scheduled: ${upcomingMatches}
+`.trim()
+    }
+
     return ''
   } catch (err: any) {
     // Never let a data-fetch hiccup take down the whole AI response - // just answer without the live-data section this one time.
