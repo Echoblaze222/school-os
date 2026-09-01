@@ -8,25 +8,30 @@ export interface TeacherRow {
   subjects: string[]; classes: string[]
   last_activity: string | null; last_action: string | null
   notes_uploaded: number; results_posted: number; is_active: boolean
+  employee_id: string | null; qualification: string | null
+  class_assignments: { class_name: string; subject: string | null; is_primary: boolean }[]
 }
 
 export default async function TeachersPage() {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login')
-  const { data: profile } = await supabase.from('profiles').select('role,school_id').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
   if (!profile || !['principal','admin'].includes((profile as any).role)) redirect('/dashboard/student')
   const schoolId = (profile as any).school_id
+  const school = (profile as any)?.schools ?? null
 
   const { data: teachers } = await supabase
     .from('profiles').select('id,full_name,email,phone,is_active').eq('role','teacher').eq('school_id', schoolId).order('full_name')
 
   const teacherIds = (teachers ?? []).map((t: any) => t.id)
-  if (!teacherIds.length) return <TeachersClient teachers={[]} />
+  if (!teacherIds.length) return <TeachersClient teachers={[]} profile={profile} school={school} userId={user.id} />
 
-  const [activityRes, csRes] = await Promise.all([
+  const [activityRes, csRes, ctRes, tpRes] = await Promise.all([
     supabase.from('teacher_activity_log').select('teacher_id,action,created_at').in('teacher_id', teacherIds).order('created_at', { ascending: false }),
     supabase.from('class_subjects').select('teacher_id,subjects(name),classes(name)').in('teacher_id', teacherIds),
+    supabase.from('class_teachers').select('teacher_id,subject,is_primary,classes(name)').in('teacher_id', teacherIds),
+    supabase.from('teacher_profiles').select('id,staff_id,qualifications').in('id', teacherIds),
   ])
 
   // Latest activity per teacher
@@ -58,6 +63,23 @@ export default async function TeachersPage() {
     if (cs.classes?.name) classMap[cs.teacher_id].add(cs.classes.name)
   })
 
+  // Class assignments (class_teachers already carries subject + is_primary directly)
+  const assignmentsMap: Record<string, { class_name: string; subject: string | null; is_primary: boolean }[]> = {}
+  ;(ctRes.data ?? []).forEach((ct: any) => {
+    if (!assignmentsMap[ct.teacher_id]) assignmentsMap[ct.teacher_id] = []
+    assignmentsMap[ct.teacher_id].push({
+      class_name: ct.classes?.name ?? 'Unknown class',
+      subject: ct.subject ?? null,
+      is_primary: ct.is_primary === true,
+    })
+  })
+
+  // Employee ID / qualification (teacher_profiles is a 1:1 extension table keyed on profiles.id)
+  const teacherProfileMap: Record<string, { staff_id: string | null; qualifications: string | null }> = {}
+  ;(tpRes.data ?? []).forEach((tp: any) => {
+    teacherProfileMap[tp.id] = { staff_id: tp.staff_id ?? null, qualifications: tp.qualifications ?? null }
+  })
+
   const rows: TeacherRow[] = (teachers ?? []).map((t: any) => ({
     id: t.id, full_name: t.full_name ?? 'Unknown', email: t.email ?? '',
     phone: t.phone ?? null, is_active: t.is_active !== false,
@@ -67,7 +89,10 @@ export default async function TeachersPage() {
     last_action: lastActivity[t.id]?.action ?? null,
     notes_uploaded: notesCounts[t.id] ?? 0,
     results_posted: resultsCounts[t.id] ?? 0,
+    employee_id: teacherProfileMap[t.id]?.staff_id ?? null,
+    qualification: teacherProfileMap[t.id]?.qualifications ?? null,
+    class_assignments: assignmentsMap[t.id] ?? [],
   }))
 
-  return <TeachersClient teachers={rows} />
+  return <TeachersClient teachers={rows} profile={profile} school={school} userId={user.id} />
 }
