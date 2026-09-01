@@ -212,3 +212,33 @@ export async function isEnrolledInClass(
 
   return !!data
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Recordings list scoping (Phase 3)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type RecordingsScopeMode = 'all_school' | 'teacher_classes' | 'single_class' | 'none'
+
+/**
+ * Which slice of the school's recordings a given role may LIST (not
+ * necessarily play back — playback still goes through
+ * /api/live/recording/[id]/url's own same-school check regardless of how
+ * the caller found the recording's ID). Pure and role-only, deliberately
+ * — resolving 'teacher_classes' or 'single_class' into actual class IDs
+ * requires a DB lookup the caller does separately (see
+ * /api/live/recordings/route.ts), kept out of this function so the ROLE
+ * decision itself stays unit-testable without a database.
+ *
+ * 'parent' currently gets 'none': showing a parent only their own
+ * child's class's recordings would need a verified parent-child link,
+ * which nothing in this codebase's schema currently confirms to me — an
+ * empty list is a support ticket, an over-broad grant is a privacy
+ * incident, so this defaults to the safer failure mode until that link is
+ * confirmed and wired in. Flagged as a known gap, not silently decided.
+ */
+export function recordingsScopeFor(role: string): RecordingsScopeMode {
+  if (['principal', 'bursar', 'secretary', 'admin'].includes(role)) return 'all_school' // mirrors is_staff() from the Phase 0 SQL migration
+  if (role === 'teacher') return 'teacher_classes'
+  if (role === 'student') return 'single_class'
+  return 'none'
+}
