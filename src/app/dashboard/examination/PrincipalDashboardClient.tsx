@@ -99,8 +99,7 @@ export default function PrincipalDashboardClient({
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
-    const { error } = await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
-    if (error) throw error
+    await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
   }
 
   return (

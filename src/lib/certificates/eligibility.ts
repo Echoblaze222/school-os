@@ -14,20 +14,18 @@ export interface EligibilityStudent {
   lifecycle_stage: string | null // profiles.lifecycle_stage
 }
 
-export interface EligibilityGraduationRecordShape {
+export type EligibilityGraduationRecord = {
   id: string
   student_id: string
   school_id: string
   graduation_year: number
   final_class: string
-}
-export type EligibilityGraduationRecord = EligibilityGraduationRecordShape | null
+} | null
 
-export interface EligibilityExistingCertificateShape {
+export type EligibilityExistingCertificate = {
   id: string
   status: 'draft' | 'pending_approval' | 'issued' | 'revoked'
-}
-export type EligibilityExistingCertificate = EligibilityExistingCertificateShape | null
+} | null
 
 export interface EligibilityPolicy {
   /** If true, a graduation_records row is mandatory. Default true. */

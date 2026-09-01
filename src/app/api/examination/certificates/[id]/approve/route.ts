@@ -110,10 +110,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   let pdfBuffer: Buffer
   try {
+    // @react-pdf/renderer's renderToBuffer types the parameter as
+    // ReactElement<DocumentProps> - i.e. literally a <Document> element,
+    // not a component that renders one. CertificateDocument's root IS a
+    // <Document> at runtime, but its own element type doesn't structurally
+    // match DocumentProps, so TS rejects it even though this is the
+    // library's documented usage pattern. Cast at the boundary.
     pdfBuffer = await renderToBuffer(
-      // @react-pdf/renderer's renderToBuffer types want a literal <Document>
-      // element; a named wrapper component that renders one (this pattern)
-      // renders identically at runtime but doesn't satisfy that strict type.
       React.createElement(CertificateDocument, { data: snapshot, primary: school?.primary_color ?? '#800020' }) as React.ReactElement<any>,
     )
   } catch (err: any) {

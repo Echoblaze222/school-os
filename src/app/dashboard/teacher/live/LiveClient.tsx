@@ -162,6 +162,13 @@ export default function LiveClient({ profile, school, userId }: Props) {
   return (
     <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Live Classes">
 
+      <div style={{ marginBottom: 'var(--space-3)', textAlign: 'right' }}>
+        <button onClick={() => router.push('/dashboard/teacher/live/recordings')}
+          className="pressable" style={{ background: 'none', border: 'none', color: sc, fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+          ▶ Recorded Classes
+        </button>
+      </div>
+
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {(['scheduled', 'live', 'ended'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}

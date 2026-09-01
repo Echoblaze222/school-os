@@ -9,7 +9,7 @@ import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  HeartIcon, ClipboardIcon, ClockIcon, GridIcon, AiIcon, MessageIcon, BellIcon, UserIcon,
+  HeartIcon, ClipboardIcon, ClockIcon, GridIcon, AiIcon, MessageIcon, BellIcon, UserIcon, CalendarIcon,
 } from '@/components/Icons'
 import styles from './nurse.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -20,6 +20,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'health-records', label: 'Health Records', href: '/dashboard/nurse/health-records', Icon: ClipboardIcon },
     { id: 'medications',   label: 'Medications',     href: '/dashboard/nurse/medications',    Icon: ClockIcon },
     { id: 'inventory',     label: 'Inventory',       href: '/dashboard/nurse/inventory',      Icon: GridIcon },
+    { id: 'meetings',      label: 'Meetings',        href: '/dashboard/nurse/meetings',       Icon: CalendarIcon },
   ]},
   { name: 'Communication', items: [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/nurse/chat',          Icon: MessageIcon },
