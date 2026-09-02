@@ -208,13 +208,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           .eq('id', payload.new.id)
           .single()
         if (msg) {
+          const enriched = await attachReplyPreview(msg as Message)
           setMessages(prev => {
-            if (prev.find(x => x.id === (msg as Message).id)) return prev
-            return [...prev, msg as Message]
+            if (prev.find(x => x.id === enriched.id)) return prev
+            return [...prev, enriched]
           })
           // The room is open right now, so anything the other person just
           // sent counts as read immediately.
-          if ((msg as Message).sender_id !== userId) markAsRead([(msg as Message).id])
+          if (enriched.sender_id !== userId) markAsRead([enriched.id])
         }
       })
       .on('postgres_changes', {
@@ -607,6 +608,29 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     processingRef.current = false
   }
 
+  // A message that arrives on its own (a fresh realtime INSERT, or the
+  // server's response right after our own insert) has no way to know what
+  // its replied-to message says - that's only computed in loadMessages,
+  // which has the whole batch to cross-reference locally. This computes
+  // the same reply_to shape for a single message, so a reply never shows
+  // up blank (or drops its quote box) until the next full reload.
+  async function attachReplyPreview(msg: Message): Promise<Message> {
+    if (!msg.reply_to_id || msg.reply_to) return msg
+    const { data: parent } = await supabase
+      .from('chat_messages')
+      .select('*, sender:profiles(full_name, avatar_url)')
+      .eq('id', msg.reply_to_id)
+      .maybeSingle()
+    if (!parent) return msg
+    return {
+      ...msg,
+      reply_to: {
+        content:     (parent as Message).is_deleted ? 'Deleted' : displayLabel(parent as Message),
+        sender_name: (parent as Message).sender?.full_name ?? 'Unknown',
+      },
+    }
+  }
+
   async function runTextJob(job: Extract<QueueJob, { kind: 'text' }>) {
     const insertData: any = { room_id: roomId, sender_id: userId, content: job.content }
     if (job.replyId) insertData.reply_to_id = job.replyId
@@ -621,7 +645,8 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       setMessages(prev => prev.map(m => m.id === job.tempId ? { ...m, _status: 'failed' } : m))
       return
     }
-    setMessages(prev => prev.map(m => m.id === job.tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
+    const enriched = await attachReplyPreview(newMsg as Message)
+    setMessages(prev => prev.map(m => m.id === job.tempId ? { ...enriched, _status: 'sent' } : m))
     pushNotification(job.content)
   }
 
