@@ -139,7 +139,7 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
       type: 'payment',
       title: 'Payment Received',
       body: `Your payment of ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name} was successful.`,
-      link_url: '/dashboard/parent/fees',
+      action_url: '/dashboard/parent/fees',
       is_read: false,
     })
 
@@ -166,7 +166,7 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
         type: 'payment',
         title: 'Online Payment Received',
         body: `${studentProfile?.full_name ?? 'A student'} paid ₦${amountNgn.toLocaleString('en-NG')} via Paystack. Receipt generated automatically.`,
-        link_url: s.role === 'bursar' ? '/dashboard/bursar/receipts' : '/dashboard/principal',
+        action_url: s.role === 'bursar' ? '/dashboard/bursar/receipts' : '/dashboard/principal',
         is_read: false,
       }))
     )

@@ -7,7 +7,7 @@ export default async function ExaminationNotificationsPage() {
 
   const { data: notifications } = await supabase
     .from('notifications')
-    .select('id, title, body, type, is_read, created_at, link_url')
+    .select('id, title, body, type, is_read, created_at, action_url')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(50)
