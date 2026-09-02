@@ -337,17 +337,13 @@ export async function POST(request: Request) {
 
 
 
-      await supabase.from('school_registration_attempts').insert({
-
+      const { error: attemptLogErr } = await supabase.from('school_registration_attempts').insert({
         school_id:    newSchool.id,
-
         reference:    paystackReference,
-
         payment_mode: paymentMode,
-
         amount_kobo:  amountDue * 100,
-
       })
+      if (attemptLogErr) console.error('[schools/register] failed to log registration attempt:', attemptLogErr.message)
 
 
 
