@@ -75,7 +75,14 @@ export default function PrincipalMeetingsClient({
   const [agenda,     setAgenda]     = useState('')
   const [audience,   setAudience]   = useState<Audience>('all_parents')
   const [classId,    setClassId]    = useState(classes[0]?.id ?? '')
-  const [isOnline,   setIsOnline]   = useState(false)
+  // 'in_person' | 'external_link' | 'livekit' — three distinct modes,
+  // not a boolean. The old isOnline boolean only distinguished
+  // in-person vs external-link; embedded video (Phase 4) needed its own
+  // state precisely because "no meeting_url" is NOT a safe signal for
+  // "wants embedded video" — it's equally true for an in-person meeting
+  // with a location instead. See PrincipalMeetingsClient's card-render
+  // fork, which checks provider === 'livekit', not meeting_url presence.
+  const [meetingMode, setMeetingMode] = useState<'in_person' | 'external_link' | 'livekit'>('in_person')
   const [submitting, setSubmitting] = useState(false)
   const [formError,  setFormError]  = useState('')
   const [success,    setSuccess]    = useState('')
@@ -87,15 +94,15 @@ export default function PrincipalMeetingsClient({
 
   function resetForm() {
     setTitle(''); setLocation(''); setMeetingUrl(''); setAgenda('')
-    setType('pta'); setAudience('all_parents'); setIsOnline(false)
+    setType('pta'); setAudience('all_parents'); setMeetingMode('in_person')
     setFormError(''); setSuccess('')
   }
 
   async function handleCreate() {
-    if (!title.trim())                            { setFormError('Meeting title is required.'); return }
-    if (!date)                                    { setFormError('Please select a date.'); return }
-    if (isOnline && !meetingUrl.trim())           { setFormError('Meeting URL required for online meetings.'); return }
-    if (!isOnline && !location.trim())            { setFormError('Location required for in-person meetings.'); return }
+    if (!title.trim())                                     { setFormError('Meeting title is required.'); return }
+    if (!date)                                             { setFormError('Please select a date.'); return }
+    if (meetingMode === 'external_link' && !meetingUrl.trim()) { setFormError('Meeting URL required for online meetings.'); return }
+    if (meetingMode === 'in_person' && !location.trim())      { setFormError('Location required for in-person meetings.'); return }
 
     setSubmitting(true); setFormError(''); setSuccess('')
 
@@ -105,17 +112,21 @@ export default function PrincipalMeetingsClient({
     const { data: inserted, error } = await supabase
       .from('online_meetings')
       .insert({
-        school_id:       schoolId || undefined,
-        created_by:      principalId,
-        title:           title.trim(),
-        meeting_type:    type,
-        scheduled_at:    scheduledAt,
-        location:        isOnline ? null : location.trim(),
-        meeting_url:     isOnline ? meetingUrl.trim() : null,
-        agenda:          agenda.trim() || null,
-        target_audience: audience,
-        // BUG 4 FIX: target_class_id column removed - doesn't exist in DB schema
-        // If you need class targeting, run: ALTER TABLE online_meetings ADD COLUMN IF NOT EXISTS target_class_id uuid REFERENCES classes(id);
+        school_id:        schoolId || undefined,
+        created_by:       principalId,
+        title:            title.trim(),
+        meeting_type:     type,
+        scheduled_at:     scheduledAt,
+        location:         meetingMode === 'in_person' ? location.trim() : null,
+        meeting_url:      meetingMode === 'external_link' ? meetingUrl.trim() : null,
+        agenda:           agenda.trim() || null,
+        target_audience:  audience,
+        target_class_id:  targetClass,
+        // provider defaults to 'external_link' in the DB (Phase 0-style
+        // additive migration) — only set explicitly here when Embedded
+        // Video was chosen, so every other meeting type is completely
+        // unaffected by this addition.
+        ...(meetingMode === 'livekit' ? { provider: 'livekit' } : {}),
       })
       .select()
       .single()
@@ -193,32 +204,38 @@ export default function PrincipalMeetingsClient({
             </div>
           </div>
 
-          {/* Online toggle */}
+          {/* Meeting format: three modes, not a toggle — see meetingMode state comment */}
           <div className={styles.field}>
             <div className={styles.toggleRow}>
               <div>
                 <p className={styles.fieldLabel}>Meeting Format</p>
-                <p className={styles.fieldHint}>Online or in-person?</p>
+                <p className={styles.fieldHint}>In-person, an external link, or embedded video?</p>
               </div>
               <div className={styles.segmentToggle}>
                 <button type="button"
-                  className={`${styles.segBtn} ${!isOnline ? styles.segBtnActive : ''} pressable`}
-                  onClick={() => setIsOnline(false)}>
+                  className={`${styles.segBtn} ${meetingMode === 'in_person' ? styles.segBtnActive : ''} pressable`}
+                  onClick={() => setMeetingMode('in_person')}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   In-Person
                 </button>
                 <button type="button"
-                  className={`${styles.segBtn} ${isOnline ? styles.segBtnActive : ''} pressable`}
-                  onClick={() => setIsOnline(true)}>
+                  className={`${styles.segBtn} ${meetingMode === 'external_link' ? styles.segBtnActive : ''} pressable`}
+                  onClick={() => setMeetingMode('external_link')}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                  Online
+                  External Link
+                </button>
+                <button type="button"
+                  className={`${styles.segBtn} ${meetingMode === 'livekit' ? styles.segBtnActive : ''} pressable`}
+                  onClick={() => setMeetingMode('livekit')}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                  Embedded Video
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Location or URL */}
-          {isOnline ? (
+          {/* Location, URL, or nothing (embedded video needs neither — the room is provisioned automatically when someone joins) */}
+          {meetingMode === 'external_link' && (
             <div className={styles.field}>
               <label className={styles.fieldLabel}>Meeting URL <span className={styles.req}>*</span></label>
               <input className={`input ${styles.input}`} type="url" value={meetingUrl}
@@ -226,12 +243,18 @@ export default function PrincipalMeetingsClient({
                 placeholder="https://meet.google.com/xxx or zoom.us/j/..." />
               <p className={styles.fieldHint}>Google Meet, Zoom, Teams…</p>
             </div>
-          ) : (
+          )}
+          {meetingMode === 'in_person' && (
             <div className={styles.field}>
               <label className={styles.fieldLabel}>Location <span className={styles.req}>*</span></label>
               <input className={`input ${styles.input}`} value={location}
                 onChange={e => setLocation(e.target.value)}
                 placeholder="e.g. School Hall, Room A1" />
+            </div>
+          )}
+          {meetingMode === 'livekit' && (
+            <div className={styles.field}>
+              <p className={styles.fieldHint}>No link or location needed — you'll get a "Start Live Meeting" button once this is scheduled.</p>
             </div>
           )}
 
@@ -362,6 +385,7 @@ function MeetingListCard({
   meeting: MeetingRow; index: number; isPast?: boolean
   userId: string; schoolId: string
 }) {
+  const router = useRouter()
   const typeLabel = MEETING_TYPE_LABELS[meeting.meeting_type as MeetingType] ?? meeting.meeting_type
 
   return (
@@ -404,6 +428,20 @@ function MeetingListCard({
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
             Join Meeting
           </a>
+        )}
+        {!meeting.meeting_url && meeting.provider === 'livekit' && !isPast && (
+          // provider === 'livekit' is the unambiguous signal this was
+          // created as an embedded-video meeting (set explicitly at
+          // creation time below) — NOT just "meeting_url is empty",
+          // which is also true for an ordinary in-person meeting
+          // (location set instead) and would otherwise wrongly offer a
+          // video button for something with no video component at all.
+          <button
+            onClick={() => router.push(`/dashboard/principal/meetings/room/${meeting.id}`)}
+            className={styles.listJoinBtn} style={{ border: 'none', cursor: 'pointer' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            {meeting.is_live ? 'Rejoin Live Meeting' : 'Start Live Meeting'}
+          </button>
         )}
       </div>
     </div>
