@@ -34,7 +34,7 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
     const { data, error: insertError } = await supabase
       .from('invigilator_assignments')
       .insert({ school_id: schoolId, exam_timetable_id: timetableId, room_id: roomId, profile_id: teacherId, assigned_by: userId })
-      .select('id, exam_timetable_id, profile_id, room_id, status, profiles(full_name), exam_rooms(name)')
+      .select('id, exam_timetable_id, profile_id, room_id, status, profiles!profile_id(full_name), exam_rooms(name)')
       .single()
     setBusyKey(null)
     setPickerFor(null)
