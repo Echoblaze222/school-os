@@ -14,7 +14,7 @@ export default async function InvigilationPage() {
       .order('exam_date', { ascending: true }),
     supabase.from('profiles').select('id, full_name').eq('school_id', schoolId).eq('role', 'teacher').order('full_name'),
     supabase.from('invigilator_assignments')
-      .select('id, exam_timetable_id, profile_id, room_id, status, profiles(full_name), exam_rooms(name)')
+      .select('id, exam_timetable_id, profile_id, room_id, status, profiles!profile_id(full_name), exam_rooms(name)')
       .eq('school_id', schoolId),
   ])
 
