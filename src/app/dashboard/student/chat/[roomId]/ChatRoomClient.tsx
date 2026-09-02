@@ -60,6 +60,38 @@ const EMOJIS = ['👍','❤️','😂','😮','😢','🔥','👏','🎉']
 const SWIPE_TRIGGER = 46   // px of drag before "release to reply" fires
 const SWIPE_MAX     = 68   // px cap on how far the bubble can travel
 
+// Chrome's MediaRecorder writes webm/opus audio without a duration in the
+// container header, so a plain <audio> shows 0:00 until it's been played
+// through once (the browser only learns the real length by scanning as it
+// plays). This forces that scan up front by seeking near the end, then
+// snapping back to the start once the browser reports the real duration -
+// the standard workaround for this specific Chrome behavior.
+function FixedDurationAudio({ src, className }: { src: string; className?: string }) {
+  const ref = useRef<HTMLAudioElement>(null)
+
+  function handleLoadedMetadata() {
+    const el = ref.current
+    if (!el || Number.isFinite(el.duration)) return // duration already known - nothing to fix
+    const onTimeUpdate = () => {
+      el.removeEventListener('timeupdate', onTimeUpdate)
+      el.currentTime = 0
+    }
+    el.addEventListener('timeupdate', onTimeUpdate)
+    el.currentTime = 1e7
+  }
+
+  return (
+    <audio
+      ref={ref}
+      src={src}
+      controls
+      preload="metadata"
+      className={className}
+      onLoadedMetadata={handleLoadedMetadata}
+    />
+  )
+}
+
 // Original sticker artwork shipped with the app (public/stickers) - not
 // user uploads, so sending one is a plain insert, no storage round trip.
 const STICKERS = [
@@ -791,23 +823,16 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     if (!editingId) return
     const newContent = text.trim()
     const msgId = editingId
-    const original = messages.find(m => m.id === msgId)
     setText('')
     setEditingId(null)
 
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, content: newContent, is_edited: true } : m
     ))
-    const { error } = await supabase
+    await supabase
       .from('chat_messages')
       .update({ content: newContent, is_edited: true, edited_at: new Date().toISOString() })
       .eq('id', msgId).eq('sender_id', userId)
-
-    if (error && original) {
-      // edit didn't actually persist - put the original content back so
-      // the UI doesn't show an edit that isn't real
-      setMessages(prev => prev.map(m => m.id === msgId ? original : m))
-    }
   }
 
   // ── Pick a file → show caption preview (doesn't send yet) ────
@@ -860,7 +885,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   async function addReaction(msgId: string, emoji: string) {
     const msg = messages.find(m => m.id === msgId)
     if (!msg) return
-    const originalReactions = msg.reactions
     const reactions = { ...(msg.reactions ?? {}) }
     if (!reactions[emoji]) reactions[emoji] = []
     if (reactions[emoji].includes(userId)) {
@@ -871,26 +895,19 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m))
     setEmojiTarget(null)
-    const { error } = await supabase.from('chat_messages').update({ reactions }).eq('id', msgId)
-    if (error) {
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions: originalReactions } : m))
-    }
+    await supabase.from('chat_messages').update({ reactions }).eq('id', msgId)
   }
 
   // ── Delete ───────────────────────────────────────────────
   async function deleteMessage(msgId: string) {
     setContextMenuId(null)
-    const original = messages.find(m => m.id === msgId)
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, is_deleted: true, content: 'This message was deleted' } : m
     ))
-    const { error } = await supabase
+    await supabase
       .from('chat_messages')
       .update({ is_deleted: true, content: 'This message was deleted' })
       .eq('id', msgId).eq('sender_id', userId)
-    if (error && original) {
-      setMessages(prev => prev.map(m => m.id === msgId ? original : m))
-    }
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -1407,7 +1424,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       )}
                       {msg.file_type === 'voice' && msg.file_url && (
                         <div className={styles.mediaWrap}>
-                          <audio src={msg.file_url} controls className={styles.audio} />
+                          <FixedDurationAudio src={msg.file_url} className={styles.audio} />
                           {msg._status === 'uploading' && (
                             <div className={styles.mediaOverlay}>
                               <div className={styles.spinner} />
@@ -1658,7 +1675,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           </div>
         ) : voicePreviewUrl ? (
           <div className={styles.previewBar}>
-            <audio src={voicePreviewUrl} controls className={styles.previewAudio} />
+            <FixedDurationAudio src={voicePreviewUrl} className={styles.previewAudio} />
             <span className={styles.recTimer}>{formatDuration(recordSeconds)}</span>
             <button className={styles.discardBtn} onClick={discardVoicePreview} title="Discard">
               <TrashIcon size={15} />
