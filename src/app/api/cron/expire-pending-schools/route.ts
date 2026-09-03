@@ -42,6 +42,7 @@ export async function GET(req: Request) {
       dryRun,
       flaggedCount: result.flagged.length,
       deletedCount: result.deleted.length,
+      skippedCount: result.skipped.length,
       errorCount:   result.errors.length,
     })
 

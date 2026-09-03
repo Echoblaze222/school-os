@@ -62,6 +62,7 @@ export interface ExpirePendingSchoolsResult {
   dryRun:  boolean
   flagged: { id: string; name: string; createdAt: string }[]
   deleted: { id: string; name: string; createdAt: string }[]
+  skipped: { id: string; name: string; createdAt: string; reason: string }[]
   errors:  { id: string; stage: 'flag' | 'delete'; message: string }[]
 }
 
@@ -74,7 +75,7 @@ export async function expirePendingSchools(opts?: { dryRun?: boolean }): Promise
   const flagCutoff   = hoursAgoIso(flagAfterHours)
   const deleteCutoff = hoursAgoIso(deleteAfterHours)
 
-  const result: ExpirePendingSchoolsResult = { dryRun, flagged: [], deleted: [], errors: [] }
+  const result: ExpirePendingSchoolsResult = { dryRun, flagged: [], deleted: [], skipped: [], errors: [] }
 
   // ── Stage 2 first: anything old enough to delete, delete - regardless
   // of whether it was ever flagged, so a missed flag pass never blocks
@@ -95,6 +96,29 @@ export async function expirePendingSchools(opts?: { dryRun?: boolean }): Promise
       result.deleted.push({ id: school.id, name: school.name, createdAt: school.created_at })
       continue
     }
+
+    // Guard: is_platform_active can lag behind real usage (e.g. an
+    // activation-flow bug, or data seeded for a school before its
+    // platform payment cleared). A school with paid-fee invoices or
+    // more than just the principal's profile has real downstream data
+    // and must never go through the destructive delete path below -
+    // that's what caused the payment_invoices FK violation we saw in
+    // production for one school that had 8 profiles, 74 subjects, and
+    // 4 real student fee invoices despite is_platform_active = false.
+    // Skip and flag for manual review instead of attempting (and
+    // partially succeeding at) a destructive sweep.
+    const [{ count: invoiceCount }, { count: profileCount }] = await Promise.all([
+      admin.from('payment_invoices').select('id', { count: 'exact', head: true }).eq('school_id', school.id),
+      admin.from('profiles').select('id', { count: 'exact', head: true }).eq('school_id', school.id),
+    ])
+
+    if ((invoiceCount ?? 0) > 0 || (profileCount ?? 0) > 1) {
+      const reason = `has real usage data (invoices=${invoiceCount ?? 0}, profiles=${profileCount ?? 0}) despite is_platform_active=false - likely an activation-flow bug, not an abandoned signup`
+      result.skipped.push({ id: school.id, name: school.name, createdAt: school.created_at, reason })
+      logger.warn('expirePendingSchools: skipped delete, needs manual review', { schoolId: school.id, reason })
+      continue
+    }
+
     try {
       await deleteAbandonedSchool(admin, school.id)
       result.deleted.push({ id: school.id, name: school.name, createdAt: school.created_at })
