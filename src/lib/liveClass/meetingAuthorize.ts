@@ -175,13 +175,20 @@ export async function loadIsInSpecificClassAudience(
   }
 
   if (caller.role === 'parent') {
-    const { data } = await supabase
-      .from('student_profiles')
-      .select('id, profiles!inner(parent_id)')
-      .eq('class_id', meeting.target_class_id)
-      .eq('profiles.parent_id', caller.userId)
-      .maybeSingle()
-    return !!data
+    // NOTE: this cannot be a plain student_profiles/profiles query run as
+    // the caller — student_profiles' own RLS grants parent-of-child
+    // visibility only via parent_student_links, not profiles.parent_id
+    // (the link this feature actually uses, matching the existing parent
+    // meetings page.tsx). A parent linked only via profiles.parent_id
+    // would get silently and incorrectly denied. Routed through the same
+    // SECURITY DEFINER Postgres function the RLS policy itself uses
+    // (public.is_parent_of_class_member), so there's one source of truth
+    // for this check instead of two that can drift.
+    const { data, error } = await supabase.rpc('is_parent_of_class_member', {
+      p_class_id: meeting.target_class_id,
+    })
+    if (error) return false
+    return data === true
   }
 
   return false
