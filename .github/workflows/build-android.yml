@@ -39,7 +39,17 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:
+          # actions/setup-java also exposes JAVA_HOME_<major>_<arch>, which
+          # survives even if a later step (android-actions/setup-android)
+          # resets the default JAVA_HOME. Pin explicitly rather than relying
+          # on step order — this is what caused the "invalid source release:
+          # 21" failures even after setup-java was set to 21.
+          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
+        run: |
+          echo "Using JDK:"
+          java -version
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
