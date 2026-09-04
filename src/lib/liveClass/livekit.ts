@@ -402,7 +402,7 @@ export async function startClassRecording(params: {
   return startRoomRecording({ room, objectKey })
 }
 
-/** Same as startClassRecording, for a general meeting (Phase 4). Persists to school_meetings.active_egress_id, not online_classes. */
+/** Same as startClassRecording, for a general meeting (Phase 4). Persists to online_meetings.active_egress_id, not online_classes. */
 export async function startMeetingRecording(params: {
   schoolId: string
   meetingId: string
