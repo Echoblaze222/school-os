@@ -11,6 +11,7 @@ import {
   ImageIcon, ClockIcon, CheckIcon,
 } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -39,6 +40,17 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
   const sc = school?.primary_color ?? '#800020'
 
   useEffect(() => { load() }, [tab])
+
+  // The exact "one bursar confirms, another bursar staffer looking at
+  // the same pending queue should see it move" case - payment_claims
+  // is already in the realtime publication (it backs the dashboard
+  // badge), this just wires the actual review screen to it too.
+  useRealtimeRefresh({
+    tables: school?.id ? ['payment_claims'] : [],
+    filter: school?.id ? `school_id=eq.${school.id}` : undefined,
+    onChange: load,
+  })
+
 
   async function load() {
     setLoading(true)

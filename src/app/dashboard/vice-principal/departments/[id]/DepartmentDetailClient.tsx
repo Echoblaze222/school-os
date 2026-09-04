@@ -11,6 +11,7 @@ import type {
   DepartmentObjective, DepartmentTask, DepartmentReport, DepartmentScheduleItem, DepartmentPerformance,
 } from '@/lib/supabase/departmentWork'
 import styles from './detail.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Member { id: string; full_name: string; email: string; avatar_url: string | null; subjects_taught: string[] | null; employee_id: string | null }
 
@@ -50,6 +51,39 @@ export default function DepartmentDetailClient({
   const [error, setError] = useState('')
 
   const base = `/api/org/departments/${department.id}`
+
+  // A department head submitting a report and the VP acknowledging it
+  // (or either side adding a task/objective) is exactly the kind of
+  // cross-user update that needs to show up without a manual reload.
+  useRealtimeRefresh({
+    tables: ['department_objectives'],
+    filter: `department_id=eq.${department.id}`,
+    onChange: async () => {
+      try { const { objectives } = await api(`${base}/objectives`); setObjectives(objectives) } catch { /* background refresh, stay on current data */ }
+    },
+  })
+  useRealtimeRefresh({
+    tables: ['department_tasks'],
+    filter: `department_id=eq.${department.id}`,
+    onChange: async () => {
+      try { const { tasks } = await api(`${base}/tasks`); setTasks(tasks) } catch { /* background refresh, stay on current data */ }
+    },
+  })
+  useRealtimeRefresh({
+    tables: ['department_reports'],
+    filter: `department_id=eq.${department.id}`,
+    onChange: async () => {
+      try { const { reports } = await api(`${base}/reports`); setReports(reports) } catch { /* background refresh, stay on current data */ }
+    },
+  })
+  useRealtimeRefresh({
+    tables: ['department_schedule_items'],
+    filter: `department_id=eq.${department.id}`,
+    onChange: async () => {
+      try { const { schedule } = await api(`${base}/schedule`); setSchedule(schedule) } catch { /* background refresh, stay on current data */ }
+    },
+  })
+
 
   // ── Objectives ──
   const [showObjForm, setShowObjForm] = useState(false)
