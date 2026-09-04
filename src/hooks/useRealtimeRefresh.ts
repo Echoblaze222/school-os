@@ -46,9 +46,13 @@ interface Options {
 }
 
 export function useRealtimeRefresh({ tables, filter, onChange, debounceMs = 400 }: Options) {
-  // Keep a stable ref so the subscription closure always calls the latest load()
+  // Keep a stable ref so the subscription closure always calls the latest
+  // load() - updated in an effect, not during render (mutating a ref
+  // synchronously in the render body isn't safe under concurrent React).
   const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
+  useEffect(() => {
+    onChangeRef.current = onChange
+  })
 
   const tableKey = tables.join(',')
 
