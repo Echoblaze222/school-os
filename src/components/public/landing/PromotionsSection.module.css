@@ -1,0 +1,31 @@
+/* src/components/public/landing/PromotionsSection.module.css */
+
+.headingRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  max-width: 640px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.cardSlot {
+  display: flex;
+}
+
+.cardSlot > * {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}

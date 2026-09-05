@@ -32,4 +32,29 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Live classes (LiveKit/WebRTC) call getUserMedia() from the web
+         content. Capacitor's built-in BridgeWebChromeClient already
+         bridges that to Android's native permission system automatically
+         (see onPermissionRequest in @capacitor/android) - but only if
+         these are declared here. Without them, joining a live class with
+         video or audio silently fails at the OS level even though the
+         exact same code works fine in a normal mobile browser. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Neither is required to install the app - a student without a
+         front camera should still be able to join a live class in
+         audio-only/view-only mode rather than being blocked from the
+         Play Store listing entirely. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <!-- Required on Android 13+ (targetSdkVersion 36 here) for the app to
+         be allowed to show notifications at all, web-push ones included.
+         Declaring it is necessary but not by itself sufficient for full
+         push reliability in a plain WebView - see the accompanying note
+         on this in the commit/migration for what's still open there. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

@@ -226,10 +226,42 @@
   margin-bottom: 6px;
 }
 
+.pricingNoteToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pricingNoteSummary {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.pricingChevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.pricingChevronOpen {
+  transform: rotate(180deg);
+  color: var(--brand);
+}
+
 .pricingNoteBody {
   font-size: 0.78rem;
   color: var(--text-secondary);
   line-height: 1.6;
+  margin-top: 10px;
 }
 
 .pricingNoteBody strong { color: var(--text-primary); }

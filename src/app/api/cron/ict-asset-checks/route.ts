@@ -45,42 +45,80 @@ export async function GET(req: Request) {
       .eq('event_type', 'borrowed')
       .lt('due_back_at', now.toISOString())
 
-    for (const ev of borrowEvents ?? []) {
-      const { data: returned } = await admin
+    const overdueEvents = borrowEvents ?? []
+
+    if (overdueEvents.length > 0) {
+      const assetIds = [...new Set(overdueEvents.map((e: any) => e.asset_id))]
+
+      // PERF: was one query per overdue event to check for a later
+      // 'returned' event (N round trips for N events, times every
+      // school every day). Batched into a single query across every
+      // asset for this school, then the precise per-event
+      // "returned after THIS event's own due_back_at" check happens in
+      // JS - same comparison the original did, just not one row at a
+      // time. earliestDue is a loose pre-filter; the real check below
+      // is still per-event.
+      const earliestDue = overdueEvents.reduce(
+        (min: string, e: any) => (e.due_back_at < min ? e.due_back_at : min),
+        overdueEvents[0].due_back_at,
+      )
+      const { data: returnedEvents } = await admin
         .from('ict_asset_events')
-        .select('id')
-        .eq('asset_id', ev.asset_id)
+        .select('asset_id, created_at')
+        .in('asset_id', assetIds)
         .eq('event_type', 'returned')
-        .gt('created_at', ev.due_back_at)
-        .limit(1)
-      if (returned && returned.length > 0) continue // already returned since being due
-
-      const dedupeKey = `ict_overdue_asset:${ev.asset_id}:${today}`
-      const { data: already } = await admin.from('portal_audit_log')
-        .select('id').eq('action', 'ict_device_maintenance_alert').eq('metadata->>dedupe_key', dedupeKey).maybeSingle()
-      if (already) continue
-
-      const asset = (ev as any).ict_assets
-      await notifyAppointmentHolders(admin, school.id, ['ict_officer', 'ict_administrator'], {
-        title: 'Overdue device return',
-        body:  `${asset?.name ?? 'A device'} (${asset?.asset_tag ?? ''}) is overdue for return.`,
-        type:  'ict_device_maintenance',
-        action_url: '/dashboard/ict/assets',
-      })
-      try {
-        await admin.from('portal_audit_log').insert({
-          action: 'ict_device_maintenance_alert', actor_id: null, target_table: 'ict_assets',
-          target_id: ev.asset_id, metadata: { dedupe_key: dedupeKey, reason: 'overdue_return' },
-          logged_at: new Date().toISOString(),
-        })
-      } catch {
-        // Non-critical, same as every other portal_audit_log write in this
-        // codebase, but here it also means dedupe degrades (this alert may
-        // re-fire tomorrow) rather than the whole cron run failing. Worth
-        // confirming actor_id accepts NULL in the live schema (unverifiable
-        // from this repo, see Phase 1's "no migration history" note).
+        .gt('created_at', earliestDue)
+      const returnedByAsset = new Map<string, string[]>()
+      for (const r of returnedEvents ?? []) {
+        const list = returnedByAsset.get(r.asset_id) ?? []
+        list.push(r.created_at)
+        returnedByAsset.set(r.asset_id, list)
       }
-      overdueNotified++
+
+      // PERF: same batching for the dedupe check - one query per asset
+      // before, now one query per school. Fetches every alert logged
+      // for these assets today and matches the exact dedupe_key string
+      // in JS, so this is behaviorally identical to the old per-row
+      // .eq('metadata->>dedupe_key', ...) check, not an approximation.
+      const { data: existingOverdueAlerts } = await admin
+        .from('portal_audit_log')
+        .select('metadata')
+        .eq('action', 'ict_device_maintenance_alert')
+        .in('target_id', assetIds)
+        .gte('logged_at', `${today}T00:00:00.000Z`)
+      const alreadyAlertedOverdue = new Set(
+        (existingOverdueAlerts ?? []).map((r: any) => r.metadata?.dedupe_key).filter(Boolean),
+      )
+
+      for (const ev of overdueEvents) {
+        const returns = returnedByAsset.get(ev.asset_id) ?? []
+        if (returns.some((createdAt) => createdAt > ev.due_back_at)) continue // already returned since being due
+
+        const dedupeKey = `ict_overdue_asset:${ev.asset_id}:${today}`
+        if (alreadyAlertedOverdue.has(dedupeKey)) continue
+
+        const asset = (ev as any).ict_assets
+        await notifyAppointmentHolders(admin, school.id, ['ict_officer', 'ict_administrator'], {
+          title: 'Overdue device return',
+          body:  `${asset?.name ?? 'A device'} (${asset?.asset_tag ?? ''}) is overdue for return.`,
+          type:  'ict_device_maintenance',
+          action_url: '/dashboard/ict/assets',
+        })
+        try {
+          await admin.from('portal_audit_log').insert({
+            action: 'ict_device_maintenance_alert', actor_id: null, target_table: 'ict_assets',
+            target_id: ev.asset_id, metadata: { dedupe_key: dedupeKey, reason: 'overdue_return' },
+            logged_at: new Date().toISOString(),
+          })
+        } catch {
+          // Non-critical, same as every other portal_audit_log write in this
+          // codebase, but here it also means dedupe degrades (this alert may
+          // re-fire tomorrow) rather than the whole cron run failing. Worth
+          // confirming actor_id accepts NULL in the live schema (unverifiable
+          // from this repo, see Phase 1's "no migration history" note).
+        }
+        overdueNotified++
+      }
     }
 
     // ── Warranty expiring within 30 days ─────────────────────────────────
@@ -93,26 +131,41 @@ export async function GET(req: Request) {
       .gte('warranty_expires_at', now.toISOString().slice(0, 10))
       .neq('status', 'retired')
 
-    for (const asset of expiringAssets ?? []) {
-      const dedupeKey = `ict_warranty:${asset.id}:${today}`
-      const { data: already } = await admin.from('portal_audit_log')
-        .select('id').eq('action', 'ict_device_maintenance_alert').eq('metadata->>dedupe_key', dedupeKey).maybeSingle()
-      if (already) continue
+    const expiring = expiringAssets ?? []
 
-      await notifyAppointmentHolders(admin, school.id, ['ict_officer', 'ict_administrator'], {
-        title: 'Warranty expiring soon',
-        body:  `${asset.name} (${asset.asset_tag}), warranty expires ${asset.warranty_expires_at}.`,
-        type:  'ict_device_maintenance',
-        action_url: '/dashboard/ict/assets',
-      })
-      try {
-        await admin.from('portal_audit_log').insert({
-          action: 'ict_device_maintenance_alert', actor_id: null, target_table: 'ict_assets',
-          target_id: asset.id, metadata: { dedupe_key: dedupeKey, reason: 'warranty_expiring' },
-          logged_at: new Date().toISOString(),
+    if (expiring.length > 0) {
+      const assetIds = expiring.map((a: any) => a.id)
+
+      // Same dedupe batching as the overdue branch above.
+      const { data: existingWarrantyAlerts } = await admin
+        .from('portal_audit_log')
+        .select('metadata')
+        .eq('action', 'ict_device_maintenance_alert')
+        .in('target_id', assetIds)
+        .gte('logged_at', `${today}T00:00:00.000Z`)
+      const alreadyAlertedWarranty = new Set(
+        (existingWarrantyAlerts ?? []).map((r: any) => r.metadata?.dedupe_key).filter(Boolean),
+      )
+
+      for (const asset of expiring) {
+        const dedupeKey = `ict_warranty:${asset.id}:${today}`
+        if (alreadyAlertedWarranty.has(dedupeKey)) continue
+
+        await notifyAppointmentHolders(admin, school.id, ['ict_officer', 'ict_administrator'], {
+          title: 'Warranty expiring soon',
+          body:  `${asset.name} (${asset.asset_tag}), warranty expires ${asset.warranty_expires_at}.`,
+          type:  'ict_device_maintenance',
+          action_url: '/dashboard/ict/assets',
         })
-      } catch { /* see overdue-branch comment above */ }
-      warrantyNotified++
+        try {
+          await admin.from('portal_audit_log').insert({
+            action: 'ict_device_maintenance_alert', actor_id: null, target_table: 'ict_assets',
+            target_id: asset.id, metadata: { dedupe_key: dedupeKey, reason: 'warranty_expiring' },
+            logged_at: new Date().toISOString(),
+          })
+        } catch { /* see overdue-branch comment above */ }
+        warrantyNotified++
+      }
     }
   }
 

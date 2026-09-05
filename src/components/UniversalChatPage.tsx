@@ -174,7 +174,17 @@ export default function UniversalChatPage({
 
         return {
           id:           room.id,
-          name:         room.is_group ? (room.name ?? 'Group') : (otherUser?.full_name ?? room.name ?? 'Chat'),
+          // Group rooms use their stored name. For DMs, prefer the other
+          // participant's live profile name; only if that lookup fails do
+          // we fall back to the room's stored "PersonA & PersonB" label -
+          // and even then, strip our own name out of it so we never show
+          // both people's names in the list.
+          name:         room.is_group
+                          ? (room.name ?? 'Group')
+                          : (otherUser?.full_name
+                              ?? room.name?.split(' & ').find((n: string) => n.trim() !== profile?.full_name?.trim())?.trim()
+                              ?? room.name
+                              ?? 'Chat'),
           room_type:    room.room_type,
           is_group:     room.is_group,
           updated_at:   lastMsg?.sent_at ?? room.updated_at,

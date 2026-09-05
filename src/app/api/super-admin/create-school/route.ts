@@ -2,7 +2,7 @@
 import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getResend }         from '@/lib/activateSchool'
+import { getResend, getEmailFrom } from '@/lib/activateSchool'
 
 export async function POST(req: Request) {
   try {
@@ -238,7 +238,7 @@ export async function POST(req: Request) {
       const planLabel = setupType === 'trial' ? `${trialDays}-Day Free Trial` : 'Active (1 Month Free)'
 
       await getResend().emails.send({
-        from:    'SchoolOS <onboarding@resend.dev>',
+        from:    getEmailFrom(),
         to:      principalEmail,
         subject: `🎉 Welcome to SchoolOS, Your School is Ready`,
         html: `

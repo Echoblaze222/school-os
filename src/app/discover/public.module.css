@@ -85,6 +85,20 @@
   text-decoration: none;
 }
 
+.cardImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-2);
+  width: calc(100% + var(--space-5) * 2);
+  max-width: none;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .cardTop {
   display: flex;
   align-items: center;
