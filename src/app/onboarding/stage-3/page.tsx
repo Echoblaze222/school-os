@@ -152,7 +152,16 @@ export default function OnboardingStage3() {
       return
     }
 
-    router.push(ROLE_ROUTES[(profile as any)?.role ?? 'student'])
+    // Hard navigation, not router.push: this is the first time this
+    // account ever reaches its dashboard, right after a chain of
+    // auth-state changes across three onboarding stages - the same
+    // situation login/page.tsx already handles with window.location for
+    // the same reason. The client Router Cache doesn't reset on auth
+    // changes, so a soft nav here can serve a stale cached dashboard
+    // render (wrong school branding, stale stats) instead of a fresh
+    // one, with no way for the user to force a refresh from inside a
+    // native app shell.
+    window.location.href = ROLE_ROUTES[(profile as any)?.role ?? 'student']
   }
 
   // Submit is allowed when:
