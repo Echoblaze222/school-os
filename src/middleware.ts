@@ -239,9 +239,25 @@ export async function middleware(request: NextRequest) {
   if (user && pathname.startsWith('/dashboard')) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, school_id')
+      .select('role, school_id, onboarding_stage')
       .eq('id', user.id)
       .single()
+
+    // ── Enforce onboarding completion ───────────────────────────
+    // A user with a valid session but an incomplete onboarding stage
+    // (e.g. activated their account, then closed the browser before
+    // finishing stage-1) must not be able to reach a dashboard by
+    // navigating straight to a URL - stage-1 is also where Terms &
+    // Privacy acceptance is collected and recorded, so skipping it
+    // means skipping that acceptance too. This is enforced here,
+    // server-side, rather than relying only on the login page's
+    // post-sign-in redirect, which a direct URL visit bypasses entirely.
+    if (profile?.onboarding_stage === 'stage_1_pending') {
+      return NextResponse.redirect(new URL('/onboarding/stage-1', request.url))
+    }
+    if (profile?.onboarding_stage === 'stage_2_pending') {
+      return NextResponse.redirect(new URL('/onboarding/stage-2', request.url))
+    }
 
     // ── Enforce role boundary ────────────────────────────────
     // '/dashboard/principal/...' -> 'principal'. If the segment is a

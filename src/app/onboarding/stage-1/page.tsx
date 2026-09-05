@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function OnboardingStage1() {
   const [fullName,   setFullName]   = useState('')
   const [phone,      setPhone]      = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
   const [prefilling, setPrefilling] = useState(true)
@@ -30,6 +31,7 @@ export default function OnboardingStage1() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!fullName.trim()) { setError('Full name is required'); return }
+    if (!agreedToTerms) { setError('You must agree to the Terms & Conditions and Privacy Policy to continue'); return }
     setLoading(true); setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -39,9 +41,10 @@ export default function OnboardingStage1() {
     // (access code → /api/auth/first-login). Stage 1 only collects profile info.
     const { error: profileErr } = await supabase.from('profiles')
       .update({
-        full_name:        fullName.trim(),
-        phone:            phone.trim() || null,
-        onboarding_stage: 'stage_2_pending',
+        full_name:         fullName.trim(),
+        phone:             phone.trim() || null,
+        onboarding_stage:  'stage_2_pending',
+        terms_accepted_at: new Date().toISOString(),
       })
       .eq('id', user.id)
 
@@ -104,6 +107,21 @@ export default function OnboardingStage1() {
               style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
             />
           </div>
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 12, background: 'var(--input-bg)', border: '1px solid var(--input-border)', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={e => setAgreedToTerms(e.target.checked)}
+              style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#800020', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '0.76rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+              I agree to the{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#c98a94', textDecoration: 'underline' }}>Terms &amp; Conditions</a>
+              {' '}and{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#c98a94', textDecoration: 'underline' }}>Privacy Policy</a>
+            </span>
+          </label>
 
           {error && (
             <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', margin: 0 }}>

@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 const TERM_LABEL: Record<string, string> = {
   first: 'First Term', second: 'Second Term', third: 'Third Term',
@@ -23,6 +24,25 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
 
   const pending  = cards.filter((c: any) => c.status === 'pending_approval')
   const approved = cards.filter((c: any) => c.status === 'approved')
+
+  async function load() {
+    const { data } = await supabase
+      .from('report_cards')
+      .select(`
+        id, term, academic_year, class_teacher_remark, principal_remark, status,
+        attendance_start_date, attendance_end_date,
+        student:profiles!report_cards_student_id_fkey ( full_name, admission_number ),
+        classes ( name, class_level )
+      `)
+      .eq('school_id', school?.id)
+      .order('created_at', { ascending: false })
+    if (data) setCards(data)
+  }
+
+  // Class teachers submit report cards into this queue continuously -
+  // the principal shouldn't have to manually reload to see a new one
+  // waiting for approval.
+  useRealtimeRefresh({ tables: ['report_cards'], filter: `school_id=eq.${school?.id}`, onChange: load })
 
   async function approve(id: string) {
     if (!hasSignature) {

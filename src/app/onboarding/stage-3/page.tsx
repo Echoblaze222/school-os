@@ -18,6 +18,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { CameraIcon } from '@/components/Icons'
 
 const ROLE_ROUTES: Record<string, string> = {
   student:   '/dashboard/student',
@@ -152,7 +153,16 @@ export default function OnboardingStage3() {
       return
     }
 
-    router.push(ROLE_ROUTES[(profile as any)?.role ?? 'student'])
+    // Hard navigation, not router.push: this is the first time this
+    // account ever reaches its dashboard, right after a chain of
+    // auth-state changes across three onboarding stages - the same
+    // situation login/page.tsx already handles with window.location for
+    // the same reason. The client Router Cache doesn't reset on auth
+    // changes, so a soft nav here can serve a stale cached dashboard
+    // render (wrong school branding, stale stats) instead of a fresh
+    // one, with no way for the user to force a refresh from inside a
+    // native app shell.
+    window.location.href = ROLE_ROUTES[(profile as any)?.role ?? 'student']
   }
 
   // Submit is allowed when:
@@ -192,7 +202,7 @@ export default function OnboardingStage3() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#10B981,#059669)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}>📸</div>
+          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#10B981,#059669)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}><CameraIcon size={28} color="#fff" strokeWidth={2} /></div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 3 of 3: Passport photo &amp; NIN verification</p>
         </div>

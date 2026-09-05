@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../nurse.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -43,6 +44,13 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
   }
 
   useEffect(() => { loadRecords() }, [])
+
+  // A school with more than one active nurse appointment shares this
+  // same record set - checked pg_policies before publishing given how
+  // sensitive this data is; scoped to active nurse/parent/teacher/
+  // student-self, nothing broader.
+  useRealtimeRefresh({ tables: ['student_medical_records'], onChange: () => loadRecords(search) })
+
   useEffect(() => {
     const t = setTimeout(() => loadRecords(search), 300)
     return () => clearTimeout(t)

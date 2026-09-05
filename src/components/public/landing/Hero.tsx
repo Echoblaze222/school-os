@@ -1,10 +1,11 @@
 // src/components/public/landing/Hero.tsx
 
 import Link from 'next/link'
+import { Newsreader } from 'next/font/google'
 import { ArrowRightIcon, CompassIcon, CreditCardIcon, VideoIcon, ClipboardIcon } from '@/components/Icons'
-import AnimatedLogo from '@/components/AnimatedLogo'
-import motion from '@/components/dashboard-motion.module.css'
 import styles from './Hero.module.css'
+
+const newsreader = Newsreader({ subsets: ['latin'], weight: ['500', '600'], style: ['italic', 'normal'] })
 
 const FEATURE_CHIPS = [
   { icon: CreditCardIcon, label: 'Fees & payments via Paystack' },
@@ -15,18 +16,15 @@ const FEATURE_CHIPS = [
 export default function Hero() {
   return (
     <section className={styles.hero}>
-      <div className={styles.glow} aria-hidden="true" />
       <div className={styles.inner}>
-        <div className={`${styles.copy} ${motion.riseIn}`}>
-          <span className="badge badge-brand">Built for Nigerian schools</span>
-          <h1 className={styles.headline}>
-            One school portal. <span className={styles.accent}>Every</span> role,
-            every term, every naira accounted for.
+        <div className={styles.copy}>
+          <h1 className={`${styles.headline} ${newsreader.className}`}>
+            One portal. Every role, every term, every naira accounted for.
           </h1>
           <p className={styles.subhead}>
-            SchoolOS brings your principal, teachers, bursar, secretary, students and
-            parents onto one platform: attendance, results, fees, live classes and
-            communication, all in one place.
+            Principals, teachers, bursars, secretaries, students and parents share one
+            login and one live view of the term: attendance, results, fees and live
+            classes, all in one place.
           </p>
           <div className={styles.ctaRow}>
             <Link href="/register-school" className="btn btn-primary btn-lg">
@@ -37,21 +35,40 @@ export default function Hero() {
             </Link>
           </div>
           <div className={styles.chipRow}>
-            {FEATURE_CHIPS.map(({ icon: Icon, label }, i) => (
-              <span
-                key={label}
-                className={`${styles.chip} ${motion.staggerItem}`}
-                style={{ animationDelay: `${200 + i * 80}ms` }}
-              >
+            {FEATURE_CHIPS.map(({ icon: Icon, label }) => (
+              <span key={label} className={styles.chip}>
                 <Icon size={13} /> {label}
               </span>
             ))}
           </div>
         </div>
 
-        <div className={`${styles.markWrap} ${motion.riseIn}`} style={{ animationDelay: '120ms' }} aria-hidden="true">
-          <div className={styles.markGlow} />
-          <AnimatedLogo size={220} />
+        <div className={styles.cardWrap} aria-hidden="true">
+          <div className={styles.reportCard}>
+            <div className={styles.reportCardHeader}>
+              <span className={styles.reportCardSchool}>Greenfield Secondary School</span>
+              <span className={styles.reportCardTerm}>First Term &middot; 2025/2026</span>
+            </div>
+            <div className={styles.reportCardRow}>
+              <span>Mathematics</span>
+              <div className={styles.reportCardBar}><i style={{ width: '88%' }} /></div>
+              <span className={styles.reportCardScore}>88</span>
+            </div>
+            <div className={styles.reportCardRow}>
+              <span>English Language</span>
+              <div className={styles.reportCardBar}><i style={{ width: '76%' }} /></div>
+              <span className={styles.reportCardScore}>76</span>
+            </div>
+            <div className={styles.reportCardRow}>
+              <span>Basic Science</span>
+              <div className={styles.reportCardBar}><i style={{ width: '92%' }} /></div>
+              <span className={styles.reportCardScore}>92</span>
+            </div>
+            <div className={styles.reportCardFooter}>
+              <span className={styles.reportCardAttendance}>Attendance: 96%</span>
+              <span className={styles.reportCardStamp}>Fees paid</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

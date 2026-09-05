@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../librarian.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 const CATEGORIES = ['General', 'Fiction', 'Non-Fiction', 'Textbook', 'Reference', 'Periodical']
 
@@ -39,6 +40,12 @@ export default function CatalogClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { loadBooks() }, [])
+
+  // available_copies here changes every time a checkout or return
+  // happens on the other screen - keep it accurate for whoever's
+  // deciding what to hand a student right now.
+  useRealtimeRefresh({ tables: ['library_books'], onChange: () => loadBooks(search) })
+
   useEffect(() => {
     const t = setTimeout(() => loadBooks(search), 300)
     return () => clearTimeout(t)

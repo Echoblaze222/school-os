@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../nurse.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -36,6 +37,11 @@ export default function InventoryClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { loadItems() }, [])
+
+  // Stock counts double-decrement if two nurses dispense without
+  // seeing each other's updates.
+  useRealtimeRefresh({ tables: ['clinic_inventory'], onChange: loadItems })
+
 
   async function submitItem() {
     if (!itemName.trim()) { showToast('Item name is required.'); return }

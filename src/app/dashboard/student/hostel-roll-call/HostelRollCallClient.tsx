@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon, InfoIcon } from '@/components/Icons'
 import styles from './hostel-roll-call.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Hostel { id: string; name: string }
 interface Entry {
@@ -56,6 +57,20 @@ export default function HostelRollCallClient({ hostels }: { hostels: Hostel[] })
   }
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [hostelId, sessionType])
+
+  // The exact same staff-and-prefect collision as the staff roll-call
+  // screen (src/app/dashboard/hostel/roll-call) - both tables are
+  // already published from that fix, just wiring this screen to them too.
+  useRealtimeRefresh({
+    tables: session ? ['hostel_roll_call_entries'] : [],
+    filter: session ? `session_id=eq.${session.id}` : undefined,
+    onChange: load,
+  })
+  useRealtimeRefresh({
+    tables: session ? ['hostel_roll_call_sessions'] : [],
+    filter: session ? `id=eq.${session.id}` : undefined,
+    onChange: load,
+  })
 
   async function record(entryId: string, newStatus: string) {
     if (savingEntryId) return

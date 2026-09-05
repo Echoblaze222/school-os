@@ -26,6 +26,13 @@ export async function POST(request: Request) {
 
     const { school, principal, paymentMode } = await request.json()
 
+    // Server-side enforcement, not just the client-side checkbox - a
+    // direct API call could otherwise skip the UI entirely and register
+    // a school without ever agreeing to the Terms & Conditions.
+    if (!principal?.agreedToTerms) {
+      return NextResponse.json({ error: 'You must agree to the Terms & Conditions and Privacy Policy to register a school.' }, { status: 400 })
+    }
+
     // paymentMode: 'full' | 'installment'
 
     // Subscription billing is per-student-per-term (handled separately after onboarding)
@@ -231,6 +238,8 @@ export async function POST(request: Request) {
         onboarding_stage: 'stage_1_pending',
 
         is_active:        true,
+
+        terms_accepted_at: new Date().toISOString(),
 
       })
 

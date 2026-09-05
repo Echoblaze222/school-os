@@ -6,6 +6,7 @@ import ContextSwitcher from '@/components/ContextSwitcher'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './incidents.module.css'
 import { SkeletonCard } from '@/components/motion/Skeleton'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Hostel { id: string; name: string }
 interface Incident {
@@ -44,6 +45,14 @@ export default function IncidentsClient({ hostels }: { hostels: Hostel[] }) {
   }
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [hostelId])
+
+  // So a second hostel staffer sees a new report, an escalation, or a
+  // resolution as it happens, not just after their own next reload.
+  useRealtimeRefresh({
+    tables: hostelId ? ['hostel_incidents'] : [],
+    filter: hostelId ? `hostel_id=eq.${hostelId}` : undefined,
+    onChange: load,
+  })
 
   async function submitReport() {
     if (submitting || !formDesc.trim()) return

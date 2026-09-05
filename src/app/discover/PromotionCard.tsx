@@ -39,6 +39,10 @@ export default function PromotionCard({ promotion }: { promotion: any }) {
   const school = promotion.schools
   const content = (
     <>
+      {promotion.image_url && isSafeHttpUrl(promotion.image_url) && (
+        // eslint-disable-next-line @next/next/no-img-element -- external, school-supplied URLs; not part of the Next.js image domain allowlist
+        <img src={promotion.image_url} alt="" className={styles.cardImage} loading="lazy" />
+      )}
       <div className={styles.cardTop}>
         <span className={styles.typeTag}>{TYPE_LABELS[promotion.promotion_type] ?? promotion.promotion_type}</span>
         {promotion.is_sponsored && <span className={styles.sponsoredTag}>Sponsored</span>}

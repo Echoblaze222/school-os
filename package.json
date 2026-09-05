@@ -10,7 +10,8 @@
     "android:build": "cap sync android && cd android && ./gradlew assembleDebug",
     "postbuild": "node scripts/generate-sw-precache.js",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "postinstall": "node scripts/copy-pdfjs-assets.mjs"
   },
@@ -52,7 +53,7 @@
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
-    "eslint-config-next": "15.3.1",
+    "eslint-config-next": "^16.3.1",
     "typescript": "^5",
     "vitest": "^3.0.5"
   }

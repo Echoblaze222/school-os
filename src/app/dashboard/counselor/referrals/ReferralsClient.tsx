@@ -9,6 +9,7 @@ import EmptyState from '@/components/motion/EmptyState'
 import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -56,6 +57,14 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { load(tab) }, [tab])
+
+  // The genuine handoff moment in this workflow: a teacher/staffer
+  // referring a student should show up for the counselor without them
+  // needing to poll, and if a referral is scoped to a specific
+  // counselor, a second counselor shouldn't be stuck looking at a stale
+  // "pending" row someone already accepted or declined.
+  useRealtimeRefresh({ tables: ['counseling_referrals'], onChange: () => load(tab) })
+
 
   async function accept(id: string) {
     setBusyId(id)

@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../librarian.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -44,6 +45,11 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { loadCheckouts() }, [scope])
+
+  // Circulation desk classic: two librarians (or a librarian + a
+  // self-checkout kiosk) working the same loan list at once.
+  useRealtimeRefresh({ tables: ['library_loans'], onChange: loadCheckouts })
+
 
   useEffect(() => {
     if (!bookQuery.trim() || selectedBook) { setBookResults([]); return }

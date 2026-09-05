@@ -37,6 +37,19 @@ export function getResend(): Resend {
   return _resend
 }
 
+/**
+ * Falls back to Resend's shared sandbox address, which only ever
+ * delivers to the Resend account's own signup email - never to real
+ * end users like school principals. Once a domain is verified in the
+ * Resend dashboard (Settings -> Domains), set RESEND_FROM_EMAIL to an
+ * address on that domain (e.g. "SchoolOS <noreply@yourdomain.com>")
+ * and every email send switches over automatically, no further code
+ * change needed.
+ */
+export function getEmailFrom(): string {
+  return process.env.RESEND_FROM_EMAIL || 'SchoolOS <onboarding@resend.dev>'
+}
+
 export async function activateSchool(
   schoolId: string, paymentMode: string, amountKobo: number, reference: string
 ): Promise<ActivateSchoolResult> {
@@ -145,7 +158,7 @@ export async function activateSchool(
   // 5. Email the PRINCIPAL with their login credentials
   if (principal?.email) {
     await getResend().emails.send({
-      from:    'SchoolOS <onboarding@resend.dev>',
+      from:    getEmailFrom(),
       to:      principal.email,
       subject: `🎉 Welcome to SchoolOS, ${school?.name} is Now Active!`,
       html: `
@@ -197,7 +210,7 @@ export async function activateSchool(
 
   // 6. Email YOU (super admin) about the new payment
   await getResend().emails.send({
-    from:    'SchoolOS <onboarding@resend.dev>',
+    from:    getEmailFrom(),
     to:      process.env.SUPER_ADMIN_EMAIL!,
     subject: `💰 New School Payment: ${school?.name ?? schoolId}`,
     html: `

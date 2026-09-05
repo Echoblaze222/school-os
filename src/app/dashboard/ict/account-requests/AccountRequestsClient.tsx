@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import styles from './account-requests.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 const STATUS_COLOR: Record<string, string> = {
   open: '#E0A94E', in_progress: '#4A90D9', resolved: '#3FA66B', closed: '#7A7A88',
@@ -38,6 +39,20 @@ export default function AccountRequestsClient({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [errorId, setErrorId] = useState<string | null>(null)
   const [noteId, setNoteId] = useState<string | null>(null)
+
+  async function load() {
+    try {
+      const res = await fetch('/api/ict/account-requests')
+      if (!res.ok) return
+      const json = await res.json()
+      setRequests(json.requests ?? [])
+    } catch {
+      // Background live-sync refresh - see TicketsClient for why this
+      // stays silent rather than surfacing an error state.
+    }
+  }
+
+  useRealtimeRefresh({ tables: ['ict_account_requests'], onChange: load })
 
   const filtered = filter === 'open'
     ? requests.filter(r => !['resolved', 'closed'].includes(r.status))

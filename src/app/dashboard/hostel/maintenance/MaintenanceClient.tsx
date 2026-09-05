@@ -6,6 +6,7 @@ import ContextSwitcher from '@/components/ContextSwitcher'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './maintenance.module.css'
 import { SkeletonCard } from '@/components/motion/Skeleton'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Hostel { id: string; name: string }
 interface MaintenanceRequest {
@@ -45,6 +46,12 @@ export default function MaintenanceClient({ hostels }: { hostels: Hostel[] }) {
   }
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [hostelId])
+
+  useRealtimeRefresh({
+    tables: hostelId ? ['hostel_maintenance_requests'] : [],
+    filter: hostelId ? `hostel_id=eq.${hostelId}` : undefined,
+    onChange: load,
+  })
 
   async function submitReport() {
     if (submitting || !formDesc.trim()) return
