@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../coach.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -50,6 +51,8 @@ export default function MatchesClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { loadAll() }, [])
+
+  useRealtimeRefresh({ tables: ['sports_matches'], onChange: loadAll })
 
   async function createMatch() {
     if (!teamId || !opponent.trim() || !scheduledAt) { showToast('Pick a team, opponent and time.'); return }
