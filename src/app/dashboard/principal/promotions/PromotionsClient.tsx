@@ -6,6 +6,7 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { RefreshIcon, TrashIcon, ImageIcon } from '@/components/Icons'
 import type { PromotionRow } from './page'
 import styles from './promotions.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props {
   promotions: PromotionRow[]
@@ -51,6 +52,23 @@ const EMPTY_FORM = {
 export default function PromotionsClient({ promotions, userId, profile, school }: Props) {
   const supabase = createClient()
   const [rows, setRows] = useState<PromotionRow[]>(promotions)
+
+  async function load() {
+    try {
+      const res = await fetch('/api/schools/promotions')
+      if (!res.ok) return
+      const json = await res.json()
+      setRows(json.promotions ?? [])
+    } catch {
+      // Background live-sync refresh - stay on the current view.
+    }
+  }
+
+  // Principal, secretary, and admin all manage this same review queue
+  // (secretary drafts, principal approves, etc.) - one seeing another's
+  // status change live matters here.
+  useRealtimeRefresh({ tables: ['school_promotions'], filter: `school_id=eq.${school?.id}`, onChange: load })
+
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
