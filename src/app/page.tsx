@@ -7,6 +7,7 @@ import ValueProps from '@/components/public/landing/ValueProps'
 import AudienceSection from '@/components/public/landing/AudienceSection'
 import StatsStrip from '@/components/public/landing/StatsStrip'
 import FeaturedSchools from '@/components/public/landing/FeaturedSchools'
+import PromotionsSection from '@/components/public/landing/PromotionsSection'
 import FaqSection from '@/components/public/landing/FaqSection'
 import FinalCta from '@/components/public/landing/FinalCta'
 
@@ -50,6 +51,8 @@ export default async function RootPage() {
         <AudienceSection />
         <div style={{ height: 'var(--space-8)' }} />
         <FeaturedSchools />
+        <div style={{ height: 'var(--space-8)' }} />
+        <PromotionsSection />
         <div style={{ height: 'var(--space-8)' }} />
         <FaqSection />
         <div style={{ height: 'var(--space-8)' }} />
