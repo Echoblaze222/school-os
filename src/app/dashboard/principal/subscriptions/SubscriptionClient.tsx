@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   CreditCardIcon, CalendarIcon, UsersIcon, CheckCircleIcon,
   AlertCircleIcon, RefreshIcon, BarChartIcon, FileTextIcon,
-  ArrowLeftIcon, SunIcon, MoonIcon, XIcon,
+  ArrowLeftIcon, SunIcon, MoonIcon, XIcon, ChevronDownIcon,
 } from '@/components/Icons'
 import styles from './subscription.module.css'
 import { getSubscriptionTier, computeSubscriptionAmount, type BillingCycle } from '@/lib/billing'
@@ -75,6 +75,7 @@ export default function SubscriptionClient({
   const [toast,        setToast]        = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('termly')
   const [cancelBusy,   setCancelBusy]   = useState(false)
+  const [pricingOpen,  setPricingOpen]  = useState(false)
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(!!subscription?.cancel_at_period_end)
 
   // Read ?status= from Paystack callback redirect
@@ -294,7 +295,7 @@ export default function SubscriptionClient({
             {isExpired
               ? 'Your subscription has expired. Renew now to restore access for all users.'
               : isGracePeriod
-              ? 'Your subscription period has ended. Staff and students still have access for a short grace period — renew now to avoid any interruption.'
+              ? 'Your subscription period has ended. Staff and students still have access for a short grace period. Renew now to avoid any interruption.'
               : `Your subscription expires in ${daysRemaining} days. Renew before it expires to avoid disruption.`
             }
           </p>
@@ -381,16 +382,33 @@ export default function SubscriptionClient({
               <p className={styles.statusSub}>{statusLabel}</p>
             </div>
 
-            {/* Pricing explanation */}
+            {/* Pricing explanation - collapsed by default; the rate itself
+                is always visible, the "why" is opt-in detail, same
+                expand/collapse pattern as the landing page FAQ. */}
             <div className={styles.pricingNote}>
-              <p className={styles.pricingNoteTitle}>How pricing works</p>
-              <p className={styles.pricingNoteBody}>
-                Your rate is based on school size. You're currently on the <strong>{tierLabel}</strong> tier
-                at <strong>₦{pricePerStudent.toLocaleString()} per student per term</strong>.
-                With <strong>{studentCount} active students</strong>, your renewal costs <strong>{fmtAmount(termlyBreakdown.amount)}</strong> per term
-                {' '}(or <strong>{fmtAmount(yearlyBreakdown.amount)}/year</strong>, paid yearly — a {Math.round((yearlyBreakdown.discountApplied / (termlyBreakdown.amount * 3)) * 100)}% saving over paying termly three times).
-                As your school grows past a tier boundary, your rate adjusts automatically, and every school gets the full feature set regardless of size.
-              </p>
+              <button
+                type="button"
+                className={styles.pricingNoteToggle}
+                aria-expanded={pricingOpen}
+                onClick={() => setPricingOpen(o => !o)}
+              >
+                <span>
+                  <strong>How pricing works</strong>
+                  <span className={styles.pricingNoteSummary}>
+                    {' '}&middot; {tierLabel} tier, ₦{pricePerStudent.toLocaleString()}/student/term
+                  </span>
+                </span>
+                <ChevronDownIcon size={16} className={`${styles.pricingChevron} ${pricingOpen ? styles.pricingChevronOpen : ''}`} />
+              </button>
+              {pricingOpen && (
+                <p className={`${styles.pricingNoteBody} animate-fade-up`}>
+                  Your rate is based on school size. You're currently on the <strong>{tierLabel}</strong> tier
+                  at <strong>₦{pricePerStudent.toLocaleString()} per student per term</strong>.
+                  With <strong>{studentCount} active students</strong>, your renewal costs <strong>{fmtAmount(termlyBreakdown.amount)}</strong> per term
+                  {' '}(or <strong>{fmtAmount(yearlyBreakdown.amount)}/year</strong> paid yearly, saving {Math.round((yearlyBreakdown.discountApplied / (termlyBreakdown.amount * 3)) * 100)}% versus paying termly three times).
+                  As your school grows past a tier boundary, your rate adjusts automatically, and every school gets the full feature set regardless of size.
+                </p>
+              )}
             </div>
 
             {/* Auto-renewal control */}
@@ -460,7 +478,7 @@ export default function SubscriptionClient({
                 className={`${styles.tab} ${billingCycle === 'yearly' ? styles.tabActive : ''} pressable`}
                 onClick={() => setBillingCycle('yearly')}
               >
-                Pay yearly — save 20%
+                Pay yearly (save 20%)
               </button>
             </div>
 
