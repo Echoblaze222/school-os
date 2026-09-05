@@ -133,14 +133,25 @@ export default function LoginPage() {
   // the one shown on screen. Signs back out and blocks navigation on a
   // mismatch, rather than letting the wrong-school selection quietly
   // succeed anyway.
-  async function checkSchoolMatches(userId: string): Promise<boolean> {
-    const { data: profile } = await supabase.from('profiles').select('school_id').eq('id', userId).single()
+  async function checkSchoolMatchesAndGetStage(userId: string): Promise<{ mismatch: boolean; stage: string | null }> {
+    const { data: profile } = await supabase.from('profiles').select('school_id, onboarding_stage').eq('id', userId).single()
     if (profile && school && profile.school_id !== school.id) {
       await supabase.auth.signOut()
       setLoginError(`This account isn't part of ${school.name}. Go back and select the correct school before signing in.`)
-      return true // mismatch
+      return { mismatch: true, stage: null }
     }
-    return false
+    return { mismatch: false, stage: profile?.onboarding_stage ?? null }
+  }
+
+  function destinationForStage(stage: string | null): string {
+    // Route through onboarding on every login, not just right after
+    // activation - a user who closes the browser mid-onboarding and
+    // signs back in normally must still be sent here, not straight to
+    // /dashboard, since this is also where Terms & Privacy acceptance
+    // is collected and recorded.
+    if (stage === 'stage_1_pending') return '/onboarding/stage-1'
+    if (stage === 'stage_2_pending') return '/onboarding/stage-2'
+    return '/dashboard'
   }
 
   async function handleExistingLogin(e: React.FormEvent) {
@@ -160,7 +171,7 @@ export default function LoginPage() {
         const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
         if (signInErr) { setLoginError('Wrong password. Please try again.'); return }
 
-        const mismatch = await checkSchoolMatches(signInData.user.id)
+        const { mismatch, stage } = await checkSchoolMatchesAndGetStage(signInData.user.id)
         if (mismatch) return
 
         // Hard navigation, not router.replace: this is a fresh sign-in, and
@@ -168,15 +179,15 @@ export default function LoginPage() {
         // nav here can briefly hand back a PREVIOUS session's cached
         // dashboard (e.g. another role's, on a shared device) before it
         // catches up. window.location guarantees a clean, fully fresh load.
-        window.location.href = '/dashboard'
+        window.location.href = destinationForStage(stage)
       } else {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: value, password })
         if (error) { setLoginError(error.message); return }
 
-        const mismatch = await checkSchoolMatches(signInData.user.id)
+        const { mismatch, stage } = await checkSchoolMatchesAndGetStage(signInData.user.id)
         if (mismatch) return
 
-        window.location.href = '/dashboard'
+        window.location.href = destinationForStage(stage)
       }
     } catch { setLoginError('Something went wrong. Please try again.')
     } finally { setLoginLoading(false) }
