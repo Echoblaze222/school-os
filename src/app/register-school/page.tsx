@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AnimatedLogo from '@/components/AnimatedLogo'
 import { ripple } from '@/lib/ripple'
@@ -77,6 +78,7 @@ export default function RegisterSchoolPage() {
   const [principalName,     setPrincipalName]     = useState('')
   const [principalEmail,    setPrincipalEmail]    = useState('')
   const [principalPassword, setPrincipalPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [principalPhone,    setPrincipalPhone]    = useState('')
 
   // UI
@@ -119,6 +121,7 @@ export default function RegisterSchoolPage() {
     if (!principalEmail.trim()) { setError('Principal email is required.'); return false }
     if (!principalEmail.includes('@')) { setError('Please enter a valid email.'); return false }
     if (principalPassword.length < 8) { setError('Password must be at least 8 characters.'); return false }
+    if (!agreedToTerms) { setError('You must agree to the Terms & Conditions and Privacy Policy to register your school.'); return false }
     return true
   }
 
@@ -158,6 +161,7 @@ export default function RegisterSchoolPage() {
             email:     principalEmail.trim(),
             password:  principalPassword,
             phone:     principalPhone.trim(),
+            agreedToTerms,
           },
         }),
       })
@@ -542,6 +546,21 @@ export default function RegisterSchoolPage() {
                   You will be redirected to Paystack to complete payment after submitting.
                 </p>
               </div>
+
+              <label className={styles.termsCheck}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                />
+                <span>
+                  I have read and agree to the{' '}
+                  <Link href="/terms" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</Link>
+                  {' '}and{' '}
+                  <Link href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
+                  , on behalf of {schoolName || 'my school'}.
+                </span>
+              </label>
             </div>
           )}
 
