@@ -1,0 +1,240 @@
+/* src/components/live/live-room.module.css
+ *
+ * Shared styling for the live-class and live-meeting rooms
+ * (teacher/student RoomClient, MeetingRoomClient). These components were
+ * originally written with Tailwind utility classes, but this project has
+ * no Tailwind installed, so none of that CSS ever existed — the buttons
+ * you saw were LiveKit's own unstyled default theme. `!important` is used
+ * on the handful of properties that need to win over LiveKit's default
+ * `.lk-button`/`.lk-disconnect-button` styles regardless of CSS import
+ * order, since both classes land on the same element.
+ */
+
+.page {
+  display: flex;
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.banner {
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.bannerWarning { background: var(--warning-subtle); color: var(--warning); }
+.bannerDanger  { background: var(--danger-subtle);  color: var(--danger); }
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.statusText {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Mic/camera toggle buttons (rendered by LiveKit's <TrackToggle>) and any
+   plain icon-style button in the control row. */
+.controlBtn {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full) !important;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.controlBtn:hover:not(:disabled) { background: var(--bg-raised) !important; }
+.controlBtn:disabled { opacity: 0.4 !important; cursor: not-allowed; }
+/* LiveKit adds its own "enabled/disabled" state class to indicate mute
+   state (distinct from the HTML disabled attribute above) — give muted
+   mic/camera a visibly different (dim, not just low-opacity) look. */
+.controlBtn[data-lk-enabled="false"] {
+  background: var(--danger-subtle) !important;
+  color: var(--danger) !important;
+  border-color: transparent !important;
+}
+
+.pillBtn {
+  padding: var(--space-2) var(--space-4) !important;
+  border-radius: var(--radius-full) !important;
+  border: none !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pillBtn:disabled { opacity: 0.5 !important; cursor: not-allowed; }
+
+.dangerBtn   { background: var(--danger) !important;  color: #fff !important; }
+.neutralBtn  { background: var(--bg-elevated) !important; color: var(--text-primary) !important; border: 1px solid var(--glass-border) !important; }
+.recordingOnBtn  { background: var(--danger-subtle) !important; color: var(--danger) !important; }
+.recordingOffBtn { background: var(--bg-elevated) !important; color: var(--text-secondary) !important; border: 1px solid var(--glass-border) !important; }
+.raiseHandBtn       { background: var(--warning-subtle) !important; color: var(--warning) !important; }
+.raiseHandBtnActive { background: var(--warning) !important; color: #fff !important; }
+.speakingTag { font-size: 0.8rem; color: var(--success); }
+
+.videoArea {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 240px;
+}
+.placeholderText { font-size: 0.85rem; color: var(--text-muted); }
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--glass-border);
+  background: var(--bg-surface);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+}
+@media (max-width: 720px) {
+  .page { flex-direction: column; }
+  .sidebar {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--glass-border);
+    max-height: 40vh;
+  }
+}
+
+.sectionHeading {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+}
+.emptyHint { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.listRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: 0.85rem; }
+.listRowName { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listeningTag { font-size: 0.75rem; color: var(--text-muted); }
+
+.smallActionBtn {
+  font-size: 0.72rem;
+  padding: var(--space-1) var(--space-2) !important;
+  border-radius: var(--radius-sm) !important;
+  border: none !important;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.smallActionBtn:disabled { opacity: 0.5 !important; cursor: not-allowed; }
+.allowBtn  { background: var(--success-subtle) !important; color: var(--success) !important; }
+.revokeBtn { background: var(--bg-elevated) !important; color: var(--text-secondary) !important; }
+
+.chatSection { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chatMessages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-2); font-size: 0.85rem; }
+.chatMessage { color: var(--text-secondary); }
+.chatMessageName { font-weight: 600; color: var(--text-primary); }
+.chatInputRow { display: flex; gap: var(--space-1); }
+.chatInput {
+  flex: 1;
+  border: 1px solid var(--input-border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font-size: 0.85rem;
+}
+.chatSendBtn {
+  background: var(--brand) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  padding: var(--space-2) var(--space-3) !important;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.centerState { padding: var(--space-6); text-align: center; color: var(--text-muted); }
+.errorState { padding: var(--space-6); max-width: 420px; margin: 0 auto; text-align: center; }
+.errorTitle { color: var(--danger); font-weight: 600; margin-bottom: var(--space-2); }
+.errorBody { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: var(--space-4); }
+.errorLink { color: var(--brand-light); text-decoration: underline; background: none; border: none; cursor: pointer; font-size: 0.85rem; }
+
+/* ── Recordings library ── */
+.recPage { padding: var(--space-4); color: var(--text-primary); }
+.recHeading { font-size: 1.1rem; font-weight: 700; margin: 0 0 var(--space-4); }
+.recEmpty { color: var(--text-muted); font-size: 0.85rem; }
+.recList { list-style: none; margin: 0; padding: 0; }
+.recItem {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.recTitle { font-weight: 600; margin: 0 0 2px; }
+.recMeta { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+.playBtn {
+  background: var(--brand) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-full) !important;
+  padding: var(--space-2) var(--space-4) !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.playBtn:disabled { opacity: 0.5 !important; cursor: not-allowed; }
+.recError { color: var(--danger); font-size: 0.85rem; margin-top: var(--space-3); }
+
+.modalOverlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+}
+.modalCard {
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  max-width: 720px;
+  width: 100%;
+}
+.modalHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+.modalTitle { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin: 0; }
+.modalCloseBtn { background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer; }
+.modalVideo { width: 100%; border-radius: var(--radius-sm); display: block; }
+.modalHint { font-size: 0.75rem; color: var(--text-muted); margin-top: var(--space-2); }

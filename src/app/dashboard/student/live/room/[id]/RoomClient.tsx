@@ -27,6 +27,7 @@ import { Track, ConnectionState } from 'livekit-client'
 import '@livekit/components-styles'
 import { useRaiseHand } from '@/lib/liveClass/useRaiseHand'
 import { useClassChat } from '@/lib/liveClass/useClassChat'
+import styles from '@/components/live/live-room.module.css'
 
 interface Props {
   onlineClassId: string
@@ -63,13 +64,13 @@ export default function RoomClient({ onlineClassId }: Props) {
     return () => { cancelled = true }
   }, [onlineClassId])
 
-  if (loading) return <div className="p-6 text-center text-gray-500">Joining class…</div>
+  if (loading) return <div className={styles.centerState}>Joining class…</div>
   if (error) {
     return (
-      <div className="p-6 max-w-md mx-auto text-center">
-        <p className="text-red-600 font-medium mb-2">Couldn't join this class</p>
-        <p className="text-gray-600 text-sm mb-4">{error}</p>
-        <button onClick={() => router.push('/dashboard/student/live')} className="text-blue-600 underline">
+      <div className={styles.errorState}>
+        <p className={styles.errorTitle}>Couldn't join this class</p>
+        <p className={styles.errorBody}>{error}</p>
+        <button onClick={() => router.push('/dashboard/student/live')} className={styles.errorLink}>
           Back to Live Classes
         </button>
       </div>
@@ -127,69 +128,71 @@ function StudentRoomInner({ onlineClassId }: { onlineClassId: string }) {
   }, [chatInput, sendMessage])
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 flex flex-col p-4 gap-4">
+    <div className={styles.page}>
+      <div className={styles.main}>
         {connectionState === ConnectionState.Reconnecting && (
-          <div className="text-sm text-amber-700 bg-amber-50 rounded px-3 py-1">
+          <div className={`${styles.banner} ${styles.bannerWarning}`}>
             Connection interrupted — reconnecting…
           </div>
         )}
 
-        <div className="flex-1 grid place-items-center bg-black rounded-lg overflow-hidden">
+        <div className={styles.videoArea}>
           {teacherCameraTrack ? (
             <ParticipantTile trackRef={teacherCameraTrack} />
           ) : (
-            <p className="text-gray-400 text-sm">Waiting for the teacher's video…</p>
+            <p className={styles.placeholderText}>Waiting for the teacher's video…</p>
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-2">
+        <div className={styles.topBar}>
+          <div className={styles.controls}>
             <TrackToggle
               source={Track.Source.Microphone}
               showIcon
               disabled={!canSpeak}
-              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-40"
+              className={styles.controlBtn}
             />
             <TrackToggle
               source={Track.Source.Camera}
               showIcon
               disabled={!canSpeak}
-              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-40"
+              className={styles.controlBtn}
             />
             {!canSpeak && (
               <button
                 onClick={selfRaised ? lowerHand : raiseHand}
-                className={`px-3 py-1 rounded ${selfRaised ? 'bg-yellow-300' : 'bg-yellow-100'}`}
+                className={`${styles.pillBtn} ${selfRaised ? styles.raiseHandBtnActive : styles.raiseHandBtn}`}
               >
                 {selfRaised ? '✋ Hand raised — tap to lower' : '✋ Raise hand / request to speak'}
               </button>
             )}
-            {canSpeak && <span className="text-sm text-green-700">You've been given permission to speak</span>}
+            {canSpeak && <span className={styles.speakingTag}>You've been given permission to speak</span>}
           </div>
-          <DisconnectButton className="px-4 py-1 rounded bg-gray-700 text-white">Leave class</DisconnectButton>
+          <DisconnectButton className={`${styles.pillBtn} ${styles.neutralBtn}`}>Leave class</DisconnectButton>
         </div>
       </div>
 
-      <aside className="w-72 border-l p-4 flex flex-col">
-        <h3 className="font-semibold mb-2">Class chat</h3>
-        <div className="flex-1 overflow-y-auto space-y-1 mb-2 text-sm">
-          {messages.map((m, i) => (
-            <div key={i}><span className="font-medium">{m.name}:</span> {m.text}</div>
-          ))}
-        </div>
-        <div className="flex gap-1">
-          <input
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Message the class…"
-            className="flex-1 border rounded px-2 py-1 text-sm"
-          />
-          <button onClick={handleSend} className="px-3 py-1 rounded bg-blue-600 text-white text-sm">Send</button>
+      <aside className={styles.sidebar}>
+        <div className={styles.chatSection}>
+          <h3 className={styles.sectionHeading}>Class chat</h3>
+          <div className={styles.chatMessages}>
+            {messages.map((m, i) => (
+              <div key={i} className={styles.chatMessage}><span className={styles.chatMessageName}>{m.name}:</span> {m.text}</div>
+            ))}
+          </div>
+          <div className={styles.chatInputRow}>
+            <input
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              placeholder="Message the class…"
+              className={styles.chatInput}
+            />
+            <button onClick={handleSend} className={styles.chatSendBtn}>Send</button>
+          </div>
         </div>
         {raisedHands.size > 0 && (
-          <p className="text-xs text-gray-400 mt-2">{raisedHands.size} hand(s) raised in class</p>
+          <p className={styles.emptyHint}>{raisedHands.size} hand(s) raised in class</p>
         )}
       </aside>
     </div>

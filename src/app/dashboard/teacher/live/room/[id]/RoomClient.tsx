@@ -24,6 +24,7 @@ import {
 import { Track } from 'livekit-client'
 import '@livekit/components-styles'
 import { useRaiseHand } from '@/lib/liveClass/useRaiseHand'
+import styles from '@/components/live/live-room.module.css'
 
 interface Props {
   onlineClassId: string
@@ -60,13 +61,13 @@ export default function RoomClient({ onlineClassId }: Props) {
     return () => { cancelled = true }
   }, [onlineClassId])
 
-  if (loading) return <div className="p-6 text-center text-gray-500">Starting your class…</div>
+  if (loading) return <div className={styles.centerState}>Starting your class…</div>
   if (error) {
     return (
-      <div className="p-6 max-w-md mx-auto text-center">
-        <p className="text-red-600 font-medium mb-2">Couldn't start this class</p>
-        <p className="text-gray-600 text-sm mb-4">{error}</p>
-        <button onClick={() => router.push('/dashboard/teacher/live')} className="text-blue-600 underline">
+      <div className={styles.errorState}>
+        <p className={styles.errorTitle}>Couldn't start this class</p>
+        <p className={styles.errorBody}>{error}</p>
+        <button onClick={() => router.push('/dashboard/teacher/live')} className={styles.errorLink}>
           Back to Live Classes
         </button>
       </div>
@@ -138,45 +139,45 @@ function TeacherRoomInner({ onlineClassId }: { onlineClassId: string }) {
   const remoteParticipants = participants.filter(p => !p.isLocal)
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 flex flex-col p-4 gap-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">
+    <div className={styles.page}>
+      <div className={styles.main}>
+        <div className={styles.topBar}>
+          <div className={styles.statusText}>
             {participants.length} in class · Recording: not enabled for this session
           </div>
-          <div className="flex gap-2">
-            <TrackToggle source={Track.Source.Microphone} showIcon className="px-3 py-1 rounded bg-gray-200" />
-            <TrackToggle source={Track.Source.Camera} showIcon className="px-3 py-1 rounded bg-gray-200" />
+          <div className={styles.controls}>
+            <TrackToggle source={Track.Source.Microphone} showIcon className={styles.controlBtn} />
+            <TrackToggle source={Track.Source.Camera} showIcon className={styles.controlBtn} />
             <button
               onClick={handleEndClass}
               disabled={ending}
-              className="px-4 py-1 rounded bg-red-600 text-white disabled:opacity-50"
+              className={`${styles.pillBtn} ${styles.dangerBtn}`}
             >
               {ending ? 'Ending…' : 'End Class'}
             </button>
           </div>
         </div>
 
-        <div className="flex-1 grid place-items-center bg-black rounded-lg overflow-hidden">
+        <div className={styles.videoArea}>
           {selfTracks[0] && <ParticipantTile trackRef={selfTracks[0]} />}
         </div>
       </div>
 
-      <aside className="w-72 border-l p-4 flex flex-col gap-4 overflow-y-auto">
+      <aside className={styles.sidebar}>
         <section>
-          <h3 className="font-semibold mb-2">Raised hands ({raisedHands.size})</h3>
-          {raisedHands.size === 0 && <p className="text-sm text-gray-400">No one has raised a hand.</p>}
-          <ul className="space-y-1">
+          <h3 className={styles.sectionHeading}>Raised hands ({raisedHands.size})</h3>
+          {raisedHands.size === 0 && <p className={styles.emptyHint}>No one has raised a hand.</p>}
+          <ul className={styles.list}>
             {Array.from(raisedHands.entries()).map(([identity, name]) => {
               const participant = remoteParticipants.find(p => p.identity === identity)
               const alreadyAllowed = !!participant?.permissions?.canPublish
               return (
-                <li key={identity} className="flex items-center justify-between text-sm">
-                  <span>✋ {name}</span>
+                <li key={identity} className={styles.listRow}>
+                  <span className={styles.listRowName}>✋ {name}</span>
                   <button
                     disabled={permissionBusy === identity || alreadyAllowed}
                     onClick={() => setStudentPermission(identity, true, false)}
-                    className="text-xs px-2 py-1 rounded bg-green-100 text-green-800 disabled:opacity-50"
+                    className={`${styles.smallActionBtn} ${styles.allowBtn}`}
                   >
                     {alreadyAllowed ? 'Allowed' : 'Allow mic'}
                   </button>
@@ -187,23 +188,23 @@ function TeacherRoomInner({ onlineClassId }: { onlineClassId: string }) {
         </section>
 
         <section>
-          <h3 className="font-semibold mb-2">Participants ({remoteParticipants.length})</h3>
-          <ul className="space-y-1">
+          <h3 className={styles.sectionHeading}>Participants ({remoteParticipants.length})</h3>
+          <ul className={styles.list}>
             {remoteParticipants.map(p => {
               const canSpeak = !!p.permissions?.canPublish
               return (
-                <li key={p.identity} className="flex items-center justify-between text-sm">
-                  <span>{p.name || p.identity}</span>
+                <li key={p.identity} className={styles.listRow}>
+                  <span className={styles.listRowName}>{p.name || p.identity}</span>
                   {canSpeak ? (
                     <button
                       disabled={permissionBusy === p.identity}
                       onClick={() => setStudentPermission(p.identity, false, false)}
-                      className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 disabled:opacity-50"
+                      className={`${styles.smallActionBtn} ${styles.revokeBtn}`}
                     >
                       Revoke
                     </button>
                   ) : (
-                    <span className="text-xs text-gray-400">Listening</span>
+                    <span className={styles.listeningTag}>Listening</span>
                   )}
                 </li>
               )
