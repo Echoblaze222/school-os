@@ -4,6 +4,7 @@
 
 import { useState } from 'react'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
+import { useRouter } from 'next/navigation'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './teacher-meetings.module.css'
 import { logActivity } from '@/lib/logActivity'
@@ -132,6 +133,7 @@ function MeetingCard({
   meeting: MeetingRow; index: number; isPast?: boolean
   userId: string; schoolId: string
 }) {
+  const router = useRouter()
   const typeLabel     = MEETING_TYPE_LABELS[meeting.meeting_type] ?? meeting.meeting_type
   const audienceLabel = AUDIENCE_LABELS[meeting.target_audience]  ?? meeting.target_audience
 
@@ -201,6 +203,18 @@ function MeetingCard({
             </svg>
             Join Meeting
           </a>
+        )}
+        {!meeting.meeting_url && meeting.provider === 'livekit' && !isPast && meeting.is_live && (
+          // Only shown once is_live is true — a participant (not the
+          // host) has nothing useful to do before the host has actually
+          // started the room; /api/live/meeting/token would just fail
+          // to mint anything meaningful yet.
+          <button
+            onClick={() => router.push(`/dashboard/teacher/meetings/room/${meeting.id}`)}
+            className={styles.listJoinBtn} style={{ border: 'none', cursor: 'pointer' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            Join Live Meeting
+          </button>
         )}
       </div>
     </div>

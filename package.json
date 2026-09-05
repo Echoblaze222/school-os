@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:build": "cap sync android && cd android && ./gradlew assembleDebug",
     "postbuild": "node scripts/generate-sw-precache.js",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "postinstall": "node scripts/copy-pdfjs-assets.mjs"
   },
@@ -15,6 +19,9 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@aws-sdk/client-s3": "^3.1121.0",
     "@aws-sdk/s3-request-presigner": "^3.1121.0",
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
     "@google/genai": "^1.0.0",
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",
@@ -38,6 +45,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.5",
@@ -45,7 +53,7 @@
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
-    "eslint-config-next": "15.3.1",
+    "eslint-config-next": "^16.3.1",
     "typescript": "^5",
     "vitest": "^3.0.5"
   }

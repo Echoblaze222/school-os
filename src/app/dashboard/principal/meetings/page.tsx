@@ -15,6 +15,12 @@ export interface MeetingRow {
   agenda: string | null
   target_audience: string
   created_at: string
+  // Added Phase 4 (embedded video). provider stays 'external_link' for
+  // every meeting created before this migration, and for any new
+  // in-person/external-link meeting — nothing about the existing rows
+  // or flows changes.
+  provider: 'external_link' | 'livekit'
+  is_live: boolean
 }
 
 export interface ClassOption {
@@ -44,7 +50,7 @@ export default async function PrincipalMeetingsPage() {
   const [meetingsRes, classesRes] = await Promise.all([
     supabase
       .from('online_meetings')
-      .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at')
+      .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at, provider, is_live')
       .eq('school_id', schoolId)
       .order('scheduled_at', { ascending: false })
       .limit(50),

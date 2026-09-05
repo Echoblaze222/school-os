@@ -15,6 +15,8 @@ export interface MeetingRow {
   agenda: string | null
   target_audience: string
   created_at: string
+  provider: 'external_link' | 'livekit'
+  is_live: boolean
 }
 
 export default async function TeacherMeetingsPage() {
@@ -36,7 +38,7 @@ export default async function TeacherMeetingsPage() {
 
   const { data: meetings, error: meetingsError } = await supabase
     .from('online_meetings')
-    .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at')
+    .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, created_at, provider, is_live')
     .eq('school_id', schoolId)
     .in('target_audience', ['all_teachers', 'all_staff'])
     .order('scheduled_at', { ascending: false })

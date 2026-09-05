@@ -1268,19 +1268,23 @@ ${perChild}
     }
 
     if (role === 'ict') {
-      const [{ data: assets }, { data: tickets }] = await Promise.all([
+      const [{ data: assets }, { data: tickets }, { data: accountRequests }] = await Promise.all([
         supabase.from('ict_assets').select('status, condition').eq('school_id', schoolId),
         supabase.from('ict_tickets').select('status, assigned_to').eq('school_id', schoolId),
+        supabase.from('ict_account_requests').select('status, handled_by').eq('school_id', schoolId),
       ])
       const inRepair = (assets ?? []).filter((a: any) => a.status === 'in_repair' || a.condition === 'needs_repair').length
       const openTickets = (tickets ?? []).filter((t: any) => !['resolved', 'closed'].includes(t.status)).length
       const unassignedOpen = (tickets ?? []).filter((t: any) => !['resolved', 'closed'].includes(t.status) && !t.assigned_to).length
+      const openRequests = (accountRequests ?? []).filter((r: any) => !['resolved', 'closed'].includes(r.status)).length
+      const unhandledRequests = (accountRequests ?? []).filter((r: any) => !['resolved', 'closed'].includes(r.status) && !r.handled_by).length
 
       return `
 ## Live ICT Data (fetched just now - use these real numbers, don't invent your own)
 - Tracked assets: ${(assets ?? []).length}
 - Assets flagged for repair: ${inRepair}
 - Open tickets (school-wide): ${openTickets} (${unassignedOpen} unassigned)
+- Open account requests (school-wide): ${openRequests} (${unhandledRequests} unhandled)
 `.trim()
     }
 

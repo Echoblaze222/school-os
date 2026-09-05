@@ -18,6 +18,7 @@ import { ClipboardIcon, CheckCircleIcon, ClockIcon, XIcon, AlertCircleIcon } fro
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '../secretary.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 const STATUS_LABEL: Record<string, string> = {
   submitted: 'Submitted',
@@ -60,6 +61,22 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
 
   const sc = school?.primary_color ?? '#800020'
   const filtered = admissions.filter(a => tab === 'all' || a.status === tab)
+
+  async function load() {
+    try {
+      const res = await fetch('/api/admission/applications')
+      if (!res.ok) return
+      const json = await res.json()
+      setAdmissions(json.applications ?? [])
+    } catch {
+      // Background live-sync refresh - stay on the current view.
+    }
+  }
+
+  // Principal and secretary both review the same admissions queue at
+  // this school - a status change by either should show up for both
+  // without a manual reload.
+  useRealtimeRefresh({ tables: ['admission_applications', 'admission_status_events'], onChange: load })
 
   async function createApplication() {
     if (!form.applicant_name.trim()) { setMsg('Applicant name is required.'); setMsgIsError(true); return }

@@ -14,8 +14,8 @@
 // it's a normal wss:// endpoint, same trust level as a public API base
 // URL, set via NEXT_PUBLIC_LIVEKIT_URL for the client SDK to connect to).
 
-import { AccessToken, RoomServiceClient, WebhookReceiver, type AccessTokenOptions } from 'livekit-server-sdk'
-import { TrackSource } from '@livekit/protocol'
+import { AccessToken, EgressClient, RoomServiceClient, WebhookReceiver, type AccessTokenOptions } from 'livekit-server-sdk'
+import { EncodedFileOutput, EncodedFileType, S3Upload, TrackSource } from '@livekit/protocol'
 import type { LiveClassRole } from './authorize'
 
 function getApiUrl(): string {
@@ -50,28 +50,36 @@ export function roomNameFor(schoolId: string, onlineClassId: string): string {
   return `${schoolId}:${onlineClassId}`
 }
 
-const TOKEN_TTL_SECONDS = 60 * 60 * 4 // 4 hours — comfortably covers a single class period plus buffer; short enough that a leaked token doesn't stay useful long
-
-export interface MintTokenParams {
-  identity: string        // the caller's profiles.id — never a client-supplied display name
-  displayName: string
-  schoolId: string
-  onlineClassId: string
-  role: LiveClassRole
-  /** Participant opted into publishing video, not just audio. Defaults to audio+data only. */
-  allowVideo?: boolean
+/**
+ * Same tenant-namespacing guarantee as roomNameFor, for a general
+ * (non-class) meeting — PTA, staff meeting, etc. (Phase 4). Deliberately
+ * a DIFFERENT format (`:meeting:` infix) from roomNameFor's, not just a
+ * different id space — this is what lets the webhook (parseRoomName)
+ * tell the two kinds of room apart unambiguously from the room name
+ * alone, with no risk of a class id and a meeting id ever colliding.
+ */
+export function meetingRoomNameFor(schoolId: string, meetingId: string): string {
+  return `${schoolId}:meeting:${meetingId}`
 }
 
+const TOKEN_TTL_SECONDS = 60 * 60 * 4 // 4 hours — comfortably covers a single class period plus buffer; short enough that a leaked token doesn't stay useful long
+
 /**
- * Mints a room-scoped, role-scoped LiveKit access token. This is the
- * ONLY place a token is created — callers must have already run the
- * caller through decideLiveClassAccess() (authorize.ts) before calling
- * this; this function does not re-check authorization itself, it only
- * encodes whatever role it's told into token grants.
+ * Shared primitive behind both mintLiveClassToken and mintMeetingToken
+ * (Phase 4) — takes an already-computed room name rather than knowing
+ * anything about classes or meetings itself, so the two callers can't
+ * drift apart in how they encode grants. Not exported: callers go
+ * through the class- or meeting-specific wrapper, which is what decides
+ * (and documents) which room-naming scheme applies.
  */
-export async function mintLiveClassToken(params: MintTokenParams): Promise<string> {
-  const { identity, displayName, schoolId, onlineClassId, role, allowVideo } = params
-  const room = roomNameFor(schoolId, onlineClassId)
+async function mintRoomToken(params: {
+  room: string
+  identity: string
+  displayName: string
+  role: LiveClassRole
+  allowVideo?: boolean
+}): Promise<string> {
+  const { room, identity, displayName, role, allowVideo } = params
 
   const options: AccessTokenOptions = {
     identity,
@@ -130,6 +138,51 @@ export async function mintLiveClassToken(params: MintTokenParams): Promise<strin
   return at.toJwt()
 }
 
+export interface MintTokenParams {
+  identity: string        // the caller's profiles.id — never a client-supplied display name
+  displayName: string
+  schoolId: string
+  onlineClassId: string
+  role: LiveClassRole
+  /** Participant opted into publishing video, not just audio. Defaults to audio+data only. */
+  allowVideo?: boolean
+}
+
+/**
+ * Mints a room-scoped, role-scoped LiveKit access token for a CLASS
+ * session. This is the ONLY place a class token is created — callers
+ * must have already run the caller through decideLiveClassAccess()
+ * (authorize.ts) before calling this; this function does not re-check
+ * authorization itself, it only encodes whatever role it's told into
+ * token grants. Signature/behavior unchanged since Phase 1 — this is now
+ * a thin wrapper over the shared mintRoomToken primitive (Phase 4), not
+ * a rewrite; see __tests__/livekit.test.ts, unmodified by that refactor.
+ */
+export async function mintLiveClassToken(params: MintTokenParams): Promise<string> {
+  const room = roomNameFor(params.schoolId, params.onlineClassId)
+  return mintRoomToken({ room, identity: params.identity, displayName: params.displayName, role: params.role, allowVideo: params.allowVideo })
+}
+
+export interface MintMeetingTokenParams {
+  identity: string
+  displayName: string
+  schoolId: string
+  meetingId: string
+  role: LiveClassRole
+  allowVideo?: boolean
+}
+
+/**
+ * Mints a token for a general MEETING (PTA, staff meeting — Phase 4).
+ * Same rules as mintLiveClassToken — caller must have already run
+ * decideMeetingAccess() (meetingAuthorize.ts) first; this function does
+ * not authorize anything itself.
+ */
+export async function mintMeetingToken(params: MintMeetingTokenParams): Promise<string> {
+  const room = meetingRoomNameFor(params.schoolId, params.meetingId)
+  return mintRoomToken({ room, identity: params.identity, displayName: params.displayName, role: params.role, allowVideo: params.allowVideo })
+}
+
 /**
  * Verifies an inbound LiveKit webhook's signature and parses it. Mirrors
  * the Paystack webhook's crypto.createHmac verification pattern
@@ -153,25 +206,18 @@ export function getRoomServiceClient(): RoomServiceClient {
 }
 
 /**
- * Grants or revokes a connected student's ability to publish audio/video,
- * live, without requiring them to reconnect with a new token. This is the
- * "teacher authorizes a raised hand" action. Always sets the FULL
- * permission set on every call — LiveKit updates permissions atomically,
- * so omitting canSubscribe/canPublishData here would silently revoke
- * them too, not just leave them unchanged.
- *
- * Caller is responsible for verifying the requester is actually the
- * session's host before calling this — see /api/live/permission/route.ts.
+ * Shared primitive behind setParticipantPublishPermission (class) and
+ * setMeetingParticipantPublishPermission (Phase 4) — takes a room name
+ * directly. Not exported for the same reason mintRoomToken isn't: the
+ * room-naming decision belongs to the class/meeting-specific wrapper.
  */
-export async function setParticipantPublishPermission(params: {
-  schoolId: string
-  onlineClassId: string
+async function setRoomParticipantPublishPermission(params: {
+  room: string
   participantIdentity: string
   canPublishAudio: boolean
   canPublishVideo: boolean
 }): Promise<void> {
-  const { schoolId, onlineClassId, participantIdentity, canPublishAudio, canPublishVideo } = params
-  const room = roomNameFor(schoolId, onlineClassId)
+  const { room, participantIdentity, canPublishAudio, canPublishVideo } = params
   const sources: TrackSource[] = []
   if (canPublishVideo) sources.push(TrackSource.CAMERA)
   if (canPublishAudio) sources.push(TrackSource.MICROPHONE)
@@ -188,14 +234,45 @@ export async function setParticipantPublishPermission(params: {
 }
 
 /**
- * Force-ends a room immediately (used by the teacher's "End Class"
- * button) rather than waiting for LiveKit's empty-room timeout. Safe to
- * call on a room that doesn't exist / already ended — LiveKit's
- * deleteRoom is a no-op in that case, not an error condition worth
- * surfacing to the caller.
+ * Grants or revokes a connected student's ability to publish audio/video,
+ * live, without requiring them to reconnect with a new token. This is the
+ * "teacher authorizes a raised hand" action. Always sets the FULL
+ * permission set on every call — LiveKit updates permissions atomically,
+ * so omitting canSubscribe/canPublishData here would silently revoke
+ * them too, not just leave them unchanged.
+ *
+ * Caller is responsible for verifying the requester is actually the
+ * session's host before calling this — see /api/live/permission/route.ts.
+ * Signature/behavior unchanged since Phase 1 — now a thin wrapper, same
+ * as mintLiveClassToken above.
  */
-export async function endLiveClassRoom(schoolId: string, onlineClassId: string): Promise<void> {
-  const room = roomNameFor(schoolId, onlineClassId)
+export async function setParticipantPublishPermission(params: {
+  schoolId: string
+  onlineClassId: string
+  participantIdentity: string
+  canPublishAudio: boolean
+  canPublishVideo: boolean
+}): Promise<void> {
+  const room = roomNameFor(params.schoolId, params.onlineClassId)
+  return setRoomParticipantPublishPermission({ room, participantIdentity: params.participantIdentity, canPublishAudio: params.canPublishAudio, canPublishVideo: params.canPublishVideo })
+}
+
+/** Same as setParticipantPublishPermission, for a general meeting (Phase 4). */
+export async function setMeetingParticipantPublishPermission(params: {
+  schoolId: string
+  meetingId: string
+  participantIdentity: string
+  canPublishAudio: boolean
+  canPublishVideo: boolean
+}): Promise<void> {
+  const room = meetingRoomNameFor(params.schoolId, params.meetingId)
+  return setRoomParticipantPublishPermission({ room, participantIdentity: params.participantIdentity, canPublishAudio: params.canPublishAudio, canPublishVideo: params.canPublishVideo })
+}
+
+/**
+ * Shared primitive behind endLiveClassRoom and endMeetingRoom (Phase 4).
+ */
+async function deleteRoomByName(room: string): Promise<void> {
   const client = getRoomServiceClient()
   try {
     await client.deleteRoom(room)
@@ -204,4 +281,145 @@ export async function endLiveClassRoom(schoolId: string, onlineClassId: string):
     // Anything else is logged by the caller via the route's own try/catch.
     if (!/not.?found/i.test((err as Error).message ?? '')) throw err
   }
+}
+
+/**
+ * Force-ends a room immediately (used by the teacher's "End Class"
+ * button) rather than waiting for LiveKit's empty-room timeout. Safe to
+ * call on a room that doesn't exist / already ended — LiveKit's
+ * deleteRoom is a no-op in that case, not an error condition worth
+ * surfacing to the caller. Signature/behavior unchanged since Phase 1.
+ */
+export async function endLiveClassRoom(schoolId: string, onlineClassId: string): Promise<void> {
+  return deleteRoomByName(roomNameFor(schoolId, onlineClassId))
+}
+
+/** Same as endLiveClassRoom, for a general meeting (Phase 4). */
+export async function endMeetingRoom(schoolId: string, meetingId: string): Promise<void> {
+  return deleteRoomByName(meetingRoomNameFor(schoolId, meetingId))
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Recording (Phase 2): LiveKit Egress -> Cloudflare R2
+// ─────────────────────────────────────────────────────────────────────────
+// R2 credentials are read here, same isolation rule as the LiveKit
+// key/secret above — no NEXT_PUBLIC_ prefix, never returned to a client.
+// R2 is S3-compatible, so this uses LiveKit Egress's built-in S3Upload
+// output with R2's custom endpoint rather than a LiveKit-specific
+// integration — LiveKit has no R2-specific code path, and doesn't need one.
+
+function getEgressClient(): EgressClient {
+  return new EgressClient(getApiUrl(), getApiKey(), getApiSecret())
+}
+
+interface R2Config {
+  accountId: string
+  accessKeyId: string
+  secretAccessKey: string
+  bucket: string
+}
+
+export function getR2Config(): R2Config {
+  const accountId = process.env.R2_ACCOUNT_ID
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
+  const bucket = process.env.R2_BUCKET
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new Error('R2 recording storage is not fully configured (R2_ACCOUNT_ID/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY/R2_BUCKET)')
+  }
+  return { accountId, accessKeyId, secretAccessKey, bucket }
+}
+
+/** R2's S3-compatible endpoint, derived from the account ID rather than a separately-configured URL — one less thing to get out of sync. */
+export function getR2Endpoint(accountId: string): string {
+  return `https://${accountId}.r2.cloudflarestorage.com`
+}
+
+/**
+ * Object key a recording will be stored under. Tenant-namespaced the same
+ * way room names are (school_id/online_class_id/...), for the same
+ * reason: structural impossibility of a cross-school collision, not a
+ * policy that has to be remembered and re-applied correctly every time.
+ * Exported (rather than a private helper) specifically so this pure,
+ * deterministic mapping is unit-testable without mocking the Egress
+ * client — see __tests__/livekit.test.ts.
+ */
+export function recordingObjectKey(schoolId: string, onlineClassId: string, startedAtMs: number): string {
+  return `recordings/${schoolId}/${onlineClassId}/${startedAtMs}.mp4`
+}
+
+/** Same as recordingObjectKey, for a general meeting (Phase 4) — distinct path prefix so a class recording and a meeting recording can never collide even if the raw ids somehow did. */
+export function meetingRecordingObjectKey(schoolId: string, meetingId: string, startedAtMs: number): string {
+  return `recordings/${schoolId}/meeting/${meetingId}/${startedAtMs}.mp4`
+}
+
+/**
+ * Shared primitive behind startClassRecording and startMeetingRecording
+ * (Phase 4) — takes the room name and object key directly.
+ */
+async function startRoomRecording(params: { room: string; objectKey: string }): Promise<{ egressId: string; objectKey: string }> {
+  const { room, objectKey } = params
+  const r2 = getR2Config()
+
+  const output = new EncodedFileOutput({
+    fileType: EncodedFileType.MP4,
+    filepath: objectKey,
+    output: {
+      case: 's3',
+      value: new S3Upload({
+        accessKey: r2.accessKeyId,
+        secret: r2.secretAccessKey,
+        region: 'auto',
+        endpoint: getR2Endpoint(r2.accountId),
+        bucket: r2.bucket,
+        forcePathStyle: true, // recommended for S3-compatible non-AWS endpoints; unverified against a live R2 bucket in this environment — see Phase 2 summary
+      }),
+    },
+  })
+
+  const egress = await getEgressClient().startRoomCompositeEgress(room, output)
+  return { egressId: egress.egressId, objectKey }
+}
+
+/**
+ * Starts a room-composite (single merged stream — simplest for classroom
+ * playback) recording, uploading directly to R2 as it records. Returns
+ * the LiveKit egress ID, which the caller must persist
+ * (online_classes.active_egress_id) so /api/live/recording/stop and the
+ * "recording in progress" UI state both know which job is running,
+ * without ever trusting a client to remember or supply it.
+ *
+ * Caller is responsible for verifying the requester is the session's
+ * host before calling this — see /api/live/recording/start/route.ts.
+ * Signature/behavior unchanged since Phase 2.
+ */
+export async function startClassRecording(params: {
+  schoolId: string
+  onlineClassId: string
+}): Promise<{ egressId: string; objectKey: string }> {
+  const room = roomNameFor(params.schoolId, params.onlineClassId)
+  const objectKey = recordingObjectKey(params.schoolId, params.onlineClassId, Date.now())
+  return startRoomRecording({ room, objectKey })
+}
+
+/** Same as startClassRecording, for a general meeting (Phase 4). Persists to online_meetings.active_egress_id, not online_classes. */
+export async function startMeetingRecording(params: {
+  schoolId: string
+  meetingId: string
+}): Promise<{ egressId: string; objectKey: string }> {
+  const room = meetingRoomNameFor(params.schoolId, params.meetingId)
+  const objectKey = meetingRecordingObjectKey(params.schoolId, params.meetingId, Date.now())
+  return startRoomRecording({ room, objectKey })
+}
+
+/**
+ * Stops an in-progress recording. Safe to call with an egress ID that's
+ * already finished/stopped — that's a normal LiveKit API response, not an
+ * error condition worth surfacing distinctly from any other failure.
+ * Takes only an egress ID, nothing class-specific about it despite the
+ * name (kept for signature stability) — reused as-is for meetings too,
+ * see /api/live/recording/stop/route.ts's kind branch.
+ */
+export async function stopClassRecording(egressId: string): Promise<void> {
+  await getEgressClient().stopEgress(egressId)
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 import { BellIcon, CheckCircleIcon } from './Icons'
 import styles from './NotificationsBell.module.css'
 
@@ -46,20 +47,15 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
   // ── Load notifications ───────────────────────────────────
   useEffect(() => {
     loadNotifications()
-
-    // Real-time subscription
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on('postgres_changes', {
-        event:  '*',
-        schema: 'public',
-        table:  'notifications',
-        filter: `user_id=eq.${userId}`,
-      }, () => loadNotifications())
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
   }, [userId])
+
+  // Real-time subscription — also refetches after a dropped connection
+  // reconnects, so nothing sent while offline is silently missed.
+  useRealtimeNotifications({
+    userId,
+    onInsert:    () => loadNotifications(),
+    onReconnect: () => loadNotifications(),
+  })
 
   // ── Close panel on outside click ─────────────────────────
   useEffect(() => {

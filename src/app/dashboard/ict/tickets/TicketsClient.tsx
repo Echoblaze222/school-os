@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import styles from './tickets.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 const STATUS_LABEL: Record<string, string> = {
   new: 'New', assigned: 'Assigned', in_progress: 'In Progress',
@@ -41,6 +42,24 @@ export default function TicketsClient({
   const [filter, setFilter] = useState<'open' | 'all' | string>('open')
   const [savingId, setSavingId] = useState<string | null>(null)
   const [errorId, setErrorId] = useState<string | null>(null)
+
+  async function load() {
+    try {
+      const res = await fetch('/api/ict/tickets')
+      if (!res.ok) return
+      const json = await res.json()
+      setTickets(json.tickets ?? [])
+    } catch {
+      // Silent: this is a background live-sync refresh, not the initial
+      // load - the visible list just stays as it was until the next
+      // successful event, no need to surface a transient network blip.
+    }
+  }
+
+  // ICT tickets are exactly the "two staff working the same queue"
+  // case - one picks up a ticket while another is looking at the same
+  // list, both should see the current state without a manual reload.
+  useRealtimeRefresh({ tables: ['ict_tickets'], onChange: load })
 
   const filtered = filter === 'all' ? tickets
     : filter === 'open' ? tickets.filter(t => !['resolved', 'closed'].includes(t.status))

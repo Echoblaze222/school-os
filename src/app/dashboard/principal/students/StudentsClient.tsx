@@ -195,7 +195,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     async function loadData() {
       if (!school?.id) { setLoading(false); return }
       const [clsRes, stuRes] = await Promise.all([
-        supabase.from('classes').select('id, name, level, section').eq('school_id', school.id).order('name'),
+        supabase.from('classes').select('id, name, class_level, section').eq('school_id', school.id).order('name'),
         supabase.from('profiles').select('*').eq('school_id', school.id).eq('role', 'student').order('full_name'),
       ])
       if (clsRes.data) setClasses(clsRes.data)

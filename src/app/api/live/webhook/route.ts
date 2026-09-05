@@ -21,14 +21,29 @@ import { logger, newTraceId } from '@/lib/logger'
 import { getWebhookReceiver } from '@/lib/liveClass/livekit'
 import { markLiveClassAttendance } from '@/lib/liveClass/attendance'
 
-// room name is `{school_id}:{online_class_id}` — see roomNameFor() in
-// livekit.ts. Parsing it back out here is the one place that format is
-// depended on in reverse; if that ever changes, this must change with it.
-function parseRoomName(name: string | undefined): { schoolId: string; onlineClassId: string } | null {
+// Class room: `{school_id}:{online_class_id}` (roomNameFor, 2 segments).
+// Meeting room: `{school_id}:meeting:{meeting_id}` (meetingRoomNameFor,
+// 3 segments with a literal "meeting" middle segment) — Phase 4. This is
+// the one place both formats are parsed back apart; if either format
+// changes in livekit.ts, this must change with it.
+type ParsedRoom =
+  | { kind: 'class'; schoolId: string; onlineClassId: string }
+  | { kind: 'meeting'; schoolId: string; meetingId: string }
+
+function parseRoomName(name: string | undefined): ParsedRoom | null {
   if (!name) return null
-  const [schoolId, onlineClassId] = name.split(':')
-  if (!schoolId || !onlineClassId) return null
-  return { schoolId, onlineClassId }
+  const parts = name.split(':')
+  if (parts.length === 2) {
+    const [schoolId, onlineClassId] = parts
+    if (!schoolId || !onlineClassId) return null
+    return { kind: 'class', schoolId, onlineClassId }
+  }
+  if (parts.length === 3 && parts[1] === 'meeting') {
+    const [schoolId, , meetingId] = parts
+    if (!schoolId || !meetingId) return null
+    return { kind: 'meeting', schoolId, meetingId }
+  }
+  return null
 }
 
 export async function POST(req: Request) {
@@ -52,6 +67,21 @@ export async function POST(req: Request) {
       case 'participant_joined': {
         const parsed = parseRoomName(event.room?.name)
         if (!parsed || !event.participant) return { handled: false, reason: 'missing room/participant' }
+
+        // Phase 4 scope: live_session_participants (join/leave audit
+        // trail) and attendance write-through are both class-specific —
+        // live_session_participants.online_class_id is a NOT NULL FK
+        // into online_classes, and attendance has no meeting concept at
+        // all. A general meeting currently gets NEITHER an audit trail
+        // nor an attendance record. That's a real, known gap (not
+        // silently decided) — flagged in the Phase 4 summary, not
+        // extended here since it would mean either loosening
+        // live_session_participants' NOT NULL constraint or building a
+        // second, meeting-specific attendance table, both bigger
+        // decisions than this webhook update should make on its own.
+        if (parsed.kind === 'meeting') {
+          return { handled: 'participant_joined_meeting_unaudited', meetingId: parsed.meetingId }
+        }
 
         // Host identification: via the `role` attribute set at token-mint
         // time (see livekit.ts), NOT `permission.roomAdmin` — that field
@@ -101,6 +131,10 @@ export async function POST(req: Request) {
         const parsed = parseRoomName(event.room?.name)
         if (!parsed || !event.participant) return { handled: false, reason: 'missing room/participant' }
 
+        if (parsed.kind === 'meeting') {
+          return { handled: 'participant_left_meeting_unaudited', meetingId: parsed.meetingId }
+        }
+
         // Close the most recent open row for this participant in this
         // session (left_at is null). Matched by livekit_participant_sid,
         // not just user_id, so a participant who reconnects mid-class
@@ -131,21 +165,19 @@ export async function POST(req: Request) {
       case 'room_started': {
         const parsed = parseRoomName(event.room?.name)
         if (!parsed) return { handled: false, reason: 'missing room' }
-        await admin
-          .from('online_classes')
-          .update({ is_live: true, started_at: new Date().toISOString() })
-          .eq('id', parsed.onlineClassId)
-        return { handled: 'room_started', onlineClassId: parsed.onlineClassId }
+        const table = parsed.kind === 'meeting' ? 'online_meetings' : 'online_classes'
+        const id = parsed.kind === 'meeting' ? parsed.meetingId : parsed.onlineClassId
+        await admin.from(table).update({ is_live: true, started_at: new Date().toISOString() }).eq('id', id)
+        return { handled: 'room_started', id, kind: parsed.kind }
       }
 
       case 'room_finished': {
         const parsed = parseRoomName(event.room?.name)
         if (!parsed) return { handled: false, reason: 'missing room' }
-        await admin
-          .from('online_classes')
-          .update({ is_live: false, ended_at: new Date().toISOString() })
-          .eq('id', parsed.onlineClassId)
-        return { handled: 'room_finished', onlineClassId: parsed.onlineClassId }
+        const table = parsed.kind === 'meeting' ? 'online_meetings' : 'online_classes'
+        const id = parsed.kind === 'meeting' ? parsed.meetingId : parsed.onlineClassId
+        await admin.from(table).update({ is_live: false, ended_at: new Date().toISOString() }).eq('id', id)
+        return { handled: 'room_finished', id, kind: parsed.kind }
       }
 
       case 'egress_ended': {
@@ -153,19 +185,49 @@ export async function POST(req: Request) {
         const parsed = parseRoomName(info?.roomName)
         if (!parsed || !info) return { handled: false, reason: 'missing egress info' }
 
+        // Recording is no longer in progress regardless of whether it
+        // produced a usable file — always clear this so the UI's
+        // "recording in progress" state can't get stuck on, and so a new
+        // recording can be started. Matched on egress ID, not just
+        // "clear whatever's there", so a stale/out-of-order webhook
+        // delivery can't clear a DIFFERENT, currently-active recording.
+        const parentTable = parsed.kind === 'meeting' ? 'online_meetings' : 'online_classes'
+        const parentId = parsed.kind === 'meeting' ? parsed.meetingId : parsed.onlineClassId
+        await admin
+          .from(parentTable)
+          .update({ active_egress_id: null })
+          .eq('id', parentId)
+          .eq('active_egress_id', info.egressId)
+
         const file = info.fileResults?.[0]
         if (!file) {
           // Egress ended without producing a file (e.g. a room with no
           // participants ever published, or the egress failed) — nothing
           // to record. Not an error condition, just nothing to do.
-          return { handled: 'egress_ended_no_file', onlineClassId: parsed.onlineClassId }
+          return { handled: 'egress_ended_no_file', id: parentId, kind: parsed.kind }
         }
+
+        // storage_key is file.filename, NOT file.location: filename is
+        // exactly the `filepath` this app specified when starting egress
+        // (see startClassRecording/startMeetingRecording in livekit.ts) —
+        // a plain object key we fully control the shape of. `location` is
+        // LiveKit's own description of where it uploaded to, whose exact
+        // format for an S3-compatible (non-AWS) endpoint like R2 isn't
+        // something to depend on; using our own known key is what makes
+        // generating a presigned R2 URL later reliable rather than
+        // dependent on parsing an unfamiliar string.
+        const DEFAULT_RETENTION_DAYS = 90
+        const retentionExpiresAt = new Date(Date.now() + DEFAULT_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
         await admin.from('class_recordings').upsert(
           {
             school_id: parsed.schoolId,
-            online_class_id: parsed.onlineClassId,
-            storage_key: file.location,
+            // Exactly one of these two is set (Phase 4 migration's
+            // class_recordings_exactly_one_parent CHECK constraint
+            // enforces this at the DB level too, not just here).
+            online_class_id: parsed.kind === 'class' ? parsed.onlineClassId : null,
+            online_meeting_id: parsed.kind === 'meeting' ? parsed.meetingId : null,
+            storage_key: file.filename,
             // Number(bigint | undefined ?? 0) — plain 0, not the 0n BigInt
             // literal: this project's tsconfig targets ES2017, which
             // doesn't support BigInt literal syntax. Number() accepts a
@@ -175,10 +237,15 @@ export async function POST(req: Request) {
             duration_seconds: Number(file.duration ?? 0) || null,
             size_bytes: Number(file.size ?? 0) || null,
             status: 'ready',
+            // Fixed default for Phase 2. The architecture doc's tiered
+            // retention (by subscription level) is a deliberate
+            // simplification left for later — flagged again in the
+            // Phase 2 summary, not silently assumed done.
+            retention_expires_at: retentionExpiresAt,
           },
           { onConflict: 'storage_key' }
         )
-        return { handled: 'egress_ended', onlineClassId: parsed.onlineClassId }
+        return { handled: 'egress_ended', id: parentId, kind: parsed.kind }
       }
 
       default:

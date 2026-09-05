@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../nurse.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -50,6 +51,9 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { loadMeds() }, [filter])
+
+  useRealtimeRefresh({ tables: ['medication_administrations'], onChange: loadMeds })
+
 
   useEffect(() => {
     if (!studentQuery.trim() || selectedStudent) { setStudentResults([]); return }

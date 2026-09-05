@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './rooms.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Bed {
   id: string; label: string; status: 'available' | 'occupied' | 'maintenance'
@@ -43,6 +44,15 @@ export default function RoomsClient() {
   }
 
   useEffect(() => { load() }, [])
+
+  // No single hostelId is in scope here (this screen loads every hostel
+  // for the school at once), so this relies on RLS alone to scope events
+  // to the subscriber's own school - same as any other query against
+  // these tables would.
+  useRealtimeRefresh({
+    tables: ['hostel_beds', 'hostel_bed_assignments'],
+    onChange: load,
+  })
 
   async function vacate(bedId: string) {
     if (busyBedId) return // duplicate-action protection

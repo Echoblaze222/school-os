@@ -9,6 +9,7 @@ import ActionButton from '@/components/motion/ActionButton'
 import { Toast, useToast } from '@/components/motion/Toast'
 import styles from '../coach.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -40,6 +41,10 @@ export default function TeamsClient({ profile, school, userId }: Props) {
   }
 
   useEffect(() => { loadTeams() }, [])
+
+  // A school can have more than one coach across different sports, all
+  // pulling from the same team/roster list.
+  useRealtimeRefresh({ tables: ['sports_teams', 'sports_team_members'], onChange: loadTeams })
 
   useEffect(() => {
     if (!studentQuery.trim()) { setStudentResults([]); return }

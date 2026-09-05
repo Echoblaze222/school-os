@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './rollcall.module.css'
 import motion from '@/components/dashboard-motion.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
 interface Hostel { id: string; name: string }
 interface Entry {
@@ -47,6 +48,22 @@ export default function RollCallClient({ hostels }: { hostels: Hostel[] }) {
   }
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [hostelId, sessionType])
+
+  // Roll call is the classic case of two staff working the same list at
+  // once - so a second staffer sees marks (and a session close) as they
+  // happen, not just after their own reload. Two calls because the
+  // entries table's scoping column (session_id) differs from the
+  // sessions table's own primary key (id).
+  useRealtimeRefresh({
+    tables: session ? ['hostel_roll_call_entries'] : [],
+    filter: session ? `session_id=eq.${session.id}` : undefined,
+    onChange: load,
+  })
+  useRealtimeRefresh({
+    tables: session ? ['hostel_roll_call_sessions'] : [],
+    filter: session ? `id=eq.${session.id}` : undefined,
+    onChange: load,
+  })
 
   async function record(entryId: string, newStatus: string) {
     if (savingEntryId) return
