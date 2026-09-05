@@ -23,7 +23,7 @@ export default function Hero() {
           </h1>
           <p className={styles.subhead}>
             Principals, teachers, bursars, secretaries, students and parents share one
-            login and one live view of the term — attendance, results, fees and live
+            login and one live view of the term: attendance, results, fees and live
             classes, all in one place.
           </p>
           <div className={styles.ctaRow}>
