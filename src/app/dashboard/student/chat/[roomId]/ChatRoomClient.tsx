@@ -134,6 +134,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [memberCount,   setMemberCount]   = useState(0)
   const [isModerator,   setIsModerator]   = useState(false)
   const [savingMode,    setSavingMode]    = useState(false)
+  // Own display name, used only to parse the legacy "A & B" room-name
+  // fallback below if the other participant's profile can't be loaded.
+  const [myName,        setMyName]        = useState<string | null>(null)
 
   // Attachment picked but not yet sent - shown in a preview sheet so people
   // can add a caption before it goes out (like WhatsApp's photo caption).
@@ -338,6 +341,13 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   // ── Load room + other user (flat, separate queries) ──────
   async function loadRoomAndUsers() {
+    supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => { if (data?.full_name) setMyName(data.full_name) })
+
     const { data: room } = await supabase
       .from('chat_rooms')
       .select('id, name, room_type, is_group, posting_mode, class_id, school_id, created_by')
@@ -562,6 +572,13 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   function getRoomDisplayName() {
     if (otherUser?.full_name) return otherUser.full_name
     if (roomInfo?.is_group)   return roomInfo.name ?? 'Group Chat'
+    // 1:1 DM, but the other participant's profile couldn't be loaded.
+    // Legacy/fallback room names are stored as "PersonA & PersonB" - strip
+    // out our own name so we never show both people's names as the title.
+    if (roomInfo?.name?.includes(' & ') && myName) {
+      const other = roomInfo.name.split(' & ').find((n: string) => n.trim() !== myName.trim())
+      if (other) return other.trim()
+    }
     return roomInfo?.name ?? 'Chat'
   }
 
