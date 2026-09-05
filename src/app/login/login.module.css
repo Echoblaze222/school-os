@@ -320,7 +320,7 @@
 .submitBtn {
   width: 100%;
   height: 50px;
-  background: linear-gradient(135deg, var(--login-brand), var(--login-brand-2, var(--login-brand)));
+  background: var(--login-brand);
   border: none;
   border-radius: 14px;
   color: #fff;
