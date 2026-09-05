@@ -6,7 +6,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import {
   UserIcon, BookOpenIcon, PeopleIcon, ArrowLeftIcon,
@@ -14,25 +13,53 @@ import {
   SchoolIcon, SearchIcon, CrownIcon, AlertIcon,
 } from '@/components/Icons'
 import styles from './classes.module.css'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
+
+// Mirrors the enrichment page.tsx does server-side (class_teachers rows
+// -> class_teacher / subject_teachers / teacher_count per class), so a
+// client-side refetch produces the exact same shape the render expects.
+// Without this, a raw `select('*, class_teachers(...)')` returns
+// `class_teachers` (plural, unaggregated) and every cls.class_teacher /
+// cls.teacher_count read in the render would silently come back undefined.
+function enrichClasses(rawClasses: any[], rawAssignments: any[]) {
+  const map: Record<string, { class_teacher: any; subject_teachers: any[]; teacher_count: number }> = {}
+  rawAssignments.forEach((a: any) => {
+    if (!map[a.class_id]) map[a.class_id] = { class_teacher: null, subject_teachers: [], teacher_count: 0 }
+    const entry = map[a.class_id]
+    entry.teacher_count++
+    if (a.is_primary) {
+      entry.class_teacher = { teacher_id: a.teacher_id, full_name: a.profiles?.full_name ?? 'Unknown' }
+    } else {
+      entry.subject_teachers.push({ teacher_id: a.teacher_id, full_name: a.profiles?.full_name ?? 'Unknown', subject: a.subject ?? 'Unknown Subject' })
+    }
+  })
+  Object.values(map).forEach(entry => entry.subject_teachers.sort((a, b) => a.subject.localeCompare(b.subject)))
+
+  return rawClasses.map((c: any) => ({
+    ...c,
+    student_count: c.student_profiles?.length ?? 0,
+    ...(map[c.id] ?? { class_teacher: null, subject_teachers: [], teacher_count: 0 }),
+  }))
+}
 
 export default function PrincipalClassesClient({
   classes, teachers, subjects, schoolId, userId,
 }: any) {
   const router   = useRouter()
-  // Prefer local state update over router.refresh() for instant feedback
-  // useRealtimeTable keeps classes in sync from any client (useful if multiple
-  // admins are working at the same time).
-  // NOTE: `classes` prop is the initial server-rendered list; realtime takes over from there.
   const supabase = createClient()
 
   const [theme,       setTheme]       = useState<'dark' | 'light'>('dark')
-  // localClasses mirrors the `classes` prop but can be mutated client-side
+  // localClasses is what actually renders below - it starts as the
+  // server-rendered `classes` prop and is what every mutation below
+  // updates, so create/assign/remove show up immediately without a
+  // manual reload.
   const [localClasses, setLocalClasses] = useState<any[]>(classes ?? [])
   const [search,      setSearch]      = useState('')
   const [activeClass, setActiveClass] = useState<any>(null)
   const [showCreate,  setShowCreate]  = useState(false)
   const [showAssign,  setShowAssign]  = useState(false)
   const [saving,      setSaving]      = useState(false)
+  const [removingTeacher, setRemovingTeacher] = useState<string | null>(null)
   const [error,       setError]       = useState<string | null>(null)
 
   // New class form
@@ -47,6 +74,39 @@ export default function PrincipalClassesClient({
   const [assignIsPrimary, setAssignIsPrimary] = useState(false)
 
   useEffect(() => { setLocalClasses(classes ?? []) }, [classes])
+
+  async function refetchClasses(): Promise<any[]> {
+    const { data: rawClasses } = await supabase
+      .from('classes')
+      .select('id, name, class_level, section, capacity, academic_year, student_profiles:profiles(id)')
+      .eq('school_id', schoolId)
+      .order('class_level').order('section')
+
+    const classIds = (rawClasses ?? []).map((c: any) => c.id)
+    let rawAssignments: any[] = []
+    if (classIds.length > 0) {
+      const { data } = await supabase
+        .from('class_teachers')
+        .select('class_id, teacher_id, subject, is_primary, profiles:teacher_id(full_name)')
+        .in('class_id', classIds)
+        .eq('school_id', schoolId)
+      rawAssignments = data ?? []
+    }
+    return enrichClasses(rawClasses ?? [], rawAssignments)
+  }
+
+  // This screen's own comment always intended multiple admins to be able
+  // to work on classes at once - useRealtimeTable was imported for it but
+  // never actually called, so it silently did nothing. Wiring it properly.
+  useRealtimeRefresh({
+    tables: ['classes', 'class_teachers'],
+    filter: `school_id=eq.${schoolId}`,
+    onChange: async () => {
+      const fresh = await refetchClasses()
+      setLocalClasses(fresh)
+      setActiveClass((prev: any) => prev ? (fresh.find((c: any) => c.id === prev.id) ?? null) : prev)
+    },
+  })
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme') as any
@@ -79,11 +139,7 @@ export default function PrincipalClassesClient({
       setError("We couldn't create that class. Try again.")
     } else {
       setShowCreate(false)
-      // Re-fetch classes from Supabase so state is fresh (avoids router.refresh roundtrip)
-      const { data: fresh } = await supabase
-        .from('classes').select('*, class_teachers(teacher_id, subject, is_primary, role_type, profiles:teacher_id(full_name))')
-        .eq('school_id', schoolId).order('name')
-      if (fresh) setLocalClasses(fresh)
+      setLocalClasses(await refetchClasses())
     }
     setSaving(false)
   }
@@ -150,33 +206,34 @@ export default function PrincipalClassesClient({
       setError("We couldn't assign that teacher. Try again.")
     } else {
       setShowAssign(false)
-      const { data: fresh } = await supabase
-        .from('classes').select('*, class_teachers(teacher_id, subject, is_primary, role_type, profiles:teacher_id(full_name))')
-        .eq('school_id', schoolId).order('name')
-      if (fresh) setLocalClasses(fresh)
+      const fresh = await refetchClasses()
+      setLocalClasses(fresh)
+      setActiveClass((prev: any) => prev ? (fresh.find((c: any) => c.id === prev.id) ?? null) : prev)
     }
     setSaving(false)
   }
 
   // FIX: Remove a teacher from a class
   async function removeTeacher(classId: string, teacherId: string, subject: string | null) {
+    setRemovingTeacher(`${teacherId}:${subject ?? ''}`)
     await supabase
       .from('class_teachers')
       .delete()
       .eq('class_id', classId)
       .eq('teacher_id', teacherId)
       .eq('subject', subject ?? '')
-    const { data: fresh } = await supabase
-      .from('classes').select('*, class_teachers(teacher_id, subject, is_primary, role_type, profiles:teacher_id(full_name))')
-      .eq('school_id', schoolId).order('name')
-    if (fresh) setLocalClasses(fresh)
-    setActiveClass(null)
+    const fresh = await refetchClasses()
+    setLocalClasses(fresh)
+    // Stay on the same class's detail panel showing the update, rather
+    // than closing it - it only becomes null if the class itself is gone.
+    setActiveClass((prev: any) => prev ? (fresh.find((c: any) => c.id === prev.id) ?? null) : prev)
+    setRemovingTeacher(null)
   }
 
   const LEVELS   = ['Pre-Nursery', 'Nursery 1', 'Nursery 2', 'KG1', 'KG2', 'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3']
   const SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 
-  const filtered = classes.filter((c: any) => {
+  const filtered = localClasses.filter((c: any) => {
     const label = `${c.class_level ?? ''} ${c.section ?? ''} ${c.name ?? ''}`.toLowerCase()
     return !search || label.includes(search.toLowerCase())
   })
@@ -211,13 +268,13 @@ export default function PrincipalClassesClient({
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
           <SchoolIcon size={16} color="var(--brand)" />
-          <span className={styles.statNum}>{classes.length}</span>
+          <span className={styles.statNum}>{localClasses.length}</span>
           <span className={styles.statLabel}>Total Classes</span>
         </div>
         <div className={styles.statCard}>
           <UserIcon size={16} color="#3B82F6" />
           <span className={styles.statNum}>
-            {classes.reduce((s: number, c: any) => s + (c.student_count ?? 0), 0)}
+            {localClasses.reduce((s: number, c: any) => s + (c.student_count ?? 0), 0)}
           </span>
           <span className={styles.statLabel}>Total Students</span>
         </div>
@@ -230,7 +287,7 @@ export default function PrincipalClassesClient({
         <div className={styles.statCard}>
           <SchoolIcon size={16} color="#EF4444" />
           <span className={styles.statNum} style={{ color: '#EF4444' }}>
-            {classes.filter((c: any) => !c.class_teacher).length}
+            {localClasses.filter((c: any) => !c.class_teacher).length}
           </span>
           <span className={styles.statLabel}>No Class Teacher</span>
         </div>
@@ -348,8 +405,9 @@ export default function PrincipalClassesClient({
                 </div>
                 <button className="pressable"
                   onClick={() => removeTeacher(activeClass.id, activeClass.class_teacher.teacher_id, null)}
-                  style={{ fontSize: '0.7rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  Remove
+                  disabled={removingTeacher === `${activeClass.class_teacher.teacher_id}:`}
+                  style={{ fontSize: '0.7rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, opacity: removingTeacher === `${activeClass.class_teacher.teacher_id}:` ? 0.5 : 1 }}>
+                  {removingTeacher === `${activeClass.class_teacher.teacher_id}:` ? 'Removing…' : 'Remove'}
                 </button>
               </div>
             ) : (
@@ -387,7 +445,8 @@ export default function PrincipalClassesClient({
                     </div>
                     <button className="pressable"
                       onClick={() => removeTeacher(activeClass.id, st.teacher_id, st.subject)}
-                      style={{ fontSize: '0.68rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, marginLeft: 'auto', flexShrink: 0 }}>
+                      disabled={removingTeacher === `${st.teacher_id}:${st.subject}`}
+                      style={{ fontSize: '0.68rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, marginLeft: 'auto', flexShrink: 0, opacity: removingTeacher === `${st.teacher_id}:${st.subject}` ? 0.4 : 1 }}>
                       <XIcon size={11} />
                     </button>
                   </div>
