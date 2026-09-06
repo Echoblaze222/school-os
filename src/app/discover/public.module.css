@@ -83,6 +83,17 @@
   flex-direction: column;
   gap: var(--space-2);
   text-decoration: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--brand-border);
+  transform: translateY(-2px);
 }
 
 .cardImage {
@@ -137,6 +148,102 @@
   font-size: 13px;
   color: var(--text-secondary);
   margin: 0;
+}
+
+.cardSummaryClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Read-more modal ──────────────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  padding: 0;
+}
+
+.modalPanel {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--nav-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.modalClose {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.modalImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: block;
+}
+
+.modalBody {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.modalTitle {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modalSummary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.modalVisitBtn {
+  align-self: flex-start;
+  margin-top: var(--space-3);
+  background: var(--brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  text-decoration: none;
+}
+
+@media (min-width: 640px) {
+  .modalOverlay { align-items: center; padding: var(--space-5); }
+  .modalPanel { border-radius: var(--radius-lg); max-height: 80vh; }
+  .modalImage { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 }
 
 .emptyState {

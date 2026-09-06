@@ -2,9 +2,7 @@
 
 .banner {
   width: 100%;
-  position: sticky;
-  top: 60px;   /* below page header */
-  z-index: calc(var(--z-nav) - 1);
+  position: relative;
   overflow: hidden;
 }
 
