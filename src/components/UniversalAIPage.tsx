@@ -9,6 +9,8 @@ import RolePageWrapper from '@/components/RolePageWrapper'
 import { AiIcon, SendIcon, RefreshIcon, PaperclipIcon, XIcon } from '@/components/Icons'
 import { createClient } from '@/lib/supabase/client'
 import styles from '@/app/dashboard/student/ai/ai.module.css'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 
 interface Message { role: 'user' | 'assistant'; content: string; ts: number; imageUrl?: string | null }
 interface Props   { profile: any; school: any; userId: string; role: string }
@@ -46,8 +48,59 @@ function mdInlineToHtml(escaped: string): string {
     .replace(/`([^`]+)`/g, '<code>$1</code>')
 }
 
+function renderMath(expr: string, displayMode: boolean): string {
+  try {
+    const html = katex.renderToString(expr, { throwOnError: false, displayMode, output: 'html' })
+    // KaTeX's own .katex-display is white-space:nowrap with no overflow
+    // handling - a long fraction or derivation will run off the edge of a
+    // phone screen otherwise, the same overflow bug class already fixed
+    // elsewhere this session. Scope the scroll to just the equation, not
+    // the whole message bubble.
+    return displayMode ? `<div style="overflow-x:auto;max-width:100%;">${html}</div>` : html
+  } catch {
+    return escapeHtml(displayMode ? `$$${expr}$$` : `$${expr}$`)
+  }
+}
+
+// Guards inline $...$ against a plain "$5 and $10" in a user's own message
+// being misread as LaTeX. A backslash command is a definite signal either
+// way; otherwise reject if the content reads like prose (contains a
+// common English word) even though it also contains letters, since
+// "5 and " does too.
+const PROSE_WORD_RE = /\b(and|or|the|is|are|was|were|in|on|at|to|of|for|with|this|that|have|has|will|can|not|but|my|your|his|her)\b/i
+function looksLikeMath(expr: string): boolean {
+  if (/\\/.test(expr)) return true
+  if (PROSE_WORD_RE.test(expr)) return false
+  return /[a-zA-Z^_]/.test(expr)
+}
+
 function formatLine(line: string): string {
-  return mdInlineToHtml(escapeHtml(line))
+  // Extract $$...$$ (display) and $...$ (inline) math segments from the
+  // RAW line first - their content must reach KaTeX unescaped and
+  // untouched by the bold/italic pass below. Placeholders stand in their
+  // place while the rest of the line goes through the normal
+  // escape+format pipeline, then get swapped back out for the rendered
+  // math HTML. The null-byte placeholder survives escapeHtml unchanged
+  // (it only touches & < > " '), so this ordering is safe.
+  const mathHtml: string[] = []
+  let working = line
+
+  working = working.replace(/\$\$(.+?)\$\$/g, (_m, expr) => {
+    const idx = mathHtml.length
+    mathHtml.push(renderMath(expr.trim(), true))
+    return `\u0000MATH${idx}\u0000`
+  })
+
+  working = working.replace(/\$([^$\n]+?)\$/g, (m, expr) => {
+    if (!looksLikeMath(expr)) return m
+    const idx = mathHtml.length
+    mathHtml.push(renderMath(expr.trim(), false))
+    return `\u0000MATH${idx}\u0000`
+  })
+
+  let html = mdInlineToHtml(escapeHtml(working))
+  html = html.replace(/\u0000MATH(\d+)\u0000/g, (_m, idx) => mathHtml[Number(idx)])
+  return html
 }
 
 // Parses [[Button label|/route]] markers the AI emits (see the step-format
