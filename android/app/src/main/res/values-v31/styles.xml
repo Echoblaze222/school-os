@@ -10,15 +10,20 @@
       icon at a small fixed size on a plain default-colored background -
       exactly the "tiny icon floating in empty dark space" look reported.
 
-      The fix is to set the dedicated windowSplashScreen* attributes
-      instead, using the same brand color and the icon's actual mark
-      (ic_launcher_foreground - transparent background, just the diamonds)
-      so it reads as one flat brand-colored screen rather than a small
-      icon-in-a-box floating on an unrelated background.
+      Fixed by setting the dedicated windowSplashScreen* attributes:
+        - background: white, to match the official lockup (below), whose
+          "OS" wordmark is a dark maroon meant for a light surface
+        - icon: the full launcher icon (burgundy square + diamonds) - not
+          the transparent foreground-only layer, which would vanish
+          against the white background below
+        - brandingImage: the full "[diamond] OS" lockup, shown near the
+          bottom - this is what that attribute exists for (a secondary
+          wordmark below the icon), not a random custom slot
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenBrandingImage">@drawable/splash_branding</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 
