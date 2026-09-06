@@ -557,7 +557,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
 
   function getRoomDisplayName() {
     if (otherUser?.full_name) return otherUser.full_name
-    if (roomInfo?.is_group)   return roomInfo.name ?? 'Group Chat'
+    if (roomInfo?.is_group)   return (roomInfo.name ?? 'Group Chat').split(' — ')[0]
     // 1:1 DM, but the other participant's profile couldn't be loaded.
     // Legacy/fallback room names are stored as "PersonA & PersonB" - strip
     // out our own name so we never show both people's names as the title.

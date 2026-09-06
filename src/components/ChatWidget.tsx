@@ -114,7 +114,9 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     // For DM rooms, get the other user's name
     const result: Room[] = await Promise.all(
       roomsData.map(async (room: any) => {
-        if (room.is_group) return { id: room.id, name: room.name ?? 'Group' }
+        // Groups are auto-named like "JSS1A — Class Group" - only show
+        // the actual class/school name, not the descriptive suffix.
+        if (room.is_group) return { id: room.id, name: (room.name ?? 'Group').split(' — ')[0] }
 
         const { data: other } = await supabase
           .from('chat_room_members')
