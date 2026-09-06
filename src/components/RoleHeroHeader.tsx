@@ -5,6 +5,7 @@
 // re-implementing either. Principal's page now uses this too (see below).
 
 import Link from 'next/link'
+import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
 import GlobalSearchOverlay from './GlobalSearchOverlay'
@@ -41,7 +42,7 @@ export default function RoleHeroHeader({
           <div className={styles.brand}>
             <div className={styles.crest}>
               {school?.logo_url
-                ? <img src={school.logo_url} alt="" className={styles.crestImg} />
+                ? <Image src={school.logo_url} alt="" width={42} height={42} className={styles.crestImg} />
                 : initials}
             </div>
             <div>
@@ -84,7 +85,7 @@ export default function RoleHeroHeader({
               aria-label="Account"
             >
               {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" className={styles.avatarImg} />
+                ? <Image src={profile.avatar_url} alt="" width={38} height={38} className={styles.avatarImg} />
                 : <UserIcon size={18} />}
             </Link>
 

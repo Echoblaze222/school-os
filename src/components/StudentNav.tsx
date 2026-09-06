@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   HomeIcon, BookIcon, BarChartIcon, MessageIcon,
@@ -126,7 +127,7 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
             style={{ background: schoolColor }}
           >
             {school?.logo_url
-              ? <img src={school.logo_url} alt="" className={styles.schoolLogo} />
+              ? <Image src={school.logo_url} alt="" width={40} height={40} className={styles.schoolLogo} />
               : <span>{school?.name?.[0] ?? 'S'}</span>
             }
           </div>
