@@ -101,6 +101,16 @@ export async function POST(req: Request) {
       .update({ provider: 'livekit', livekit_room_name: room })
       .eq('id', meeting.id)
       .is('livekit_room_name', null)
+
+    // Same reasoning as /api/live/token: don't leave is_live solely
+    // dependent on LiveKit's room_started webhook actually reaching this
+    // app — flip it here too, the moment the host is actually authorized
+    // and joining. Harmless if the webhook also fires afterward.
+    await admin
+      .from('online_meetings')
+      .update({ is_live: true, started_at: new Date().toISOString() })
+      .eq('id', meeting.id)
+      .is('started_at', null)
   }
 
   const token = await mintMeetingToken({

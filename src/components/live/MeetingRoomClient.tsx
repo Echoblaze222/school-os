@@ -29,6 +29,7 @@ import '@livekit/components-styles'
 import { useRaiseHand } from '@/lib/liveClass/useRaiseHand'
 import { useClassChat } from '@/lib/liveClass/useClassChat'
 import { useRecordingStatus } from '@/lib/liveClass/useRecordingStatus'
+import styles from './live-room.module.css'
 
 interface Props {
   meetingId: string
@@ -64,13 +65,13 @@ export default function MeetingRoomClient({ meetingId, backHref }: Props) {
     return () => { cancelled = true }
   }, [meetingId])
 
-  if (loading) return <div className="p-6 text-center text-gray-500">Joining meeting…</div>
+  if (loading) return <div className={styles.centerState}>Joining meeting…</div>
   if (error) {
     return (
-      <div className="p-6 max-w-md mx-auto text-center">
-        <p className="text-red-600 font-medium mb-2">Couldn't join this meeting</p>
-        <p className="text-gray-600 text-sm mb-4">{error}</p>
-        <button onClick={() => router.push(backHref)} className="text-blue-600 underline">Back to Meetings</button>
+      <div className={styles.errorState}>
+        <p className={styles.errorTitle}>Couldn't join this meeting</p>
+        <p className={styles.errorBody}>{error}</p>
+        <button onClick={() => router.push(backHref)} className={styles.errorLink}>Back to Meetings</button>
       </div>
     )
   }
@@ -166,64 +167,64 @@ function MeetingRoomInner({ meetingId, isHost, initialRecording, backHref }: { m
     .find(t => host && t.participant.identity === host.identity)
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 flex flex-col p-4 gap-4">
+    <div className={styles.page}>
+      <div className={styles.main}>
         {connectionState === ConnectionState.Reconnecting && (
-          <div className="text-sm text-amber-700 bg-amber-50 rounded px-3 py-1">Connection interrupted — reconnecting…</div>
+          <div className={`${styles.banner} ${styles.bannerWarning}`}>Connection interrupted — reconnecting…</div>
         )}
         {recording && (
-          <div className="text-sm text-red-700 bg-red-50 rounded px-3 py-1">● This meeting is being recorded</div>
+          <div className={`${styles.banner} ${styles.bannerDanger}`}>● This meeting is being recorded</div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">{participants.length} in meeting</div>
-          <div className="flex gap-2">
+        <div className={styles.topBar}>
+          <div className={styles.statusText}>{participants.length} in meeting</div>
+          <div className={styles.controls}>
             {isHost && (
               <button onClick={toggleRecording} disabled={recordingBusy}
-                className={`px-3 py-1 rounded text-sm disabled:opacity-50 ${recording ? 'bg-red-100 text-red-700' : 'bg-gray-200'}`}>
+                className={`${styles.pillBtn} ${recording ? styles.recordingOnBtn : styles.recordingOffBtn}`}>
                 {recordingBusy ? '…' : recording ? '■ Stop Recording' : '● Start Recording'}
               </button>
             )}
-            <TrackToggle source={Track.Source.Microphone} showIcon disabled={!canSpeak} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-40" />
-            <TrackToggle source={Track.Source.Camera} showIcon disabled={!canSpeak} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-40" />
+            <TrackToggle source={Track.Source.Microphone} showIcon disabled={!canSpeak} className={styles.controlBtn} />
+            <TrackToggle source={Track.Source.Camera} showIcon disabled={!canSpeak} className={styles.controlBtn} />
             {!isHost && !canSpeak && (
-              <button onClick={selfRaised ? lowerHand : raiseHand} className={`px-3 py-1 rounded ${selfRaised ? 'bg-yellow-300' : 'bg-yellow-100'}`}>
+              <button onClick={selfRaised ? lowerHand : raiseHand} className={`${styles.pillBtn} ${selfRaised ? styles.raiseHandBtnActive : styles.raiseHandBtn}`}>
                 {selfRaised ? '✋ Hand raised' : '✋ Raise hand'}
               </button>
             )}
             {isHost ? (
-              <button onClick={handleEndMeeting} disabled={ending} className="px-4 py-1 rounded bg-red-600 text-white disabled:opacity-50">
+              <button onClick={handleEndMeeting} disabled={ending} className={`${styles.pillBtn} ${styles.dangerBtn}`}>
                 {ending ? 'Ending…' : 'End Meeting'}
               </button>
             ) : (
-              <button onClick={() => router.push(backHref)} className="px-4 py-1 rounded bg-gray-700 text-white">Leave</button>
+              <button onClick={() => router.push(backHref)} className={`${styles.pillBtn} ${styles.neutralBtn}`}>Leave</button>
             )}
           </div>
         </div>
-        {recordingError && <p className="text-red-500 text-xs">{recordingError}</p>}
+        {recordingError && <p className={styles.recError}>{recordingError}</p>}
 
-        <div className="flex-1 grid place-items-center bg-black rounded-lg overflow-hidden">
+        <div className={styles.videoArea}>
           {isHost
             ? (selfTracks[0] && <ParticipantTile trackRef={selfTracks[0]} />)
-            : (hostCameraTrack ? <ParticipantTile trackRef={hostCameraTrack} /> : <p className="text-gray-400 text-sm">Waiting for the host's video…</p>)
+            : (hostCameraTrack ? <ParticipantTile trackRef={hostCameraTrack} /> : <p className={styles.placeholderText}>Waiting for the host's video…</p>)
           }
         </div>
       </div>
 
-      <aside className="w-72 border-l p-4 flex flex-col gap-4 overflow-y-auto">
+      <aside className={styles.sidebar}>
         {isHost && (
           <section>
-            <h3 className="font-semibold mb-2">Raised hands ({raisedHands.size})</h3>
-            {raisedHands.size === 0 && <p className="text-sm text-gray-400">No one has raised a hand.</p>}
-            <ul className="space-y-1">
+            <h3 className={styles.sectionHeading}>Raised hands ({raisedHands.size})</h3>
+            {raisedHands.size === 0 && <p className={styles.emptyHint}>No one has raised a hand.</p>}
+            <ul className={styles.list}>
               {Array.from(raisedHands.entries()).map(([identity, name]) => {
                 const participant = remoteParticipants.find(p => p.identity === identity)
                 const alreadyAllowed = !!participant?.permissions?.canPublish
                 return (
-                  <li key={identity} className="flex items-center justify-between text-sm">
-                    <span>✋ {name}</span>
+                  <li key={identity} className={styles.listRow}>
+                    <span className={styles.listRowName}>✋ {name}</span>
                     <button disabled={permissionBusy === identity || alreadyAllowed} onClick={() => setParticipantPermission(identity, true, false)}
-                      className="text-xs px-2 py-1 rounded bg-green-100 text-green-800 disabled:opacity-50">
+                      className={`${styles.smallActionBtn} ${styles.allowBtn}`}>
                       {alreadyAllowed ? 'Allowed' : 'Allow mic'}
                     </button>
                   </li>
@@ -233,17 +234,17 @@ function MeetingRoomInner({ meetingId, isHost, initialRecording, backHref }: { m
           </section>
         )}
 
-        <section className="flex-1 flex flex-col min-h-0">
-          <h3 className="font-semibold mb-2">Chat</h3>
-          <div className="flex-1 overflow-y-auto space-y-1 mb-2 text-sm">
-            {messages.map((m, i) => <div key={i}><span className="font-medium">{m.name}:</span> {m.text}</div>)}
+        <div className={styles.chatSection}>
+          <h3 className={styles.sectionHeading}>Chat</h3>
+          <div className={styles.chatMessages}>
+            {messages.map((m, i) => <div key={i} className={styles.chatMessage}><span className={styles.chatMessageName}>{m.name}:</span> {m.text}</div>)}
           </div>
-          <div className="flex gap-1">
+          <div className={styles.chatInputRow}>
             <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
-              placeholder="Message everyone…" className="flex-1 border rounded px-2 py-1 text-sm" />
-            <button onClick={handleSend} className="px-3 py-1 rounded bg-blue-600 text-white text-sm">Send</button>
+              placeholder="Message everyone…" className={styles.chatInput} />
+            <button onClick={handleSend} className={styles.chatSendBtn}>Send</button>
           </div>
-        </section>
+        </div>
       </aside>
     </div>
   )

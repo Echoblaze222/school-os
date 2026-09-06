@@ -141,7 +141,7 @@ export default function StudentsClient({ students: init, profile, school, userId
       // after the secretary assigned one).
       const chosenClass = classes.find((c: any) => c.id === form.class_id)
 
-      const { error } = await supabase
+      const { data: profData, error } = await supabase
         .from('profiles')
         .update({
           full_name:     form.full_name,
@@ -151,20 +151,24 @@ export default function StudentsClient({ students: init, profile, school, userId
           date_of_birth: form.date_of_birth || null,
         })
         .eq('id', editItem.id)
+        .select('id')
 
-      if (!error && form.class_id) {
-        await supabase
+      let spOk = true
+      if (!error && profData?.length && form.class_id) {
+        const { data: spData, error: spErr } = await supabase
           .from('student_profiles')
           .upsert({ id: editItem.id, class_id: form.class_id }, { onConflict: 'id' })
+          .select('id')
+        spOk = !spErr && !!spData?.length
       }
 
-      if (!error) {
+      if (!error && profData?.length && spOk) {
         setStudents(p => p.map(s => s.id === editItem.id
           ? { ...s, full_name: form.full_name, class_id: form.class_id || null, phone: form.phone, gender: form.gender, date_of_birth: form.date_of_birth }
           : s))
         setMsg('Student updated!')
         setModal(false)
-      } else setMsg(error.message)
+      } else setMsg(error?.message ?? 'Failed to update student — the change may have been blocked.')
     } else {
       if (!form.email.trim()) { setMsg('Email is required.'); setSaving(false); return }
       const res = await fetch('/api/secretary/create-user', {

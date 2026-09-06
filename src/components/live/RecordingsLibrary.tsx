@@ -9,6 +9,7 @@
 // one — this just renders whatever the API returns.
 
 import { useEffect, useState } from 'react'
+import styles from './live-room.module.css'
 
 interface Recording {
   id: string
@@ -73,23 +74,23 @@ export default function RecordingsLibrary() {
     }
   }
 
-  if (loading) return <div className="p-6 text-center text-gray-500">Loading recordings…</div>
-  if (error) return <div className="p-6 text-center text-red-600">{error}</div>
+  if (loading) return <div className={styles.centerState}>Loading recordings…</div>
+  if (error) return <div className={styles.errorState}><p className={styles.errorTitle}>{error}</p></div>
 
   return (
-    <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Recorded Classes</h2>
+    <div className={styles.recPage}>
+      <h2 className={styles.recHeading}>Recorded Classes</h2>
 
       {recordings.length === 0 && (
-        <p className="text-gray-400 text-sm">No recordings yet.</p>
+        <p className={styles.recEmpty}>No recordings yet.</p>
       )}
 
-      <ul className="divide-y">
+      <ul className={styles.recList}>
         {recordings.map(r => (
-          <li key={r.id} className="py-3 flex items-center justify-between gap-4">
+          <li key={r.id} className={styles.recItem}>
             <div>
-              <p className="font-medium">{r.title}</p>
-              <p className="text-xs text-gray-500">
+              <p className={styles.recTitle}>{r.title}</p>
+              <p className={styles.recMeta}>
                 {r.className ? `${r.className} · ` : ''}
                 {new Date(r.recordedAt).toLocaleDateString()} · {formatDuration(r.durationSeconds)} · {formatSize(r.sizeBytes)}
               </p>
@@ -97,7 +98,7 @@ export default function RecordingsLibrary() {
             <button
               onClick={() => play(r)}
               disabled={loadingId === r.id}
-              className="px-3 py-1 rounded bg-blue-600 text-white text-sm disabled:opacity-50 shrink-0"
+              className={styles.playBtn}
             >
               {loadingId === r.id ? 'Opening…' : '▶ Play'}
             </button>
@@ -105,21 +106,21 @@ export default function RecordingsLibrary() {
         ))}
       </ul>
 
-      {playError && <p className="text-red-600 text-sm mt-3">{playError}</p>}
+      {playError && <p className={styles.recError}>{playError}</p>}
 
       {playing && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          className={styles.modalOverlay}
           onClick={() => setPlaying(null)}
         >
-          <div className="bg-white rounded-lg p-3 max-w-3xl w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-medium text-sm">{playing.title}</p>
-              <button onClick={() => setPlaying(null)} className="text-gray-500 text-sm">Close ✕</button>
+          <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <p className={styles.modalTitle}>{playing.title}</p>
+              <button onClick={() => setPlaying(null)} className={styles.modalCloseBtn}>Close ✕</button>
             </div>
             {/* eslint-disable-next-line jsx-a11y/media-has-caption -- recordings have no separate caption track yet */}
-            <video src={playing.url} controls autoPlay className="w-full rounded" />
-            <p className="text-xs text-gray-400 mt-2">
+            <video src={playing.url} controls autoPlay className={styles.modalVideo} />
+            <p className={styles.modalHint}>
               This link expires shortly — reopen from the list if it stops working.
             </p>
           </div>

@@ -277,19 +277,28 @@ export default function StudentsClient({ profile, school, userId }: Props) {
     const chosenClass = classes.find(c => c.id === assignClassId)
     const className   = chosenClass?.name ?? null
 
-    // Update profiles.class_level (text) - used for display & grouping
-    const { error: profErr } = await supabase
+    // Update profiles.class_level (text) - used for display & grouping.
+    // .select() forces PostgREST to return the updated row(s), which is how
+    // we tell "RLS silently matched zero rows" apart from "actually
+    // updated" — a plain .update() with no error can still affect 0 rows.
+    const { data: profData, error: profErr } = await supabase
       .from('profiles')
       .update({ class_level: className })
       .eq('id', assignTarget.id)
+      .select('id')
 
     // Update student_profiles.class_id (uuid) - used for results/attendance joins
-    await supabase
+    const { data: spData, error: spErr } = await supabase
       .from('student_profiles')
       .upsert({ id: assignTarget.id, class_id: assignClassId }, { onConflict: 'id' })
+      .select('id')
 
     setAssigning(false)
-    if (profErr) { showToast('Failed to assign class', false); return }
+
+    if (profErr || spErr || !profData?.length || !spData?.length) {
+      showToast('Failed to assign class', false)
+      return
+    }
 
     // Optimistically update local list
     setStudents(prev => prev.map(s =>

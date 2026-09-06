@@ -147,6 +147,21 @@ export async function POST(req: Request) {
       .update({ provider: 'livekit', livekit_room_name: room })
       .eq('id', session.id)
       .is('livekit_room_name', null) // no-op if already provisioned; trigger would reject a change anyway
+
+    // Flip is_live here too, not just via the LiveKit room_started
+    // webhook. The webhook depends on external delivery (LiveKit Cloud
+    // reaching this app's public URL) which can be misconfigured or
+    // delayed independently of whether the class is actually running —
+    // that gap left classes stuck showing "Upcoming" past their start
+    // time even while the host was already in the room. This write is
+    // authorized (decision.role === 'host' already passed the same
+    // access check the webhook's own update has no way to verify), and
+    // is harmless to repeat if the webhook also fires afterward.
+    await admin
+      .from('online_classes')
+      .update({ is_live: true, started_at: new Date().toISOString() })
+      .eq('id', session.id)
+      .is('started_at', null) // no-op on a reconnect — don't reset started_at or re-fire this every join
   }
 
   const token = await mintLiveClassToken({
