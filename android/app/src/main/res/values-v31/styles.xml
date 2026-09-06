@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Android 12 (API 31+) replaced the old "just show this drawable as the
+      window background" launch screen with a dedicated SplashScreen API.
+      Setting android:background=@drawable/splash on a Theme.SplashScreen
+      parent (as values/styles.xml does, for pre-31 devices) is ignored on
+      31+: the system instead falls back to rendering the app's launcher
+      icon at a small fixed size on a plain default-colored background -
+      exactly the "tiny icon floating in empty dark space" look reported.
+
+      The fix is to set the dedicated windowSplashScreen* attributes
+      instead, using the same brand color and the icon's actual mark
+      (ic_launcher_foreground - transparent background, just the diamonds)
+      so it reads as one flat brand-colored screen rather than a small
+      icon-in-a-box floating on an unrelated background.
+    -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+
+</resources>

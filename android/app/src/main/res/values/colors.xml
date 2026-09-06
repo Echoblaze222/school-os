@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SchoolOS brand burgundy, matches the web app's login-brand fallback
+         and the launcher icon's background. -->
+    <color name="colorPrimary">#800020</color>
+    <color name="colorPrimaryDark">#5C0017</color>
+    <color name="colorAccent">#178A9E</color>
+
+    <!-- Android 12+ splash screen background (values-v31/styles.xml) -->
+    <color name="splashBackground">#800020</color>
+</resources>
