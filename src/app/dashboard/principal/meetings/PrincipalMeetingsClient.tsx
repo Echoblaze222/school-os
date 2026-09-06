@@ -254,7 +254,7 @@ export default function PrincipalMeetingsClient({
           )}
           {meetingMode === 'livekit' && (
             <div className={styles.field}>
-              <p className={styles.fieldHint}>No link or location needed — you'll get a "Start Live Meeting" button once this is scheduled.</p>
+              <p className={styles.fieldHint}>No link or location needed. You'll get a "Start Live Meeting" button once this is scheduled.</p>
             </div>
           )}
 
