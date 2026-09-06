@@ -18,12 +18,21 @@
           against the white background below
         - brandingImage: the full "[diamond] OS" lockup, shown near the
           bottom - this is what that attribute exists for (a secondary
-          wordmark below the icon), not a random custom slot
+          wordmark below the icon), not a random custom slot.
+          NOTE: unlike the other three items here, this one needs the
+          android: prefix. background/icon/postSplashScreenTheme are
+          custom attrs backported by AndroidX's core-splashscreen compat
+          library (so they resolve without a namespace prefix down to
+          API 21) - but brandingImage was never included in that compat
+          surface, so it only exists as the real platform attribute.
+          Bare "windowSplashScreenBrandingImage" fails resource linking
+          with "attr ... not found" since nothing declares it as a
+          local/compat attr.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="windowSplashScreenBrandingImage">@drawable/splash_branding</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/splash_branding</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 
