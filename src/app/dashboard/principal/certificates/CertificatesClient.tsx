@@ -320,10 +320,10 @@ function CertificateSettingsForm({ school, onClose }: { school: any; onClose: ()
 
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>{label}</span>
       <input value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
-        style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem' }} />
+        style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem', width: '100%', boxSizing: 'border-box' as const }} />
     </label>
   )
 }
