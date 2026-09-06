@@ -36,7 +36,7 @@ export default async function PrincipalMeetingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, school_id, role, schools(*)')
+    .select('full_name, avatar_url, school_id, role, schools(*)')
     .eq('id', user.id)
     .single()
 

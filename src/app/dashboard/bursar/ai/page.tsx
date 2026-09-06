@@ -13,13 +13,13 @@ export default async function BursarAIPage() {
 
   const { data: profileRow } = await supabase
     .from('profiles')
-    .select('full_name, schools(id, name, primary_color)')
+    .select('full_name, avatar_url, schools(id, name, primary_color)')
     .eq('id', user.id)
     .single()
 
   const schoolRow = Array.isArray(profileRow?.schools) ? profileRow.schools[0] : profileRow?.schools
 
-  const profile = { full_name: profileRow?.full_name ?? 'Bursar' }
+  const profile = { full_name: profileRow?.full_name ?? 'Bursar', avatar_url: profileRow?.avatar_url ?? null }
   const school  = {
     id:            schoolRow?.id,
     name:          schoolRow?.name ?? 'this school',
