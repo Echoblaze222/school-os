@@ -6,6 +6,7 @@
 
 import Link from 'next/link'
 import NotificationsBell from './NotificationsBell'
+import PushToggle from './PushToggle'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
 import GlobalSearchOverlay from './GlobalSearchOverlay'
 import { SunIcon, MoonIcon, UserIcon, TagIcon } from './Icons'
@@ -76,6 +77,12 @@ export default function RoleHeroHeader({
             </button>
 
             <NotificationsBell userId={userId} role={role} />
+
+            {/* Was built (see PushToggle.tsx) but never mounted anywhere in
+                the app, so nobody ever saw a way to opt into push alerts.
+                Header is its own documented drop-in target; compact mode
+                is self-styled, so no need to fight it into .iconBtn. */}
+            <PushToggle compact />
 
             <Link
               href={`/dashboard/${role}/profile`}

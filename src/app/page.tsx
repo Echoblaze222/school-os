@@ -44,6 +44,8 @@ export default async function RootPage() {
       <PublicNav />
       <main style={{ flex: 1 }}>
         <Hero />
+        <div style={{ height: 'var(--space-8)' }} />
+        <PromotionsSection />
         <StatsStrip />
         <div style={{ height: 'var(--space-8)' }} />
         <ValueProps />
@@ -51,8 +53,6 @@ export default async function RootPage() {
         <AudienceSection />
         <div style={{ height: 'var(--space-8)' }} />
         <FeaturedSchools />
-        <div style={{ height: 'var(--space-8)' }} />
-        <PromotionsSection />
         <div style={{ height: 'var(--space-8)' }} />
         <FaqSection />
         <div style={{ height: 'var(--space-8)' }} />
