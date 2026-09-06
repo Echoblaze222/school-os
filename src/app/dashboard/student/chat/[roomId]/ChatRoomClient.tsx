@@ -8,7 +8,7 @@ import {
   ArrowLeftIcon, SmileIcon, MoreIcon, XIcon,
   BanIcon, PeopleIcon, UserIcon, RefreshIcon, ClockIcon,
   UploadIcon, CheckIcon, AlertIcon, EditIcon, TrashIcon, LockIcon, MessageIcon,
-  MicIcon, StopIcon, StickerIcon, CrownIcon, PlusIcon, SearchIcon,
+  MicIcon, StopIcon, CrownIcon, PlusIcon, SearchIcon,
 } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './chat-room.module.css'
@@ -92,19 +92,6 @@ function FixedDurationAudio({ src, className }: { src: string; className?: strin
   )
 }
 
-// Original sticker artwork shipped with the app (public/stickers) - not
-// user uploads, so sending one is a plain insert, no storage round trip.
-const STICKERS = [
-  { id: 'laugh-cry',  src: '/stickers/laugh-cry.svg',  alt: 'Laughing with tears' },
-  { id: 'mind-blown', src: '/stickers/mind-blown.svg', alt: 'Mind blown' },
-  { id: 'cool',       src: '/stickers/cool.svg',       alt: 'Cool with sunglasses' },
-  { id: 'heart-eyes', src: '/stickers/heart-eyes.svg', alt: 'Heart eyes' },
-  { id: 'side-eye',   src: '/stickers/side-eye.svg',   alt: 'Side eye' },
-  { id: 'shocked',    src: '/stickers/shocked.svg',    alt: 'Shocked' },
-  { id: 'party',      src: '/stickers/party.svg',      alt: 'Party' },
-  { id: 'facepalm',   src: '/stickers/facepalm.svg',   alt: 'Facepalm' },
-]
-
 // ── Background send queue ─────────────────────────────────────────────────
 // Text + file sends are pushed here and processed one at a time in the
 // background so the UI never blocks and multiple sends never race.
@@ -153,7 +140,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [voiceError,      setVoiceError]      = useState('')
 
   // Sticker picker
-  const [showStickers, setShowStickers] = useState(false)
 
   // Peer-group management - only meaningful when roomInfo.room_type === 'peer_group'
   const [isGroupAdmin,     setIsGroupAdmin]     = useState(false)
@@ -297,7 +283,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   useEffect(() => {
     const handler = () => {
       if (suppressNextCloseClick.current) { suppressNextCloseClick.current = false; return }
-      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null); setShowStickers(false)
+      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null)
     }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
@@ -1122,21 +1108,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setRecordSeconds(0)
   }
 
-  // ── Stickers: tap to send immediately, like WhatsApp ────────────────
-  function sendSticker(url: string) {
-    setShowStickers(false)
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-
-    const temp: Message = {
-      id: tempId, content: '', sender_id: userId, sent_at: new Date().toISOString(),
-      is_deleted: false, is_edited: false,
-      file_url: url, file_type: 'sticker',
-      _status: 'sending',
-    }
-    setMessages(prev => [...prev, temp])
-    enqueue({ kind: 'sticker', tempId, url })
-  }
-
   function formatDate(d: string) {
     const date = new Date(d), today = new Date(), yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
@@ -1678,23 +1649,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
-      {/* ── STICKER PICKER ──────────────────────────────────────────── */}
-      {showStickers && (
-        <div className={styles.stickerPicker} onClick={e => e.stopPropagation()}>
-          <div className={styles.stickerPickerHeader}>
-            <span>Stickers</span>
-            <button onClick={() => setShowStickers(false)}><XIcon size={14} /></button>
-          </div>
-          <div className={styles.stickerGrid}>
-            {STICKERS.map(s => (
-              <button key={s.id} className={styles.stickerItem} onClick={() => sendSticker(s.src)} title={s.alt}>
-                <img src={s.src} alt={s.alt} />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {voiceError && (
         <div className={styles.voiceError}>
           <AlertIcon size={13} /> {voiceError}
@@ -1732,13 +1686,6 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
             <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
               <PaperclipIcon size={18} color="var(--text-muted)" />
-            </button>
-            <button
-              className={styles.attachBtn}
-              onClick={e => { e.stopPropagation(); setShowStickers(p => !p) }}
-              title="Stickers"
-            >
-              <StickerIcon size={18} color={showStickers ? schoolColor : 'var(--text-muted)'} />
             </button>
             <input
               ref={inputRef}
