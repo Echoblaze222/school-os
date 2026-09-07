@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
@@ -52,7 +53,7 @@ export default function DashboardHeader({
             </button>
           : <div className={styles.schoolBadge}>
               {school?.logo_url
-                ? <img src={school.logo_url} alt="" className={styles.schoolLogo} />
+                ? <Image src={school.logo_url} alt="" width={36} height={36} className={styles.schoolLogo} />
                 : <span>{school?.name?.[0] ?? 'S'}</span>
               }
             </div>
@@ -88,7 +89,7 @@ export default function DashboardHeader({
           aria-label="Account"
         >
           {profile?.avatar_url
-            ? <img src={profile.avatar_url} alt={firstName} className={styles.avatarImg} />
+            ? <Image src={profile.avatar_url} alt={firstName} width={36} height={36} className={styles.avatarImg} />
             : <UserIcon size={14} color="#F6F1E4" />
           }
         </Link>

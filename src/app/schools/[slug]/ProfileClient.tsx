@@ -2,6 +2,7 @@
 // src/app/schools/[slug]/ProfileClient.tsx
 
 import { useState } from 'react'
+import Image from 'next/image'
 import {
   MapPinIcon, CheckCircleIcon, GlobeIcon, MailIcon, PhoneIcon,
   CalendarIcon, HomeIcon, GraduationCapIcon, BookOpenIcon,
@@ -52,7 +53,7 @@ export default function ProfileClient({ school, events }: { school: PublicSchool
             className={styles.logo}
             style={{ background: school.logo_url ? 'var(--bg-elevated)' : (school.primary_color || 'var(--brand)') }}
           >
-            {school.logo_url ? <img src={school.logo_url} alt="" /> : <SchoolIcon size={30} color="#fff" />}
+            {school.logo_url ? <Image src={school.logo_url} alt="" width={76} height={76} /> : <SchoolIcon size={30} color="#fff" />}
           </div>
 
           <div className={styles.headerText}>

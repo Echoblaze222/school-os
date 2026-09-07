@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SchoolOS brand burgundy, matches the web app's login-brand fallback
+         and the launcher icon's background. -->
+    <color name="colorPrimary">#800020</color>
+    <color name="colorPrimaryDark">#5C0017</color>
+    <color name="colorAccent">#178A9E</color>
+
+    <!-- Android 12+ splash screen background (values-v31/styles.xml).
+         White, not brand burgundy: the official lockup's "OS" wordmark is
+         rendered in a dark maroon (#4A0012) meant to sit on a light
+         surface - on the burgundy background it was nearly illegible. -->
+    <color name="splashBackground">#FFFFFF</color>
+</resources>

@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import styles from './reset-password.module.css'
 
@@ -81,8 +82,7 @@ export default function ResetPasswordPage() {
       <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
         {/* Logo */}
         <div className={styles.logoWrap}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
+          <Image src="/icons/logo.png" alt="SchoolOS" width={48} height={48} className={styles.logo} />
         </div>
 
         {stage === 'invalid' && (

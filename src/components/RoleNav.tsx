@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
@@ -487,14 +488,26 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
   const supabase = createClient()
   const config   = NAV[role]
   const homePath = `/dashboard/${role}`
-  if (!config) return null
 
-  function isActive(href: string, home?: boolean) {
-    if (home || href === homePath) return pathname === homePath
-    return pathname.startsWith(href)
+  // Unread chat badge (teacher only). Declared and called before the
+  // `if (!config) return null` guard below - it used to sit after that
+  // guard, which makes this useEffect a conditionally-called hook (a
+  // real Rules of Hooks violation, not just a lint nitpick: if `config`
+  // were ever falsy on one render and truthy on another for the same
+  // mounted instance, React's hook bookkeeping would desync). In
+  // practice `role` is a stable prop per mount so this likely never
+  // showed up as a visible bug, but it's not something to leave in
+  // place now that it's been flagged.
+  async function loadUnread() {
+    const { count } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('school_id', school?.id)
+      .neq('sender_id', userId)
+      .eq('is_read', false)
+    setUnreadCount(count ?? 0)
   }
 
-  // Unread chat badge (teacher only)
   useEffect(() => {
     if (role !== 'teacher') return
     loadUnread()
@@ -505,16 +518,14 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
       }, loadUnread)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, role])
 
-  async function loadUnread() {
-    const { count } = await supabase
-      .from('messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('school_id', school?.id)
-      .neq('sender_id', userId)
-      .eq('is_read', false)
-    setUnreadCount(count ?? 0)
+  if (!config) return null
+
+  function isActive(href: string, home?: boolean) {
+    if (home || href === homePath) return pathname === homePath
+    return pathname.startsWith(href)
   }
 
   async function logout() {
@@ -528,7 +539,7 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
         <div className={styles.header}>
           <div className={styles.badge} style={{ background: schoolColor }}>
             {school?.logo_url
-              ? <img src={school.logo_url} alt="" className={styles.logo}/>
+              ? <Image src={school.logo_url} alt="" width={40} height={40} className={styles.logo}/>
               : <span>{school?.name?.[0] ?? 'S'}</span>
             }
           </div>
