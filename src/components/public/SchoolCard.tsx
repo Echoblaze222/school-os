@@ -4,6 +4,7 @@
 // stays identical everywhere a visitor encounters it.
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { CheckCircleIcon, MapPinIcon, SchoolIcon } from '@/components/Icons'
 import type { PublicSchoolListItem } from '@/lib/publicSchools'
 import motion from '@/components/dashboard-motion.module.css'
@@ -36,7 +37,7 @@ export default function SchoolCard({ school, index = 0 }: { school: PublicSchool
           style={{ background: school.logo_url ? 'var(--bg-elevated)' : (school.primary_color || 'var(--brand)') }}
         >
           {school.logo_url
-            ? <img src={school.logo_url} alt="" />
+            ? <Image src={school.logo_url} alt="" width={44} height={44} />
             : <SchoolIcon size={20} color="#fff" />
           }
         </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon, ArrowLeftIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
@@ -184,7 +185,7 @@ export default function SelectSchoolPage() {
                 style={{ background: recent.primaryColor || '#800020' }}
               >
                 {recent.logoUrl
-                  ? <img src={recent.logoUrl} alt={recent.name} />
+                  ? <Image src={recent.logoUrl} alt={recent.name} width={36} height={36} />
                   : <span>{recent.name[0]?.toUpperCase()}</span>
                 }
               </span>
@@ -242,7 +243,7 @@ export default function SelectSchoolPage() {
                         style={{ background: school.primary_color }}
                       >
                         {school.logo_url
-                          ? <img src={school.logo_url} alt={school.name} />
+                          ? <Image src={school.logo_url} alt={school.name} width={38} height={38} />
                           : <span>{school.name[0]?.toUpperCase()}</span>
                         }
                       </div>
@@ -285,7 +286,7 @@ export default function SelectSchoolPage() {
                   >
                     <div className={styles.selectedLogo}>
                       {selected.logo_url
-                        ? <img src={selected.logo_url} alt={selected.name} />
+                        ? <Image src={selected.logo_url} alt={selected.name} width={46} height={46} />
                         : <span>{selected.name[0]?.toUpperCase()}</span>
                       }
                     </div>

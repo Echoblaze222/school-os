@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import styles from './login.module.css'
 import {
@@ -264,8 +265,7 @@ export default function LoginPage() {
         <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
 
           <div className={styles.topBar}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
+            <Image src="/icons/logo.png" alt="SchoolOS" width={44} height={44} className={styles.logo} />
             <div className={styles.topBarText}>
               <span className={styles.appName}>SchoolOS</span>
               {school ? (
