@@ -31,6 +31,7 @@ interface RecentSchool {
 const SCHOOL_KEY = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY = 'schoolos_recent_school'
 const SIGNOUT_REASON_KEY = 'schoolos_signout_reason'
+const RETURN_TO_KEY = 'schoolos_return_to'
 
 export default function SelectSchoolPage() {
   const router   = useRouter()
@@ -44,6 +45,7 @@ export default function SelectSchoolPage() {
   const [recent,   setRecent]   = useState<RecentSchool | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [signoutReason, setSignoutReason] = useState<string | null>(null)
+  const [returnTo, setReturnTo] = useState<string | null>(null)
 
   const searchRef   = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
@@ -55,6 +57,11 @@ export default function SelectSchoolPage() {
       if (reason) {
         setSignoutReason(reason)
         sessionStorage.removeItem(SIGNOUT_REASON_KEY)
+      }
+      const savedReturnTo = sessionStorage.getItem(RETURN_TO_KEY)
+      if (savedReturnTo) {
+        setReturnTo(savedReturnTo)
+        sessionStorage.removeItem(RETURN_TO_KEY)
       }
     } catch { /* ignore */ }
     try {
@@ -131,9 +138,17 @@ export default function SelectSchoolPage() {
     searchRef.current?.focus()
   }
 
+  function loginUrl(): string {
+    const params = new URLSearchParams()
+    if (signoutReason) params.set('reason', signoutReason)
+    if (returnTo) params.set('returnTo', returnTo)
+    const qs = params.toString()
+    return qs ? `/login?${qs}` : '/login'
+  }
+
   function proceedToLogin() {
     if (!selected) return
-    router.push(signoutReason ? `/login?reason=${signoutReason}` : '/login')
+    router.push(loginUrl())
   }
 
   function continueWithRecent() {
@@ -143,7 +158,7 @@ export default function SelectSchoolPage() {
       name: recent.name,
       primaryColor: recent.primaryColor,
     }))
-    router.push(signoutReason ? `/login?reason=${signoutReason}` : '/login')
+    router.push(loginUrl())
   }
 
   function useDifferentSchool() {

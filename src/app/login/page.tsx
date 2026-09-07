@@ -50,10 +50,19 @@ export default function LoginPage() {
   const [showNewPass,    setShowNewPass]    = useState(false)
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [newUserError,   setNewUserError]   = useState('')
+  const returnToRef = useRef<string | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'timeout') setIsTimeout(true)
+
+    // Only accept a same-app dashboard path - never an absolute URL or
+    // protocol-relative one (e.g. "//evil.com"), which would otherwise
+    // make this an open redirect via a crafted ?returnTo= link.
+    const rt = params.get('returnTo')
+    if (rt && rt.startsWith('/dashboard/') && !rt.startsWith('//')) {
+      returnToRef.current = rt
+    }
 
     const stored = localStorage.getItem(SCHOOL_KEY)
     if (!stored) {
@@ -148,10 +157,11 @@ export default function LoginPage() {
     // activation - a user who closes the browser mid-onboarding and
     // signs back in normally must still be sent here, not straight to
     // /dashboard, since this is also where Terms & Privacy acceptance
-    // is collected and recorded.
+    // is collected and recorded. returnTo only applies once onboarding
+    // is actually done - it must never be able to skip this gate.
     if (stage === 'stage_1_pending') return '/onboarding/stage-1'
     if (stage === 'stage_2_pending') return '/onboarding/stage-2'
-    return '/dashboard'
+    return returnToRef.current ?? '/dashboard'
   }
 
   async function handleExistingLogin(e: React.FormEvent) {

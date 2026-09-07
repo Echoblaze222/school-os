@@ -20,6 +20,7 @@ import './globals.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import AndroidBackHandler from '@/components/AndroidBackHandler'
 
 const inter = Inter({
   subsets:  ['latin'],
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <ToastProvider>
             {children}
+            <AndroidBackHandler />
           </ToastProvider>
           <script
             dangerouslySetInnerHTML={{

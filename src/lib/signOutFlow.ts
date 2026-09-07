@@ -20,6 +20,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const SCHOOL_KEY         = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY  = 'schoolos_recent_school'
 const SIGNOUT_REASON_KEY = 'schoolos_signout_reason'
+const RETURN_TO_KEY      = 'schoolos_return_to'
 
 interface StoredSchool {
   id: string
@@ -30,7 +31,8 @@ interface StoredSchool {
 export async function signOutFlow(
   supabase: SupabaseClient,
   router: { push: (href: string) => void; replace?: (href: string) => void; refresh?: () => void },
-  reason?: string
+  reason?: string,
+  returnTo?: string
 ) {
   try {
     const stored = localStorage.getItem(SCHOOL_KEY)
@@ -51,6 +53,12 @@ export async function signOutFlow(
 
   if (reason) {
     sessionStorage.setItem(SIGNOUT_REASON_KEY, reason)
+  }
+  // Only worth remembering for a timeout/idle-style signout - a
+  // deliberate "Log out" click shouldn't drop the user back into
+  // whatever they were doing, that's the whole point of logging out.
+  if (returnTo && reason) {
+    sessionStorage.setItem(RETURN_TO_KEY, returnTo)
   }
 
   try { await supabase.auth.signOut() } catch { /* proceed regardless */ }
