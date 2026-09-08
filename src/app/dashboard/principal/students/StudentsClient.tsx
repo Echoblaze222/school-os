@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
@@ -565,7 +566,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                     <div key={student.id} className={`${styles.studentRow} animate-fade-up`}>
                       <div className={styles.studentAvatar} style={{ background: genderColor + '25', color: genderColor }}>
                         {student.avatar_url
-                          ? <img src={student.avatar_url} alt="" style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}/>
+                          ? <Image src={student.avatar_url} alt="" width={36} height={36} style={{ borderRadius:'50%', objectFit:'cover' }}/>
                           : initials
                         }
                       </div>
