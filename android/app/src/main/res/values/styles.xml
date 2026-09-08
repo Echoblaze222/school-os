@@ -49,10 +49,22 @@
       anymore, which also removes the two-file-must-stay-in-sync risk
       that caused this exact bug in the first place (the v31 fix landed
       correctly, the base file was forgotten).
+
+      windowSplashScreenAnimatedIcon: uses drawable-nodpi/splash_icon.png
+      (a plain flat copy of public/icons/icon-512x512.png), NOT
+      @mipmap/ic_launcher. Pointing this attribute at the mipmap
+      reference made the OS treat it as an adaptive icon (it resolves
+      through mipmap-anydpi-v26/ic_launcher.xml, which is background +
+      foreground layers) and apply its own adaptive-icon mask + upscale
+      on top of an image that was already a flattened, rounded square -
+      producing the oversized, blurry, forced-circular result reported.
+      A plain drawable reference outside the mipmap/adaptive-icon system
+      is displayed as-is, at its own native resolution, no extra
+      masking.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
