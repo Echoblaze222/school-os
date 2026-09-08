@@ -50,21 +50,38 @@
       that caused this exact bug in the first place (the v31 fix landed
       correctly, the base file was forgotten).
 
-      windowSplashScreenAnimatedIcon: uses drawable-nodpi/splash_icon.png
-      (a plain flat copy of public/icons/icon-512x512.png), NOT
-      @mipmap/ic_launcher. Pointing this attribute at the mipmap
-      reference made the OS treat it as an adaptive icon (it resolves
-      through mipmap-anydpi-v26/ic_launcher.xml, which is background +
-      foreground layers) and apply its own adaptive-icon mask + upscale
-      on top of an image that was already a flattened, rounded square -
-      producing the oversized, blurry, forced-circular result reported.
-      A plain drawable reference outside the mipmap/adaptive-icon system
-      is displayed as-is, at its own native resolution, no extra
-      masking.
+      windowSplashScreenAnimatedIcon: the "logo looks big and blurry, why
+      is it round" report. Both are actually the same root cause, and
+      it's not a bug in this project's code - it's documented Android
+      platform behavior: per Android's own SplashScreen guide, the icon
+      "must be a vector drawable" and gets masked into the device's
+      standard icon shape (the same shape used for home-screen icons -
+      this project already ships mipmap/ic_launcher_round.png for
+      exactly that reason, so a circular mask on this device is
+      expected, not a glitch). A previous attempt here pointed this at
+      a flattened raster PNG (drawable-nodpi/splash_icon.png) instead of
+      a vector, which the platform doesn't render natively - hence
+      upscale blur on top of the mask it applies regardless of source
+      format.
+
+      Fixed properly per Android's documented pattern for a non-round
+      source icon: use the actual vector (@drawable/ic_launcher_foreground,
+      the transparent-background diamond mark, already used by the
+      adaptive launcher icon - drawable-v24/ic_launcher_foreground.xml)
+      so it scales losslessly, and switch the parent theme to
+      Theme.SplashScreen.IconBackground + set
+      windowSplashScreenIconBackgroundColor to brand burgundy. That
+      draws a colored circular disc behind the icon, masked the same
+      way, so the circle reads as an intentional round badge (matching
+      ic_launcher_round) instead of looking like a cropping accident -
+      and gives the white/teal diamond mark contrast against both the
+      light and dark splashBackground values, without needing a second
+      themed icon asset.
     -->
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen.IconBackground">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/colorPrimary</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
