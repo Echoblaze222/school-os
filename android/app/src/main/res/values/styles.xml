@@ -37,11 +37,18 @@
       the one that actually applies - was never correctly fixed until now.
 
       windowSplashScreenBrandingImage has no compat equivalent (confirmed
-      by the "attr not found" build failure when it was attempted without
-      the android: prefix in values-v31 - the compat library genuinely
-      doesn't define it), so pre-31 devices only get background + icon,
-      no branding lockup underneath. Platform limitation, not an
-      oversight.
+      by an earlier "attr not found" build failure when it was attempted
+      without the android: prefix - the compat library genuinely doesn't
+      define it), and its underlying asset (the "[icon] OS" lockup) used
+      dark maroon text that only reads on a light surface anyway. Since
+      splashBackground below now switches between light/dark per system
+      theme (values/colors.xml + values-night/colors.xml), a single icon
+      that stays legible either way was the simpler, more robust choice
+      than a wordmark image that only worked in one mode. Applies to
+      every API level this way - no separate values-v31 override needed
+      anymore, which also removes the two-file-must-stay-in-sync risk
+      that caused this exact bug in the first place (the v31 fix landed
+      correctly, the base file was forgotten).
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
