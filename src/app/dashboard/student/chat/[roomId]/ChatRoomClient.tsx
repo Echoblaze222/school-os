@@ -769,6 +769,21 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     }
     setMessages(prev => prev.map(m => m.id === tempId ? { ...(newMsg as Message), _status: 'sent' } : m))
     pushNotification('Voice message')
+
+    // Same reasoning as runFileJob: a voice note is a deliberate, substantive
+    // share worth surfacing in Recent Activity, unlike routine text chatter
+    // (see the comment on runFileJob's own logActivity call). This was
+    // missing here even though runFileJob has it - voice notes go through
+    // their own upload path (separate bucket), not runFileJob, so they'd
+    // been silently falling through uncounted.
+    if (school?.id) {
+      logActivity({
+        userId, schoolId: school.id,
+        type:  'message_sent',
+        title: `Sent a voice message to ${otherUser?.full_name ?? 'someone'}`,
+        href:  `/dashboard/${role}/chat/${roomId}`,
+      })
+    }
   }
 
   // Stickers reference a static asset already shipped with the app, so

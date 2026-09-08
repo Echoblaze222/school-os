@@ -16,7 +16,72 @@
     </style>
 
 
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+    <!--
+      This extends Theme.SplashScreen, which doesn't exist as a native
+      platform theme before API 31 - it resolves here via androidx.core's
+      core-splashscreen compat library, which backports the same
+      windowSplashScreen* system down to API 21.
+
+      That's the actual bug this whole style had: android:background is
+      a plain window-background attribute, but the compat library's
+      Theme.SplashScreen implementation never reads it - it only reads
+      its own custom windowSplashScreenBackground / windowSplashScreenAnimatedIcon
+      attrs (same names as the real platform API on 31+, just without
+      the android: prefix since they're backported, not native). Setting
+      android:background here was a no-op on every version this file
+      applies to (API 21-30) - it silently fell through to the same
+      "tiny default icon on a plain background" fallback as the
+      unfixed API 31+ case, just via a different mechanism. This is why
+      the fix in values-v31/styles.xml never took effect on an Android 11
+      device: that override doesn't apply below API 31, and THIS file -
+      the one that actually applies - was never correctly fixed until now.
+
+      windowSplashScreenBrandingImage has no compat equivalent (confirmed
+      by an earlier "attr not found" build failure when it was attempted
+      without the android: prefix - the compat library genuinely doesn't
+      define it), and its underlying asset (the "[icon] OS" lockup) used
+      dark maroon text that only reads on a light surface anyway. Since
+      splashBackground below now switches between light/dark per system
+      theme (values/colors.xml + values-night/colors.xml), a single icon
+      that stays legible either way was the simpler, more robust choice
+      than a wordmark image that only worked in one mode. Applies to
+      every API level this way - no separate values-v31 override needed
+      anymore, which also removes the two-file-must-stay-in-sync risk
+      that caused this exact bug in the first place (the v31 fix landed
+      correctly, the base file was forgotten).
+
+      windowSplashScreenAnimatedIcon: the "logo looks big and blurry, why
+      is it round" report. Both are actually the same root cause, and
+      it's not a bug in this project's code - it's documented Android
+      platform behavior: per Android's own SplashScreen guide, the icon
+      "must be a vector drawable" and gets masked into the device's
+      standard icon shape (the same shape used for home-screen icons -
+      this project already ships mipmap/ic_launcher_round.png for
+      exactly that reason, so a circular mask on this device is
+      expected, not a glitch). A previous attempt here pointed this at
+      a flattened raster PNG (drawable-nodpi/splash_icon.png) instead of
+      a vector, which the platform doesn't render natively - hence
+      upscale blur on top of the mask it applies regardless of source
+      format.
+
+      Fixed properly per Android's documented pattern for a non-round
+      source icon: use the actual vector (@drawable/ic_launcher_foreground,
+      the transparent-background diamond mark, already used by the
+      adaptive launcher icon - drawable-v24/ic_launcher_foreground.xml)
+      so it scales losslessly, and switch the parent theme to
+      Theme.SplashScreen.IconBackground + set
+      windowSplashScreenIconBackgroundColor to brand burgundy. That
+      draws a colored circular disc behind the icon, masked the same
+      way, so the circle reads as an intentional round badge (matching
+      ic_launcher_round) instead of looking like a cropping accident -
+      and gives the white/teal diamond mark contrast against both the
+      light and dark splashBackground values, without needing a second
+      themed icon asset.
+    -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/colorPrimary</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
