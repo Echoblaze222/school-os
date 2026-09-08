@@ -16,7 +16,36 @@
     </style>
 
 
+    <!--
+      This extends Theme.SplashScreen, which doesn't exist as a native
+      platform theme before API 31 - it resolves here via androidx.core's
+      core-splashscreen compat library, which backports the same
+      windowSplashScreen* system down to API 21.
+
+      That's the actual bug this whole style had: android:background is
+      a plain window-background attribute, but the compat library's
+      Theme.SplashScreen implementation never reads it - it only reads
+      its own custom windowSplashScreenBackground / windowSplashScreenAnimatedIcon
+      attrs (same names as the real platform API on 31+, just without
+      the android: prefix since they're backported, not native). Setting
+      android:background here was a no-op on every version this file
+      applies to (API 21-30) - it silently fell through to the same
+      "tiny default icon on a plain background" fallback as the
+      unfixed API 31+ case, just via a different mechanism. This is why
+      the fix in values-v31/styles.xml never took effect on an Android 11
+      device: that override doesn't apply below API 31, and THIS file -
+      the one that actually applies - was never correctly fixed until now.
+
+      windowSplashScreenBrandingImage has no compat equivalent (confirmed
+      by the "attr not found" build failure when it was attempted without
+      the android: prefix in values-v31 - the compat library genuinely
+      doesn't define it), so pre-31 devices only get background + icon,
+      no branding lockup underneath. Platform limitation, not an
+      oversight.
+    -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
