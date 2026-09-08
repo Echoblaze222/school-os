@@ -1,11 +1,14 @@
 // src/app/api/nurse/visits/route.ts
 //
-// clinic_visits already existed in the live database before this
-// feature was built - see the schema this route was rewritten against
-// (student_id, recorded_by, sent_home, parent_notified_at,
-// follow_up_notes, medication_administered - no nurse_profile_id,
-// blood_pressure, pulse_bpm, or outcome enum). This route now matches
-// the real table instead of the one originally designed for it.
+// clinic_visits' actual columns as of this fix: school_id, student_id,
+// visited_at, reason, symptoms, treatment_given, medication_administered,
+// temperature_c, sent_home, parent_notified, parent_notified_at,
+// follow_up_notes, recorded_by, nurse_profile_id, outcome (has a default),
+// blood_pressure, pulse_bpm, notes. A prior version of this comment said
+// nurse_profile_id/blood_pressure/pulse_bpm/outcome didn't exist - they do
+// now (nurse_profile_id has no default and is NOT NULL, so every insert
+// was failing until this route set it). Re-verify against the live
+// schema before trusting this comment again if visits start failing.
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -65,6 +68,7 @@ export async function POST(request: Request) {
       school_id: caller.schoolId,
       student_id: body.studentId,
       recorded_by: caller.userId,
+      nurse_profile_id: caller.userId,
       reason: String(body.reason).trim(),
       symptoms: body.symptoms ? String(body.symptoms).trim() : null,
       temperature_c: body.temperatureC ?? null,

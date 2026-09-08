@@ -80,6 +80,13 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
       parent_notified_at: visitForm.parent_notified ? new Date().toISOString() : null,
       school_id: school?.id,
       recorded_by: userId,
+      // NOT NULL, no default, FK to profiles(id) - same fix as
+      // /api/nurse/visits. Consistent with recorded_by above: this
+      // screen already lets non-nurse staff (secretary) log a visit
+      // under their own id, so nurse_profile_id follows the same
+      // "whoever logged it" convention rather than requiring a lookup
+      // of the school's actual assigned nurse.
+      nurse_profile_id: userId,
     }).select('*, profiles!clinic_visits_student_id_fkey(full_name, default_code)').single()
 
     if (!error && data) {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash screen background, dark mode. Matches the web app's own
+         bg-base dark value (src/app/globals.css), same reasoning as
+         the light value in values/colors.xml. -->
+    <color name="splashBackground">#080C14</color>
+</resources>

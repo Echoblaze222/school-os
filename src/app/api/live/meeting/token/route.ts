@@ -15,6 +15,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkSubscription } from '@/lib/subscription'
 import { checkRateLimit } from '@/lib/rateLimit'
 import { auditLog } from '@/lib/auditLog'
+import { logActivityWithClient } from '@/lib/logActivity'
 import { logger, newTraceId } from '@/lib/logger'
 import {
   decideMeetingAccess,
@@ -134,6 +135,34 @@ export async function POST(req: Request) {
     targetTable: 'online_meetings',
     targetId: decision.meetingId,
     metadata: { role: decision.role, traceId },
+  })
+
+  // Recent Activity feed - fire-and-forget, never blocks issuing the token.
+  // loadOnlineMeeting() intentionally doesn't select title (only what
+  // authorization itself needs), so this is its own small query rather
+  // than widening that shared function's contract for every caller.
+  //
+  // href: only principal and teacher have a meetings/room/[id] page at all
+  // right now (Phase 4 never built one for parent/student/bursar/secretary,
+  // even though the authorization layer clearly allows them to join a
+  // specific_class or all_parents meeting - separate gap, flagged, not
+  // fixed here). Anyone else falls back to their meetings list instead of
+  // a link that would 404.
+  const { data: meetingForActivity } = await admin
+    .from('online_meetings')
+    .select('title')
+    .eq('id', decision.meetingId)
+    .maybeSingle()
+  const activityHref =
+    caller.role === 'principal' ? `/dashboard/principal/meetings/room/${decision.meetingId}`
+    : caller.role === 'teacher' ? `/dashboard/teacher/meetings/room/${decision.meetingId}`
+    : `/dashboard/${caller.role}/meetings`
+  logActivityWithClient(admin, {
+    userId: user.id,
+    schoolId: decision.schoolId,
+    type: 'meeting_joined',
+    title: meetingForActivity?.title ? `Joined "${meetingForActivity.title}"` : 'Joined a meeting',
+    href: activityHref,
   })
 
   return NextResponse.json({
