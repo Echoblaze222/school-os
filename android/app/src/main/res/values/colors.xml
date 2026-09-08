@@ -13,4 +13,12 @@
          values-night/colors.xml - same resource name, resolved
          automatically by system theme. -->
     <color name="splashBackground">#F4F6FB</color>
+
+    <!-- Splash screen icon disc color (windowSplashScreenIconBackgroundColor
+         in values/styles.xml). The real logo (public/icons/logo.png) uses a
+         gradient burgundy background, which Android's splash icon
+         background can't reproduce (solid color only) - this is the
+         closer single-color match of the two existing brand colors;
+         colorPrimary read visibly lighter than the actual artwork. -->
+    <color name="splashIconBackground">#5C0017</color>
 </resources>

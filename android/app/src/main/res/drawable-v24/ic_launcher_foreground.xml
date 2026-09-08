@@ -3,21 +3,18 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- SchoolOS diamond mark, hand-built as clean vector path data
-         (replaces the previous placeholder mascot icon left over from
-         project scaffolding) - three light diamonds + one teal accent
-         diamond, arranged in a plus pattern around center, sized to
-         leave clear padding within the adaptive icon / splash circle. -->
+    <!-- SchoolOS diamond mark, hand-built vector path data. Colors and
+         proportions sampled directly from public/icons/logo.png. -->
     <path
-        android:pathData="M49.50,29.50 Q54.00,25.00 58.50,29.50 L62.50,33.50 Q67.00,38.00 62.50,42.50 L58.50,46.50 Q54.00,51.00 49.50,46.50 L45.50,42.50 Q41.00,38.00 45.50,33.50 Z"
-        android:fillColor="#F5F5F5" />
+        android:pathData="M 50.50,34.50 Q 54.00,31.00 57.50,34.50 L 60.50,37.50 Q 64.00,41.00 60.50,44.50 L 57.50,47.50 Q 54.00,51.00 50.50,47.50 L 47.50,44.50 Q 44.00,41.00 47.50,37.50 Z"
+        android:fillColor="#F7F7F8" />
     <path
-        android:pathData="M33.50,45.50 Q38.00,41.00 42.50,45.50 L46.50,49.50 Q51.00,54.00 46.50,58.50 L42.50,62.50 Q38.00,67.00 33.50,62.50 L29.50,58.50 Q25.00,54.00 29.50,49.50 Z"
-        android:fillColor="#F5F5F5" />
+        android:pathData="M 37.50,47.50 Q 41.00,44.00 44.50,47.50 L 47.50,50.50 Q 51.00,54.00 47.50,57.50 L 44.50,60.50 Q 41.00,64.00 37.50,60.50 L 34.50,57.50 Q 31.00,54.00 34.50,50.50 Z"
+        android:fillColor="#F7F7F8" />
     <path
-        android:pathData="M65.50,45.50 Q70.00,41.00 74.50,45.50 L78.50,49.50 Q83.00,54.00 78.50,58.50 L74.50,62.50 Q70.00,67.00 65.50,62.50 L61.50,58.50 Q57.00,54.00 61.50,49.50 Z"
-        android:fillColor="#F5F5F5" />
+        android:pathData="M 63.50,47.50 Q 67.00,44.00 70.50,47.50 L 73.50,50.50 Q 77.00,54.00 73.50,57.50 L 70.50,60.50 Q 67.00,64.00 63.50,60.50 L 60.50,57.50 Q 57.00,54.00 60.50,50.50 Z"
+        android:fillColor="#F7F7F8" />
     <path
-        android:pathData="M49.50,61.50 Q54.00,57.00 58.50,61.50 L62.50,65.50 Q67.00,70.00 62.50,74.50 L58.50,78.50 Q54.00,83.00 49.50,78.50 L45.50,74.50 Q41.00,70.00 45.50,65.50 Z"
-        android:fillColor="#178A9E" />
+        android:pathData="M 50.50,60.50 Q 54.00,57.00 57.50,60.50 L 60.50,63.50 Q 64.00,67.00 60.50,70.50 L 57.50,73.50 Q 54.00,77.00 50.50,73.50 L 47.50,70.50 Q 44.00,67.00 47.50,63.50 Z"
+        android:fillColor="#1C93AC" />
 </vector>
