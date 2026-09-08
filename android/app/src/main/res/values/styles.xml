@@ -50,37 +50,25 @@
       that caused this exact bug in the first place (the v31 fix landed
       correctly, the base file was forgotten).
 
-      windowSplashScreenAnimatedIcon: the "logo looks big and blurry, why
-      is it round" report. Both are actually the same root cause, and
-      it's not a bug in this project's code - it's documented Android
-      platform behavior: per Android's own SplashScreen guide, the icon
-      "must be a vector drawable" and gets masked into the device's
-      standard icon shape (the same shape used for home-screen icons -
-      this project already ships mipmap/ic_launcher_round.png for
-      exactly that reason, so a circular mask on this device is
-      expected, not a glitch). A previous attempt here pointed this at
-      a flattened raster PNG (drawable-nodpi/splash_icon.png) instead of
-      a vector, which the platform doesn't render natively - hence
-      upscale blur on top of the mask it applies regardless of source
-      format.
-
-      Fixed properly per Android's documented pattern for a non-round
-      source icon: use the actual vector (@drawable/ic_launcher_foreground,
-      the transparent-background diamond mark, already used by the
-      adaptive launcher icon - drawable-v24/ic_launcher_foreground.xml)
-      so it scales losslessly, and switch the parent theme to
-      Theme.SplashScreen.IconBackground + set
-      windowSplashScreenIconBackgroundColor to brand burgundy. That
-      draws a colored circular disc behind the icon, masked the same
-      way, so the circle reads as an intentional round badge (matching
-      ic_launcher_round) instead of looking like a cropping accident -
-      and gives the white/teal diamond mark contrast against both the
-      light and dark splashBackground values, without needing a second
-      themed icon asset.
+      windowSplashScreenAnimatedIcon references @mipmap/ic_launcher_foreground
+      (a raster PNG), not @drawable/ic_launcher_foreground. That
+      similarly-named drawable-v24/ic_launcher_foreground.xml file
+      exists in this project but is NOT SchoolOS artwork - it's
+      Android Studio's default placeholder mascot icon (the robot
+      head), left over from project scaffolding and never replaced
+      with real vector path data for the diamond mark. Only the raster
+      mipmap variants were ever actually updated with correct artwork,
+      which is why the real launcher icon looks right but referencing
+      the vector for the splash put the robot icon on screen instead.
+      A raster source isn't Android's documented ideal for this
+      attribute (see prior comment - vector is recommended), but it's
+      the only version of this artwork that's actually correct; a
+      properly hand-authored vector replacement for
+      ic_launcher_foreground.xml would be a separate, dedicated fix.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen.IconBackground">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/colorPrimary</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
