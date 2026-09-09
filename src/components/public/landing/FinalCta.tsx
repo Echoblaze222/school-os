@@ -13,7 +13,7 @@ export default function FinalCta() {
         <p className={styles.subtitle}>
           Registration takes a few minutes. Your portal is ready as soon as setup is complete.
         </p>
-        <Link href="/register-school" className="btn btn-lg" style={{ background: '#fff', color: 'var(--brand)' }}>
+        <Link href="/register-school" className={`btn btn-lg ${styles.ctaButton}`}>
           Register your school <ArrowRightIcon size={16} />
         </Link>
       </div>

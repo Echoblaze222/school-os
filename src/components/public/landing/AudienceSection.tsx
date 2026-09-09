@@ -59,8 +59,7 @@ export default function AudienceSection() {
   return (
     <section className="page-content">
       <div className={styles.headingRow}>
-        <span className="overline">Built for everyone in the school</span>
-        <h2 className="h2">See what SchoolOS does for your role</h2>
+        <h2 className="h2">See what SchoolOS does for every role in your school</h2>
       </div>
 
       <div className={styles.tabRow} role="tablist" aria-label="Choose your role">

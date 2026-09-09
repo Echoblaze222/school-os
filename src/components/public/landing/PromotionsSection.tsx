@@ -36,8 +36,7 @@ export default async function PromotionsSection() {
   return (
     <section className="page-content">
       <div className={styles.headingRow}>
-        <span className="overline">On SchoolOS right now</span>
-        <h2 className="h2">What schools are announcing this term</h2>
+        <h2 className="h2">What schools are announcing right now</h2>
       </div>
 
       <div className={styles.grid}>
