@@ -26,6 +26,7 @@ interface StoredSchool {
   id: string
   name: string
   primaryColor: string | null
+  logoUrl?: string | null
 }
 
 export async function signOutFlow(
@@ -42,7 +43,7 @@ export async function signOutFlow(
         id: school.id,
         name: school.name,
         primaryColor: school.primaryColor || '#7C3AED',
-        logoUrl: null,
+        logoUrl: school.logoUrl ?? null,
       }))
     }
   } catch {

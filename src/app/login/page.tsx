@@ -22,6 +22,7 @@ interface SelectedSchool {
   id: string
   name: string
   primaryColor: string | null
+  logoUrl?: string | null
 }
 
 const SCHOOL_KEY = 'schoolos_selected_school'
@@ -104,15 +105,19 @@ export default function LoginPage() {
     const colorFetch = Promise.allSettled([
       supabase
         .from('schools')
-        .select('primary_color')
+        .select('primary_color, logo_url')
         .eq('id', parsedSchool.id)
         .single()
         .then(({ data }) => {
-          if (data?.primary_color) {
-            setSchool(s => s ? { ...s, primaryColor: data.primary_color } : s)
+          if (data?.primary_color || data?.logo_url) {
+            setSchool(s => s ? { ...s, primaryColor: data.primary_color ?? s.primaryColor, logoUrl: data.logo_url ?? s.logoUrl } : s)
             // Keep the cache in step so the next visit starts from the
-            // right colour even before this fetch resolves.
-            localStorage.setItem(SCHOOL_KEY, JSON.stringify({ ...parsedSchool, primaryColor: data.primary_color }))
+            // right colour/logo even before this fetch resolves.
+            localStorage.setItem(SCHOOL_KEY, JSON.stringify({
+              ...parsedSchool,
+              primaryColor: data.primary_color ?? parsedSchool.primaryColor,
+              logoUrl: data.logo_url ?? parsedSchool.logoUrl,
+            }))
           }
         }),
       supabase
@@ -275,7 +280,11 @@ export default function LoginPage() {
         <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
 
           <div className={styles.topBar}>
-            <Image src="/icons/logo.png" alt="SchoolOS" width={44} height={44} className={styles.logo} />
+            {school?.logoUrl ? (
+              <Image src={school.logoUrl} alt={school.name} width={44} height={44} className={styles.logo} />
+            ) : (
+              <Image src="/icons/logo.png" alt="SchoolOS" width={44} height={44} className={styles.logo} />
+            )}
             <div className={styles.topBarText}>
               <span className={styles.appName}>SchoolOS</span>
               {school ? (

@@ -129,6 +129,7 @@ export default function SelectSchoolPage() {
       id: school.id,
       name: school.name,
       primaryColor: school.primary_color,
+      logoUrl: school.logo_url,
     }))
   }
 
@@ -158,6 +159,7 @@ export default function SelectSchoolPage() {
       id: recent.id,
       name: recent.name,
       primaryColor: recent.primaryColor,
+      logoUrl: recent.logoUrl,
     }))
     router.push(loginUrl())
   }
