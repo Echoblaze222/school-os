@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -114,7 +115,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             <div style={{ position:'relative' }}>
               <div style={{ width:90, height:90, borderRadius:'50%', background:schoolColor, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', border:`3px solid ${schoolColor}40` }}>
                 {avatar
-                  ? <img src={avatar} alt={fullName} style={{ width:'100%', height:'100%', objectFit:'cover', opacity: uploading ? 0.4 : 1 }}/>
+                  ? <Image src={avatar} alt={fullName} width={90} height={90} style={{ objectFit:'cover', opacity: uploading ? 0.4 : 1 }}/>
                   : <div style={{ opacity: uploading ? 0.4 : 1, display:'flex' }}><UserIcon size={36} color="white"/></div>
                 }
                 {uploading && (

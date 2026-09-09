@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
@@ -42,8 +43,6 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#800020'
 
-  useEffect(() => { loadMyClasses() }, [])
-
   async function loadMyClasses() {
     const { data } = await supabase
       .from('class_teachers')
@@ -59,6 +58,8 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       })))
     }
   }
+
+  useEffect(() => { loadMyClasses() }, [])
 
   async function save() {
     setSaving(true)
@@ -169,7 +170,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             overflow: 'hidden', border: `3px solid ${sc}40`,
           }}>
             {avatar
-              ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: uploadingPhoto ? 0.4 : 1 }} />
+              ? <Image src={avatar} alt="" width={84} height={84} style={{ objectFit: 'cover', opacity: uploadingPhoto ? 0.4 : 1 }} />
               : <div style={{ opacity: uploadingPhoto ? 0.4 : 1, display: 'flex' }}><UserIcon size={32} color="white" /></div>
             }
             {uploadingPhoto && (
