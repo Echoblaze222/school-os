@@ -6,7 +6,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import {
   PeopleIcon, CalendarIcon, ClipboardIcon,
   BarChartIcon, AwardIcon, CrownIcon,
@@ -116,7 +117,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   ]
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="My Classes">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="My Classes" featureGroups={TEACHER_FEATURE_GROUPS}>
       {loading ? (
         <SkeletonList count={4} variant="card" />
       ) : classes.length === 0 ? (
@@ -157,14 +158,11 @@ export default function ClassesClient({ profile, school, userId }: Props) {
           {selected && (
             <>
               {/* Class info + role badge */}
-              <div style={{
+              <div className="glass-card-flat" style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '12px 14px',
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 10,
                 marginBottom: 'var(--space-4)',
               }}>
                 <div>
@@ -246,14 +244,11 @@ export default function ClassesClient({ profile, school, userId }: Props) {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {students.map((s: any, i: number) => (
-                  <div key={s.id} style={{
+                  <div key={s.id} className="glass-card-flat" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
                     padding: '10px 14px',
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 10,
                   }}>
                     {/* Rank */}
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', minWidth: 20, textAlign: 'center' as const }}>
@@ -283,6 +278,6 @@ export default function ClassesClient({ profile, school, userId }: Props) {
         </>
       )}
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
