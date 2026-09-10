@@ -16,6 +16,8 @@ export interface MeetingRow {
   target_audience: string
   target_class_id: string | null
   created_at: string
+  provider: 'external_link' | 'livekit'
+  is_live: boolean
 }
 
 export default async function ParentMeetingsPage() {
@@ -49,7 +51,7 @@ export default async function ParentMeetingsPage() {
   // Fetch all_parents meetings + specific_class meetings for child's class
   const { data: meetings, error: meetingsError } = await supabase
     .from('online_meetings')
-    .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, target_class_id, created_at')
+    .select('id, title, meeting_type, scheduled_at, location, meeting_url, agenda, target_audience, target_class_id, created_at, provider, is_live')
     .eq('school_id', schoolId)
     .or(
       childClassId

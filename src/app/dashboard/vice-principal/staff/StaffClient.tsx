@@ -2,6 +2,7 @@
 // src/app/dashboard/vice-principal/staff/StaffClient.tsx
 
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { SearchIcon, UserIcon } from '@/components/Icons'
 import { VP_FEATURE_GROUPS } from '../featureGroups'
@@ -78,7 +79,7 @@ export default function StaffClient({ profile, school, userId, initialTeachers, 
           {visible.map(t => (
             <div key={t.id} className={`${styles.row} glass-card`}>
               <div className={styles.avatar}>
-                {t.avatar_url ? <img src={t.avatar_url} alt="" /> : <UserIcon size={16} />}
+                {t.avatar_url ? <Image src={t.avatar_url} alt="" width={36} height={36} /> : <UserIcon size={16} />}
               </div>
               <div className={styles.info}>
                 <p className={styles.name}>{t.full_name}</p>

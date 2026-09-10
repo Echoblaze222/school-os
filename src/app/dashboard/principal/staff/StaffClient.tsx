@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
@@ -624,7 +625,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                   <div className={styles.cardHeader}>
                     <div className={styles.avatar} style={{ background: roleColor + '30', color: roleColor }}>
                       {member.avatar_url
-                        ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}/>
+                        ? <Image src={member.avatar_url} alt="" width={44} height={44} style={{ borderRadius: '50%', objectFit: 'cover' }}/>
                         : <span>{initials}</span>
                       }
                     </div>
@@ -699,7 +700,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                 const initials  = previewMember.full_name?.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase() ?? '?'
                 return (
                   <div style={{ width:56, height:56, borderRadius:'50%', flexShrink:0, overflow:'hidden', background:roleColor+'25', color:roleColor, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:'1.2rem' }}>
-                    {previewMember.avatar_url ? <img src={previewMember.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : initials}
+                    {previewMember.avatar_url ? <Image src={previewMember.avatar_url} alt="" width={56} height={56} style={{ objectFit:'cover' }}/> : initials}
                   </div>
                 )
               })()}

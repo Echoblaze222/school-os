@@ -3,6 +3,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import RolePageWrapper from '@/components/RolePageWrapper'
@@ -106,7 +107,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
         <div style={{ position: 'relative' }}>
           <div style={{ width: 84, height: 84, borderRadius: '50%', background: sc, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '3px solid ' + sc + '40' }}>
             {avatar
-              ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: uploadingPhoto ? 0.4 : 1 }} />
+              ? <Image src={avatar} alt="" width={84} height={84} style={{ objectFit: 'cover', opacity: uploadingPhoto ? 0.4 : 1 }} />
               : <UserIcon size={34} color="white" />
             }
             {uploadingPhoto && (

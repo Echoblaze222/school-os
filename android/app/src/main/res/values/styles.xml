@@ -50,26 +50,24 @@
       that caused this exact bug in the first place (the v31 fix landed
       correctly, the base file was forgotten).
 
-      windowSplashScreenAnimatedIcon references @mipmap/ic_launcher_foreground
-      (a raster PNG), not @drawable/ic_launcher_foreground. That
-      similarly-named drawable-v24/ic_launcher_foreground.xml file
-      exists in this project but is NOT SchoolOS artwork - it's
-      Android Studio's default placeholder mascot icon (the robot
-      head), left over from project scaffolding and never replaced
-      with real vector path data for the diamond mark. Only the raster
-      mipmap variants were ever actually updated with correct artwork,
-      which is why the real launcher icon looks right but referencing
-      the vector for the splash put the robot icon on screen instead.
-      A raster source isn't Android's documented ideal for this
-      attribute (see prior comment - vector is recommended), but it's
-      the only version of this artwork that's actually correct; a
-      properly hand-authored vector replacement for
-      ic_launcher_foreground.xml would be a separate, dedicated fix.
+      windowSplashScreenAnimatedIcon references @drawable/ic_launcher_foreground
+      - now a proper hand-built vector of the actual diamond mark
+      (previously this file was Android Studio's default placeholder
+      mascot icon, left over from scaffolding; commit c596d5c worked
+      around that by pointing at the raster mipmap version instead).
+      With the vector itself fixed, using it directly is correct again
+      per Android's documented pattern (vector, not raster).
+      Note: the real home-screen adaptive icon
+      (mipmap-anydpi-v26/ic_launcher.xml) references
+      @mipmap/ic_launcher_foreground, not this drawable - it was
+      already using correct raster artwork and is unaffected either
+      way. This vector was previously unused dead weight; now it's
+      actually wired in, just for the splash screen specifically.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen.IconBackground">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/colorPrimary</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splashIconBackground</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
