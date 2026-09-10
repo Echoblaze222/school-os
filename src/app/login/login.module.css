@@ -67,6 +67,19 @@
   filter: drop-shadow(0 0 10px rgba(0, 180, 216, 0.3));
 }
 
+.logoFallback {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
 .topBarText {
   display: flex;
   flex-direction: column;

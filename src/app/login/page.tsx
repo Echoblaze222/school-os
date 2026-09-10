@@ -282,6 +282,10 @@ export default function LoginPage() {
           <div className={styles.topBar}>
             {school?.logoUrl ? (
               <Image src={school.logoUrl} alt={school.name} width={44} height={44} className={styles.logo} />
+            ) : school ? (
+              <span className={styles.logoFallback} style={{ background: school.primaryColor || '#800020' }}>
+                {school.name[0]?.toUpperCase()}
+              </span>
             ) : (
               <Image src="/icons/logo.png" alt="SchoolOS" width={44} height={44} className={styles.logo} />
             )}
