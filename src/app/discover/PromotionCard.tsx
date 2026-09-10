@@ -4,9 +4,17 @@
 // session_ref is a random per-mount token used only to de-duplicate this
 // card's own repeat impressions client-side - never sent anywhere else,
 // never read back, not derived from anything identifying.
-import { useEffect, useRef } from 'react'
+//
+// The card itself is always clickable now (previously only when
+// external_link was set, and even then it just navigated away
+// immediately with no way to read a long summary first). Clicking opens
+// a modal with the full, unclamped text; external_link (if present)
+// becomes a separate "Visit" action inside that modal instead of
+// hijacking the card's own click.
+import { useEffect, useRef, useState } from 'react'
 import styles from './public.module.css'
 import { isSafeHttpUrl } from '@/lib/validation/safeUrl'
+import { XIcon } from '@/components/Icons'
 
 const TYPE_LABELS: Record<string, string> = {
   admission: 'Admission', open_day: 'Open Day', scholarship: 'Scholarship',
@@ -27,6 +35,7 @@ function track(id: string, eventType: string, sessionRef: string) {
 export default function PromotionCard({ promotion }: { promotion: any }) {
   const sessionRef = useRef(Math.random().toString(36).slice(2))
   const tracked = useRef(false)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     if (tracked.current) return
@@ -34,40 +43,74 @@ export default function PromotionCard({ promotion }: { promotion: any }) {
     track(promotion.id, 'impression', sessionRef.current)
   }, [promotion.id])
 
-  const handleClick = () => track(promotion.id, 'view', sessionRef.current)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
-  const school = promotion.schools
-  const content = (
-    <>
-      {promotion.image_url && isSafeHttpUrl(promotion.image_url) && (
-        // eslint-disable-next-line @next/next/no-img-element -- external, school-supplied URLs; not part of the Next.js image domain allowlist
-        <img src={promotion.image_url} alt="" className={styles.cardImage} loading="lazy" />
-      )}
-      <div className={styles.cardTop}>
-        <span className={styles.typeTag}>{TYPE_LABELS[promotion.promotion_type] ?? promotion.promotion_type}</span>
-        {promotion.is_sponsored && <span className={styles.sponsoredTag}>Sponsored</span>}
-      </div>
-      {school && (
-        <span className={styles.cardSchool}>{school.name}{school.city ? ` · ${school.city}` : ''}</span>
-      )}
-      <h3 className={styles.cardTitle}>{promotion.title}</h3>
-      <p className={styles.cardSummary}>{promotion.summary}</p>
-    </>
-  )
-
-  if (promotion.external_link && isSafeHttpUrl(promotion.external_link)) {
-    return (
-      <a
-        href={promotion.external_link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={styles.card}
-        onClick={handleClick}
-      >
-        {content}
-      </a>
-    )
+  const handleOpen = () => {
+    track(promotion.id, 'view', sessionRef.current)
+    setOpen(true)
   }
 
-  return <div className={styles.card}>{content}</div>
+  const school = promotion.schools
+  const hasImage = promotion.image_url && isSafeHttpUrl(promotion.image_url)
+  const hasLink = promotion.external_link && isSafeHttpUrl(promotion.external_link)
+
+  return (
+    <>
+      <button type="button" className={styles.card} onClick={handleOpen}>
+        {hasImage && (
+          // eslint-disable-next-line @next/next/no-img-element -- external, school-supplied URLs; not part of the Next.js image domain allowlist
+          <img src={promotion.image_url} alt="" className={styles.cardImage} loading="lazy" />
+        )}
+        <div className={styles.cardTop}>
+          <span className={styles.typeTag}>{TYPE_LABELS[promotion.promotion_type] ?? promotion.promotion_type}</span>
+          {promotion.is_sponsored && <span className={styles.sponsoredTag}>Sponsored</span>}
+        </div>
+        {school && (
+          <span className={styles.cardSchool}>{school.name}{school.city ? ` · ${school.city}` : ''}</span>
+        )}
+        <h3 className={styles.cardTitle}>{promotion.title}</h3>
+        <p className={`${styles.cardSummary} ${styles.cardSummaryClamped}`}>{promotion.summary}</p>
+      </button>
+
+      {open && (
+        <div className={styles.modalOverlay} onClick={() => setOpen(false)}>
+          <div className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className={styles.modalClose} onClick={() => setOpen(false)} aria-label="Close">
+              <XIcon size={18} />
+            </button>
+            {hasImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={promotion.image_url} alt="" className={styles.modalImage} />
+            )}
+            <div className={styles.modalBody}>
+              <div className={styles.cardTop}>
+                <span className={styles.typeTag}>{TYPE_LABELS[promotion.promotion_type] ?? promotion.promotion_type}</span>
+                {promotion.is_sponsored && <span className={styles.sponsoredTag}>Sponsored</span>}
+              </div>
+              {school && (
+                <span className={styles.cardSchool}>{school.name}{school.city ? ` · ${school.city}` : ''}</span>
+              )}
+              <h3 className={styles.modalTitle}>{promotion.title}</h3>
+              <p className={styles.modalSummary}>{promotion.summary}</p>
+              {hasLink && (
+                <a
+                  href={promotion.external_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.modalVisitBtn}
+                >
+                  Visit link
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }

@@ -6,6 +6,7 @@
 // table InvoicesClient, RemindersClient, and the principal dashboard use - // so debtor totals stay in sync with everything else in the app.
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import GaugeStat from '@/components/GaugeStat'
@@ -172,8 +173,8 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
                     <div className={styles.cardIcon}
                       style={{ background:'#EF444420', borderRadius:'50%', overflow:'hidden' }}>
                       {d.avatar_url
-                        ? <img src={d.avatar_url} alt=""
-                            style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                        ? <Image src={d.avatar_url} alt=""
+                            width={40} height={40} style={{ objectFit:'cover' }}/>
                         : <span style={{ fontWeight:800, color:'#EF4444' }}>
                             {d.full_name?.[0]}
                           </span>}

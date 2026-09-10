@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIcon, ArrowLeftIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
@@ -31,6 +32,7 @@ interface RecentSchool {
 const SCHOOL_KEY = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY = 'schoolos_recent_school'
 const SIGNOUT_REASON_KEY = 'schoolos_signout_reason'
+const RETURN_TO_KEY = 'schoolos_return_to'
 
 export default function SelectSchoolPage() {
   const router   = useRouter()
@@ -44,6 +46,7 @@ export default function SelectSchoolPage() {
   const [recent,   setRecent]   = useState<RecentSchool | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [signoutReason, setSignoutReason] = useState<string | null>(null)
+  const [returnTo, setReturnTo] = useState<string | null>(null)
 
   const searchRef   = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
@@ -55,6 +58,11 @@ export default function SelectSchoolPage() {
       if (reason) {
         setSignoutReason(reason)
         sessionStorage.removeItem(SIGNOUT_REASON_KEY)
+      }
+      const savedReturnTo = sessionStorage.getItem(RETURN_TO_KEY)
+      if (savedReturnTo) {
+        setReturnTo(savedReturnTo)
+        sessionStorage.removeItem(RETURN_TO_KEY)
       }
     } catch { /* ignore */ }
     try {
@@ -121,6 +129,7 @@ export default function SelectSchoolPage() {
       id: school.id,
       name: school.name,
       primaryColor: school.primary_color,
+      logoUrl: school.logo_url,
     }))
   }
 
@@ -131,9 +140,17 @@ export default function SelectSchoolPage() {
     searchRef.current?.focus()
   }
 
+  function loginUrl(): string {
+    const params = new URLSearchParams()
+    if (signoutReason) params.set('reason', signoutReason)
+    if (returnTo) params.set('returnTo', returnTo)
+    const qs = params.toString()
+    return qs ? `/login?${qs}` : '/login'
+  }
+
   function proceedToLogin() {
     if (!selected) return
-    router.push(signoutReason ? `/login?reason=${signoutReason}` : '/login')
+    router.push(loginUrl())
   }
 
   function continueWithRecent() {
@@ -142,8 +159,9 @@ export default function SelectSchoolPage() {
       id: recent.id,
       name: recent.name,
       primaryColor: recent.primaryColor,
+      logoUrl: recent.logoUrl,
     }))
-    router.push(signoutReason ? `/login?reason=${signoutReason}` : '/login')
+    router.push(loginUrl())
   }
 
   function useDifferentSchool() {
@@ -184,7 +202,7 @@ export default function SelectSchoolPage() {
                 style={{ background: recent.primaryColor || '#800020' }}
               >
                 {recent.logoUrl
-                  ? <img src={recent.logoUrl} alt={recent.name} />
+                  ? <Image src={recent.logoUrl} alt={recent.name} width={36} height={36} />
                   : <span>{recent.name[0]?.toUpperCase()}</span>
                 }
               </span>
@@ -242,7 +260,7 @@ export default function SelectSchoolPage() {
                         style={{ background: school.primary_color }}
                       >
                         {school.logo_url
-                          ? <img src={school.logo_url} alt={school.name} />
+                          ? <Image src={school.logo_url} alt={school.name} width={38} height={38} />
                           : <span>{school.name[0]?.toUpperCase()}</span>
                         }
                       </div>
@@ -285,7 +303,7 @@ export default function SelectSchoolPage() {
                   >
                     <div className={styles.selectedLogo}>
                       {selected.logo_url
-                        ? <img src={selected.logo_url} alt={selected.name} />
+                        ? <Image src={selected.logo_url} alt={selected.name} width={46} height={46} />
                         : <span>{selected.name[0]?.toUpperCase()}</span>
                       }
                     </div>

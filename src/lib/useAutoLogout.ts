@@ -38,8 +38,14 @@ export function useAutoLogout({ onWarning, onLogout }: Options = {}) {
     onLogout?.()
     sessionStorage.removeItem(LAST_ACTIVITY_KEY)
     sessionStorage.removeItem(HIDDEN_SINCE_KEY)
+    // Capture where the user actually was, so signing back in can return
+    // them here instead of always landing on the generic role dashboard -
+    // losing your place after an inactivity timeout is exactly the kind
+    // of thing that makes people distrust "auto-logout for your security"
+    // features.
+    const returnTo = window.location.pathname + window.location.search
     try {
-      await signOutFlow(supabase.current, router.current, 'timeout')
+      await signOutFlow(supabase.current, router.current, 'timeout', returnTo)
     } catch (_) {
       // Fallback in case signOutFlow itself throws unexpectedly
       router.current.replace('/select-school')

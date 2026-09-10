@@ -39,25 +39,33 @@ export default async function RootPage() {
   // The cinematic /splash entrance still exists and now plays when a
   // visitor actually chooses to log in, rather than gating everyone
   // before they have seen anything about the product.
+  //
+  // Section rhythm is controlled by `gap` on this flex container instead
+  // of a manual spacer <div> between every section. Several sections
+  // (StatsStrip, PromotionsSection) already conditionally render null
+  // when there's no data - with spacer divs, a null section still left
+  // its neighboring spacer in place, producing an inconsistent gap
+  // whenever content was actually absent. `gap` only applies between
+  // siblings that actually render, so it self-corrects.
+  //
+  // PromotionsSection + StatsStrip are grouped in their own wrapper so
+  // they keep sitting flush against each other (no gap), which was the
+  // original, presumably intentional layout - the outer gap still
+  // applies normally around that pair as a single unit.
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PublicNav />
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
         <Hero />
-        <StatsStrip />
-        <div style={{ height: 'var(--space-8)' }} />
+        <div>
+          <PromotionsSection />
+          <StatsStrip />
+        </div>
         <ValueProps />
-        <div style={{ height: 'var(--space-8)' }} />
         <AudienceSection />
-        <div style={{ height: 'var(--space-8)' }} />
         <FeaturedSchools />
-        <div style={{ height: 'var(--space-8)' }} />
-        <PromotionsSection />
-        <div style={{ height: 'var(--space-8)' }} />
         <FaqSection />
-        <div style={{ height: 'var(--space-8)' }} />
         <FinalCta />
-        <div style={{ height: 'var(--space-8)' }} />
       </main>
       <PublicFooter />
     </div>

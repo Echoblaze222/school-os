@@ -39,3 +39,9 @@
   max-width: 480px;
   position: relative;
 }
+
+.ctaButton {
+  background: #fff;
+  color: var(--brand);
+  position: relative;
+}

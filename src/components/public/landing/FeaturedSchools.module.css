@@ -46,6 +46,15 @@
   margin-bottom: var(--space-2);
 }
 
+.emptyBody {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.emptyCta {
+  margin-top: var(--space-2);
+}
+
 @media (min-width: 640px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
 }

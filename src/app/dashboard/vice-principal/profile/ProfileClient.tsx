@@ -3,6 +3,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { UserIcon, CameraIcon } from '@/components/Icons'
@@ -72,7 +73,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
     >
       <div className={styles.avatarSection}>
         <button className={styles.avatarWrap} onClick={() => fileRef.current?.click()} disabled={uploadingPhoto}>
-          {avatarUrl ? <img src={avatarUrl} alt="" /> : <UserIcon size={28} />}
+          {avatarUrl ? <Image src={avatarUrl} alt="" width={64} height={64} /> : <UserIcon size={28} />}
           <span className={styles.cameraBadge}><CameraIcon size={12} /></span>
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={handlePhotoChange} />

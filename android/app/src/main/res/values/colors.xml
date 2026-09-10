@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SchoolOS brand burgundy, matches the web app's login-brand fallback
+         and the launcher icon's background. -->
+    <color name="colorPrimary">#800020</color>
+    <color name="colorPrimaryDark">#5C0017</color>
+    <color name="colorAccent">#178A9E</color>
+
+    <!-- Splash screen background, light mode. Matches the web app's own
+         bg-base light value (src/app/globals.css) rather than an
+         arbitrary white, so the splash reads as the same surface as the
+         app it's about to show. Dark mode value lives in
+         values-night/colors.xml - same resource name, resolved
+         automatically by system theme. -->
+    <color name="splashBackground">#F4F6FB</color>
+
+    <!-- Splash screen icon disc color (windowSplashScreenIconBackgroundColor
+         in values/styles.xml). The real logo (public/icons/logo.png) uses a
+         gradient burgundy background, which Android's splash icon
+         background can't reproduce (solid color only) - this is the
+         closer single-color match of the two existing brand colors;
+         colorPrimary read visibly lighter than the actual artwork. -->
+    <color name="splashIconBackground">#5C0017</color>
+</resources>

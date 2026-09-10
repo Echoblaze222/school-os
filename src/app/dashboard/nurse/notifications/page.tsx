@@ -11,7 +11,7 @@ export default async function NurseNotificationsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, school_id')
+    .select('full_name, avatar_url, role, school_id')
     .eq('id', user.id)
     .single()
 

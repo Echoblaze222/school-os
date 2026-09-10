@@ -34,7 +34,6 @@ export default function FaqSection() {
   return (
     <section className="page-content">
       <div className={styles.headingRow}>
-        <span className="overline">Questions</span>
         <h2 className="h2">Frequently asked questions</h2>
       </div>
 

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import type { ManagedUser, UserRole } from './page'
@@ -131,7 +132,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
                 <div key={u.id} className={`${styles.userRow} ${!u.is_active?styles.userRowInactive:''}`}>
                   <div className={styles.userMain}>
                     <div className={styles.userAvatar}>
-                      {u.avatar_url ? <img className={styles.userAvatarImg} src={u.avatar_url} alt={u.full_name}/> : initials(u.full_name)}
+                      {u.avatar_url ? <Image className={styles.userAvatarImg} src={u.avatar_url} alt={u.full_name} width={44} height={44}/> : initials(u.full_name)}
                       {!u.is_active && <span className={styles.inactiveDot}/>}
                     </div>
                     <div className={styles.userInfo}>
@@ -172,7 +173,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
           <aside className={styles.drawer} onClick={e=>e.stopPropagation()}>
             <div className={styles.drawerHandle}/>
             <div className={styles.drawerAvatar}>
-              {selected.avatar_url?<img className={styles.drawerAvatarImg} src={selected.avatar_url} alt={selected.full_name}/>:initials(selected.full_name)}
+              {selected.avatar_url?<Image className={styles.drawerAvatarImg} src={selected.avatar_url} alt={selected.full_name} width={72} height={72}/>:initials(selected.full_name)}
             </div>
             <p className={styles.drawerName}>{selected.full_name}</p>
             <span className={styles.drawerRoleBadge} style={{

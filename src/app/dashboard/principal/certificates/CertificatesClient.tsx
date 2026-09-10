@@ -290,14 +290,14 @@ function CertificateSettingsForm({ school, onClose }: { school: any; onClose: ()
   return (
     <div className="glass-card" style={{ flexDirection: 'column', padding: 'var(--space-5)', gap: 12 }}>
       {error && <p style={{ fontSize: '0.78rem', color: 'var(--danger)', margin: 0 }}>{error}</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
         <Field label="Principal Name" value={form.principal_name} onChange={v => setForm(f => ({ ...f, principal_name: v }))} />
         <Field label="Principal Title" value={form.principal_title} onChange={v => setForm(f => ({ ...f, principal_title: v }))} />
         <Field label="Certificate Prefix" value={form.certificate_prefix} onChange={v => setForm(f => ({ ...f, certificate_prefix: v.toUpperCase() }))} placeholder="CERT" />
         <Field label="Verification Base URL" value={form.verification_base_url} onChange={v => setForm(f => ({ ...f, verification_base_url: v }))} placeholder="https://yourschool.schoolos.app" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
         <AssetUpload label="Principal Signature" url={form.signature_url} uploading={uploadingField === 'signature_url'} onUpload={f => uploadAsset('signature_url', f)} />
         <AssetUpload label="School Stamp / Seal" url={form.stamp_url} uploading={uploadingField === 'stamp_url'} onUpload={f => uploadAsset('stamp_url', f)} />
       </div>
@@ -320,10 +320,10 @@ function CertificateSettingsForm({ school, onClose }: { school: any; onClose: ()
 
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>{label}</span>
       <input value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
-        style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem' }} />
+        style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem', width: '100%', boxSizing: 'border-box' as const }} />
     </label>
   )
 }

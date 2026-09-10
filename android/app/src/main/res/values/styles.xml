@@ -16,7 +16,58 @@
     </style>
 
 
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+    <!--
+      This extends Theme.SplashScreen, which doesn't exist as a native
+      platform theme before API 31 - it resolves here via androidx.core's
+      core-splashscreen compat library, which backports the same
+      windowSplashScreen* system down to API 21.
+
+      That's the actual bug this whole style had: android:background is
+      a plain window-background attribute, but the compat library's
+      Theme.SplashScreen implementation never reads it - it only reads
+      its own custom windowSplashScreenBackground / windowSplashScreenAnimatedIcon
+      attrs (same names as the real platform API on 31+, just without
+      the android: prefix since they're backported, not native). Setting
+      android:background here was a no-op on every version this file
+      applies to (API 21-30) - it silently fell through to the same
+      "tiny default icon on a plain background" fallback as the
+      unfixed API 31+ case, just via a different mechanism. This is why
+      the fix in values-v31/styles.xml never took effect on an Android 11
+      device: that override doesn't apply below API 31, and THIS file -
+      the one that actually applies - was never correctly fixed until now.
+
+      windowSplashScreenBrandingImage has no compat equivalent (confirmed
+      by an earlier "attr not found" build failure when it was attempted
+      without the android: prefix - the compat library genuinely doesn't
+      define it), and its underlying asset (the "[icon] OS" lockup) used
+      dark maroon text that only reads on a light surface anyway. Since
+      splashBackground below now switches between light/dark per system
+      theme (values/colors.xml + values-night/colors.xml), a single icon
+      that stays legible either way was the simpler, more robust choice
+      than a wordmark image that only worked in one mode. Applies to
+      every API level this way - no separate values-v31 override needed
+      anymore, which also removes the two-file-must-stay-in-sync risk
+      that caused this exact bug in the first place (the v31 fix landed
+      correctly, the base file was forgotten).
+
+      windowSplashScreenAnimatedIcon references @drawable/ic_launcher_foreground
+      - now a proper hand-built vector of the actual diamond mark
+      (previously this file was Android Studio's default placeholder
+      mascot icon, left over from scaffolding; commit c596d5c worked
+      around that by pointing at the raster mipmap version instead).
+      With the vector itself fixed, using it directly is correct again
+      per Android's documented pattern (vector, not raster).
+      Note: the real home-screen adaptive icon
+      (mipmap-anydpi-v26/ic_launcher.xml) references
+      @mipmap/ic_launcher_foreground, not this drawable - it was
+      already using correct raster artwork and is unaffected either
+      way. This vector was previously unused dead weight; now it's
+      actually wired in, just for the splash screen specifically.
+    -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splashIconBackground</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

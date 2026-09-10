@@ -2,6 +2,7 @@
 
 // src/app/dashboard/student/meetings/StudentMeetingsClient.tsx
 
+import { useRouter } from 'next/navigation'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import styles from './student-meetings.module.css'
@@ -133,6 +134,7 @@ function MeetingCard({
   userId: string; schoolId: string; profile: any
 }) {
   const typeLabel = MEETING_TYPE_LABELS[meeting.meeting_type] ?? meeting.meeting_type
+  const router = useRouter()
 
   return (
     <div className={styles.listCard} style={{ animationDelay: `${index * 50}ms` }}>
@@ -184,6 +186,16 @@ function MeetingCard({
             </svg>
             Join Meeting
           </a>
+        )}
+        {!meeting.meeting_url && meeting.provider === 'livekit' && !isPast && meeting.is_live && (
+          // Only shown once is_live is true - nothing useful to do before
+          // the host has actually started the room.
+          <button
+            onClick={() => router.push(`/dashboard/student/meetings/room/${meeting.id}`)}
+            className={styles.listJoinBtn} style={{ border: 'none', cursor: 'pointer' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            Join Live Meeting
+          </button>
         )}
       </div>
     </div>

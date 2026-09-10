@@ -33,11 +33,11 @@ export default async function FeaturedSchools() {
         <div className={`${styles.emptyCard} glass-card`}>
           <div className={styles.emptyIcon}><SchoolIcon size={22} /></div>
           <h3 className="h3">Be the first school on SchoolOS</h3>
-          <p className="body" style={{ maxWidth: 480, margin: '0 auto' }}>
+          <p className={`body ${styles.emptyBody}`}>
             Public school profiles are opt-in. Register your school and turn on your
             public profile from Settings to appear here.
           </p>
-          <Link href="/register-school" className="btn btn-primary" style={{ marginTop: 'var(--space-2)' }}>
+          <Link href="/register-school" className={`btn btn-primary ${styles.emptyCta}`}>
             Register your school <ArrowRightIcon size={14} />
           </Link>
         </div>
@@ -48,10 +48,7 @@ export default async function FeaturedSchools() {
   return (
     <section className="page-content">
       <div className={styles.headingRow}>
-        <div>
-          <span className="overline">On SchoolOS</span>
-          <h2 className="h2">Schools already on the platform</h2>
-        </div>
+        <h2 className="h2">Schools already on the platform</h2>
         {total > schools.length && (
           <Link href="/find-schools" className={styles.seeAll}>
             See all {total} <ArrowRightIcon size={13} />

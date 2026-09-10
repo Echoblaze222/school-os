@@ -31,7 +31,6 @@ export default function ValueProps() {
   return (
     <section className="page-content">
       <div className={styles.headingRow}>
-        <span className="overline">What is SchoolOS</span>
         <h2 className="h2">Everything a Nigerian school runs on, in one place</h2>
       </div>
 

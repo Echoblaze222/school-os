@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import styles from './login.module.css'
 import {
@@ -21,6 +22,7 @@ interface SelectedSchool {
   id: string
   name: string
   primaryColor: string | null
+  logoUrl?: string | null
 }
 
 const SCHOOL_KEY = 'schoolos_selected_school'
@@ -50,10 +52,19 @@ export default function LoginPage() {
   const [showNewPass,    setShowNewPass]    = useState(false)
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [newUserError,   setNewUserError]   = useState('')
+  const returnToRef = useRef<string | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'timeout') setIsTimeout(true)
+
+    // Only accept a same-app dashboard path - never an absolute URL or
+    // protocol-relative one (e.g. "//evil.com"), which would otherwise
+    // make this an open redirect via a crafted ?returnTo= link.
+    const rt = params.get('returnTo')
+    if (rt && rt.startsWith('/dashboard/') && !rt.startsWith('//')) {
+      returnToRef.current = rt
+    }
 
     const stored = localStorage.getItem(SCHOOL_KEY)
     if (!stored) {
@@ -94,15 +105,19 @@ export default function LoginPage() {
     const colorFetch = Promise.allSettled([
       supabase
         .from('schools')
-        .select('primary_color')
+        .select('primary_color, logo_url')
         .eq('id', parsedSchool.id)
         .single()
         .then(({ data }) => {
-          if (data?.primary_color) {
-            setSchool(s => s ? { ...s, primaryColor: data.primary_color } : s)
+          if (data?.primary_color || data?.logo_url) {
+            setSchool(s => s ? { ...s, primaryColor: data.primary_color ?? s.primaryColor, logoUrl: data.logo_url ?? s.logoUrl } : s)
             // Keep the cache in step so the next visit starts from the
-            // right colour even before this fetch resolves.
-            localStorage.setItem(SCHOOL_KEY, JSON.stringify({ ...parsedSchool, primaryColor: data.primary_color }))
+            // right colour/logo even before this fetch resolves.
+            localStorage.setItem(SCHOOL_KEY, JSON.stringify({
+              ...parsedSchool,
+              primaryColor: data.primary_color ?? parsedSchool.primaryColor,
+              logoUrl: data.logo_url ?? parsedSchool.logoUrl,
+            }))
           }
         }),
       supabase
@@ -148,10 +163,11 @@ export default function LoginPage() {
     // activation - a user who closes the browser mid-onboarding and
     // signs back in normally must still be sent here, not straight to
     // /dashboard, since this is also where Terms & Privacy acceptance
-    // is collected and recorded.
+    // is collected and recorded. returnTo only applies once onboarding
+    // is actually done - it must never be able to skip this gate.
     if (stage === 'stage_1_pending') return '/onboarding/stage-1'
     if (stage === 'stage_2_pending') return '/onboarding/stage-2'
-    return '/dashboard'
+    return returnToRef.current ?? '/dashboard'
   }
 
   async function handleExistingLogin(e: React.FormEvent) {
@@ -264,8 +280,15 @@ export default function LoginPage() {
         <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
 
           <div className={styles.topBar}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/logo.png" alt="SchoolOS" className={styles.logo} />
+            {school?.logoUrl ? (
+              <Image src={school.logoUrl} alt={school.name} width={44} height={44} className={styles.logo} />
+            ) : school ? (
+              <span className={styles.logoFallback} style={{ background: school.primaryColor || '#800020' }}>
+                {school.name[0]?.toUpperCase()}
+              </span>
+            ) : (
+              <Image src="/icons/logo.png" alt="SchoolOS" width={44} height={44} className={styles.logo} />
+            )}
             <div className={styles.topBarText}>
               <span className={styles.appName}>SchoolOS</span>
               {school ? (

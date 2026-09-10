@@ -77,7 +77,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
   }
 
   return (
-    <div className={styles.page} style={{ background: 'color-mix(in srgb, var(--brand) 6%, var(--bg-base))' }}>
+    <div className={styles.page}>
       <RoleHeroHeader
         userId={userId}
         role="student"
@@ -95,25 +95,21 @@ export default function StudentDashboardClient({ profile, school, userId, counts
       <main className={styles.main}>
 
         {c.isLive && (
-          <Link href="/dashboard/student/classes" className={`glass-card ${motion.riseIn} ${motion.pressable}`} style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 'var(--radius-xl)',
-            marginTop: 'var(--space-6)', marginBottom: 'var(--space-3)',
-            border: '1px solid var(--status-warn, #E4572E)', textDecoration: 'none',
-          }}>
-            <span style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--status-warn, #E4572E)' }} className={motion.pulseDot} />
-            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>A class is live right now, tap to join</span>
+          <Link
+            href="/dashboard/student/classes"
+            className={`glass-card ${motion.riseIn} ${motion.pressable} ${styles.liveBanner}`}
+          >
+            <span className={`${styles.liveDot} ${motion.pulseDot}`} />
+            <span className={styles.liveBannerLabel}>A class is live right now, tap to join</span>
           </Link>
         )}
 
-        <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
-          marginTop: c.isLive ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
-        }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+        <div className={`${motion.riseIn} ${styles.gaugeGrid} ${c.isLive ? '' : styles.withTopSpace}`}>
+          <div className={`glass-card ${motion.pressable} ${styles.gaugeCard}`}>
             <GaugeStat label="My attendance" value={c.attendance ?? 0} isPercent
               color="var(--status-ok, #3FA66B)" caption="this term" />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+          <div className={`glass-card ${motion.pressable} ${styles.gaugeCard}`}>
             <GaugeStat
               label="Term GPA"
               value={c.gpa != null ? Math.round((c.gpa / 5) * 100) : 0}
@@ -122,13 +118,13 @@ export default function StudentDashboardClient({ profile, school, userId, counts
               color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
             />
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+          <div className={`glass-card ${motion.pressable} ${styles.gaugeCard}`}>
             <GaugeStat label="Tasks due" value={c.pendingTasks}
               color="var(--status-warn, #E4572E)" caption="this week" delayMs={160} />
           </div>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-4)' }}>
+        <div className={styles.insightRow}>
           <AiInsightBanner
             insight={buildInsight(c, firstName)}
             actionLabel="Ask AI Tutor →"
@@ -136,7 +132,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
           />
         </div>
 
-        <div className={styles.statsGrid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+        <div className={styles.statsGrid}>
           <KpiCard label="Open Quizzes" value={c.upcomingQuizzes} icon={<ClipboardIcon size={16} />} context="Not yet taken" />
           <KpiCard label="Class Rank" value={c.rank ? `#${c.rank}` : 'N/A'} icon={<TrophyIcon size={16} />} context="Current standing" />
         </div>

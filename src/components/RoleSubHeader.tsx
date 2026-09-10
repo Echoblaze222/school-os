@@ -14,6 +14,7 @@
 //   </RoleSubHeader>
 
 import Link from 'next/link'
+import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
 import BottomDock from './BottomDock'
@@ -64,7 +65,7 @@ export default function RoleSubHeader({
               </Link>
               <div className={styles.crest}>
                 {school?.logo_url
-                  ? <img src={school.logo_url} alt="" className={styles.crestImg} />
+                  ? <Image src={school.logo_url} alt="" width={36} height={36} className={styles.crestImg} />
                   : initials}
               </div>
               <div className={styles.titleBlock}>
@@ -93,7 +94,7 @@ export default function RoleSubHeader({
                 aria-label="Account"
               >
                 {profile?.avatar_url
-                  ? <img src={profile.avatar_url} alt="" className={styles.avatarImg} />
+                  ? <Image src={profile.avatar_url} alt="" width={38} height={38} className={styles.avatarImg} />
                   : <UserIcon size={18} />}
               </Link>
 

@@ -15,7 +15,7 @@ export default async function StudentAnnouncementsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, school_id')
+    .select('role, full_name, avatar_url, school_id')
     .eq('id', user.id)
     .single()
 
