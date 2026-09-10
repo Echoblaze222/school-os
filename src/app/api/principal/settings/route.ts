@@ -196,7 +196,7 @@ export async function POST(req: Request) {
   await admin.from('notifications').insert({
     user_id:   profile.id,
     school_id: profile.school_id,
-    title:     '⚙️ Settings Updated',
+    title:     'Settings Updated',
     body:      'Your school settings were saved successfully.',
     type:      'system',
   }).then(() => {/* fire-and-forget */})

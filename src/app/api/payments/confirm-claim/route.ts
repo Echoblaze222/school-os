@@ -206,7 +206,7 @@ export async function POST(req: Request) {
   await admin.from('notifications').insert({
     user_id:    parent_id,
     school_id,
-    title:      'Payment Confirmed ✓',
+    title:      'Payment Confirmed',
     body:       `Your payment of ${fmtAmount} for ${fee_type?.replace(/_/g,' ')} (${term} ${year}) has been confirmed. Balance updated.`,
     type:       'payment',
     action_url: '/dashboard/parent/fees',
