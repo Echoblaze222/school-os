@@ -31,6 +31,10 @@ interface Props {
   school:        any
   title:         string
   backHref?:     string          // defaults to the role's dashboard home
+  onBack?:       () => void      // for multi-step flows living on one route
+                                  // (e.g. a wizard's own "previous step"),
+                                  // where "back" isn't a URL at all. Takes
+                                  // precedence over backHref when given.
   featureGroups: FeatureGroup[]
   homeHref?:     string          // for BottomDock - defaults to the role's dashboard home
   aiHref?:       string          // for BottomDock - defaults to `${role}/ai`
@@ -39,7 +43,7 @@ interface Props {
 }
 
 export default function RoleSubHeader({
-  userId, role, profile, school, title, backHref, featureGroups,
+  userId, role, profile, school, title, backHref, onBack, featureGroups,
   homeHref, aiHref, hideDock = false, children,
 }: Props) {
   const { theme, toggleTheme } = useTheme()
@@ -54,15 +58,28 @@ export default function RoleSubHeader({
         <div className={styles.frame}>
           <div className={styles.topRow}>
             <div className={styles.brand}>
-              <Link
-                href={resolvedBack}
-                className={`${styles.backBtn} ${motion.rippleHost} ${motion.focusable}`}
-                title="Back"
-                aria-label="Back"
-                onMouseDown={ripple(motion)}
-              >
-                <ArrowLeftIcon size={17} />
-              </Link>
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className={`${styles.backBtn} ${motion.rippleHost} ${motion.focusable}`}
+                  title="Back"
+                  aria-label="Back"
+                  onMouseDown={ripple(motion)}
+                >
+                  <ArrowLeftIcon size={17} />
+                </button>
+              ) : (
+                <Link
+                  href={resolvedBack}
+                  className={`${styles.backBtn} ${motion.rippleHost} ${motion.focusable}`}
+                  title="Back"
+                  aria-label="Back"
+                  onMouseDown={ripple(motion)}
+                >
+                  <ArrowLeftIcon size={17} />
+                </Link>
+              )}
               <div className={styles.crest}>
                 {school?.logo_url
                   ? <Image src={school.logo_url} alt="" width={36} height={36} className={styles.crestImg} />

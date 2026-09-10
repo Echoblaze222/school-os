@@ -11,47 +11,19 @@ import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
+import { TEACHER_FEATURE_GROUPS } from './featureGroups'
 import {
-  PeopleIcon, ClipboardIcon, BarChartIcon,
-  VideoIcon, BookIcon, BellIcon, CalendarIcon,
-  AwardIcon, MessageIcon, BookOpenIcon, ClockIcon,
-  MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon, AwardIcon as ExamIcon,
+  BookOpenIcon, PeopleIcon, AwardIcon as ExamIcon,
 } from '@/components/Icons'
 import styles from './teacher.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
-// Built once statically; the exam-committee item is spliced in below only
-// for teachers who actually hold an active exam appointment, a teacher
-// with none of these appointments never sees it, per "one user, multiple
-// contexts": the extra dashboard only appears while the appointment is
-// active, base teacher functionality is unaffected either way.
-const FEATURE_GROUPS: FeatureGroup[] = [
-  { name: 'Teaching', items: [
-    { id: 'classes',     label: 'My classes',  href: '/dashboard/teacher/classes',     Icon: PeopleIcon },
-    { id: 'attendance',  label: 'Attendance',  href: '/dashboard/teacher/attendance',  Icon: CalendarIcon },
-    { id: 'assignments', label: 'Assignments', href: '/dashboard/teacher/assignments', Icon: ClipboardIcon },
-    { id: 'grades',      label: 'Grades',      href: '/dashboard/teacher/grades',      Icon: BarChartIcon },
-    { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/teacher/quizzes',     Icon: AwardIcon },
-    { id: 'results',     label: 'Results',     href: '/dashboard/teacher/results',     Icon: BarChartIcon },
-  ]},
-  { name: 'Around school', items: [
-    { id: 'live',      label: 'Live class', href: '/dashboard/teacher/live',      Icon: VideoIcon },
-    { id: 'notes',     label: 'Study notes',href: '/dashboard/teacher/notes',     Icon: BookIcon },
-    { id: 'timetable', label: 'Timetable',  href: '/dashboard/teacher/timetable', Icon: ClockIcon },
-    { id: 'syllabus',  label: 'Syllabus',   href: '/dashboard/teacher/syllabus',  Icon: BookOpenIcon },
-    { id: 'clinic',    label: 'Clinic',     href: '/dashboard/teacher/clinic',    Icon: ActivityIcon },
-  ]},
-  { name: 'Communication', items: [
-    { id: 'chat',          label: 'Messages',      href: '/dashboard/teacher/chat',          Icon: MessageIcon },
-    { id: 'announcements', label: 'Announcements', href: '/dashboard/teacher/announcements', Icon: MegaphoneIcon },
-    { id: 'meetings',      label: 'Staff meetings',href: '/dashboard/teacher/meetings',      Icon: CalendarIcon },
-    { id: 'notices',       label: 'Notices',       href: '/dashboard/teacher/notifications', Icon: BellIcon },
-  ]},
-  { name: 'Account', items: [
-    { id: 'audit',   label: 'Audit log', href: '/dashboard/teacher/audit',   Icon: ShieldIcon },
-    { id: 'profile', label: 'Profile',   href: '/dashboard/teacher/profile', Icon: UserIcon },
-  ]},
-]
+// The exam-committee item is spliced in below only for teachers who
+// actually hold an active exam appointment - a teacher with none of
+// these appointments never sees it, per "one user, multiple contexts":
+// the extra dashboard only appears while the appointment is active,
+// base teacher functionality is unaffected either way.
+const FEATURE_GROUPS = TEACHER_FEATURE_GROUPS
 
 interface Props {
   profile: any

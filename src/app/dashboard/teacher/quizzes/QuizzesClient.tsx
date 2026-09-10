@@ -31,7 +31,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { AwardIcon, PlusIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -518,17 +519,13 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
   // ── Preview / Edit existing quiz ──────────────────────────────────────────
   if (step === 'preview' && editingQuiz) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Edit Quiz" showBack={false}>
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Edit Quiz" onBack={backToList} featureGroups={TEACHER_FEATURE_GROUPS}>
       <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
         <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{editingQuiz.title}</p>
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
           {editingQuiz.classes?.name ?? 'N/A'} · {editingQuiz.total_marks} marks · {questions.length} question{questions.length !== 1 ? 's' : ''}
         </p>
       </div>
-      <button className="pressable" onClick={backToList}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        ← Back to Quizzes
-      </button>
       <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>Edit Questions</p>
       <QuestionBuilder
         questions={questions} setQuestions={setQuestions}
@@ -537,16 +534,12 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         saving={saving} saveError={saveError} sc={sc}
       />
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   // ── New quiz: add questions step ──────────────────────────────────────────
   if (step === 'questions') return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Add Questions" showBack={false}>
-      <button className="pressable" onClick={backToList}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        ← Back to Quizzes
-      </button>
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Add Questions" onBack={backToList} featureGroups={TEACHER_FEATURE_GROUPS}>
       <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
         Quiz: <strong style={{ color: 'var(--text-primary)' }}>{newQuiz?.title}</strong>
         {newQuiz?.classes?.name && <span style={{ color: sc, marginLeft: 8 }}>· {newQuiz.classes.name}</span>}
@@ -558,16 +551,12 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         saving={saving} saveError={saveError} sc={sc}
       />
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   // ── Create form ───────────────────────────────────────────────────────────
   if (step === 'create') return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" showBack={false}>
-      <button className="pressable" onClick={backToList}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--space-4)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        ← Back to Quizzes
-      </button>
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" onBack={backToList} featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {saveError && (
         <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
@@ -586,20 +575,20 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
           <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Quiz Title *</label>
+            <label className="input-label">Quiz Title *</label>
             <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Chapter 5 Test"
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+              className="input" />
           </div>
 
           <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Assign to Class *</label>
+            <label className="input-label">Assign to Class *</label>
             <select value={form.class_id}
               onChange={e => {
                 const cls = teacherClasses.find(c => c.class_id === e.target.value)
                 setForm(f => ({ ...f, class_id: e.target.value, class_subject_id: cls?.class_subject_id ?? '' }))
               }}
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
+              className="input">
               <option value="">Select a class</option>
               {teacherClasses.map(cls => (
                 <option key={cls.class_id} value={cls.class_id}>
@@ -616,21 +605,21 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Marks</label>
+            <label className="input-label">Total Marks</label>
             <input type="number" min={1} value={form.total_marks}
               onChange={e => setForm(f => ({ ...f, total_marks: Number(e.target.value) }))}
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+              className="input" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Attempt Limit</label>
+            <label className="input-label">Attempt Limit</label>
             <select value={form.attempt_limit} onChange={e => setForm(f => ({ ...f, attempt_limit: Number(e.target.value) }))}
-              style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
+              className="input">
               {[1, 2, 3, 5].map(n => <option key={n} value={n}>{n === 1 ? '1 attempt' : `${n} attempts`}</option>)}
             </select>
           </div>
         </div>
 
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: 'var(--space-4)' }}>
+        <div className="glass-card-flat" style={{ padding: 'var(--space-4)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 var(--space-3)' }}>Exam Mode</p>
           <div style={{ display: 'flex', gap: 8, marginBottom: form.mode === 'cbt' ? 'var(--space-3)' : 0 }}>
             {(['quiz', 'cbt'] as const).map(m => (
@@ -645,16 +634,16 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
           {form.mode === 'cbt' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Duration (minutes)</label>
+                <label className="input-label">Duration (minutes)</label>
                 <input type="number" min={5} max={300} value={form.duration_mins}
                   onChange={e => setForm(f => ({ ...f, duration_mins: Number(e.target.value) }))}
-                  style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                  className="input" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Pass Mark (%)</label>
+                <label className="input-label">Pass Mark (%)</label>
                 <input type="number" min={0} max={100} value={form.pass_mark}
                   onChange={e => setForm(f => ({ ...f, pass_mark: e.target.value === '' ? '' : Number(e.target.value) }))}
-                  placeholder="Optional" style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                  placeholder="Optional" className="input" />
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.randomize_questions} onChange={e => setForm(f => ({ ...f, randomize_questions: e.target.checked }))} />
@@ -672,37 +661,36 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
           )}
         </div>
 
-        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: 'var(--space-4)' }}>
+        <div className="glass-card-flat" style={{ padding: 'var(--space-4)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 var(--space-3)' }}>Scheduling</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Opens At</label>
+              <label className="input-label">Opens At</label>
               <input type="datetime-local" value={form.starts_at} onChange={e => setForm(f => ({ ...f, starts_at: e.target.value }))}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
+                className="input" />
               <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>Leave blank = open now</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Closes At</label>
+              <label className="input-label">Closes At</label>
               <input type="datetime-local" value={form.ends_at} onChange={e => setForm(f => ({ ...f, ends_at: e.target.value }))}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
+                className="input" />
               <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>Leave blank = 7 days from now</p>
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button className="pressable" onClick={createQuiz} disabled={saving || !form.title || !form.class_id}
-            style={{ flex: 1, height: 44, background: sc, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', opacity: saving || !form.class_id ? 0.5 : 1 }}>
+          <button className="btn pressable" onClick={createQuiz} disabled={saving || !form.title || !form.class_id}
+            style={{ flex: 1, background: sc, color: '#fff' }}>
             {saving ? 'Creating...' : 'Continue → Add Questions'}
           </button>
-          <button className="pressable" onClick={backToList}
-            style={{ height: 44, padding: '0 16px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 10, color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
+          <button className="btn btn-secondary pressable" onClick={backToList}>
             Cancel
           </button>
         </div>
       </div>
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   const liveCount = quizzes.filter(q => quizStatus(q) === 'live').length
@@ -710,7 +698,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
   // ── Quiz list (default) ───────────────────────────────────────────────────
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Quizzes" showBack={false}>
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Quizzes" featureGroups={TEACHER_FEATURE_GROUPS}>
       {quizzes.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 'var(--space-4)' }}>
           <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
@@ -777,6 +765,6 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
         </div>
       )}
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
