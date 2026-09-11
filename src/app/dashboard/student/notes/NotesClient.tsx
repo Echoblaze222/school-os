@@ -23,7 +23,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { BookIcon, AlertIcon, XIcon, FileTextIcon, BookOpenIcon } from '@/components/Icons'
 import NoteBook from '@/components/NoteBook'
 import DocumentViewer from '@/components/DocumentViewer'
@@ -92,7 +93,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="School Notes">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="School Notes" featureGroups={STUDENT_FEATURE_GROUPS}>
         <>
 
           {error && (
@@ -160,6 +161,6 @@ export default function NotesClient({ profile, school, userId }: Props) {
           onClose={() => setOpenDoc(null)}
         />
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

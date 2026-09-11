@@ -10,39 +10,10 @@ import GaugeStat from '@/components/GaugeStat'
 import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
-import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import {
-  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon,
-  BookIcon, MessageIcon, CalendarIcon, FileTextIcon, BookOpenIcon,
-  GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon,
-} from '@/components/Icons'
+import { STUDENT_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
+import { ClipboardIcon, TrophyIcon } from '@/components/Icons'
 import styles from './student-dashboard.module.css'
 import motion from '@/components/dashboard-motion.module.css'
-
-const FEATURE_GROUPS: FeatureGroup[] = [
-  { name: 'Learning', items: [
-    { id: 'assignments', label: 'Assignments', href: '/dashboard/student/assignments', Icon: ClipboardIcon },
-    { id: 'results',     label: 'Results',     href: '/dashboard/student/results',     Icon: BarChartIcon },
-    { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/student/quizzes',     Icon: AwardIcon },
-    { id: 'classes',     label: 'Live classes',href: '/dashboard/student/classes',     Icon: VideoIcon },
-    { id: 'notes',       label: 'Notes',       href: '/dashboard/student/notes',       Icon: BookIcon },
-    { id: 'syllabus',    label: 'Syllabus',    href: '/dashboard/student/syllabus',    Icon: BookOpenIcon },
-  ]},
-  { name: 'Around school', items: [
-    { id: 'timetable',   label: 'Timetable',   href: '/dashboard/student/timetable',   Icon: ClockIcon },
-    { id: 'library',     label: 'Library',     href: '/dashboard/student/library',     Icon: BookIcon },
-    { id: 'leaderboard', label: 'Leaderboard', href: '/dashboard/student/leaderboard', Icon: TrophyIcon },
-    { id: 'id-card',     label: 'My ID card',  href: '/dashboard/student/id-card',     Icon: IdCardIcon },
-    { id: 'records',     label: 'Records',     href: '/dashboard/student/records',     Icon: FileTextIcon },
-    { id: 'alumni',      label: 'Alumni',      href: '/dashboard/student/alumni',      Icon: GlobeIcon },
-    { id: 'certificates',label: 'Certificate', href: '/dashboard/student/certificates',Icon: GraduationCapIcon },
-  ]},
-  { name: 'Communication', items: [
-    { id: 'chat',     label: 'Messages', href: '/dashboard/student/chat',     Icon: MessageIcon },
-    { id: 'meetings', label: 'Meetings', href: '/dashboard/student/meetings', Icon: CalendarIcon },
-    { id: 'schedule', label: 'Study plan',href: '/dashboard/student/schedule',Icon: CalendarIcon },
-  ]},
-]
 
 interface Counts {
   pendingTasks: number; upcomingQuizzes: number; isLive: boolean
