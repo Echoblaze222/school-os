@@ -205,7 +205,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
             {d.slice(0, 3)}
           </button>
         ))}
-        <button className="pressable" onClick={() => setShowForm(!showForm)}
+        <button className="pressable" onClick={() => setShowForm(true)}
           style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}>
           <PlusIcon size={13} color="white" /> Add
         </button>

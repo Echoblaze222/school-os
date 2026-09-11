@@ -17,6 +17,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import type { SchoolInfo } from './page'
 import { ArrowLeftIcon, SunIcon, MoonIcon, XIcon, CheckIcon, AlertIcon, PrinterIcon } from '@/components/Icons'
@@ -100,6 +101,12 @@ export default function RecordPaymentClient({
 
   const [mounted, setMounted] = useState(false)
   const [isDark,  setIsDark]  = useState(true)
+  const toggleTheme = useSingleFireClick(() => {
+    const next = isDark ? 'light' : 'dark'
+    setIsDark(p => !p)
+    localStorage.setItem('schoolos_theme', next)
+    document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '')
+  })
 
   // Student search
   const [searchQuery,     setSearchQuery]      = useState(searchParams.get('student') ?? '')
@@ -470,12 +477,7 @@ export default function RecordPaymentClient({
         <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, flex: 1 }}>
           Record Payment
         </h1>
-        <button onClick={() => {
-          const next = isDark ? 'light' : 'dark'
-          setIsDark(!isDark)
-          localStorage.setItem('schoolos_theme', next)
-          document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '')
-        }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+        <button onClick={toggleTheme} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           {isDark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
         </button>
       </div>

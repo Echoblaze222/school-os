@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { FlameIcon, CheckCircleIcon, ClockIcon, WalletIcon, PeopleIcon, AlertCircleIcon, CreditCardIcon, FileTextIcon, LockIcon, EyeIcon, SettingsIcon, ChevronUpIcon, ChevronDownIcon } from '@/components/Icons'
 import styles from './school-card.module.css'
 
@@ -42,6 +43,7 @@ async function manageSchool(payload: Record<string, unknown>) {
 
 export default function SchoolCard({ school, onRefresh }: { school: School; onRefresh: () => void }) {
   const [expanded,   setExpanded]   = useState(false)
+  const toggleExpanded = useSingleFireClick(() => setExpanded(p => !p))
   const [loading,    setLoading]    = useState(false)
   const [showPay,    setShowPay]    = useState(false)
   const [payAmount,  setPayAmount]  = useState('')
@@ -197,7 +199,7 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
           </button>
         )}
         {/* Toggle expand */}
-        <button className={styles.expandBtn} onClick={() => setExpanded(!expanded)}>
+        <button className={styles.expandBtn} onClick={toggleExpanded}>
           {expanded ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
         </button>
       </div>

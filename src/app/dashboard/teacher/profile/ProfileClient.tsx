@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import {
@@ -28,6 +29,7 @@ interface TeacherClass {
 
 export default function ProfileClient({ profile, school, userId }: Props) {
   const [editing,     setEditing]     = useState(false)
+  const toggleEditing = useSingleFireClick(() => setEditing(p => !p))
   const [saving,      setSaving]      = useState(false)
   const [fullName,    setFullName]    = useState(profile?.full_name    ?? '')
   const [phone,       setPhone]       = useState(profile?.phone        ?? '')
@@ -234,7 +236,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: 0 }}>
             Personal Info
           </p>
-          <button className="pressable" onClick={() => setEditing(!editing)} style={{
+          <button className="pressable" onClick={toggleEditing} style={{
             display: 'flex', alignItems: 'center', gap: 5,
             padding: '5px 12px',
             background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)',

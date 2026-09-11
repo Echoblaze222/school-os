@@ -103,7 +103,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
     <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Announcements" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'var(--space-4)' }}>
-        <button className="btn btn-sm pressable" onClick={() => setShowForm(!showForm)}
+        <button className="btn btn-sm pressable" onClick={() => setShowForm(true)}
           style={{ background:sc, color:'#fff', borderRadius:999 }}>
           <PlusIcon size={13} color="white"/> New Announcement
         </button>

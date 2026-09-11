@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import {
   UserIcon,
@@ -25,6 +26,7 @@ export default function ProfileClient({
   userId,
 }: Props) {
   const [editing, setEditing] = useState(false)
+  const toggleEditing = useSingleFireClick(() => setEditing(p => !p))
   const [saving, setSaving] = useState(false)
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [phone, setPhone] = useState(profile?.phone ?? '')
@@ -292,7 +294,7 @@ export default function ProfileClient({
           </p>
 
           <button className="pressable"
-            onClick={() => setEditing(!editing)}
+            onClick={toggleEditing}
             style={{
               display: 'flex',
               alignItems: 'center',

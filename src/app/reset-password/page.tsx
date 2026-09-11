@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import styles from './reset-password.module.css'
 
 type Stage = 'form' | 'success' | 'invalid'
@@ -18,6 +19,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const toggleShowPass = useSingleFireClick(() => setShowPass(p => !p))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -123,7 +125,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="button"
                   className={styles.eyeBtn}
-                  onClick={() => setShowPass(!showPass)}
+                  onClick={toggleShowPass}
                   tabIndex={-1}
                 >
                   {showPass ? '🙈' : '👁️'}

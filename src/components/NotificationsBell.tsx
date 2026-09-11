@@ -160,7 +160,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
             if (right < margin) right = margin
             setPanelPos({ top: rect.bottom + 10, right })
           }
-          setOpen(!open)
+          setOpen(true)
         }}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ''}`}
       >

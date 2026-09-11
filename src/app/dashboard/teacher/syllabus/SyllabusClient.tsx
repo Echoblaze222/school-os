@@ -322,7 +322,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
           )}
 
           <div className={styles.addTopicRow}>
-            <button onClick={() => { setShowAddTopic(!showAddTopic); setEditTopicId(null) }}
+            <button onClick={() => { setShowAddTopic(true); setEditTopicId(null) }}
               className={`${styles.addBtn} pressable`} style={{ background: sc }}>
               <PlusIcon size={13} color="white" /> Add Topic
             </button>
