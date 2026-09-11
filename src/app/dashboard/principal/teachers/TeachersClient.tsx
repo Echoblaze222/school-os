@@ -1,18 +1,19 @@
 'use client'
 // src/app/dashboard/principal/teachers/TeachersClient.tsx
-// FIX: replaced custom hardcoded bottom-nav with RolePageWrapper so the nav
+// FIX: replaced custom hardcoded bottom-nav with RoleSubHeader so the nav
 // pill matches every other principal sub-page (Staff, Stats, Home, Chat, AI).
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter }                    from 'next/navigation'
-import RolePageWrapper                  from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import type { TeacherRow }              from './page'
 import styles                           from './teachers.module.css'
 import { CrownIcon }                    from '@/components/Icons'
 
 interface Props {
   teachers: TeacherRow[]
-  // RolePageWrapper props - page.tsx must forward these
+  // RoleSubHeader props - page.tsx must forward these
   profile?: any
   school?:  any
   userId?:  string
@@ -86,13 +87,13 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
   ]
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId ?? ''}
       role="principal"
       profile={profile ?? null}
       school={school  ?? null}
       title="All Teachers"
-      showBack={false}
+      featureGroups={PRINCIPAL_FEATURE_GROUPS}
     >
       {/* Decorative orb */}
       <div className={styles.bgOrb} aria-hidden/>
@@ -337,7 +338,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
           </aside>
         </>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
           }
                       
