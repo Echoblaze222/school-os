@@ -1302,7 +1302,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           </div>
         </div>
         <button className={styles.moreBtn}
-          onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}>
+          onClick={e => { e.stopPropagation(); setShowMenu(true) }}>
           <MoreIcon size={20} />
         </button>
         {showMenu && (
