@@ -85,6 +85,12 @@ screenshot of this app seen so far.
   `teacher/quizzes/QuizzesClient.tsx` is the most thorough example (list,
   create, add-questions, preview/edit all migrated) - use it as the
   reference for future migrations.
+- **`principal` role: fully migrated, 0 files remaining.**
+  `featureGroups.ts` created; `PrincipalDashboardClient.tsx` migrated to
+  use it. All 18 files that referenced `RolePageWrapper` migrated to
+  `RoleSubHeader` (one, `results/PrincipalResultsClient.tsx`, turned out
+  to be a comment-only false positive and needed no change). See the
+  patterns section below this one for specific findings from this batch.
 
 ### Patterns discovered during the teacher batch (apply to future roles too)
 
@@ -117,7 +123,7 @@ screenshot of this app seen so far.
 
 ## Remaining (RolePageWrapper usages by role, at time of writing)
 
-- [ ] **principal** - 18 files
+- [x] ~~**principal** - 18 files~~ - **done, 0 remaining**
 - [x] ~~**teacher** - 15 files remaining (quizzes done)~~ - **done, 0 remaining**
 - [ ] **student** - 14 files
 - [ ] **secretary** - 14 files
@@ -136,8 +142,36 @@ screenshot of this app seen so far.
       check which role this belongs to
 
 None of these roles have a `featureGroups.ts` file yet - step 1 of the
-recipe above applies to all of them. `teacher/featureGroups.ts` is the
-reference example for the extraction pattern.
+recipe above applies to all of them. `teacher/featureGroups.ts` and
+`principal/featureGroups.ts` are the reference examples for the
+extraction pattern.
+
+### More patterns discovered during the principal batch
+
+- **Double-check icon imports when extracting a `featureGroups.ts`.**
+  During the principal extraction, a first pass removed icons that were
+  actually used elsewhere in the dashboard client's JSX body (KpiCards),
+  while accidentally keeping ones that were only ever used inside the
+  extracted `FEATURE_GROUPS` array. `grep -c '<IconName' file.tsx` per icon
+  before finalizing catches this - a diff that "looks plausible" isn't
+  enough.
+- **A `showBack`/conditional-visibility flag sometimes hides a real bug.**
+  `PrincipalMeetingsClient.tsx` toggled the old wrapper's back button
+  on/off based on view mode, relying on generic back-navigation to
+  "return to list" - which doesn't reliably work within a single-route,
+  multi-mode component. Migrating to `onBack` with an explicit mode-reset
+  callback isn't just parity, it's a correctness fix. Look for this
+  pattern (a boolean visibility prop instead of a real destination)
+  whenever migrating a multi-mode page.
+- **Not every grep hit is actually on `RolePageWrapper`.** Two more
+  comment-only false positives this batch (`results/PrincipalResultsClient.tsx`
+  explains its own inline color fallback by contrasting with
+  `RolePageWrapper`, without ever using it). Confirm actual JSX usage,
+  not just string presence, before assuming a file needs migration.
+- **Dynamic `role` prop.** `promotions/PromotionsClient.tsx` passes
+  `role={profile.role}` instead of a literal string - don't assume the
+  role prop is always hardcoded per file; check before templating a
+  batch script.
 
 ## Not yet started
 
