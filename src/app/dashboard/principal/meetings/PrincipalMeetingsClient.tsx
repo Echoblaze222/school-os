@@ -6,7 +6,8 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import styles from './principal-meetings.module.css'
 import { logActivity } from '@/lib/logActivity'
 import type { MeetingRow, ClassOption } from './page'
@@ -145,13 +146,14 @@ export default function PrincipalMeetingsClient({
   const sc       = school?.primary_color ?? '#7C3AED'
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="principal"
       profile={profile}
       school={school}
       title={mode === 'create' ? 'Create Meeting' : 'Meetings'}
-      showBack={mode === 'create'}
+      onBack={mode === 'create' ? () => { resetForm(); setMode('list') } : undefined}
+      featureGroups={PRINCIPAL_FEATURE_GROUPS}
     >
       {/* ── CREATE FORM ── */}
       {mode === 'create' && (
@@ -374,7 +376,7 @@ export default function PrincipalMeetingsClient({
       )}
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

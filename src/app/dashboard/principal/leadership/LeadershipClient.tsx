@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import DepartmentCard from '@/components/org/DepartmentCard'
 import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon, ClockIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
@@ -447,7 +448,7 @@ export default function LeadershipClient({
     new Date(b.revokedAt ?? b.assignedAt).getTime() - new Date(a.revokedAt ?? a.assignedAt).getTime())
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Leadership & Appointments">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Leadership & Appointments" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {error && <div className={styles.errorBanner}>{error}</div>}
 
       <div className={styles.pageToolbar}>
@@ -843,6 +844,6 @@ export default function LeadershipClient({
           </div>
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

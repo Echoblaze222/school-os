@@ -7,7 +7,8 @@
 
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import KpiCard from '@/components/KpiCard'
 import { VideoIcon, ClockIcon, BarChartIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -133,7 +134,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   ]
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Live Classes">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Live Classes" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
 
       {/* Stats row */}
       <div className={styles.statsRow} style={{ marginBottom: 'var(--space-5)' }}>
@@ -249,7 +250,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       }
 
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
   

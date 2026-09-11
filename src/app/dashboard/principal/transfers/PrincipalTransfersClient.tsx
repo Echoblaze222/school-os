@@ -4,7 +4,8 @@
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import styles from '@/app/dashboard/secretary/secretary.module.css'
 import KpiCard from '@/components/KpiCard'
 import { GraduationCapIcon, TransferIcon, ClockIcon, AlertIcon, CheckCircleIcon } from '@/components/Icons'
@@ -211,7 +212,7 @@ export default function PrincipalTransfersClient({
   }
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Transfers">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Transfers" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
 
       {/* ── Main tab switcher ── */}
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
@@ -530,6 +531,6 @@ export default function PrincipalTransfersClient({
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

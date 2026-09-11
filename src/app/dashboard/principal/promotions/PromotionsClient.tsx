@@ -2,7 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import { RefreshIcon, TrashIcon, ImageIcon } from '@/components/Icons'
 import type { PromotionRow } from './page'
 import styles from './promotions.module.css'
@@ -220,7 +221,7 @@ export default function PromotionsClient({ promotions, userId, profile, school }
   }
 
   return (
-    <RolePageWrapper userId={userId} role={profile.role} profile={profile} school={school} title="Promotions">
+    <RoleSubHeader userId={userId} role={profile.role} profile={profile} school={school} title="Promotions" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       <div className={styles.container}>
         <div className={styles.intro}>
           <p>
@@ -445,6 +446,6 @@ export default function PromotionsClient({ promotions, userId, profile, school }
           ))}
         </div>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

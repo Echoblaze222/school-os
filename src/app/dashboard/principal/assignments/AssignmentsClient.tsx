@@ -14,7 +14,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import styles from './assignments.module.css'
 import KpiCard from '@/components/KpiCard'
 import { AlertIcon, CheckIcon, XIcon, CalendarIcon, UserIcon, RefreshIcon } from '@/components/Icons'
@@ -157,7 +158,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Assignments">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Assignments" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {subsError && (
         <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
           borderRadius: 8, marginBottom: 16, fontSize: '0.78rem', color: '#EF4444', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -368,6 +369,6 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
         )}
         <div style={{ height: 100 }}/>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

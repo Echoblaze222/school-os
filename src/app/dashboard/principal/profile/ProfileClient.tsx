@@ -4,7 +4,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import {
   UserIcon,
   CameraIcon,
@@ -141,12 +142,13 @@ export default function ProfileClient({
   ]
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="principal"
       profile={profile}
       school={school}
       title="My Profile"
+      featureGroups={PRINCIPAL_FEATURE_GROUPS}
     >
       <div
         style={{
@@ -482,6 +484,6 @@ export default function ProfileClient({
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
