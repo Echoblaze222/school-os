@@ -2,6 +2,7 @@
 // src/app/dashboard/vice-principal/departments/DepartmentsClient.tsx
 
 import { useState } from 'react'
+import Image from 'next/image'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import DepartmentCard from '@/components/org/DepartmentCard'
 import { PlusIcon, XIcon, UserIcon } from '@/components/Icons'
@@ -266,7 +267,7 @@ export default function DepartmentsClient({ profile, school, userId, initialDepa
                 {members.map(m => (
                   <div key={m.id} className={styles.memberRow}>
                     <div className={styles.memberAvatar}>
-                      {m.avatar_url ? <img src={m.avatar_url} alt="" /> : <UserIcon size={14} />}
+                      {m.avatar_url ? <Image src={m.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}
                     </div>
                     <div className={styles.memberInfo}>
                       <p className={styles.memberName}>{m.full_name}</p>
@@ -301,7 +302,7 @@ export default function DepartmentsClient({ profile, school, userId, initialDepa
                   .map(s => (
                   <button key={s.id} className={styles.pickRow} onClick={() => assignHod(s.id)} disabled={assigning}>
                     <div className={styles.memberAvatar}>
-                      {s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}
+                      {s.avatar_url ? <Image src={s.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}
                     </div>
                     <div className={styles.memberInfo}>
                       <p className={styles.memberName}>{s.full_name}</p>

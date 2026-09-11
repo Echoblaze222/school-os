@@ -2,6 +2,7 @@
 // src/app/dashboard/vice-principal/departments/[id]/DepartmentDetailClient.tsx
 
 import { useState } from 'react'
+import Image from 'next/image'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import GaugeStat from '@/components/GaugeStat'
 import { PlusIcon, XIcon, UserIcon, CheckCircleIcon, TrashIcon, ClockIcon, PeopleIcon, BookOpenIcon } from '@/components/Icons'
@@ -213,7 +214,7 @@ export default function DepartmentDetailClient({
             <div className={styles.memberGrid}>
               {members.map(m => (
                 <div key={m.id} className={styles.memberRow}>
-                  <div className={styles.memberAvatar}>{m.avatar_url ? <img src={m.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                  <div className={styles.memberAvatar}>{m.avatar_url ? <Image src={m.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                   <div>
                     <p className={styles.memberName}>{m.full_name}</p>
                     {m.subjects_taught && m.subjects_taught.length > 0 && <p className={styles.memberMeta}>{m.subjects_taught.slice(0, 3).join(', ')}</p>}

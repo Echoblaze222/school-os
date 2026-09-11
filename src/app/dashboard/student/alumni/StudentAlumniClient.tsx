@@ -22,6 +22,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RolePageWrapper from '@/components/RolePageWrapper'
 import { GraduationCapIcon, AwardIcon } from '@/components/Icons'
@@ -104,7 +105,7 @@ export default function StudentAlumniClient({
         <div className={styles.heroBanner}>
           <div className={styles.heroAvatarWrap}>
             {alumniProfile.avatar_url
-              ? <img src={alumniProfile.avatar_url} alt={alumniProfile.full_name} className={styles.heroAvatarImg} />
+              ? <Image src={alumniProfile.avatar_url} alt={alumniProfile.full_name} width={64} height={64} className={styles.heroAvatarImg} />
               : <span className={styles.heroAvatarText}>{initials(alumniProfile.full_name)}</span>
             }
             <div className={styles.heroCapBadge}><GraduationCapIcon size={14} color="#fff" /></div>
