@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { ShieldIcon, LockIcon, EyeIcon, EyeOffIcon } from '@/components/Icons'
 import styles from './super-admin-login.module.css'
 
@@ -11,6 +12,7 @@ export default function SuperAdminLoginPage() {
   const [password, setPassword] = useState('')
   const [pin,      setPin]      = useState('')
   const [showPass, setShowPass] = useState(false)
+  const toggleShowPass = useSingleFireClick(() => setShowPass(p => !p))
   const [step,     setStep]     = useState<'credentials' | 'pin'>('credentials')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -89,7 +91,7 @@ export default function SuperAdminLoginPage() {
                 <input className={styles.input} type={showPass ? 'text' : 'password'}
                   value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" required />
-                <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)}>
+                <button type="button" className={styles.eyeBtn} onClick={toggleShowPass}>
                   {showPass ? <EyeOffIcon size={15} /> : <EyeIcon size={15} />}
                 </button>
               </div>

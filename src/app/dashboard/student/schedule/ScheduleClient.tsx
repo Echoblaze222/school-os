@@ -173,7 +173,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
           {/* Action buttons */}
           <div className={motion.riseIn} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
             <button
-              onClick={() => setShowAdd(!showAdd)} className={motion.pressable}
+              onClick={() => setShowAdd(true)} className={motion.pressable}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '9px 18px', background: schoolColor, color: '#fff',

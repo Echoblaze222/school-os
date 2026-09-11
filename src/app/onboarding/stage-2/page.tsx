@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { ShieldIcon, EyeIcon, EyeOffIcon } from '@/components/Icons'
 import styles from './stage2.module.css'
 
@@ -10,6 +11,7 @@ export default function OnboardingStage2() {
   const [confirm,  setConfirm]  = useState('')
   const [secret,   setSecret]   = useState('')
   const [showPin,  setShowPin]  = useState(false)
+  const toggleShowPin = useSingleFireClick(() => setShowPin(p => !p))
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
   const [authReady, setAuthReady] = useState(false)
@@ -107,7 +109,7 @@ export default function OnboardingStage2() {
                     if (e.key === 'Backspace' && !pin[i] && i > 0) document.getElementById(`pin-${i-1}`)?.focus()
                   }}/>
               ))}
-              <button type="button" className={styles.eyeBtn} onClick={() => setShowPin(!showPin)}>
+              <button type="button" className={styles.eyeBtn} onClick={toggleShowPin}>
                 {showPin ? <EyeOffIcon size={15}/> : <EyeIcon size={15}/>}
               </button>
             </div>
