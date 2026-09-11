@@ -8,7 +8,7 @@ import {
   ArrowLeftIcon, SmileIcon, MoreIcon, XIcon,
   BanIcon, PeopleIcon, UserIcon, RefreshIcon, ClockIcon,
   UploadIcon, CheckIcon, AlertIcon, EditIcon, TrashIcon, LockIcon, MessageIcon,
-  MicIcon, StopIcon, CrownIcon, PlusIcon, SearchIcon,
+  MicIcon, StopIcon, StickerIcon, CrownIcon, PlusIcon, SearchIcon,
 } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './chat-room.module.css'
@@ -92,6 +92,31 @@ function FixedDurationAudio({ src, className }: { src: string; className?: strin
   )
 }
 
+// Original sticker artwork shipped with the app (public/stickers) - not
+// user uploads, so sending one is a plain insert, no storage round trip.
+const STICKERS = [
+  { id: 'laugh-cry',  src: '/stickers/laugh-cry.svg',  alt: 'Laughing with tears' },
+  { id: 'mind-blown', src: '/stickers/mind-blown.svg', alt: 'Mind blown' },
+  { id: 'cool',       src: '/stickers/cool.svg',       alt: 'Cool with sunglasses' },
+  { id: 'heart-eyes', src: '/stickers/heart-eyes.svg', alt: 'Heart eyes' },
+  { id: 'side-eye',   src: '/stickers/side-eye.svg',   alt: 'Side eye' },
+  { id: 'shocked',    src: '/stickers/shocked.svg',    alt: 'Shocked' },
+  { id: 'party',      src: '/stickers/party.svg',      alt: 'Party' },
+  { id: 'facepalm',   src: '/stickers/facepalm.svg',   alt: 'Facepalm' },
+]
+
+// User-uploaded custom stickers. Mirrors the chat-stickers bucket's own
+// limits (1MB, png/jpeg/webp/gif) so a rejected upload is caught instantly
+// client-side instead of round-tripping to storage first.
+const CUSTOM_STICKER_MAX_BYTES  = 1024 * 1024
+const CUSTOM_STICKER_MAX_COUNT  = 24
+const CUSTOM_STICKER_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+const CUSTOM_STICKER_EXT: Record<string, string> = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif',
+}
+
+type CustomSticker = { name: string; url: string }
+
 // ── Background send queue ─────────────────────────────────────────────────
 // Text + file sends are pushed here and processed one at a time in the
 // background so the UI never blocks and multiple sends never race.
@@ -139,7 +164,18 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [voicePreviewUrl, setVoicePreviewUrl] = useState<string | null>(null)
   const [voiceError,      setVoiceError]      = useState('')
 
-  // Sticker picker
+  // Sticker picker. showStickers is only ever set to true/false explicitly
+  // (never toggled with `p => !p`) — a toggle is vulnerable to a duplicate
+  // click/touch event firing twice for one tap (a known WebView quirk),
+  // which would open then immediately re-close it, looking like the button
+  // did nothing. Explicit true/false is idempotent against that.
+  const [showStickers,        setShowStickers]        = useState(false)
+  const [customStickers,      setCustomStickers]       = useState<CustomSticker[]>([])
+  const [loadingCustomStickers, setLoadingCustomStickers] = useState(false)
+  const [uploadingSticker,    setUploadingSticker]     = useState(false)
+  const [stickerError,        setStickerError]         = useState('')
+  const stickerPickerRef = useRef<HTMLDivElement>(null)
+  const stickerFileRef   = useRef<HTMLInputElement>(null)
 
   // Peer-group management - only meaningful when roomInfo.room_type === 'peer_group'
   const [isGroupAdmin,     setIsGroupAdmin]     = useState(false)
@@ -283,7 +319,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   useEffect(() => {
     const handler = () => {
       if (suppressNextCloseClick.current) { suppressNextCloseClick.current = false; return }
-      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null)
+      setEmojiTarget(null); setShowMenu(false); setContextMenuId(null); setShowStickers(false)
     }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
@@ -1123,6 +1159,97 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setRecordSeconds(0)
   }
 
+  // ── Stickers: tap to send immediately, like WhatsApp ────────────────
+  function sendSticker(url: string) {
+    setShowStickers(false)
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+
+    const temp: Message = {
+      id: tempId, content: '', sender_id: userId, sent_at: new Date().toISOString(),
+      is_deleted: false, is_edited: false,
+      file_url: url, file_type: 'sticker',
+      _status: 'sending',
+    }
+    setMessages(prev => [...prev, temp])
+    enqueue({ kind: 'sticker', tempId, url })
+  }
+
+  function genStickerId() {
+    // crypto.randomUUID is available on every modern WebView, but this
+    // still has a fallback rather than assuming it — a failure here would
+    // silently break every custom-sticker upload.
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  }
+
+  // Custom stickers live under stickers/{userId}/ in the chat-stickers
+  // bucket (RLS-scoped so only the owner can list/upload/delete their own
+  // folder — see the storage policies). Loaded lazily the first time the
+  // picker opens, not on every render.
+  async function loadCustomStickers() {
+    setLoadingCustomStickers(true)
+    try {
+      const { data, error } = await supabase.storage
+        .from('chat-stickers')
+        .list(`stickers/${userId}`, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
+
+      if (error || !data) { setLoadingCustomStickers(false); return }
+
+      const items: CustomSticker[] = data
+        .filter(f => f.name && !f.name.startsWith('.')) // skip Supabase's .emptyFolderPlaceholder marker
+        .map(f => {
+          const path = `stickers/${userId}/${f.name}`
+          const { data: urlData } = supabase.storage.from('chat-stickers').getPublicUrl(path)
+          return { name: f.name, url: urlData.publicUrl }
+        })
+      setCustomStickers(items)
+    } finally {
+      setLoadingCustomStickers(false)
+    }
+  }
+
+  async function handleStickerUpload(file: File) {
+    setStickerError('')
+
+    if (!CUSTOM_STICKER_MIME_TYPES.includes(file.type)) {
+      setStickerError('Stickers must be a PNG, JPEG, WebP, or GIF image.')
+      return
+    }
+    if (file.size > CUSTOM_STICKER_MAX_BYTES) {
+      setStickerError('That image is too large — stickers must be under 1MB.')
+      return
+    }
+    if (customStickers.length >= CUSTOM_STICKER_MAX_COUNT) {
+      setStickerError(`You've reached the ${CUSTOM_STICKER_MAX_COUNT}-sticker limit. Delete one to add another.`)
+      return
+    }
+
+    setUploadingSticker(true)
+    const ext   = CUSTOM_STICKER_EXT[file.type] ?? 'png'
+    const fname = `stickers/${userId}/${genStickerId()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage.from('chat-stickers').upload(fname, file, {
+      contentType: file.type,
+      upsert: false,
+    })
+    setUploadingSticker(false)
+
+    if (uploadError) {
+      setStickerError('Upload failed — please try again.')
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('chat-stickers').getPublicUrl(fname)
+    setCustomStickers(prev => [{ name: fname.split('/').pop()!, url: urlData.publicUrl }, ...prev])
+  }
+
+  async function deleteCustomSticker(name: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    const path = `stickers/${userId}/${name}`
+    const { error } = await supabase.storage.from('chat-stickers').remove([path])
+    if (!error) setCustomStickers(prev => prev.filter(s => s.name !== name))
+  }
+
   function formatDate(d: string) {
     const date = new Date(d), today = new Date(), yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
@@ -1664,6 +1791,72 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         </div>
       )}
 
+      {/* ── STICKER PICKER ──────────────────────────────────────────── */}
+      {showStickers && (
+        <div ref={stickerPickerRef} className={styles.stickerPicker} onClick={e => e.stopPropagation()}>
+          <div className={styles.stickerPickerHeader}>
+            <span>Stickers</span>
+            <button onClick={() => setShowStickers(false)}><XIcon size={14} /></button>
+          </div>
+          <div className={styles.stickerGrid}>
+            {STICKERS.map(s => (
+              <button key={s.id} className={styles.stickerItem} onClick={() => sendSticker(s.src)} title={s.alt}>
+                <img src={s.src} alt={s.alt} />
+              </button>
+            ))}
+
+            <p className={styles.stickerSectionLabel}>My Stickers</p>
+
+            {customStickers.map(s => (
+              <div key={s.name} className={styles.stickerCustomItem}>
+                <button className={styles.stickerItem} onClick={() => sendSticker(s.url)} title="Custom sticker">
+                  <img src={s.url} alt="Custom sticker" />
+                </button>
+                <button
+                  className={styles.stickerDeleteBadge}
+                  onClick={e => deleteCustomSticker(s.name, e)}
+                  title="Delete this sticker"
+                >
+                  <XIcon size={11} />
+                </button>
+              </div>
+            ))}
+
+            <button
+              className={styles.stickerAddTile}
+              disabled={uploadingSticker}
+              onClick={() => stickerFileRef.current?.click()}
+              title="Add your own sticker"
+            >
+              {uploadingSticker ? <RefreshIcon size={20} /> : <PlusIcon size={22} />}
+            </button>
+          </div>
+
+          {stickerError && (
+            <p className={`${styles.stickerPickerFooter} ${styles.stickerError}`}>{stickerError}</p>
+          )}
+          {!stickerError && (
+            <p className={styles.stickerPickerFooter}>
+              {loadingCustomStickers
+                ? 'Loading your stickers…'
+                : `${customStickers.length}/${CUSTOM_STICKER_MAX_COUNT} custom stickers · PNG, JPEG, WebP or GIF, up to 1MB`}
+            </p>
+          )}
+
+          <input
+            ref={stickerFileRef}
+            type="file"
+            accept={CUSTOM_STICKER_MIME_TYPES.join(',')}
+            style={{ display: 'none' }}
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) handleStickerUpload(file)
+              e.target.value = '' // allow re-selecting the same file next time
+            }}
+          />
+        </div>
+      )}
+
       {voiceError && (
         <div className={styles.voiceError}>
           <AlertIcon size={13} /> {voiceError}
@@ -1701,6 +1894,18 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
             <button className={styles.attachBtn} onClick={() => fileRef.current?.click()} title="Attach">
               <PaperclipIcon size={18} color="var(--text-muted)" />
+            </button>
+            <button
+              className={styles.attachBtn}
+              onClick={e => {
+                e.stopPropagation()
+                setShowStickers(true)
+                // Lazy-load: only fetch once per session, not on every open.
+                if (customStickers.length === 0 && !loadingCustomStickers) loadCustomStickers()
+              }}
+              title="Stickers"
+            >
+              <StickerIcon size={18} color={showStickers ? schoolColor : 'var(--text-muted)'} />
             </button>
             <input
               ref={inputRef}

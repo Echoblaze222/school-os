@@ -934,6 +934,53 @@
 .stickerItem:active { transform: scale(0.94); }
 .stickerItem img { width: 100%; height: 100%; object-fit: contain; }
 
+.stickerSectionLabel {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: var(--space-2) 0 0;
+}
+.stickerSectionLabel:first-child { margin-top: 0; }
+
+.stickerAddTile {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1.5px dashed var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.stickerAddTile:hover:not(:disabled) { border-color: var(--brand-border); color: var(--brand-light); }
+.stickerAddTile:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.stickerCustomItem { position: relative; }
+.stickerDeleteBadge {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  border: 2px solid var(--bg-elevated);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stickerPickerFooter {
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.stickerPickerFooter.stickerError { color: var(--danger); }
+
 /* Sticker message bubble - bare image, no bubble chrome, like WhatsApp stickers */
 .bubbleSticker {
   background: none !important;
