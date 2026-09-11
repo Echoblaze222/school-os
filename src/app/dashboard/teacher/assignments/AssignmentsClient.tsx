@@ -36,7 +36,8 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { ClipboardIcon, PlusIcon, AlertIcon, XIcon, PaperclipIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -294,7 +295,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Assignments">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Assignments" featureGroups={TEACHER_FEATURE_GROUPS}>
       {/* Tab bar + New button */}
       <div className={styles.tabs} style={{ marginBottom: 'var(--space-4)' }}>
         {(['active', 'past'] as const).map(t => (
@@ -304,18 +305,15 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
             {t === 'active' ? 'Active' : 'Past'}
           </button>
         ))}
-        <button className="pressable" onClick={openCreate}
-          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
-            padding: '7px 14px', background: sc, color: '#fff', border: 'none',
-            borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+        <button className="btn btn-sm pressable" onClick={openCreate}
+          style={{ marginLeft: 'auto', background: sc, color: '#fff', borderRadius: 999 }}>
           <PlusIcon size={13} color="white" /> New
         </button>
       </div>
 
       {/* Create / Edit form */}
       {showForm && (
-        <div className="glass-card" style={{
-          borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
+        <div className="glass-card" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
 
           <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>
             {editingId ? 'Edit Assignment' : 'New Assignment'}
@@ -337,18 +335,16 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
             {/* Title */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Title *</label>
+              <label className="input-label">Title *</label>
               <input type="text" value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                 placeholder="e.g. Chapter 3 Exercise"
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)', borderRadius: 8,
-                  color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                className="input" />
             </div>
 
             {/* Class - auto-sets class_subject_id when selected */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Class *</label>
+              <label className="input-label">Class *</label>
               <select value={form.class_id}
                 onChange={e => {
                   const cls = teacherClasses.find(c => c.class_id === e.target.value)
@@ -358,9 +354,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                     class_subject_id: cls?.class_subject_id ?? '',
                   }))
                 }}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)', borderRadius: 8,
-                  color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}>
+                className="input">
                 <option value="">Select class</option>
                 {teacherClasses.map(cls => (
                   <option key={cls.class_id} value={cls.class_id}>
@@ -377,35 +371,29 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
             {/* Due Date */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Due Date *</label>
+              <label className="input-label">Due Date *</label>
               <input type="date" value={form.due_date}
                 onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
                 min={new Date().toISOString().slice(0, 10)}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)', borderRadius: 8,
-                  color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                className="input" />
             </div>
 
             {/* Max Score */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Max Score</label>
+              <label className="input-label">Max Score</label>
               <input type="number" min={1} value={form.max_score}
                 onChange={e => setForm(f => ({ ...f, max_score: Number(e.target.value) }))}
-                style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)', borderRadius: 8,
-                  color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                className="input" />
             </div>
 
             {/* Description */}
             <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Description</label>
+              <label className="input-label">Description</label>
               <textarea value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Assignment details, instructions, requirements..."
                 rows={3}
-                style={{ padding: '8px 12px', background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)', borderRadius: 8,
-                  color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }} />
+                className="input" style={{ height: 'auto', padding: '8px 12px', resize: 'vertical' }} />
             </div>
 
             {/* File attachment */}
@@ -438,19 +426,14 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-            <button className="pressable"
+            <button className="btn pressable"
               onClick={saveAssignment}
               disabled={saving || uploading || !form.title.trim() || !form.due_date || !form.class_id}
-              style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none',
-                borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-                opacity: (saving || uploading || !form.title.trim() || !form.due_date || !form.class_id) ? 0.5 : 1 }}>
+              style={{ flex: 1, background: sc, color: '#fff' }}>
               {saving ? 'Saving...' : uploading ? 'Uploading...' : editingId ? 'Save Changes' : 'Create Assignment'}
             </button>
-            <button className="pressable"
-              onClick={() => { setShowForm(false); setAttachFile(null); setEditingId(null); setSaveError(null) }}
-              style={{ height: 40, padding: '0 16px', background: 'transparent',
-                border: '1px solid var(--glass-border)', borderRadius: 8,
-                color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
+            <button className="btn btn-secondary pressable"
+              onClick={() => { setShowForm(false); setAttachFile(null); setEditingId(null); setSaveError(null) }}>
               Cancel
             </button>
           </div>
@@ -465,9 +448,8 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           <ClipboardIcon size={40} color="var(--text-faint)" strokeWidth={1} />
           <p>No {tab} assignments</p>
           {tab === 'active' && (
-            <button className="pressable" onClick={openCreate}
-              style={{ marginTop: 12, padding: '8px 20px', background: sc, color: '#fff',
-                border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+            <button className="btn btn-sm pressable" onClick={openCreate}
+              style={{ marginTop: 12, background: sc, color: '#fff', borderRadius: 999 }}>
               Create your first assignment
             </button>
           )}
@@ -533,6 +515,6 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
       )}
 
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

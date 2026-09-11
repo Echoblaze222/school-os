@@ -4,7 +4,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import ReminderButton from '@/components/ReminderButton'
 import { ClockIcon, PlusIcon, AlertIcon, XIcon, MapPinIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -185,16 +186,16 @@ export default function TimetableClient({ profile, school, userId }: Props) {
   }
 
   if (!loading && teacherClasses.length === 0) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Timetable" featureGroups={TEACHER_FEATURE_GROUPS}>
       <div className={styles.empty}>
         <ClockIcon size={40} color="var(--text-faint)" strokeWidth={1} />
         <p>No classes assigned yet. Ask the principal to assign you a class.</p>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Timetable">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Timetable" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       <div className={styles.dayTabs} style={{ marginBottom: 'var(--space-4)' }}>
         {DAYS.map(d => (
@@ -324,6 +325,6 @@ export default function TimetableClient({ profile, school, userId }: Props) {
           </div>
       }
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
