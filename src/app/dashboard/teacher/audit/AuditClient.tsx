@@ -1,10 +1,11 @@
 'use client'
-// FIXED: Uses RolePageWrapper (standard teacher nav) instead of custom secretary BottomNav
+// FIXED: Uses RoleSubHeader (standard teacher nav) instead of custom secretary BottomNav
 // FIXED: correct teacher navigation, no stale secretary links
 
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import styles from './audit.module.css'
 import type { AuditEntry } from './page'
 
@@ -199,7 +200,7 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
   function goPage(n: number) { startTransition(() => router.push(buildUrl(filters, n))) }
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Audit Log">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Audit Log" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Export CSV strip */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
@@ -328,6 +329,6 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
         </div>
       )}
       <div style={{ height: 40 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

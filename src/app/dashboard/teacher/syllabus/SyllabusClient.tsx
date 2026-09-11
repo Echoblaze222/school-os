@@ -9,7 +9,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { BookOpenIcon, PlusIcon, CheckCircleIcon, DownloadIcon, ClipboardIcon, FileTextIcon, AlertIcon, XIcon, EditIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from './syllabus.module.css'
@@ -228,22 +229,22 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   const pct     = total > 0 ? Math.round((covered / total) * 100) : 0
 
   if (loading) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Syllabus">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Syllabus" featureGroups={TEACHER_FEATURE_GROUPS}>
       <SkeletonList count={4} variant="row" />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   if (!teacherClasses.length) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Syllabus">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Syllabus" featureGroups={TEACHER_FEATURE_GROUPS}>
       <div className={styles.empty}>
         <BookOpenIcon size={40} color="var(--text-faint)" strokeWidth={1} />
         <p>No classes assigned yet.</p>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Syllabus">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Syllabus" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Class pills */}
       {teacherClasses.length > 1 && (
@@ -516,6 +517,6 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
       )}
 
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

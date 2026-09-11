@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import {
   UserIcon, CameraIcon, KeyIcon, LogOutIcon, EditIcon, CrownIcon,
 } from '@/components/Icons'
@@ -158,7 +159,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   const subjectsTaught = [...new Set(myClasses.filter(c => c.subject).map(c => c.subject!))]
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="My Profile">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="My Profile" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Avatar + name block */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
@@ -412,6 +413,6 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -1,5 +1,11 @@
 # Claude Code project notes
 
+## Active work
+
+**Design consistency migration** (multi-session) - see `DESIGN_AUDIT.md`
+for the full audit findings, migration recipe, and per-role checklist.
+Read that file before doing any further design-consistency work here.
+
 ## Installed skills
 
 ### Impeccable (frontend design)

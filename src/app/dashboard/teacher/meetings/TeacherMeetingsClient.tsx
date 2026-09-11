@@ -5,7 +5,8 @@
 import { useState } from 'react'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { useRouter } from 'next/navigation'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import styles from './teacher-meetings.module.css'
 import { logActivity } from '@/lib/logActivity'
 import type { MeetingRow } from './page'
@@ -64,12 +65,13 @@ export default function TeacherMeetingsClient({
   const past     = relevant.filter(m =>  isPast(m.scheduled_at))
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="teacher"
       profile={profile}
       school={school}
       title="Meetings"
+      featureGroups={TEACHER_FEATURE_GROUPS}
     >
       <div className={styles.listMain}>
 
@@ -123,7 +125,7 @@ export default function TeacherMeetingsClient({
       </div>
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

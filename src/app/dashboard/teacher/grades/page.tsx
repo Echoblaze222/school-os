@@ -5,7 +5,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { AlertIcon, ClipboardIcon, TrophyIcon, CheckCircleIcon, PaperclipIcon, EditIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -262,24 +263,24 @@ export default function GradeSubmissionsPage() {
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) return (
-    <RolePageWrapper userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions">
+    <RoleSubHeader userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions" featureGroups={TEACHER_FEATURE_GROUPS}>
       <SkeletonList count={4} variant="card" />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   // ── Empty state ─────────────────────────────────────────────────────────────
   if (assignmentGroups.length === 0 && quizGroups.length === 0) return (
-    <RolePageWrapper userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions">
+    <RoleSubHeader userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions" featureGroups={TEACHER_FEATURE_GROUPS}>
       <div style={{textAlign:'center' as const,padding:'60px 20px',color:'var(--text-muted)'}}>
         <p style={{fontWeight:700,color:'var(--text-primary)',fontSize:'1rem',marginBottom:6}}>No submissions yet</p>
         <p style={{fontSize:'0.85rem'}}>Once students submit assignments or quiz attempts, they'll show up here for grading.</p>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   // ── Main UI ────────────────────────────────────────────────────────────────
   return (
-    <RolePageWrapper userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions">
+    <RoleSubHeader userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {fetchErr&&<div className="alert-error" style={{padding:'8px 14px',borderRadius:8,marginBottom:16,fontSize:'0.75rem'}}><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><AlertIcon size={13} /></span>{fetchErr}</div>}
 
@@ -475,6 +476,6 @@ export default function GradeSubmissionsPage() {
       )}
 
       <div style={{height:100}}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

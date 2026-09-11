@@ -12,7 +12,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { BookIcon, PlusIcon, DownloadIcon, AlertIcon, XIcon, EditIcon, FileTextIcon, BookOpenIcon, PaperclipIcon } from '@/components/Icons'
 import NoteBook from '@/components/NoteBook'
 import DocumentViewer from '@/components/DocumentViewer'
@@ -197,7 +198,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Study Notes">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Study Notes" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
         <button className="pressable" onClick={() => setShowForm(!showForm)}
@@ -374,6 +375,6 @@ export default function NotesClient({ profile, school, userId }: Props) {
           onClose={() => setPreviewDoc(null)}
         />
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
