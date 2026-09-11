@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
 import { UserIcon, EditIcon, CameraIcon, LogOutIcon, ShieldIcon, KeyIcon } from '@/components/Icons'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
@@ -107,7 +106,6 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
   return (
     <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
       <div className={styles.content}>
         <DashboardHeader userId={userId} role="student" profile={profile} school={school}
           schoolColor={schoolColor} title="My Profile" showBack />

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import styles from './staff.module.css'
 import KpiCard from '@/components/KpiCard'
 import { CheckIcon, XIcon, AlertIcon, EditIcon, PeopleIcon } from '@/components/Icons'
@@ -418,7 +419,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
   }, {} as Record<string, number>)
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Staff">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Staff" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {toast && (
         <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
           {toast.ok ? <CheckIcon size={14} /> : <XIcon size={14} />} {toast.msg}
@@ -872,6 +873,6 @@ export default function StaffClient({ profile, school, userId }: Props) {
           </div>
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

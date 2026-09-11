@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
@@ -34,9 +35,6 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   const router   = useRouter()
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#800020'
-
-  useEffect(() => { load() }, [])
-  useEffect(() => { if (selected) loadStudents(selected.class_id) }, [selected])
 
   async function load() {
     // FIX #1: load from class_teachers instead of classes.teacher_id
@@ -82,6 +80,9 @@ export default function ClassesClient({ profile, school, userId }: Props) {
       .order('full_name')
     if (data) setStudents(data)
   }
+
+  useEffect(() => { load() }, [])
+  useEffect(() => { if (selected) loadStudents(selected.class_id) }, [selected])
 
   // Quick action: navigate with class context pre-filled via query param
   function goTo(path: string) {
@@ -262,7 +263,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                       overflow: 'hidden', flexShrink: 0,
                     }}>
                       {s.avatar_url
-                        ? <img src={s.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ? <Image src={s.avatar_url} alt="" width={36} height={36} style={{ objectFit: 'cover' }} />
                         : <span style={{ fontWeight: 700, color: sc, fontSize: '0.85rem' }}>{s.full_name?.[0]}</span>
                       }
                     </div>

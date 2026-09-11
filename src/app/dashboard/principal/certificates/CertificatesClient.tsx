@@ -9,7 +9,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import {
   GraduationCapIcon, SettingsIcon, UploadIcon, CheckCircleIcon, AlertIcon,
   XIcon, FileTextIcon, RefreshIcon,
@@ -129,7 +130,7 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
   }
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Certificates">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Certificates" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
         {error && (
@@ -236,7 +237,7 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
           )}
         </div>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

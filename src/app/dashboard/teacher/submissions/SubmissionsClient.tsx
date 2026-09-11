@@ -8,6 +8,7 @@
 // 6. filter bar uses school brand colour for active state
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
@@ -142,7 +143,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                 <div className={styles.cardTop} onClick={() => setExpanded(isOpen ? null : sub.id)}>
                   <div className={styles.avatar}>
                     {sub.student_avatar
-                      ? <img src={sub.student_avatar} alt={sub.student_name} className={styles.avatarImg} />
+                      ? <Image src={sub.student_avatar} alt={sub.student_name} width={42} height={42} className={styles.avatarImg} />
                       : <span>{initials(sub.student_name)}</span>
                     }
                   </div>

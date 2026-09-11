@@ -5,7 +5,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import KpiCard from '@/components/KpiCard'
 import { BarChartIcon, AlertIcon, WalletIcon, CheckCircleIcon, XIcon, UsersIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
@@ -135,7 +136,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Reports">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Reports" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', alignItems: 'center' }}>
         <input value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
           style={{ height: 40, padding: '0 12px', background: 'var(--input-bg)',
@@ -287,6 +288,6 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             </>
       }
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

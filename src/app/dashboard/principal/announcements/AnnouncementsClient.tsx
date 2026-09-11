@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import type { AnnouncementRow, AudienceType, ClassOption } from './page'
 import styles from './announcements.module.css'
 import { CheckIcon } from '@/components/Icons'
@@ -175,7 +176,7 @@ export default function AnnouncementsClient({
   const sc = school?.primary_color ?? '#800020'
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Announcements">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Announcements" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {/* Toast */}
       {toast && (
         <div className={`${styles.toast} ${styles.toastOk}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CheckIcon size={14} /> {toast}</div>
@@ -354,6 +355,6 @@ export default function AnnouncementsClient({
       </div>
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
