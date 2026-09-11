@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
@@ -102,7 +103,7 @@ export default function ProfileClient({
         .from('avatars')
         .getPublicUrl(path)
 
-      // Append a cache-buster so the <img> tag always re-fetches
+      // Append a cache-buster so the <Image> tag always re-fetches
       const freshUrl = data.publicUrl + '?t=' + Date.now()
 
       const { error: dbErr } = await supabase
@@ -176,12 +177,12 @@ export default function ProfileClient({
             }}
           >
             {avatar ? (
-              <img
+              <Image
                 src={avatar}
                 alt=""
+                width={84}
+                height={84}
                 style={{
-                  width: '100%',
-                  height: '100%',
                   objectFit: 'cover',
                   opacity: uploadingPhoto ? 0.4 : 1,
                 }}
