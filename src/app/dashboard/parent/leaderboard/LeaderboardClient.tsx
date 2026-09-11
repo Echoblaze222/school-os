@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
@@ -289,7 +290,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                         <div className={styles.podiumMedal}><AwardIcon size={22} color={medalColors[i]} /></div>
                         <div className={styles.podiumAvatar} style={{ background: schoolColor + '30', color: schoolColor }}>
                           {entry.avatar_url
-                            ? <img src={entry.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            ? <Image src={entry.avatar_url} alt="" width={44} height={44} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                             : entry.full_name.charAt(0).toUpperCase()}
                         </div>
                         <p className={styles.podiumName}>

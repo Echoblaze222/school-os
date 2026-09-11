@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LinkChildPrompt from '@/components/LinkChildPrompt'
@@ -318,7 +319,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
           <div className={`${styles.childCard} ${motion.riseIn}`} style={{ borderColor: sc + '40' }}>
             <div className={styles.childAvatar} style={{ background: sc }}>
               {activeChild.avatar_url
-                ? <img src={activeChild.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                ? <Image src={activeChild.avatar_url} alt="" width={52} height={52} style={{ objectFit: 'cover', borderRadius: '50%' }} />
                 : <span style={{ fontWeight: 800, color: '#fff', fontSize: '1.1rem' }}>{activeChild.full_name?.[0]}</span>
               }
             </div>
