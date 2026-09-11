@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -251,14 +252,6 @@ export default function UniversalChatPage({
   }
 
   // ── New Group: live suggestions as you type a name or code ─────────
-  useEffect(() => {
-    if (!showNewGroup) { setGroupSuggestions([]); return }
-    const trimmed = groupSearch.trim()
-    if (trimmed.length < 2) { setGroupSuggestions([]); return }
-    const handle = setTimeout(() => searchGroupSuggestions(trimmed), 250)
-    return () => clearTimeout(handle)
-  }, [groupSearch, showNewGroup, groupSelected])
-
   async function searchGroupSuggestions(query: string) {
     setGroupSuggesting(true)
     const { data } = await supabase
@@ -273,6 +266,15 @@ export default function UniversalChatPage({
     setGroupSuggestions((data ?? []).filter(u => !selectedIds.has(u.id)))
     setGroupSuggesting(false)
   }
+
+  useEffect(() => {
+    if (!showNewGroup) { setGroupSuggestions([]); return }
+    const trimmed = groupSearch.trim()
+    if (trimmed.length < 2) { setGroupSuggestions([]); return }
+    const handle = setTimeout(() => searchGroupSuggestions(trimmed), 250)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupSearch, showNewGroup, groupSelected])
 
   function addGroupMember(user: any) {
     setGroupSelected(prev => (prev.find(m => m.id === user.id) ? prev : [...prev, user]))
@@ -535,7 +537,7 @@ export default function UniversalChatPage({
                     <button key={u.id} className={styles.suggestItem} onClick={() => addGroupMember(u)}>
                       <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
                         {u.avatar_url
-                          ? <img src={u.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                          ? <Image src={u.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
                           : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.75rem' }}>{u.full_name?.[0]}</span>
                         }
                       </div>
@@ -646,7 +648,7 @@ export default function UniversalChatPage({
                       <button key={u.id} className={styles.suggestItem} onClick={() => pickSuggestion(u)}>
                         <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
                           {u.avatar_url
-                            ? <img src={u.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                            ? <Image src={u.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
                             : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.75rem' }}>{u.full_name?.[0]}</span>
                           }
                         </div>
@@ -670,7 +672,7 @@ export default function UniversalChatPage({
                     style={{ background: ROLE_COLORS[foundUser.role] ?? schoolColor }}
                   >
                     {foundUser.avatar_url
-                      ? <img src={foundUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                      ? <Image src={foundUser.avatar_url} alt="" width={36} height={36} style={{ objectFit:'cover' }} />
                       : <UserIcon size={16} color="white" />
                     }
                   </div>
@@ -727,13 +729,13 @@ export default function UniversalChatPage({
                     }}
                   >
                     {room.room_type === 'school_group' && school?.logo_url
-                      ? <img src={school.logo_url} alt=""
-                          style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                      ? <Image src={school.logo_url} alt=""
+                          width={44} height={44} style={{ objectFit:'cover' }} />
                       : room.room_type === 'peer_group'
                       ? <PeopleIcon size={18} color="#fff" />
                       : room.other_user?.avatar_url
-                      ? <img src={room.other_user.avatar_url} alt=""
-                          style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                      ? <Image src={room.other_user.avatar_url} alt=""
+                          width={44} height={44} style={{ objectFit:'cover' }} />
                       : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.95rem' }}>
                           {room.name[0]?.toUpperCase()}
                         </span>
