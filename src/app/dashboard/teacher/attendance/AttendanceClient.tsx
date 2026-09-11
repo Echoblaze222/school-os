@@ -5,6 +5,7 @@
 // FIXED: added History tab showing past attendance records per class
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
@@ -328,7 +329,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: st.bg, border: "1px solid " + st.color + "40", borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.15s" }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: sc + "20", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
                     {s.avatar_url
-                      ? <img src={s.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ? <Image src={s.avatar_url} alt="" width={36} height={36} style={{ objectFit: "cover" }} />
                       : <span style={{ fontWeight: 700, color: sc, fontSize: "0.85rem" }}>{s.full_name?.[0]}</span>
                     }
                   </div>
@@ -410,7 +411,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                           return (
                             <div key={r.student_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px", background: sc2.bg, borderRadius: 7 }}>
                               <div style={{ width: 28, height: 28, borderRadius: "50%", background: sc + "20", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, fontSize: "0.75rem", fontWeight: 700, color: sc }}>
-                                {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : p?.full_name?.[0] ?? "?"}
+                                {p?.avatar_url ? <Image src={p.avatar_url} alt="" width={28} height={28} style={{ objectFit: "cover" }} /> : p?.full_name?.[0] ?? "?"}
                               </div>
                               <span style={{ flex: 1, fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)" }}>{p?.full_name ?? "Unknown"}</span>
                               <span style={{ fontSize: "0.65rem", fontWeight: 800, color: sc2.color, letterSpacing: "0.06em" }}>{st.toUpperCase()}</span>
