@@ -76,16 +76,49 @@ screenshot of this app seen so far.
 
 - `src/components/RoleSubHeader.tsx` - added optional `onBack` callback,
   needed for multi-step/wizard pages. Backward compatible.
-- `teacher`: `featureGroups.ts` created; `TeacherDashboardClient.tsx`
-  migrated to use it.
-- `teacher/quizzes/QuizzesClient.tsx` - fully migrated (list, create,
-  add-questions, preview/edit) - both the wrapper and the input/button/card
-  drift. Use this file as the reference example for future migrations.
+- **`teacher` role: fully migrated, 0 files remaining.** `featureGroups.ts`
+  created; `TeacherDashboardClient.tsx` migrated to use it. All 16 files
+  that referenced `RolePageWrapper` (quizzes, clinic, announcements,
+  meetings, submissions, classes, timetable, audit, live, notes, profile,
+  assignments, attendance, syllabus, results, grades/page) migrated to
+  `RoleSubHeader`, with the input/button/card drift fixed wherever found.
+  `teacher/quizzes/QuizzesClient.tsx` is the most thorough example (list,
+  create, add-questions, preview/edit all migrated) - use it as the
+  reference for future migrations.
+
+### Patterns discovered during the teacher batch (apply to future roles too)
+
+- **Hand-rolled "← Back" buttons that duplicate `onBack`.** Multi-step
+  pages (Quiz, PostResults) had their own back button wired to local state
+  (e.g. `setMode('overview')`), built *inside* `RolePageWrapper` because
+  that wrapper had no callback-based back option. Once migrated to
+  `RoleSubHeader` with `onBack`, these are pure duplication - remove them.
+  Also check for now-orphaned icon components that only that button used
+  (e.g. `PostResultsClient.tsx` had an `IcBack` SVG left over after its two
+  call sites were removed).
+- **Comment-only false positives.** `grep -rl "RolePageWrapper"` can match
+  a stale comment that just *mentions* the name without the page actually
+  using it (`teacher/audit/page.tsx` had this - the real usage was in the
+  sibling `AuditClient.tsx`). Check before assuming a grep hit needs a
+  wrapper swap; fix the comment wording while there for cleanliness.
+- **Not every custom input should become `.input`.** `.input` is
+  `width: 100%` by design - it will break a compact, fixed-width field
+  (e.g. `PostResultsClient.tsx`'s 68px per-student score box in a grading
+  grid). Check the actual layout context before forcing the shared class;
+  leaving a genuinely bespoke, purpose-built input alone is the correct
+  call here, not a missed fix.
+- **Possible duplicate feature, not yet investigated:**
+  `teacher/grades/page.tsx` and `teacher/submissions/SubmissionsClient.tsx`
+  both title themselves "Grade Submissions" and appear to serve an
+  overlapping purpose. Both were migrated (wrapper-only, no functional
+  change), but nobody has checked whether one is dead code, a duplicate
+  route, or two genuinely different flows that happen to share a name.
+  Worth a look before doing more work in either file.
 
 ## Remaining (RolePageWrapper usages by role, at time of writing)
 
 - [ ] **principal** - 18 files
-- [ ] **teacher** - 15 files remaining (quizzes done)
+- [x] ~~**teacher** - 15 files remaining (quizzes done)~~ - **done, 0 remaining**
 - [ ] **student** - 14 files
 - [ ] **secretary** - 14 files
 - [ ] **bursar** - 13 files
@@ -103,7 +136,8 @@ screenshot of this app seen so far.
       check which role this belongs to
 
 None of these roles have a `featureGroups.ts` file yet - step 1 of the
-recipe above applies to all of them.
+recipe above applies to all of them. `teacher/featureGroups.ts` is the
+reference example for the extraction pattern.
 
 ## Not yet started
 
