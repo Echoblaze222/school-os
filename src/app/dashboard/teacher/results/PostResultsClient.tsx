@@ -12,7 +12,8 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import type { TeacherClass, StudentForResult, ExistingResult } from './types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -99,7 +100,6 @@ function initials(n: string) {
 const IcPlus    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 const IcEdit    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
 const IcEye     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-const IcBack    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
 const IcCheck   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
 const IcAlert   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 const IcSave    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -391,7 +391,7 @@ export default function PostResultsClient({
   // ── OVERVIEW ─────────────────────────────────────────────────────────────
   if (mode === 'overview') {
     return (
-      <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title="Results">
+      <RoleSubHeader userId={teacherId} role="teacher" profile={profile} school={school} title="Results" featureGroups={TEACHER_FEATURE_GROUPS}>
         {/* Post Results button */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
           <button className="pressable" onClick={openNewWizard} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
@@ -497,7 +497,7 @@ export default function PostResultsClient({
             ))}
           </div>
         )}
-      </RolePageWrapper>
+      </RoleSubHeader>
     )
   }
 
@@ -505,12 +505,9 @@ export default function PostResultsClient({
   if (mode === 'preview' && previewGroup) {
     const avgPct = previewGroup.avg
     return (
-      <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title={previewGroup.subjectName}>
-        {/* Back + edit row */}
+      <RoleSubHeader userId={teacherId} role="teacher" profile={profile} school={school} title={previewGroup.subjectName} onBack={() => setMode('overview')} featureGroups={TEACHER_FEATURE_GROUPS}>
+        {/* Meta + edit row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <button className="pressable" onClick={() => setMode('overview')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
-            <IcBack /> Back
-          </button>
           <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', flex: 1 }}>
             {previewGroup.className} · {previewGroup.term} · {RESULT_TYPE_LABELS[previewGroup.resultType]}
           </p>
@@ -574,7 +571,7 @@ export default function PostResultsClient({
             )
           })}
         </div>
-      </RolePageWrapper>
+      </RoleSubHeader>
     )
   }
 
@@ -584,13 +581,10 @@ export default function PostResultsClient({
     : `${selectedCS?.subject_name ?? ''}, ${selectedCS?.class_name ?? ''}`
 
   return (
-    <RolePageWrapper userId={teacherId} role="teacher" profile={profile} school={school} title={wizardTitle}>
+    <RoleSubHeader userId={teacherId} role="teacher" profile={profile} school={school} title={wizardTitle} onBack={() => { setMode('overview'); setStep(1) }} featureGroups={TEACHER_FEATURE_GROUPS}>
 
-      {/* Back + step info */}
+      {/* Step info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <button className="pressable" onClick={() => { setMode('overview'); setStep(1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
-          <IcBack /> Back
-        </button>
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
           Step {step} of 3{step > 1 && selectedCS ? ` · ${selectedCS.class_name}` : ''}
         </p>
@@ -826,6 +820,6 @@ export default function PostResultsClient({
           </p>
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

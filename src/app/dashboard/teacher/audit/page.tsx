@@ -32,7 +32,7 @@ export default async function AuditPage({ searchParams }: PageParams) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
 
-  // Load profile + school for RolePageWrapper
+  // Load profile + school for RoleSubHeader
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')

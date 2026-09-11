@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { CalendarIcon, CheckCircleIcon, ClockIcon, CrownIcon } from '@/components/Icons'
 import { logActivity } from '@/lib/logActivity'
 import GaugeStat from '@/components/GaugeStat'
@@ -240,22 +241,22 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const lateCount = Object.values(records).filter(v => v === 'late').length
 
   if (loading && teacherClasses.length === 0) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Attendance" featureGroups={TEACHER_FEATURE_GROUPS}>
       <SkeletonList count={4} variant="row" />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   if (!teacherClasses.length) return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Attendance" featureGroups={TEACHER_FEATURE_GROUPS}>
       <div style={{ textAlign: 'center', padding: '40px 0' }}>
         <CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1} />
         <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>No classes assigned yet. Contact your admin.</p>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Attendance">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Attendance" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Class selector */}
       <div style={{ overflowX: "auto", display: "flex", gap: 8, marginBottom: "var(--space-4)", paddingBottom: 4 }}>
@@ -282,7 +283,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         {/* Date picker */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "var(--space-4)" }}>
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setSaved(false) }}
-            style={{ height: 38, padding: "0 12px", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: 8, color: "var(--text-primary)", fontSize: "0.85rem", outline: "none" }} />
+            className="input" style={{ width: 'auto' }} />
           {saved && (
             <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--success)", fontSize: "0.8rem", fontWeight: 600 }}>
               <CheckCircleIcon size={14} color="var(--success)" /> Saved
@@ -427,6 +428,6 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       )}
 
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
