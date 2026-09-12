@@ -109,7 +109,7 @@ export default function SecretaryClient({
             <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
               {counts.totalStudents ?? 0}
             </p>
-            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--success)' }}>
+            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
               +{counts.newThisWeek ?? 0} new this week
             </p>
             <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
@@ -123,11 +123,11 @@ export default function SecretaryClient({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Pending admissions</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingAdmissions ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.pendingAdmissions ?? 0}</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingAdmissions ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.pendingAdmissions ?? 0}</p>
             </div>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Transfer requests</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingApps ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.pendingApps ?? 0}</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingApps ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.pendingApps ?? 0}</p>
             </div>
           </div>
         </div>

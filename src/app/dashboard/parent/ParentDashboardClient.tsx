@@ -299,13 +299,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Attendance</p>
-                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (childStats.attendance ?? 100) < 80 ? 'var(--warning)' : 'var(--text-primary)' }}>
+                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (childStats.attendance ?? 100) < 80 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>
                   {statsLoading ? '…' : `${childStats.attendance ?? 0}%`}
                 </p>
               </div>
               <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Tasks due</p>
-                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: childStats.pendingTasks > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>
+                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: childStats.pendingTasks > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>
                   {statsLoading ? '…' : childStats.pendingTasks}
                 </p>
               </div>

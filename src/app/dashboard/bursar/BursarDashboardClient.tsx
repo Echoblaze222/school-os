@@ -132,7 +132,7 @@ export default function BursarDashboardClient({
             <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
               ₦{totalCollected.toLocaleString()}
             </p>
-            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--success)' }}>
+            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
               {collectionRate}% of fees · {counts.currentTerm ?? 'this term'}
             </p>
             <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
@@ -154,11 +154,11 @@ export default function BursarDashboardClient({
             </div>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Claims pending</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingClaims > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{pendingClaims}</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingClaims > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{pendingClaims}</p>
             </div>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Overdue</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.overdueCount ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.overdueCount ?? 0}</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.overdueCount ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.overdueCount ?? 0}</p>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function BursarDashboardClient({
                   <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</p>
                   <p style={{ margin: 0, fontSize: '0.68rem', color: 'var(--text-muted)' }}>{d.term ?? ''}</p>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--warning)' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--status-warn, #E4572E)' }}>
                   ₦{d.outstanding.toLocaleString()}
                 </p>
               </Link>

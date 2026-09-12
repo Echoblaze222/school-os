@@ -141,7 +141,7 @@ export default function CounselorDashboardClient({ userId, counselorName, school
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Referrals</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.pendingReferrals > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{stats.pendingReferrals}</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.pendingReferrals > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{stats.pendingReferrals}</p>
             </div>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Upcoming</p>

@@ -148,7 +148,7 @@ export default function ExaminationDashboardClient({
             {capabilities.verifyResults && (
               <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Awaiting verification</p>
-                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingVerificationCount > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{pendingVerificationCount}</p>
+                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingVerificationCount > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{pendingVerificationCount}</p>
               </div>
             )}
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
@@ -181,7 +181,7 @@ export default function ExaminationDashboardClient({
                     <p className={styles.dutyMeta}>{et?.exam_date} · {et?.start_time}–{et?.end_time}</p>
                   </div>
                   <span className={styles.dutyStatus} style={{
-                    color: d.status === 'confirmed' ? 'var(--success)' : 'var(--warning)',
+                    color: d.status === 'confirmed' ? 'var(--status-ok, #3FA66B)' : 'var(--status-warn, #E4572E)',
                   }}>{d.status}</span>
                 </div>
               )
