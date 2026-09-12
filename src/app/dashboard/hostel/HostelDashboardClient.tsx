@@ -101,7 +101,7 @@ export default function HostelDashboardClient({
         profile={null} school={school}
         greeting="Hostel overview"
         headline={hostels.length > 0 ? hostels.map(h => h.name).join(', ') : 'No hostels set up yet'}
-        sub="Occupancy, roll call, and room management"
+        sub={status === 'ready' ? `${occupancyRate}% bed occupancy · ${summary?.absent ?? 0} absent` : 'Occupancy, roll call, and room management'}
         featureGroups={FEATURE_GROUPS}
       />
 

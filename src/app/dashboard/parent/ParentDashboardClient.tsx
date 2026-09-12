@@ -7,7 +7,6 @@ import LinkChildPrompt from '@/components/LinkChildPrompt'
 import TrialBanner from '@/components/TrialBanner'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ChatWidget from '@/components/ChatWidget'
@@ -247,7 +246,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         profile={profile}
         school={school}
         greeting={`${greeting}, ${firstName}`}
-        headline={activeChild ? `How ${activeChild.full_name?.split(' ')[0]} is doing.` : 'Your children, at a glance.'}
+        headline={
+          activeChild
+            ? (!statsLoading && childStats.gpa != null
+                ? `${activeChild.full_name?.split(' ')[0]}: ${childStats.gpa.toFixed(1)}/5.0 GPA · ${childStats.attendance ?? 0}% attendance`
+                : `How ${activeChild.full_name?.split(' ')[0]} is doing.`)
+            : 'Your children, at a glance.'
+        }
         sub={activeChild ? `${activeChild.class_level ?? 'No class'} · ${getCurrentTerm()}` : ''}
         featureGroups={FEATURE_GROUPS}
       />
@@ -278,28 +283,32 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
           </div>
         )}
 
-        {/* Animated graphical stats for the active child */}
         {activeChild && (
           <div className={motion.riseIn} style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
+            display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
             marginTop: children.length > 1 ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
           }}>
-            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-              <GaugeStat label="Attendance" value={statsLoading ? 0 : (childStats.attendance ?? 0)} isPercent
-                color="var(--status-ok, #3FA66B)" caption={getCurrentTerm()} />
+            <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Term GPA</p>
+              <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+                {statsLoading ? '…' : (childStats.gpa != null ? childStats.gpa.toFixed(1) : 'N/A')}
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}> / 5.0</span>
+              </p>
+              <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>{getCurrentTerm()}</p>
             </div>
-            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-              <GaugeStat
-                label="Term GPA"
-                value={statsLoading ? 0 : (childStats.gpa != null ? Math.round((childStats.gpa / 5) * 100) : 0)}
-                isPercent
-                displayValue={statsLoading ? '…' : (childStats.gpa != null ? childStats.gpa.toFixed(1) : 'N/A')}
-                color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
-              />
-            </div>
-            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-              <GaugeStat label="Tasks due" value={statsLoading ? 0 : childStats.pendingTasks}
-                color="var(--status-warn, #E4572E)" caption="this week" delayMs={160} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Attendance</p>
+                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (childStats.attendance ?? 100) < 80 ? 'var(--warning)' : 'var(--text-primary)' }}>
+                  {statsLoading ? '…' : `${childStats.attendance ?? 0}%`}
+                </p>
+              </div>
+              <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Tasks due</p>
+                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: childStats.pendingTasks > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>
+                  {statsLoading ? '…' : childStats.pendingTasks}
+                </p>
+              </div>
             </div>
           </div>
         )}
