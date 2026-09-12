@@ -1,6 +1,11 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  EditIcon, BarChartIcon, TrophyIcon, MessageIcon, CalendarIcon,
+  CreditCardIcon, CheckCircleIcon, FolderIcon, MegaphoneIcon,
+  ActivityIcon, EyeIcon, TrashIcon, ClockIcon,
+} from '@/components/Icons'
 import styles from './recent-activity.module.css'
 
 export interface ActivityItem {
@@ -10,7 +15,10 @@ export interface ActivityItem {
   subtitle?: string       // e.g. "Term Test 2 · Physics"
   href: string           // where tapping navigates
   created_at: string     // ISO timestamp
-  icon?: string           // optional emoji/short glyph fallback
+  icon?: string           // unused for rendering - icons are resolved from
+                          // `type` via iconFor() below. Kept only so any
+                          // external caller still setting this doesn't
+                          // break the type; nothing in this app sets it.
   preview?: {
     // Optional rich preview shown in the modal before navigating
     body?: string
@@ -37,17 +45,21 @@ function timeAgo(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-const TYPE_ICON: Record<string, string> = {
-  assignment_submitted: '📝',
-  result_viewed:        '📊',
-  quiz_completed:       '🏆',
-  message_sent:         '💬',
-  meeting_joined:       '📅',
-  fee_paid:             '💳',
-  attendance_marked:    '✅',
-  record_added:         '📁',
-  announcement_read:    '📣',
-  default:              '•',
+const TYPE_ICON: Record<string, typeof ActivityIcon> = {
+  assignment_submitted: EditIcon,
+  result_viewed:        BarChartIcon,
+  quiz_completed:       TrophyIcon,
+  message_sent:         MessageIcon,
+  meeting_joined:       CalendarIcon,
+  fee_paid:             CreditCardIcon,
+  attendance_marked:    CheckCircleIcon,
+  record_added:         FolderIcon,
+  announcement_read:    MegaphoneIcon,
+  default:              ActivityIcon,
+}
+
+function iconFor(type: string) {
+  return TYPE_ICON[type] ?? TYPE_ICON.default
 }
 
 export default function RecentActivity({ items, accentColor = '#7C3AED', onDelete, emptyLabel = 'No recent activity yet' }: Props) {
@@ -120,7 +132,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
 
       {localItems.length === 0 ? (
         <div className={styles.emptyState}>
-          <span className={styles.emptyGlyph}>🕓</span>
+          <span className={styles.emptyGlyph}><ClockIcon size={22} /></span>
           <p>{emptyLabel}</p>
         </div>
       ) : (
@@ -140,7 +152,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
                     onClick={() => handleDelete(item.id)}
                     aria-label="Delete activity"
                   >
-                    🗑
+                    <TrashIcon size={20} color="#fff" />
                   </button>
                 </div>
 
@@ -157,7 +169,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
                     onClick={() => handleTap(item)}
                   >
                     <span className={styles.itemIcon} style={{ background: `${accentColor}22` }}>
-                      {item.icon ?? TYPE_ICON[item.type] ?? TYPE_ICON.default}
+                      {(() => { const Icon = iconFor(item.type); return <Icon size={18} color={accentColor} /> })()}
                     </span>
                     <span className={styles.itemText}>
                       <span className={styles.itemTitle}>{item.title}</span>
@@ -171,7 +183,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
                     onClick={(e) => { e.stopPropagation(); setPreviewItem(item) }}
                     aria-label="Preview"
                   >
-                    👁
+                    <EyeIcon size={16} />
                   </button>
                 </div>
               </li>
@@ -185,7 +197,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
           <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <span className={styles.itemIcon} style={{ background: `${accentColor}22` }}>
-                {previewItem.icon ?? TYPE_ICON[previewItem.type] ?? TYPE_ICON.default}
+                {(() => { const Icon = iconFor(previewItem.type); return <Icon size={18} color={accentColor} /> })()}
               </span>
               <div>
                 <p className={styles.modalTitle}>{previewItem.title}</p>

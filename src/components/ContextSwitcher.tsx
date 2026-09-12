@@ -8,10 +8,20 @@
 //
 // Renders nothing if the user only has one context (their base role) :
 // a switcher with one option is just noise.
+//
+// Uses a plain <a>, not next/link : switching context is a fresh
+// auth-adjacent transition between fundamentally different role
+// dashboards, the same class of situation login.tsx and
+// onboarding/stage-3 already use window.location for. The client
+// Router Cache doesn't reset on this kind of transition, so a soft
+// nav here could serve a stale cached render of the destination
+// (e.g. a missing avatar, stale stats) instead of a fresh one - with
+// no way for the user to force a refresh from inside a native app
+// shell. A real anchor tag isn't intercepted by the client router, so
+// every context switch is a genuine full navigation.
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import Link from 'next/link'
 import styles from './ContextSwitcher.module.css'
 
 interface Context { id: string; label: string; href: string; kind: 'base' | 'appointment' | 'boarding' }
@@ -38,7 +48,7 @@ export default function ContextSwitcher() {
       {contexts.map(ctx => {
         const active = pathname === ctx.href || (ctx.href !== '/dashboard' && pathname?.startsWith(ctx.href.split('?')[0]))
         return (
-          <Link
+          <a
             key={ctx.id}
             href={ctx.href}
             role="tab"
@@ -46,7 +56,7 @@ export default function ContextSwitcher() {
             className={`${styles.pill} ${active ? styles.pillActive : ''}`}
           >
             {ctx.label}
-          </Link>
+          </a>
         )
       })}
     </div>

@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: linear-gradient(120deg, var(--brand-dark), var(--brand));
+  background: var(--brand);
   color: #F6F1E4;
   border-radius: 20px;
   padding: 16px 18px;

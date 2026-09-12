@@ -102,7 +102,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  background: linear-gradient(90deg, transparent, #DC2626);
+  background: #DC2626;
   border-radius: 14px;
 }
 
@@ -124,7 +124,14 @@
   position: relative;
   display: flex;
   align-items: stretch;
-  background: rgba(255, 255, 255, 0.04);
+  /* Solid, not translucent: this card sits directly in front of
+     .deleteBackdrop (always rendered, not conditionally shown - it's
+     revealed by the card sliding off it during a drag). A blur-reliant
+     ~4%-opaque background only hides that backdrop where
+     backdrop-filter actually renders; on Android WebView, where blur
+     support can be missing entirely, the backdrop showed straight
+     through. var(--bg-elevated) is opaque regardless of blur support. */
+  background: var(--bg-elevated);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;

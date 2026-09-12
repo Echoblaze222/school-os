@@ -1,5 +1,5 @@
 .hero {
-  background: linear-gradient(180deg, var(--brand), var(--brand-dark));
+  background: var(--brand);
   color: #F6F1E4;
   padding: 20px 20px 28px;
   border-bottom: 5px solid var(--brand-2);
@@ -10,7 +10,7 @@
 .brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .crest {
   width: 42px; height: 42px; border-radius: 50%;
-  background: conic-gradient(var(--brand-2-light), var(--brand-2), var(--brand-2-light));
+  background: var(--brand-2);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; color: var(--brand-dark); font-size: 1rem;
   border: 2px solid rgba(0,0,0,0.15); flex-shrink: 0; overflow: hidden;
