@@ -4,6 +4,7 @@
 
 import Link from 'next/link'
 import AnimatedLogo from '@/components/AnimatedLogo'
+import SecretHqLink from './SecretHqLink'
 import styles from './PublicFooter.module.css'
 
 export default function PublicFooter() {
@@ -35,7 +36,7 @@ export default function PublicFooter() {
       </div>
 
       <div className={styles.bottomBar}>
-        <p>© {new Date().getFullYear()} SchoolOS. All rights reserved.</p>
+        <SecretHqLink />
       </div>
     </footer>
   )
