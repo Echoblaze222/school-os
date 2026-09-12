@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COACH_FEATURE_GROUPS } from '../featureGroups'
 import { PeopleIcon, PlusIcon, XIcon, SearchIcon, UserIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -99,7 +100,7 @@ export default function TeamsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="coach" profile={profile} school={school} title="Teams">
+    <RoleSubHeader userId={userId} role="coach" profile={profile} school={school} title="Teams" featureGroups={COACH_FEATURE_GROUPS}>
       <main className={styles.main}>
         <ActionButton onClick={() => setShowTeamForm(true)} icon={<PlusIcon size={16} />} fullWidth>
           Create a Team
@@ -192,6 +193,6 @@ export default function TeamsClient({ profile, school, userId }: Props) {
       )}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

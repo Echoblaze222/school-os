@@ -6,27 +6,10 @@ import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import ContextSwitcher from '@/components/ContextSwitcher'
-import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import { PeopleIcon, CalendarIcon, TrophyIcon, AiIcon, MessageIcon, BellIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
+import { COACH_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
+import { PeopleIcon, CalendarIcon, TrophyIcon } from '@/components/Icons'
 import styles from './coach.module.css'
 import motion from '@/components/dashboard-motion.module.css'
-
-const FEATURE_GROUPS: FeatureGroup[] = [
-  { name: 'Coaching', items: [
-    { id: 'teams',    label: 'Teams',    href: '/dashboard/coach/teams',    Icon: PeopleIcon },
-    { id: 'schedule', label: 'Schedule', href: '/dashboard/coach/schedule', Icon: CalendarIcon },
-    { id: 'matches',  label: 'Matches',  href: '/dashboard/coach/matches',  Icon: TrophyIcon },
-    { id: 'meetings', label: 'Meetings', href: '/dashboard/coach/meetings', Icon: ClipboardIcon },
-  ]},
-  { name: 'Communication', items: [
-    { id: 'chat',          label: 'Messages',      href: '/dashboard/coach/chat',          Icon: MessageIcon },
-    { id: 'notifications', label: 'Notifications', href: '/dashboard/coach/notifications', Icon: BellIcon },
-  ]},
-  { name: 'Account', items: [
-    { id: 'ai',      label: 'AI Assistant', href: '/dashboard/coach/ai',      Icon: AiIcon },
-    { id: 'profile', label: 'My Profile',   href: '/dashboard/coach/profile', Icon: UserIcon },
-  ]},
-]
 
 interface Stats { teamCount: number; totalPlayers: number; upcomingMatches: number }
 interface Team { id: string; name: string; sport: string }

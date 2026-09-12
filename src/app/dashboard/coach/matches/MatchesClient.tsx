@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COACH_FEATURE_GROUPS } from '../featureGroups'
 import { TrophyIcon, PlusIcon, XIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -90,7 +91,7 @@ export default function MatchesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="coach" profile={profile} school={school} title="Matches">
+    <RoleSubHeader userId={userId} role="coach" profile={profile} school={school} title="Matches" featureGroups={COACH_FEATURE_GROUPS}>
       <main className={styles.main}>
         <ActionButton onClick={() => setShowForm(true)} icon={<PlusIcon size={16} />} fullWidth disabled={teams.length === 0}>
           {teams.length === 0 ? 'Create a team first' : 'Schedule a Match'}
@@ -178,6 +179,6 @@ export default function MatchesClient({ profile, school, userId }: Props) {
       )}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COACH_FEATURE_GROUPS } from '../featureGroups'
 import { CalendarIcon, PlusIcon, XIcon, CheckIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -93,7 +94,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="coach" profile={profile} school={school} title="Schedule">
+    <RoleSubHeader userId={userId} role="coach" profile={profile} school={school} title="Schedule" featureGroups={COACH_FEATURE_GROUPS}>
       <main className={styles.main}>
         <ActionButton onClick={() => setShowForm(true)} icon={<PlusIcon size={16} />} fullWidth disabled={teams.length === 0}>
           {teams.length === 0 ? 'Create a team first' : 'Schedule a Session'}
@@ -197,6 +198,6 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
       })()}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
