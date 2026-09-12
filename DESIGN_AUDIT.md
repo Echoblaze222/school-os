@@ -74,6 +74,24 @@ screenshot of this app seen so far.
 
 ## Already done
 
+- **`secretary` role: fully migrated, 0 files remaining.**
+  `featureGroups.ts` created; `SecretaryClient.tsx` migrated to use it
+  (dropped `ClipboardIcon`/`FileTextIcon` from the import list entirely
+  - both were already-unused dead imports before this change, not the
+  "icon used outside FEATURE_GROUPS" gotcha seen in earlier batches).
+  All 14 files migrated: records, users, library, profile, meetings,
+  settings, clinic, students, codes, transfers, calendar, applications,
+  documents, admissions.
+  - Fixed 3 hand-rolled buttons with per-school dynamic color to use
+    the shared `.btn` class (`records`: "+ New" and "Create Record";
+    `profile`: "Save Changes", which also had an unnecessary gradient
+    - flattened to a solid per-school color).
+  - Fixed 2 hardcoded hex colors (`#10B981`/`#EF4444`) that were exact
+    literal copies of `--success`/`--danger` - replaced with the real
+    tokens. Left `records/RecordsClient.tsx`'s `positive`/`negative`
+    record-type color map alone - that's a business-domain concept
+    map, not accidental token drift, even though the values happen to
+    match.
 - `src/components/RoleSubHeader.tsx` - added optional `onBack` callback,
   needed for multi-step/wizard pages. Backward compatible.
 - **`teacher` role: fully migrated, 0 files remaining.** `featureGroups.ts`
@@ -220,7 +238,7 @@ screenshot of this app seen so far.
 - [x] ~~**principal** - 18 files~~ - **done, 0 remaining**
 - [x] ~~**teacher** - 15 files remaining (quizzes done)~~ - **done, 0 remaining**
 - [x] ~~**student** - 14 files~~ - **done, 0 remaining**
-- [ ] **secretary** - 14 files
+- [x] ~~**secretary** - 14 files~~ - **done, 0 remaining**
 - [ ] **bursar** - 13 files
 - [ ] **examination** - 8 files
 - [ ] **counselor** - 6 files
