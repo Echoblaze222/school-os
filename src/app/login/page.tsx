@@ -28,6 +28,20 @@ interface SelectedSchool {
 
 const SCHOOL_KEY = 'schoolos_selected_school'
 
+// Fired right before the hard navigation away from this page on a
+// successful sign-in, for the /super-admin/hq usage dashboard.
+// keepalive lets the browser finish the request even though the page
+// starts unloading immediately after - not awaited, so it never delays
+// the redirect.
+function logLoginEvent() {
+  fetch('/api/log-event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_type: 'login' }),
+    keepalive: true,
+  }).catch(() => {})
+}
+
 export default function LoginPage() {
   const router   = useRouter()
   const supabase = createClient()
@@ -193,6 +207,8 @@ export default function LoginPage() {
         const { mismatch, stage } = await checkSchoolMatchesAndGetStage(signInData.user.id)
         if (mismatch) return
 
+        logLoginEvent()
+
         // Hard navigation, not router.replace: this is a fresh sign-in, and
         // the client Router Cache doesn't reset on auth changes - a soft
         // nav here can briefly hand back a PREVIOUS session's cached
@@ -206,6 +222,7 @@ export default function LoginPage() {
         const { mismatch, stage } = await checkSchoolMatchesAndGetStage(signInData.user.id)
         if (mismatch) return
 
+        logLoginEvent()
         window.location.href = destinationForStage(stage)
       }
     } catch { setLoginError('Something went wrong. Please try again.')
@@ -248,6 +265,7 @@ export default function LoginPage() {
         // call auth.getUser() before the cookie exists and return 401.
         await supabase.auth.getSession()
 
+        logLoginEvent()
         const stage = data.onboarding_stage
         // Hard navigation for the same reason as handleExistingLogin above - // this is a fresh sign-in and must not reuse a cached page from
         // whoever was previously signed in on this device.

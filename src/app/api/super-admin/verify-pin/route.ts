@@ -31,5 +31,15 @@ export async function POST(req: Request) {
     .update({ last_login: new Date().toISOString() })
     .eq('id', user.id)
 
+  // Analytics event for /super-admin/hq. Awaited (not fire-and-forget) -
+  // an un-awaited promise isn't guaranteed to finish once the response is
+  // returned in a serverless function. Wrapped so a logging failure can
+  // never block a successful login.
+  try {
+    await adminSupabase.from('usage_events').insert({
+      user_id: user.id, role: 'super_admin', event_type: 'login',
+    })
+  } catch {}
+
   return NextResponse.json({ ok: true })
 }
