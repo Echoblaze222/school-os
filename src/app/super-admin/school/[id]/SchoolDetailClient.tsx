@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeftIcon, SchoolIcon, PeopleIcon, WalletIcon,
@@ -55,6 +56,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
   const [tab,        setTab]        = useState<'overview'|'staff'|'payments'|'compliance'|'settings'>('overview')
   const [saving,     setSaving]     = useState(false)
   const [editNotes,  setEditNotes]  = useState(false)
+  const toggleEditNotes = useSingleFireClick(() => setEditNotes(p => !p))
   const [notes,      setNotes]      = useState(school.notes ?? '')
   const [extendDays, setExtendDays] = useState(5)
   const [msg,        setMsg]        = useState('')
@@ -312,7 +314,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
           <div className={styles.card}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'var(--space-3)' }}>
               <h3 className={styles.cardTitle}>Private Notes</h3>
-              <button onClick={() => setEditNotes(!editNotes)}
+              <button onClick={toggleEditNotes}
                 style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, color:'var(--text-muted)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
                 <EditIcon size={11}/> {editNotes ? 'Cancel' : 'Edit'}
               </button>

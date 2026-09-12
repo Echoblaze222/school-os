@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { MegaphoneIcon, PlusIcon, MapPinIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -99,17 +100,17 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
   }
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Announcements">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Announcements" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'var(--space-4)' }}>
-        <button className="pressable" onClick={() => setShowForm(!showForm)}
-          style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 14px', background:sc, color:'#fff', border:'none', borderRadius:999, fontWeight:700, fontSize:'0.8rem', cursor:'pointer' }}>
+        <button className="btn btn-sm pressable" onClick={() => setShowForm(true)}
+          style={{ background:sc, color:'#fff', borderRadius:999 }}>
           <PlusIcon size={13} color="white"/> New Announcement
         </button>
       </div>
 
       {showForm && (
-        <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', padding:'var(--space-5)', marginBottom:'var(--space-5)' }}>
+        <div className="glass-card-flat" style={{ padding:'var(--space-5)', marginBottom:'var(--space-5)' }}>
           <p style={{ fontWeight:700, color:'var(--text-primary)', marginBottom:'var(--space-4)', fontSize:'0.9rem' }}>New Announcement</p>
           {aiDraftBanner && (
             <div style={{ padding: '10px 14px', background: 'rgba(128,0,32,0.08)', border: `1px solid ${sc}44`,
@@ -119,34 +120,34 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
           )}
           <div style={{ display:'flex', flexDirection:'column', gap:'var(--space-3)' }}>
             <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <label style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-secondary)' }}>Title *</label>
+              <label className="input-label">Title *</label>
               <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                 placeholder="e.g. Mid-term exam schedule"
-                style={{ height:40, padding:'0 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }}/>
+                className="input"/>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <label style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-secondary)' }}>Audience</label>
+              <label className="input-label">Audience</label>
               <select value={form.audience} onChange={e => setForm(p => ({ ...p, audience: e.target.value }))}
-                style={{ height:40, padding:'0 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }}>
+                className="input">
                 {['students','parents','all','teachers','staff'].map(a => (
                   <option key={a} value={a}>{a.charAt(0).toUpperCase()+a.slice(1)}</option>
                 ))}
               </select>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <label style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-secondary)' }}>Message *</label>
+              <label className="input-label">Message *</label>
               <textarea value={form.body} onChange={e => setForm(p => ({ ...p, body: e.target.value }))}
                 placeholder="Write your announcement here..." rows={4}
-                style={{ padding:'10px 12px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none', resize:'vertical' }}/>
+                className="input" style={{ height: 'auto', padding:'10px 12px', resize:'vertical' }}/>
             </div>
           </div>
           <div style={{ display:'flex', gap:'var(--space-2)', marginTop:'var(--space-4)' }}>
-            <button className="pressable" onClick={create} disabled={saving || !form.title || !form.body}
-              style={{ flex:1, height:40, background:sc, color:'#fff', border:'none', borderRadius:8, fontWeight:700, fontSize:'0.85rem', cursor:'pointer', opacity:saving?0.6:1 }}>
+            <button className="btn pressable" onClick={create} disabled={saving || !form.title || !form.body}
+              style={{ flex:1, background:sc, color:'#fff' }}>
               {saving ? 'Posting...' : 'Post Announcement'}
             </button>
-            <button className="pressable" onClick={() => setShowForm(false)}
-              style={{ flex:1, height:40, background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-muted)', fontWeight:600, fontSize:'0.85rem', cursor:'pointer' }}>
+            <button className="btn btn-secondary pressable" onClick={() => setShowForm(false)}
+              style={{ flex:1 }}>
               Cancel
             </button>
           </div>
@@ -195,6 +196,6 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
           </div>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { UserIcon } from '@/components/Icons'
 
@@ -129,7 +130,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props
             <div style={{ background: `${schoolColor}12`, border: `1px solid ${schoolColor}30`, borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: '50%', background: schoolColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
                 {found.avatar_url
-                  ? <img src={found.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ? <Image src={found.avatar_url} alt="" width={44} height={44} style={{ objectFit: 'cover' }} />
                   : <span style={{ fontWeight: 800, color: '#fff', fontSize: '1rem' }}>{found.full_name?.[0]}</span>
                 }
               </div>

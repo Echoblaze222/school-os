@@ -3,7 +3,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import Image from 'next/image'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import DepartmentCard from '@/components/org/DepartmentCard'
 import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon, ClockIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
@@ -447,7 +449,7 @@ export default function LeadershipClient({
     new Date(b.revokedAt ?? b.assignedAt).getTime() - new Date(a.revokedAt ?? a.assignedAt).getTime())
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Leadership & Appointments">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Leadership & Appointments" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {error && <div className={styles.errorBanner}>{error}</div>}
 
       <div className={styles.pageToolbar}>
@@ -470,7 +472,7 @@ export default function LeadershipClient({
         <div className={styles.vpGrid}>
           {vicePrincipals.map(vp => (
             <div key={vp.appointmentId} className={`${styles.vpCard} glass-card`}>
-              <div className={styles.vpAvatar}>{vp.avatarUrl ? <img src={vp.avatarUrl} alt="" /> : <CrownIcon size={16} />}</div>
+              <div className={styles.vpAvatar}>{vp.avatarUrl ? <Image src={vp.avatarUrl} alt="" width={38} height={38} /> : <CrownIcon size={16} />}</div>
               <div className={styles.vpInfo}>
                 <p className={styles.vpName}>{vp.fullName}</p>
                 <p className={styles.vpMeta}>
@@ -503,7 +505,7 @@ export default function LeadershipClient({
         <div className={styles.vpGrid}>
           {hostelPrefects.map(hp => (
             <div key={hp.appointmentId} className={`${styles.vpCard} glass-card`}>
-              <div className={styles.vpAvatar}>{hp.avatarUrl ? <img src={hp.avatarUrl} alt="" /> : <HomeIcon size={16} />}</div>
+              <div className={styles.vpAvatar}>{hp.avatarUrl ? <Image src={hp.avatarUrl} alt="" width={38} height={38} /> : <HomeIcon size={16} />}</div>
               <div className={styles.vpInfo}>
                 <p className={styles.vpName}>{hp.fullName}</p>
                 <p className={styles.vpMeta}>{hp.hostelIds.map(hostelName).join(', ')}</p>
@@ -562,7 +564,7 @@ export default function LeadershipClient({
                       {holders.map(h => (
                         <div key={h.appointmentId} className={`${styles.genericHolderCard} glass-card`}>
                           <div className={styles.genericHolderTop}>
-                            <div className={styles.memberAvatar}>{h.avatarUrl ? <img src={h.avatarUrl} alt="" /> : <UserIcon size={14} />}</div>
+                            <div className={styles.memberAvatar}>{h.avatarUrl ? <Image src={h.avatarUrl} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                             <p className={styles.memberName}>{h.fullName}</p>
                             <button
                               className={styles.chipRevokeBtn}
@@ -617,7 +619,7 @@ export default function LeadershipClient({
                   return (
                     <div key={h.appointmentId} className={styles.historyRow}>
                       <div className={styles.historyTop}>
-                        <div className={styles.memberAvatar}>{h.avatarUrl ? <img src={h.avatarUrl} alt="" /> : <UserIcon size={14} />}</div>
+                        <div className={styles.memberAvatar}>{h.avatarUrl ? <Image src={h.avatarUrl} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                         <p className={styles.memberName}>{h.fullName}</p>
                         <span className={`${styles.historyBadge} ${statusClass[h.status]}`}>{statusLabel[h.status]}</span>
                       </div>
@@ -672,7 +674,7 @@ export default function LeadershipClient({
               <div className={styles.memberList}>
                 {members.map(m => (
                   <div key={m.id} className={styles.memberRow}>
-                    <div className={styles.memberAvatar}>{m.avatar_url ? <img src={m.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                    <div className={styles.memberAvatar}>{m.avatar_url ? <Image src={m.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                     <div className={styles.memberInfo}><p className={styles.memberName}>{m.full_name}</p><p className={styles.memberMeta}>{m.employee_id ?? m.email}</p></div>
                   </div>
                 ))}
@@ -690,7 +692,7 @@ export default function LeadershipClient({
               <div className={styles.memberList}>
                 {eligibleHods.map(s => (
                   <button key={s.id} className={styles.pickRow} onClick={() => assignHod(s.id)} disabled={!!assigningHodId}>
-                    <div className={styles.memberAvatar}>{s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                    <div className={styles.memberAvatar}>{s.avatar_url ? <Image src={s.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                     <p className={styles.memberName}>{assigningHodId === s.id ? 'Assigning…' : s.full_name}</p>
                   </button>
                 ))}
@@ -715,7 +717,7 @@ export default function LeadershipClient({
                 <div className={styles.memberList}>
                   {eligibleVps.map(s => (
                     <button key={s.id} className={styles.pickRow} onClick={() => pickVpCandidate(s)}>
-                      <div className={styles.memberAvatar}>{s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                      <div className={styles.memberAvatar}>{s.avatar_url ? <Image src={s.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                       <p className={styles.memberName}>{s.full_name}</p>
                     </button>
                   ))}
@@ -761,7 +763,7 @@ export default function LeadershipClient({
                 <div className={styles.memberList}>
                   {eligibleHp.map(s => (
                     <button key={s.id} className={styles.pickRow} onClick={() => pickHpCandidate(s)}>
-                      <div className={styles.memberAvatar}>{s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                      <div className={styles.memberAvatar}>{s.avatar_url ? <Image src={s.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                       <p className={styles.memberName}>{s.full_name}</p>
                     </button>
                   ))}
@@ -804,7 +806,7 @@ export default function LeadershipClient({
                 <div className={styles.memberList}>
                   {genericCandidates.map(s => (
                     <button key={s.id} className={styles.pickRow} onClick={() => pickGenericCandidate(s)} disabled={appointingGeneric}>
-                      <div className={styles.memberAvatar}>{s.avatar_url ? <img src={s.avatar_url} alt="" /> : <UserIcon size={14} />}</div>
+                      <div className={styles.memberAvatar}>{s.avatar_url ? <Image src={s.avatar_url} alt="" width={30} height={30} /> : <UserIcon size={14} />}</div>
                       <p className={styles.memberName}>{assigningGenericCandidateId === s.id ? 'Assigning…' : s.full_name}</p>
                     </button>
                   ))}
@@ -843,6 +845,6 @@ export default function LeadershipClient({
           </div>
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

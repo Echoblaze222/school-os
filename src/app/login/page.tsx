@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import styles from './login.module.css'
 import {
   MailIcon, EyeIcon, EyeOffIcon,
@@ -43,6 +44,7 @@ export default function LoginPage() {
   const [identifier,   setIdentifier]   = useState('')
   const [password,     setPassword]     = useState('')
   const [showPass,     setShowPass]     = useState(false)
+  const toggleShowPass = useSingleFireClick(() => setShowPass(p => !p))
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError,   setLoginError]   = useState('')
 
@@ -50,6 +52,7 @@ export default function LoginPage() {
   const [newPassword,    setNewPassword]    = useState('')
   const [confirmPass,    setConfirmPass]    = useState('')
   const [showNewPass,    setShowNewPass]    = useState(false)
+  const toggleShowNewPass = useSingleFireClick(() => setShowNewPass(p => !p))
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [newUserError,   setNewUserError]   = useState('')
   const returnToRef = useRef<string | null>(null)
@@ -363,7 +366,7 @@ export default function LoginPage() {
                       onChange={e => setPassword(e.target.value)} className={styles.input}
                       placeholder="Enter your password" required autoComplete="current-password"
                     />
-                    <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)} tabIndex={-1}>
+                    <button type="button" className={styles.eyeBtn} onClick={toggleShowPass} tabIndex={-1}>
                       {showPass ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </button>
                   </div>
@@ -395,7 +398,7 @@ export default function LoginPage() {
                       onChange={e => setNewPassword(e.target.value)} className={styles.input}
                       placeholder="Min. 8 characters" required minLength={8}
                     />
-                    <button type="button" className={styles.eyeBtn} onClick={() => setShowNewPass(!showNewPass)} tabIndex={-1}>
+                    <button type="button" className={styles.eyeBtn} onClick={toggleShowNewPass} tabIndex={-1}>
                       {showNewPass ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </button>
                   </div>

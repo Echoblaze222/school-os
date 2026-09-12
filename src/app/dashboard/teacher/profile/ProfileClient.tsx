@@ -7,7 +7,9 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import {
   UserIcon, CameraIcon, KeyIcon, LogOutIcon, EditIcon, CrownIcon,
 } from '@/components/Icons'
@@ -27,6 +29,7 @@ interface TeacherClass {
 
 export default function ProfileClient({ profile, school, userId }: Props) {
   const [editing,     setEditing]     = useState(false)
+  const toggleEditing = useSingleFireClick(() => setEditing(p => !p))
   const [saving,      setSaving]      = useState(false)
   const [fullName,    setFullName]    = useState(profile?.full_name    ?? '')
   const [phone,       setPhone]       = useState(profile?.phone        ?? '')
@@ -158,7 +161,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
   const subjectsTaught = [...new Set(myClasses.filter(c => c.subject).map(c => c.subject!))]
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="My Profile">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="My Profile" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Avatar + name block */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
@@ -233,7 +236,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: 0 }}>
             Personal Info
           </p>
-          <button className="pressable" onClick={() => setEditing(!editing)} style={{
+          <button className="pressable" onClick={toggleEditing} style={{
             display: 'flex', alignItems: 'center', gap: 5,
             padding: '5px 12px',
             background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)',
@@ -412,6 +415,6 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

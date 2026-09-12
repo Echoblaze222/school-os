@@ -9,7 +9,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { VideoIcon, StatusDotIcon, CalendarIcon, AlertIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
@@ -65,7 +66,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Classes">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Classes" featureGroups={STUDENT_FEATURE_GROUPS}>
         <>
 
           {/* No class assigned warning */}
@@ -169,6 +170,6 @@ export default function ClassesClient({ profile, school, userId }: Props) {
           }
           <div className={styles.spacer} />
         </>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

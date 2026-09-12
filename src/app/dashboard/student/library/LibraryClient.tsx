@@ -2,7 +2,8 @@
 // src/app/dashboard/student/library/LibraryClient.tsx
 
 import { useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import KpiCard from '@/components/KpiCard'
 import { BookIcon, AlertCircleIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -35,7 +36,7 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
   }
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Library">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Library" featureGroups={STUDENT_FEATURE_GROUPS}>
       {activeLoans.length > 0 && (
         <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
           <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} color={sc} />
@@ -119,6 +120,6 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

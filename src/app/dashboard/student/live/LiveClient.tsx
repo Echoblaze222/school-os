@@ -8,7 +8,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import ReminderButton from '@/components/ReminderButton'
 import { VideoIcon, StatusDotIcon, CalendarIcon, CheckCircleIcon, AlertIcon, XIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
@@ -77,7 +78,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   sessions.forEach(s => { counts[deriveStatus(s)]++ })
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Live Classes">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Live Classes" featureGroups={STUDENT_FEATURE_GROUPS}>
 
       <div style={{ marginBottom: 'var(--space-3)', textAlign: 'right' }}>
         <button onClick={() => router.push('/dashboard/student/live/recordings')}
@@ -211,6 +212,6 @@ export default function LiveClient({ profile, school, userId }: Props) {
           )
       }
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

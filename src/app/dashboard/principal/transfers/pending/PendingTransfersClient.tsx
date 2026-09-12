@@ -1,10 +1,11 @@
 'use client'
 // src/app/dashboard/principal/transfers/pending/PendingTransfersClient.tsx
-// Rebuilt with RolePageWrapper + secretary.module.css to match the rest of the principal dashboard.
+// Rebuilt with RoleSubHeader + secretary.module.css to match the rest of the principal dashboard.
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../../featureGroups'
 import styles from '@/app/dashboard/secretary/secretary.module.css'
 import type { PendingTransferRow } from '../../types'
 import { TransferIcon } from '@/components/Icons'
@@ -107,13 +108,13 @@ export default function PendingTransfersClient({
   }
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="principal"
       profile={profile}
       school={school}
       title="Pending Transfers"
-      showBack
+      featureGroups={PRINCIPAL_FEATURE_GROUPS}
     >
       {transfers.length === 0 ? (
         <div className={styles.emptyState}>
@@ -248,7 +249,7 @@ export default function PendingTransfersClient({
       )}
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
       }
   

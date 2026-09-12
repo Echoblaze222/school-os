@@ -9,7 +9,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import KpiCard from '@/components/KpiCard'
 import { ActivityIcon, AlertCircleIcon, PeopleIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -55,7 +56,7 @@ export default function ClinicClient({ profile, school, userId }: Props) {
   const withAllergies = rows.filter(r => r.record?.allergies)
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Clinic">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Clinic" featureGroups={TEACHER_FEATURE_GROUPS}>
       {loading ? (
         <SkeletonList count={4} variant="card" />
       ) : rows.length === 0 ? (
@@ -103,6 +104,6 @@ export default function ClinicClient({ profile, school, userId }: Props) {
         </>
       )}
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

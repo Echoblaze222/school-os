@@ -9,7 +9,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient }        from '@/lib/supabase/client'
-import RolePageWrapper         from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import { BarChartIcon }        from '@/components/Icons'
 import { SkeletonBlock }       from '@/components/motion/Skeleton'
 import styles                  from '@/app/dashboard/student/records/page.module.css'
@@ -231,7 +232,7 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
   const currentTerm = TERM_OPTIONS.find(t => t.value === term)?.label ?? 'First'
 
   return (
-    <RolePageWrapper userId={userId} role="principal" profile={profile} school={school} title="Analytics">
+    <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Analytics" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
 
       {/* ── Term / Year selector ── */}
       <div style={{
@@ -405,6 +406,6 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
       )}
 
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

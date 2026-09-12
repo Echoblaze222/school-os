@@ -227,7 +227,7 @@ export async function POST(req: Request) {
 
     await adminSupabase.from('notifications').insert({
       user_id: authUser.user.id,
-      title:   '🎉 Welcome to SchoolOS!',
+      title:   'Welcome to SchoolOS!',
       body:    welcomeMsg,
       type:    'system',
     })

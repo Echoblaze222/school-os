@@ -19,7 +19,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { BookOpenIcon, AlertIcon, XIcon, FileTextIcon, CheckIcon, DownloadIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
@@ -111,7 +112,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
   const SUBJECT_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6', '#F97316', '#14B8A6']
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Syllabus">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Syllabus" featureGroups={STUDENT_FEATURE_GROUPS}>
         <>
 
           <div className={`${styles.tabs} ${motion.riseIn}`} style={{ marginBottom: 'var(--space-3)' }}>
@@ -206,6 +207,6 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
           </>}
           <div className={styles.spacer} />
         </>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -4,12 +4,14 @@
 // 2. Props extended: accepts school + profile from page.tsx
 // 3. handleGrade() now updates existing grade OR sets new - same function handles both
 // 4. Error messages surfaced in UI instead of only setSaveErrors
-// 5. Uses RolePageWrapper so header/nav is consistent with rest of teacher dashboard
+// 5. Uses RoleSubHeader so header/nav is consistent with rest of teacher dashboard
 // 6. filter bar uses school brand colour for active state
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import type { Submission } from './page'
 import styles from './submissions.module.css'
 import { CheckIcon, EditIcon } from '@/components/Icons'
@@ -94,7 +96,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
   }
 
   return (
-    <RolePageWrapper userId={graderId} role="teacher" profile={profile} school={school} title="Grade Submissions">
+    <RoleSubHeader userId={graderId} role="teacher" profile={profile} school={school} title="Grade Submissions" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Summary pill */}
       <div style={{ marginBottom: 'var(--space-3)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -141,7 +143,7 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
                 <div className={styles.cardTop} onClick={() => setExpanded(isOpen ? null : sub.id)}>
                   <div className={styles.avatar}>
                     {sub.student_avatar
-                      ? <img src={sub.student_avatar} alt={sub.student_name} className={styles.avatarImg} />
+                      ? <Image src={sub.student_avatar} alt={sub.student_name} width={42} height={42} className={styles.avatarImg} />
                       : <span>{initials(sub.student_name)}</span>
                     }
                   </div>
@@ -237,6 +239,6 @@ export default function SubmissionsClient({ submissions: initial, graderId, scho
         </div>
       )}
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

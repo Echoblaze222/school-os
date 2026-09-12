@@ -3,8 +3,8 @@ import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import DashboardHeader from '@/components/DashboardHeader'
-import StudentNav from '@/components/StudentNav'
 import { UserIcon, EditIcon, CameraIcon, LogOutIcon, ShieldIcon, KeyIcon } from '@/components/Icons'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
@@ -13,6 +13,7 @@ interface Props { profile: any; school: any; userId: string }
 
 export default function ProfileClient({ profile, school, userId }: Props) {
   const [editing,   setEditing]   = useState(false)
+  const toggleEditing = useSingleFireClick(() => setEditing(p => !p))
   const [saving,    setSaving]    = useState(false)
   const [fullName,  setFullName]  = useState(profile?.full_name ?? '')
   const [phone,     setPhone]     = useState(profile?.phone ?? '')
@@ -105,7 +106,6 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
   return (
     <div className={styles.page}>
-      <StudentNav userId={userId} profile={profile} school={school} schoolColor={schoolColor} />
       <div className={styles.content}>
         <DashboardHeader userId={userId} role="student" profile={profile} school={school}
           schoolColor={schoolColor} title="My Profile" showBack />
@@ -143,7 +143,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <div style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', overflow:'hidden', marginBottom:'var(--space-5)' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--space-4) var(--space-5)', borderBottom:'1px solid var(--glass-border)' }}>
               <p style={{ fontSize:'0.72rem', fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--text-muted)', margin:0 }}>Personal Info</p>
-              <button className="pressable" onClick={() => setEditing(!editing)}
+              <button className="pressable" onClick={toggleEditing}
                 style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', background:editing?'var(--glass-bg)':'var(--brand-subtle)', border:`1px solid ${editing?'var(--glass-border)':'var(--brand-border)'}`, borderRadius:'999px', color:editing?'var(--text-muted)':'var(--brand-light)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
                 <EditIcon size={12}/> {editing ? 'Cancel' : 'Edit'}
               </button>

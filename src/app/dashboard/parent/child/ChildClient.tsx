@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
@@ -185,7 +186,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
               <div style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', padding:'var(--space-5)', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', marginBottom:'var(--space-5)' }}>
                 <div style={{ width:60, height:60, borderRadius:'50%', background:schoolColor, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', flexShrink:0 }}>
                   {child.avatar_url
-                    ? <img src={child.avatar_url} alt={child.full_name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                    ? <Image src={child.avatar_url} alt={child.full_name} width={60} height={60} style={{ objectFit:'cover' }}/>
                     : <UserIcon size={24} color="white"/>
                   }
                 </div>

@@ -2,9 +2,12 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import {
   UserIcon,
   CameraIcon,
@@ -25,6 +28,7 @@ export default function ProfileClient({
   userId,
 }: Props) {
   const [editing, setEditing] = useState(false)
+  const toggleEditing = useSingleFireClick(() => setEditing(p => !p))
   const [saving, setSaving] = useState(false)
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [phone, setPhone] = useState(profile?.phone ?? '')
@@ -99,7 +103,7 @@ export default function ProfileClient({
         .from('avatars')
         .getPublicUrl(path)
 
-      // Append a cache-buster so the <img> tag always re-fetches
+      // Append a cache-buster so the <Image> tag always re-fetches
       const freshUrl = data.publicUrl + '?t=' + Date.now()
 
       const { error: dbErr } = await supabase
@@ -141,12 +145,13 @@ export default function ProfileClient({
   ]
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="principal"
       profile={profile}
       school={school}
       title="My Profile"
+      featureGroups={PRINCIPAL_FEATURE_GROUPS}
     >
       <div
         style={{
@@ -172,12 +177,12 @@ export default function ProfileClient({
             }}
           >
             {avatar ? (
-              <img
+              <Image
                 src={avatar}
                 alt=""
+                width={84}
+                height={84}
                 style={{
-                  width: '100%',
-                  height: '100%',
                   objectFit: 'cover',
                   opacity: uploadingPhoto ? 0.4 : 1,
                 }}
@@ -292,7 +297,7 @@ export default function ProfileClient({
           </p>
 
           <button className="pressable"
-            onClick={() => setEditing(!editing)}
+            onClick={toggleEditing}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -482,6 +487,6 @@ export default function ProfileClient({
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

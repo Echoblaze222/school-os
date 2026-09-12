@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { MessageIcon, SendIcon, PaperclipIcon, XIcon } from './Icons'
 import styles from './ChatWidget.module.css'
 
@@ -30,6 +31,7 @@ interface Props {
 // ── Component ──────────────────────────────────────────────
 export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Props) {
   const [open,       setOpen]       = useState(false)
+  const toggleOpen = useSingleFireClick(() => setOpen(p => !p))
   const [rooms,      setRooms]      = useState<Room[]>([])
   const [activeRoom, setActiveRoom] = useState<Room | null>(null)
   const [messages,   setMessages]   = useState<Message[]>([])
@@ -231,7 +233,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
       <button
         className={styles.fab}
         style={{ background: schoolColor }}
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         aria-label="Open messages"
       >
         {open

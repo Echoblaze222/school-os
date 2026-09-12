@@ -8,7 +8,8 @@
 // verification page uses.
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import {
   GraduationCapIcon, DownloadIcon, CopyIcon, CheckCircleIcon, XIcon, AlertIcon,
 } from '@/components/Icons'
@@ -54,7 +55,7 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
   }
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="My Certificate">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="My Certificate" featureGroups={STUDENT_FEATURE_GROUPS}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
         {error && (
@@ -123,13 +124,13 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
               {cert.status === 'issued' && cert.pdfUrl && (
-                <a href={cert.pdfUrl} target="_blank" rel="noopener noreferrer" className={motion.pressable}
-                  style={{ flex: 1, minWidth: 140, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 42, borderRadius: 10, background: sc, color: '#fff', fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>
+                <a href={cert.pdfUrl} target="_blank" rel="noopener noreferrer" className={`btn ${motion.pressable}`}
+                  style={{ flex: 1, minWidth: 140, background: sc, color: '#fff', textDecoration: 'none' }}>
                   <DownloadIcon size={14} /> Download PDF
                 </a>
               )}
-              <button onClick={() => copyLink(cert)} className={motion.pressable}
-                style={{ flex: 1, minWidth: 140, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 42, borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+              <button onClick={() => copyLink(cert)} className={`btn btn-secondary ${motion.pressable}`}
+                style={{ flex: 1, minWidth: 140 }}>
                 {copiedId === cert.id ? <><CheckCircleIcon size={14} color="var(--success)" /> Copied</> : <><CopyIcon size={14} /> Copy Verification Link</>}
               </button>
             </div>
@@ -140,6 +141,6 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
           </div>
         ))}
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

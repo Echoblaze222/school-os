@@ -92,7 +92,7 @@ export async function evaluateSchoolSubscription(supabase: any, school: SchoolEx
         if (principal) {
           await supabase.from('notifications').insert({
             user_id: principal.id,
-            title:   '⚠️ Subscription payment due',
+            title:   'Subscription payment due',
             body:    `${school.name}'s subscription for this term has ended. You have ${GRACE_PERIOD_DAYS} days to renew before access is restricted for staff and students.`,
             type:    'system',
             action_url: '/dashboard/principal/subscriptions',
@@ -116,7 +116,7 @@ export async function evaluateSchoolSubscription(supabase: any, school: SchoolEx
       if (principal) {
         await supabase.from('notifications').insert({
           user_id: principal.id,
-          title:   '🚫 Subscription Suspended',
+          title:   'Subscription Suspended',
           body:    `${school.name}'s grace period has ended. Renew now to restore full access for your staff and students.`,
           type:    'system',
           action_url: '/dashboard/principal/subscriptions',
@@ -168,10 +168,10 @@ export async function evaluateSchoolSubscription(supabase: any, school: SchoolEx
           await supabase.from('trial_reminders').insert({
             school_id: school.id, day_trigger: day,
           })
-          const urgency = day <= 3 ? '🚨 URGENT' : day <= 7 ? '⚠️' : 'ℹ️'
+          const urgency = day <= 3 ? 'URGENT:' : day <= 7 ? 'Reminder:' : ''
           await supabase.from('notifications').insert({
             user_id: principal.id,
-            title:   `${urgency} Trial ends in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`,
+            title:   `${urgency} Trial ends in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`.trim(),
             body:    daysLeft <= 1
               ? `Your SchoolOS trial expires TODAY. Pay for setup NOW to keep all your data and continue using the portal.`
               : `Your SchoolOS free trial ends in ${daysLeft} days. Pay for permanent setup to avoid losing access. All features + 1 month free after payment.`,

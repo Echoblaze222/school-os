@@ -6,8 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
-import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
@@ -99,6 +97,10 @@ export default function BursarDashboardClient({
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const totalCollected = counts.totalCollected ?? 0
+  const collectionRate = counts.collectionRate ?? 0
+  const headline = `₦${totalCollected.toLocaleString()} collected · ${collectionRate}% of fees`
+  const sub = `${counts.currentTerm ?? 'This term'} · ${counts.totalStudents ?? 0} students`
 
   async function handleDeleteActivity(id: string) {
     const { error } = await supabase.from('recent_activities').delete().eq('id', id).eq('user_id', userId)
@@ -114,28 +116,50 @@ export default function BursarDashboardClient({
         profile={profile}
         school={school}
         greeting={`${greeting}, ${firstName}`}
-        headline="The books, today."
-        sub={`${counts.currentTerm ?? 'This term'} · ${counts.totalStudents ?? 0} students`}
+        headline={headline}
+        sub={sub}
         featureGroups={FEATURE_GROUPS}
       />
 
       <main className={styles.main}>
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
+          display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Collection rate" value={counts.collectionRate ?? 0} isPercent
-              color="var(--brand-2, var(--brand))" caption={counts.currentTerm ?? 'this term'} />
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Collected</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              ₦{totalCollected.toLocaleString()}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--success)' }}>
+              {collectionRate}% of fees · {counts.currentTerm ?? 'this term'}
+            </p>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Paid students</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.paidCount ?? 0}</p>
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Enrolled</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.totalStudents ?? 0}</p>
+              </div>
+            </div>
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Claims pending" value={pendingClaims}
-              color="var(--status-warn, #E4572E)" caption="awaiting review" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Overdue" value={counts.overdueCount ?? 0}
-              color="var(--status-warn, #E4572E)" caption="students" delayMs={160} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Collection rate</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{collectionRate}%</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Claims pending</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingClaims > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{pendingClaims}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Overdue</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.overdueCount ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.overdueCount ?? 0}</p>
+            </div>
           </div>
         </div>
 
@@ -159,18 +183,13 @@ export default function BursarDashboardClient({
                   <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</p>
                   <p style={{ margin: 0, fontSize: '0.68rem', color: 'var(--text-muted)' }}>{d.term ?? ''}</p>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--status-warn, #E4572E)' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--warning)' }}>
                   ₦{d.outstanding.toLocaleString()}
                 </p>
               </Link>
             ))}
           </div>
         )}
-
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
-          <KpiCard label="Total Collected" value={`₦${((counts.totalCollected ?? 0) / 1000).toFixed(0)}k`} icon={<WalletIcon size={16} />} context="This term" />
-          <KpiCard label="Paid Students" value={counts.paidCount ?? 0} icon={<CheckCircleIcon size={16} />} context="Fully settled" />
-        </div>
 
         <RecentActivity
           items={activities}

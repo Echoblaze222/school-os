@@ -4,7 +4,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import ReminderButton from '@/components/ReminderButton'
 import { VideoIcon, PlusIcon, CalendarIcon, StatusDotIcon, CheckCircleIcon, AlertIcon, XIcon, PlayIcon, StopIcon, LinkIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -160,7 +161,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="Live Classes">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Live Classes" featureGroups={TEACHER_FEATURE_GROUPS}>
 
       <div style={{ marginBottom: 'var(--space-3)', textAlign: 'right' }}>
         <button onClick={() => router.push('/dashboard/teacher/live/recordings')}
@@ -181,7 +182,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
               : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CheckCircleIcon size={13} /></span>Ended</>}
           </button>
         ))}
-        <button className="pressable" onClick={() => setShowForm(!showForm)}
+        <button className="pressable" onClick={() => setShowForm(true)}
           style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> Schedule
         </button>
@@ -374,6 +375,6 @@ export default function LiveClient({ profile, school, userId }: Props) {
           </div>
       }
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

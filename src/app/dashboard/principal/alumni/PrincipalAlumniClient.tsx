@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import RoleNav from '@/components/RoleNav'
 import styles from './alumni.module.css'
 import type { AlumniStudent } from './page'
@@ -152,7 +153,7 @@ export default function PrincipalAlumniClient({ alumni, userId, profile, school,
                 {/* Avatar */}
                 <div className={styles.avatar}>
                   {a.avatar_url
-                    ? <img src={a.avatar_url} alt={a.full_name} className={styles.avatarImg} />
+                    ? <Image src={a.avatar_url} alt={a.full_name} width={48} height={48} className={styles.avatarImg} />
                     : <span>{initials(a.full_name)}</span>
                   }
                 </div>

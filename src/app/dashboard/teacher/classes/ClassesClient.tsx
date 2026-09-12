@@ -5,8 +5,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import {
   PeopleIcon, CalendarIcon, ClipboardIcon,
   BarChartIcon, AwardIcon, CrownIcon,
@@ -33,9 +35,6 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   const router   = useRouter()
   const supabase = createClient()
   const sc       = school?.primary_color ?? '#800020'
-
-  useEffect(() => { load() }, [])
-  useEffect(() => { if (selected) loadStudents(selected.class_id) }, [selected])
 
   async function load() {
     // FIX #1: load from class_teachers instead of classes.teacher_id
@@ -82,6 +81,9 @@ export default function ClassesClient({ profile, school, userId }: Props) {
     if (data) setStudents(data)
   }
 
+  useEffect(() => { load() }, [])
+  useEffect(() => { if (selected) loadStudents(selected.class_id) }, [selected])
+
   // Quick action: navigate with class context pre-filled via query param
   function goTo(path: string) {
     if (!selected) return
@@ -116,7 +118,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
   ]
 
   return (
-    <RolePageWrapper userId={userId} role="teacher" profile={profile} school={school} title="My Classes">
+    <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="My Classes" featureGroups={TEACHER_FEATURE_GROUPS}>
       {loading ? (
         <SkeletonList count={4} variant="card" />
       ) : classes.length === 0 ? (
@@ -157,14 +159,11 @@ export default function ClassesClient({ profile, school, userId }: Props) {
           {selected && (
             <>
               {/* Class info + role badge */}
-              <div style={{
+              <div className="glass-card-flat" style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '12px 14px',
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 10,
                 marginBottom: 'var(--space-4)',
               }}>
                 <div>
@@ -246,14 +245,11 @@ export default function ClassesClient({ profile, school, userId }: Props) {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {students.map((s: any, i: number) => (
-                  <div key={s.id} style={{
+                  <div key={s.id} className="glass-card-flat" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
                     padding: '10px 14px',
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 10,
                   }}>
                     {/* Rank */}
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', minWidth: 20, textAlign: 'center' as const }}>
@@ -267,7 +263,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                       overflow: 'hidden', flexShrink: 0,
                     }}>
                       {s.avatar_url
-                        ? <img src={s.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ? <Image src={s.avatar_url} alt="" width={36} height={36} style={{ objectFit: 'cover' }} />
                         : <span style={{ fontWeight: 700, color: sc, fontSize: '0.85rem' }}>{s.full_name?.[0]}</span>
                       }
                     </div>
@@ -283,6 +279,6 @@ export default function ClassesClient({ profile, school, userId }: Props) {
         </>
       )}
       <div style={{ height: 100 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
