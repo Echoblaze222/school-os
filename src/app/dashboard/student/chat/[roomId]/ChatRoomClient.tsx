@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   SendIcon, PaperclipIcon,
@@ -1284,9 +1283,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         <div className={styles.roomInfo}>
           <div className={styles.roomAvatar} style={{ background: schoolColor }}>
             {roomInfo?.room_type === 'school_group' && school?.logo_url
-              ? <Image src={school.logo_url} alt="" width={38} height={38} style={{ objectFit:'cover' }} />
+              ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
               : otherUser?.avatar_url
-              ? <Image src={otherUser.avatar_url} alt="" width={38} height={38} style={{ objectFit:'cover' }} />
+              ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
               : <span style={{ color:'#fff', fontWeight:700, fontSize:'1rem' }}>
                   {displayName[0]?.toUpperCase() ?? '#'}
                 </span>
@@ -1327,11 +1326,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           <div className={styles.profileCard} onClick={e => e.stopPropagation()}>
             <div className={styles.profileAvatar} style={{ background: schoolColor }}>
               {roomInfo?.room_type === 'school_group' && school?.logo_url
-                ? <Image src={school.logo_url} alt="" width={64} height={64} style={{ objectFit:'cover' }} />
+                ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                 : roomInfo?.room_type === 'peer_group'
                 ? <PeopleIcon size={28} color="#fff" />
                 : otherUser?.avatar_url
-                ? <Image src={otherUser.avatar_url} alt="" width={64} height={64} style={{ objectFit:'cover' }} />
+                ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                 : <span style={{ color:'#fff', fontWeight:700, fontSize:'1.6rem' }}>{displayName[0]?.toUpperCase() ?? '#'}</span>
               }
             </div>
@@ -1377,7 +1376,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     <div key={m.id} className={styles.memberRow}>
                       <div className={styles.memberAvatar} style={{ background: ROLE_COLORS[m.role] ?? schoolColor }}>
                         {m.avatar_url
-                          ? <Image src={m.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
+                          ? <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                           : <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.7rem' }}>{m.full_name?.[0]}</span>
                         }
                       </div>
@@ -1522,7 +1521,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       {showAvatar && (
                         <div className={styles.senderAvatar} style={{ background: schoolColor }}>
                           {msg.sender?.avatar_url
-                            ? <Image src={msg.sender.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
+                            ? <img src={msg.sender.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                             : msg.sender?.full_name?.[0] ?? '?'
                           }
                         </div>
@@ -1900,6 +1899,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               className={styles.attachBtn}
               onClick={e => {
                 e.stopPropagation()
+                // Dismiss the native on-screen keyboard so the sticker
+                // tray actually takes its place (matches the WhatsApp-style
+                // swap this was asked to match) instead of appearing
+                // stacked below/behind a keyboard that never closed.
+                inputRef.current?.blur()
                 setShowStickers(true)
                 // Lazy-load: only fetch once per session, not on every open.
                 if (customStickers.length === 0 && !loadingCustomStickers) loadCustomStickers()
