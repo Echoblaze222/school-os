@@ -91,6 +91,46 @@ screenshot of this app seen so far.
   `RoleSubHeader` (one, `results/PrincipalResultsClient.tsx`, turned out
   to be a comment-only false positive and needed no change). See the
   patterns section below this one for specific findings from this batch.
+- **`student` role: fully migrated, 0 files remaining.**
+  `featureGroups.ts` created; `StudentDashboardClient.tsx` migrated to
+  use it (kept `ClipboardIcon`/`TrophyIcon` imported separately since
+  those are still used directly in KpiCards on the dashboard home -
+  same "icon used outside FEATURE_GROUPS" gotcha as the principal batch).
+  All 14 files migrated: certificates, library, alumni, notes, meetings,
+  quizzes, classes, results, syllabus, schedule, live, leaderboard,
+  assignments. `quizzes/[id]/QuizTakeClient.tsx` was a comment-only
+  false positive, no change needed.
+  - **Dynamic role, not just dynamic role prop.** `leaderboard/LeaderboardClient.tsx`
+    renders for both students and parents (`role={isParent ? 'parent' : 'student'}`).
+    The naive fix (pass `STUDENT_FEATURE_GROUPS` always) would have shown
+    student nav links to parents. Had to import `PARENT_FEATURE_GROUPS`
+    too and pick per `isParent`. Worth checking for on any page shared
+    across roles, not just pages with a single hardcoded role.
+  - Rest of the student batch (library, notes, meetings, classes,
+    syllabus, live, schedule, results) had already had their inline-style
+    drift cleaned up in an earlier "REDESIGN PASS" - only the wrapper
+    swap was needed, no new drift found.
+  - Fixed one hand-rolled button pair (download/copy in
+    `certificates/StudentCertificatesClient.tsx`) to use `.btn`/`.btn-secondary`.
+  - Cleaned a stale comment in `assignments/AssignmentsClient.tsx` that
+    described the wrapper migration as still undecided.
+- **Bursar dashboard home (`BursarDashboardClient.tsx`) - stats section
+  redesigned, but NOT part of the RolePageWrapper migration.** Separate
+  ask: apply "5 tells of AI-made UI" (equal-weight tiles, generic
+  greeting copy) to just this one page, explicitly not its 13
+  `RolePageWrapper` sub-pages (those are still pending below). Replaced
+  5 equal-weight tiles (3 GaugeStat rings + 2 KpiCards) with one primary
+  hero card (Total Collected + Paid/Enrolled breakdown) and 3 smaller
+  secondary tiles (Collection rate, Claims pending, Overdue). Replaced
+  the generic "The books, today." headline with a numbers-driven one.
+  Also found and fixed a second instance of the undefined-CSS-variable
+  bug class (see the `--error` bug above): this file referenced
+  `--status-warn`, which doesn't exist in `globals.css` either - fixed
+  to the real token, `--warning`. `RoleHeroHeader`'s gradient and the
+  shadow system were deliberately left alone (shared across every role,
+  and already correctly shadow-only-on-floating-elements respectively).
+  **The 13 `RolePageWrapper` sub-pages for bursar are still outstanding
+  - see below.**
 
 ### Patterns discovered during the teacher batch (apply to future roles too)
 
@@ -125,7 +165,7 @@ screenshot of this app seen so far.
 
 - [x] ~~**principal** - 18 files~~ - **done, 0 remaining**
 - [x] ~~**teacher** - 15 files remaining (quizzes done)~~ - **done, 0 remaining**
-- [ ] **student** - 14 files
+- [x] ~~**student** - 14 files~~ - **done, 0 remaining**
 - [ ] **secretary** - 14 files
 - [ ] **bursar** - 13 files
 - [ ] **examination** - 8 files

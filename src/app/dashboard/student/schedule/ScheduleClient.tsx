@@ -27,7 +27,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { CalendarIcon, PlusIcon, SparkleIcon, AlertIcon, XIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
@@ -152,7 +153,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Study Plan">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Study Plan" featureGroups={STUDENT_FEATURE_GROUPS}>
         <>
 
           {error && (
@@ -349,6 +350,6 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
           }
           <div className={styles.spacer} />
         </>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

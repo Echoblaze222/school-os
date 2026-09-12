@@ -14,7 +14,8 @@
 // Chrome was already on RolePageWrapper, so no chrome change needed here.
 
 import { useState, useMemo, useEffect } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { BarChartIcon, FileTextIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -189,12 +190,13 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
   }, [filtered])
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="student"
       profile={profile}
       school={school}
       title="My Results"
+      featureGroups={STUDENT_FEATURE_GROUPS}
     >
 
       {/* ── Report Cards (independent of whether results exist for the term) ── */}
@@ -441,6 +443,6 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
       )}
 
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

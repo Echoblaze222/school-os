@@ -8,7 +8,9 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
+import { PARENT_FEATURE_GROUPS } from '../../parent/featureGroups'
 import { TrophyIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
@@ -248,7 +250,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
     .filter(({ entry, rank }) => isHighlighted(entry) && rank > 3)
 
   return (
-    <RolePageWrapper userId={userId} role={isParent ? 'parent' : 'student'} profile={profile} school={school} title="Leaderboard">
+    <RoleSubHeader userId={userId} role={isParent ? 'parent' : 'student'} profile={profile} school={school} title="Leaderboard" featureGroups={isParent ? PARENT_FEATURE_GROUPS : STUDENT_FEATURE_GROUPS}>
         <>
           {loading ? (
             <SkeletonList count={3} variant="row" />
@@ -377,7 +379,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
             </>
           )}
         </>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

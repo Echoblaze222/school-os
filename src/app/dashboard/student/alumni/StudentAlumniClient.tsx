@@ -24,7 +24,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { GraduationCapIcon, AwardIcon } from '@/components/Icons'
 import styles from './alumni-student.module.css'
 import type { AlumniProfile, AlumniResult, AlumniReceipt } from './types'
@@ -98,7 +99,7 @@ export default function StudentAlumniClient({
   }, {})
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="My Records">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="My Records" featureGroups={STUDENT_FEATURE_GROUPS}>
         <div className={styles.orb1} aria-hidden />
 
         {/* Hero banner */}
@@ -273,6 +274,6 @@ export default function StudentAlumniClient({
         )}
 
         <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

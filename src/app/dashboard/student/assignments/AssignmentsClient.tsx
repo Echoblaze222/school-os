@@ -35,12 +35,13 @@
 //     from globals.css instead of one-off inline styles
 //   - riseIn / staggerItem / pressable motion added to match the
 //     hero-dashboard's entrance + press feel
-//   - NOTE: StudentNav + DashboardHeader chrome intentionally left as-is - //     the RolePageWrapper migration question is still open, tracked
-//     separately so it can be applied once across all sub-pages at once
+//   - Chrome migrated from RolePageWrapper to RoleSubHeader as part of the
+//     app-wide design consistency pass (see DESIGN_AUDIT.md)
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import {
   ClipboardIcon, AlertIcon, XIcon, EditIcon, PaperclipIcon, CheckIcon, UploadIcon,
 } from '@/components/Icons'
@@ -220,7 +221,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   function isOverdue(due: string) { return new Date(due) < new Date() }
 
   return (
-    <RolePageWrapper userId={userId} role="student" profile={profile} school={school} title="Assignments">
+    <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Assignments" featureGroups={STUDENT_FEATURE_GROUPS}>
         <>
 
           {/* Error banner */}
@@ -459,6 +460,6 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           }
           <div className={styles.spacer}/>
         </>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
