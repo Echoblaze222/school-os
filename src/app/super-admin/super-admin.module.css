@@ -1,19 +1,6 @@
 /* super-admin.module.css */
-.page { display:flex; min-height:100dvh; background:var(--bg-base); }
-.sidebar { width:220px; background:var(--sidebar-bg); border-right:1px solid var(--sidebar-border); display:flex; flex-direction:column; padding:var(--space-5) 0; position:fixed; height:100dvh; z-index:var(--z-nav); }
-.sidebarTop { padding:0 var(--space-4) var(--space-5); }
-.brand { display:flex; align-items:center; gap:var(--space-3); }
-.brandIcon { width:40px; height:40px; background:linear-gradient(135deg,#EF4444,#B91C1C); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(239,68,68,0.3); }
-.brandName { font-size:0.9rem; font-weight:800; color:var(--text-primary); margin:0; }
-.brandSub { font-size:0.62rem; color:#EF4444; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin:0; }
-.sidebarNav { flex:1; padding:0 var(--space-3); display:flex; flex-direction:column; gap:2px; }
-.navItem { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); border-radius:var(--radius-md); color:var(--text-muted); font-size:0.82rem; font-weight:500; background:none; border:none; cursor:pointer; transition:all var(--transition-fast); text-align:left; width:100%; }
-.navItem:hover { background:var(--glass-bg); color:var(--text-primary); }
-.navActive { background:rgba(239,68,68,0.1) !important; color:#EF4444 !important; border:1px solid rgba(239,68,68,0.2); }
-.logoutBtn { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) var(--space-4); font-size:0.82rem; font-weight:500; color:var(--danger); background:none; border:none; cursor:pointer; transition:all var(--transition-fast); margin:0 var(--space-3); border-radius:var(--radius-md); }
-.logoutBtn:hover { background:var(--danger-subtle); }
-.main { flex:1; margin-left:220px; padding:var(--space-8); overflow-y:auto; }
-@media(max-width:768px) { .sidebar{display:none} .main{margin-left:0; padding:var(--space-5)} }
+.main { padding:var(--space-8); overflow-y:auto; }
+@media(max-width:768px) { .main{padding:var(--space-5)} }
 .topBar { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:var(--space-7); gap:var(--space-4); }
 .pageTitle { font-size:1.6rem; font-weight:800; color:var(--text-primary); margin:0 0 4px; letter-spacing:-0.02em; }
 .pageSub { font-size:0.82rem; color:var(--text-muted); margin:0; }

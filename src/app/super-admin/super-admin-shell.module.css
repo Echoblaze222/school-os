@@ -1,0 +1,53 @@
+.shell { min-height:100dvh; background:var(--bg-base); }
+
+/* Desktop sidebar - identical look to the previous per-page version */
+.sidebar { width:220px; background:var(--sidebar-bg); border-right:1px solid var(--sidebar-border); display:flex; flex-direction:column; padding:var(--space-5) 0; position:fixed; top:0; left:0; height:100dvh; z-index:var(--z-nav); }
+.sidebarTop { padding:0 var(--space-4) var(--space-5); }
+.brand { display:flex; align-items:center; gap:var(--space-3); }
+.brandIcon { width:40px; height:40px; background:linear-gradient(135deg,#EF4444,#B91C1C); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(239,68,68,0.3); flex-shrink:0; }
+.brandName { font-size:0.9rem; font-weight:800; color:var(--text-primary); margin:0; }
+.brandSub { font-size:0.62rem; color:#EF4444; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin:0; }
+.sidebarNav { flex:1; padding:0 var(--space-3); display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+.navItem { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); border-radius:var(--radius-md); color:var(--text-muted); font-size:0.82rem; font-weight:500; background:none; border:none; cursor:pointer; transition:all var(--transition-fast); text-align:left; width:100%; text-decoration:none; }
+.navItem:hover { background:var(--glass-bg); color:var(--text-primary); }
+.navActive { background:rgba(239,68,68,0.1) !important; color:#EF4444 !important; border:1px solid rgba(239,68,68,0.2); }
+.logoutBtn { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) var(--space-4); font-size:0.82rem; font-weight:500; color:var(--danger); background:none; border:none; cursor:pointer; transition:all var(--transition-fast); margin:0 var(--space-3); border-radius:var(--radius-md); }
+.logoutBtn:hover { background:var(--danger-subtle); }
+
+/* Content offset for the fixed desktop sidebar - no padding of its own,
+   each page still supplies its own (as before). */
+.content { margin-left:220px; min-height:100dvh; }
+
+/* Mobile top bar - hidden on desktop */
+.mobileTopBar { display:none; }
+
+/* Drawer - hidden on desktop, positioned fixed when open on mobile */
+.drawerOverlay { display:none; }
+
+@media(max-width:768px) {
+  .sidebar { display:none; }
+  .content { margin-left:0; padding-top:56px; }
+
+  .mobileTopBar {
+    display:flex; align-items:center; justify-content:space-between;
+    position:fixed; top:0; left:0; right:0; height:56px; z-index:var(--z-nav);
+    background:var(--sidebar-bg); border-bottom:1px solid var(--sidebar-border);
+    padding:0 var(--space-4);
+  }
+  .mobileTopBar .brandName { display:flex; align-items:center; gap:6px; font-size:0.85rem; }
+  .hamburgerBtn { display:flex; align-items:center; justify-content:center; width:36px; height:36px; background:none; border:none; color:var(--text-primary); cursor:pointer; }
+
+  .drawerOverlay {
+    display:flex; position:fixed; inset:0; z-index:calc(var(--z-nav) + 10);
+    background:rgba(0,0,0,0.5); backdrop-filter:blur(2px);
+  }
+  .drawer {
+    width:min(80vw, 280px); height:100dvh; background:var(--sidebar-bg);
+    border-right:1px solid var(--sidebar-border); display:flex; flex-direction:column;
+    padding:var(--space-5) 0; animation:slideIn 0.18s ease-out;
+  }
+  .drawerHeader { display:flex; align-items:center; justify-content:space-between; padding:0 var(--space-4) var(--space-5); }
+  .closeBtn { display:flex; align-items:center; justify-content:center; width:32px; height:32px; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-md); color:var(--text-muted); cursor:pointer; flex-shrink:0; }
+}
+
+@keyframes slideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }

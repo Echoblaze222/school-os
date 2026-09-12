@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
-  SchoolIcon, PlusIcon, BarChartIcon, WalletIcon,
+  SchoolIcon, PlusIcon, WalletIcon,
   SearchIcon, RefreshIcon, CheckCircleIcon, ClockIcon,
-  BellIcon, SettingsIcon, LogOutIcon, FlameIcon,
-  BookOpenIcon, AlertCircleIcon, XIcon, PauseIcon, StarIcon,
+  FlameIcon, XIcon, PauseIcon,
 } from '@/components/Icons'
 import SchoolSetupModal from './SchoolSetupModal'
 import SchoolCard from './SchoolCard'
@@ -63,11 +61,6 @@ export default function SuperAdminDashboard() {
     setLoading(false)
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    window.location.href = '/super-admin/login'
-  }
-
   const STATUS_TABS = [
     { value: 'all',       label: 'All',       count: stats.total,     Icon: null },
     { value: 'trial',     label: 'Trial',     count: stats.trial,     Icon: FlameIcon },
@@ -77,56 +70,7 @@ export default function SuperAdminDashboard() {
   ]
 
   return (
-    <div className={styles.page}>
-      {/* ── SIDEBAR ──────────────────────────────────────── */}
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarTop}>
-          <div className={styles.brand}>
-            <div className={styles.brandIcon}>
-              <SchoolIcon size={22} color="white" />
-            </div>
-            <div>
-              <p className={styles.brandName}>SchoolOS</p>
-              <p className={styles.brandSub}>Super Admin</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className={styles.sidebarNav}>
-          {[
-            { icon: SchoolIcon,   label: 'Schools',   href: '/super-admin/schools', active: true },
-            { icon: BarChartIcon, label: 'Analytics', href: null },
-            { icon: WalletIcon,   label: 'Revenue',   href: '/super-admin/revenue' },
-            { icon: BookOpenIcon, label: 'Content',   href: '/super-admin/content' },
-            { icon: StarIcon,     label: 'Promotions', href: '/super-admin/promotions' },
-            { icon: AlertCircleIcon, label: 'Reports', href: '/super-admin/reports' },
-            { icon: BellIcon,     label: 'Alerts',    href: null },
-            { icon: SettingsIcon, label: 'Settings',  href: '/super-admin/settings' },
-          ].map(item => (
-            item.href ? (
-              <Link key={item.label} href={item.href}
-                className={`${styles.navItem} ${item.active ? styles.navActive : ''}`}>
-                <item.icon size={17} />
-                <span>{item.label}</span>
-              </Link>
-            ) : (
-              <button key={item.label} disabled
-                className={styles.navItem}
-                title="Coming soon"
-                style={{ opacity: 0.4, cursor: 'not-allowed' }}>
-                <item.icon size={17} />
-                <span>{item.label}</span>
-              </button>
-            )
-          ))}
-        </nav>
-
-        <button className={styles.logoutBtn} onClick={handleLogout}>
-          <LogOutIcon size={15} color="var(--danger)" />
-          <span>Sign Out</span>
-        </button>
-      </aside>
-
+    <>
       {/* ── MAIN ──────────────────────────────────────────── */}
       <main className={styles.main}>
 
@@ -221,6 +165,6 @@ export default function SuperAdminDashboard() {
           onSuccess={() => { setShowSetup(false); loadSchools() }}
         />
       )}
-    </div>
+    </>
   )
 }
