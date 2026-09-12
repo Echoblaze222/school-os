@@ -1,11 +1,12 @@
 'use client'
 // src/components/public/SecretHqLink.tsx
 // Tap the copyright line 5 times within 2.5 seconds to jump straight to
-// the unlisted /super-admin/hq dashboard - a faster path than typing the
-// URL. This is NOT the security boundary: /super-admin/hq is already
-// gated server-side on platform_admins.is_super, so anyone else who
-// stumbles onto this just lands on the ordinary login screen and then a
-// 404. This only saves Speed some typing.
+// the super-admin login screen - a faster path than typing the URL.
+// This is NOT the security boundary: /super-admin/login still requires
+// real credentials + PIN, and /super-admin/hq (reachable afterward, e.g.
+// by tapping this same trigger again once logged in) is separately gated
+// server-side on platform_admins.is_super. This only saves Speed some
+// typing.
 
 import { useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -24,7 +25,7 @@ export default function SecretHqLink() {
 
     if (countRef.current >= TAPS_NEEDED) {
       countRef.current = 0
-      router.push('/super-admin/hq')
+      router.push('/super-admin/login')
       return
     }
 
