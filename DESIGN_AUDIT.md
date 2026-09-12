@@ -114,23 +114,64 @@ screenshot of this app seen so far.
     `certificates/StudentCertificatesClient.tsx`) to use `.btn`/`.btn-secondary`.
   - Cleaned a stale comment in `assignments/AssignmentsClient.tsx` that
     described the wrapper migration as still undecided.
-- **Bursar dashboard home (`BursarDashboardClient.tsx`) - stats section
-  redesigned, but NOT part of the RolePageWrapper migration.** Separate
-  ask: apply "5 tells of AI-made UI" (equal-weight tiles, generic
-  greeting copy) to just this one page, explicitly not its 13
-  `RolePageWrapper` sub-pages (those are still pending below). Replaced
-  5 equal-weight tiles (3 GaugeStat rings + 2 KpiCards) with one primary
-  hero card (Total Collected + Paid/Enrolled breakdown) and 3 smaller
-  secondary tiles (Collection rate, Claims pending, Overdue). Replaced
-  the generic "The books, today." headline with a numbers-driven one.
-  Also found and fixed a second instance of the undefined-CSS-variable
-  bug class (see the `--error` bug above): this file referenced
-  `--status-warn`, which doesn't exist in `globals.css` either - fixed
-  to the real token, `--warning`. `RoleHeroHeader`'s gradient and the
-  shadow system were deliberately left alone (shared across every role,
-  and already correctly shadow-only-on-floating-elements respectively).
-  **The 13 `RolePageWrapper` sub-pages for bursar are still outstanding
-  - see below.**
+- **All 13 dashboard home screens - "de-AI the dashboard" pass applied
+  app-wide, NOT part of the RolePageWrapper migration.** Started as a
+  bursar-only ask (apply the "5 tells of AI-made UI" video's fixes -
+  equal-weight tiles, generic greeting copy - to just its dashboard
+  home), then extended to all 13: bursar, nurse, librarian, coach,
+  counselor, hostel, parent, secretary, teacher, student, examination,
+  vice-principal, principal. Explicitly NOT their `RolePageWrapper`/
+  `RoleSubHeader` sub-pages - those remain a separate, still-pending
+  piece of work (see the per-role checklist below).
+  - **Hierarchy fix, same shape everywhere:** each dashboard had 3-8
+    equal-weight `GaugeStat`/`KpiCard` tiles in a flat grid. Replaced
+    with one primary hero card (the single most meaningful number -
+    money for bursar/principal, GPA for student/parent, roster size
+    for teacher/coach/librarian, active caseload for counselor, etc.)
+    plus 2-3 smaller secondary tiles beside it. Where a page also had
+    a *second*, redundant KpiCard row further down repeating numbers
+    already in the primary card (bursar, secretary, teacher, student,
+    vice-principal, principal all had this), that row was removed
+    entirely rather than left duplicated.
+  - **Copy fix, same shape everywhere:** headlines changed from
+    generic filler ("Clinic Dashboard", "Library Dashboard",
+    "Counseling Dashboard", "Coaching Dashboard", "Here's how the
+    school stands today.", "Your classroom, today.", etc.) to
+    numbers-driven copy built from the same data already being
+    fetched (e.g. "₦2.4M collected · 78% of fees", "4.2/5.0 GPA · 92%
+    attendance"). `hostel` and `parent`/`student` had partially
+    reasonable copy already (hostel names, "How X is doing.") so got
+    a lighter touch - hostel's static sub-copy made numbers-driven,
+    parent/student's headline blended personalization with numbers
+    rather than replacing it outright.
+  - **Bug found while doing this, same class as the pre-existing
+    `--error` bug above:** `--status-warn` and `--status-ok` are
+    referenced all over these dashboard files but neither is defined
+    anywhere in `globals.css` - always with a hardcoded hex fallback
+    masking it. Fixed to the real tokens (`--warning`, `--success`) in
+    every dashboard-home file touched. **This bug is much more
+    widespread than just these 13 files** - a `grep -rl "status-warn\|
+    status-ok" src/app/dashboard` after this pass still turns up ~20
+    more sub-pages (parent/fees, coach/matches, secretary/students,
+    nurse/visits, counselor/cases, and others). Not fixed yet - a
+    dedicated project-wide find-and-replace pass is still needed.
+  - **`RoleHeroHeader`'s gradient (tell #1 in the video) was
+    deliberately left alone in this pass** since it's shared across
+    every role and out of scope for a per-page hierarchy/copy fix -
+    but a concurrent commit from the same session window
+    (`c792503`, "Fix dashboard-home avatar bug, emoji icons, and
+    gradients") happened to fix exactly that tell app-wide anyway
+    (replaced `RoleHeroHeader`'s banner/avatar-ring gradients and
+    `AiInsightBanner`'s background gradient with solid brand-derived
+    colors). Between the two efforts, tells #1, #2/#3 (icon tiles/
+    hierarchy), and #5 (copy) from the video are now addressed
+    app-wide on every dashboard home. Tell #4 (shadows) was checked
+    and found to already be correctly scoped everywhere (shadows only
+    on genuinely floating elements - bottom docks, home buttons - not
+    on static cards), so nothing needed there.
+  - **The 13 `RolePageWrapper`/`RoleSubHeader` sub-pages for bursar,
+    secretary, examination, counselor, nurse, coach, and librarian are
+    still outstanding - see the checklist below.**
 
 ### Patterns discovered during the teacher batch (apply to future roles too)
 
