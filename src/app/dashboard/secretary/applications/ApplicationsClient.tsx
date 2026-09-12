@@ -3,7 +3,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import { EditIcon, CheckCircleIcon, XIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -66,7 +67,7 @@ export default function ApplicationsClient({ applications: init, profile, school
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Applications">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Applications" featureGroups={SECRETARY_FEATURE_GROUPS}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1, overflowX: 'auto' }}>
           {['all', 'pending', 'admitted', 'rejected'].map(t => (
@@ -140,6 +141,6 @@ export default function ApplicationsClient({ applications: init, profile, school
         </div>
       )}
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

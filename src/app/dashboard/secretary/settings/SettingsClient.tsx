@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import {
   UserIcon, SchoolIcon, BellIcon, LockIcon, SparkleIcon, KeyIcon, LogOutIcon,
   MoonIcon, SunIcon,
@@ -63,7 +64,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Settings">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Settings" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Nav tabs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
         {SECTIONS.map(s => (
@@ -167,6 +168,6 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -7,7 +7,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import DOBPicker from '@/components/DOBPicker'
 import { GraduationCapIcon, EditIcon, TrashIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
@@ -282,7 +283,7 @@ export default function StudentsClient({ students: init, profile, school, userId
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Students">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Students" featureGroups={SECRETARY_FEATURE_GROUPS}>
 
       {/* ── Snapshot ── */}
       <div className={motion.riseIn} style={{
@@ -625,6 +626,6 @@ export default function StudentsClient({ students: init, profile, school, userId
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

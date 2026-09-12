@@ -13,7 +13,8 @@
 // what staff actually did.
 
 import { useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import { ClipboardIcon, CheckCircleIcon, ClockIcon, XIcon, AlertCircleIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
@@ -130,7 +131,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Admissions">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Admissions" featureGroups={SECRETARY_FEATURE_GROUPS}>
       <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
         <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
           <GaugeStat label="Awaiting Review" value={admissions.filter(a => ['submitted', 'under_review'].includes(a.status)).length} color="var(--status-warn, #F59E0B)" size={56} />
@@ -251,6 +252,6 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

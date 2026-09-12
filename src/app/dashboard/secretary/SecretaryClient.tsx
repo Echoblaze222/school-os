@@ -7,42 +7,9 @@ import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
-import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import {
-  UserIcon, UsersIcon, CalendarIcon,
-  MessageIcon, BellIcon, SettingsIcon, FolderIcon,
-  ClipboardIcon, CheckCircleIcon, BookOpenIcon,
-  RefreshIcon, GraduationCapIcon, FileTextIcon, BookIcon, ActivityIcon,
-} from '@/components/Icons'
+import { SECRETARY_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
 import styles from './secretary.module.css'
 import motion from '@/components/dashboard-motion.module.css'
-
-const FEATURE_GROUPS: FeatureGroup[] = [
-  { name: 'Front desk', items: [
-    { id: 'students',    label: 'Students',    href: '/dashboard/secretary/students',    Icon: UsersIcon },
-    // 'Applications' was a duplicate of 'Admissions' pointed at a
-    // separate, disconnected table - consolidated (Phase 4, Lane D).
-    { id: 'admissions',  label: 'Admissions',  href: '/dashboard/secretary/admissions',  Icon: GraduationCapIcon },
-    { id: 'transfers',   label: 'Transfers',   href: '/dashboard/secretary/transfers',   Icon: RefreshIcon },
-    { id: 'clinic',      label: 'Clinic',      href: '/dashboard/secretary/clinic',      Icon: ActivityIcon },
-    { id: 'codes',       label: 'Access codes',href: '/dashboard/secretary/codes',       Icon: CheckCircleIcon },
-  ]},
-  { name: 'Records', items: [
-    { id: 'users',     label: 'Users',     href: '/dashboard/secretary/users',     Icon: UserIcon },
-    { id: 'records',   label: 'Records',   href: '/dashboard/secretary/records',   Icon: FolderIcon },
-    { id: 'documents', label: 'Documents', href: '/dashboard/secretary/documents', Icon: BookOpenIcon },
-    { id: 'library',   label: 'Library',   href: '/dashboard/secretary/library',   Icon: BookIcon },
-  ]},
-  { name: 'Communication', items: [
-    { id: 'notices',       label: 'Notices',  href: '/dashboard/secretary/notices',       Icon: BellIcon },
-    { id: 'chat',          label: 'Messages', href: '/dashboard/secretary/chat',          Icon: MessageIcon },
-    { id: 'calendar',      label: 'Calendar', href: '/dashboard/secretary/calendar',      Icon: CalendarIcon },
-    { id: 'meetings',      label: 'Meetings', href: '/dashboard/secretary/meetings',      Icon: CalendarIcon },
-  ]},
-  { name: 'Account', items: [
-    { id: 'settings', label: 'Settings', href: '/dashboard/secretary/settings', Icon: SettingsIcon },
-  ]},
-]
 
 interface PendingNotif { id: string; title: string; body: string; type: string; created_at: string; href: string }
 interface Props {

@@ -2,7 +2,8 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import type { ManagedUser, UserRole } from './page'
 import KpiCard from '@/components/KpiCard'
 import { UsersIcon, CheckCircleIcon, GraduationCapIcon, PeopleIcon } from '@/components/Icons'
@@ -83,7 +84,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
   const stats = { total:users.length, active:users.filter(u=>u.is_active).length, students:users.filter(u=>u.role==='student').length, teachers:users.filter(u=>u.role==='teacher').length }
 
   return (
-    <RolePageWrapper userId={currentUserId} role="secretary" profile={profile} school={school} title="User Management">
+    <RoleSubHeader userId={currentUserId} role="secretary" profile={profile} school={school} title="User Management" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Stats */}
       <div className={styles.statsStrip} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-3)' }}>
         <KpiCard label="Total" value={stats.total} icon={<UsersIcon size={16} />} />
@@ -217,6 +218,6 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
         </div>
       )}
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

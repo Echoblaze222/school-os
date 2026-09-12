@@ -3,7 +3,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import { CalendarIcon, EditIcon, TrashIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -92,7 +93,7 @@ export default function CalendarClient({ events: init, profile, school, userId }
     .slice(0, 10)
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Calendar">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Calendar" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Month nav */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-5)' }}>
         <button className="pressable" onClick={prevMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '1.1rem' }}>‹</button>
@@ -190,6 +191,6 @@ export default function CalendarClient({ events: init, profile, school, userId }
         </div>
       )}
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
                                                               }

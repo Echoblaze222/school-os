@@ -3,7 +3,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import { ActivityIcon, UserIcon, AlertIcon } from '@/components/Icons'
 import GaugeStat from '@/components/GaugeStat'
 import motion from '@/components/dashboard-motion.module.css'
@@ -149,7 +150,7 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Clinic">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Clinic" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Stats */}
       <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
         <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
@@ -319,6 +320,6 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

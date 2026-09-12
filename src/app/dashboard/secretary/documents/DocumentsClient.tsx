@@ -3,7 +3,8 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import DocumentViewer from '@/components/DocumentViewer'
 import {
   UploadIcon, FolderIcon, DownloadIcon, TrashIcon, PaperclipIcon,
@@ -94,7 +95,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Documents">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Documents" featureGroups={SECRETARY_FEATURE_GROUPS}>
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div className={styles.searchBar} style={{ flex: 1, marginBottom: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -227,6 +228,6 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
