@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   SendIcon, PaperclipIcon,
@@ -1283,9 +1284,9 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         <div className={styles.roomInfo}>
           <div className={styles.roomAvatar} style={{ background: schoolColor }}>
             {roomInfo?.room_type === 'school_group' && school?.logo_url
-              ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+              ? <Image src={school.logo_url} alt="" width={38} height={38} style={{ objectFit:'cover' }} />
               : otherUser?.avatar_url
-              ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+              ? <Image src={otherUser.avatar_url} alt="" width={38} height={38} style={{ objectFit:'cover' }} />
               : <span style={{ color:'#fff', fontWeight:700, fontSize:'1rem' }}>
                   {displayName[0]?.toUpperCase() ?? '#'}
                 </span>
@@ -1326,11 +1327,11 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           <div className={styles.profileCard} onClick={e => e.stopPropagation()}>
             <div className={styles.profileAvatar} style={{ background: schoolColor }}>
               {roomInfo?.room_type === 'school_group' && school?.logo_url
-                ? <img src={school.logo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                ? <Image src={school.logo_url} alt="" width={64} height={64} style={{ objectFit:'cover' }} />
                 : roomInfo?.room_type === 'peer_group'
                 ? <PeopleIcon size={28} color="#fff" />
                 : otherUser?.avatar_url
-                ? <img src={otherUser.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                ? <Image src={otherUser.avatar_url} alt="" width={64} height={64} style={{ objectFit:'cover' }} />
                 : <span style={{ color:'#fff', fontWeight:700, fontSize:'1.6rem' }}>{displayName[0]?.toUpperCase() ?? '#'}</span>
               }
             </div>
@@ -1376,7 +1377,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     <div key={m.id} className={styles.memberRow}>
                       <div className={styles.memberAvatar} style={{ background: ROLE_COLORS[m.role] ?? schoolColor }}>
                         {m.avatar_url
-                          ? <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                          ? <Image src={m.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
                           : <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.7rem' }}>{m.full_name?.[0]}</span>
                         }
                       </div>
@@ -1521,7 +1522,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       {showAvatar && (
                         <div className={styles.senderAvatar} style={{ background: schoolColor }}>
                           {msg.sender?.avatar_url
-                            ? <img src={msg.sender.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                            ? <Image src={msg.sender.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
                             : msg.sender?.full_name?.[0] ?? '?'
                           }
                         </div>
