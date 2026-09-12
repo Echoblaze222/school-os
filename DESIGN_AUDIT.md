@@ -74,6 +74,31 @@ screenshot of this app seen so far.
 
 ## Already done
 
+- **`examination` role: fully migrated, 0 files remaining.**
+  `featureGroups.ts` created; `ExaminationDashboardClient.tsx` migrated
+  to use it (kept `ShieldIcon` imported separately - also used
+  directly in the dashboard home's JSX, not just in `FEATURE_GROUPS`).
+  All 8 files migrated: attendance, timetable, profile, invigilation,
+  incidents, sessions, results, documents.
+  - `attendance/AttendanceClient.tsx` had two separate
+    `RolePageWrapper` usages (an early-return empty state plus the
+    main render) - both needed migrating, easy to miss if only
+    grepping for the JSX tag once.
+  - `results/ResultsWorkflowClient.tsx`'s title contains an ampersand
+    ("Verify & Publish Results"), which broke a `sed` replacement on
+    the first pass since `&` is a special character in `sed`'s
+    replacement string (it means "insert the matched text"). Worth
+    remembering for any future batch `sed` migration - titles with
+    `&`, `\`, or numbered backreferences need manual handling instead.
+  - `profile/ProfileClient.tsx` had the same hand-rolled-gradient-
+    button + hardcoded-hex-color pattern already found in student/
+    secretary - fixed to the shared `.btn` class and the real
+    `--success`/`--danger` tokens.
+  - Spot-checked the rest of the batch for the same drift -
+    attendance, invigilation, incidents, and sessions all already
+    correctly reference the real `--warning`/`--success` tokens (not
+    the `--status-warn`/`--status-ok` mixup from earlier this
+    session) - no changes needed there.
 - **`secretary` role: fully migrated, 0 files remaining.**
   `featureGroups.ts` created; `SecretaryClient.tsx` migrated to use it
   (dropped `ClipboardIcon`/`FileTextIcon` from the import list entirely
@@ -240,7 +265,7 @@ screenshot of this app seen so far.
 - [x] ~~**student** - 14 files~~ - **done, 0 remaining**
 - [x] ~~**secretary** - 14 files~~ - **done, 0 remaining**
 - [ ] **bursar** - 13 files
-- [ ] **examination** - 8 files
+- [x] ~~**examination** - 8 files~~ - **done, 0 remaining**
 - [ ] **counselor** - 6 files
 - [ ] **nurse** - 5 files
 - [ ] **coach** - 4 files
