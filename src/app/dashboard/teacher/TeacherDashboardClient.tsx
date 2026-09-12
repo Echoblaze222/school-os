@@ -5,15 +5,13 @@ import Link from 'next/link'
 import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
-import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ContextSwitcher from '@/components/ContextSwitcher'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import { TEACHER_FEATURE_GROUPS } from './featureGroups'
 import {
-  BookOpenIcon, PeopleIcon, AwardIcon as ExamIcon,
+  AwardIcon as ExamIcon,
 } from '@/components/Icons'
 import styles from './teacher.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -86,8 +84,8 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
         profile={profile}
         school={school}
         greeting={`${greeting}, ${firstName}`}
-        headline="Your classroom, today."
-        sub={`${counts.studentCount ?? 0} students across ${counts.classCount ?? 0} classes`}
+        headline={`${counts.studentCount ?? 0} students · ${counts.classCount ?? 0} classes`}
+        sub={(counts.pendingGrading ?? 0) > 0 ? `${counts.pendingGrading} submission${counts.pendingGrading === 1 ? '' : 's'} to grade` : 'All caught up on grading'}
         featureGroups={featureGroups}
       />
 
@@ -96,20 +94,35 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
       <main className={styles.main}>
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
+          display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="To grade" value={counts.pendingGrading ?? 0}
-              color="var(--status-warn, #E4572E)" caption="submissions" />
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Students</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {counts.studentCount ?? 0}
+            </p>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Classes</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.classCount ?? 0}</p>
+              </div>
+            </div>
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Open assignments" value={counts.assignmentCount ?? 0}
-              color="var(--status-ok, #3FA66B)" caption="across your classes" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Published quizzes" value={counts.quizCount ?? 0}
-              color="var(--brand-2, var(--brand))" caption="live now" delayMs={160} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>To grade</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingGrading ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.pendingGrading ?? 0}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Assignments</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.assignmentCount ?? 0}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Quizzes</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.quizCount ?? 0}</p>
+            </div>
           </div>
         </div>
 
@@ -146,11 +159,6 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
             </div>
           </Link>
         )}
-
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
-          <KpiCard label="Classes" value={counts.classCount ?? 0} icon={<BookOpenIcon size={16} />} context="You teach" />
-          <KpiCard label="Students" value={counts.studentCount ?? 0} icon={<PeopleIcon size={16} />} context="Across your classes" />
-        </div>
 
         <RecentActivity
           items={activities}

@@ -5,8 +5,6 @@ import Link from 'next/link'
 import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
-import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
@@ -95,28 +93,42 @@ export default function SecretaryClient({
         profile={profile}
         school={school}
         greeting={`${greeting}, ${firstName}`}
-        headline="The front desk, at a glance."
-        sub={`${counts.totalStudents ?? 0} students on roll · ${counts.activeUsers ?? 0} active accounts`}
+        headline={`${counts.totalStudents ?? 0} students on roll · ${counts.newThisWeek ?? 0} new this week`}
+        sub={`${counts.pendingAdmissions ?? 0} admission${(counts.pendingAdmissions ?? 0) === 1 ? '' : 's'} pending · ${counts.pendingApps ?? 0} transfer${(counts.pendingApps ?? 0) === 1 ? '' : 's'} pending`}
         featureGroups={FEATURE_GROUPS}
       />
 
       <main className={styles.main}>
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
+          display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Pending admissions" value={counts.pendingAdmissions ?? 0}
-              color="var(--status-warn, #E4572E)" caption="need review" />
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Students</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {counts.totalStudents ?? 0}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--success)' }}>
+              +{counts.newThisWeek ?? 0} new this week
+            </p>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Active accounts</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.activeUsers ?? 0}</p>
+              </div>
+            </div>
           </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Transfer requests" value={counts.pendingApps ?? 0}
-              color="var(--status-warn, #E4572E)" caption="awaiting action" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="New this week" value={counts.newThisWeek ?? 0}
-              color="var(--status-ok, #3FA66B)" caption="admissions" delayMs={160} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Pending admissions</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingAdmissions ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.pendingAdmissions ?? 0}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Transfer requests</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingApps ?? 0) > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{counts.pendingApps ?? 0}</p>
+            </div>
           </div>
         </div>
 
@@ -148,11 +160,6 @@ export default function SecretaryClient({
             ))}
           </div>
         )}
-
-        <div className={styles.statsRow} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
-          <KpiCard label="Total Students" value={counts.totalStudents ?? 0} icon={<GraduationCapIcon size={16} />} context="On roll" />
-          <KpiCard label="Active Users" value={counts.activeUsers ?? 0} icon={<UsersIcon size={16} />} context="Logged in recently" />
-        </div>
 
         <RecentActivity
           items={activities}
