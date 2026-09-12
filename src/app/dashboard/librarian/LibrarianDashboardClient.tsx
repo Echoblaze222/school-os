@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
@@ -75,23 +74,29 @@ export default function LibrarianDashboardClient({ userId, librarianName, school
         profile={{ full_name: librarianName }}
         school={school}
         greeting={`Hello, ${librarianName.split(' ')[0] || 'Librarian'}`}
-        headline="Library Dashboard"
-        sub={`${stats.openCheckouts} book${stats.openCheckouts === 1 ? '' : 's'} out`}
+        headline={`${stats.totalBooks} title${stats.totalBooks === 1 ? '' : 's'} · ${stats.openCheckouts} checked out`}
+        sub={stats.overdueCheckouts > 0 ? `${stats.overdueCheckouts} overdue` : 'Nothing overdue'}
         featureGroups={FEATURE_GROUPS}
       />
 
       <ContextSwitcher />
 
       <main className={styles.main}>
-        <div className={`${motion.riseIn} ${styles.statsRow}`}>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Total books" value={stats.totalBooks} color="var(--brand)" caption="in catalog" />
+        <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginBottom: 'var(--space-4)' }}>
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total books</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.totalBooks}</p>
+            <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>in catalog</p>
           </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Checked out" value={stats.openCheckouts} color="var(--brand-2, var(--brand))" caption="right now" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Overdue" value={stats.overdueCheckouts} color="var(--status-warn, #E4572E)" caption="past due" delayMs={160} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Checked out</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.openCheckouts}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Overdue</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.overdueCheckouts > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{stats.overdueCheckouts}</p>
+            </div>
           </div>
         </div>
 

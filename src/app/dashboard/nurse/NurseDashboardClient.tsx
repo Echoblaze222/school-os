@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
@@ -83,26 +82,29 @@ export default function NurseDashboardClient({ userId, nurseName, school, stats,
         profile={{ full_name: nurseName }}
         school={school}
         greeting={`Hello, ${nurseName.split(' ')[0] || 'Nurse'}`}
-        headline="Clinic Dashboard"
-        sub={`${stats.visitsToday} visit${stats.visitsToday === 1 ? '' : 's'} today`}
+        headline={`${stats.visitsToday} clinic visit${stats.visitsToday === 1 ? '' : 's'} today`}
+        sub={`${stats.pendingMeds} med${stats.pendingMeds === 1 ? '' : 's'} due · ${stats.lowStockItems} item${stats.lowStockItems === 1 ? '' : 's'} low on stock`}
         featureGroups={FEATURE_GROUPS}
       />
 
       <ContextSwitcher />
 
       <main className={styles.main}>
-        <div className={`${motion.riseIn} ${styles.statsRow}`}>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Visits today" value={stats.visitsToday}
-              color="var(--brand)" caption="clinic log" />
+        <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginBottom: 'var(--space-4)' }}>
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Visits today</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.visitsToday}</p>
+            <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>clinic log</p>
           </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Meds due" value={stats.pendingMeds}
-              color="var(--status-warn, #E4572E)" caption="pending today" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Low stock" value={stats.lowStockItems}
-              color="var(--status-warn, #E4572E)" caption="items to reorder" delayMs={160} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Meds due</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.pendingMeds > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{stats.pendingMeds}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Low stock</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.lowStockItems > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{stats.lowStockItems}</p>
+            </div>
           </div>
         </div>
 

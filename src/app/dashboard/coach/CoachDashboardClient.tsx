@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
@@ -85,23 +84,29 @@ export default function CoachDashboardClient({ userId, coachName, school, stats,
         profile={{ full_name: coachName }}
         school={school}
         greeting={`Hello, Coach ${coachName.split(' ')[0] || ''}`}
-        headline="Coaching Dashboard"
-        sub={`${stats.teamCount} team${stats.teamCount === 1 ? '' : 's'}`}
+        headline={`${stats.totalPlayers} player${stats.totalPlayers === 1 ? '' : 's'} · ${stats.teamCount} team${stats.teamCount === 1 ? '' : 's'}`}
+        sub={`${stats.upcomingMatches} match${stats.upcomingMatches === 1 ? '' : 'es'} upcoming`}
         featureGroups={FEATURE_GROUPS}
       />
 
       <ContextSwitcher />
 
       <main className={styles.main}>
-        <div className={`${motion.riseIn} ${styles.statsRow}`}>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Teams" value={stats.teamCount} color="var(--brand)" caption="you coach" />
+        <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginBottom: 'var(--space-4)' }}>
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Players</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.totalPlayers}</p>
+            <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>on your rosters</p>
           </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Players" value={stats.totalPlayers} color="var(--brand-2, var(--brand))" caption="on rosters" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Matches" value={stats.upcomingMatches} color="var(--status-warn, #E4572E)" caption="upcoming" delayMs={160} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Teams</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.teamCount}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Matches</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.upcomingMatches}</p>
+            </div>
           </div>
         </div>
 

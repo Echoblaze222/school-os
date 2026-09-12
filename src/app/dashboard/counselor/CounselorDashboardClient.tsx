@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
@@ -114,26 +113,40 @@ export default function CounselorDashboardClient({ userId, counselorName, school
         profile={{ full_name: counselorName }}
         school={school}
         greeting={`Hello, ${counselorName.split(' ')[0] || 'Counselor'}`}
-        headline="Counseling Dashboard"
-        sub={`${stats.openCases + stats.monitoringCases} active case${stats.openCases + stats.monitoringCases === 1 ? '' : 's'}`}
+        headline={`${stats.openCases + stats.monitoringCases} active case${stats.openCases + stats.monitoringCases === 1 ? '' : 's'}`}
+        sub={`${stats.pendingReferrals} referral${stats.pendingReferrals === 1 ? '' : 's'} pending · ${stats.upcomingSessions} upcoming`}
         featureGroups={FEATURE_GROUPS}
       />
 
       <ContextSwitcher />
 
       <main className={styles.main}>
-        <div className={`${motion.riseIn} ${styles.statsRow}`}>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Open cases" value={stats.openCases}
-              color="var(--brand)" caption="your caseload" />
+        <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginBottom: 'var(--space-4)' }}>
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Active caseload</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {stats.openCases + stats.monitoringCases}
+            </p>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Open</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.openCases}</p>
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Monitoring</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.monitoringCases}</p>
+              </div>
+            </div>
           </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Monitoring" value={stats.monitoringCases}
-              color="var(--brand-2, var(--brand))" caption="watching closely" delayMs={80} />
-          </div>
-          <div className={`glass-card ${motion.pressable} ${styles.statCard}`}>
-            <GaugeStat label="Referrals" value={stats.pendingReferrals}
-              color="var(--status-warn, #E4572E)" caption="pending review" delayMs={160} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Referrals</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.pendingReferrals > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{stats.pendingReferrals}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Upcoming</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.upcomingSessions}</p>
+            </div>
           </div>
         </div>
 
