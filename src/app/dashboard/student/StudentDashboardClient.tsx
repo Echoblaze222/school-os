@@ -6,12 +6,9 @@ import ChatWidget from '@/components/ChatWidget'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
 import ContextSwitcher from '@/components/ContextSwitcher'
-import GaugeStat from '@/components/GaugeStat'
-import KpiCard from '@/components/KpiCard'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import { STUDENT_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
-import { ClipboardIcon, TrophyIcon } from '@/components/Icons'
 import styles from './student-dashboard.module.css'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -56,7 +53,7 @@ export default function StudentDashboardClient({ profile, school, userId, counts
         profile={profile}
         school={school}
         greeting={`${greeting}, ${firstName}`}
-        headline="Your day, at a glance."
+        headline={c.gpa != null ? `${c.gpa.toFixed(1)}/5.0 GPA · ${c.attendance ?? 0}% attendance` : 'Your day, at a glance.'}
         sub={c.rank ? `Rank #${c.rank} in class this term` : school?.name ?? ''}
         featureGroups={FEATURE_GROUPS}
       />
@@ -75,23 +72,33 @@ export default function StudentDashboardClient({ profile, school, userId, counts
           </Link>
         )}
 
-        <div className={`${motion.riseIn} ${styles.gaugeGrid} ${c.isLive ? '' : styles.withTopSpace}`}>
-          <div className={`glass-card ${motion.pressable} ${styles.gaugeCard}`}>
-            <GaugeStat label="My attendance" value={c.attendance ?? 0} isPercent
-              color="var(--status-ok, #3FA66B)" caption="this term" />
+        <div className={`${motion.riseIn} ${c.isLive ? '' : styles.withTopSpace}`} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginBottom: 'var(--space-4)' }}>
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Term GPA</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {c.gpa != null ? c.gpa.toFixed(1) : 'N/A'}
+              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}> / 5.0</span>
+            </p>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Class rank</p>
+                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.rank ? `#${c.rank}` : 'N/A'}</p>
+              </div>
+            </div>
           </div>
-          <div className={`glass-card ${motion.pressable} ${styles.gaugeCard}`}>
-            <GaugeStat
-              label="Term GPA"
-              value={c.gpa != null ? Math.round((c.gpa / 5) * 100) : 0}
-              isPercent
-              displayValue={c.gpa != null ? c.gpa.toFixed(1) : 'N/A'}
-              color="var(--brand-2, var(--brand))" caption="out of 5.0" delayMs={80}
-            />
-          </div>
-          <div className={`glass-card ${motion.pressable} ${styles.gaugeCard}`}>
-            <GaugeStat label="Tasks due" value={c.pendingTasks}
-              color="var(--status-warn, #E4572E)" caption="this week" delayMs={160} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Attendance</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (c.attendance ?? 100) < 80 ? 'var(--warning)' : 'var(--text-primary)' }}>{c.attendance ?? 0}%</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Tasks due</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: c.pendingTasks > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{c.pendingTasks}</p>
+            </div>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Open quizzes</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.upcomingQuizzes}</p>
+            </div>
           </div>
         </div>
 
@@ -101,11 +108,6 @@ export default function StudentDashboardClient({ profile, school, userId, counts
             actionLabel="Ask AI Tutor →"
             actionHref="/dashboard/student/ai"
           />
-        </div>
-
-        <div className={styles.statsGrid}>
-          <KpiCard label="Open Quizzes" value={c.upcomingQuizzes} icon={<ClipboardIcon size={16} />} context="Not yet taken" />
-          <KpiCard label="Class Rank" value={c.rank ? `#${c.rank}` : 'N/A'} icon={<TrophyIcon size={16} />} context="Current standing" />
         </div>
 
         <RecentActivity

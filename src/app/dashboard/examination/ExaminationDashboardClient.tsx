@@ -3,7 +3,6 @@
 
 import Link from 'next/link'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
-import GaugeStat from '@/components/GaugeStat'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ContextSwitcher from '@/components/ContextSwitcher'
@@ -101,10 +100,12 @@ export default function ExaminationDashboardClient({
         profile={profile}
         school={school}
         greeting={`${greeting}, ${firstName}`}
-        headline="Sessions, timetables, and results, all in one place."
-        sub={activeSession
-          ? `${activeSession.name} · ${activeSession.term} ${activeSession.academic_year}`
-          : 'No exam session currently scheduled'}
+        headline={`${upcomingExamCount} exam${upcomingExamCount === 1 ? '' : 's'} this week`}
+        sub={openIncidentCount > 0
+          ? `${openIncidentCount} incident${openIncidentCount === 1 ? '' : 's'} open`
+          : capabilities.verifyResults && pendingVerificationCount > 0
+            ? `${pendingVerificationCount} result${pendingVerificationCount === 1 ? '' : 's'} awaiting verification`
+            : `${myDutyCount} dut${myDutyCount === 1 ? 'y' : 'ies'} upcoming`}
         featureGroups={FEATURE_GROUPS}
       />
 
@@ -131,22 +132,29 @@ export default function ExaminationDashboardClient({
         )}
 
         <div className={motion.riseIn} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))', gap: 12,
+          display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
           marginBottom: 'var(--space-4)',
         }}>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Exams this week" value={upcomingExamCount} color="var(--brand)" caption="next 7 days" />
+          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Exams this week</p>
+            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{upcomingExamCount}</p>
+            <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>next 7 days</p>
           </div>
-          {capabilities.verifyResults && (
-            <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-              <GaugeStat label="Awaiting verification" value={pendingVerificationCount} color="var(--status-warn, #E4572E)" caption="approved results" delayMs={80} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Open incidents</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: openIncidentCount > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>{openIncidentCount}</p>
             </div>
-          )}
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="Open incidents" value={openIncidentCount} color="var(--danger)" caption="unresolved" delayMs={160} />
-          </div>
-          <div className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-            <GaugeStat label="My duties" value={myDutyCount} color="var(--brand-2, var(--brand))" caption="upcoming invigilation" delayMs={240} />
+            {capabilities.verifyResults && (
+              <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Awaiting verification</p>
+                <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingVerificationCount > 0 ? 'var(--warning)' : 'var(--text-primary)' }}>{pendingVerificationCount}</p>
+              </div>
+            )}
+            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>My duties</p>
+              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{myDutyCount}</p>
+            </div>
           </div>
         </div>
 
@@ -173,7 +181,7 @@ export default function ExaminationDashboardClient({
                     <p className={styles.dutyMeta}>{et?.exam_date} · {et?.start_time}–{et?.end_time}</p>
                   </div>
                   <span className={styles.dutyStatus} style={{
-                    color: d.status === 'confirmed' ? 'var(--status-ok, #3FA66B)' : 'var(--status-warn, #E4572E)',
+                    color: d.status === 'confirmed' ? 'var(--success)' : 'var(--warning)',
                   }}>{d.status}</span>
                 </div>
               )
