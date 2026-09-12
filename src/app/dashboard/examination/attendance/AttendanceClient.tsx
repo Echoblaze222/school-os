@@ -2,7 +2,8 @@
 // src/app/dashboard/examination/attendance/AttendanceClient.tsx
 
 import { useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { EXAMINATION_FEATURE_GROUPS } from '../featureGroups'
 import { createClient } from '@/lib/supabase/client'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -57,18 +58,18 @@ export default function AttendanceClient({ userId, profile, school, schoolId, ti
 
   if (timetable.length === 0) {
     return (
-      <RolePageWrapper userId={userId} role="examination" profile={profile} school={school} title="Exam Attendance">
+      <RoleSubHeader userId={userId} role="examination" profile={profile} school={school} title="Exam Attendance" featureGroups={EXAMINATION_FEATURE_GROUPS}>
         <div className="glass-card-flat" style={{ padding: 20, borderRadius: 'var(--radius-xl)', textAlign: 'center' }}>
           <p style={{ margin: 0, opacity: 0.75 }}>
             No exam sittings assigned to you yet. Attendance can only be marked for sittings you're invigilating.
           </p>
         </div>
-      </RolePageWrapper>
+      </RoleSubHeader>
     )
   }
 
   return (
-    <RolePageWrapper userId={userId} role="examination" profile={profile} school={school} title="Exam Attendance">
+    <RoleSubHeader userId={userId} role="examination" profile={profile} school={school} title="Exam Attendance" featureGroups={EXAMINATION_FEATURE_GROUPS}>
       {error && (
         <div className="glass-card-flat" style={{ padding: 12, borderRadius: 'var(--radius-lg)', marginBottom: 12, border: '1px solid var(--danger)' }}>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--danger)' }}>{error}</p>
@@ -128,6 +129,6 @@ export default function AttendanceClient({ userId, profile, school, schoolId, ti
           )
         })}
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

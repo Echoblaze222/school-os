@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { EXAMINATION_FEATURE_GROUPS } from '../featureGroups'
 
 import {
   UserIcon,
@@ -145,12 +146,13 @@ export default function ProfileClient({
   ]
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="examination"
       profile={profile}
       school={school}
       title="My Profile"
+      featureGroups={EXAMINATION_FEATURE_GROUPS}
     >
       <div
         style={{
@@ -402,8 +404,8 @@ export default function ProfileClient({
                     '0.78rem',
                   color:
                     msg.includes('!')
-                      ? '#10B981'
-                      : '#EF4444',
+                      ? 'var(--success)'
+                      : 'var(--danger)',
                   margin: 0,
                 }}
               >
@@ -414,22 +416,10 @@ export default function ProfileClient({
             <button
               onClick={save}
               disabled={saving}
-              className="pressable"
+              className="btn pressable"
               style={{
-                height: 44,
-                background:
-                  'linear-gradient(135deg,' +
-                  sc +
-                  ',' +
-                  sc +
-                  'cc)',
+                background: sc,
                 color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                fontWeight: 700,
-                fontSize:
-                  '0.875rem',
-                cursor: 'pointer',
               }}
             >
               {saving
@@ -542,6 +532,6 @@ export default function ProfileClient({
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

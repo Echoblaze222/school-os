@@ -2,7 +2,8 @@
 // src/app/dashboard/examination/invigilation/InvigilationClient.tsx
 
 import { useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { EXAMINATION_FEATURE_GROUPS } from '../featureGroups'
 import { createClient } from '@/lib/supabase/client'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -67,7 +68,7 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
   }
 
   return (
-    <RolePageWrapper userId={userId} role="examination" profile={profile} school={school} title="Invigilation">
+    <RoleSubHeader userId={userId} role="examination" profile={profile} school={school} title="Invigilation" featureGroups={EXAMINATION_FEATURE_GROUPS}>
       {error && (
         <div className="glass-card-flat" style={{ padding: 12, borderRadius: 'var(--radius-lg)', marginBottom: 12, border: '1px solid var(--danger)' }}>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--danger)' }}>{error}</p>
@@ -139,7 +140,7 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
           })}
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

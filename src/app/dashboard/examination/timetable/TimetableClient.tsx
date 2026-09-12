@@ -2,7 +2,8 @@
 // src/app/dashboard/examination/timetable/TimetableClient.tsx
 
 import { useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { EXAMINATION_FEATURE_GROUPS } from '../featureGroups'
 import { createClient } from '@/lib/supabase/client'
 import motion from '@/components/dashboard-motion.module.css'
 
@@ -88,7 +89,7 @@ export default function TimetableClient({
   }
 
   return (
-    <RolePageWrapper userId={userId} role="examination" profile={profile} school={school} title="Exam Timetable">
+    <RoleSubHeader userId={userId} role="examination" profile={profile} school={school} title="Exam Timetable" featureGroups={EXAMINATION_FEATURE_GROUPS}>
       {error && (
         <div className="glass-card-flat" style={{ padding: 12, borderRadius: 'var(--radius-lg)', marginBottom: 12, border: '1px solid var(--danger)' }}>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--danger)' }}>{error}</p>
@@ -172,7 +173,7 @@ export default function TimetableClient({
           ))}
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

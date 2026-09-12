@@ -6,7 +6,8 @@
 // enforces. Every action here is idle -> processing -> success/failure.
 
 import { useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { EXAMINATION_FEATURE_GROUPS } from '../featureGroups'
 import motion from '@/components/dashboard-motion.module.css'
 
 interface ResultRow {
@@ -81,7 +82,7 @@ export default function ResultsWorkflowClient({
   }
 
   return (
-    <RolePageWrapper userId={userId} role="examination" profile={profile} school={school} title="Verify & Publish Results">
+    <RoleSubHeader userId={userId} role="examination" profile={profile} school={school} title="Verify & Publish Results" featureGroups={EXAMINATION_FEATURE_GROUPS}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {canVerify && (
           <button className="btn" onClick={() => { setTab('verify'); setSelected(new Set()); setMessage(null) }}
@@ -143,6 +144,6 @@ export default function ResultsWorkflowClient({
           </div>
         </>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
