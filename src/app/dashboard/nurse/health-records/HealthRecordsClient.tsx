@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { NURSE_FEATURE_GROUPS } from '../featureGroups'
 import { ClipboardIcon, SearchIcon, XIcon, UserIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -91,7 +92,7 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
   }
 
   return (
-    <RolePageWrapper userId={userId} role="nurse" profile={profile} school={school} title="Health Records">
+    <RoleSubHeader userId={userId} role="nurse" profile={profile} school={school} title="Health Records" featureGroups={NURSE_FEATURE_GROUPS}>
       <main className={styles.main}>
         <div style={{ position: 'relative', marginBottom: 14 }}>
           <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
@@ -166,6 +167,6 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
       )}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

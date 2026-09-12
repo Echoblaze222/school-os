@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { NURSE_FEATURE_GROUPS } from '../featureGroups'
 import { ClockIcon, PlusIcon, XIcon, SearchIcon, UserIcon, CheckIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -100,7 +101,7 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="nurse" profile={profile} school={school} title="Medications">
+    <RoleSubHeader userId={userId} role="nurse" profile={profile} school={school} title="Medications" featureGroups={NURSE_FEATURE_GROUPS}>
       <main className={styles.main}>
         <ActionButton onClick={() => setShowForm(true)} icon={<PlusIcon size={16} />} fullWidth>
           Schedule a Medication
@@ -202,6 +203,6 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
       )}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

@@ -6,30 +6,12 @@ import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import ContextSwitcher from '@/components/ContextSwitcher'
-import { FeatureGroup } from '@/components/AllFeaturesSheet'
+import { NURSE_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
 import {
-  HeartIcon, ClipboardIcon, ClockIcon, GridIcon, AiIcon, MessageIcon, BellIcon, UserIcon, CalendarIcon,
+  HeartIcon, ClipboardIcon, ClockIcon, GridIcon,
 } from '@/components/Icons'
 import styles from './nurse.module.css'
 import motion from '@/components/dashboard-motion.module.css'
-
-const FEATURE_GROUPS: FeatureGroup[] = [
-  { name: 'Clinic', items: [
-    { id: 'visits',        label: 'Clinic Visits',   href: '/dashboard/nurse/visits',        Icon: HeartIcon },
-    { id: 'health-records', label: 'Health Records', href: '/dashboard/nurse/health-records', Icon: ClipboardIcon },
-    { id: 'medications',   label: 'Medications',     href: '/dashboard/nurse/medications',    Icon: ClockIcon },
-    { id: 'inventory',     label: 'Inventory',       href: '/dashboard/nurse/inventory',      Icon: GridIcon },
-    { id: 'meetings',      label: 'Meetings',        href: '/dashboard/nurse/meetings',       Icon: CalendarIcon },
-  ]},
-  { name: 'Communication', items: [
-    { id: 'chat',          label: 'Messages',      href: '/dashboard/nurse/chat',          Icon: MessageIcon },
-    { id: 'notifications', label: 'Notifications', href: '/dashboard/nurse/notifications', Icon: BellIcon },
-  ]},
-  { name: 'Account', items: [
-    { id: 'ai',      label: 'AI Assistant', href: '/dashboard/nurse/ai',      Icon: AiIcon },
-    { id: 'profile', label: 'My Profile',   href: '/dashboard/nurse/profile', Icon: UserIcon },
-  ]},
-]
 
 interface Stats { visitsToday: number; pendingMeds: number; lowStockItems: number }
 interface RecentVisit {

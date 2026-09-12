@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { NURSE_FEATURE_GROUPS } from '../featureGroups'
 import { HeartIcon, PlusIcon, XIcon, SearchIcon, UserIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -88,7 +89,7 @@ export default function VisitsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="nurse" profile={profile} school={school} title="Clinic Visits">
+    <RoleSubHeader userId={userId} role="nurse" profile={profile} school={school} title="Clinic Visits" featureGroups={NURSE_FEATURE_GROUPS}>
       <main className={styles.main}>
         <ActionButton onClick={() => setShowForm(true)} icon={<PlusIcon size={16} />} fullWidth>
           Log a Visit
@@ -188,6 +189,6 @@ export default function VisitsClient({ profile, school, userId }: Props) {
       )}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
