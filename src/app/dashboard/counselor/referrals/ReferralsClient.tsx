@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COUNSELOR_FEATURE_GROUPS } from '../featureGroups'
 import { ShieldIcon, XIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -105,7 +106,7 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="counselor" profile={profile} school={school} title="Referrals">
+    <RoleSubHeader userId={userId} role="counselor" profile={profile} school={school} title="Referrals" featureGroups={COUNSELOR_FEATURE_GROUPS}>
       <Toast toast={toast} />
 
       <div className={motion.riseIn} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -184,6 +185,6 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
           ))}
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

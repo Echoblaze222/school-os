@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COUNSELOR_FEATURE_GROUPS } from '../../featureGroups'
 import { ClockIcon, CheckCircleIcon, PlusIcon, AlertIcon, CalendarIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -142,22 +143,22 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
 
   if (loading) {
     return (
-      <RolePageWrapper userId={userId} role="counselor" profile={profile} school={school} title="Case">
+      <RoleSubHeader userId={userId} role="counselor" profile={profile} school={school} title="Case" featureGroups={COUNSELOR_FEATURE_GROUPS} backHref="/dashboard/counselor/cases">
         <SkeletonList count={3} variant="card" />
-      </RolePageWrapper>
+      </RoleSubHeader>
     )
   }
 
   if (!data) {
     return (
-      <RolePageWrapper userId={userId} role="counselor" profile={profile} school={school} title="Case">
+      <RoleSubHeader userId={userId} role="counselor" profile={profile} school={school} title="Case" featureGroups={COUNSELOR_FEATURE_GROUPS} backHref="/dashboard/counselor/cases">
         <Toast toast={toast} />
         <EmptyState
           icon={<AlertIcon size={32} color="var(--text-muted)" />}
           title="Case not found"
           subtitle="This case may have been closed or the link may be incorrect."
         />
-      </RolePageWrapper>
+      </RoleSubHeader>
     )
   }
 
@@ -165,7 +166,7 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
   const pendingFollowUps = followUps.filter((f: any) => f.status === 'pending')
 
   return (
-    <RolePageWrapper userId={userId} role="counselor" profile={profile} school={school} title={c.student?.full_name ?? 'Case'}>
+    <RoleSubHeader userId={userId} role="counselor" profile={profile} school={school} title={c.student?.full_name ?? 'Case'} featureGroups={COUNSELOR_FEATURE_GROUPS} backHref="/dashboard/counselor/cases">
       <Toast toast={toast} />
 
       <div className={`glass-card ${motion.riseIn}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 16 }}>
@@ -315,6 +316,6 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
           ))}
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

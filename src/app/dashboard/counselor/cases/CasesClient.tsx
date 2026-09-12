@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COUNSELOR_FEATURE_GROUPS } from '../featureGroups'
 import { HeartIcon, SearchIcon, XIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -46,7 +47,7 @@ export default function CasesClient({ profile, school, userId }: Props) {
   useEffect(() => { load(tab) }, [tab])
 
   return (
-    <RolePageWrapper userId={userId} role="counselor" profile={profile} school={school} title="Caseload">
+    <RoleSubHeader userId={userId} role="counselor" profile={profile} school={school} title="Caseload" featureGroups={COUNSELOR_FEATURE_GROUPS}>
       <Toast toast={toast} />
 
       <div className={motion.riseIn} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -131,7 +132,7 @@ export default function CasesClient({ profile, school, userId }: Props) {
           ))}
         </div>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

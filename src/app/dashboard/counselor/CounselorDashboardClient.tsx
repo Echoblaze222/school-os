@@ -7,30 +7,12 @@ import BottomDock from '@/components/BottomDock'
 import RecentActivity, { ActivityItem } from '@/components/RecentActivity'
 import ChatWidget from '@/components/ChatWidget'
 import ContextSwitcher from '@/components/ContextSwitcher'
-import { FeatureGroup } from '@/components/AllFeaturesSheet'
+import { COUNSELOR_FEATURE_GROUPS as FEATURE_GROUPS } from './featureGroups'
 import {
-  HeartIcon, CalendarIcon, ShieldIcon, BarChartIcon,
-  MessageIcon, BellIcon, UserIcon, AiIcon,
+  HeartIcon, CalendarIcon, ShieldIcon, AiIcon,
 } from '@/components/Icons'
 import styles from './counselor.module.css'
 import motion from '@/components/dashboard-motion.module.css'
-
-const FEATURE_GROUPS: FeatureGroup[] = [
-  { name: 'Counseling', items: [
-    { id: 'cases',        label: 'Caseload',      href: '/dashboard/counselor/cases',        Icon: HeartIcon },
-    { id: 'appointments', label: 'Appointments',  href: '/dashboard/counselor/appointments',  Icon: CalendarIcon },
-    { id: 'referrals',    label: 'Referrals',     href: '/dashboard/counselor/referrals',     Icon: ShieldIcon },
-    { id: 'reports',      label: 'Reports',       href: '/dashboard/counselor/reports',       Icon: BarChartIcon },
-    { id: 'meetings',     label: 'Meetings',      href: '/dashboard/counselor/meetings',      Icon: CalendarIcon },
-  ]},
-  { name: 'Communication', items: [
-    { id: 'chat',          label: 'Messages',      href: '/dashboard/counselor/chat',          Icon: MessageIcon },
-    { id: 'notifications', label: 'Notifications', href: '/dashboard/counselor/notifications', Icon: BellIcon },
-  ]},
-  { name: 'Account', items: [
-    { id: 'profile', label: 'My Profile', href: '/dashboard/counselor/profile', Icon: UserIcon },
-  ]},
-]
 
 interface Stats {
   openCases: number

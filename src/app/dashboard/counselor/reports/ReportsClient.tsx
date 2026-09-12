@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { COUNSELOR_FEATURE_GROUPS } from '../featureGroups'
 import GaugeStat from '@/components/GaugeStat'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import { Toast, useToast } from '@/components/motion/Toast'
@@ -46,7 +47,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
   }, [])
 
   return (
-    <RolePageWrapper userId={userId} role="counselor" profile={profile} school={school} title="Reports">
+    <RoleSubHeader userId={userId} role="counselor" profile={profile} school={school} title="Reports" featureGroups={COUNSELOR_FEATURE_GROUPS}>
       <Toast toast={toast} />
 
       {loading || !report ? (
@@ -102,7 +103,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
           </div>
         </>
       )}
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 
