@@ -5,7 +5,8 @@
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import DOBPicker from '@/components/DOBPicker'
 import {
   ClipboardIcon, RefreshIcon, KeyIcon, CheckIcon,
@@ -445,7 +446,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
   const isStudentRole = nRole === 'student'
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Access Codes">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Access Codes" featureGroups={SECRETARY_FEATURE_GROUPS}>
 
       <div className={styles.tabRow}>
         {(['existing', 'enrol', 'bulk'] as const).map(t => (
@@ -996,6 +997,6 @@ export default function CodesClient({ entries: init, students, classes, profile,
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

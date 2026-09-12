@@ -7,7 +7,8 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import { UserIcon, CameraIcon, EditIcon, KeyIcon, LogOutIcon } from '@/components/Icons'
 
 interface Props { profile: any; school: any; userId: string }
@@ -103,7 +104,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
   ]
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="My Profile">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="My Profile" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Avatar */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-7)' }}>
         <div style={{ position: 'relative' }}>
@@ -145,8 +146,8 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
                 <input value={val} onChange={e => setter(e.target.value)} style={{ width: '100%', height: 44, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }} />
               </div>
             ))}
-            {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin: 0 }}>{msg}</p>}
-            <button className="pressable" onClick={save} disabled={saving} style={{ height: 44, background: `linear-gradient(135deg,${sc},${sc}cc)`, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save Changes'}</button>
+            {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? 'var(--success)' : 'var(--danger)', margin: 0 }}>{msg}</p>}
+            <button className="btn pressable" onClick={save} disabled={saving} style={{ background: sc, color: '#fff' }}>{saving ? 'Saving…' : 'Save Changes'}</button>
           </div>
         ) : (
           <div>
@@ -170,6 +171,6 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
         </button>
       </div>
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

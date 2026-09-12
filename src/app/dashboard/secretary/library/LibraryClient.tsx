@@ -3,7 +3,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import KpiCard from '@/components/KpiCard'
 import { BookIcon, BookOpenIcon, ClipboardIcon, TrashIcon, AlertCircleIcon } from '@/components/Icons'
 import styles from '../secretary.module.css'
@@ -137,7 +138,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
   }
 
   return (
-    <RolePageWrapper userId={userId} role="secretary" profile={profile} school={school} title="Library">
+    <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Library" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Stats */}
       <div className={styles.statsRow}>
         <KpiCard label="Titles" value={books.length} icon={<BookIcon size={16} />} color={sc} />
@@ -290,6 +291,6 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
       )}
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

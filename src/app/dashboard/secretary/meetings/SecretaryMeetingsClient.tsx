@@ -4,7 +4,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { SECRETARY_FEATURE_GROUPS } from '../featureGroups'
 import styles from './secretary-meetings.module.css'
 import { logActivity } from '@/lib/logActivity'
 import type { MeetingRow } from './page'
@@ -61,12 +62,13 @@ export default function SecretaryMeetingsClient({
   const past     = relevant.filter(m =>  isPast(m.scheduled_at))
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="secretary"
       profile={profile}
       school={school}
       title="Meetings"
+      featureGroups={SECRETARY_FEATURE_GROUPS}
     >
       <div className={styles.listMain}>
 
@@ -119,7 +121,7 @@ export default function SecretaryMeetingsClient({
       </div>
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 
