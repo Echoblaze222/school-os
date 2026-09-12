@@ -144,17 +144,30 @@ screenshot of this app seen so far.
     a lighter touch - hostel's static sub-copy made numbers-driven,
     parent/student's headline blended personalization with numbers
     rather than replacing it outright.
-  - **Bug found while doing this, same class as the pre-existing
-    `--error` bug above:** `--status-warn` and `--status-ok` are
-    referenced all over these dashboard files but neither is defined
-    anywhere in `globals.css` - always with a hardcoded hex fallback
-    masking it. Fixed to the real tokens (`--warning`, `--success`) in
-    every dashboard-home file touched. **This bug is much more
-    widespread than just these 13 files** - a `grep -rl "status-warn\|
-    status-ok" src/app/dashboard` after this pass still turns up ~20
-    more sub-pages (parent/fees, coach/matches, secretary/students,
-    nurse/visits, counselor/cases, and others). Not fixed yet - a
-    dedicated project-wide find-and-replace pass is still needed.
+  - **False alarm, since corrected: `--status-warn`/`--status-ok` are
+    NOT a bug.** Initially misdiagnosed these as the same
+    undefined-CSS-variable class as the `--error` bug above (neither
+    is defined as a static value in `globals.css`) and "fixed" them to
+    the static `--warning`/`--success` tokens across all 11 affected
+    dashboard-home files. That was wrong: `SchoolBrandInjector.tsx`
+    (wired into every dashboard `layout.tsx`) sets both variables at
+    runtime, deliberately steering them away from whatever hue the
+    school's own `primary_color` uses - so a green-branded school's
+    "on track" indicator doesn't collide with its own brand color (see
+    the `hueOf`/`hueDistance` logic and comment in that file).
+    `--status-warn`/`--status-ok` are intentional and more
+    brand-aware than the static tokens that replaced them - the
+    "fix" silently broke that hue-avoidance behavior for every school.
+    Reverted all 25 instances back to `var(--status-warn, #E4572E)` /
+    `var(--status-ok, #3FA66B)` in a follow-up commit. A larger sweep
+    of ~27 more files (sub-pages plus shared components like
+    `KpiCard.module.css`, `GaugeStat.tsx`, `DepartmentCard.module.css`)
+    was drafted but caught and discarded before committing, once
+    `SchoolBrandInjector.tsx` turned up in the same grep. **Lesson:
+    before "fixing" any CSS variable that looks undefined, grep for
+    where it's set at runtime (`.setProperty(`, inline `<script>`
+    injectors) - `globals.css` isn't the only place a variable can be
+    defined.**
   - **`RoleHeroHeader`'s gradient (tell #1 in the video) was
     deliberately left alone in this pass** since it's shared across
     every role and out of scope for a per-page hierarchy/copy fix -
