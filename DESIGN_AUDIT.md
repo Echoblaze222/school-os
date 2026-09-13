@@ -74,6 +74,40 @@ screenshot of this app seen so far.
 
 ## Already done
 
+- **`counselor`, `nurse`, `coach`, and `librarian` roles: fully
+  migrated, 0 files remaining (18 files total across the four).**
+  Each got the same treatment: `featureGroups.ts` extracted from the
+  dashboard-home client (keeping any icons that are also used directly
+  in that page's quick-links JSX, not just in `FEATURE_GROUPS`), then
+  every `RolePageWrapper` sub-page migrated to `RoleSubHeader`.
+  - `counselor/cases/[caseId]/CaseDetailClient.tsx` is a nested detail
+    page (one level deeper than the usual sub-page) reached from the
+    caseload list, with **three separate `RolePageWrapper` usages**
+    (loading state, not-found state, main render with a dynamic
+    title from the student's name) - easy to miss with a single grep
+    for the JSX tag. All three migrated, and given
+    `backHref="/dashboard/counselor/cases"` instead of the default
+    dashboard-home fallback, since "back" from a case detail page
+    should return to the caseload list.
+  - **Every one of these four roles' `profile/ProfileClient.tsx` had
+    the exact same hand-rolled-gradient-button + hardcoded-hex-color
+    pattern** (`'#10B981'`/`'#EF4444'` instead of the real
+    `--success`/`--danger` tokens, plus a `linear-gradient(135deg,
+    sc, sc+'cc')` "Save Changes" button instead of the shared `.btn`
+    class) - confirmed identical, character-for-character, across
+    counselor/nurse/coach/librarian (and student/secretary/
+    examination from earlier batches too). All fixed the same way:
+    `.btn pressable` + flat `background: sc`, tokens instead of hex.
+    **Checked**: `grep -rl "'#10B981'" src/app/dashboard/*/profile/ProfileClient.tsx`
+    shows teacher/secretary/examination/counselor/nurse/coach/librarian
+    are now clean (fixed as part of their respective migrations), but
+    **bursar, hostel, ict, parent, principal, student, and
+    vice-principal still have it** - not fixed yet. Note that
+    `student/profile/ProfileClient.tsx` doesn't use `RolePageWrapper`
+    at all (confirmed - no import), so it was never going to surface
+    in a RolePageWrapper-only migration; the hex-color bug is
+    independent of wrapper-migration status and needs its own pass
+    across whichever profile pages still have it.
 - **`examination` role: fully migrated, 0 files remaining.**
   `featureGroups.ts` created; `ExaminationDashboardClient.tsx` migrated
   to use it (kept `ShieldIcon` imported separately - also used
@@ -266,10 +300,10 @@ screenshot of this app seen so far.
 - [x] ~~**secretary** - 14 files~~ - **done, 0 remaining**
 - [ ] **bursar** - 13 files
 - [x] ~~**examination** - 8 files~~ - **done, 0 remaining**
-- [ ] **counselor** - 6 files
-- [ ] **nurse** - 5 files
-- [ ] **coach** - 4 files
-- [ ] **librarian** - 3 files
+- [x] ~~**counselor** - 6 files~~ - **done, 0 remaining**
+- [x] ~~**nurse** - 5 files~~ - **done, 0 remaining**
+- [x] ~~**coach** - 4 files~~ - **done, 0 remaining**
+- [x] ~~**librarian** - 3 files~~ - **done, 0 remaining**
 - [ ] shared components (`DashboardHeader.tsx`, `StaffMeetingsClient.tsx`,
       `UniversalAIPage.tsx`) - 3 files, check whether these are still
       referenced anywhere before touching
