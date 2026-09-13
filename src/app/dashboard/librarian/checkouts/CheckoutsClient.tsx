@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { LIBRARIAN_FEATURE_GROUPS } from '../featureGroups'
 import { RefreshIcon, PlusIcon, XIcon, SearchIcon, UserIcon, BookIcon } from '@/components/Icons'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import EmptyState from '@/components/motion/EmptyState'
@@ -105,7 +106,7 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="librarian" profile={profile} school={school} title="Checkouts">
+    <RoleSubHeader userId={userId} role="librarian" profile={profile} school={school} title="Checkouts" featureGroups={LIBRARIAN_FEATURE_GROUPS}>
       <main className={styles.main}>
         <ActionButton onClick={() => setShowForm(true)} icon={<PlusIcon size={16} />} fullWidth>
           Issue a Book
@@ -230,6 +231,6 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
       )}
 
       <Toast toast={toast} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
