@@ -362,8 +362,8 @@ export default function ExportClient({ profile, school, userId }: Props) {
 
       {error && (
         <div style={{ padding:'var(--space-4)', marginTop:'var(--space-5)',
-          background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:10, fontSize:'0.85rem', fontWeight:700, color:'#EF4444',
+          background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+          borderRadius:10, fontSize:'0.85rem', fontWeight:700, color:'var(--danger)',
           display:'flex', alignItems:'center', gap:6 }}>
           <AlertIcon size={15} /> {error}
         </div>
@@ -371,10 +371,10 @@ export default function ExportClient({ profile, school, userId }: Props) {
 
       {result !== null && !error && (
         <div className="animate-success-pop" style={{ padding:'var(--space-4)', marginTop:'var(--space-5)',
-          background: result.count > 0 ? '#10B98115' : '#F59E0B15',
-          border: `1px solid ${result.count > 0 ? '#10B98140' : '#F59E0B40'}`,
+          background: result.count > 0 ? 'rgba(16,185,129,0.08)' : '#F59E0B15',
+          border: `1px solid ${result.count > 0 ? 'rgba(16,185,129,0.25)' : '#F59E0B40'}`,
           borderRadius:10, fontSize:'0.85rem', fontWeight:700,
-          color: result.count > 0 ? '#10B981' : '#F59E0B',
+          color: result.count > 0 ? 'var(--success)' : '#F59E0B',
           display:'flex', alignItems:'center', gap:6 }}>
           {result.count > 0
             ? <><CheckCircleIcon size={15} /> {`Downloaded ${result.count} record${result.count !== 1 ? 's' : ''}`}</>

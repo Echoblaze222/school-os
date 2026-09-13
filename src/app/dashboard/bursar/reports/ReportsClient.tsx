@@ -180,8 +180,8 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div className="animate-shake" style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600 }}>
+        <div className="animate-shake" style={{ padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600 }}>
           ⚠️ {error}
         </div>
       )}
@@ -199,9 +199,9 @@ export default function ReportsClient({ profile, school, userId }: Props) {
               {tab === 'summary' && (
                 <>
                   <div className={`${styles.statsRow} stagger`} style={{ marginBottom:'var(--space-5)' }}>
-                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} color="#10B981" valueColor="#10B981" context="This term" />
+                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} color="var(--success)" valueColor="var(--success)" context="This term" />
                     <KpiCard label="Students Paid" value={report.paidCount} icon={<CheckCircleIcon size={16} />} color={sc} context="Fully settled" />
-                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} color="#EF4444" valueColor="#EF4444" context="Outstanding" />
+                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} color="var(--danger)" valueColor="var(--danger)" context="Outstanding" />
                     <KpiCard label="Total Students" value={report.studentCount} icon={<UsersIcon size={16} />} color="#F59E0B" context="On roll" />
                   </div>
 

@@ -148,7 +148,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
 
             {/* Amount hero */}
             <div style={{ textAlign:'center', marginBottom:20 }}>
-              <p style={{ fontSize:'2rem', fontWeight:900, color:'#10B981', margin:0 }}>
+              <p style={{ fontSize:'2rem', fontWeight:900, color:'var(--success)', margin:0 }}>
                 {fmtAmt(preview.amount, preview.currency)}
               </p>
               {preview.receipt_number && (
@@ -208,8 +208,8 @@ export default function HistoryClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600,
+        <div style={{ padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600,
           display:'flex', alignItems:'center', gap:6 }}>
           <AlertIcon size={14} /> {error}
         </div>
@@ -253,7 +253,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
                     </p>
                   </div>
                   <div style={{ textAlign:'right', flexShrink:0 }}>
-                    <p style={{ fontSize:'0.88rem', fontWeight:800, color:'#10B981', margin:'0 0 2px' }}>
+                    <p style={{ fontSize:'0.88rem', fontWeight:800, color:'var(--success)', margin:'0 0 2px' }}>
                       {fmtAmt(p.amount, p.currency)}
                     </p>
                     <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}>
