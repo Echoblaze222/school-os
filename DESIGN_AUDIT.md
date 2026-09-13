@@ -74,6 +74,45 @@ screenshot of this app seen so far.
 
 ## Already done
 
+- **`bursar` role: fully migrated, 0 files remaining. This completes
+  every full-role RolePageWrapper migration** (bursar's dashboard home
+  was already redesigned separately, earlier - see the "de-AI the
+  dashboard" entry below; this completes its 13 sub-pages).
+  `featureGroups.ts` created; `BursarDashboardClient.tsx` migrated to
+  use it (no icons were used directly in the dashboard home's JSX
+  outside `FEATURE_GROUPS` this time, unlike most other roles).
+  All 13 files migrated: reminders, fees, history, profile, debtors,
+  meetings, export, expenses, receipts, settings, claims, payments,
+  reports.
+  - **New, much bigger finding while scanning this batch - NOT
+    fixed, needs its own dedicated pass:** nearly every bursar
+    sub-page *other than* profile (reminders, fees, history, debtors,
+    export, expenses, receipts, claims, reports) has pervasive
+    hardcoded hex colors scattered throughout - not just the one
+    `'#10B981'`/`'#EF4444'` profile-page pattern, but dozens of
+    instances per file including alpha-tinted variants
+    (`'#EF444415'`, `'#10B98120'`, `'#EF444440'`, etc.) used for
+    subtle status-badge/error-banner backgrounds, plus at least one
+    hardcoded delete-button background (`background:'#EF4444',
+    color:'#fff'`) that likely belongs on a `.btn-danger` class if the
+    codebase has one. This is a different shape of problem than the
+    profile-page bug: that one was one exact copy-pasted template
+    fixable with one search-and-replace per file; this is organic,
+    varied hex usage that needs the alpha-tinted variants mapped to
+    `--success-subtle`/`--danger-subtle` (both already exist in
+    `globals.css`) rather than a blind swap, checked file-by-file. Not
+    attempted - flagging for a future dedicated session rather than
+    risking a rushed, error-prone broad edit.
+- **The hand-rolled-gradient-button + hardcoded-hex-color profile-page
+  bug (`'#10B981'`/`'#EF4444'` instead of `--success`/`--danger`, plus
+  a `linear-gradient(135deg, sc, sc+'cc')` "Save Changes" button
+  instead of the shared `.btn` class) is now fixed on every profile
+  page across all 13 roles - closed out.** Found identical,
+  character-for-character, in the profile pages of student, secretary,
+  examination, counselor, nurse, coach, librarian, bursar, hostel,
+  ict, parent, principal (fixed as each role was migrated or in a
+  final cleanup pass). `vice-principal`'s profile page was checked and
+  genuinely never had this pattern - confirmed via grep, not a miss.
 - **`counselor`, `nurse`, `coach`, and `librarian` roles: fully
   migrated, 0 files remaining (18 files total across the four).**
   Each got the same treatment: `featureGroups.ts` extracted from the
@@ -298,7 +337,7 @@ screenshot of this app seen so far.
 - [x] ~~**teacher** - 15 files remaining (quizzes done)~~ - **done, 0 remaining**
 - [x] ~~**student** - 14 files~~ - **done, 0 remaining**
 - [x] ~~**secretary** - 14 files~~ - **done, 0 remaining**
-- [ ] **bursar** - 13 files
+- [x] ~~**bursar** - 13 files~~ - **done, 0 remaining**
 - [x] ~~**examination** - 8 files~~ - **done, 0 remaining**
 - [x] ~~**counselor** - 6 files~~ - **done, 0 remaining**
 - [x] ~~**nurse** - 5 files~~ - **done, 0 remaining**
