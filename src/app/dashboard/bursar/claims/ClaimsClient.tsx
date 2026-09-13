@@ -21,8 +21,8 @@ type Tab   = typeof TABS[number]
 
 const TAB_META: Record<Tab, { label: string; color: string }> = {
   pending:   { label: 'Pending',   color: '#F59E0B' },
-  confirmed: { label: 'Confirmed', color: '#10B981' },
-  rejected:  { label: 'Rejected',  color: '#EF4444' },
+  confirmed: { label: 'Confirmed', color: 'var(--success)' },
+  rejected:  { label: 'Rejected',  color: 'var(--danger)' },
 }
 
 export default function ClaimsClient({ profile, school, userId }: Props) {
@@ -151,7 +151,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
             style={tab===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
             {TAB_META[t].label}
             {t === 'pending' && pendingCount !== null && pendingCount > 0 && (
-              <span style={{ marginLeft:6, background:'#EF4444', color:'#fff',
+              <span style={{ marginLeft:6, background:'var(--danger)', color:'#fff',
                 borderRadius:20, padding:'1px 7px', fontSize:'0.7rem', fontWeight:800 }}>
                 {pendingCount}
               </span>
@@ -190,11 +190,11 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                     <div className="animate-success-pop" style={{ position:'absolute', inset:0, zIndex:2,
                       background:'var(--glass-bg)', backdropFilter:'blur(2px)',
                       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8 }}>
-                      <div style={{ width:40, height:40, borderRadius:'50%', background:'#10B981',
+                      <div style={{ width:40, height:40, borderRadius:'50%', background:'var(--success)',
                         display:'flex', alignItems:'center', justifyContent:'center' }}>
                         <CheckIcon size={20} color="#fff" />
                       </div>
-                      <p style={{ fontSize:'0.8rem', fontWeight:700, color:'#10B981', margin:0 }}>Confirmed</p>
+                      <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--success)', margin:0 }}>Confirmed</p>
                     </div>
                   )}
 
@@ -214,7 +214,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                       </p>
                     </div>
                     <div style={{ textAlign:'right' }}>
-                      <p style={{ fontSize:'1.05rem', fontWeight:800, color:'#10B981', margin:0 }}>
+                      <p style={{ fontSize:'1.05rem', fontWeight:800, color:'var(--success)', margin:0 }}>
                         {fmt(c.amount_claimed)}
                       </p>
                       <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:'2px 0 0' }}>
@@ -244,8 +244,8 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
 
                   {/* Reject note if rejected */}
                   {c.status === 'rejected' && c.bursar_note && (
-                    <div style={{ background:'#EF444415', borderRadius:8, padding:'7px 12px' }}>
-                      <p style={{ fontSize:'0.75rem', color:'#EF4444', margin:0 }}>
+                    <div style={{ background:'rgba(239,68,68,0.08)', borderRadius:8, padding:'7px 12px' }}>
+                      <p style={{ fontSize:'0.75rem', color:'var(--danger)', margin:0 }}>
                         Rejected: {c.bursar_note}
                       </p>
                     </div>
@@ -253,8 +253,8 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
 
                   {/* Confirmed note */}
                   {c.status === 'confirmed' && (
-                    <div style={{ background:'#10B98115', borderRadius:8, padding:'7px 12px' }}>
-                      <p style={{ fontSize:'0.75rem', color:'#10B981', margin:0, fontWeight:700,
+                    <div style={{ background:'rgba(16,185,129,0.08)', borderRadius:8, padding:'7px 12px' }}>
+                      <p style={{ fontSize:'0.75rem', color:'var(--success)', margin:0, fontWeight:700,
                         display:'flex', alignItems:'center', gap:5 }}>
                         <CheckIcon size={12} /> Confirmed, balance auto-deducted
                       </p>
@@ -270,12 +270,12 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                           <input placeholder="Rejection reason (required)" value={rejectNote}
                             onChange={e => setRejectNote(e.target.value)}
                             className={`input${shakeInput ? ' animate-shake' : ''}`}
-                            style={{ height:38, borderColor:'#EF444450' }}/>
+                            style={{ height:38, borderColor:'rgba(239,68,68,0.31)' }}/>
                           <div style={{ display:'flex', gap:8 }}>
                             <button onClick={() => reject(c.id)}
                               disabled={reviewing === c.id}
                               className="pressable"
-                              style={{ flex:1, height:38, background:'#EF4444', color:'#fff',
+                              style={{ flex:1, height:38, background:'var(--danger)', color:'#fff',
                                 border:'none', borderRadius:8, fontWeight:700, fontSize:'0.8rem',
                                 cursor:'pointer', opacity: reviewing===c.id ? 0.5 : 1 }}>
                               {reviewing===c.id ? 'Rejecting…' : 'Confirm Reject'}
@@ -296,7 +296,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                           <button onClick={() => confirm(c)}
                             disabled={reviewing === c.id}
                             className="pressable"
-                            style={{ flex:1, height:40, background:'#10B981', color:'#fff',
+                            style={{ flex:1, height:40, background:'var(--success)', color:'#fff',
                               border:'none', borderRadius:9, fontWeight:700, fontSize:'0.82rem',
                               cursor:'pointer', display:'flex', alignItems:'center',
                               justifyContent:'center', gap:6,
@@ -306,11 +306,11 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                           </button>
                           <button onClick={() => { setRejectId(c.id); setRejectNote('') }}
                             className="pressable"
-                            style={{ flex:1, height:40, background:'#EF444415', color:'#EF4444',
-                              border:'1px solid #EF444430', borderRadius:9, fontWeight:700,
+                            style={{ flex:1, height:40, background:'rgba(239,68,68,0.08)', color:'var(--danger)',
+                              border:'1px solid rgba(239,68,68,0.19)', borderRadius:9, fontWeight:700,
                               fontSize:'0.82rem', cursor:'pointer', display:'flex',
                               alignItems:'center', justifyContent:'center', gap:6 }}>
-                            <XIcon size={14} color="#EF4444"/>
+                            <XIcon size={14} color="var(--danger)"/>
                             Reject
                           </button>
                         </div>

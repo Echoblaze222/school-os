@@ -151,7 +151,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
     td    { padding:9px 0; border-bottom:1px solid #eee; font-size:0.85rem; }
     td:last-child { text-align:right; font-weight:700; }
     .amount-row td { font-size:1.1rem; font-weight:800; border-bottom:none; padding-top:16px; }
-    .amount-row td:last-child { color:#10B981; }
+    .amount-row td:last-child { color:var(--success); }
     .bank { background:#f7f7f7; padding:12px; border-radius:8px; font-size:0.78rem; }
     .bank strong { display:block; margin-bottom:2px; }
     @media print { body { margin:20px; } }
@@ -226,7 +226,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
               <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 4px' }}>
                 AMOUNT PAID
               </p>
-              <p style={{ fontSize:'2rem', fontWeight:900, color:'#10B981', margin:0 }}>
+              <p style={{ fontSize:'2rem', fontWeight:900, color:'var(--success)', margin:0 }}>
                 {fmtAmt(selected.amount, selected.currency)}
               </p>
             </div>
@@ -290,8 +290,8 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
-          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600,
+        <div style={{ padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+          borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600,
           display:'flex', alignItems:'center', gap:6 }}>
           <AlertIcon size={14} /> {error}
         </div>
@@ -328,7 +328,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
                     </p>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0 }}>
-                    <p style={{ fontSize:'0.88rem', fontWeight:800, color:'#10B981', margin:0 }}>
+                    <p style={{ fontSize:'0.88rem', fontWeight:800, color:'var(--success)', margin:0 }}>
                       {fmtAmt(p.amount, p.currency)}
                     </p>
                     <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}>

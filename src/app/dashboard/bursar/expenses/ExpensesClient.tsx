@@ -183,13 +183,13 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
 
       {/* Total banner */}
       {!loading && rows.length > 0 && (
-        <div style={{ padding:'var(--space-4)', background:'#EF444415',
-          border:'1px solid #EF444430', borderRadius:10, marginBottom:'var(--space-4)' }}>
+        <div style={{ padding:'var(--space-4)', background:'rgba(239,68,68,0.08)',
+          border:'1px solid rgba(239,68,68,0.19)', borderRadius:10, marginBottom:'var(--space-4)' }}>
           <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--text-muted)',
             letterSpacing:'0.05em', margin:'0 0 4px' }}>
             TOTAL EXPENSES: {term} {year}
           </p>
-          <p style={{ fontSize:'1.2rem', fontWeight:800, color:'#EF4444', margin:0 }}>
+          <p style={{ fontSize:'1.2rem', fontWeight:800, color:'var(--danger)', margin:0 }}>
             {fmt(totalSpend)}
           </p>
         </div>
@@ -206,7 +206,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
           : <div className={`${styles.list} stagger`}>
               {rows.map((item: any) => (
                 <div key={item.id} className={`${styles.card} animate-fade-up`}>
-                  <div className={styles.cardIcon} style={{ background:'#EF444420' }}>
+                  <div className={styles.cardIcon} style={{ background:'var(--danger-subtle)' }}>
                     <span style={{ fontSize:'0.8rem' }}>₦</span>
                   </div>
                   <div className={styles.cardBody}>
@@ -218,14 +218,14 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
                     </p>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-                    <span style={{ fontSize:'0.9rem', fontWeight:800, color:'#EF4444' }}>
+                    <span style={{ fontSize:'0.9rem', fontWeight:800, color:'var(--danger)' }}>
                       {fmt(item.amount)}
                     </span>
                     {confirmDeleteId === item.id ? (
                       <>
                         <button onClick={() => del(item.id)} disabled={deleting===item.id}
                           className="pressable"
-                          style={{ background:'#EF4444', color:'#fff', border:'none', borderRadius:6,
+                          style={{ background:'var(--danger)', color:'#fff', border:'none', borderRadius:6,
                             padding:'5px 10px', cursor:'pointer', fontSize:'0.72rem', fontWeight:700,
                             opacity:deleting===item.id ? 0.6 : 1 }}>
                           {deleting===item.id ? '…' : 'Confirm'}
@@ -246,9 +246,9 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
                           <EditIcon size={13} color="#3B82F6"/>
                         </button>
                         <button onClick={() => setConfirmDeleteId(item.id)} className="pressable"
-                          style={{ background:'#EF444420', border:'none', borderRadius:6,
+                          style={{ background:'var(--danger-subtle)', border:'none', borderRadius:6,
                             padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
-                          <TrashIcon size={13} color="#EF4444"/>
+                          <TrashIcon size={13} color="var(--danger)"/>
                         </button>
                       </>
                     )}

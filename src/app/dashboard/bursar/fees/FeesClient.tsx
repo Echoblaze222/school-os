@@ -205,9 +205,9 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
           {error && (
             <div style={{
-              padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
+              padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
               borderRadius: 8, marginBottom: 'var(--space-3)',
-              fontSize: '0.8rem', color: '#EF4444', fontWeight: 600,
+              fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               <AlertIcon size={14} /> {error}
@@ -326,7 +326,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                         <>
                           <button onClick={() => del(item.id)} disabled={deleting === item.id}
                             className="pressable"
-                            style={{ background: '#EF4444', color: '#fff', border: 'none', borderRadius: 6,
+                            style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 6,
                               padding: '5px 10px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700,
                               opacity: deleting === item.id ? 0.6 : 1 }}>
                             {deleting === item.id ? '…' : 'Confirm'}
@@ -344,11 +344,11 @@ export default function FeesClient({ profile, school, userId }: Props) {
                           disabled={deleting === item.id}
                           className="pressable"
                           style={{
-                            background: '#EF444420', border: 'none', borderRadius: 6,
+                            background: 'var(--danger-subtle)', border: 'none', borderRadius: 6,
                             padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
                             opacity: deleting === item.id ? 0.5 : 1,
                           }}>
-                          <TrashIcon size={13} color="#EF4444" />
+                          <TrashIcon size={13} color="var(--danger)" />
                         </button>
                       )}
                     </div>

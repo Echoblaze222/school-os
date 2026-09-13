@@ -438,8 +438,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                 </div>
                 <span style={{
                   padding: '3px 10px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
-                  background: previewMsg.status === 'sent' ? '#10B98120' : '#F59E0B20',
-                  color:      previewMsg.status === 'sent' ? '#10B981'   : '#F59E0B',
+                  background: previewMsg.status === 'sent' ? 'var(--success-subtle)' : '#F59E0B20',
+                  color:      previewMsg.status === 'sent' ? 'var(--success)'   : '#F59E0B',
                 }}>
                   {previewMsg.status}
                 </span>
@@ -507,9 +507,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
           {error && (
             <div style={{
-              padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
+              padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
               borderRadius: 8, marginBottom: 'var(--space-4)',
-              fontSize: '0.8rem', color: '#EF4444', fontWeight: 600,
+              fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
             }}>
               ⚠️ {error}
             </div>
@@ -517,10 +517,10 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
           {sentDone && (
             <div style={{
-              padding: 'var(--space-4)', background: '#10B98115',
-              border: '1px solid #10B98140', borderRadius: 10,
+              padding: 'var(--space-4)', background: 'rgba(16,185,129,0.08)',
+              border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10,
               marginBottom: 'var(--space-4)', fontSize: '0.85rem',
-              fontWeight: 700, color: '#10B981',
+              fontWeight: 700, color: 'var(--success)',
             }}>
               ✓ {sentCount} reminder{sentCount !== 1 ? 's' : ''} sent successfully and saved to records
             </div>
@@ -655,20 +655,20 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                         }}>
                           {selected.has(d.id) && <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: 900 }}>✓</span>}
                         </div>
-                        <div className={styles.cardIcon} style={{ background: '#EF444420' }}>
-                          <PeopleIcon size={16} color="#EF4444" />
+                        <div className={styles.cardIcon} style={{ background: 'var(--danger-subtle)' }}>
+                          <PeopleIcon size={16} color="var(--danger)" />
                         </div>
                         <div className={styles.cardBody}>
                           <p className={styles.cardTitle}>{d.full_name}</p>
                           <p className={styles.cardMeta}>
                             {d.class_level}
                             {d.parent_name
-                              ? <span style={{ color: '#10B981' }}> · {d.parent_name}</span>
+                              ? <span style={{ color: 'var(--success)' }}> · {d.parent_name}</span>
                               : <span style={{ color: '#F59E0B' }}> · ⚠ No parent linked</span>
                             }
                           </p>
                         </div>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#EF4444', flexShrink: 0 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--danger)', flexShrink: 0 }}>
                           {fmtAmt(d.outstanding)}
                         </span>
                       </div>
@@ -715,8 +715,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                         </div>
                         <span style={{
                           padding: '3px 10px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
-                          background: item.status === 'sent' ? '#10B98120' : '#F59E0B20',
-                          color:      item.status === 'sent' ? '#10B981'   : '#F59E0B',
+                          background: item.status === 'sent' ? 'var(--success-subtle)' : '#F59E0B20',
+                          color:      item.status === 'sent' ? 'var(--success)'   : '#F59E0B',
                         }}>
                           {item.status}
                         </span>

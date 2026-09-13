@@ -170,11 +170,11 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
                 return (
                   <div key={d.id} className={`${styles.card} animate-fade-up`}>
                     <div className={styles.cardIcon}
-                      style={{ background:'#EF444420', borderRadius:'50%', overflow:'hidden' }}>
+                      style={{ background:'var(--danger-subtle)', borderRadius:'50%', overflow:'hidden' }}>
                       {d.avatar_url
                         ? <Image src={d.avatar_url} alt=""
                             width={40} height={40} style={{ objectFit:'cover' }}/>
-                        : <span style={{ fontWeight:800, color:'#EF4444' }}>
+                        : <span style={{ fontWeight:800, color:'var(--danger)' }}>
                             {d.full_name?.[0]}
                           </span>}
                     </div>
@@ -185,7 +185,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
                         <div style={{ marginTop:5 }}>
                           <div style={{ height:4, background:'var(--glass-border)', borderRadius:2 }}>
                             <div style={{ height:'100%', width:`${paidPct}%`,
-                              background:'#10B981', borderRadius:2 }}/>
+                              background:'var(--success)', borderRadius:2 }}/>
                           </div>
                           <p style={{ fontSize:'0.67rem', color:'var(--text-muted)', margin:'2px 0 0' }}>
                             Paid {fmtAmt(d.paid)} of {fmtAmt(d.expected)}
@@ -194,7 +194,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
                       )}
                     </div>
                     <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <p style={{ fontSize:'0.85rem', fontWeight:800, color:'#EF4444', margin:0 }}>
+                      <p style={{ fontSize:'0.85rem', fontWeight:800, color:'var(--danger)', margin:0 }}>
                         {fmtAmt(d.outstanding)}
                       </p>
                       <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', margin:0 }}>
