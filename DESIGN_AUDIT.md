@@ -74,6 +74,60 @@ screenshot of this app seen so far.
 
 ## Already done
 
+- **The RolePageWrapper -> RoleSubHeader migration is now complete
+  everywhere it was ever used.** A full-repo `grep -rl "RolePageWrapper"
+  src --include="*.tsx"` turns up zero real imports or JSX usages - the
+  only hits left are historical comments in already-migrated files
+  (documenting past migrations) and the `RolePageWrapper.tsx`
+  definition file itself, which is now dead code (nothing imports it -
+  confirmed via a separate grep for `from '@/components/RolePageWrapper'`
+  excluding the file itself). Not deleted - flagging as a removal
+  candidate rather than deleting unasked.
+  - `ict` and `hostel` both turned out to need work that was missing
+    from every earlier list: neither had a `featureGroups.ts` (their
+    dashboard-home clients had local `FEATURE_GROUPS` never extracted),
+    and both had exactly one `RolePageWrapper` file - `profile/
+    ProfileClient.tsx`. Both fixed the same way as every other role.
+  - `StaffMeetingsClient.tsx` (shared `/meetings` page for coach, ict,
+    examination, librarian, counselor, hostel, vice-principal, nurse)
+    and `UniversalAIPage.tsx` (shared `/ai` page for all 14 roles) both
+    take a dynamic `role` prop, so neither could just import one
+    `featureGroups.ts` like a normal sub-page - each needed a
+    `Record<string, FeatureGroup[]>` lookup map built from every
+    relevant role's own file. Worth remembering for any other shared,
+    role-parameterized component found later.
+  - **`RoleSubHeader` gained `fullHeight` support, which didn't exist
+    before.** `UniversalAIPage.tsx` needs it (chat-style layout: own
+    sticky input bar, no page padding/max-width, locked to viewport
+    height) - `RolePageWrapper` had this via a `fullHeight` prop plus
+    an unconditional `useVisualViewportHeight()` call for keyboard-safe
+    height on iOS (dvh doesn't shrink for the on-screen keyboard the
+    way visualViewport does). Added the same to `RoleSubHeader`:
+    `.pageFullHeight`/`.mainFull` CSS mirroring `RolePageWrapper`'s
+    `.shellFullHeight`/`.mainFull`, and the same unconditional hook
+    call. Confirmed safe to call unconditionally on every already-
+    migrated page (not just fullHeight ones): grepped the whole app for
+    `--app-vh`, `--keyboard-inset`, and `.keyboard-open` and nothing
+    outside `RolePageWrapper.module.css` and `RoleSubHeader.module.css`
+    itself references them, so it's a no-op everywhere except pages
+    that actually set `fullHeight`.
+  - **New, separate, NOT-yet-addressed finding:** while confirming
+    nothing else still imports `RolePageWrapper`, `DashboardHeader`, or
+    `RoleNav`, found that `DashboardHeader` and `RoleNav` (the two
+    pieces `RolePageWrapper` itself is built from) are still used
+    DIRECTLY - composed manually, without `RolePageWrapper` - by about
+    10 files: `UniversalChatPage.tsx`, `principal/report-cards`,
+    `teacher/report-cards`, `student/timetable`, `student/records`,
+    `student/profile`, `student/id-card`, `student/announcements`,
+    `notifications/NotificationsPageShared.tsx`, `principal/alumni`,
+    `principal/students/promote`. None of these ever showed up in any
+    `RolePageWrapper` grep this whole session, because they don't use
+    `RolePageWrapper` - they use its two building blocks separately.
+    This is a genuinely different, previously untracked legacy pattern
+    from the migration this file has been tracking - not attempted,
+    needs its own dedicated pass and its own recipe (these files may
+    have desktop-sidebar-specific behavior via direct `RoleNav` usage
+    that a hero+dock migration needs to account for, file by file).
 - **`bursar` role: fully migrated, 0 files remaining. This completes
   every full-role RolePageWrapper migration** (bursar's dashboard home
   was already redesigned separately, earlier - see the "de-AI the
@@ -343,13 +397,30 @@ screenshot of this app seen so far.
 - [x] ~~**nurse** - 5 files~~ - **done, 0 remaining**
 - [x] ~~**coach** - 4 files~~ - **done, 0 remaining**
 - [x] ~~**librarian** - 3 files~~ - **done, 0 remaining**
-- [ ] shared components (`DashboardHeader.tsx`, `StaffMeetingsClient.tsx`,
-      `UniversalAIPage.tsx`) - 3 files, check whether these are still
-      referenced anywhere before touching
-- [ ] **ict** - 1 file
-- [ ] **hostel** - 1 file
-- [ ] **applications** (`src/app/dashboard/applications/page.tsx`) - 1 file,
-      check which role this belongs to
+- [x] ~~shared components (`DashboardHeader.tsx`, `StaffMeetingsClient.tsx`,
+      `UniversalAIPage.tsx`) - 3 files~~ - **done, with a correction:
+      `DashboardHeader.tsx` never used `RolePageWrapper` (checked - only
+      a comment mentioned it), so nothing to migrate there. The other
+      two (`StaffMeetingsClient.tsx`, `UniversalAIPage.tsx`) both take a
+      dynamic `role` prop and are shared across 8 and 14 roles
+      respectively, so each needed a `role -> FeatureGroup[]` lookup map
+      built from every one of those roles' own `featureGroups.ts`,
+      rather than a single import. `UniversalAIPage.tsx` also needed
+      `fullHeight` support added to `RoleSubHeader` itself (didn't exist
+      before) - see the dedicated entry below.**
+- [x] ~~**ict** - 1 file~~ - **done, 0 remaining.** Also had a local
+      `FEATURE_GROUPS` never extracted (like hostel below) -
+      `featureGroups.ts` created.
+- [x] ~~**hostel** - 1 file~~ - **done, 0 remaining.** Same gap as ict:
+      local `FEATURE_GROUPS` never extracted - `featureGroups.ts`
+      created.
+- [x] **applications** (`src/app/dashboard/applications/page.tsx`) -
+      **checked, confirmed N/A.** This page is explicitly documented in
+      its own file header as intentionally NOT using `RolePageWrapper` -
+      it's the landing page for identities with `school_id = null`
+      (an applicant who may have open applications to several different
+      schools at once), so a single-school-branded sidebar doesn't fit.
+      Nothing to migrate here.
 
 None of these roles have a `featureGroups.ts` file yet - step 1 of the
 recipe above applies to all of them. `teacher/featureGroups.ts` and
