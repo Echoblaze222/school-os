@@ -4,7 +4,7 @@
 //
 // Shared "my staff meetings" list, adapted from
 // teacher/meetings/TeacherMeetingsClient.tsx. That file is role-specific
-// (hardcodes role="teacher" into RolePageWrapper and filters on
+// (hardcodes role="teacher" into RoleSubHeader and filters on
 // all_teachers/all_staff), so it could not be imported directly; this is
 // the same component made generic over role, profile, school, userId, and
 // which target_audience values count as "for me".
@@ -24,9 +24,34 @@
 // principal's own MeetingsClient still owns that.
 
 import { useRealtimeTable } from '@/hooks/useRealtimeTable'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { FeatureGroup } from '@/components/AllFeaturesSheet'
+import { COACH_FEATURE_GROUPS } from '@/app/dashboard/coach/featureGroups'
+import { ICT_FEATURE_GROUPS } from '@/app/dashboard/ict/featureGroups'
+import { EXAMINATION_FEATURE_GROUPS } from '@/app/dashboard/examination/featureGroups'
+import { LIBRARIAN_FEATURE_GROUPS } from '@/app/dashboard/librarian/featureGroups'
+import { COUNSELOR_FEATURE_GROUPS } from '@/app/dashboard/counselor/featureGroups'
+import { HOSTEL_FEATURE_GROUPS } from '@/app/dashboard/hostel/featureGroups'
+import { VP_FEATURE_GROUPS } from '@/app/dashboard/vice-principal/featureGroups'
+import { NURSE_FEATURE_GROUPS } from '@/app/dashboard/nurse/featureGroups'
 import styles from './StaffMeetings.module.css'
 import { logActivity } from '@/lib/logActivity'
+
+// One "Meetings" page, eight roles. Each role's own featureGroups.ts is
+// the single source of truth for its nav sheet - this just looks up the
+// right one by role at render time so the bottom dock / "all features"
+// sheet matches whatever that role sees on its own dashboard home,
+// instead of hardcoding (or omitting) it here.
+const FEATURE_GROUPS_BY_ROLE: Record<string, FeatureGroup[]> = {
+  coach:            COACH_FEATURE_GROUPS,
+  ict:              ICT_FEATURE_GROUPS,
+  examination:      EXAMINATION_FEATURE_GROUPS,
+  librarian:        LIBRARIAN_FEATURE_GROUPS,
+  counselor:        COUNSELOR_FEATURE_GROUPS,
+  hostel:           HOSTEL_FEATURE_GROUPS,
+  'vice-principal': VP_FEATURE_GROUPS,
+  nurse:            NURSE_FEATURE_GROUPS,
+}
 
 export interface MeetingRow {
   id: string
@@ -95,12 +120,13 @@ export default function StaffMeetingsClient({
   const past     = relevant.filter(m =>  isPast(m.scheduled_at))
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role={role}
       profile={profile}
       school={school}
       title="Meetings"
+      featureGroups={FEATURE_GROUPS_BY_ROLE[role] ?? []}
     >
       <div className={styles.listMain}>
 
@@ -153,7 +179,7 @@ export default function StaffMeetingsClient({
       </div>
 
       <div style={{ height: 80 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
 

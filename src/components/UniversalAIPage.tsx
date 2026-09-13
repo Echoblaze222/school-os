@@ -5,12 +5,49 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import { AiIcon, SendIcon, RefreshIcon, PaperclipIcon, XIcon } from '@/components/Icons'
 import { createClient } from '@/lib/supabase/client'
 import styles from '@/app/dashboard/student/ai/ai.module.css'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
+import { BURSAR_FEATURE_GROUPS } from '@/app/dashboard/bursar/featureGroups'
+import { COACH_FEATURE_GROUPS } from '@/app/dashboard/coach/featureGroups'
+import { COUNSELOR_FEATURE_GROUPS } from '@/app/dashboard/counselor/featureGroups'
+import { EXAMINATION_FEATURE_GROUPS } from '@/app/dashboard/examination/featureGroups'
+import { HOSTEL_FEATURE_GROUPS } from '@/app/dashboard/hostel/featureGroups'
+import { ICT_FEATURE_GROUPS } from '@/app/dashboard/ict/featureGroups'
+import { LIBRARIAN_FEATURE_GROUPS } from '@/app/dashboard/librarian/featureGroups'
+import { NURSE_FEATURE_GROUPS } from '@/app/dashboard/nurse/featureGroups'
+import { PARENT_FEATURE_GROUPS } from '@/app/dashboard/parent/featureGroups'
+import { PRINCIPAL_FEATURE_GROUPS } from '@/app/dashboard/principal/featureGroups'
+import { SECRETARY_FEATURE_GROUPS } from '@/app/dashboard/secretary/featureGroups'
+import { STUDENT_FEATURE_GROUPS } from '@/app/dashboard/student/featureGroups'
+import { TEACHER_FEATURE_GROUPS } from '@/app/dashboard/teacher/featureGroups'
+import { VP_FEATURE_GROUPS } from '@/app/dashboard/vice-principal/featureGroups'
+
+// One "AI Assistant" page, every role in the app. Each role's own
+// featureGroups.ts is the single source of truth for its nav sheet -
+// this just looks up the right one by role at render time so the bottom
+// dock / "all features" sheet matches whatever that role sees on its own
+// dashboard home, instead of hardcoding (or omitting) it here.
+const FEATURE_GROUPS_BY_ROLE: Record<string, FeatureGroup[]> = {
+  bursar:           BURSAR_FEATURE_GROUPS,
+  coach:            COACH_FEATURE_GROUPS,
+  counselor:        COUNSELOR_FEATURE_GROUPS,
+  examination:      EXAMINATION_FEATURE_GROUPS,
+  hostel:           HOSTEL_FEATURE_GROUPS,
+  ict:              ICT_FEATURE_GROUPS,
+  librarian:        LIBRARIAN_FEATURE_GROUPS,
+  nurse:            NURSE_FEATURE_GROUPS,
+  parent:           PARENT_FEATURE_GROUPS,
+  principal:        PRINCIPAL_FEATURE_GROUPS,
+  secretary:        SECRETARY_FEATURE_GROUPS,
+  student:          STUDENT_FEATURE_GROUPS,
+  teacher:          TEACHER_FEATURE_GROUPS,
+  'vice-principal': VP_FEATURE_GROUPS,
+}
 
 interface Message { role: 'user' | 'assistant'; content: string; ts: number; imageUrl?: string | null }
 interface Props   { profile: any; school: any; userId: string; role: string }
@@ -529,7 +566,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
   // or from student/parent free text, neither of which is trusted HTML.
 
   return (
-    <RolePageWrapper userId={userId} role={role} profile={profile} school={school} title={config.title} fullHeight>
+    <RoleSubHeader userId={userId} role={role} profile={profile} school={school} title={config.title} featureGroups={FEATURE_GROUPS_BY_ROLE[role] ?? []} fullHeight>
       {/* Outer flex column fills the mainFull container */}
       <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0 }}>
 
@@ -630,6 +667,6 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
           </button>
         </div>
       </div>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

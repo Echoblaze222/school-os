@@ -20,6 +20,7 @@ import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
 import BottomDock from './BottomDock'
 import { SunIcon, MoonIcon, UserIcon, ArrowLeftIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
+import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import { ripple } from '@/lib/ripple'
 import motion from './dashboard-motion.module.css'
 import styles from './RoleSubHeader.module.css'
@@ -39,21 +40,29 @@ interface Props {
   homeHref?:     string          // for BottomDock - defaults to the role's dashboard home
   aiHref?:       string          // for BottomDock - defaults to `${role}/ai`
   hideDock?:     boolean         // opt out of the floating dock (rare - e.g. a page that already has heavy fixed UI of its own)
+  fullHeight?:   boolean         // removes main's padding/max-width and locks the page to viewport height - for AI/Chat-style pages with their own sticky input bar
   children:      React.ReactNode
 }
 
 export default function RoleSubHeader({
   userId, role, profile, school, title, backHref, onBack, featureGroups,
-  homeHref, aiHref, hideDock = false, children,
+  homeHref, aiHref, hideDock = false, fullHeight = false, children,
 }: Props) {
   const { theme, toggleTheme } = useTheme()
+
+  // Keeps the shell height honest when a mobile keyboard opens, so a
+  // sticky/floating input bar (used by fullHeight pages like AI & Chat)
+  // stays pinned above the keyboard instead of scrolling off with the
+  // page. Harmless no-op for pages that don't reference --app-vh.
+  useVisualViewportHeight()
+
   const initials = (school?.name ?? 'S').slice(0, 2).toUpperCase()
   const resolvedHome = homeHref ?? `/dashboard/${role}`
   const resolvedBack = backHref ?? resolvedHome
   const resolvedAi   = aiHref ?? `/dashboard/${role}/ai`
 
   return (
-    <div className={styles.page}>
+    <div className={fullHeight ? `${styles.page} ${styles.pageFullHeight}` : styles.page}>
       <header className={styles.hero}>
         <div className={styles.frame}>
           <div className={styles.topRow}>
@@ -121,7 +130,7 @@ export default function RoleSubHeader({
         </div>
       </header>
 
-      <main className={styles.main}>
+      <main className={fullHeight ? styles.mainFull : styles.main}>
         {children}
       </main>
 
