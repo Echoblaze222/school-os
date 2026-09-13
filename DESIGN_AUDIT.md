@@ -138,49 +138,61 @@ screenshot of this app seen so far.
   All 13 files migrated: reminders, fees, history, profile, debtors,
   meetings, export, expenses, receipts, settings, claims, payments,
   reports.
-  - **New, much bigger finding while scanning this batch - NOT
-    fixed, needs its own dedicated pass:** nearly every bursar
-    sub-page *other than* profile (reminders, fees, history, debtors,
-    export, expenses, receipts, claims, reports) has pervasive
-    hardcoded hex colors scattered throughout - not just the one
-    `'#10B981'`/`'#EF4444'` profile-page pattern, but dozens of
-    instances per file including alpha-tinted variants
-    (`'#EF444415'`, `'#10B98120'`, `'#EF444440'`, etc.) used for
-    subtle status-badge/error-banner backgrounds, plus at least one
-    hardcoded delete-button background (`background:'#EF4444',
-    color:'#fff'`) that likely belongs on a `.btn-danger` class if the
-    codebase has one. This is a different shape of problem than the
-    profile-page bug: that one was one exact copy-pasted template
-    fixable with one search-and-replace per file; this is organic,
-    varied hex usage that needs the alpha-tinted variants mapped to
-    `--success-subtle`/`--danger-subtle` (both already exist in
-    `globals.css`) rather than a blind swap, checked file-by-file. Not
-    attempted - flagging for a future dedicated session rather than
-    risking a rushed, error-prone broad edit.
-  - **Addendum (separate pass): the `.input`/`textarea.input` drift
-    pattern - a different bug from the hex-color finding above - was
-    found and fixed across this same batch.** The canonical drift
-    example quoted at the top of this doc (`height: 40, padding: '0
-    12px', background: 'var(--input-bg)', border: '1px solid
-    var(--input-border)', borderRadius: 8`) turned out to be an exact,
-    byte-for-byte "Year" filter input, copy-pasted identically across
-    5 files (reminders, history, debtors, receipts, reports) - all
-    converted to `className="input"` with a `width: 110, height: 40`
-    override to stay compact next to the adjacent term-tab pills. Also
-    converted: local `const inp`/`lbl` style-object patterns backing
-    real multi-field forms in fees, expenses, export, and settings
-    (removed the now-dead `const inp` after conversion in each); a
-    `reminders` textarea (there's a real `textarea.input` variant in
-    `globals.css` for this); the same profile name/phone input/label
-    duplication documented for other roles below, recurring here too;
-    and a validation-tinted rejection-reason input in claims (kept its
-    custom `borderColor` override rather than reaching for
-    `.input-error`, since that's a stronger, different treatment -
-    solid `var(--danger)` with `!important` - not what this soft tint
-    was going for). Left alone, as a deliberate convention rather than
-    accidental drift: several small non-pill "Cancel"/"Close" buttons
-    using `var(--input-bg)`/`var(--input-border)`, identical across
-    multiple files; dynamic per-school-color selection-state rows; a
+  - **Update: hex-color part fixed in a follow-up commit.** All solid
+    `#EF4444`/`#10B981` instances (71 total) replaced with
+    `var(--danger)`/`var(--success)`, and all 28 alpha-tinted variants
+    replaced per-opacity-level: the ~12% suffix (`20`) mapped to the
+    existing `--danger-subtle`/`--success-subtle` tokens (already
+    defined at exactly 12% in `globals.css`), every other opacity
+    level (`15`/`30`/`40`/`50`, i.e. ~8%/19%/25%/31%) became a literal
+    `rgba(239,68,68,X)`/`rgba(16,185,129,X)` with the precise decimal
+    equivalent - pixel-identical to before, since `globals.css` has no
+    reusable RGB-tuple token (e.g. `--danger-rgb: 239,68,68`) that
+    would let these reference the token by name at an arbitrary
+    opacity. Spot-checked diffs by hand to confirm no broken syntax
+    and that no hits were inside SVG attributes. **Still open, smaller
+    in scope than the original finding, and trickier than it first
+    looked:** the 4 delete/reject-style buttons this finding
+    mentioned (`claims/ClaimsClient.tsx` x2,
+    `expenses/ExpensesClient.tsx`, `fees/FeesClient.tsx`) still
+    hand-roll their sizing/shape/border-radius inline. Checked whether
+    `.btn-danger` (it exists) is a drop-in fix and it is NOT: in this
+    codebase `.btn-danger` is a *subtle*, muted style (`background:
+    var(--danger-subtle)` at 12% opacity, red text) meant for a
+    secondary/de-emphasized danger action - these four are bold
+    solid-red, white-text "Confirm Reject"/"Confirm Delete" buttons, a
+    different visual weight entirely for what's usually a final
+    destructive-confirmation step. Attempted the swap on one instance,
+    caught the visual mismatch before committing, reverted it. If this
+    gets tackled later: either add a bolder `.btn-danger-solid`
+    variant to `globals.css` first, or leave these as intentionally
+    bespoke (the color-token fix above already removed the hardcoded
+    hex from them - only the structural/class question remains open).
+  - **Addendum (separate pass, landed concurrently): the `.input`/
+    `textarea.input` drift pattern - a different bug from the
+    hex-color finding above - was found and fixed across this same
+    batch.** The canonical drift example quoted at the top of this doc
+    (`height: 40, padding: '0 12px', background: 'var(--input-bg)',
+    border: '1px solid var(--input-border)', borderRadius: 8`) turned
+    out to be an exact, byte-for-byte "Year" filter input, copy-pasted
+    identically across 5 files (reminders, history, debtors, receipts,
+    reports) - all converted to `className="input"` with a `width:
+    110, height: 40` override to stay compact next to the adjacent
+    term-tab pills. Also converted: local `const inp`/`lbl`
+    style-object patterns backing real multi-field forms in fees,
+    expenses, export, and settings (removed the now-dead `const inp`
+    after conversion in each); a `reminders` textarea (there's a real
+    `textarea.input` variant in `globals.css` for this); the same
+    profile name/phone input/label duplication documented for other
+    roles below, recurring here too; and a validation-tinted
+    rejection-reason input in claims (kept its custom `borderColor`
+    override rather than reaching for `.input-error`, since that's a
+    stronger, different treatment - solid `var(--danger)` with
+    `!important` - not what this soft tint was going for). Left alone,
+    as a deliberate convention rather than accidental drift: several
+    small non-pill "Cancel"/"Close" buttons using
+    `var(--input-bg)`/`var(--input-border)`, identical across multiple
+    files; dynamic per-school-color selection-state rows; a
     `DOBPicker`-style compact date input; static content/preview boxes
     styled to visually echo an input without being one.
 - **The hand-rolled-gradient-button + hardcoded-hex-color profile-page
