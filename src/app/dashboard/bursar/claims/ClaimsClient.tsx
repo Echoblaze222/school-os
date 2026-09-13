@@ -5,7 +5,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import {
   WalletIcon, CheckCircleIcon, XIcon,
   ImageIcon, ClockIcon, CheckIcon,
@@ -130,7 +131,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
   const pendingCount = tab === 'pending' ? claims.length : null
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Payment Claims">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Payment Claims" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {toast && (
         <div className={toastLeaving ? 'animate-toast-out' : 'animate-toast-in'}
@@ -323,6 +324,6 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
             </div>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

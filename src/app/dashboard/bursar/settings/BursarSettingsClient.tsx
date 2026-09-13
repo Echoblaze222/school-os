@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { SaveIcon, CheckIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
@@ -31,7 +32,7 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
     color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:6, display:'block' }
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Settings">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Settings" featureGroups={BURSAR_FEATURE_GROUPS}>
       {/* School info - read only */}
       <div style={{ padding:'var(--space-5)', background:'var(--glass-bg)',
         border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)',
@@ -92,6 +93,6 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
         {saving ? 'Saving…' : saved ? 'Saved' : 'Save Changes'}
       </button>
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

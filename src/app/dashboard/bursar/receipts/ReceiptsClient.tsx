@@ -8,7 +8,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { FileTextIcon, AlertIcon, DownloadIcon } from '@/components/Icons'
 import { getCurrentAcademicYear, getCurrentTerm } from '@/lib/utils/term'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
@@ -194,7 +195,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
 
   // ── List view ─────────────────────────────────────────────
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Receipts">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Receipts" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {/* ── Receipt Preview Modal ── */}
       {selected && (
@@ -348,6 +349,6 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
             </div>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

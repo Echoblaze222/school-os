@@ -9,7 +9,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { BellIcon, PeopleIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -421,7 +422,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Fee Reminders">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Fee Reminders" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {/* ── Message Preview Modal ── */}
       {previewMsg && (() => {
@@ -750,6 +751,6 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       )}
 
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

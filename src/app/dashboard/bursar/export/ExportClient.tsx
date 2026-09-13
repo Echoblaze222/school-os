@@ -9,7 +9,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { DownloadIcon, AlertIcon, CheckCircleIcon, EyeIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -319,7 +320,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
     color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:6, display:'block' }
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Export Data">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Export Data" featureGroups={BURSAR_FEATURE_GROUPS}>
       <div style={{ display:'grid', gap:'var(--space-5)' }}>
 
         <div>
@@ -440,6 +441,6 @@ export default function ExportClient({ profile, school, userId }: Props) {
       </div>
 
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

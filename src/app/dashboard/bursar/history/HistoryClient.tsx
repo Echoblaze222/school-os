@@ -7,7 +7,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { ClockIcon, CreditCardIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
@@ -132,7 +133,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
   const totalShown = payments.reduce((s, p) => s + (p.amount ?? 0), 0)
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="History">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="History" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {/* ── Payment Preview Modal ── */}
       {preview && (
@@ -264,6 +265,6 @@ export default function HistoryClient({ profile, school, userId }: Props) {
             </div>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

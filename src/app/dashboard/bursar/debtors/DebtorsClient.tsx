@@ -8,7 +8,8 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import GaugeStat from '@/components/GaugeStat'
 import { PeopleIcon, AlertIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
@@ -119,7 +120,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
   const collectionPct    = totalExpected > 0 ? Math.round((totalPaid / totalExpected) * 100) : 0
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Debtors">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Debtors" featureGroups={BURSAR_FEATURE_GROUPS}>
       <div style={{ display:'flex', gap:'var(--space-3)', marginBottom:'var(--space-4)', alignItems:'center' }}>
         <input value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
           style={{ height:40, padding:'0 12px', background:'var(--input-bg)',
@@ -208,6 +209,6 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
             </div>
       }
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

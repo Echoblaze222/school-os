@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { WalletIcon, PlusIcon, TrashIcon, AlertIcon } from '@/components/Icons'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -167,7 +168,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Fee Structures">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Fee Structures" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {/* Year + Term selector */}
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', alignItems: 'center' }}>
@@ -363,6 +364,6 @@ export default function FeesClient({ profile, school, userId }: Props) {
           )
       }
       <div className={styles.spacer} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }

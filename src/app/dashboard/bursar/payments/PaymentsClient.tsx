@@ -8,7 +8,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { WalletIcon } from '@/components/Icons'
 import { getCurrentAcademicYear } from '@/lib/utils/term'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
@@ -76,7 +77,7 @@ export default function PaymentsClient({ profile, school, userId }: Props) {
   }
 
   return (
-    <RolePageWrapper userId={userId} role="bursar" profile={profile} school={school} title="Payments">
+    <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Payments" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {/* Header row: title + Record Payment button */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
@@ -133,6 +134,6 @@ export default function PaymentsClient({ profile, school, userId }: Props) {
       }
 
       <div className={styles.spacer}/>
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
