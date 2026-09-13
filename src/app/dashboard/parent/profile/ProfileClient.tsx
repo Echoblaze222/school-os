@@ -150,11 +150,11 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                 />
               </div>
             ))}
-            {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin: 0 }}>{msg}</p>}
-            <button className="pressable"
+            {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? 'var(--success)' : 'var(--danger)', margin: 0 }}>{msg}</p>}
+            <button className="btn pressable"
               onClick={save}
               disabled={saving}
-              style={{ height: 44, background: 'linear-gradient(135deg,' + sc + ',' + sc + 'cc)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              style={{ background: sc, color: '#fff' }}
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>

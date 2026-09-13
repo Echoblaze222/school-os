@@ -161,9 +161,9 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                   <input value={phone} onChange={e => setPhone(e.target.value)}
                     style={{ width:'100%', height:44, padding:'0 14px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:'var(--radius-md)', color:'var(--text-primary)', fontSize:'0.875rem', outline:'none' }}/>
                 </div>
-                {msg && <p style={{ fontSize:'0.78rem', color: msg.includes('!') ? '#10B981' : '#EF4444', margin:0 }}>{msg}</p>}
-                <button className="pressable" onClick={saveProfile} disabled={saving}
-                  style={{ width:'100%', height:44, background:`linear-gradient(135deg,${schoolColor},${schoolColor}cc)`, color:'#fff', border:'none', borderRadius:'var(--radius-md)', fontWeight:700, fontSize:'0.875rem', cursor:'pointer' }}>
+                {msg && <p style={{ fontSize:'0.78rem', color: msg.includes('!') ? 'var(--success)' : 'var(--danger)', margin:0 }}>{msg}</p>}
+                <button className="btn pressable" onClick={saveProfile} disabled={saving}
+                  style={{ width:'100%', background: schoolColor, color:'#fff' }}>
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

@@ -374,8 +374,8 @@ export default function ProfileClient({
                 style={{
                   fontSize: '0.78rem',
                   color: msg.includes('!')
-                    ? '#10B981'
-                    : '#EF4444',
+                    ? 'var(--success)'
+                    : 'var(--danger)',
                   margin: 0,
                 }}
               >
@@ -383,23 +383,12 @@ export default function ProfileClient({
               </p>
             )}
 
-            <button className="pressable"
+            <button className="btn pressable"
               onClick={save}
               disabled={saving}
               style={{
-                height: 44,
-                background:
-                  'linear-gradient(135deg,' +
-                  sc +
-                  ',' +
-                  sc +
-                  'cc)',
+                background: sc,
                 color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                fontWeight: 700,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
               }}
             >
               {saving ? 'Saving...' : 'Save Changes'}

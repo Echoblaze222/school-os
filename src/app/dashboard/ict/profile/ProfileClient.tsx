@@ -402,8 +402,8 @@ export default function ProfileClient({
                     '0.78rem',
                   color:
                     msg.includes('!')
-                      ? '#10B981'
-                      : '#EF4444',
+                      ? 'var(--success)'
+                      : 'var(--danger)',
                   margin: 0,
                 }}
               >
@@ -414,22 +414,10 @@ export default function ProfileClient({
             <button
               onClick={save}
               disabled={saving}
-              className="pressable"
+              className="btn pressable"
               style={{
-                height: 44,
-                background:
-                  'linear-gradient(135deg,' +
-                  sc +
-                  ',' +
-                  sc +
-                  'cc)',
+                background: sc,
                 color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                fontWeight: 700,
-                fontSize:
-                  '0.875rem',
-                cursor: 'pointer',
               }}
             >
               {saving
