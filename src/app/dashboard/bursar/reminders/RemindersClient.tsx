@@ -415,12 +415,6 @@ export default function RemindersClient({ profile, school, userId }: Props) {
     return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  const inp: React.CSSProperties = {
-    height: 40, padding: '0 12px', background: 'var(--input-bg)',
-    border: '1px solid var(--input-border)', borderRadius: 8,
-    color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none',
-  }
-
   return (
     <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Fee Reminders" featureGroups={BURSAR_FEATURE_GROUPS}>
 
@@ -497,7 +491,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
             <input
               value={year} onChange={e => setYear(e.target.value)}
               placeholder="2025/2026"
-              style={{ ...inp, width: 110, flexShrink: 0 }}
+              className="input"
+              style={{ width: 110, height: 40, fontSize: '0.82rem', flexShrink: 0 }}
             />
             <div className={styles.tabs} style={{ flex: 1 }}>
               {TERMS.map(t => (
@@ -579,13 +574,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                     value={customMsg}
                     onChange={e => setCustomMsg(e.target.value)}
                     placeholder={`Dear Parent of {student},\n\nYour ward in {class} has an outstanding balance of {amount} for {term}...\n\nPlease make payment at your earliest convenience.\n\nThank you.`}
-                    style={{
-                      width: '100%', padding: '10px 12px', background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)', borderRadius: 8,
-                      color: 'var(--text-primary)', fontSize: '0.82rem',
-                      outline: 'none', resize: 'vertical', boxSizing: 'border-box',
-                      lineHeight: 1.6,
-                    }}
+                    className="input"
+                    style={{ fontSize: '0.82rem', lineHeight: 1.6, boxSizing: 'border-box' }}
                   />
                 </>
               ) : (

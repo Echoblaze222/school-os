@@ -25,9 +25,6 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
     setTimeout(() => setSaved(false), 3000)
   }
 
-  const inp: React.CSSProperties = { width:'100%', height:44, padding:'0 14px',
-    background:'var(--input-bg)', border:'1px solid var(--input-border)',
-    borderRadius:10, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }
   const lbl: React.CSSProperties = { fontSize:'0.72rem', fontWeight:700,
     color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:6, display:'block' }
 
@@ -64,22 +61,22 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
         <div>
           <label style={lbl}>FULL NAME</label>
           <input value={form.full_name}
-            onChange={e => setForm(p => ({...p, full_name:e.target.value}))} style={inp}/>
+            onChange={e => setForm(p => ({...p, full_name:e.target.value}))} className="input"/>
         </div>
         <div>
           <label style={lbl}>PHONE</label>
           <input value={form.phone} placeholder="Phone number"
-            onChange={e => setForm(p => ({...p, phone:e.target.value}))} style={inp}/>
+            onChange={e => setForm(p => ({...p, phone:e.target.value}))} className="input"/>
         </div>
         <div>
           <label style={lbl}>EMAIL</label>
           <input value={profile?.email ?? ''} disabled
-            style={{ ...inp, opacity:0.5, cursor:'not-allowed' }}/>
+            className="input" style={{ opacity:0.5, cursor:'not-allowed' }}/>
         </div>
         <div>
           <label style={lbl}>ROLE</label>
           <input value="Bursar" disabled
-            style={{ ...inp, opacity:0.5, cursor:'not-allowed' }}/>
+            className="input" style={{ opacity:0.5, cursor:'not-allowed' }}/>
         </div>
       </div>
 

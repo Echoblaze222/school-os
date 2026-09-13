@@ -157,6 +157,32 @@ screenshot of this app seen so far.
     `globals.css`) rather than a blind swap, checked file-by-file. Not
     attempted - flagging for a future dedicated session rather than
     risking a rushed, error-prone broad edit.
+  - **Addendum (separate pass): the `.input`/`textarea.input` drift
+    pattern - a different bug from the hex-color finding above - was
+    found and fixed across this same batch.** The canonical drift
+    example quoted at the top of this doc (`height: 40, padding: '0
+    12px', background: 'var(--input-bg)', border: '1px solid
+    var(--input-border)', borderRadius: 8`) turned out to be an exact,
+    byte-for-byte "Year" filter input, copy-pasted identically across
+    5 files (reminders, history, debtors, receipts, reports) - all
+    converted to `className="input"` with a `width: 110, height: 40`
+    override to stay compact next to the adjacent term-tab pills. Also
+    converted: local `const inp`/`lbl` style-object patterns backing
+    real multi-field forms in fees, expenses, export, and settings
+    (removed the now-dead `const inp` after conversion in each); a
+    `reminders` textarea (there's a real `textarea.input` variant in
+    `globals.css` for this); the same profile name/phone input/label
+    duplication documented for other roles below, recurring here too;
+    and a validation-tinted rejection-reason input in claims (kept its
+    custom `borderColor` override rather than reaching for
+    `.input-error`, since that's a stronger, different treatment -
+    solid `var(--danger)` with `!important` - not what this soft tint
+    was going for). Left alone, as a deliberate convention rather than
+    accidental drift: several small non-pill "Cancel"/"Close" buttons
+    using `var(--input-bg)`/`var(--input-border)`, identical across
+    multiple files; dynamic per-school-color selection-state rows; a
+    `DOBPicker`-style compact date input; static content/preview boxes
+    styled to visually echo an input without being one.
 - **The hand-rolled-gradient-button + hardcoded-hex-color profile-page
   bug (`'#10B981'`/`'#EF4444'` instead of `--success`/`--danger`, plus
   a `linear-gradient(135deg, sc, sc+'cc')` "Save Changes" button

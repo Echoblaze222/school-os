@@ -107,19 +107,13 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
 
   const totalSpend = rows.reduce((s, r) => s + (r.amount ?? 0), 0)
 
-  const inp: React.CSSProperties = {
-    width:'100%', height:42, padding:'0 12px',
-    background:'var(--input-bg)', border:'1px solid var(--input-border)',
-    borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none'
-  }
-
   return (
     <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Expenses" featureGroups={BURSAR_FEATURE_GROUPS}>
 
       {/* Year + Term */}
       <div style={{ display:'flex', gap:'var(--space-3)', marginBottom:'var(--space-4)', alignItems:'center' }}>
         <input value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
-          style={{ ...inp, width:110, flex:'none' }}/>
+          className="input" style={{ width:110, height:40, fontSize:'0.85rem', flex:'none' }}/>
         <div className={styles.tabs} style={{ flex:1 }}>
           {TERMS.map(t => (
             <button key={t} onClick={() => setTerm(t)}
@@ -148,10 +142,10 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
           </p>
           <div style={{ display:'grid', gap:'var(--space-3)' }}>
             <input placeholder="Title *" value={form.title}
-              onChange={e => setForm(p => ({...p, title:e.target.value}))} style={inp}/>
+              onChange={e => setForm(p => ({...p, title:e.target.value}))} className="input"/>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'var(--space-3)' }}>
               <select value={form.category}
-                onChange={e => setForm(p => ({...p, category:e.target.value}))} style={inp}>
+                onChange={e => setForm(p => ({...p, category:e.target.value}))} className="input">
                 {CATS.map(c => (
                   <option key={c} value={c} style={{ textTransform:'capitalize' }}>
                     {c.charAt(0).toUpperCase() + c.slice(1)}
@@ -159,15 +153,15 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
                 ))}
               </select>
               <input type="number" placeholder="Amount (₦) *" value={form.amount}
-                onChange={e => setForm(p => ({...p, amount:e.target.value}))} style={inp}/>
+                onChange={e => setForm(p => ({...p, amount:e.target.value}))} className="input"/>
             </div>
             <input placeholder="Description (optional)" value={form.description}
-              onChange={e => setForm(p => ({...p, description:e.target.value}))} style={inp}/>
+              onChange={e => setForm(p => ({...p, description:e.target.value}))} className="input"/>
             <div>
               <label style={{ fontSize:'0.72rem', color:'var(--text-muted)', fontWeight:700,
                 letterSpacing:'0.05em', display:'block', marginBottom:6 }}>DATE PAID (optional)</label>
               <input type="date" value={form.paid_at}
-                onChange={e => setForm(p => ({...p, paid_at:e.target.value}))} style={inp}/>
+                onChange={e => setForm(p => ({...p, paid_at:e.target.value}))} className="input"/>
             </div>
           </div>
           <div style={{ display:'flex', gap:'var(--space-3)', marginTop:'var(--space-4)' }}>

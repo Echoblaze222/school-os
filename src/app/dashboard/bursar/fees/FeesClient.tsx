@@ -161,12 +161,6 @@ export default function FeesClient({ profile, school, userId }: Props) {
   }
 
   const totalExpected = rows.reduce((s, r) => s + (r.amount_ngn ?? 0), 0)
-  const inp: React.CSSProperties = {
-    width: '100%', height: 42, padding: '0 12px',
-    background: 'var(--input-bg)', border: '1px solid var(--input-border)',
-    borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none',
-  }
-
   return (
     <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Fee Structures" featureGroups={BURSAR_FEATURE_GROUPS}>
 
@@ -174,7 +168,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', alignItems: 'center' }}>
         <input
           value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
-          style={{ ...inp, width: 110, flex: 'none' }}
+          className="input"
+          style={{ width: 110, height: 40, fontSize: '0.85rem', flex: 'none' }}
         />
         <div className={styles.tabs} style={{ flex: 1 }}>
           {TERMS.map(t => (
@@ -224,7 +219,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
               <select
                 value={form.class_level}
                 onChange={e => setForm(p => ({ ...p, class_level: e.target.value }))}
-                style={inp}>
+                className="input">
                 <option value="">Select class *</option>
                 {classes.map(c => (
                   <option key={c.id} value={c.class_level}>
@@ -235,7 +230,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
               <select
                 value={form.fee_type}
                 onChange={e => setForm(p => ({ ...p, fee_type: e.target.value }))}
-                style={inp}>
+                className="input">
                 {FEE_TYPES.map(f => (
                   <option key={f} value={f} style={{ textTransform: 'capitalize' }}>
                     {f.replace(/_/g, ' ')}
@@ -246,13 +241,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
             <input
               type="number" placeholder="Amount (₦) *" value={form.amount}
               onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
-              style={inp}
+              className="input"
             />
             <input
               placeholder="Description (optional, defaults to fee type)"
               value={form.description}
               onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              style={inp}
+              className="input"
             />
           </div>
 

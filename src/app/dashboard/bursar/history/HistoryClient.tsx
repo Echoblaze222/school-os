@@ -185,10 +185,8 @@ export default function HistoryClient({ profile, school, userId }: Props) {
       )}
       <div style={{ display:'flex', gap:'var(--space-3)', marginBottom:'var(--space-4)', alignItems:'center' }}>
         <input value={year} onChange={e => setYear(e.target.value)} placeholder="2024/2025"
-          style={{ height:40, padding:'0 12px', background:'var(--input-bg)',
-            border:'1px solid var(--input-border)', borderRadius:8,
-            color:'var(--text-primary)', fontSize:'0.82rem', outline:'none',
-            width:110, flexShrink:0 }}/>
+          className="input"
+          style={{ width:110, height:40, fontSize:'0.82rem', flexShrink:0 }}/>
         <div className={styles.subjectScroll} style={{ flex:1 }}>
           <button onClick={() => setTerm(null)}
             className={`${styles.subjectPill} pressable ${!term ? styles.subjectPillActive : ''}`}

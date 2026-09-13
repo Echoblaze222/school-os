@@ -269,10 +269,8 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                         <div style={{ display:'grid', gap:8 }}>
                           <input placeholder="Rejection reason (required)" value={rejectNote}
                             onChange={e => setRejectNote(e.target.value)}
-                            className={shakeInput ? 'animate-shake' : ''}
-                            style={{ width:'100%', height:38, padding:'0 12px',
-                              background:'var(--input-bg)', border:'1px solid #EF444450',
-                              borderRadius:8, color:'var(--text-primary)', fontSize:'0.82rem', outline:'none' }}/>
+                            className={`input${shakeInput ? ' animate-shake' : ''}`}
+                            style={{ height:38, borderColor:'#EF444450' }}/>
                           <div style={{ display:'flex', gap:8 }}>
                             <button onClick={() => reject(c.id)}
                               disabled={reviewing === c.id}

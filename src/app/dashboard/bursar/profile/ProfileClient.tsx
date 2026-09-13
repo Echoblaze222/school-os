@@ -354,17 +354,7 @@ export default function ProfileClient({
             ].map(
               ([label, val, setter]: any) => (
                 <div key={label}>
-                  <label
-                    style={{
-                      fontSize:
-                        '0.75rem',
-                      fontWeight: 600,
-                      color:
-                        'var(--text-secondary)',
-                      display: 'block',
-                      marginBottom: 6,
-                    }}
-                  >
+                  <label className="input-label" style={{ display: 'block', marginBottom: 6 }}>
                     {label}
                   </label>
 
@@ -375,22 +365,7 @@ export default function ProfileClient({
                         e.target.value
                       )
                     }
-                    style={{
-                      width: '100%',
-                      height: 44,
-                      padding:
-                        '0 14px',
-                      background:
-                        'var(--input-bg)',
-                      border:
-                        '1px solid var(--input-border)',
-                      borderRadius: 10,
-                      color:
-                        'var(--text-primary)',
-                      fontSize:
-                        '0.875rem',
-                      outline: 'none',
-                    }}
+                    className="input"
                   />
                 </div>
               )
