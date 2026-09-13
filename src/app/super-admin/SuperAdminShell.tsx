@@ -10,8 +10,8 @@
 //
 // Renders nothing (no chrome) on /super-admin/login, since that's the
 // pre-auth screen. /super-admin/hq gets the same shell as everywhere
-// else for easy navigation once you're in - it just isn't one of the
-// items in NAV_ITEMS below, so it stays out of the visible list.
+// else, and is now the real destination behind "Analytics" - that item
+// used to be a disabled "coming soon" stub with no href.
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -25,7 +25,7 @@ import styles from './super-admin-shell.module.css'
 
 const NAV_ITEMS = [
   { icon: SchoolIcon,      label: 'Schools',    href: '/super-admin/schools' },
-  { icon: BarChartIcon,    label: 'Analytics',  href: null },
+  { icon: BarChartIcon,    label: 'Analytics',  href: '/super-admin/hq' },
   { icon: WalletIcon,      label: 'Revenue',    href: '/super-admin/revenue' },
   { icon: BookOpenIcon,    label: 'Content',    href: '/super-admin/content' },
   { icon: StarIcon,        label: 'Promotions', href: '/super-admin/promotions' },

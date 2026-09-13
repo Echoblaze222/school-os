@@ -1,8 +1,6 @@
 // src/app/api/super-admin/hq/route.ts
-// Backs the unlisted /super-admin/hq dashboard. Gated on is_super = true
-// specifically, not just membership in platform_admins - this route (and
-// the page that calls it) is intentionally not linked from anywhere in
-// the admin nav.
+// Backs the "Analytics" nav item / /super-admin/hq dashboard. Gated on
+// is_super = true specifically, not just membership in platform_admins.
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'

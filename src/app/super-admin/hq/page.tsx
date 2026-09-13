@@ -1,8 +1,7 @@
 // src/app/super-admin/hq/page.tsx
-// Unlisted dashboard - deliberately not linked from the super-admin nav
-// or SuperAdminDashboard.tsx. Gated on is_super = true specifically (not
-// just platform_admins membership), so it stays private even if a second
-// platform admin account is ever added.
+// Backs the "Analytics" nav item. Still gated on is_super = true
+// specifically (not just platform_admins membership), so it stays
+// private even if a second platform admin account is ever added.
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'

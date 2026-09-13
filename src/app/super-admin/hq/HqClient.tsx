@@ -50,8 +50,8 @@ export default function HqClient() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>HQ</h1>
-        <p className={styles.sub}>Not linked anywhere - this page only exists at this URL.</p>
+        <h1 className={styles.title}>Analytics</h1>
+        <p className={styles.sub}>Traffic, logins, and a daily briefing.</p>
       </div>
 
       <div className={styles.briefingCard}>{briefing}</div>
