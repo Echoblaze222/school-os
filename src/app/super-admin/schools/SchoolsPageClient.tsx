@@ -1,12 +1,27 @@
 'use client'
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { SearchIcon, PlusIcon, FlameIcon, CheckCircleIcon, ClockIcon, SchoolIcon, XIcon, PauseIcon } from '@/components/Icons'
+// Canonical Schools page - previously duplicated with the root
+// SuperAdminDashboard.tsx (now just a redirect here). Combines what each
+// version had: server-rendered initial data + clickable/filterable stat
+// cards from the original version of this file, plus the Revenue card
+// and soft (no full-reload) refresh from the old root dashboard.
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { SearchIcon, PlusIcon, FlameIcon, CheckCircleIcon, SchoolIcon, XIcon, PauseIcon } from '@/components/Icons'
 import SchoolCard from '../SchoolCard'
 import SchoolSetupModal from '../SchoolSetupModal'
 import styles from '../super-admin.module.css'
 
-interface Props { schools: any[] }
+interface School {
+  id: string; name: string; slug: string
+  setup_status: string; trial_days_left: number
+  free_days_left: number; sub_days_left: number
+  subscription_plan: string; installment_count: number
+  total_students: number; total_paid_ngn: number
+  trial_active_score: number; notes: string
+  trial_ends_at: string; next_payment_due: string
+}
+
+interface Props { schools: School[] }
 
 const STATUS_TABS = [
   { value: 'all',       label: 'All',       Icon: null },
@@ -21,6 +36,15 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
   const [search,     setSearch]     = useState('')
   const [status,     setStatus]     = useState('all')
   const [showSetup,  setShowSetup]  = useState(false)
+  const supabase = createClient()
+
+  async function refetch() {
+    const { data } = await supabase
+      .from('school_subscription_summary')
+      .select('*')
+      .order('setup_status', { ascending: true })
+    if (data) setSchools(data as School[])
+  }
 
   const filtered = schools.filter(s => {
     const matchSearch = !search || s.name.toLowerCase().includes(search.toLowerCase())
@@ -34,6 +58,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
     active:    schools.filter(s => s.setup_status === 'active').length,
     expired:   schools.filter(s => s.setup_status === 'expired').length,
     suspended: schools.filter(s => s.setup_status === 'suspended').length,
+    revenue:   schools.reduce((sum, s) => sum + (s.total_paid_ngn ?? 0), 0),
   }
 
   return (
@@ -55,16 +80,17 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
       </div>
 
       {/* Stats row */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'var(--space-3)', marginBottom:'var(--space-6)' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:'var(--space-3)', marginBottom:'var(--space-6)' }}>
         {[
-          { label:'Total',     value:counts.all,       color:'#800020' },
-          { label:'Trial',     value:counts.trial,     color:'#F59E0B' },
-          { label:'Active',    value:counts.active,    color:'#10B981' },
-          { label:'Expired',   value:counts.expired,   color:'#EF4444' },
-          { label:'Suspended', value:counts.suspended, color:'#6B7280' },
+          { label:'Total',     value:counts.all,       color:'#800020', clickable:true  },
+          { label:'Trial',     value:counts.trial,     color:'#F59E0B', clickable:true  },
+          { label:'Active',    value:counts.active,    color:'#10B981', clickable:true  },
+          { label:'Expired',   value:counts.expired,   color:'#EF4444', clickable:true  },
+          { label:'Suspended', value:counts.suspended, color:'#6B7280', clickable:true  },
+          { label:'Revenue',   value:`₦${(counts.revenue/1000).toFixed(0)}k`, color:'#10B981', clickable:false },
         ].map(s => (
-          <div key={s.label} style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', padding:'var(--space-4)', textAlign:'center', cursor:'pointer' }}
-            onClick={() => setStatus(s.label.toLowerCase() === 'total' ? 'all' : s.label.toLowerCase())}>
+          <div key={s.label} style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-xl)', padding:'var(--space-4)', textAlign:'center', cursor: s.clickable ? 'pointer' : 'default' }}
+            onClick={s.clickable ? () => setStatus(s.label.toLowerCase() === 'total' ? 'all' : s.label.toLowerCase()) : undefined}>
             <p style={{ fontSize:'1.5rem', fontWeight:800, color:s.color, margin:'0 0 2px' }}>{s.value}</p>
             <p style={{ fontSize:'0.65rem', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:0 }}>{s.label}</p>
           </div>
@@ -91,7 +117,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
                 color: status===tab.value ? '#EF4444' : 'var(--text-muted)',
                 cursor:'pointer', whiteSpace:'nowrap',
               }}>
-              {tab.Icon && <tab.Icon size={12} />} {tab.label} {tab.value !== 'all' && `(${(counts as any)[tab.value] ?? 0})`}
+              {tab.Icon && <tab.Icon size={12} />} {tab.label} {tab.value !== 'all' && `(${counts[tab.value as keyof typeof counts] ?? 0})`}
             </button>
           ))}
         </div>
@@ -107,11 +133,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
           </div>
         : <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'var(--space-5)' }}>
             {filtered.map(school => (
-              <div key={school.id} style={{ position:'relative' }}>
-                <Link href={`/super-admin/school/${school.id}`}
-                  style={{ position:'absolute', inset:0, zIndex:1, borderRadius:'var(--radius-xl)' }}/>
-                <SchoolCard school={school} onRefresh={() => window.location.reload()}/>
-              </div>
+              <SchoolCard key={school.id} school={school} onRefresh={refetch}/>
             ))}
           </div>
       }
@@ -119,7 +141,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
       {showSetup && (
         <SchoolSetupModal
           onClose={() => setShowSetup(false)}
-          onSuccess={() => { setShowSetup(false); window.location.reload() }}
+          onSuccess={() => { setShowSetup(false); refetch() }}
         />
       )}
     </div>
