@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
-import RolePageWrapper from '@/components/RolePageWrapper'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import { ICT_FEATURE_GROUPS } from '../featureGroups'
 
 import {
   UserIcon,
@@ -145,12 +146,13 @@ export default function ProfileClient({
   ]
 
   return (
-    <RolePageWrapper
+    <RoleSubHeader
       userId={userId}
       role="ict"
       profile={profile}
       school={school}
       title="My Profile"
+      featureGroups={ICT_FEATURE_GROUPS}
     >
       <div
         style={{
@@ -530,6 +532,6 @@ export default function ProfileClient({
       </div>
 
       <div style={{ height: 110 }} />
-    </RolePageWrapper>
+    </RoleSubHeader>
   )
 }
