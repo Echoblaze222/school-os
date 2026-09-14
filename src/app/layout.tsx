@@ -73,6 +73,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   // active before the user taps "Enable Alerts". The browser
                   // safely defers actual installation without blocking render.
                   navigator.serviceWorker.register('/sw.js').catch(function(){});
+
+                  // sw.js calls self.skipWaiting() so a new SW version
+                  // activates right away - but that only changes which SW
+                  // handles FUTURE network requests. Any tab that was
+                  // already open keeps running the JS it already loaded
+                  // into memory, indefinitely, with no prompt to refresh.
+                  // That's exactly the shape of bug reports like "I tap
+                  // this button and nothing happens" when the fix already
+                  // shipped - the device just never re-fetched it. Reload
+                  // once, automatically, the moment a new SW takes over.
+                  var refreshingForNewSW = false;
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (refreshingForNewSW) return;
+                    refreshingForNewSW = true;
+                    window.location.reload();
+                  });
                 }
               `,
             }}
