@@ -146,12 +146,15 @@
   height: 2px;
   background: rgba(255,255,255,0.06);
   width: 100%;
+  overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #10B981, #EF4444);
-  transition: width 1s linear;
+  width: 100%;
+  background: var(--warning);
+  transform-origin: left;
+  transition: transform 1s linear;
 }
 
 /* Mobile: hide countdown on very small screens */

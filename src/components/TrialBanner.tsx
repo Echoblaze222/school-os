@@ -118,7 +118,7 @@ export default function TrialBanner({ trialEndsAt, schoolId, setupStatus, school
           <div
             className={styles.progressFill}
             style={{
-              width: `${100 - ((timeLeft.days * 86400 + timeLeft.hours * 3600 + timeLeft.mins * 60 + timeLeft.secs) / (10 * 86400)) * 100}%`,
+              transform: `scaleX(${1 - ((timeLeft.days * 86400 + timeLeft.hours * 3600 + timeLeft.mins * 60 + timeLeft.secs) / (10 * 86400))})`,
             }}
           />
         </div>

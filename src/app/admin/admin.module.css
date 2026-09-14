@@ -281,10 +281,7 @@
   font-family: var(--font-display);
   font-size: 3rem;
   font-weight: 600;
-  color: var(--text-primary);
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--burgundy);
 }
 
 .subRow {

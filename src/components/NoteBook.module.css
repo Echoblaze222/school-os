@@ -156,10 +156,7 @@
 .slideTitle {
   font-size: 1.05rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff, var(--accent, #b794f6));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent, #b794f6);
   margin: 0 0 16px;
   line-height: 1.35;
 }
