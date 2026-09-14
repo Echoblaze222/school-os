@@ -58,6 +58,7 @@ export default async function LibrarianDashboardPage() {
     <LibrarianDashboardClient
       userId={user.id}
       librarianName={profile.full_name}
+      profile={profile}
       school={school}
       stats={stats}
       recentCheckouts={recentCheckouts ?? []}

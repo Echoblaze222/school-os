@@ -19,7 +19,7 @@ interface RecentVisit {
   profiles: { full_name: string } | { full_name: string }[] | null
 }
 interface Props {
-  userId: string; nurseName: string; school: any; stats: Stats; recentVisits: RecentVisit[]
+  userId: string; nurseName: string; profile: any; school: any; stats: Stats; recentVisits: RecentVisit[]
 }
 
 function studentName(p: RecentVisit['profiles']): string {
@@ -40,7 +40,7 @@ function insightFor(stats: Stats) {
   return 'No visits logged yet today. The clinic log is one tap away.'
 }
 
-export default function NurseDashboardClient({ userId, nurseName, school, stats, recentVisits }: Props) {
+export default function NurseDashboardClient({ userId, nurseName, profile, school, stats, recentVisits }: Props) {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const schoolColor = school?.primary_color ?? '#00B4D8'
 
@@ -61,7 +61,7 @@ export default function NurseDashboardClient({ userId, nurseName, school, stats,
         userId={userId}
         role="nurse"
         roleLabel="School Nurse"
-        profile={{ full_name: nurseName }}
+        profile={profile}
         school={school}
         greeting={`Hello, ${nurseName.split(' ')[0] || 'Nurse'}`}
         headline={`${stats.visitsToday} clinic visit${stats.visitsToday === 1 ? '' : 's'} today`}

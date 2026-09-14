@@ -73,6 +73,7 @@ export default async function NurseDashboardPage() {
     <NurseDashboardClient
       userId={user.id}
       nurseName={profile.full_name}
+      profile={profile}
       school={school}
       stats={stats}
       recentVisits={recentVisits ?? []}
