@@ -20,7 +20,7 @@ interface RecentMatch {
   team: { name: string } | { name: string }[] | null
 }
 interface Props {
-  userId: string; coachName: string; school: any; stats: Stats
+  userId: string; coachName: string; profile: any; school: any; stats: Stats
   teams: Team[]; nextSession: NextSession | null; recentMatches: RecentMatch[]
 }
 
@@ -37,7 +37,7 @@ function insightFor(stats: Stats, nextSession: NextSession | null) {
   return `${stats.teamCount} team${stats.teamCount === 1 ? '' : 's'}, ${stats.totalPlayers} player${stats.totalPlayers === 1 ? '' : 's'} on your rosters.`
 }
 
-export default function CoachDashboardClient({ userId, coachName, school, stats, teams, nextSession, recentMatches }: Props) {
+export default function CoachDashboardClient({ userId, coachName, profile, school, stats, teams, nextSession, recentMatches }: Props) {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const schoolColor = school?.primary_color ?? '#00B4D8'
 
@@ -64,7 +64,7 @@ export default function CoachDashboardClient({ userId, coachName, school, stats,
         userId={userId}
         role="coach"
         roleLabel="Coach"
-        profile={{ full_name: coachName }}
+        profile={profile}
         school={school}
         greeting={`Hello, Coach ${coachName.split(' ')[0] || ''}`}
         headline={`${stats.totalPlayers} player${stats.totalPlayers === 1 ? '' : 's'} · ${stats.teamCount} team${stats.teamCount === 1 ? '' : 's'}`}

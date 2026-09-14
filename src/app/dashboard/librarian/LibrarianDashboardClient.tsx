@@ -17,7 +17,7 @@ interface RecentCheckout {
   book: { title: string } | { title: string }[] | null
   borrower: { full_name: string } | { full_name: string }[] | null
 }
-interface Props { userId: string; librarianName: string; school: any; stats: Stats; recentCheckouts: RecentCheckout[] }
+interface Props { userId: string; librarianName: string; profile: any; school: any; stats: Stats; recentCheckouts: RecentCheckout[] }
 
 function one<T>(v: T | T[] | null): T | null { return Array.isArray(v) ? (v[0] ?? null) : v }
 
@@ -31,7 +31,7 @@ function insightFor(stats: Stats) {
   return `${stats.totalBooks} title${stats.totalBooks === 1 ? '' : 's'} in the catalog. Everything's checked in.`
 }
 
-export default function LibrarianDashboardClient({ userId, librarianName, school, stats, recentCheckouts }: Props) {
+export default function LibrarianDashboardClient({ userId, librarianName, profile, school, stats, recentCheckouts }: Props) {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const schoolColor = school?.primary_color ?? '#00B4D8'
 
@@ -55,7 +55,7 @@ export default function LibrarianDashboardClient({ userId, librarianName, school
         userId={userId}
         role="librarian"
         roleLabel="Librarian"
-        profile={{ full_name: librarianName }}
+        profile={profile}
         school={school}
         greeting={`Hello, ${librarianName.split(' ')[0] || 'Librarian'}`}
         headline={`${stats.totalBooks} title${stats.totalBooks === 1 ? '' : 's'} · ${stats.openCheckouts} checked out`}

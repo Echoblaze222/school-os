@@ -46,8 +46,8 @@ function buildInsight(summary: Summary | null, occupancyRate: number): string {
 }
 
 export default function HostelDashboardClient({
-  school, hostels, appointmentType,
-}: { school: any; hostels: Hostel[]; appointmentType: string }) {
+  userId, profile, school, hostels, appointmentType,
+}: { userId: string; profile: any; school: any; hostels: Hostel[]; appointmentType: string }) {
   const [selectedHostelId, setSelectedHostelId] = useState<string>(hostels[0]?.id ?? '')
   const [summary, setSummary] = useState<Summary | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -76,9 +76,9 @@ export default function HostelDashboardClient({
   return (
     <>
       <RoleHeroHeader
-        userId="" role="hostel"
+        userId={userId} role="hostel"
         roleLabel={ROLE_LABEL[appointmentType] ?? 'Hostel Staff'}
-        profile={null} school={school}
+        profile={profile} school={school}
         greeting="Hostel overview"
         headline={hostels.length > 0 ? hostels.map(h => h.name).join(', ') : 'No hostels set up yet'}
         sub={status === 'ready' ? `${occupancyRate}% bed occupancy · ${summary?.absent ?? 0} absent` : 'Occupancy, roll call, and room management'}
