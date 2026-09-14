@@ -19,12 +19,13 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   SchoolIcon, BarChartIcon, WalletIcon, BookOpenIcon, StarIcon,
-  AlertCircleIcon, BellIcon, SettingsIcon, LogOutIcon, MenuIcon, XIcon,
+  AlertCircleIcon, BellIcon, SettingsIcon, LogOutIcon, MenuIcon, XIcon, AiIcon,
 } from '@/components/Icons'
 import styles from './super-admin-shell.module.css'
 
 const NAV_ITEMS = [
   { icon: SchoolIcon,      label: 'Schools',    href: '/super-admin/schools' },
+  { icon: AiIcon,          label: 'AI Assistant', href: '/super-admin/ai' },
   { icon: BarChartIcon,    label: 'Analytics',  href: '/super-admin/hq' },
   { icon: WalletIcon,      label: 'Revenue',    href: '/super-admin/revenue' },
   { icon: BookOpenIcon,    label: 'Content',    href: '/super-admin/content' },

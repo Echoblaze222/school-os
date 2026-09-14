@@ -1,6 +1,11 @@
 // app/api/ai/chat/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  findSchoolByName, extendSchoolTrial, confirmSchoolSetupPayment,
+  confirmSchoolSubscriptionPayment, toggleSchoolLock,
+} from '@/lib/super-admin/schoolActions'
 import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenAI, Type } from '@google/genai'
 
@@ -183,11 +188,98 @@ const AGENT_TOOLS: AgentTool[] = [
     reviewPath: (_role, id) => `/dashboard/bursar/reminders?draftId=${id}`,
     validate: (input) => !!input?.title && !!input?.message,
   },
+  // ─── Super-admin action tools ──────────────────────────────────────────────
+  // Unlike every tool above, these do NOT go through the ai_action_drafts
+  // flow - they're intercepted and executed for real, immediately (see the
+  // "SUPER_ADMIN_REAL_ACTION_TOOLS" branch in the execution loop below).
+  // That's a deliberate, narrow exception to this file's "no tool writes
+  // real data" rule: super_admin is a single trusted operator (not a
+  // multi-user school), the equivalent SchoolCard buttons already execute
+  // unconfirmed with one click today, and reviewPath/actionType below are
+  // never actually used for these three - they exist only to satisfy the
+  // AgentTool type.
+  {
+    name:        'extend_school_trial',
+    roles:       ['super_admin'],
+    actionType:  'extend_trial',
+    description:
+      'Extend a specific school\'s trial by a number of days. Executes immediately - this is real, ' +
+      'not a draft. Only call this when the admin has clearly named a specific school and a specific ' +
+      'number of days. If the school name is ambiguous or you\'re not sure which school they mean, do ' +
+      'not call this - ask which school first.',
+    schema: {
+      type: 'object',
+      properties: {
+        school_name: { type: 'string', description: 'The school name, as close as possible to what the admin typed.' },
+        days:        { type: 'number', description: 'Number of days to extend the trial by.' },
+      },
+      required: ['school_name', 'days'],
+    },
+    reviewPath: () => '/super-admin/schools',
+    validate: (input) => !!input?.school_name && typeof input?.days === 'number' && input.days > 0 && input.days <= 365,
+  },
+  {
+    name:        'confirm_school_payment',
+    roles:       ['super_admin'],
+    actionType:  'confirm_payment',
+    description:
+      'Confirm a real payment for a school - either the one-time setup fee, or a subscription plan ' +
+      'payment. Executes immediately - this is real, not a draft, and moves the school to active with ' +
+      'a new subscription window. Only call this when the admin has clearly stated the school, whether ' +
+      'it\'s a setup or subscription payment, and the amount. For a subscription payment, also require a ' +
+      'plan (basic_500, standard_1000, premium_2000, or installment_3month) - ask if it\'s missing rather ' +
+      'than guessing one.',
+    schema: {
+      type: 'object',
+      properties: {
+        school_name:  { type: 'string', description: 'The school name, as close as possible to what the admin typed.' },
+        payment_type: { type: 'string', enum: ['setup', 'subscription'] },
+        plan:         { type: 'string', enum: ['free_month', 'basic_500', 'standard_1000', 'premium_2000', 'installment_3month'], description: 'Required when payment_type is subscription.' },
+        amount_ngn:   { type: 'number', description: 'Amount paid, in naira.' },
+        payment_ref:  { type: 'string', description: 'Optional payment reference or receipt number.' },
+      },
+      required: ['school_name', 'payment_type', 'amount_ngn'],
+    },
+    reviewPath: () => '/super-admin/schools',
+    validate: (input) => {
+      if (!input?.school_name || !['setup', 'subscription'].includes(input?.payment_type)) return false
+      if (typeof input?.amount_ngn !== 'number' || input.amount_ngn < 0) return false
+      if (input.payment_type === 'subscription' && !input.plan) return false
+      return true
+    },
+  },
+  {
+    name:        'toggle_school_suspension',
+    roles:       ['super_admin'],
+    actionType:  'toggle_suspension',
+    description:
+      'Suspend (lock) or reactivate (unlock) a specific school. Executes immediately - this is real, ' +
+      'not a draft, and immediately affects whether that school\'s staff/students/parents can use ' +
+      'SchoolOS. Only call this when the admin has clearly named a specific school and clearly said ' +
+      'whether to suspend or reactivate it.',
+    schema: {
+      type: 'object',
+      properties: {
+        school_name: { type: 'string', description: 'The school name, as close as possible to what the admin typed.' },
+        suspend:     { type: 'boolean', description: 'true to suspend/lock the school, false to reactivate/unlock it.' },
+      },
+      required: ['school_name', 'suspend'],
+    },
+    reviewPath: () => '/super-admin/schools',
+    validate: (input) => !!input?.school_name && typeof input?.suspend === 'boolean',
+  },
 ]
 
 function toolsForRole(role: string): AgentTool[] {
   return AGENT_TOOLS.filter(t => t.roles.includes(role))
 }
+
+// See the comment on the three super_admin entries in AGENT_TOOLS above -
+// these are the only tools in this whole file that write real data
+// immediately instead of a draft.
+const SUPER_ADMIN_REAL_ACTION_TOOLS = new Set([
+  'extend_school_trial', 'confirm_school_payment', 'toggle_school_suspension',
+])
 
 function anthropicToolSchema(t: AgentTool) {
   return { name: t.name, description: t.description, input_schema: t.schema }
@@ -624,6 +716,15 @@ respond normally in prose - don't force the numbered/link format.
       'AI Assistant':    '/dashboard/coach/ai',
       'Notifications':   '/dashboard/coach/notifications',
     },
+    super_admin: {
+      'Schools':     '/super-admin/schools',
+      'Analytics':   '/super-admin/hq',
+      'Revenue':     '/super-admin/revenue',
+      'Content':     '/super-admin/content',
+      'Promotions':  '/super-admin/promotions',
+      'Reports':     '/super-admin/reports',
+      'Settings':    '/super-admin/settings',
+    },
   }
 
   function formatRouteMap(role: string): string {
@@ -880,6 +981,23 @@ Your job is to help the Coach manage teams, matches, and training schedules in S
 
 ### Tone: Energetic, encouraging, practical. Use numbered steps for app procedures.
 `.trim(),
+
+    super_admin: `
+You are the SchoolOS AI Assistant for ${userName}, the platform's super admin - the sole owner/operator of SchoolOS itself, not a school's own staff.
+
+### What you can help with:
+- **Answering questions** about the platform using the live snapshot in your context below (revenue, school counts, which schools are expiring or expired, etc.) - answer directly from that data, don't guess numbers.
+- **Taking real action** on a specific school when clearly asked: extending a trial, confirming a payment, or suspending/reactivating a school. Unlike every other role's tools in this app, these are NOT drafts - they execute immediately against the real database the moment you call them, the same as if ${userName} clicked the button on that school's card directly.
+- **Navigation** to any admin page.
+
+### Rules for taking action (read carefully - these protect real schools and real money):
+- Only call an action tool when the admin has given a clear, specific instruction naming an identifiable school (by name) and, where relevant, an unambiguous amount/duration (e.g. "extend Nonchalant college's trial by 7 days", "confirm ₦50,000 setup payment for Nonchalant college, ref ABC123"). Never call an action tool on a vague or exploratory message like "how are trials going" or "what should I do about expired schools" - those are questions, answer them in prose instead.
+- If a school name in the request doesn't clearly match exactly one school, the tool will tell you it found none or more than one - relay that back and ask which school they mean. Never guess a school_id.
+- After a tool executes, always state plainly and specifically what changed (e.g. "Done - Nonchalant college's trial now runs until March 3."). Never imply an action happened if the tool result says it failed.
+- If a request could be read as either extending a trial or confirming a subscription payment, ask which one rather than picking.
+
+### Tone: Direct, precise, no hedging on numbers. This is a business-critical tool, not a casual chat.
+`.trim(),
   }
 
   const rolePrompt = rolePrompts[role] ?? rolePrompts['student']
@@ -1007,6 +1125,52 @@ async function fetchDataContext(
   effectiveUserId: string,
   profile: any
 ): Promise<string> {
+  if (role === 'super_admin') {
+    try {
+      const admin = createAdminClient()
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+      const [{ data: schools }, { data: paymentsThisMonth }, { data: allPayments }] = await Promise.all([
+        admin.from('school_subscription_summary').select('*'),
+        admin.from('school_payments').select('amount_ngn, confirmed_at')
+          .not('confirmed_at', 'is', null).gte('confirmed_at', startOfMonth),
+        admin.from('school_payments').select('amount_ngn').not('confirmed_at', 'is', null),
+      ])
+
+      const list = schools ?? []
+      const revenueThisMonth = (paymentsThisMonth ?? []).reduce((s: number, p: any) => s + (Number(p.amount_ngn) || 0), 0)
+      const totalRevenue = (allPayments ?? []).reduce((s: number, p: any) => s + (Number(p.amount_ngn) || 0), 0)
+
+      const daysLeftOf = (s: any) => s.trial_days_left ?? s.sub_days_left ?? s.free_days_left ?? null
+      const expiringSoon = list.filter((s: any) => {
+        const d = daysLeftOf(s)
+        return d !== null && d >= 0 && d <= 7 && s.setup_status !== 'expired'
+      })
+      const expired = list.filter((s: any) => s.setup_status === 'expired')
+
+      const schoolLines = list.map((s: any) =>
+        `- ${s.name} (id: ${s.id}) - status: ${s.setup_status}, plan: ${s.subscription_plan ?? 'none'}, days left: ${daysLeftOf(s) ?? 'n/a'}, total paid: ₦${Number(s.total_paid_ngn ?? 0).toLocaleString()}, students: ${s.total_students ?? 0}`
+      ).join('\n') || 'No schools registered yet.'
+
+      return `
+## Live platform snapshot (as of this message - use these exact numbers, don't estimate)
+Total schools: ${list.length} (trial: ${list.filter((s: any) => s.setup_status === 'trial').length}, active: ${list.filter((s: any) => s.setup_status === 'active').length}, expired: ${expired.length}, locked: ${list.filter((s: any) => s.setup_status === 'locked').length})
+Revenue this month (confirmed payments only): ₦${revenueThisMonth.toLocaleString()}
+Total revenue all-time (confirmed payments only): ₦${totalRevenue.toLocaleString()}
+
+Schools expiring within 7 days: ${expiringSoon.length ? expiringSoon.map((s: any) => s.name).join(', ') : 'none'}
+Expired schools: ${expired.length ? expired.map((s: any) => s.name).join(', ') : 'none'}
+
+Full school list:
+${schoolLines}
+`.trim()
+    } catch (err) {
+      console.error('[AI] super_admin data context failed:', err)
+      return ''
+    }
+  }
+
   const schoolId = profile?.school_id
   if (!schoolId) return ''
 
@@ -1363,6 +1527,7 @@ const RATE_LIMIT_PER_ROLE: Record<string, number> = {
   student:   20, parent:  20,
   vice_principal: 30, counselor: 30, nurse: 30, librarian: 30,
   ict: 30, examination: 30, hostel: 30, coach: 30,
+  super_admin: 30,
 }
 
 export async function POST(req: Request) {
@@ -1387,6 +1552,20 @@ export async function POST(req: Request) {
 
     // Resolve role - client may send it as `role` or `systemContext`
     const resolvedRole = (role ?? systemContext ?? 'student').toLowerCase()
+
+    // super_admin is a privileged role with real-money, real-access action
+    // tools (see AGENT_TOOLS below) - unlike every other role, it must NEVER
+    // be trusted from client input alone. Verify against platform_admins
+    // directly before proceeding any further for this role.
+    let superAdminName: string | null = null
+    if (resolvedRole === 'super_admin') {
+      const admin = createAdminClient()
+      const { data: sa } = await admin.from('platform_admins').select('is_super, full_name').eq('id', effectiveUserId).maybeSingle()
+      if (!sa?.is_super) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      superAdminName = sa.full_name ?? null
+    }
 
     // ── High-traffic protection: atomic DB-backed rate limit ─────────────────
     // Works correctly across every serverless instance (unlike an in-memory
@@ -1421,12 +1600,17 @@ export async function POST(req: Request) {
     const imageAttachment: ImageAttachment | undefined =
       image?.data && image?.mediaType ? { data: image.data, mediaType: image.mediaType } : undefined
 
-    // Fetch user profile for personalisation
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, class_level, school_id, role')
-      .eq('id', effectiveUserId)
-      .single()
+    // Fetch user profile for personalisation. super_admin has no profiles
+    // row (it's a separate platform_admins account) - use the name we
+    // already verified above instead of querying a table that will never
+    // have a matching row for this user.
+    const { data: profile } = resolvedRole === 'super_admin'
+      ? { data: { full_name: superAdminName, class_level: null, school_id: null, role: 'super_admin' } }
+      : await supabase
+          .from('profiles')
+          .select('full_name, class_level, school_id, role')
+          .eq('id', effectiveUserId)
+          .single()
 
     const systemPrompt = buildSystemPrompt(resolvedRole, profile)
     const dataContext  = await fetchDataContext(supabase, resolvedRole, effectiveUserId, profile)
@@ -1475,6 +1659,63 @@ export async function POST(req: Request) {
 
       if (!tool.validate(block.input)) {
         result.content.push({ type: 'text', text: `\n\n(I tried to draft that but the details came out incomplete. Could you ask me again?)` })
+        continue
+      }
+
+      // ── Super-admin real-action tools ──────────────────────────────────────
+      // These execute for real instead of going through ai_action_drafts -
+      // see the comment on these three entries in AGENT_TOOLS above for why.
+      // resolvedRole === 'super_admin' here was already verified against
+      // platform_admins earlier in this request, not trusted from the client.
+      if (resolvedRole === 'super_admin' && SUPER_ADMIN_REAL_ACTION_TOOLS.has(tool.name)) {
+        const input = block.input as any
+        const adminSupabase = createAdminClient()
+        const match = await findSchoolByName(adminSupabase, input.school_name)
+
+        if (!match) {
+          result.content.push({ type: 'text', text: `\n\n(I couldn't find exactly one school matching "${input.school_name}" - could you confirm the exact name?)` })
+          continue
+        }
+
+        try {
+          let actionResult: { ok: boolean; error?: string; [k: string]: unknown }
+
+          if (tool.name === 'extend_school_trial') {
+            actionResult = await extendSchoolTrial(adminSupabase, match.id, input.days, effectiveUserId)
+            if (actionResult.ok) {
+              const newExpiry = new Date(actionResult.new_expiry as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+              result.content.push({ type: 'text', text: `\n\n✅ Done - ${match.name}'s trial now runs until ${newExpiry}.` })
+            }
+          } else if (tool.name === 'confirm_school_payment') {
+            actionResult = input.payment_type === 'setup'
+              ? await confirmSchoolSetupPayment(adminSupabase, match.id, input.amount_ngn, input.payment_ref, effectiveUserId)
+              : await confirmSchoolSubscriptionPayment(adminSupabase, match.id, input.plan, input.amount_ngn, input.payment_ref, effectiveUserId)
+            if (actionResult.ok) {
+              result.content.push({ type: 'text', text: `\n\n✅ Done - confirmed ₦${Number(input.amount_ngn).toLocaleString()} ${input.payment_type} payment for ${match.name}. School is now active.` })
+            }
+          } else { // toggle_school_suspension
+            const wantedSuspend = input.suspend === true
+            const { data: current } = await adminSupabase.from('schools').select('setup_status').eq('id', match.id).single()
+            const alreadyThere = (current?.setup_status === 'locked') === wantedSuspend
+
+            if (alreadyThere) {
+              actionResult = { ok: true, setup_status: current?.setup_status }
+              result.content.push({ type: 'text', text: `\n\n${match.name} is already ${wantedSuspend ? 'suspended' : 'active'} - nothing to change.` })
+            } else {
+              actionResult = await toggleSchoolLock(adminSupabase, match.id, effectiveUserId)
+              if (actionResult.ok) {
+                result.content.push({ type: 'text', text: `\n\n✅ Done - ${match.name} is now ${wantedSuspend ? 'suspended' : 'active'}.` })
+              }
+            }
+          }
+
+          if (!actionResult!.ok) {
+            result.content.push({ type: 'text', text: `\n\n(That didn't go through: ${actionResult!.error ?? 'unknown error'}.)` })
+          }
+        } catch (actionErr: any) {
+          console.error(`[AI] super_admin action ${tool.name} failed:`, actionErr?.message ?? actionErr)
+          result.content.push({ type: 'text', text: `\n\n(Something went wrong trying to do that. Nothing was changed - please try again or use the school's card directly.)` })
+        }
         continue
       }
 
