@@ -128,6 +128,19 @@ screenshot of this app seen so far.
     needs its own dedicated pass and its own recipe (these files may
     have desktop-sidebar-specific behavior via direct `RoleNav` usage
     that a hero+dock migration needs to account for, file by file).
+    **Addendum, found while chasing an unrelated user-reported bug
+    (BottomDock overlapping bottom-sheet modals - see the fix commits
+    for coach/librarian/nurse):** there's a THIRD page-chrome pattern
+    beyond `RoleSubHeader` and `DashboardHeader`+`RoleNav` - several
+    pages hand-roll a fully bespoke header of their own (`principal/
+    fees/PrincipalFeesClient.tsx`, `principal/classes/
+    PrincipalClassesClient.tsx`, `ict/assets/AssetsClient.tsx` at
+    least - own `.header`/`.backBtn` CSS, no shared component at all).
+    These don't render `BottomDock`, so they were never at risk from
+    the z-index collision bug - checked and ruled out, not a live bug
+    - but they're a third untracked chrome pattern worth knowing about
+    alongside the `DashboardHeader`/`RoleNav` one above if a future
+    session goes looking for every remaining non-`RoleSubHeader` page.
 - **`bursar` role: fully migrated, 0 files remaining. This completes
   every full-role RolePageWrapper migration** (bursar's dashboard home
   was already redesigned separately, earlier - see the "de-AI the
