@@ -48,6 +48,8 @@ export default async function HostelDashboardPage() {
 
   return (
     <HostelDashboardClient
+      userId={user.id}
+      profile={profile}
       school={school}
       hostels={hostels ?? []}
       appointmentType={auth.appointment?.appointment_type ?? 'principal'}
