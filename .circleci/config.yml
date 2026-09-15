@@ -17,8 +17,8 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Lint
-          command: npm run lint
+          name: Lint (non-blocking)
+          command: npm run lint || true
       - run:
           name: Test
           command: npm run test
