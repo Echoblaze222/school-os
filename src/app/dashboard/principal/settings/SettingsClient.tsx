@@ -11,6 +11,7 @@ import {
   ArrowLeftIcon, SaveIcon, RefreshIcon, TrashIcon, UploadIcon,
   CheckIcon, AlertIcon, SchoolIcon, LayersIcon, PhoneIcon, WalletIcon,
 } from '@/components/Icons'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 
 interface Profile {
   id:        string
@@ -734,6 +735,10 @@ export default function SettingsClient({ profile, school }: Props) {
                 onChange={onBuildImageChange}
               />
             </div>
+
+            {/* ── Account Security ── */}
+            <p className={styles.sectionLabel}>Account Security</p>
+            <AutoLockSettings userId={profile.id} />
           </>
         )}
 
