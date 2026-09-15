@@ -14,7 +14,7 @@ import Link                             from 'next/link'
 import { createClient }                 from '@/lib/supabase/client'
 import type { ResultRow, ClassOption }  from '../types'
 
-interface Props { results: ResultRow[]; classOptions: ClassOption[]; schoolId?: string }
+interface Props { results: ResultRow[]; classOptions: ClassOption[]; schoolId?: string; school?: any }
 
 const TERM_OPTIONS = [
   { value: 'first',  label: 'First Term'  },
@@ -43,7 +43,7 @@ const IcDownload = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="n
 const IcCheck   = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
 const IcBack    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
 
-export default function PrincipalResultsClient({ results: initialResults, classOptions, schoolId }: Props) {
+export default function PrincipalResultsClient({ results: initialResults, classOptions, schoolId, school }: Props) {
   const [termFilter,  setTermFilter]  = useState('first')
   const [typeFilter,  setTypeFilter]  = useState('')
   const [classFilter, setClassFilter] = useState('')
@@ -66,7 +66,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
     setApprovedIds(prev => new Set([...prev, ...newApproved]))
   }, [liveResults])
 
-  const sc = '#800020' // fallback; RolePageWrapper isn't used here so we use school colour inline
+  const sc = school?.primary_color ?? '#800020' // falls back only if the school has no brand color set
 
   const filtered = useMemo(() => liveResults.filter(r => {
     if (termFilter  && r.term        !== termFilter)  return false
@@ -180,9 +180,9 @@ export default function PrincipalResultsClient({ results: initialResults, classO
               style={{
                 flexShrink: 0, padding: '6px 14px', borderRadius: 999,
                 fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
-                background: termFilter === t.value ? '#800020'      : 'var(--glass-bg)',
+                background: termFilter === t.value ? sc              : 'var(--glass-bg)',
                 color:      termFilter === t.value ? '#fff'         : 'var(--text-muted)',
-                border:     termFilter === t.value ? '1px solid #800020' : '1px solid var(--glass-border)',
+                border:     termFilter === t.value ? `1px solid ${sc}` : '1px solid var(--glass-border)',
               }}
             >
               {t.label}
@@ -197,9 +197,9 @@ export default function PrincipalResultsClient({ results: initialResults, classO
             style={{
               flexShrink: 0, padding: '6px 14px', borderRadius: 999,
               fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-              background: !typeFilter ? '#800020'      : 'var(--glass-bg)',
+              background: !typeFilter ? sc              : 'var(--glass-bg)',
               color:      !typeFilter ? '#fff'         : 'var(--text-muted)',
-              border:     !typeFilter ? '1px solid #800020' : '1px solid var(--glass-border)',
+              border:     !typeFilter ? `1px solid ${sc}` : '1px solid var(--glass-border)',
             }}
           >
             All Types
@@ -211,9 +211,9 @@ export default function PrincipalResultsClient({ results: initialResults, classO
               style={{
                 flexShrink: 0, padding: '6px 14px', borderRadius: 999,
                 fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                background: typeFilter === t.value ? '#800020'      : 'var(--glass-bg)',
+                background: typeFilter === t.value ? sc              : 'var(--glass-bg)',
                 color:      typeFilter === t.value ? '#fff'         : 'var(--text-muted)',
-                border:     typeFilter === t.value ? '1px solid #800020' : '1px solid var(--glass-border)',
+                border:     typeFilter === t.value ? `1px solid ${sc}` : '1px solid var(--glass-border)',
               }}
             >
               {t.label}

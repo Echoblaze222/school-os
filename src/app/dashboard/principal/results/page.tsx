@@ -24,6 +24,7 @@ export default async function PrincipalResultsPage() {
 
   if (!profile || profile.role !== 'principal') redirect('/login')
   const schoolId = (profile as any).schools?.id ?? (profile as any).school_id ?? ''
+  const school = (profile as any).schools ?? null
 
   // ── 1. Raw results with class_subjects join only ───────────────────────────
   // We can't join profiles inline (no FK constraint on student_id / posted_by)
@@ -64,6 +65,7 @@ export default async function PrincipalResultsPage() {
         results={[]}
         classOptions={(classes ?? []).map((c: any) => ({ id: c.id, name: c.name ?? c.class_level }))}
         schoolId={schoolId}
+        school={school}
       />
     )
   }
@@ -138,6 +140,7 @@ export default async function PrincipalResultsPage() {
       results={results}
       classOptions={classOptions}
       schoolId={schoolId}
+      school={school}
     />
   )
     }
