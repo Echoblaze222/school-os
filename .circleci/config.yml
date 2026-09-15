@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build-and-test:
     docker:
-      - image: cimg/node:22.11
+      - image: cimg/node:22.14
     steps:
       - checkout
       - restore_cache:
