@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import PublicHeader from '../discover/PublicHeader'
 import styles from '../discover/public.module.css'
 
+export const dynamic = 'force-dynamic'
 export const revalidate = 300
 
 export default async function RankingsPage() {
