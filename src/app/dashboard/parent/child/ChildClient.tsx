@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
@@ -165,7 +166,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
               {children.length > 1 && (
                 <div style={{ display:'flex', gap:8, marginBottom:16, overflowX:'auto', paddingBottom:4 }}>
                   {children.map(c => (
-                    <a
+                    <Link
                       key={c.id}
                       href={`/dashboard/parent/child?id=${c.id}`}
                       style={{
@@ -177,7 +178,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
                         flexShrink:0,
                       }}>
                       {c.full_name?.split(' ')[0]}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}

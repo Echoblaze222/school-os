@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
@@ -571,7 +572,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                 </select>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
                   Vice Principal and Head of Department need department/portfolio setup - use{' '}
-                  <a href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</a> for those.
+                  <Link href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</Link> for those.
                 </p>
 
                 {appointmentType && HOSTEL_SCOPED_TYPES.has(appointmentType) && (
@@ -845,7 +846,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
               </select>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
                 Vice Principal and Head of Department need department/portfolio setup - use{' '}
-                <a href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</a> for those.
+                <Link href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</Link> for those.
               </p>
             </div>
 

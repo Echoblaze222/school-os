@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // src/app/dashboard/teacher/profile/ProfileClient.tsx
 // FIX #12: Added teacher-specific fields - subjects, classes, qualification, employee ID, years experience
 
@@ -389,7 +390,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
       {/* ── Actions ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-        <a href="/forgot-password" style={{
+        <Link href="/forgot-password" style={{
           display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
           padding: 'var(--space-4)',
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
@@ -399,7 +400,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
         }}>
           <KeyIcon size={16} />
           Change Password
-        </a>
+        </Link>
 
         <button className="pressable" onClick={logout} style={{
           display: 'flex', alignItems: 'center', gap: 'var(--space-3)',

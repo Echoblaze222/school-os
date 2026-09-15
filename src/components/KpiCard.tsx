@@ -12,6 +12,7 @@
 // don't pass one if there's no real prior-period number to compare
 // against; a fabricated trend is worse than no trend.
 
+import Link from 'next/link'
 import styles from './KpiCard.module.css'
 
 interface Trend {
@@ -66,7 +67,7 @@ export default function KpiCard({
       )}
 
       {actionLabel && actionHref && (
-        <a href={actionHref} className={styles.action}>{actionLabel}</a>
+        <Link href={actionHref} className={styles.action}>{actionLabel}</Link>
       )}
     </div>
   )

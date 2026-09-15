@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -240,9 +241,9 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
           {/* Footer */}
           {notifications.length > 0 && (
             <div className={styles.panelFooter}>
-              <a href={`/dashboard/${role}/notifications`} className={styles.viewAll}>
+              <Link href={`/dashboard/${role}/notifications`} className={styles.viewAll}>
                 View all notifications →
-              </a>
+              </Link>
             </div>
           )}
         </div>

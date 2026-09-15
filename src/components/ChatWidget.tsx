@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -295,9 +296,9 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
                   </button>
                 ))
               )}
-              <a href={`/dashboard/${role}/chat`} className={styles.viewAllChats}>
+              <Link href={`/dashboard/${role}/chat`} className={styles.viewAllChats}>
                 Open full chat →
-              </a>
+              </Link>
             </div>
           )}
 

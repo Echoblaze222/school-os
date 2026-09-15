@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // src/app/dashboard/bursar/payments/PaymentsClient.tsx
 //
 // Fixed: was reading from `fee_payments`, a table nothing writes to
@@ -86,12 +87,12 @@ export default function PaymentsClient({ profile, school, userId }: Props) {
           letterSpacing:'0.05em', margin:0 }}>
           PAYMENT HISTORY
         </p>
-        <a href="/dashboard/bursar/record-payment" className="pressable"
+        <Link href="/dashboard/bursar/record-payment" className="pressable"
           style={{ display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px',
             background:sc, color:'#fff', borderRadius:8,
             fontWeight:700, fontSize:'0.8rem', textDecoration:'none' }}>
           + Record Payment
-        </a>
+        </Link>
       </div>
 
       {histLoading

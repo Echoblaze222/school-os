@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -173,12 +174,12 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
       {/* ── Actions ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-        <a
+        <Link
           href="/forgot-password"
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500, textDecoration: 'none' }}
         >
           <KeyIcon size={16} /> Change Password
-        </a>
+        </Link>
         <button className="pressable"
           onClick={logout}
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-lg)', color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}

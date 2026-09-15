@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
@@ -141,34 +142,34 @@ export default function CounselorDashboardClient({ userId, counselorName, profil
 
         <p className={styles.sectionLabel}>Quick access</p>
         <div className={styles.quickLinkRow}>
-          <a href="/dashboard/counselor/cases" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          <Link href="/dashboard/counselor/cases" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><HeartIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Caseload</span>
               <span className={styles.quickLinkCount}>{stats.openCases + stats.monitoringCases} active</span>
             </span>
-          </a>
-          <a href="/dashboard/counselor/appointments" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/counselor/appointments" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><CalendarIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Appointments</span>
               <span className={styles.quickLinkCount}>{stats.upcomingSessions} upcoming</span>
             </span>
-          </a>
-          <a href="/dashboard/counselor/referrals" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/counselor/referrals" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><ShieldIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Referrals</span>
               <span className={styles.quickLinkCount}>{stats.pendingReferrals} pending</span>
             </span>
-          </a>
-          <a href="/dashboard/counselor/ai" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/counselor/ai" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><AiIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>AI Assistant</span>
               <span className={styles.quickLinkCount}>ask a question</span>
             </span>
-          </a>
+          </Link>
         </div>
 
         <RecentActivity
