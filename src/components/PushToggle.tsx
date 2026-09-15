@@ -1,9 +1,30 @@
 // src/components/PushToggle.tsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Drop this into any dashboard's notification settings area or header.
-// Shows a simple "Enable / Disable push notifications" button.
+// A working "Enable / Disable push notifications" button, not currently
+// mounted anywhere in the app.
 //
-// Import example:
+// It briefly was - RoleHeroHeader.tsx mounted it in `compact` mode next to
+// the real NotificationsBell, which put two different bell icons side by
+// side for two unrelated things (NotificationsBell = your notification
+// list; this = a device-level push-permission toggle) - confusing on its
+// own, made worse by this component's `compact` mode rendering a raw 🔔/🔕
+// emoji in a self-styled inline <style> block instead of the app's actual
+// icon system (BellIcon, .iconBtn, CSS custom properties) that everything
+// else in that header uses. Removed from RoleHeroHeader for that reason.
+//
+// There is currently no UI anywhere in the app for a user to opt into push
+// notifications at all - this component still works (the underlying
+// usePushNotifications hook is correct, Android and web alike), it just
+// needs a real home. The most natural one is a "Notifications" section on
+// each role's Settings page, which doesn't exist yet either - none of the
+// 13 roles' settings pages have a notification-preferences section, even
+// though the notification_preferences table this would eventually feed
+// into (docs/lane3-notifications) already exists in the schema. That's
+// real, separate, not-small scope (13 settings pages, decisions about what
+// preferences to expose) - flagging it here rather than building it as a
+// side effect of removing a broken header icon.
+//
+// Import example once it has a real home:
 //   import PushToggle from '@/components/PushToggle'
 //   <PushToggle />
 // ─────────────────────────────────────────────────────────────────────────────
