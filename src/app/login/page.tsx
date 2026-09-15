@@ -349,9 +349,6 @@ export default function LoginPage() {
 
               {loginMode === 'existing' && (
                 <form onSubmit={handleExistingLogin} className={styles.form}>
-                  <div className={styles.accessCodeNote}>
-                    Sign in with your <strong>email</strong> or <strong>access code</strong> and your password.
-                  </div>
                   {loginError && <div className={styles.errorBanner}>{loginError}</div>}
                   <label className={styles.label}>Email or Access Code</label>
                   <input
@@ -400,7 +397,7 @@ export default function LoginPage() {
               {loginMode === 'new-user' && (
                 <form onSubmit={handleNewUserActivation} className={styles.form}>
                   <div className={styles.accessCodeNote}>
-                    First time? Enter your access code from your administrator and create your password.
+                    Get your access code from your school administrator.
                   </div>
                   {newUserError && <div className={styles.errorBanner}>{newUserError}</div>}
                   <label className={styles.label}>Access Code</label>

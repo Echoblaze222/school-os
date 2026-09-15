@@ -53,10 +53,6 @@ export default function AllFeaturesSheet({ groups, role }: Props) {
               </button>
             </div>
 
-            <div className={styles.note}>
-              Showing {role.charAt(0).toUpperCase() + role.slice(1)} features only. This account can't open any other role's dashboard.
-            </div>
-
             {groups.map(g => (
               <div key={g.name} className={styles.group}>
                 <h4>{g.name}</h4>

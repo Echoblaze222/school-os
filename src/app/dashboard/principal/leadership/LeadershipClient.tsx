@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import RoleSubHeader from '@/components/RoleSubHeader'
+import LearnMore from '@/components/LearnMore'
 import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 import DepartmentCard from '@/components/org/DepartmentCard'
 import { PlusIcon, XIcon, UserIcon, CrownIcon, HomeIcon, ClockIcon } from '@/components/Icons'
@@ -730,7 +731,9 @@ export default function LeadershipClient({
                   {PORTFOLIOS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
                 <label className={styles.label}>Departments this Vice Principal oversees</label>
-                <p className={styles.hint} style={{ marginBottom: 8 }}>Controls which departments they can approve, publish for, or assign a Head of Department to. Leave empty to configure later - they'll still get full view access.</p>
+                <LearnMore>
+                  Controls which departments they can approve, publish for, or assign a Head of Department to. Leave empty to configure later - they'll still get full view access.
+                </LearnMore>
                 {departments.length === 0 ? <p className={styles.hint}>No departments created yet.</p> : (
                   <div className={styles.checkList}>
                     {departments.map(d => (
@@ -772,7 +775,9 @@ export default function LeadershipClient({
             ) : (
               <>
                 <label className={styles.label}>Hostel(s) this prefect assists with</label>
-                <p className={styles.hint} style={{ marginBottom: 8 }}>Controls which hostel's roll call they can record attendance for. They get no other access - incidents, leave, and maintenance always stay staff-only regardless of what's selected here.</p>
+                <LearnMore>
+                  Controls which hostel's roll call they can record attendance for. They get no other access - incidents, leave, and maintenance always stay staff-only regardless of what's selected here.
+                </LearnMore>
                 <HostelPicker
                   hostels={hostels}
                   selectedIds={hpHostelIds}

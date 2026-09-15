@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import RoleSubHeader from '@/components/RoleSubHeader'
+import LearnMore from '@/components/LearnMore'
 import DepartmentCard from '@/components/org/DepartmentCard'
 import { PlusIcon, XIcon, UserIcon } from '@/components/Icons'
 import { ripple } from '@/lib/ripple'
@@ -173,11 +174,11 @@ export default function DepartmentsClient({ profile, school, userId, initialDepa
       title="Departments" featureGroups={VP_FEATURE_GROUPS}
     >
       <div className={styles.topRow}>
-        <p className={styles.hint}>
+        <LearnMore label="Your department permissions">
           You can view and edit every department. Assigning or changing a
           Head of Department is limited to the departments your Principal
           has assigned to you.
-        </p>
+        </LearnMore>
         <button
           className={`${styles.newBtn} ${motion.rippleHost} ${motion.focusable}`}
           onClick={() => { setShowCreate(true); setError('') }}

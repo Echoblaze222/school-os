@@ -7,6 +7,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './settings.module.css'
+import LearnMore from '@/components/LearnMore'
 import {
   ArrowLeftIcon, SaveIcon, RefreshIcon, TrashIcon, UploadIcon,
   CheckIcon, AlertIcon, SchoolIcon, LayersIcon, PhoneIcon, WalletIcon,
@@ -548,10 +549,10 @@ export default function SettingsClient({ profile, school }: Props) {
             {/* ── School Logo ── */}
             <p className={styles.sectionLabel}>School Logo</p>
             <div className={`glass-card ${styles.card}`}>
-              <p className={styles.imageHint}>
+              <LearnMore>
                 Displayed in the school header, report cards, invoices, and the SchoolOS portal.
-                Recommended: square PNG or SVG, min 200×200 px, max 5 MB.
-              </p>
+                Recommended: square PNG or SVG, at least 200×200px.
+              </LearnMore>
 
               {logoPreview ? (
                 <div className={styles.imagePreviewWrapper}>
@@ -675,9 +676,10 @@ export default function SettingsClient({ profile, school }: Props) {
             {/* ── Build Image ── */}
             <p className={styles.sectionLabel}>School Build Image</p>
             <div className={`glass-card ${styles.card}`}>
-              <p className={styles.imageHint}>
-                Shown on your login page and public profile. Optional — your brand color is used if you skip this.
-              </p>
+              <p className={styles.imageHint}>Optional — shown on your login page.</p>
+              <LearnMore>
+                Your brand color is used instead if you skip this.
+              </LearnMore>
 
               {buildImagePreview ? (
                 <div className={styles.buildPreviewWrapper}>

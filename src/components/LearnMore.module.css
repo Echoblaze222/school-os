@@ -1,0 +1,37 @@
+.details {
+  margin-top: 4px;
+}
+
+.summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--brand);
+  list-style: none;
+  user-select: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::after {
+  content: '›';
+  display: inline-block;
+  transition: transform var(--transition-fast, 0.15s ease);
+}
+
+.details[open] .summary::after {
+  transform: rotate(90deg);
+}
+
+.content {
+  margin-top: 6px;
+  padding-left: 1px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
