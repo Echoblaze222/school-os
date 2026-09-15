@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  android: circleci/android@2.5
+
 jobs:
   build-and-test:
     docker:
@@ -26,7 +29,41 @@ jobs:
           name: Build
           command: npm run build
 
+  build-android-apk:
+    docker:
+      - image: cimg/android:2024.10
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          name: Install Node
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+      - restore_cache:
+          keys:
+            - npm-deps-v1-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: npm-deps-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Sync Capacitor Android project
+          command: npx cap sync android
+      - run:
+          name: Build debug APK
+          command: cd android && ./gradlew assembleDebug
+      - store_artifacts:
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          destination: school-os-debug.apk
+
 workflows:
   build-test-lint:
     jobs:
       - build-and-test
+  build-android:
+    jobs:
+      - build-android-apk
