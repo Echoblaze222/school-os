@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
+import EmptyState from '@/components/motion/EmptyState'
+import { ClipboardIcon, CheckCircleIcon } from '@/components/Icons'
 
 const TERM_LABEL: Record<string, string> = {
   first: 'First Term', second: 'Second Term', third: 'Third Term',
@@ -85,23 +87,35 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: 'var(--space-4)' }}>
-      <DashboardHeader profile={profile} school={school} userId={principalId} role="principal" title="Report Cards" />
+      <DashboardHeader profile={profile} school={school} userId={principalId} role="principal" title="Report Cards" showBack />
 
       {!hasSignature && (
-        <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid #F59E0B', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#F59E0B', fontSize: '0.85rem' }}>
+        <div style={{ background: 'var(--warning-subtle)', border: '1px solid var(--warning)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: 'var(--warning)', fontSize: '0.85rem' }}>
           You haven't uploaded a signature yet. Add one in Settings before approving report cards.
         </div>
       )}
       {error && (
-        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #EF4444', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#EF4444', fontSize: '0.85rem' }}>
+        <div style={{ background: 'var(--danger-subtle)', border: '1px solid var(--danger)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: 'var(--danger)', fontSize: '0.85rem' }}>
           {error}
         </div>
       )}
 
-      <h3 style={{ marginBottom: 10 }}>Pending Approval ({pending.length})</h3>
-      {pending.length === 0 && <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>Nothing waiting for review.</p>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <ClipboardIcon size={18} color="var(--text-muted)" />
+        <h3 style={{ margin: 0 }}>Pending Approval</h3>
+        <span className="badge badge-gold" style={{ fontSize: '0.72rem' }}>{pending.length}</span>
+      </div>
+      {pending.length === 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <EmptyState
+            icon={<ClipboardIcon size={32} color="var(--text-muted)" />}
+            title="Nothing waiting for review"
+            subtitle="Report cards submitted by class teachers will show up here for your approval."
+          />
+        </div>
+      )}
       {pending.map((rc: any) => (
-        <div key={rc.id} style={{ border: '1px solid var(--glass-border)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+        <div key={rc.id} style={{ border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <strong>{rc.student?.full_name}</strong>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -131,9 +145,20 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
         </div>
       ))}
 
-      <h3 style={{ margin: '24px 0 10px' }}>Approved ({approved.length})</h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '24px 0 10px' }}>
+        <CheckCircleIcon size={18} color="var(--text-muted)" />
+        <h3 style={{ margin: 0 }}>Approved</h3>
+        <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>{approved.length}</span>
+      </div>
+      {approved.length === 0 && (
+        <EmptyState
+          icon={<CheckCircleIcon size={32} color="var(--text-muted)" />}
+          title="No approved report cards yet"
+          subtitle="Once you approve a report card above, it'll show up here."
+        />
+      )}
       {approved.map((rc: any) => (
-        <div key={rc.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid var(--glass-border)', borderRadius: 10, marginBottom: 8 }}>
+        <div key={rc.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', borderRadius: 10, marginBottom: 8 }}>
           <span>{rc.student?.full_name}, {TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}</span>
           <button className="pressable" onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
             style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem' }}>
