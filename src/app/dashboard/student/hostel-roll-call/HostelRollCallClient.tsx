@@ -12,8 +12,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon, InfoIcon } from '@/components/Icons'
+import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './hostel-roll-call.module.css'
+import LearnMore from '@/components/LearnMore'
 import motion from '@/components/dashboard-motion.module.css'
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 
@@ -130,13 +131,10 @@ export default function HostelRollCallClient({ hostels }: { hostels: Hostel[] })
       <h1 className={styles.title}>Hostel roll call</h1>
       <p className={styles.subtitle}>Record attendance for your assigned hostel.</p>
 
-      <div className={styles.scopeNote}>
-        <InfoIcon size={16} />
-        <span>
-          You can record roll call attendance here. Incidents, leave requests, and maintenance
-          are handled by hostel staff, not by prefects.
-        </span>
-      </div>
+      <LearnMore label="What prefects can and can't do here">
+        You can record roll call attendance here. Incidents, leave requests, and maintenance
+        are handled by hostel staff, not by prefects.
+      </LearnMore>
 
       <div className={styles.controls}>
         {hostels.length > 1 && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ContextSwitcher from '@/components/ContextSwitcher'
+import LearnMore from '@/components/LearnMore'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon, ClockIcon, ChevronRightIcon } from '@/components/Icons'
 import styles from './leadership.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -106,9 +107,9 @@ export default function LeadershipClient({
           </Link>
         </div>
         <h1 className={styles.title}>{LABELS[appointmentType] ?? 'Leadership'} duties</h1>
-        <p className={styles.subtitle}>
+        <LearnMore label="What this dashboard shows">
           This is your leadership dashboard. It doesn't show academic, financial, medical, or counseling records.
-        </p>
+        </LearnMore>
 
         {appointmentType === 'hostel_prefect' && (
           <Link

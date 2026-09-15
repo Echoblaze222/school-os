@@ -14,7 +14,7 @@ import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import styles from './login.module.css'
 import {
   MailIcon, EyeIcon, EyeOffIcon,
-  LockIcon, PlusIcon, ArrowLeftIcon,
+  PlusIcon, ArrowLeftIcon,
 } from '@/components/Icons'
 
 type LoginMode = 'existing' | 'new-user'
@@ -53,7 +53,6 @@ export default function LoginPage() {
   const [school,    setSchool]    = useState<SelectedSchool | null>(null)
   const [secondaryColor, setSecondaryColor] = useState<string | null>(null)
   const [loginMode, setLoginMode] = useState<LoginMode>('existing')
-  const [isTimeout, setIsTimeout] = useState(false)
 
   const [identifier,   setIdentifier]   = useState('')
   const [password,     setPassword]     = useState('')
@@ -73,7 +72,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('reason') === 'timeout') setIsTimeout(true)
 
     // Only accept a same-app dashboard path - never an absolute URL or
     // protocol-relative one (e.g. "//evil.com"), which would otherwise
@@ -326,12 +324,6 @@ export default function LoginPage() {
               )}
             </div>
           </div>
-
-          {isTimeout && (
-            <div className={styles.timeoutBanner}>
-              <LockIcon size={14} /> You were logged out due to inactivity. Please sign in again.
-            </div>
-          )}
 
           <h2 className={styles.signInHeading}>Sign in</h2>
 

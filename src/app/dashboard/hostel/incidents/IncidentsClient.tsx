@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ContextSwitcher from '@/components/ContextSwitcher'
+import LearnMore from '@/components/LearnMore'
 import { ArrowLeftIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/Icons'
 import styles from './incidents.module.css'
 import { SkeletonCard } from '@/components/motion/Skeleton'
@@ -114,7 +115,9 @@ export default function IncidentsClient({ hostels }: { hostels: Hostel[] }) {
             {showForm ? 'Cancel' : 'Report incident'}
           </button>
         </div>
-        <p className={styles.subtitle}>Restricted to hostel staff and school admins. Students and prefects don't have access to this page.</p>
+        <LearnMore label="Who can see this page">
+          Restricted to hostel staff and school admins. Students and prefects don't have access to this page.
+        </LearnMore>
 
         {hostels.length > 1 && (
           <select className={styles.select} value={hostelId} onChange={e => setHostelId(e.target.value)}>
