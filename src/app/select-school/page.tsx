@@ -34,6 +34,7 @@ const RECENT_SCHOOL_KEY = 'schoolos_recent_school'
 const SIGNOUT_REASON_KEY = 'schoolos_signout_reason'
 const RETURN_TO_KEY = 'schoolos_return_to'
 
+export const dynamic = 'force-dynamic'
 export default function SelectSchoolPage() {
   const router   = useRouter()
 
