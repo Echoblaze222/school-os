@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import RoleSubHeader from '@/components/RoleSubHeader'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import {
   UserIcon, CameraIcon, KeyIcon, LogOutIcon, EditIcon, CrownIcon,
@@ -389,6 +390,8 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
       {/* ── Actions ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <AutoLockSettings userId={userId} />
+
         <a href="/forgot-password" style={{
           display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
           padding: 'var(--space-4)',

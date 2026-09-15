@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import RoleSubHeader from '@/components/RoleSubHeader'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 import { COUNSELOR_FEATURE_GROUPS } from '../featureGroups'
 
 import {
@@ -469,6 +470,8 @@ export default function ProfileClient({
           </div>
         )}
       </div>
+
+      <AutoLockSettings userId={userId} />
 
       <div
         style={{

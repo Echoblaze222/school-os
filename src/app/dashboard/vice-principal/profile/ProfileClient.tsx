@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 import { UserIcon, CameraIcon } from '@/components/Icons'
 import { VP_FEATURE_GROUPS } from '../featureGroups'
 import styles from './profile.module.css'
@@ -97,6 +98,8 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       <button className={styles.saveBtn} onClick={handleSave} disabled={saving || !fullName.trim()}>
         {saving ? 'Saving…' : 'Save changes'}
       </button>
+
+      <AutoLockSettings userId={userId} />
 
       <button className={styles.signOutBtn} onClick={handleSignOut}>Sign out</button>
 
