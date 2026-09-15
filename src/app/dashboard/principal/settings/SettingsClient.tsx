@@ -613,8 +613,7 @@ export default function SettingsClient({ profile, school }: Props) {
             <p className={styles.sectionLabel}>Your Signature</p>
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
-                Appears on every report card you approve. Upload a photo or scan of your
-                signature on a plain background. PNG with a transparent background works best.
+                Appears on every report card you approve.
               </p>
 
               {sigPreview ? (
@@ -677,11 +676,7 @@ export default function SettingsClient({ profile, school }: Props) {
             <p className={styles.sectionLabel}>School Build Image</p>
             <div className={`glass-card ${styles.card}`}>
               <p className={styles.imageHint}>
-                A wide photo of your school building, campus, or classrooms.
-                Shown on the login page, welcome screens, and — if your school is publicly
-                listed — as the cover photo on your public profile and discovery card.
-                Recommended: landscape 16:9, min 1280×720 px, max 5 MB. Optional — schools
-                without one just show their brand color instead.
+                Shown on your login page and public profile. Optional — your brand color is used if you skip this.
               </p>
 
               {buildImagePreview ? (

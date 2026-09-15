@@ -94,25 +94,21 @@ export default function ClassesClient({ profile, school, userId }: Props) {
     {
       label: 'Mark Attendance',
       Icon: CalendarIcon,
-      color: '#14B8A6',
       onClick: () => goTo('/dashboard/teacher/attendance'),
     },
     {
       label: 'New Assignment',
       Icon: ClipboardIcon,
-      color: 'var(--warning)',
       onClick: () => goTo('/dashboard/teacher/assignments'),
     },
     {
       label: 'View Results',
       Icon: BarChartIcon,
-      color: 'var(--success)',
       onClick: () => goTo('/dashboard/teacher/results'),
     },
     {
       label: 'Create Quiz',
       Icon: AwardIcon,
-      color: '#8B5CF6',
       onClick: () => goTo('/dashboard/teacher/quizzes'),
     },
   ]
@@ -218,18 +214,18 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                       alignItems: 'center',
                       gap: 8,
                       padding: '10px 12px',
-                      background: action.color + '12',
-                      border: `1px solid ${action.color}30`,
+                      background: sc + '12',
+                      border: `1px solid ${sc}30`,
                       borderRadius: 10,
                       cursor: 'pointer',
-                      color: action.color,
+                      color: sc,
                       fontWeight: 600,
                       fontSize: '0.8rem',
                       textAlign: 'left' as const,
                       transition: 'all 0.15s',
                     }}
                   >
-                    <action.Icon size={16} color={action.color} />
+                    <action.Icon size={16} color={sc} />
                     {action.label}
                   </button>
                 ))}
