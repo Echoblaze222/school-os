@@ -566,7 +566,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
   // or from student/parent free text, neither of which is trusted HTML.
 
   return (
-    <RoleSubHeader userId={userId} role={role} profile={profile} school={school} title={config.title} featureGroups={FEATURE_GROUPS_BY_ROLE[role] ?? []} fullHeight>
+    <RoleSubHeader userId={userId} role={role} profile={profile} school={school} title={config.title} featureGroups={FEATURE_GROUPS_BY_ROLE[role] ?? []} fullHeight hideDock>
       {/* Outer flex column fills the mainFull container */}
       <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0 }}>
 

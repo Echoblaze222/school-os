@@ -25,6 +25,7 @@ interface Stats {
 interface Props {
   userId: string
   counselorName: string
+  profile: any
   school: any
   stats: Stats
 }
@@ -42,7 +43,7 @@ function insightFor(stats: Stats) {
   return `Your caseload is steady, ${stats.openCases + stats.monitoringCases} active case${stats.openCases + stats.monitoringCases === 1 ? '' : 's'} right now.`
 }
 
-export default function CounselorDashboardClient({ userId, counselorName, school, stats }: Props) {
+export default function CounselorDashboardClient({ userId, counselorName, profile, school, stats }: Props) {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const schoolColor = school?.primary_color ?? '#00B4D8'
 
@@ -92,7 +93,7 @@ export default function CounselorDashboardClient({ userId, counselorName, school
         userId={userId}
         role="counselor"
         roleLabel="Counselor"
-        profile={{ full_name: counselorName }}
+        profile={profile}
         school={school}
         greeting={`Hello, ${counselorName.split(' ')[0] || 'Counselor'}`}
         headline={`${stats.openCases + stats.monitoringCases} active case${stats.openCases + stats.monitoringCases === 1 ? '' : 's'}`}

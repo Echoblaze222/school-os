@@ -71,6 +71,7 @@ export default async function CoachDashboardPage() {
     <CoachDashboardClient
       userId={user.id}
       coachName={profile.full_name}
+      profile={profile}
       school={school}
       stats={stats}
       teams={teams ?? []}

@@ -74,6 +74,7 @@ export default async function CounselorDashboardPage() {
     <CounselorDashboardClient
       userId={user.id}
       counselorName={profile.full_name ?? 'Counselor'}
+      profile={profile}
       school={school}
       stats={{
         openCases: openCases ?? 0,
