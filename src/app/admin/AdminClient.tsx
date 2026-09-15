@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './admin.module.css'
 
@@ -29,6 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminClient({ stats, recentSchools, subscriptions, recentPayments, adminEmail }: Props) {
   const supabase = createClient()
+  const router    = useRouter()
   const [tab,   setTab]   = useState<'overview' | 'schools' | 'revenue' | 'users'>('overview')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [activatingId, setActivatingId] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
       .update({ status: newStatus, is_platform_active: newStatus === 'active' })
       .eq('id', schoolId)
     setActivatingId(null)
-    window.location.reload()
+    router.refresh()
   }
 
   function fmt(n: number) { return `₦${n.toLocaleString()}` }
