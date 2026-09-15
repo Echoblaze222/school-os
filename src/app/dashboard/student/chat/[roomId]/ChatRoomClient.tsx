@@ -1306,17 +1306,31 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           <MoreIcon size={20} />
         </button>
         {showMenu && (
-          <div className={styles.headerMenu} onClick={e => e.stopPropagation()}>
-            <button className="pressable" onClick={() => { setShowProfile(true); setShowMenu(false) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {roomInfo?.is_group ? <PeopleIcon size={15} /> : <UserIcon size={15} />}
-              {roomInfo?.is_group ? 'Group info' : 'View profile'}
-            </button>
-            <button className="pressable" onClick={() => { loadMessages(); setShowMenu(false) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <RefreshIcon size={15} /> Refresh chat
-            </button>
-          </div>
+          <>
+            {/* Dedicated backdrop instead of relying solely on the
+                document-level click listener below - that listener resets
+                several other pieces of state too (emojiTarget,
+                contextMenuId, showStickers) and depends on stopPropagation
+                timing between React's synthetic events and the native
+                listener, which made this menu unreliable to close (and,
+                per report, to use at all). An explicit backdrop closes on
+                any tap outside regardless of that timing. */}
+            <div
+              onClick={() => setShowMenu(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+            />
+            <div className={styles.headerMenu} onClick={e => e.stopPropagation()}>
+              <button className="pressable" onClick={() => { setShowProfile(true); setShowMenu(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {roomInfo?.is_group ? <PeopleIcon size={15} /> : <UserIcon size={15} />}
+                {roomInfo?.is_group ? 'Group info' : 'View profile'}
+              </button>
+              <button className="pressable" onClick={() => { loadMessages(); setShowMenu(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <RefreshIcon size={15} /> Refresh chat
+              </button>
+            </div>
+          </>
         )}
       </header>
 
