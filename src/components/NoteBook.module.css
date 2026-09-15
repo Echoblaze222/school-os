@@ -29,7 +29,7 @@
   gap: 14px;
   opacity: 0;
   transform: scale(0.9) translateY(24px) rotateX(8deg);
-  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.5s var(--ease-overshoot), transform 0.5s var(--ease-overshoot);
 }
 
 .stageOpen {
@@ -113,7 +113,7 @@
   padding: 30px 26px 26px;
   transform-origin: left center;
   transform-style: preserve-3d;
-  animation: pageIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pageIn 0.42s var(--ease-overshoot);
   backface-visibility: hidden;
 }
 

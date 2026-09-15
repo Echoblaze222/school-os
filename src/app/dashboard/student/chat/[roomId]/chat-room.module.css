@@ -677,7 +677,7 @@
 }
 .msgGroup > .bubbleCol,
 .msgGroup > .avatarCol {
-  transition: transform 0.18s ease;
+  transition: transform 0.18s var(--ease-overshoot);
 }
 .msgGroupDragging > .bubbleCol,
 .msgGroupDragging > .avatarCol {
