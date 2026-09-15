@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import DashboardHeader from '@/components/DashboardHeader'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 import { UserIcon, EditIcon, CameraIcon, LogOutIcon, ShieldIcon, KeyIcon } from '@/components/Icons'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
@@ -181,6 +182,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
 
           {/* Actions */}
           <div style={{ display:'flex', flexDirection:'column', gap:'var(--space-2)' }}>
+            <AutoLockSettings userId={userId} />
             <a href="/forgot-password"
               style={{ display:'flex', alignItems:'center', gap:'var(--space-3)', padding:'var(--space-4)', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-lg)', color:'var(--text-secondary)', fontSize:'0.85rem', fontWeight:500, textDecoration:'none' }}>
               <KeyIcon size={16}/> Change Password
