@@ -1,0 +1,34 @@
+name: Cron - Unread notifications digest
+
+# Same situation as cron-reminders.yml (see that file for the full
+# explanation): Vercel Hobby's native Cron Jobs only support once-daily
+# frequency, but /api/cron/unread-digest is designed to run hourly, so
+# this workflow calls it from GitHub Actions instead.
+#
+# Requires the same two repository secrets as cron-reminders.yml -
+# CRON_SECRET and VERCEL_BYPASS_SECRET. See that file for how to get
+# each one; both workflows share the same two secrets, so you only need
+# to set them up once.
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/unread-digest
+        run: |
+          http_code=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
+            "https://school-os-j4bn.vercel.app/api/cron/unread-digest" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_BYPASS_SECRET }}")
+          echo "HTTP $http_code"
+          cat /tmp/response.json
+          echo
+          if [ "$http_code" -ge 300 ]; then
+            echo "::error::unread-digest cron call failed with HTTP $http_code"
+            exit 1
+          fi

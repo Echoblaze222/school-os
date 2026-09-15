@@ -2,6 +2,10 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import {
+  lockSchool, unlockSchool, toggleSchoolLock,
+  extendSchoolTrial, confirmSchoolSetupPayment, confirmSchoolSubscriptionPayment,
+} from '@/lib/super-admin/schoolActions'
 
 // ─── Auth guard ───────────────────────────────────────────────────────────────
 async function assertSuperAdmin() {
@@ -18,61 +22,6 @@ async function assertSuperAdmin() {
   return { adminId: user.id, adminSupabase }
 }
 
-// ─── Shared: unlock a school across both tables ───────────────────────────────
-async function unlockSchool(adminSupabase: any, school_id: string, adminId: string) {
-  const now = new Date().toISOString()
-
-  // evaluateSchoolSubscription (the check-subscriptions cron) only ever
-  // re-evaluates an 'active' school by comparing subscription_ends against
-  // now - if that's null, the comparison never happens and the school
-  // stays 'active' forever, unconditionally, with nothing left to ever
-  // expire it again. This used to leave subscription_ends untouched
-  // (usually null, or a stale past date), which is exactly how T.E.S.T
-  // College ended up permanently active with zero payment record. Giving
-  // it a fresh 30-day window (same length confirm_setup already uses a
-  // few branches down) makes this a temporary reprieve instead of a
-  // silent permanent bypass - it still re-enters the normal lapse/grace/
-  // suspend cycle in 30 days rather than needing another manual unlock.
-  const newSubscriptionEnds = new Date(Date.now() + 30 * 86_400_000).toISOString()
-
-  await adminSupabase
-    .from('schools')
-    .update({
-      setup_status:       'active',
-      is_platform_active: true,
-      subscription_ends:  newSubscriptionEnds,
-      updated_at:         now,
-    })
-    .eq('id', school_id)
-
-  await adminSupabase
-    .from('subscriptions')
-    .update({ status: 'Active', updated_at: now })
-    .eq('school_id', school_id)
-    .eq('status', 'Expired')
-
-  await adminSupabase.from('portal_audit_log').insert({
-    actor_id: adminId, action: 'unlock_school',
-    target_table: 'schools', target_id: school_id,
-    metadata: { new_subscription_ends: newSubscriptionEnds },
-  })
-}
-
-// ─── Shared: lock a school ────────────────────────────────────────────────────
-async function lockSchool(adminSupabase: any, school_id: string, adminId: string) {
-  const now = new Date().toISOString()
-
-  await adminSupabase
-    .from('schools')
-    .update({ setup_status: 'locked', is_platform_active: false, updated_at: now })
-    .eq('id', school_id)
-
-  await adminSupabase.from('portal_audit_log').insert({
-    actor_id: adminId, action: 'lock_school',
-    target_table: 'schools', target_id: school_id,
-  })
-}
-
 export async function POST(req: Request) {
   try {
     const { adminId, adminSupabase } = await assertSuperAdmin()
@@ -83,23 +32,9 @@ export async function POST(req: Request) {
 
     // ── toggle_lock ───────────────────────────────────────────────────────────
     if (action === 'toggle_lock') {
-      const { data: school, error: fetchErr } = await adminSupabase
-        .from('schools')
-        .select('setup_status')
-        .eq('id', school_id)
-        .single()
-
-      if (fetchErr || !school) return NextResponse.json({ ok: false, error: 'School not found' }, { status: 404 })
-
-      const isLocked = school.setup_status === 'locked'
-
-      if (isLocked) {
-        await unlockSchool(adminSupabase, school_id, adminId)
-        return NextResponse.json({ ok: true, setup_status: 'active' })
-      } else {
-        await lockSchool(adminSupabase, school_id, adminId)
-        return NextResponse.json({ ok: true, setup_status: 'locked' })
-      }
+      const result = await toggleSchoolLock(adminSupabase, school_id, adminId)
+      if (!result.ok) return NextResponse.json(result, { status: result.error === 'School not found' ? 404 : 500 })
+      return NextResponse.json(result)
     }
 
     // ── lock_school (explicit) ────────────────────────────────────────────────
@@ -117,88 +52,18 @@ export async function POST(req: Request) {
     // ── extend_trial ──────────────────────────────────────────────────────────
     if (action === 'extend_trial') {
       const days = Number(body.days ?? 5)
-      if (!days || days < 1) return NextResponse.json({ ok: false, error: 'Invalid days' }, { status: 400 })
-
-      const { data: school, error: fetchErr } = await adminSupabase
-        .from('schools')
-        .select('trial_ends_at')
-        .eq('id', school_id)
-        .single()
-
-      if (fetchErr || !school) return NextResponse.json({ ok: false, error: 'School not found' }, { status: 404 })
-
-      const base     = school.trial_ends_at ? new Date(school.trial_ends_at) : new Date()
-      const newExpiry = new Date(base.getTime() + days * 86_400_000)
-
-      const { error } = await adminSupabase
-        .from('schools')
-        .update({
-          trial_ends_at:      newExpiry.toISOString(),
-          trial_extended:     true,
-          setup_status:       'trial',
-          is_platform_active: true,
-          updated_at:         new Date().toISOString(),
-        })
-        .eq('id', school_id)
-
-      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-      await adminSupabase.from('portal_audit_log').insert({
-        actor_id: adminId, action: 'extend_trial', target_table: 'schools', target_id: school_id,
-        metadata: { days, new_expiry: newExpiry.toISOString() },
-      })
-      return NextResponse.json({ ok: true })
+      const result = await extendSchoolTrial(adminSupabase, school_id, days, adminId)
+      if (!result.ok) return NextResponse.json(result, { status: result.error === 'School not found' ? 404 : 400 })
+      return NextResponse.json(result)
     }
 
     // ── confirm_setup ─────────────────────────────────────────────────────────
     if (action === 'confirm_setup') {
       const amount_ngn  = Number(body.amount_ngn ?? 0)
       const payment_ref = body.payment_ref as string | undefined
-      const now         = new Date()
-      const freeEnd     = new Date(now.getTime() + 30 * 86_400_000)
-
-      const { error } = await adminSupabase
-        .from('schools')
-        .update({
-          setup_status:        'active',
-          is_platform_active:  true,
-          setup_paid_at:       now.toISOString(),
-          subscription_plan:   'free_month',
-          free_month_starts:   now.toISOString(),
-          free_month_ends:     freeEnd.toISOString(),
-          subscription_starts: now.toISOString(),
-          subscription_ends:   freeEnd.toISOString(),
-          next_payment_due:    freeEnd.toISOString(),
-          updated_at:          now.toISOString(),
-        })
-        .eq('id', school_id)
-
-      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-
-      await adminSupabase.from('subscriptions').upsert({
-        school_id,
-        plan_type:     'free_month',
-        status:        'Active',
-        billing_cycle: 'Monthly',
-        started_at:    now.toISOString().split('T')[0],
-        expiry_date:   freeEnd.toISOString().split('T')[0],
-        amount_paid:   amount_ngn,
-        currency_used: 'NGN',
-        payment_reference: payment_ref ?? null,
-      }, { onConflict: 'school_id' })
-
-      if (amount_ngn > 0) {
-        await adminSupabase.from('school_payments').insert({
-          school_id, payment_type: 'setup', amount_ngn,
-          payment_ref: payment_ref ?? null,
-          confirmed_by: adminId, confirmed_at: now.toISOString(),
-        })
-      }
-
-      await adminSupabase.from('portal_audit_log').insert({
-        actor_id: adminId, action: 'confirm_setup', target_table: 'schools', target_id: school_id,
-        metadata: { amount_ngn, payment_ref },
-      })
-      return NextResponse.json({ ok: true })
+      const result = await confirmSchoolSetupPayment(adminSupabase, school_id, amount_ngn, payment_ref, adminId)
+      if (!result.ok) return NextResponse.json(result, { status: result.error === 'School not found' ? 404 : 500 })
+      return NextResponse.json(result)
     }
 
     // ── confirm_subscription ──────────────────────────────────────────────────
@@ -206,54 +71,9 @@ export async function POST(req: Request) {
       const plan        = (body.plan as string) ?? 'basic_500'
       const amount_ngn  = Number(body.amount_ngn ?? 0)
       const payment_ref = body.payment_ref as string | undefined
-      const now         = new Date()
-
-      const cycleMonths: Record<string, number> = {
-        basic_500: 1, standard_1000: 1, premium_2000: 1, installment_3month: 3,
-      }
-      const months = cycleMonths[plan] ?? 1
-      const subEnd = new Date(now.getTime() + months * 30 * 86_400_000)
-
-      const { error } = await adminSupabase
-        .from('schools')
-        .update({
-          setup_status:        'active',
-          is_platform_active:  true,
-          subscription_plan:   plan,
-          subscription_starts: now.toISOString(),
-          subscription_ends:   subEnd.toISOString(),
-          next_payment_due:    subEnd.toISOString(),
-          updated_at:          now.toISOString(),
-        })
-        .eq('id', school_id)
-
-      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-
-      await adminSupabase.from('subscriptions').upsert({
-        school_id,
-        plan_type:         plan,
-        status:            'Active',
-        billing_cycle:     'Termly',
-        started_at:        now.toISOString().split('T')[0],
-        expiry_date:       subEnd.toISOString().split('T')[0],
-        amount_paid:       amount_ngn,
-        currency_used:     'NGN',
-        payment_reference: payment_ref ?? null,
-      }, { onConflict: 'school_id' })
-
-      if (amount_ngn > 0) {
-        await adminSupabase.from('school_payments').insert({
-          school_id, payment_type: 'subscription', plan, amount_ngn,
-          payment_ref: payment_ref ?? null,
-          confirmed_by: adminId, confirmed_at: now.toISOString(),
-        })
-      }
-
-      await adminSupabase.from('portal_audit_log').insert({
-        actor_id: adminId, action: 'confirm_subscription', target_table: 'schools', target_id: school_id,
-        metadata: { plan, amount_ngn, payment_ref },
-      })
-      return NextResponse.json({ ok: true })
+      const result = await confirmSchoolSubscriptionPayment(adminSupabase, school_id, plan, amount_ngn, payment_ref, adminId)
+      if (!result.ok) return NextResponse.json(result, { status: result.error === 'School not found' ? 404 : 500 })
+      return NextResponse.json(result)
     }
 
     // ── save_notes ────────────────────────────────────────────────────────────

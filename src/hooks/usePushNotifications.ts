@@ -1,7 +1,27 @@
 // src/hooks/usePushNotifications.ts
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Capacitor } from '@capacitor/core'
+
+// ANDROID: this app has no separate native bundle - capacitor.config.ts
+// points the WebView straight at the live production URL, so this exact
+// file runs both in ordinary mobile/desktop browsers AND inside the
+// Capacitor Android app shell. isNativeAndroid() is how it tells those
+// two contexts apart at runtime. Inside the shell, the standard Web Push
+// API (pushManager.subscribe, VAPID keys) isn't the right tool - Android
+// WebViews don't reliably support it the way a real browser does, and
+// the app already has a native FCM path server-side (lib/fcm.ts,
+// api/push/subscribe's platform:'android' branch) with nothing on the
+// client side to ever call it. This hook is that missing piece: same
+// public API (supported/subscribed/loading/permission/subscribe/
+// unsubscribe/error) either way, so PushToggle and everything else that
+// already uses this hook needs zero changes.
+function isNativeAndroid(): boolean {
+  return typeof window !== 'undefined'
+    && Capacitor.isNativePlatform()
+    && Capacitor.getPlatform() === 'android'
+}
 
 // Returns ArrayBuffer (not Uint8Array) so TypeScript accepts it anywhere
 // BufferSource is expected - including applicationServerKey in pushManager.subscribe()
@@ -29,6 +49,22 @@ async function getSwRegistration(): Promise<ServiceWorkerRegistration> {
   return Promise.race([readyPromise, timeoutPromise])
 }
 
+/** POST a freshly-obtained Android FCM token to the server. Shared by the
+ *  mount-time auto-register path and the explicit subscribe() click -
+ *  both just need "we have a token, save it", so this is the one place
+ *  that actually talks to the server for the Android branch. */
+async function persistAndroidToken(fcmToken: string): Promise<void> {
+  const res = await fetch('/api/push/subscribe', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ platform: 'android', fcmToken }),
+  })
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}))
+    throw new Error((d as any).error ?? `Server error ${res.status}`)
+  }
+}
+
 export type PushPermissionState = 'default' | 'granted' | 'denied' | 'unsupported'
 
 export interface PushNotificationHook {
@@ -48,9 +84,76 @@ export function usePushNotifications(): PushNotificationHook {
   const [permission, setPermission] = useState<PushPermissionState>('default')
   const [error,      setError]      = useState<string | null>(null)
 
+  // Holds the current FCM token so unsubscribe() can construct the same
+  // `fcm:<token>` endpoint string the server stored it under (see
+  // api/push/subscribe's android branch) - there's no equivalent of the
+  // web path's pushManager.getSubscription() to look this back up later,
+  // so it has to be kept around client-side from whenever we last saw it.
+  const androidTokenRef = useRef<string | null>(null)
+
   // ── Initial state check ───────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    if (isNativeAndroid()) {
+      setSupported(true)
+      let cancelled = false
+      let removeRegistration: (() => void) | undefined
+      let removeRegistrationError: (() => void) | undefined
+
+      ;(async () => {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+
+        // Registered unconditionally on mount, not just inside subscribe()
+        // - so a token from a *previous* launch (permission already
+        // granted, register() below re-fires it without prompting again)
+        // still gets captured and re-persisted this session.
+        const regHandle = await PushNotifications.addListener('registration', async (token) => {
+          androidTokenRef.current = token.value
+          try {
+            await persistAndroidToken(token.value)
+            setSubscribed(true)
+            setError(null)
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save this device for notifications.')
+          } finally {
+            setLoading(false)
+          }
+        })
+        removeRegistration = () => regHandle.remove()
+
+        const errHandle = await PushNotifications.addListener('registrationError', (err) => {
+          setError(err?.error || 'Failed to register for push notifications.')
+          setLoading(false)
+        })
+        removeRegistrationError = () => errHandle.remove()
+
+        if (cancelled) return
+
+        const status = await PushNotifications.checkPermissions()
+        setPermission(
+          status.receive === 'granted' ? 'granted' :
+          status.receive === 'denied'  ? 'denied'  : 'default'
+        )
+
+        if (status.receive === 'granted') {
+          // Re-registering when permission is already granted doesn't
+          // re-prompt - it just re-fires 'registration' with the current
+          // token, which is exactly what we want on every app launch.
+          await PushNotifications.register()
+        } else {
+          setLoading(false)
+        }
+      })()
+
+      return () => {
+        cancelled = true
+        removeRegistration?.()
+        removeRegistrationError?.()
+      }
+    }
+
+    // ── Web branch (unchanged) ────────────────────────────────
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       setSupported(false)
       setLoading(false)
@@ -78,6 +181,31 @@ export function usePushNotifications(): PushNotificationHook {
     setLoading(true)
     setError(null)
 
+    if (isNativeAndroid()) {
+      try {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        const status = await PushNotifications.requestPermissions()
+        setPermission(status.receive === 'granted' ? 'granted' : 'denied')
+        if (status.receive !== 'granted') {
+          setError(
+            status.receive === 'denied'
+              ? "Notifications are blocked. Allow them in this device's app settings."
+              : 'Notification permission was not granted.'
+          )
+          setLoading(false)
+          return
+        }
+        // Fires the 'registration' listener set up on mount, which
+        // captures the token and POSTs it - nothing further to do here.
+        await PushNotifications.register()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to enable notifications. Please try again.')
+        setLoading(false)
+      }
+      return
+    }
+
+    // ── Web branch (unchanged) ────────────────────────────────
     const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
     if (!VAPID_PUBLIC_KEY) {
       setError('Push notifications are not configured for this site.')
@@ -140,6 +268,31 @@ export function usePushNotifications(): PushNotificationHook {
   const unsubscribe = useCallback(async () => {
     setLoading(true)
     setError(null)
+
+    if (isNativeAndroid()) {
+      try {
+        if (androidTokenRef.current) {
+          await fetch('/api/push/subscribe', {
+            method:  'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ endpoint: `fcm:${androidTokenRef.current}` }),
+          })
+        }
+        // Note: this only stops the server from sending to this device -
+        // Android notification permission itself can't be revoked by the
+        // app once granted (only the user can, in system Settings). If
+        // they re-tap "enable", subscribe() re-registers and re-persists
+        // without needing that OS permission to be re-granted.
+        setSubscribed(false)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to disable notifications')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // ── Web branch (unchanged) ────────────────────────────────
     try {
       const reg     = await navigator.serviceWorker.ready
       const pushSub = await reg.pushManager.getSubscription()

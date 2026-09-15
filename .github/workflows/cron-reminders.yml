@@ -1,0 +1,65 @@
+name: Cron - Fire pending reminders
+
+# Vercel's own Cron Jobs feature is capped at once-per-day on the Hobby
+# plan (anything more frequent is rejected at deploy time), but
+# /api/cron/reminders is designed to run every few minutes so reminders
+# fire close to their scheduled time. This workflow is the external
+# scheduler that calls it instead - GitHub Actions isn't subject to
+# Vercel's plan limits, and requests to the route work identically
+# regardless of what triggered them.
+#
+# GitHub Actions' documented minimum interval for `schedule` is 5
+# minutes, and - like Vercel Hobby's own cron - the actual fire time
+# isn't exact: GitHub queues scheduled workflows and can delay them,
+# especially during platform load. Treat this as "within a few minutes",
+# not "on the dot".
+#
+# Requires two repository secrets (Settings -> Secrets and variables ->
+# Actions -> New repository secret):
+#   CRON_SECRET            Same value as the CRON_SECRET env var already
+#                           set in Vercel - this is what the route itself
+#                           checks (Authorization: Bearer <value>).
+#   VERCEL_BYPASS_SECRET   A *different* secret from Vercel's Deployment
+#                           Protection settings. This project has Vercel
+#                           Authentication (SSO protection) on for all
+#                           its *.vercel.app domains, which blocks any
+#                           request that isn't a logged-in Vercel user or
+#                           Vercel's own cron caller (Vercel's native
+#                           cron is auto-exempted; external callers like
+#                           this workflow are not). To generate this
+#                           secret: Vercel dashboard -> this project ->
+#                           Settings -> Deployment Protection ->
+#                           Protection Bypass for Automation -> enable.
+#                           That both generates the secret and exposes it
+#                           to the app as VERCEL_AUTOMATION_BYPASS_SECRET
+#                           - a redeploy is required for a newly
+#                           generated/rotated secret to take effect.
+#                           Without this, every run below will fail with
+#                           an HTML/401 response from Vercel's auth wall,
+#                           not from the route itself.
+#
+# Until both secrets are added, this workflow will run on schedule but
+# fail - that's expected and not a bug in the workflow itself.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  fire-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/reminders
+        run: |
+          http_code=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
+            "https://school-os-j4bn.vercel.app/api/cron/reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_BYPASS_SECRET }}")
+          echo "HTTP $http_code"
+          cat /tmp/response.json
+          echo
+          if [ "$http_code" -ge 300 ]; then
+            echo "::error::reminders cron call failed with HTTP $http_code"
+            exit 1
+          fi

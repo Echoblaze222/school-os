@@ -1,14 +1,26 @@
 // src/app/api/cron/reminders/route.ts
-// Vercel Cron Job - fires every minute.
-// Configure in vercel.json:
-// {
-//   "crons": [{ "path": "/api/cron/reminders", "schedule": "* * * * *" }]
-// }
-// Protected by CRON_SECRET env var (set in Vercel dashboard).
+// Vercel Cron Job - intended to fire every minute (see vercel.json note
+// below). Protected by CRON_SECRET env var (set in Vercel dashboard).
+//
+// ANDROID FIX: this route used to duplicate its own copy of the Web-Push-
+// only send logic (select endpoint/p256dh/auth, call webpush.sendNotification
+// unconditionally) instead of using the shared sendPushToUsers() in
+// lib/webpush.ts - the same platform-blind bug fixed there, just copy-pasted
+// here instead of shared. An android/FCM subscription (p256dh/auth = null)
+// would throw, get silently swallowed, and never fire - permanently, for
+// every reminder, on every Android device. Delegating to sendPushToUsers
+// both fixes that (it already branches on platform) and removes the
+// duplicate implementation, matching what api/cron/unread-digest already
+// does correctly.
+//
+// NOT YET SCHEDULED: this path was never added to vercel.json's crons
+// array (see the note there), so as of this fix it still won't run
+// automatically until that's wired up - see DESIGN_AUDIT.md / the Android
+// push finding for the schedule-frequency decision that's blocking that.
 
 import { NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import webpush from 'web-push'
+import { sendPushToUsers } from '@/lib/webpush'
 
 function adminClient() {
   return createAdminClient(
@@ -23,14 +35,6 @@ export async function GET(req: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  // Initialise here (not at module level) so the build doesn't crash when
-  // VAPID env vars are absent during Next.js page-data collection.
-  webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_EMAIL ?? 'admin@schoolos.app'}`,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
-  )
 
   const admin = adminClient()
 
@@ -54,37 +58,15 @@ export async function GET(req: Request) {
   let fired = 0
 
   for (const reminder of reminders) {
-    // Get all push subscriptions for this user
-    const { data: subs } = await admin
-      .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .eq('user_id', reminder.user_id)
-
-    if (subs?.length) {
-      const payload = JSON.stringify({
-        title: reminder.title,
-        body:  reminder.body,
-        url:   reminder.url,
-        tag:   `reminder-${reminder.id}`,
-        icon:  '/icons/icon-192x192.png',
-        badge: '/icons/icon-192x192.png',
-      })
-
-      // Send to all user's devices
-      await Promise.allSettled(
-        subs.map(sub =>
-          webpush.sendNotification(
-            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-            payload
-          ).catch(err => {
-            // 410 = subscription expired - clean it up
-            if (err.statusCode === 410) {
-              admin.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
-            }
-          })
-        )
-      )
-    }
+    // sendPushToUsers looks up this user's subscriptions itself (web and
+    // android alike) and is a no-op if there are none - no need to
+    // pre-fetch subscriptions here the way this route used to.
+    await sendPushToUsers([reminder.user_id], {
+      title: reminder.title,
+      body:  reminder.body,
+      url:   reminder.url,
+      tag:   `reminder-${reminder.id}`,
+    })
 
     // Mark as fired regardless (even if no subscriptions found)
     await admin
@@ -96,5 +78,4 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({ ok: true, fired })
-  }
-              
+}
