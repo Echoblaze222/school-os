@@ -12,6 +12,7 @@ import {
   MoonIcon, SunIcon,
 } from '@/components/Icons'
 import styles from '../secretary.module.css'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -138,6 +139,7 @@ export default function SettingsClient({ profile, school, userId }: Props) {
 
       {section === 'security' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <AutoLockSettings userId={userId} />
           <a href="/forgot-password" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none' }}>
             <KeyIcon size={16} /> Change Password
           </a>

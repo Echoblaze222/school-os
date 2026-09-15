@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { SaveIcon, CheckIcon } from '@/components/Icons'
+import AutoLockSettings from '@/components/settings/AutoLockSettings'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -78,6 +79,10 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
           <input value="Bursar" disabled
             className="input" style={{ opacity:0.5, cursor:'not-allowed' }}/>
         </div>
+      </div>
+
+      <div style={{ marginTop: 'var(--space-6)' }}>
+        <AutoLockSettings userId={userId} />
       </div>
 
       <button onClick={save} disabled={saving} className="pressable"
