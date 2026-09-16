@@ -68,8 +68,8 @@ export default function ClinicClient({ profile, school, userId }: Props) {
         <>
           {withAllergies.length > 0 && (
             <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
-              <KpiCard label="With Allergies Noted" value={withAllergies.length} icon={<AlertCircleIcon size={16} />} color="var(--danger)" valueColor="var(--danger)" />
-              <KpiCard label="Students" value={rows.length} icon={<PeopleIcon size={16} />} color={sc} />
+              <KpiCard label="With Allergies Noted" value={withAllergies.length} icon={<AlertCircleIcon size={16} />} valueColor="var(--danger)" />
+              <KpiCard label="Students" value={rows.length} icon={<PeopleIcon size={16} />} />
             </div>
           )}
 

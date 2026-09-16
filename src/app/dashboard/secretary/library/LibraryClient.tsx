@@ -141,9 +141,9 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
     <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Library" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Stats */}
       <div className={styles.statsRow}>
-        <KpiCard label="Titles" value={books.length} icon={<BookIcon size={16} />} color={sc} />
-        <KpiCard label="On Loan" value={activeLoans.length} icon={<BookOpenIcon size={16} />} color="#3B82F6" />
-        <KpiCard label="Overdue" value={overdueCount} icon={<AlertCircleIcon size={16} />} color={overdueCount > 0 ? '#EF4444' : '#10B981'} valueColor={overdueCount > 0 ? '#EF4444' : '#10B981'} />
+        <KpiCard label="Titles" value={books.length} icon={<BookIcon size={16} />} />
+        <KpiCard label="On Loan" value={activeLoans.length} icon={<BookOpenIcon size={16} />} />
+        <KpiCard label="Overdue" value={overdueCount} icon={<AlertCircleIcon size={16} />} valueColor={overdueCount > 0 ? '#EF4444' : '#10B981'} />
       </div>
 
       {/* Tabs */}

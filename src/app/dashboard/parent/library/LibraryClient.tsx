@@ -101,8 +101,8 @@ export default function LibraryClient({ profile, school, userId }: Props) {
                 const overdueCount = activeLoans.filter(l => new Date(l.due_at) < new Date()).length
                 return (
                   <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
-                    <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} color={sc} context="Currently borrowed" />
-                    <KpiCard label="Overdue" value={overdueCount} icon={<AlertCircleIcon size={16} />} color={overdueCount > 0 ? '#EF4444' : '#10B981'} valueColor={overdueCount > 0 ? '#EF4444' : '#10B981'} context={overdueCount > 0 ? 'Return needed' : 'All on time'} />
+                    <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} context="Currently borrowed" />
+                    <KpiCard label="Overdue" value={overdueCount} icon={<AlertCircleIcon size={16} />} valueColor={overdueCount > 0 ? '#EF4444' : '#10B981'} context={overdueCount > 0 ? 'Return needed' : 'All on time'} />
                   </div>
                 )
               })()}

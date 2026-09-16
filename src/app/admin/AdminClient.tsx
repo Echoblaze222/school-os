@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import {
+  ZapIcon, SunIcon, MoonIcon, BarChartIcon, SchoolIcon, WalletIcon,
+  PeopleIcon, GraduationCapIcon, MapPinIcon, EyeIcon, PauseIcon, PlayIcon, RefreshIcon,
+} from '@/components/Icons'
 import styles from './admin.module.css'
 
 interface Props {
@@ -70,7 +74,7 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.adminBadge}>⚡</div>
+          <div className={styles.adminBadge}><ZapIcon size={18} color="white" /></div>
           <div>
             <p className={styles.platformName}>SchoolOS</p>
             <p className={styles.adminLabel}>Platform Admin</p>
@@ -79,7 +83,7 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
         <div className={styles.headerRight}>
           <span className={styles.adminEmail}>{adminEmail}</span>
           <button className={styles.iconBtn} onClick={toggleTheme}>
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
           </button>
         </div>
       </header>
@@ -91,10 +95,13 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
             key={t}
             className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
             onClick={() => setTab(t)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}
           >
-            {t === 'overview' ? '📊 Overview' :
-             t === 'schools'  ? '🏫 Schools' :
-             t === 'revenue'  ? '💰 Revenue' : '👥 Users'}
+            {t === 'overview' && <BarChartIcon size={14} />}
+            {t === 'schools'  && <SchoolIcon size={14} />}
+            {t === 'revenue'  && <WalletIcon size={14} />}
+            {t === 'users'    && <PeopleIcon size={14} />}
+            {t === 'overview' ? 'Overview' : t === 'schools' ? 'Schools' : t === 'revenue' ? 'Revenue' : 'Users'}
           </button>
         ))}
       </div>
@@ -107,19 +114,19 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
             {/* Key stats */}
             <div className={styles.statsGrid}>
               <div className={`glass-card ${styles.bigStatCard}`}>
-                <span className={styles.bigStatEmoji}>🏫</span>
+                <span className={styles.bigStatEmoji}><SchoolIcon size={32} /></span>
                 <p className={styles.bigStatValue}>{stats.totalSchools}</p>
                 <p className={styles.bigStatLabel}>Total Schools</p>
                 <p className={styles.bigStatSub}>{stats.activeSchools} active</p>
               </div>
               <div className={`glass-card ${styles.bigStatCard}`}>
-                <span className={styles.bigStatEmoji}>👥</span>
+                <span className={styles.bigStatEmoji}><PeopleIcon size={32} /></span>
                 <p className={styles.bigStatValue}>{stats.totalUsers.toLocaleString()}</p>
                 <p className={styles.bigStatLabel}>Total Users</p>
                 <p className={styles.bigStatSub}>{stats.totalStudents.toLocaleString()} students</p>
               </div>
               <div className={`glass-card ${styles.bigStatCard} ${styles.revenueCard}`}>
-                <span className={styles.bigStatEmoji}>💰</span>
+                <span className={styles.bigStatEmoji}><WalletIcon size={32} /></span>
                 <p className={styles.bigStatValue}>{fmt(stats.totalRevenue)}</p>
                 <p className={styles.bigStatLabel}>Platform Revenue</p>
                 <p className={styles.bigStatSub}>All time</p>
@@ -127,7 +134,9 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
             </div>
 
             {/* Recent schools */}
-            <p className={styles.sectionLabel}>🏫 Recently Registered Schools</p>
+            <p className={styles.sectionLabel} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <SchoolIcon size={14} /> Recently Registered Schools
+            </p>
             {recentSchools.map(school => (
               <div key={school.id} className={`glass-card ${styles.schoolRow}`}>
                 <div className={styles.schoolLeft}>
@@ -145,9 +154,10 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
                     className={styles.toggleBtn}
                     onClick={() => toggleSchoolStatus(school.id, school.status)}
                     disabled={activatingId === school.id}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}
                   >
-                    {activatingId === school.id ? '⏳' :
-                     school.status === 'active' ? '🔴 Suspend' : '🟢 Activate'}
+                    {activatingId === school.id ? <RefreshIcon size={13} /> :
+                     school.status === 'active' ? <><PauseIcon size={13} /> Suspend</> : <><PlayIcon size={13} /> Activate</>}
                   </button>
                 </div>
               </div>
@@ -168,23 +178,25 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
                       {school.status}
                     </span>
                   </div>
-                  <p className={styles.schoolCardLocation}>
-                    📍 {[school.city, school.state].filter(Boolean).join(', ')}
+                  <p className={styles.schoolCardLocation} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPinIcon size={12} /> {[school.city, school.state].filter(Boolean).join(', ')}
                   </p>
                   <p className={styles.schoolCardDate}>Joined {fmtDate(school.created_at)}</p>
                   <div className={styles.schoolCardActions}>
                     <button
                       className={styles.viewBtn}
                       onClick={() => window.open(`/admin/schools/${school.id}`, '_blank')}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}
                     >
-                      👁 View
+                      <EyeIcon size={13} /> View
                     </button>
                     <button
                       className={`${styles.toggleBtn} ${school.status === 'active' ? styles.suspendBtn : styles.activateBtn}`}
                       onClick={() => toggleSchoolStatus(school.id, school.status)}
                       disabled={activatingId === school.id}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}
                     >
-                      {school.status === 'active' ? '🔴 Suspend' : '🟢 Activate'}
+                      {school.status === 'active' ? <><PauseIcon size={13} /> Suspend</> : <><PlayIcon size={13} /> Activate</>}
                     </button>
                   </div>
                 </div>
@@ -197,7 +209,9 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
         {tab === 'revenue' && (
           <>
             <div className={`glass-card ${styles.totalRevCard}`}>
-              <p className={styles.totalRevLabel}>💰 Total Platform Revenue</p>
+              <p className={styles.totalRevLabel} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <WalletIcon size={14} /> Total Platform Revenue
+              </p>
               <p className={styles.totalRevAmount}>{fmt(stats.totalRevenue)}</p>
             </div>
 
@@ -226,17 +240,17 @@ export default function AdminClient({ stats, recentSchools, subscriptions, recen
           <>
             <div className={styles.userStatsRow}>
               <div className={`glass-card ${styles.userStatCard}`}>
-                <p className={styles.userStatEmoji}>👥</p>
+                <p className={styles.userStatEmoji}><PeopleIcon size={24} /></p>
                 <p className={styles.userStatVal}>{stats.totalUsers.toLocaleString()}</p>
                 <p className={styles.userStatLabel}>Total Users</p>
               </div>
               <div className={`glass-card ${styles.userStatCard}`}>
-                <p className={styles.userStatEmoji}>🎓</p>
+                <p className={styles.userStatEmoji}><GraduationCapIcon size={24} /></p>
                 <p className={styles.userStatVal}>{stats.totalStudents.toLocaleString()}</p>
                 <p className={styles.userStatLabel}>Students</p>
               </div>
               <div className={`glass-card ${styles.userStatCard}`}>
-                <p className={styles.userStatEmoji}>🏫</p>
+                <p className={styles.userStatEmoji}><SchoolIcon size={24} /></p>
                 <p className={styles.userStatVal}>{stats.totalSchools}</p>
                 <p className={styles.userStatLabel}>Schools</p>
               </div>

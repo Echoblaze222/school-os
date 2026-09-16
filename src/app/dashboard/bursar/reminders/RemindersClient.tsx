@@ -11,7 +11,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
-import { BellIcon, PeopleIcon } from '@/components/Icons'
+import { BellIcon, PeopleIcon, MegaphoneIcon, ClipboardIcon, AlertCircleIcon, CheckCircleIcon, EditIcon, SparkleIcon, SendIcon } from '@/components/Icons'
 import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -471,8 +471,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         {(['send', 'history'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
-            style={tab === t ? { background: sc, color: '#fff', borderColor: sc } : {}}>
-            {t === 'send' ? '📢 Send Reminders' : '📋 Sent History'}
+            style={tab === t ? { background: sc, color: '#fff', borderColor: sc, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' } : { display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+            {t === 'send' ? <MegaphoneIcon size={15} /> : <ClipboardIcon size={15} />}
+            {t === 'send' ? 'Send Reminders' : 'Sent History'}
           </button>
         ))}
       </div>
@@ -510,8 +511,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
               borderRadius: 8, marginBottom: 'var(--space-4)',
               fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              ⚠️ {error}
+              <AlertCircleIcon size={15} /> {error}
             </div>
           )}
 
@@ -521,8 +523,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10,
               marginBottom: 'var(--space-4)', fontSize: '0.85rem',
               fontWeight: 700, color: 'var(--success)',
+              display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              ✓ {sentCount} reminder{sentCount !== 1 ? 's' : ''} sent successfully and saved to records
+              <CheckCircleIcon size={15} /> {sentCount} reminder{sentCount !== 1 ? 's' : ''} sent successfully and saved to records
             </div>
           )}
 
@@ -533,8 +536,8 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)',
               marginBottom: 'var(--space-4)',
             }}>
-              <p style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--space-3)' }}>
-                📝 Compose Reminder, {selected.size} student{selected.size !== 1 ? 's' : ''}
+              <p style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--space-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <EditIcon size={14} /> Compose Reminder, {selected.size} student{selected.size !== 1 ? 's' : ''}
               </p>
 
               {/* Toggle custom vs default */}
@@ -546,8 +549,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                     border: `1px solid ${!useCustom ? sc : 'var(--input-border)'}`,
                     background: !useCustom ? sc + '20' : 'var(--input-bg)',
                     color: !useCustom ? sc : 'var(--text-muted)', cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
                   }}>
-                  ✨ Auto (personalised)
+                  <SparkleIcon size={13} /> Auto (personalised)
                 </button>
                 <button
                   onClick={() => setUseCustom(true)}
@@ -556,8 +560,9 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                     border: `1px solid ${useCustom ? sc : 'var(--input-border)'}`,
                     background: useCustom ? sc + '20' : 'var(--input-bg)',
                     color: useCustom ? sc : 'var(--text-muted)', cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
                   }}>
-                  ✏️ Write custom
+                  <EditIcon size={13} /> Write custom
                 </button>
               </div>
 
@@ -605,10 +610,11 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                   background: sc, color: '#fff', border: 'none', borderRadius: 8,
                   fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
                   opacity: (sending || (useCustom && !customMsg.trim())) ? 0.6 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}>
                 {sending
                   ? `Sending… (${sentCount}/${selected.size})`
-                  : `📤 Send to ${selected.size} Parent${selected.size !== 1 ? 's' : ''}`}
+                  : <><SendIcon size={15} color="#fff" /> Send to {selected.size} Parent{selected.size !== 1 ? 's' : ''}</>}
               </button>
             </div>
           )}
@@ -664,7 +670,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                             {d.class_level}
                             {d.parent_name
                               ? <span style={{ color: 'var(--success)' }}> · {d.parent_name}</span>
-                              : <span style={{ color: '#F59E0B' }}> · ⚠ No parent linked</span>
+                              : <span style={{ color: '#F59E0B', display: 'inline-flex', alignItems: 'center', gap: 3 }}> · <AlertCircleIcon size={11} /> No parent linked</span>
                             }
                           </p>
                         </div>

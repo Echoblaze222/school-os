@@ -201,10 +201,10 @@ export default function ReportsClient({ profile, school, userId }: Props) {
               {tab === 'summary' && (
                 <>
                   <div className={styles.statsRow} style={{ marginBottom: 'var(--space-5)' }}>
-                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} color="#10B981" valueColor="#10B981" />
-                    <KpiCard label="Students Paid" value={report.paidCount} icon={<CheckCircleIcon size={16} />} color={sc} />
-                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
-                    <KpiCard label="Total Students" value={report.studentCount} icon={<UsersIcon size={16} />} color="#F59E0B" />
+                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} valueColor="#10B981" />
+                    <KpiCard label="Students Paid" value={report.paidCount} icon={<CheckCircleIcon size={16} />} />
+                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} valueColor="#EF4444" />
+                    <KpiCard label="Total Students" value={report.studentCount} icon={<UsersIcon size={16} />} />
                   </div>
 
                   <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',

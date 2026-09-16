@@ -460,9 +460,9 @@ export default function StaffClient({ profile, school, userId }: Props) {
       <div className={styles.container}>
         {/* Stats strip */}
         <div className={styles.statsRow}>
-          <KpiCard label="Total Staff" value={staff.length} icon={<PeopleIcon size={16} />} color={sc} />
+          <KpiCard label="Total Staff" value={staff.length} icon={<PeopleIcon size={16} />} />
           {Object.entries(roleCounts).filter(([, c]) => c > 0).map(([r, c]) => (
-            <KpiCard key={r} label={`${r.charAt(0).toUpperCase() + r.slice(1)}s`} value={c} icon={<PeopleIcon size={16} />} color={ROLE_COLORS[r] ?? sc} valueColor={ROLE_COLORS[r] ?? sc} />
+            <KpiCard key={r} label={`${r.charAt(0).toUpperCase() + r.slice(1)}s`} value={c} icon={<PeopleIcon size={16} />} />
           ))}
         </div>
 
