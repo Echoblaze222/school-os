@@ -100,7 +100,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       setExpiresAt(new Date(data.attempt.expiresAt).getTime())
       setPhase('in_progress')
     } catch (err: any) {
-      setError('Network error — check your connection and try again.')
+      setError('Network error. Check your connection and try again.')
       setPhase('error')
     }
   }
@@ -173,7 +173,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       })
       const data = await res.json()
       if (!res.ok || !data.ok) {
-        if (data.expired) { setError('Time is up — your quiz was submitted automatically.'); await handleSubmit(true); return }
+        if (data.expired) { setError('Time is up. Your quiz was submitted automatically.'); await handleSubmit(true); return }
         // Requeue this batch so the next successful save picks it up.
         pendingAnswers.current = { ...batch, ...pendingAnswers.current }
         setSaveStatus('offline')
@@ -205,7 +205,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       const res = await fetch(`/api/examination/quizzes/${quizId}/submit`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok || !data.ok) {
-        setError(data.error || "We couldn't submit your quiz. Your answers are saved — try again.")
+        setError(data.error || "We couldn't submit your quiz. Your answers are saved, try again.")
         setSubmitting(false)
         return
       }
@@ -213,7 +213,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       setPhase('submitted')
       setShowConfirm(false)
     } catch {
-      setError("Couldn't reach the server to submit. Your answers are saved — try again when you're back online.")
+      setError("Couldn't reach the server to submit. Your answers are saved, try again when you're back online.")
     } finally {
       setSubmitting(false)
     }
@@ -352,7 +352,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   const SaveIndicator = () => {
     if (saveStatus === 'saving') return <><RefreshIcon size={11} color="var(--text-faint)" /> Saving...</>
     if (saveStatus === 'saved')  return <><SaveIcon size={11} color="var(--success)" /> Saved</>
-    if (saveStatus === 'offline') return <><WifiOffIcon size={11} color="var(--warning)" /> Offline — retrying</>
+    if (saveStatus === 'offline') return <><WifiOffIcon size={11} color="var(--warning)" /> Offline, retrying</>
     return null
   }
 

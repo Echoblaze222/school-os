@@ -137,7 +137,7 @@ export async function POST(req: Request) {
     // Most common cause: the target participant isn't currently connected
     // to the room (already left). Not a server error — report it plainly.
     logger.warn('live permission change failed', { traceId, onlineClassId, participantIdentity, error: (err as Error).message })
-    return NextResponse.json({ error: "Couldn't update that participant — they may have already left." }, { status: 409 })
+    return NextResponse.json({ error: "Couldn't update that participant. They may have already left." }, { status: 409 })
   }
 
   await auditLog(supabase, {

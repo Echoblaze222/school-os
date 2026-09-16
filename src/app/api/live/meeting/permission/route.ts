@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     })
   } catch (err) {
     logger.warn('meeting permission change failed', { traceId, meetingId, participantIdentity, error: (err as Error).message })
-    return NextResponse.json({ error: "Couldn't update that participant — they may have already left." }, { status: 409 })
+    return NextResponse.json({ error: "Couldn't update that participant. They may have already left." }, { status: 409 })
   }
 
   await auditLog(supabase, {

@@ -132,7 +132,7 @@ function StudentRoomInner({ onlineClassId }: { onlineClassId: string }) {
       <div className={styles.main}>
         {connectionState === ConnectionState.Reconnecting && (
           <div className={`${styles.banner} ${styles.bannerWarning}`}>
-            Connection interrupted — reconnecting…
+            Connection interrupted, reconnecting…
           </div>
         )}
 
@@ -163,7 +163,7 @@ function StudentRoomInner({ onlineClassId }: { onlineClassId: string }) {
                 onClick={selfRaised ? lowerHand : raiseHand}
                 className={`${styles.pillBtn} ${selfRaised ? styles.raiseHandBtnActive : styles.raiseHandBtn}`}
               >
-                {selfRaised ? '✋ Hand raised — tap to lower' : '✋ Raise hand / request to speak'}
+                {selfRaised ? '✋ Hand raised, tap to lower' : '✋ Raise hand / request to speak'}
               </button>
             )}
             {canSpeak && <span className={styles.speakingTag}>You've been given permission to speak</span>}

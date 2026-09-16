@@ -27,7 +27,7 @@ const PAYMENT_OPTIONS = [
     id:          'full',
     label:       'Pay in Full',
     amountDue:   SETUP_FEE,
-    description: `₦${SETUP_FEE.toLocaleString()} today — setup fee fully settled`,
+    description: `₦${SETUP_FEE.toLocaleString()} today, setup fee fully settled`,
     color:       '#800020',
   },
   {
@@ -442,7 +442,7 @@ export default function RegisterSchoolPage() {
             <div className={styles.stepContent}>
               <h2 className={styles.stepTitle}>Setup Fee Payment</h2>
               <p className={styles.stepSubtitle}>
-                Every school gets the full SchoolOS feature set — no tiers to choose.
+                Every school gets the full SchoolOS feature set. No tiers to choose.
                 One-time setup fee of ₦{SETUP_FEE.toLocaleString()}, paid in full or across 3 months.
               </p>
 
@@ -490,7 +490,7 @@ export default function RegisterSchoolPage() {
               </div>
               <p className={styles.hint}>
                 Recurring per-student, per-term billing starts after onboarding and is based on
-                your active student count — you'll see that rate on your first billing cycle, not here.
+                your active student count. You'll see that rate on your first billing cycle, not here.
               </p>
             </div>
           )}

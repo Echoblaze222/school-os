@@ -170,7 +170,7 @@ function MeetingRoomInner({ meetingId, isHost, initialRecording, backHref }: { m
     <div className={styles.page}>
       <div className={styles.main}>
         {connectionState === ConnectionState.Reconnecting && (
-          <div className={`${styles.banner} ${styles.bannerWarning}`}>Connection interrupted — reconnecting…</div>
+          <div className={`${styles.banner} ${styles.bannerWarning}`}>Connection interrupted, reconnecting…</div>
         )}
         {recording && (
           <div className={`${styles.banner} ${styles.bannerDanger}`}>● This meeting is being recorded</div>

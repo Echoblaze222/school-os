@@ -169,7 +169,7 @@ export default function StudentsClient({ students: init, profile, school, userId
           : s))
         setMsg('Student updated!')
         setModal(false)
-      } else setMsg(error?.message ?? 'Failed to update student — the change may have been blocked.')
+      } else setMsg(error?.message ?? 'Failed to update student. The change may have been blocked.')
     } else {
       if (!form.email.trim()) { setMsg('Email is required.'); setSaving(false); return }
       const res = await fetch('/api/secretary/create-user', {

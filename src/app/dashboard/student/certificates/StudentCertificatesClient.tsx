@@ -136,7 +136,7 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
             </div>
 
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-faint)' }}>
-              Anyone with this link — an employer, another school — can verify this certificate is genuine without needing an account.
+              Anyone with this link (an employer, another school) can verify this certificate is genuine without needing an account.
             </p>
           </div>
         ))}

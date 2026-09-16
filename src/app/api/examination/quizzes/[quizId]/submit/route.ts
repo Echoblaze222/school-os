@@ -90,6 +90,6 @@ export async function POST(_req: Request, { params }: { params: Promise<{ quizId
     })
   } catch (err: any) {
     await admin.from('idempotency_keys').update({ status: 'failed' }).eq('id', idRow.id)
-    return NextResponse.json({ ok: false, error: `Submission failed: ${err.message}. Your answers are still saved — try submitting again.` }, { status: 500 })
+    return NextResponse.json({ ok: false, error: `Submission failed: ${err.message}. Your answers are still saved, try submitting again.` }, { status: 500 })
   }
 }

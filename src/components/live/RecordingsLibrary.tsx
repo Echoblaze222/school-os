@@ -121,7 +121,7 @@ export default function RecordingsLibrary() {
             {/* eslint-disable-next-line jsx-a11y/media-has-caption -- recordings have no separate caption track yet */}
             <video src={playing.url} controls autoPlay className={styles.modalVideo} />
             <p className={styles.modalHint}>
-              This link expires shortly — reopen from the list if it stops working.
+              This link expires shortly. Reopen from the list if it stops working.
             </p>
           </div>
         </div>

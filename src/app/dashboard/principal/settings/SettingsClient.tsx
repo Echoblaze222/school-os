@@ -677,7 +677,7 @@ export default function SettingsClient({ profile, school }: Props) {
             {/* ── Build Image ── */}
             <p className={styles.sectionLabel}>School Build Image</p>
             <div className={`glass-card ${styles.card}`}>
-              <p className={styles.imageHint}>Optional — shown on your login page.</p>
+              <p className={styles.imageHint}>Optional. Shown on your login page.</p>
               <LearnMore>
                 Your brand color is used instead if you skip this.
               </LearnMore>
@@ -960,7 +960,7 @@ export default function SettingsClient({ profile, school }: Props) {
                   <label className={styles.label} style={{ marginBottom: 2 }}>List this school publicly</label>
                   <p className={styles.fieldHint} style={{ margin: 0 }}>
                     Turns on your profile at /schools/{school.slug ?? '...'} and makes you searchable on /find-schools.
-                    Off by default — nothing below is visible to parents until this is on.
+                    Off by default. Nothing below is visible to parents until this is on.
                   </p>
                 </div>
                 <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
@@ -1017,7 +1017,7 @@ export default function SettingsClient({ profile, school }: Props) {
                     onChange={e => setPublicEmail(e.target.value)}
                     placeholder="admissions@yourschool.edu.ng"
                   />
-                  <p className={styles.fieldHint}>Shown to visitors — separate from your private official email in Contact.</p>
+                  <p className={styles.fieldHint}>Shown to visitors, separate from your private official email in Contact.</p>
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Public Phone</label>

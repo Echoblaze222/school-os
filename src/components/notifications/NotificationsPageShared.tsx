@@ -356,7 +356,7 @@ export default function NotificationsPageShared({
           color: '#eab308', fontSize: '0.78rem',
           display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          <AlertIcon size={13} /> Reconnecting — new notifications may be delayed
+          <AlertIcon size={13} /> Reconnecting, new notifications may be delayed
         </div>
       )}
 

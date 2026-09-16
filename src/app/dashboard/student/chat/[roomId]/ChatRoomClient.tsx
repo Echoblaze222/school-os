@@ -1216,7 +1216,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
       return
     }
     if (file.size > CUSTOM_STICKER_MAX_BYTES) {
-      setStickerError('That image is too large — stickers must be under 1MB.')
+      setStickerError('That image is too large. Stickers must be under 1MB.')
       return
     }
     if (customStickers.length >= CUSTOM_STICKER_MAX_COUNT) {
@@ -1235,7 +1235,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
     setUploadingSticker(false)
 
     if (uploadError) {
-      setStickerError('Upload failed — please try again.')
+      setStickerError('Upload failed. Please try again.')
       return
     }
 

@@ -131,7 +131,7 @@ export async function POST(req: Request) {
       queued: true,
       jobId: enqueueResult.jobId,
       totalRecipients: scopedRecipientIds.length,
-      message: `Queued for ${scopedRecipientIds.length} recipients — delivery runs in the background and completes within a minute.`,
+      message: `Queued for ${scopedRecipientIds.length} recipients. Delivery runs in the background and completes within a minute.`,
     })
   }
 
