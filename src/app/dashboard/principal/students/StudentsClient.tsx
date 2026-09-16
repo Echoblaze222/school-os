@@ -449,10 +449,10 @@ export default function StudentsClient({ profile, school, userId }: Props) {
       <div className={styles.container}>
         {/* Summary */}
         <div className={styles.statsRow}>
-          <KpiCard label="Total Students" value={students.length} icon={<GraduationCapIcon size={16} />} color={sc} />
-          <KpiCard label="Male" value={students.filter(s => s.gender?.toLowerCase() === 'male').length} icon={<GraduationCapIcon size={16} />} color="#10B981" />
-          <KpiCard label="Female" value={students.filter(s => s.gender?.toLowerCase() === 'female').length} icon={<GraduationCapIcon size={16} />} color="#EC4899" />
-          <KpiCard label="Classes" value={classes.length} icon={<LayersIcon size={16} />} color="#8B5CF6" />
+          <KpiCard label="Total Students" value={students.length} icon={<GraduationCapIcon size={16} />} />
+          <KpiCard label="Male" value={students.filter(s => s.gender?.toLowerCase() === 'male').length} icon={<GraduationCapIcon size={16} />} />
+          <KpiCard label="Female" value={students.filter(s => s.gender?.toLowerCase() === 'female').length} icon={<GraduationCapIcon size={16} />} />
+          <KpiCard label="Classes" value={classes.length} icon={<LayersIcon size={16} />} />
         </div>
 
         {/* Toolbar */}

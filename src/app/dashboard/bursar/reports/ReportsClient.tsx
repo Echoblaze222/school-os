@@ -197,10 +197,10 @@ export default function ReportsClient({ profile, school, userId }: Props) {
               {tab === 'summary' && (
                 <>
                   <div className={`${styles.statsRow} stagger`} style={{ marginBottom:'var(--space-5)' }}>
-                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} color="var(--success)" valueColor="var(--success)" context="This term" />
-                    <KpiCard label="Students Paid" value={report.paidCount} icon={<CheckCircleIcon size={16} />} color={sc} context="Fully settled" />
-                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} color="var(--danger)" valueColor="var(--danger)" context="Outstanding" />
-                    <KpiCard label="Total Students" value={report.studentCount} icon={<UsersIcon size={16} />} color="#F59E0B" context="On roll" />
+                    <KpiCard label="Collected" value={fmtAmt(report.totalCollected)} icon={<WalletIcon size={16} />} valueColor="var(--success)" context="This term" />
+                    <KpiCard label="Students Paid" value={report.paidCount} icon={<CheckCircleIcon size={16} />} context="Fully settled" />
+                    <KpiCard label="Not Paid" value={report.unpaidCount} icon={<XIcon size={16} />} valueColor="var(--danger)" context="Outstanding" />
+                    <KpiCard label="Total Students" value={report.studentCount} icon={<UsersIcon size={16} />} context="On roll" />
                   </div>
 
                   <div className="animate-fade-up" style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',

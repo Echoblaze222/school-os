@@ -146,9 +146,9 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
         {/* Stats */}
         <div style={c.statsRow}>
           <KpiCard label="Students" value={subs.length} icon={<PeopleIcon size={16} />} />
-          <KpiCard label="Submitted" value={counts.submitted} icon={<CheckCircleIcon size={16} />} color="#10B981" />
+          <KpiCard label="Submitted" value={counts.submitted} icon={<CheckCircleIcon size={16} />} />
           <KpiCard label="Graded" value={counts.graded} icon={<AwardIcon size={16} />} />
-          <KpiCard label="Graded Rate" value={`${gradedPct}%`} icon={<PercentIcon size={16} />} color="var(--brand)" valueColor="var(--text-accent)" />
+          <KpiCard label="Graded Rate" value={`${gradedPct}%`} icon={<PercentIcon size={16} />} valueColor="var(--text-accent)" />
         </div>
 
         {/* Progress bar */}

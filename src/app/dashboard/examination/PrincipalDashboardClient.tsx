@@ -134,7 +134,7 @@ export default function PrincipalDashboardClient({
           <KpiCard label="Teachers" value={counts.teacherCount ?? 0} icon={<UserIcon size={16} />} context="Active staff" />
           <KpiCard label="Classes" value={counts.classCount ?? 0} icon={<LayersIcon size={16} />} context="This session" />
           <KpiCard label="Fees Collected" value={counts.feesCollectedDisplay ?? '—'} icon={<WalletIcon size={16} />} context="This term" />
-          <KpiCard label="Outstanding Fees" value={counts.outstandingFeesDisplay ?? '—'} icon={<WalletIcon size={16} />} context="Requires attention" color="var(--status-warn, #E4572E)" />
+          <KpiCard label="Outstanding Fees" value={counts.outstandingFeesDisplay ?? '—'} icon={<WalletIcon size={16} />} context="Requires attention" valueColor="var(--status-warn, #E4572E)" />
         </div>
 
         {/* Animated graphical stats - the numbers that matter most, as gauges */}

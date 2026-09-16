@@ -81,10 +81,10 @@ export default function RecordsClient({ profile, school, userId }: Props) {
             {tab === 'summary' && (
               <>
                 <div className={styles.statsRow} style={{ marginBottom:'var(--space-5)' }}>
-                  <KpiCard label="Attendance Rate" value={`${rate}%`} icon={<PercentIcon size={16} />} color="#10B981" valueColor="#10B981" />
-                  <KpiCard label="Present" value={present} icon={<CheckCircleIcon size={16} />} color="#10B981" valueColor="#10B981" />
-                  <KpiCard label="Absent" value={absent} icon={<XIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
-                  <KpiCard label="Late" value={late} icon={<ClockIcon size={16} />} color="#F59E0B" valueColor="#F59E0B" />
+                  <KpiCard label="Attendance Rate" value={`${rate}%`} icon={<PercentIcon size={16} />} valueColor="#10B981" />
+                  <KpiCard label="Present" value={present} icon={<CheckCircleIcon size={16} />} valueColor="#10B981" />
+                  <KpiCard label="Absent" value={absent} icon={<XIcon size={16} />} valueColor="#EF4444" />
+                  <KpiCard label="Late" value={late} icon={<ClockIcon size={16} />} valueColor="#F59E0B" />
                 </div>
                 <div className={styles.progressCard}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>

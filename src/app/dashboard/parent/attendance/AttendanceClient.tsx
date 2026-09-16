@@ -127,10 +127,10 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
               {/* Summary row */}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:8, marginBottom:'var(--space-5)' }}>
-                <KpiCard label="Rate" value={`${rate}%`} icon={<PercentIcon size={16} />} color={rate >= 75 ? '#10B981' : '#EF4444'} valueColor={rate >= 75 ? '#10B981' : '#EF4444'} context="This term" />
-                <KpiCard label="Present" value={summary.present} icon={<CheckCircleIcon size={16} />} color="#10B981" context="Days" />
-                <KpiCard label="Absent" value={summary.absent} icon={<XIcon size={16} />} color="#EF4444" context="Days" />
-                <KpiCard label="Late" value={summary.late} icon={<ClockIcon size={16} />} color="#F59E0B" context="Days" />
+                <KpiCard label="Rate" value={`${rate}%`} icon={<PercentIcon size={16} />} valueColor={rate >= 75 ? '#10B981' : '#EF4444'} context="This term" />
+                <KpiCard label="Present" value={summary.present} icon={<CheckCircleIcon size={16} />} context="Days" />
+                <KpiCard label="Absent" value={summary.absent} icon={<XIcon size={16} />} context="Days" />
+                <KpiCard label="Late" value={summary.late} icon={<ClockIcon size={16} />} context="Days" />
               </div>
 
               {rows.length === 0

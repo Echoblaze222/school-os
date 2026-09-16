@@ -39,8 +39,8 @@ export default function LibraryClient({ books, myLoans, profile, school, userId 
     <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="Library" featureGroups={STUDENT_FEATURE_GROUPS}>
       {activeLoans.length > 0 && (
         <div className={styles.statsRow} style={{ marginBottom: 'var(--space-4)' }}>
-          <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} color={sc} />
-          <KpiCard label="Overdue" value={activeLoans.filter(l => new Date(l.due_at) < new Date()).length} icon={<AlertCircleIcon size={16} />} color={activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981'} valueColor={activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981'} />
+          <KpiCard label="Books Out" value={activeLoans.length} icon={<BookIcon size={16} />} />
+          <KpiCard label="Overdue" value={activeLoans.filter(l => new Date(l.due_at) < new Date()).length} icon={<AlertCircleIcon size={16} />} valueColor={activeLoans.some(l => new Date(l.due_at) < new Date()) ? '#EF4444' : '#10B981'} />
         </div>
       )}
 

@@ -128,9 +128,9 @@ export default function LiveClient({ profile, school, userId }: Props) {
   ]
 
   const stats = [
-    { label: 'Active Now',    value: counts.live,  color: '#10B981', Icon: VideoIcon    },
-    { label: 'Today',         value: counts.today, color: sc,        Icon: ClockIcon    },
-    { label: 'All Sessions',  value: counts.total, color: '#F59E0B', Icon: BarChartIcon },
+    { label: 'Active Now',    value: counts.live,  valueColor: '#10B981', Icon: VideoIcon    },
+    { label: 'Today',         value: counts.today, valueColor: undefined, Icon: ClockIcon    },
+    { label: 'All Sessions',  value: counts.total, valueColor: undefined, Icon: BarChartIcon },
   ]
 
   return (
@@ -139,7 +139,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
       {/* Stats row */}
       <div className={styles.statsRow} style={{ marginBottom: 'var(--space-5)' }}>
         {stats.map(s => (
-          <KpiCard key={s.label} label={s.label} value={s.value} icon={<s.Icon size={16} />} color={s.color} valueColor={s.color} />
+          <KpiCard key={s.label} label={s.label} value={s.value} icon={<s.Icon size={16} />} valueColor={s.valueColor} />
         ))}
       </div>
 

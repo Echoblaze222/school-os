@@ -200,10 +200,10 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
 
               {/* Stats */}
               <div className={styles.statsRow} style={{ marginBottom:'var(--space-6)' }}>
-                <KpiCard label="Avg Score" value={`${avgScore}%`} icon={<BarChartIcon size={16} />} color={avgScore>=60?'#10B981':'#EF4444'} valueColor={avgScore>=60?'#10B981':'#EF4444'} context="This term" />
-                <KpiCard label="Attendance" value={`${attRate}%`} icon={<CalendarIcon size={16} />} color={attRate>=75?'#10B981':'#EF4444'} valueColor={attRate>=75?'#10B981':'#EF4444'} context="This term" />
-                <KpiCard label="Days Present" value={attendance.present} icon={<CheckCircleIcon size={16} />} color="#10B981" />
-                <KpiCard label="Days Absent" value={attendance.absent} icon={<XIcon size={16} />} color="#EF4444" />
+                <KpiCard label="Avg Score" value={`${avgScore}%`} icon={<BarChartIcon size={16} />} valueColor={avgScore>=60?'#10B981':'#EF4444'} context="This term" />
+                <KpiCard label="Attendance" value={`${attRate}%`} icon={<CalendarIcon size={16} />} valueColor={attRate>=75?'#10B981':'#EF4444'} context="This term" />
+                <KpiCard label="Days Present" value={attendance.present} icon={<CheckCircleIcon size={16} />} />
+                <KpiCard label="Days Absent" value={attendance.absent} icon={<XIcon size={16} />} />
               </div>
 
               {/* Boarding / hostel status - §21, boarding students only */}

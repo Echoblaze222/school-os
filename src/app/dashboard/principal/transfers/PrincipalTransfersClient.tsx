@@ -253,9 +253,9 @@ export default function PrincipalTransfersClient({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-            <KpiCard label="Total" value={allStudents.length} icon={<GraduationCapIcon size={16} />} color="#10B981" />
-            <KpiCard label="Active" value={allStudents.filter(s => s.is_active).length} icon={<CheckCircleIcon size={16} />} color="#3B82F6" />
-            <KpiCard label="Transfers" value={sent.length} icon={<TransferIcon size={16} />} color="#F59E0B" />
+            <KpiCard label="Total" value={allStudents.length} icon={<GraduationCapIcon size={16} />} />
+            <KpiCard label="Active" value={allStudents.filter(s => s.is_active).length} icon={<CheckCircleIcon size={16} />} />
+            <KpiCard label="Transfers" value={sent.length} icon={<TransferIcon size={16} />} />
           </div>
 
           {filteredStudents.length === 0 ? (

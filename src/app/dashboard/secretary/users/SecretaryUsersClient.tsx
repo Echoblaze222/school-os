@@ -88,7 +88,7 @@ export default function SecretaryUsersClient({ users: initial, currentUserId, pr
       {/* Stats */}
       <div className={styles.statsStrip} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-3)' }}>
         <KpiCard label="Total" value={stats.total} icon={<UsersIcon size={16} />} />
-        <KpiCard label="Active" value={stats.active} icon={<CheckCircleIcon size={16} />} color="#10B981" />
+        <KpiCard label="Active" value={stats.active} icon={<CheckCircleIcon size={16} />} />
         <KpiCard label="Students" value={stats.students} icon={<GraduationCapIcon size={16} />} />
         <KpiCard label="Teachers" value={stats.teachers} icon={<PeopleIcon size={16} />} />
       </div>

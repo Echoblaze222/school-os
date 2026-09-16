@@ -139,9 +139,9 @@ export default function NoticesClient({ profile, school, userId }: Props) {
       <div className={styles.container}>
         {/* Stats */}
         <div className={styles.statsRow}>
-          <KpiCard label="Total" value={notices.length} icon={<MegaphoneIcon size={16} />} color={sc} />
-          <KpiCard label="Urgent" value={urgentCount} icon={<AlertIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
-          <KpiCard label="This Week" value={notices.filter(n => { const d = Date.now()-new Date(n.created_at).getTime(); return d < 86400000*7 }).length} icon={<CalendarIcon size={16} />} color="#10B981" />
+          <KpiCard label="Total" value={notices.length} icon={<MegaphoneIcon size={16} />} />
+          <KpiCard label="Urgent" value={urgentCount} icon={<AlertIcon size={16} />} valueColor="#EF4444" />
+          <KpiCard label="This Week" value={notices.filter(n => { const d = Date.now()-new Date(n.created_at).getTime(); return d < 86400000*7 }).length} icon={<CalendarIcon size={16} />} />
         </div>
 
         {/* Toolbar */}

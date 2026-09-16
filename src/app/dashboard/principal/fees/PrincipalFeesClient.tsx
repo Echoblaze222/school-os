@@ -286,10 +286,10 @@ export default function PrincipalFeesClient({
 
             {/* Stats grid */}
             <div className={styles.statsGrid}>
-              <KpiCard label="Fully Paid" value={stats.fullyPaid} icon={<CheckCircleIcon size={16} />} color="#10B981" context="Settled in full" />
-              <KpiCard label="Partial" value={stats.partial} icon={<TrendingUpIcon size={16} />} color="#F59400" context="Part payment made" />
-              <KpiCard label="Pending" value={stats.pending} icon={<UsersIcon size={16} />} color="#3B82F6" context="Not yet paid" />
-              <KpiCard label="Overdue" value={stats.overdue} icon={<AlertCircleIcon size={16} />} color="#EF4444" valueColor="#EF4444" context="Past due date" />
+              <KpiCard label="Fully Paid" value={stats.fullyPaid} icon={<CheckCircleIcon size={16} />} context="Settled in full" />
+              <KpiCard label="Partial" value={stats.partial} icon={<TrendingUpIcon size={16} />} context="Part payment made" />
+              <KpiCard label="Pending" value={stats.pending} icon={<UsersIcon size={16} />} context="Not yet paid" />
+              <KpiCard label="Overdue" value={stats.overdue} icon={<AlertCircleIcon size={16} />} valueColor="#EF4444" context="Past due date" />
             </div>
 
             {/* Balance summary */}

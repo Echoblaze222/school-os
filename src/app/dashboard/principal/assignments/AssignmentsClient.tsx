@@ -197,7 +197,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
           ))}
           <KpiCard label="Overdue"
             value={assignments.filter(a => a.due_date && new Date(a.due_date) < new Date() && a.status === 'active').length}
-            icon={<AlertIcon size={16} />} color="#EF4444" valueColor="#EF4444" />
+            icon={<AlertIcon size={16} />} valueColor="#EF4444" />
         </div>
 
         {/* Toolbar */}
