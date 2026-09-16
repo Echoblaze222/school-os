@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoLock } from '@/lib/useAutoLock'
 import LockScreen from '@/components/auth/LockScreen'
+import PullToRefresh from '@/components/PullToRefresh'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefs] = useState({ enabled: true, minutes: 10 })
@@ -38,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <>
-      {children}
+      <PullToRefresh disabled={locked}>{children}</PullToRefresh>
       {locked && <LockScreen onUnlock={unlock} />}
     </>
   )
