@@ -6,10 +6,22 @@
 // calls `onReconnect` after a dropped connection recovers, so callers can
 // refetch anything that might have been missed while disconnected instead
 // of silently going stale.
+//
+// That status tracking alone doesn't catch every way this can go stale,
+// though: a backgrounded WebView (this app's Android build is a Capacitor
+// WebView) has its JS timers throttled by the OS, which silently drops
+// supabase-js's internal auth-refresh timer for the realtime socket. The
+// channel can stay reported as "SUBSCRIBED" the whole time - it never
+// hits CHANNEL_ERROR/TIMED_OUT/CLOSED, so the disconnect tracking below
+// never fires - while its JWT has actually expired and it quietly stops
+// receiving anything. useRealtimeReconnect covers that separate case: it
+// re-authenticates (and refetches) whenever the tab/WebView becomes
+// visible again, regardless of whether a "disconnect" was ever observed.
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeReconnect } from './useRealtimeReconnect'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export type RealtimeConnectionStatus = 'connecting' | 'connected' | 'disconnected'
@@ -36,9 +48,13 @@ export function useRealtimeNotifications({
   onInsertRef.current = onInsert
   onReconnectRef.current = onReconnect
 
+  // Created once and shared with useRealtimeReconnect below, so the
+  // visibility-triggered re-auth applies to this hook's own socket.
+  const [supabase] = useState(() => createClient())
+  useRealtimeReconnect(supabase, () => onReconnectRef.current?.())
+
   useEffect(() => {
     if (!userId) return
-    const supabase = createClient()
 
     const channel = supabase
       .channel(`notifications:${userId}`)
@@ -78,7 +94,7 @@ export function useRealtimeNotifications({
       window.removeEventListener('online', handleOnline)
       supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [userId, supabase])
 
   return { status }
 }

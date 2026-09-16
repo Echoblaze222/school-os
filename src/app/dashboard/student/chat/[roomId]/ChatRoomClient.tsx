@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeReconnect } from '@/hooks/useRealtimeReconnect'
 import {
   SendIcon, PaperclipIcon,
   ArrowLeftIcon, SmileIcon, MoreIcon, XIcon,
@@ -190,7 +191,10 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const [groupActionBusy,  setGroupActionBusy]  = useState(false)
 
   const router     = useRouter()
-  const supabase   = createClient()
+  // Stable across renders (previously recreated every render, which would
+  // have left useRealtimeReconnect operating on a different client instance
+  // than the one the message channel below actually subscribes on).
+  const [supabase] = useState(() => createClient())
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
   const fileRef    = useRef<HTMLInputElement>(null)
@@ -215,6 +219,14 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
   const suppressNextCloseClick = useRef(false)
 
   const schoolColor = school?.primary_color ?? '#800020'
+
+  // See useRealtimeReconnect's own header comment: a backgrounded WebView
+  // (this app's Android build) can leave the room channel below silently
+  // stuck on an expired auth token without ever reporting a disconnect.
+  // Refetching messages on resume also catches up anything sent by the
+  // other person while this device was backgrounded and the channel was
+  // stale - not just future messages from this point on.
+  useRealtimeReconnect(supabase, () => loadMessages())
 
   // ── Bootstrap ────────────────────────────────────────────
   useEffect(() => {
