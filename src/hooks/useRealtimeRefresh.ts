@@ -30,8 +30,9 @@
 
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeReconnect } from './useRealtimeReconnect'
 
 interface Options {
   /** One or more Supabase table names to watch. Pass [] to skip subscribing entirely. */
@@ -56,10 +57,17 @@ export function useRealtimeRefresh({ tables, filter, onChange, debounceMs = 400 
 
   const tableKey = tables.join(',')
 
+  // Created once and shared with useRealtimeReconnect below. Passing
+  // onChangeRef.current as the reconnect callback means a tab that comes
+  // back from the background not only re-authenticates for future events,
+  // it also refetches once immediately - catching up on anything that was
+  // missed while the socket was silently stuck on an expired token.
+  const [supabase] = useState(() => createClient())
+  useRealtimeReconnect(supabase, () => onChangeRef.current())
+
   useEffect(() => {
     if (tables.length === 0) return
 
-    const supabase = createClient()
     const channelName = `rt-refresh:${tableKey}${filter ? `:${filter}` : ''}`
     const channel = supabase.channel(channelName)
 

@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeReconnect } from '@/hooks/useRealtimeReconnect'
 import { logActivity } from '@/lib/logActivity'
 import styles from './viewer.module.css'
 
@@ -67,11 +68,21 @@ function relativeTime(iso: string): string {
 export default function AnnouncementsViewer({
   initialItems, schoolId, userId, viewerAudience,
 }: Props) {
-  const supabase = createClient()
+  // Stable across renders (was previously recreated on every render, which
+  // would have left useRealtimeReconnect operating on a different client
+  // instance than the one the channel below actually subscribes on).
+  const [supabase] = useState(() => createClient())
 
   const [items,      setItems]      = useState<Announcement[]>(initialItems)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const loggedIds = useRef<Set<string>>(new Set())
+
+  // See useRealtimeReconnect's own header comment: a backgrounded WebView
+  // (this app's Android build) can leave this channel silently stuck on an
+  // expired auth token without ever reporting a disconnect, since it's the
+  // realtime socket's own auth-refresh timer that gets silently dropped by
+  // the OS - not the channel's connection state.
+  useRealtimeReconnect(supabase)
 
   // Opening a long announcement is the one clear, discrete "read" action
   // available here (short ones are just visible in the list with nothing to
@@ -118,7 +129,7 @@ export default function AnnouncementsViewer({
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [schoolId, viewerAudience])
+  }, [schoolId, viewerAudience, supabase])
 
   // Filter: show announcements addressed to this viewer
   const displayed = items.filter(a =>

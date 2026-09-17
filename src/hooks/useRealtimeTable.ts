@@ -29,6 +29,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeReconnect } from './useRealtimeReconnect'
 
 interface Options<T extends { id: string }> {
   /** Supabase table name, e.g. 'announcements' */
@@ -61,9 +62,12 @@ export function useRealtimeTable<T extends { id: string }>({
   const rowsRef = useRef<T[]>(initial)
   rowsRef.current = rows
 
-  useEffect(() => {
-    const supabase = createClient()
+  // Created once and shared with useRealtimeReconnect below, so both are
+  // operating on the same underlying realtime socket.
+  const [supabase] = useState(() => createClient())
+  useRealtimeReconnect(supabase)
 
+  useEffect(() => {
     // Build channel name: unique per table + filter so multiple instances
     // on the same page don't collide.
     const channelName = filter
