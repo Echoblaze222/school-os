@@ -282,30 +282,46 @@ export async function middleware(request: NextRequest) {
     // security boundary" cuts both ways: middleware is the outer floor,
     // the route's own check is the inner one, neither alone is enough.
     const appointmentTypes = APPOINTMENT_DASHBOARD_SEGMENTS[roleSegment]
-    if (appointmentTypes && profile?.role !== 'principal') {
-      const { data: appt } = await supabase
-        .from('appointments')
-        .select('id')
-        .eq('profile_id', user.id)
-        .eq('school_id', profile?.school_id ?? '')
-        .eq('status', 'active')
-        .in('appointment_type', appointmentTypes)
-        .limit(1)
-        .maybeSingle()
+    const needsAppointmentCheck = !!appointmentTypes && profile?.role !== 'principal'
+    const needsSchoolCheck = !!(profile && profile.school_id)
 
-      if (!appt) {
-        const home = ROLE_HOME[profile?.role ?? ''] ?? '/login'
-        return NextResponse.redirect(new URL(home, request.url))
-      }
+    // The appointment-boundary check and the school-lock check are
+    // independent of each other (neither's result depends on the other),
+    // so fire both queries concurrently instead of sequentially. This
+    // trims one full Supabase round-trip off every /dashboard navigation
+    // that needs both - middleware runs before the page starts rendering,
+    // so this latency was previously paid on every single page-to-page
+    // click. Redirect priority (appointment boundary still wins over
+    // school lock, matching the original sequential order) is preserved
+    // below even though both queries have already resolved by then.
+    const [apptResult, schoolResult] = await Promise.all([
+      needsAppointmentCheck
+        ? supabase
+            .from('appointments')
+            .select('id')
+            .eq('profile_id', user.id)
+            .eq('school_id', profile?.school_id ?? '')
+            .eq('status', 'active')
+            .in('appointment_type', appointmentTypes!)
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null as { id: string } | null }),
+      needsSchoolCheck
+        ? supabase
+            .from('schools')
+            .select('setup_status, is_platform_active')
+            .eq('id', profile!.school_id)
+            .single()
+        : Promise.resolve({ data: null as { setup_status: string; is_platform_active: boolean } | null }),
+    ])
+
+    if (needsAppointmentCheck && !apptResult.data) {
+      const home = ROLE_HOME[profile?.role ?? ''] ?? '/login'
+      return NextResponse.redirect(new URL(home, request.url))
     }
 
-    if (profile && profile.school_id) {
-      const { data: school } = await supabase
-        .from('schools')
-        .select('setup_status, is_platform_active')
-        .eq('id', profile.school_id)
-        .single()
-
+    if (needsSchoolCheck) {
+      const school = schoolResult.data
       if (school) {
         const isHardLocked =
           !school.is_platform_active ||
