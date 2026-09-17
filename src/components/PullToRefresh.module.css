@@ -1,0 +1,21 @@
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--brand);
+  transition: opacity 0.15s var(--ease-overshoot);
+}
+
+.icon {
+  transition: transform 0.15s ease;
+}
+
+.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
