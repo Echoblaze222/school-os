@@ -4,9 +4,9 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { UserIcon } from '@/components/Icons'
 
-interface Props { userId: string; schoolColor: string; schoolId: string }
+interface Props { userId: string; schoolColor: string; schoolId: string; onLinked?: () => void }
 
-export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props) {
+export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinked }: Props) {
   const [code,    setCode]    = useState('')
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -74,7 +74,11 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId }: Props
         if (insertErr) throw insertErr
       }
 
-      window.location.reload()
+      if (onLinked) {
+        onLinked()
+      } else {
+        window.location.reload()
+      }
     } catch (err: any) {
       console.error('linkChild error:', err)
       setError('Failed to link child: ' + (err?.message ?? 'unknown error'))

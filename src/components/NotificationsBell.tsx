@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -34,6 +35,7 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 export default function NotificationsBell({ userId, role = 'student' }: Props) {
+  const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open,          setOpen]          = useState(false)
   const [loading,       setLoading]       = useState(false)
@@ -219,7 +221,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
                   className={`${styles.notifItem} ${!n.is_read ? styles.notifUnread : ''}`}
                   onClick={() => {
                     markOneRead(n.id)
-                    if (n.action_url) window.location.href = n.action_url
+                    if (n.action_url) router.push(n.action_url)
                   }}
                 >
                   {/* Type indicator */}

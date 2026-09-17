@@ -229,7 +229,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
   // ── No children linked yet ──
   if (!children.length && !showLinkForm) {
-    return <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} />
+    return <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} onLinked={fetchChildren} />
   }
 
   const activeChild = children.find((c: any) => c.id === activeChildId) ?? children[0]
@@ -357,7 +357,8 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
         {showLinkForm && (
           <div style={{ marginBottom: 16 }}>
-            <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''} />
+            <LinkChildPrompt userId={userId} schoolColor={sc} schoolId={school?.id ?? ''}
+              onLinked={() => { fetchChildren(); setShowLinkForm(false) }} />
             <button className="pressable" onClick={() => setShowLinkForm(false)}
               style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
               Cancel
