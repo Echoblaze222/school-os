@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // src/app/dashboard/secretary/settings/SettingsClient.tsx
 
 import { useState } from 'react'
@@ -140,9 +141,9 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       {section === 'security' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <AutoLockSettings userId={userId} />
-          <a href="/forgot-password" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none' }}>
+          <Link href="/forgot-password" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none' }}>
             <KeyIcon size={16} /> Change Password
-          </a>
+          </Link>
           <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-5)' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Login Code</p>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 var(--space-3)' }}>Your unique access code for this school</p>

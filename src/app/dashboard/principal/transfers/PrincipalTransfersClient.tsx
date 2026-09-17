@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // src/app/dashboard/principal/transfers/PrincipalTransfersClient.tsx
 // Mirrors the secretary TransfersClient exactly - same UI, same flow.
 
@@ -229,11 +230,11 @@ export default function PrincipalTransfersClient({
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        <a href="/dashboard/principal/transfers/pending"
+        <Link href="/dashboard/principal/transfers/pending"
           className={styles.btnGhost}
           style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
           <ClockIcon size={14} /> Pending
-        </a>
+        </Link>
         <button className={`${styles.btnPrimary} pressable`}
           onClick={() => setModal(true)}
           style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>

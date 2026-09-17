@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
@@ -92,20 +93,20 @@ export default function LibrarianDashboardClient({ userId, librarianName, profil
 
         <p className={styles.sectionLabel}>Quick access</p>
         <div className={styles.quickLinkRow}>
-          <a href="/dashboard/librarian/catalog" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          <Link href="/dashboard/librarian/catalog" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><BookIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Catalog</span>
               <span className={styles.quickLinkCount}>{stats.totalBooks} titles</span>
             </span>
-          </a>
-          <a href="/dashboard/librarian/checkouts" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/librarian/checkouts" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><RefreshIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Checkouts</span>
               <span className={styles.quickLinkCount}>{stats.openCheckouts} out</span>
             </span>
-          </a>
+          </Link>
         </div>
 
         <RecentActivity items={activities} accentColor={schoolColor} emptyLabel="No checkouts yet. They'll show up here." />

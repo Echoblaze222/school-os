@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState } from 'react'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
@@ -214,14 +215,14 @@ export default function SchoolCard({ school, onRefresh }: { school: School; onRe
               onClick={toggleLock} disabled={loading}>
               <LockIcon size={13} /> {school.setup_status === 'locked' ? 'Unlock School' : 'Lock School'}
             </button>
-            <a href={`/dashboard/principal?school=${school.id}`}
+            <Link href={`/dashboard/principal?school=${school.id}`}
               className={styles.viewBtn} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:6 }}>
               <EyeIcon size={13} /> View Portal
-            </a>
-            <a href={`/super-admin/school/${school.id}`}
+            </Link>
+            <Link href={`/super-admin/school/${school.id}`}
               className={styles.viewBtn} style={{ display:'flex', alignItems:'center', gap:6 }}>
               <SettingsIcon size={13} /> Manage / Compliance
-            </a>
+            </Link>
           </div>
         </div>
       )}

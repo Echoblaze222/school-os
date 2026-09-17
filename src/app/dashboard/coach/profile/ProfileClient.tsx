@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -480,7 +481,7 @@ export default function ProfileClient({
           gap: 'var(--space-2)',
         }}
       >
-        <a
+        <Link
           href="/forgot-password"
           style={{
             display: 'flex',
@@ -502,7 +503,7 @@ export default function ProfileClient({
         >
           <KeyIcon size={16} />
           Change Password
-        </a>
+        </Link>
 
         <button
           onClick={logout}

@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
@@ -98,34 +99,34 @@ export default function NurseDashboardClient({ userId, nurseName, profile, schoo
 
         <p className={styles.sectionLabel}>Quick access</p>
         <div className={styles.quickLinkRow}>
-          <a href="/dashboard/nurse/visits" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          <Link href="/dashboard/nurse/visits" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><HeartIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Log a Visit</span>
               <span className={styles.quickLinkCount}>{stats.visitsToday} today</span>
             </span>
-          </a>
-          <a href="/dashboard/nurse/health-records" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/nurse/health-records" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><ClipboardIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Health Records</span>
               <span className={styles.quickLinkCount}>student profiles</span>
             </span>
-          </a>
-          <a href="/dashboard/nurse/medications" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/nurse/medications" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><ClockIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Medications</span>
               <span className={styles.quickLinkCount}>{stats.pendingMeds} due</span>
             </span>
-          </a>
-          <a href="/dashboard/nurse/inventory" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/nurse/inventory" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><GridIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Inventory</span>
               <span className={styles.quickLinkCount}>{stats.lowStockItems} low</span>
             </span>
-          </a>
+          </Link>
         </div>
 
         <RecentActivity

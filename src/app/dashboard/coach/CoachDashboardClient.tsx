@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useEffect, useState } from 'react'
 import RoleHeroHeader from '@/components/RoleHeroHeader'
@@ -101,27 +102,27 @@ export default function CoachDashboardClient({ userId, coachName, profile, schoo
 
         <p className={styles.sectionLabel}>Quick access</p>
         <div className={styles.quickLinkRow}>
-          <a href="/dashboard/coach/teams" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          <Link href="/dashboard/coach/teams" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><PeopleIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Teams</span>
               <span className={styles.quickLinkCount}>{stats.teamCount} teams</span>
             </span>
-          </a>
-          <a href="/dashboard/coach/schedule" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/coach/schedule" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><CalendarIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Schedule</span>
               <span className={styles.quickLinkCount}>training</span>
             </span>
-          </a>
-          <a href="/dashboard/coach/matches" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
+          </Link>
+          <Link href="/dashboard/coach/matches" className={`glass-card ${motion.pressable} ${styles.quickLink}`}>
             <span className={styles.quickLinkIcon}><TrophyIcon size={18} /></span>
             <span className={styles.quickLinkText}>
               <span className={styles.quickLinkLabel}>Matches</span>
               <span className={styles.quickLinkCount}>{stats.upcomingMatches} upcoming</span>
             </span>
-          </a>
+          </Link>
         </div>
 
         {teams.length > 0 && (
@@ -129,11 +130,11 @@ export default function CoachDashboardClient({ userId, coachName, profile, schoo
             <p className={styles.sectionLabel}>Your teams</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 'var(--space-4)' }}>
               {teams.map(t => (
-                <a key={t.id} href="/dashboard/coach/teams" className={`glass-card ${motion.pressable}`}
+                <Link key={t.id} href="/dashboard/coach/teams" className={`glass-card ${motion.pressable}`}
                   style={{ display: 'block', padding: 12, borderRadius: 'var(--radius-lg)', textDecoration: 'none', color: 'var(--text-primary)' }}>
                   <p style={{ fontWeight: 700, fontSize: '0.84rem', margin: 0 }}>{t.name}</p>
                   <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{t.sport}</p>
-                </a>
+                </Link>
               ))}
             </div>
           </>

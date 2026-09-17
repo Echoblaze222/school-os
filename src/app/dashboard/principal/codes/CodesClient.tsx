@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // src/app/dashboard/principal/codes/CodesClient.tsx
 // FIXED: Added missing thStyle/tdStyle/cellInputStyle table style constants
 //        Fixed bSaved not resetting when bulk rows are edited after a save
@@ -833,7 +834,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
           {arType === 'hod' || arType === 'vice_principal' ? (
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               {arType === 'hod' ? 'Head of Department' : 'Vice Principal'} has its own department/portfolio setup - use{' '}
-              <a href="/dashboard/principal/leadership" style={{ color: 'var(--brand)' }}>Leadership &amp; Appointments</a> for this one.
+              <Link href="/dashboard/principal/leadership" style={{ color: 'var(--brand)' }}>Leadership &amp; Appointments</Link> for this one.
             </p>
           ) : arType ? (
             <>

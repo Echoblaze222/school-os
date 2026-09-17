@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -146,11 +147,11 @@ export default function PrincipalFeesClient({
                     </div>
                   ))}
                 </div>
-                <a
+                <Link
                   href={`/dashboard/bursar/record-payment?invoice=${previewItem.id}&student=${encodeURIComponent(student?.full_name ?? '')}`}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 44, background: '#EF4444', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>
                   <CreditCardIcon size={15} /> Record Payment
-                </a>
+                </Link>
               </div>
             </div>
           )

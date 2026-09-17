@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -252,11 +253,11 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
                 {previewInv.balance_ngn > 0 && (
-                  <a href={`/dashboard/bursar/record-payment?invoice=${previewInv.id}&student=${student?.full_name ?? ''}`}
+                  <Link href={`/dashboard/bursar/record-payment?invoice=${previewInv.id}&student=${student?.full_name ?? ''}`}
                     className="pressable"
                     style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
                     <CreditCardIcon size={15} color="var(--text-primary)" /> Record Payment
-                  </a>
+                  </Link>
                 )}
               </div>
             </div>

@@ -3,6 +3,7 @@
 // and so search engines can index it; reads directly via the admin client
 // rather than round-tripping through /api/public/promotions from the
 // server (that API route exists for client-side use, e.g. "load more").
+import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import PublicHeader from './PublicHeader'
 import styles from './public.module.css'
@@ -57,13 +58,13 @@ export default async function DiscoverPage({
 
         <div className={styles.filterRow}>
           {TYPE_FILTERS.map((f) => (
-            <a
+            <Link
               key={f.key}
               href={f.key ? `/discover?type=${f.key}` : '/discover'}
               className={(type || '') === f.key ? styles.filterChipActive : styles.filterChip}
             >
               {f.label}
-            </a>
+            </Link>
           ))}
         </div>
 

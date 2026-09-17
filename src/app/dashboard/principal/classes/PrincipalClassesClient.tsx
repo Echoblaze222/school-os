@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // src/app/dashboard/principal/classes/PrincipalClassesClient.tsx
 // FIX: Detail panel now shows Class Teacher (👑) separately from Subject Teachers
 // FIX: Class card shows teacher count and class teacher name
@@ -469,12 +470,12 @@ export default function PrincipalClassesClient({
             </button>
 
             <div className={styles.detailActions}>
-              <a href={`/dashboard/principal/students?class=${activeClass.id}`} className={styles.detailBtn}>
+              <Link href={`/dashboard/principal/students?class=${activeClass.id}`} className={styles.detailBtn}>
                 <UserIcon size={15} /> View Students
-              </a>
-              <a href={`/dashboard/principal/students/promote?from=${activeClass.id}`} className={styles.detailBtn}>
+              </Link>
+              <Link href={`/dashboard/principal/students/promote?from=${activeClass.id}`} className={styles.detailBtn}>
                 <PeopleIcon size={15} /> Promote Class
-              </a>
+              </Link>
             </div>
           </div>
         </div>
