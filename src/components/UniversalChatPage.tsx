@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+// BUG FIX: avatars in this list (and the group-suggest/found-user rows
+// below) used to go through next/image's <Image>. That routes every
+// thumbnail through Next's on-demand image-optimization endpoint -
+// server-side resize + an extra network hop - before it can paint,
+// which is why avatars here visibly lagged behind everything else on
+// the page. ChatRoomClient.tsx (the room itself) already used a plain
+// <img> for every avatar and never had this problem, so this file now
+// matches that: plain <img>, same rounded wrapper divs already clip it
+// to a circle via CSS (see .roomAvatar/.suggestAvatar/.foundAvatar in
+// chat.module.css), just with an explicit borderRadius as a fallback.
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -537,7 +546,7 @@ export default function UniversalChatPage({
                     <button key={u.id} className={styles.suggestItem} onClick={() => addGroupMember(u)}>
                       <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
                         {u.avatar_url
-                          ? <Image src={u.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
+                          ? <img src={u.avatar_url} alt="" style={{ width:28, height:28, objectFit:'cover', borderRadius:'50%' }} />
                           : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.75rem' }}>{u.full_name?.[0]}</span>
                         }
                       </div>
@@ -648,7 +657,7 @@ export default function UniversalChatPage({
                       <button key={u.id} className={styles.suggestItem} onClick={() => pickSuggestion(u)}>
                         <div className={styles.suggestAvatar} style={{ background: ROLE_COLORS[u.role] ?? schoolColor }}>
                           {u.avatar_url
-                            ? <Image src={u.avatar_url} alt="" width={28} height={28} style={{ objectFit:'cover' }} />
+                            ? <img src={u.avatar_url} alt="" style={{ width:28, height:28, objectFit:'cover', borderRadius:'50%' }} />
                             : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.75rem' }}>{u.full_name?.[0]}</span>
                           }
                         </div>
@@ -672,7 +681,7 @@ export default function UniversalChatPage({
                     style={{ background: ROLE_COLORS[foundUser.role] ?? schoolColor }}
                   >
                     {foundUser.avatar_url
-                      ? <Image src={foundUser.avatar_url} alt="" width={36} height={36} style={{ objectFit:'cover' }} />
+                      ? <img src={foundUser.avatar_url} alt="" style={{ width:36, height:36, objectFit:'cover', borderRadius:'50%' }} />
                       : <UserIcon size={16} color="white" />
                     }
                   </div>
@@ -729,13 +738,13 @@ export default function UniversalChatPage({
                     }}
                   >
                     {room.room_type === 'school_group' && school?.logo_url
-                      ? <Image src={school.logo_url} alt=""
-                          width={44} height={44} style={{ objectFit:'cover' }} />
+                      ? <img src={school.logo_url} alt=""
+                          style={{ width:44, height:44, objectFit:'cover', borderRadius:'50%' }} />
                       : room.room_type === 'peer_group'
                       ? <PeopleIcon size={18} color="#fff" />
                       : room.other_user?.avatar_url
-                      ? <Image src={room.other_user.avatar_url} alt=""
-                          width={44} height={44} style={{ objectFit:'cover' }} />
+                      ? <img src={room.other_user.avatar_url} alt=""
+                          style={{ width:44, height:44, objectFit:'cover', borderRadius:'50%' }} />
                       : <span style={{ color:'#fff', fontWeight:700, fontSize:'0.95rem' }}>
                           {room.name[0]?.toUpperCase()}
                         </span>
