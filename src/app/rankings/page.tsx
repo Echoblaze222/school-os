@@ -1,9 +1,17 @@
 // src/app/rankings/page.tsx
 // Lane F - public rankings. Every category shows its methodology summary
 // and data freshness inline (§50) rather than a single unexplained score.
+import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import PublicHeader from '../discover/PublicHeader'
 import styles from '../discover/public.module.css'
+import { pageMetadata } from '@/lib/seo'
+
+export const metadata: Metadata = pageMetadata({
+  title: 'School Rankings',
+  description: 'Data-based Nigerian school rankings by category. Sponsored placement never affects a ranking — categories with insufficient data are labeled, not faked.',
+  path: '/rankings',
+})
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 300
