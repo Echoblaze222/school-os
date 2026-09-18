@@ -67,17 +67,29 @@ const SWIPE_MAX     = 68   // px cap on how far the bubble can travel
 // plays). This forces that scan up front by seeking near the end, then
 // snapping back to the start once the browser reports the real duration -
 // the standard workaround for this specific Chrome behavior.
+//
+// ANDROID FIX: desktop Chrome reports the not-yet-known duration as
+// Infinity, but the Android app's WebView reports it as a plain 0 instead -
+// which the old `Number.isFinite(el.duration)` check treated as "already
+// known" and skipped the fix for, leaving voice notes permanently stuck at
+// 0:00 / 0:00 in the Android app. A real voice note is never actually
+// 0 seconds long, so treat 0 the same as Infinity: still unknown. Also
+// listen for 'durationchange' in addition to 'timeupdate' - the event that
+// actually fires once the real duration is known differs between the two
+// environments too, so listening for whichever fires first covers both.
 function FixedDurationAudio({ src, className }: { src: string; className?: string }) {
   const ref = useRef<HTMLAudioElement>(null)
 
   function handleLoadedMetadata() {
     const el = ref.current
-    if (!el || Number.isFinite(el.duration)) return // duration already known - nothing to fix
-    const onTimeUpdate = () => {
-      el.removeEventListener('timeupdate', onTimeUpdate)
+    if (!el || (Number.isFinite(el.duration) && el.duration > 0)) return // duration already known - nothing to fix
+    const fixDuration = () => {
+      el.removeEventListener('timeupdate', fixDuration)
+      el.removeEventListener('durationchange', fixDuration)
       el.currentTime = 0
     }
-    el.addEventListener('timeupdate', onTimeUpdate)
+    el.addEventListener('timeupdate', fixDuration)
+    el.addEventListener('durationchange', fixDuration)
     el.currentTime = 1e7
   }
 
@@ -1335,7 +1347,20 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
               </>
             ) : (
               <>
-                <p className={styles.profileMeta}>{otherUser?.role}{otherUser?.default_code ? ` · ${otherUser.default_code}` : ''}</p>
+                {/* BUG FIX: otherUser is reset to null every time the room
+                    changes and re-fetched async (see the roomId effect
+                    above), so opening this card in that window - or for
+                    any contact whose role somehow came back empty - used
+                    to render a blank line here, making the whole card
+                    look broken (just avatar/name/Close, nothing else).
+                    Always show *something*: a loading state while the
+                    fetch is in flight, and a safe fallback if it resolves
+                    without a role. */}
+                <p className={styles.profileMeta}>
+                  {otherUser
+                    ? `${otherUser.role || 'Member'}${otherUser.default_code ? ` · ${otherUser.default_code}` : ''}`
+                    : 'Loading…'}
+                </p>
                 {otherUser?.school_id !== school?.id && otherUser?.school_id && (
                   <p className={styles.profileBadge}>From a different school</p>
                 )}

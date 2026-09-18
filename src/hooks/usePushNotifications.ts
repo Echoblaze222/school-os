@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Capacitor } from '@capacitor/core'
 
 // ANDROID: this app has no separate native bundle - capacitor.config.ts
@@ -78,6 +79,7 @@ export interface PushNotificationHook {
 }
 
 export function usePushNotifications(): PushNotificationHook {
+  const router = useRouter()
   const [supported,  setSupported]  = useState(false)
   const [subscribed, setSubscribed] = useState(false)
   const [loading,    setLoading]    = useState(true)
@@ -100,9 +102,26 @@ export function usePushNotifications(): PushNotificationHook {
       let cancelled = false
       let removeRegistration: (() => void) | undefined
       let removeRegistrationError: (() => void) | undefined
+      let removeActionPerformed: (() => void) | undefined
 
       ;(async () => {
         const { PushNotifications } = await import('@capacitor/push-notifications')
+
+        // BUG FIX: this listener didn't exist at all before, so tapping a
+        // push notification on Android never navigated anywhere - it just
+        // resumed the WebView on whatever page it was already showing
+        // (e.g. the messages screen), regardless of what the notification
+        // was actually about. lib/fcm.ts already sends the right
+        // destination as data.url on every push; this is what actually
+        // reads it and navigates there.
+        const actionHandle = await PushNotifications.addListener(
+          'pushNotificationActionPerformed',
+          (action) => {
+            const url = action.notification?.data?.url
+            if (url) router.push(url)
+          }
+        )
+        removeActionPerformed = () => actionHandle.remove()
 
         // Registered unconditionally on mount, not just inside subscribe()
         // - so a token from a *previous* launch (permission already
@@ -150,6 +169,7 @@ export function usePushNotifications(): PushNotificationHook {
         cancelled = true
         removeRegistration?.()
         removeRegistrationError?.()
+        removeActionPerformed?.()
       }
     }
 
@@ -174,7 +194,7 @@ export function usePushNotifications(): PushNotificationHook {
         }
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [router])
 
   // ── Subscribe ────────────────────────────────────────────────
   const subscribe = useCallback(async () => {
