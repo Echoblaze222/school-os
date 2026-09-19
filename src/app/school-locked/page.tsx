@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { PhoneIcon } from '@/components/Icons'
+import { getStoredSchoolBrand, hexToRgba, type StoredSchoolBrand } from '@/lib/schoolBrand'
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string; icon: string }> = {
   locked: {
@@ -39,58 +40,8 @@ const STATUS_MESSAGES: Record<string, { title: string; body: string; icon: strin
 }
 
 // SchoolOS's own maroon - used only until/unless the school's own color is
-// available (see loadSchoolBrand below).
+// available.
 const DEFAULT_ACCENT = '#800020'
-
-interface StoredSchool {
-  id?: string
-  name?: string | null
-  primaryColor?: string | null
-  logoUrl?: string | null
-}
-
-// Reads the same 'schoolos_selected_school' localStorage key that
-// /select-school, /login, and signOutFlow.ts already write on every login -
-// by the time anyone can reach this locked page they've necessarily been
-// through one of those, so this is reliably present, synchronous (no
-// loading flash), and requires no extra network round trip or RLS query.
-// This was the actual bug: this page never read it at all and instead
-// hardcoded SchoolOS's own theme regardless of which school's portal was
-// locked - the properly-branded equivalent (SubscriptionGate.tsx) exists
-// elsewhere in the codebase but is unreachable here because middleware.ts
-// redirects to this route before a dashboard page (where SubscriptionGate
-// lives) ever renders. See the PR description for the full trace.
-function loadStoredSchool(): StoredSchool {
-  if (typeof window === 'undefined') return {}
-  try {
-    const raw = localStorage.getItem('schoolos_selected_school')
-    if (!raw) return {}
-    const parsed = JSON.parse(raw)
-    return {
-      id: parsed?.id,
-      name: typeof parsed?.name === 'string' ? parsed.name : null,
-      primaryColor: typeof parsed?.primaryColor === 'string' ? parsed.primaryColor : null,
-      logoUrl: typeof parsed?.logoUrl === 'string' ? parsed.logoUrl : null,
-    }
-  } catch {
-    return {}
-  }
-}
-
-// Converts a '#rrggbb' hex color to an 'rgba(r,g,b,a)' string for the
-// radial-gradient background below. Falls back to the default accent's
-// own tint if the stored value isn't valid 6-digit hex - principal
-// settings already validates on save (see /api/principal/settings), but
-// this stays defensive since it's rendering client-stored data.
-function hexToRgba(hex: string, alpha: number): string {
-  const match = /^#?([0-9a-fA-F]{6})$/.exec(hex)
-  if (!match) return `rgba(128,0,32,${alpha})`
-  const int = parseInt(match[1], 16)
-  const r = (int >> 16) & 255
-  const g = (int >> 8) & 255
-  const b = int & 255
-  return `rgba(${r},${g},${b},${alpha})`
-}
 
 function LockedContent() {
   const params   = useSearchParams()
@@ -99,8 +50,9 @@ function LockedContent() {
   const supabase = createClient()
 
   // Lazy initializer runs once, synchronously, on mount - no fetch, no
-  // flash of the wrong color before the real one loads.
-  const [brand] = useState<StoredSchool>(loadStoredSchool)
+  // flash of the wrong color before the real one loads. See
+  // src/lib/schoolBrand.ts.
+  const [brand] = useState<StoredSchoolBrand>(getStoredSchoolBrand)
   const accent = brand.primaryColor || DEFAULT_ACCENT
 
   async function handleSignOut() {
@@ -134,7 +86,8 @@ function LockedContent() {
 
         {/* School name - falls back to the SchoolOS wordmark only if
             nothing was ever stored (shouldn't happen given the trace
-            above, but this page must never crash for a locked-out user) */}
+            in PR #4, but this page must never crash for a locked-out
+            user) */}
         <p style={{
           fontSize: '0.7rem',
           fontWeight: 800,
@@ -147,8 +100,8 @@ function LockedContent() {
         </p>
 
         {/* Title - now colored with the school's own brand color, matching
-            the same treatment SubscriptionGate.tsx already gives its
-            heading/divider/button */}
+            the same treatment SubscriptionGate.tsx and LockScreen.tsx
+            already give their own headings */}
         <h1 style={{
           fontSize: '1.5rem',
           fontWeight: 800,
@@ -169,14 +122,12 @@ function LockedContent() {
           {info.body}
         </p>
 
-        {/* Accent divider - matches SubscriptionGate.tsx's use of
-            schoolColor for this same element */}
+        {/* Accent divider */}
         <div style={{ height: 2, width: 48, background: accent, margin: '0 auto 32px', borderRadius: 2 }} />
 
         {/* WhatsApp CTA - kept WhatsApp's own green regardless of school
             color. This is a recognizable third-party action button, not
-            part of the school's own branding - same reasoning
-            SubscriptionGate.tsx applies to its phone-number pill. */}
+            part of the school's own branding. */}
         <a
           href="https://wa.me/2348086883144?text=Hello%2C%20my%20school%20portal%20has%20been%20locked.%20Please%20help%20me%20restore%20access."
           target="_blank"
