@@ -18,6 +18,14 @@
 //     falling back to the existing profiles.notify_whatsapp/notify_sms
 //     booleans when no per-category row exists, so nothing changes for
 //     users who've never touched their preferences.
+//
+// PUSH-AS-PRIMARY-CHANNEL (this change): push/in-app was always sent
+// (via the DB trigger on the notifications insert below) but WhatsApp/SMS
+// via Termii was *also* always attempted regardless — every notification
+// fired both a free push and a billed Termii message, unconditionally,
+// even to someone who had the app open and push working perfectly. Termii
+// is a paid third-party vendor; it should be a backup for someone push
+// can't reach, not a second copy of every notification. See step 2b below.
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSms, sendWhatsApp, normalizeNigerianPhone } from './termii'
@@ -27,7 +35,9 @@ export type NotifyChannel = 'whatsapp' | 'sms'
 // Categories that ignore user preference entirely — security/critical
 // school-safety notifications (§64: "Critical school/security
 // notifications may remain mandatory where justified"). Keep this list
-// short and deliberate; it's a bypass, not a default.
+// short and deliberate; it's a bypass, not a default. Also bypasses the
+// push-as-primary skip below — these always go out on every requested
+// channel regardless of push status; redundancy is the point for these.
 const MANDATORY_CATEGORIES = new Set(['security_alert', 'account_security', 'subscription_suspended'])
 
 export interface NotifyUserInput {
@@ -130,20 +140,60 @@ export async function notifyUser(input: NotifyUserInput): Promise<NotifyUserResu
   //     that gap. Until that's applied, a category with push_enabled:
   //     false in notification_preferences still gets an in-app row (as
   //     it should) but may still trigger a push (known gap, documented,
-  //     not silently ignored).
+  //     not silently ignored). Separately, that same file is this
+  //     app's actual push trigger's ONLY committed representation — the
+  //     real trigger was applied directly to Supabase and was never
+  //     committed anywhere, so that .sql file is a reconstruction, not
+  //     a verified copy. If this project's database were ever rebuilt
+  //     from this repo alone, push notifications would not exist until
+  //     someone pulls the real trigger from the live Supabase project
+  //     and commits it for real.
 
-  // 2. Look up recipient's phone, mandatory-category override, and
-  //    category-level preferences (falling back to the profile-level
-  //    booleans when no per-category row exists).
+  // 2. Look up recipient's phone, mandatory-category override,
+  //    category-level preferences, and whether they have an active push
+  //    subscription — all in parallel.
   const isMandatory = MANDATORY_CATEGORIES.has(type)
 
-  const [{ data: recipient }, { data: categoryPref }] = await Promise.all([
+  const [{ data: recipient }, { data: categoryPref }, { data: pushSubs }] = await Promise.all([
     supabase.from('profiles').select('phone, notify_whatsapp, notify_sms').eq('id', recipientId).single(),
     isMandatory
       ? Promise.resolve({ data: null })
       : supabase.from('notification_preferences').select('whatsapp_enabled, sms_enabled')
           .eq('user_id', recipientId).eq('category', type).maybeSingle(),
+    isMandatory
+      ? Promise.resolve({ data: null })
+      : supabase.from('push_subscriptions').select('id').eq('user_id', recipientId).limit(1),
   ])
+
+  // 2b. PUSH IS THE PRIMARY CHANNEL. The notifications insert above
+  //     already triggers a push send (api/internal/push-on-notification).
+  //     WhatsApp/SMS via Termii is a paid, third-party backup for someone
+  //     who can't actually receive that push — not a second copy of every
+  //     notification. If the recipient has at least one push_subscriptions
+  //     row, treat push as sufficient and skip Termii entirely, unless
+  //     this is a mandatory category (security/critical alerts
+  //     intentionally go out on every channel regardless).
+  //
+  //     This is a presence check, not a delivery confirmation: the real
+  //     push send happens asynchronously via a DB trigger this function
+  //     never observes the result of. A subscription existing is the best
+  //     signal available here that push is *likely* to reach them, not a
+  //     guarantee it did. Accepting that gap is simpler and safer than
+  //     making this function block on a cross-service round trip just to
+  //     decide whether to also fire a paid SMS — and matches the
+  //     documented, known gap in 1b above (this function has never had
+  //     visibility into push delivery outcome, before or after this
+  //     change).
+  if (!isMandatory && pushSubs && pushSubs.length > 0) {
+    return {
+      notificationId,
+      deliveries: channels.map(channel => ({
+        channel,
+        status: 'skipped' as const,
+        error: 'Recipient has an active push subscription — Termii backup not needed',
+      })),
+    }
+  }
 
   if (!recipient?.phone) {
     // No phone on file — nothing more to do, in-app notification still stands.
