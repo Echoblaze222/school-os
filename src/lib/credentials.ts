@@ -52,12 +52,14 @@ export function generateLinkCode(): string {
 // Uppercase, drop separators/whitespace, and apply the Crockford look-alike
 // mapping so a person reading a code aloud or typing it on a phone is not
 // punished for O/0 or I/L/1 confusion. None of those letters are in ALPHABET,
-// so this can never make two different codes collide.
+// so this can never make two different codes collide. The prefix is optional
+// (people drop it), and is only stripped when the length proves it is there,
+// because a body may legitimately start with the same letters as the prefix.
 function normalize(raw: string, prefix: string, bodyLength: number): string | null {
   if (typeof raw !== 'string') return null
   let s = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
   s = s.replace(/O/g, '0').replace(/[IL]/g, '1')
-  if (s.startsWith(prefix)) s = s.slice(prefix.length)
+  if (s.length === prefix.length + bodyLength && s.startsWith(prefix)) s = s.slice(prefix.length)
   if (s.length !== bodyLength) return null
   for (const ch of s) if (!ALPHABET.includes(ch)) return null
   return s
