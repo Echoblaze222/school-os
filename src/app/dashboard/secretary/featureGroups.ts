@@ -22,6 +22,7 @@ export const SECRETARY_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'transfers',   label: 'Transfers',   href: '/dashboard/secretary/transfers',   Icon: RefreshIcon },
     { id: 'clinic',      label: 'Clinic',      href: '/dashboard/secretary/clinic',      Icon: ActivityIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/secretary/codes',       Icon: CheckCircleIcon },
+    { id: 'link-codes',  label: 'Parent link codes', href: '/dashboard/secretary/link-codes', Icon: UserIcon },
   ]},
   { name: 'Records', items: [
     { id: 'users',     label: 'Users',     href: '/dashboard/secretary/users',     Icon: UserIcon },

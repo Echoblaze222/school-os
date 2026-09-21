@@ -1,52 +1,42 @@
 'use client'
 import { useState } from 'react'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
 import { UserIcon } from '@/components/Icons'
+
+// C1: linking is now done through the server with a PARENT LINK CODE issued by
+// the school for this specific child. The student's normal access code /
+// default_code is only a visible identifier and no longer works here, and the
+// browser no longer reads student profiles or inserts into
+// parent_student_links itself.
 
 interface Props { userId: string; schoolColor: string; schoolId: string; onLinked?: () => void }
 
-export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinked }: Props) {
+interface FoundChild { full_name: string; avatar_url: string | null; class_label: string }
+
+export default function LinkChildPrompt({ schoolColor, onLinked }: Props) {
   const [code,    setCode]    = useState('')
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
-  const [found,   setFound]   = useState<any>(null)
+  const [found,   setFound]   = useState<FoundChild | null>(null)
+
+  async function call(preview: boolean) {
+    const res = await fetch('/api/parent/link-child', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ child_code: code.trim(), preview }),
+    })
+    const data = await res.json().catch(() => ({}))
+    return { ok: res.ok && data.ok === true, data }
+  }
 
   async function findChild() {
     if (!code.trim()) return
     setLoading(true); setError(''); setFound(null)
     try {
-      const supabase = createClient()
-
-      // Step 1: find student by code - simple query, no joins
-      const { data: student, error: e1 } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('default_code', code.trim().toUpperCase())
-        .eq('role', 'student')
-        .eq('school_id', schoolId)
-        .maybeSingle()
-
-      if (e1) throw e1
-      if (!student) {
-        setError('No student found with that code. Check with the school admin.')
-        return
-      }
-
-      // Step 2: get their class label separately
-      const { data: sp } = await supabase
-        .from('student_profiles')
-        .select('class_id, classes(name, class_level)')
-        .eq('id', student.id)
-        .maybeSingle()
-
-      const classLabel = (sp?.classes as any)?.class_level
-                      ?? (sp?.classes as any)?.name
-                      ?? 'Student'
-
-      setFound({ ...student, class_label: classLabel })
-    } catch (err: any) {
-      console.error('findChild error:', err)
+      const { ok, data } = await call(true)
+      if (!ok) { setError(data.error || 'Something went wrong. Please try again.'); return }
+      setFound(data.student)
+    } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
@@ -56,32 +46,15 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
   async function linkChild() {
     setLoading(true); setError('')
     try {
-      const supabase = createClient()
-
-      // Check if already linked
-      const { data: existing } = await supabase
-        .from('parent_student_links')
-        .select('id')
-        .eq('parent_id', userId)
-        .eq('student_id', found.id)
-        .maybeSingle()
-
-      if (!existing) {
-        const { error: insertErr } = await supabase
-          .from('parent_student_links')
-          .insert({ parent_id: userId, student_id: found.id })
-
-        if (insertErr) throw insertErr
-      }
-
+      const { ok, data } = await call(false)
+      if (!ok) { setError(data.error || 'Failed to link child. Please try again.'); setLoading(false); return }
       if (onLinked) {
         onLinked()
       } else {
         window.location.reload()
       }
-    } catch (err: any) {
-      console.error('linkChild error:', err)
-      setError('Failed to link child: ' + (err?.message ?? 'unknown error'))
+    } catch {
+      setError('Failed to link child. Please try again.')
       setLoading(false)
     }
   }
@@ -98,21 +71,22 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
             Link Your Child
           </h1>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-            Enter your child's student access code to connect your account
+            Enter the parent link code your school gave you for your child
           </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
-              Student Access Code
+              Parent Link Code
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
                 onKeyDown={e => e.key === 'Enter' && findChild()}
-                placeholder="e.g. STU-2024-001"
+                placeholder="e.g. LNK-XXXX-XXXX-XXXX-XXXX"
+                autoComplete="off"
                 style={{ flex: 1, height: 46, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', letterSpacing: '0.04em', fontFamily: 'monospace' }}
               />
               <button
@@ -153,8 +127,9 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
 
           <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 14px', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             <strong style={{ color: 'var(--text-secondary)' }}>Where to find the code?</strong><br />
-            The access code is given by your school's secretary or principal. It looks like{' '}
-            <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>STU-2024-001</span>.
+            Your school's secretary or principal can generate a parent link code for your child. It looks like{' '}
+            <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>LNK-7H2K-9QXM-4TRD-B8WP</span>{' '}
+            and expires after 30 days.
           </div>
         </div>
       </div>

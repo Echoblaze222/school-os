@@ -32,6 +32,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'analytics',   label: 'Analytics',   href: '/dashboard/principal/analytics',   Icon: BarChartIcon },
     { id: 'assignments', label: 'Assignments', href: '/dashboard/principal/assignments', Icon: ClipboardIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/principal/codes',       Icon: KeyIcon },
+    { id: 'link-codes',  label: 'Parent link codes', href: '/dashboard/principal/link-codes', Icon: UserIcon },
   ]},
   { name: 'Finance', items: [
     { id: 'fees',          label: 'Fees',          href: '/dashboard/principal/fees',          Icon: WalletIcon },
