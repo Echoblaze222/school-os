@@ -1,7 +1,7 @@
 /* src/app/dashboard/principal/codes/codes.module.css */
 /* Principal - Generate / View Access Codes */
 
-/* ─── Tab switcher ──────────────────────────────────────── */
+/* ─── Tab switcher ────────────────────────────────────────────── */
 .tabRow {
   display: flex;
   gap: var(--space-2);
@@ -33,7 +33,7 @@
   background: rgba(128, 0, 32, 0.06);
 }
 
-/* ─── Info banner ───────────────────────────────────────── */
+/* ─── Info banner ─────────────────────────────────────────────── */
 .infoBanner {
   display: flex;
   align-items: flex-start;
@@ -48,7 +48,7 @@
 .infoBannerTitle { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
 .infoBannerSub { font-size: 0.72rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
 
-/* ─── Search ────────────────────────────────────────────── */
+/* ─── Search ────────────────────────────────────────────────────── */
 .searchWrap {
   display: flex;
   align-items: center;
@@ -75,7 +75,7 @@
 }
 .searchInput::placeholder { color: var(--text-muted); }
 
-/* ─── Role tabs ─────────────────────────────────────────── */
+/* ─── Role tabs ───────────────────────────────────────────────── */
 .roleTabs {
   display: flex;
   gap: var(--space-2);
@@ -96,7 +96,7 @@
   transition: all var(--transition-fast);
 }
 
-/* ─── Code list (existing) ──────────────────────────────── */
+/* ─── Code list (existing) ────────────────────────────────────── */
 .codeList { display: flex; flex-direction: column; gap: var(--space-3); }
 .codeRow {
   display: flex;
@@ -173,7 +173,7 @@
 .actionBtn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text-primary); }
 .actionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ─── Form card ─────────────────────────────────────────── */
+/* ─── Form card ───────────────────────────────────────────────── */
 .twoCol {
   display: grid;
   grid-template-columns: 1fr;
@@ -243,20 +243,27 @@
   padding-right: 36px;
 }
 .textarea { resize: vertical; min-height: 140px; line-height: 1.6; }
+/* Error box: uses the real design-system tokens (--danger / --danger-subtle).
+   The old --error / --error-bg tokens were never defined in globals.css. */
 .errorMsg {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  background: var(--error-bg);
-  border: 1px solid rgba(192, 57, 43, 0.25);
-  color: var(--error);
+  background: var(--danger-subtle);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--danger);
   font-size: 0.82rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
+/* Primary action button. Uses --brand / --brand-dark / --brand-glow from
+   globals.css. The old --burgundy* tokens were never defined there, so the
+   background collapsed to transparent and the white label vanished on the
+   light theme. */
 .generateBtn {
   width: 100%;
   padding: var(--space-4);
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
   color: #fff;
   font-family: var(--font-body);
   font-size: 0.88rem;
@@ -266,11 +273,11 @@
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: 0 4px 20px var(--burgundy-glow);
+  box-shadow: 0 4px 20px var(--brand-glow);
 }
 .generateBtn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 28px var(--burgundy-glow);
+  box-shadow: 0 6px 28px var(--brand-glow);
 }
 .generateBtn:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -294,7 +301,7 @@
 }
 .previewBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ─── Single result card ────────────────────────────────── */
+/* ─── Single result card ───────────────────────────────────── */
 .resultCard {
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -380,7 +387,7 @@
   padding: var(--space-3) var(--space-5) var(--space-5);
 }
 
-/* ─── Bulk section ──────────────────────────────────────── */
+/* ─── Bulk section ───────────────────────────────────────── */
 .bulkRoleHints { display: flex; flex-direction: column; gap: var(--space-2); }
 .roleTags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .roleTag {
@@ -468,7 +475,7 @@
 }
 .statusDot { font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
 
-/* ─── Empty state ───────────────────────────────────────── */
+/* ─── Empty state ──────────────────────────────────────────── */
 .empty {
   text-align: center;
   padding: var(--space-10) var(--space-6);
@@ -477,7 +484,7 @@
 .emptyTitle { font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
 .emptySub { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
 
-/* ─── Responsive ────────────────────────────────────────── */
+/* ─── Responsive ───────────────────────────────────────────── */
 @media (max-width: 640px) {
   .codeRow { flex-wrap: wrap; }
   .codeRowActions { width: 100%; justify-content: flex-end; }
@@ -489,7 +496,7 @@
   .bulkRow > *:nth-child(4) { display: none; }
 }
 
-/* ─── Enrol form ──────────────────────────────────────────── */
+/* ─── Enrol form ────────────────────────────────────────────── */
 .enrolForm {
   max-width: 680px;
 }
@@ -544,7 +551,7 @@
   text-align: center;
 }
 
-/* ─── Code success screen ────────────────────────────────── */
+/* ─── Code success screen ───────────────────────────────────── */
 .successScreen {
   max-width: 480px;
   display: flex;
@@ -681,12 +688,14 @@
   transition: all var(--transition-fast);
 }
 .copyBothBtn:hover { background: var(--glass-border); }
+/* "Enrol another" button: same token fix as .generateBtn (was --text-accent,
+   which globals.css never defines, so it was transparent on light theme). */
 .enrolAnotherBtn {
   width: 100%;
   padding: 12px;
   border-radius: var(--radius-lg);
   border: none;
-  background: var(--text-accent);
+  background: var(--brand);
   color: #fff;
   font-size: 0.85rem;
   font-weight: 700;
