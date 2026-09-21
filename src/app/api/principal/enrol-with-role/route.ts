@@ -33,6 +33,8 @@ import { generateAccessCode } from '@/lib/supabase/access-code-generator'
 
 const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
 
+const EMAIL_TAKEN_MESSAGE = 'That email already has an account. Use a different email.'
+
 export async function POST(request: Request) {
   try {
     const {
@@ -126,6 +128,15 @@ export async function POST(request: Request) {
 
     if (adminCreateErr) {
       console.error('auth.admin.createUser failed:', adminCreateErr.message)
+
+      // The email already belongs to an account. Stop here. The signUp
+      // fallback below cannot help: for an existing address Supabase hides
+      // that fact and hands back a made-up user id, which used to surface
+      // further down as a confusing foreign-key error ("access_codes_profile_id_fkey").
+      if ((adminCreateErr as any).code === 'email_exists' || /already (been )?registered/i.test(adminCreateErr.message)) {
+        return NextResponse.json({ error: EMAIL_TAKEN_MESSAGE }, { status: 409 })
+      }
+
       const anonClient = createServiceClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -137,10 +148,12 @@ export async function POST(request: Request) {
         options: { data: { full_name: fullName, role: 'teacher' } },
       })
       if (signUpErr || !signUpData.user) {
-        return NextResponse.json(
-          { error: `Auth failed: ${adminCreateErr.message} | Fallback: ${signUpErr?.message ?? 'no user returned'}` },
-          { status: 400 }
-        )
+        console.error('signUp fallback failed:', signUpErr?.message ?? 'no user returned')
+        return NextResponse.json({ error: 'Could not create the account. Check the email and try again.' }, { status: 400 })
+      }
+      // A user with no identities is Supabase's way of saying the email is taken.
+      if (!signUpData.user.identities || signUpData.user.identities.length === 0) {
+        return NextResponse.json({ error: EMAIL_TAKEN_MESSAGE }, { status: 409 })
       }
       userId = signUpData.user.id
       authWarning = 'Created via signUp, email confirmation may be required'
@@ -159,8 +172,9 @@ export async function POST(request: Request) {
       })
       code = generated.code
     } catch (codeErr: any) {
+      console.error('Access code generation failed:', codeErr?.message)
       await admin.auth.admin.deleteUser(userId)
-      return NextResponse.json({ error: `Access code generation failed: ${codeErr.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Could not generate an access code. Please try again.' }, { status: 500 })
     }
 
     // handle_new_user auto-inserts a blank profiles row the instant
@@ -196,8 +210,9 @@ export async function POST(request: Request) {
 
     const { error: profileErr } = await admin.from('profiles').insert(profileInsert)
     if (profileErr) {
+      console.error('Profile insert failed:', profileErr.message)
       await admin.auth.admin.deleteUser(userId)
-      return NextResponse.json({ error: `Profile error: ${profileErr.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Could not save the profile. Please try again.' }, { status: 500 })
     }
 
     // ── Appointment (the actual new capability this route adds) ──
@@ -228,7 +243,7 @@ export async function POST(request: Request) {
         // warning instead: the code still works, the principal just
         // needs to appoint the role separately from Leadership.
         console.error('enrol-with-role: appointment insert failed:', apptErr.message)
-        appointmentWarning = `Account created, but the ${appointmentConfig?.label ?? 'role'} assignment failed: ${apptErr.message}. Appoint it from Leadership & Appointments instead.`
+        appointmentWarning = `Account created, but the ${appointmentConfig?.label ?? 'role'} assignment failed. Appoint it from Leadership & Appointments instead.`
       }
     }
 
@@ -251,6 +266,7 @@ export async function POST(request: Request) {
     })
 
   } catch (e: any) {
-    return NextResponse.json({ error: e.message ?? 'Internal error' }, { status: 500 })
+    console.error('enrol-with-role error:', e?.message)
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
 }
