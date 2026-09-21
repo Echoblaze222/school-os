@@ -5,6 +5,7 @@ import { cookies }            from 'next/headers'
 import { NextResponse }       from 'next/server'
 import crypto                 from 'crypto'
 import { generateAccessCode } from '@/lib/supabase/access-code-generator'
+import { issueActivationCredential } from '@/lib/credentials'
 
 export async function POST(request: Request) {
   try {
@@ -79,11 +80,15 @@ export async function POST(request: Request) {
     // its own (it was long and cryptographically random), this switch is
     // about spec compliance and giving the code a lifecycle row, not about
     // fixing a vulnerability.
+    //
+    // C1 NOTE: this value is now only the account's visible IDENTIFIER
+    // (display + code-signin). It is NOT what the new user activates with -
+    // see the activation token issued below.
     const year = new Date().getFullYear()
 
     // Supabase auth requires a password on user creation, but this account is
     // never meant to be signed into with it - activation happens entirely via
-    // the access code + a password the user sets themselves on first login
+    // the activation token + a password the user sets themselves on first login
     // (see /api/auth/first-login). So this is thrown away immediately: long,
     // random, never logged, never emailed, never shown in any UI.
     const tempPass = crypto.randomUUID() + crypto.randomUUID()
@@ -141,11 +146,10 @@ export async function POST(request: Request) {
 
     // Every account created via access code - regardless of role - must
     // start at 'stage_1_pending'. That's the ONLY stage /api/auth/first-login
-    // accepts for activation (see isFirstLogin there); anything else causes
-    // an immediate, permanent "Account already activated" error the very
-    // first time the person ever tries their code. Onboarding then advances
-    // them to stage 2 itself once activation succeeds - this route should
-    // never pre-skip that step for any role.
+    // accepts for activation; anything else causes an immediate, permanent
+    // "invalid activation code" the very first time the person tries. Onboarding
+    // then advances them to stage 2 itself once activation succeeds - this
+    // route should never pre-skip that step for any role.
     const onboardingStage = 'stage_1_pending'
 
     // If a classId was given, resolve the class name so we can write class_level to profiles
@@ -197,6 +201,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Profile error: ${profileErr.message}` }, { status: 500 })
     }
 
+    // C1: issue the activation token. It is a separate, random, single-use,
+    // expiring secret (only its hash is stored). The plaintext is returned to
+    // the admin below exactly once and is never logged or audited.
+    let activation: { token: string; expiresAt: string }
+    try {
+      activation = await issueActivationCredential(adminClient, { userId, createdBy: user.id })
+    } catch (actErr: any) {
+      console.error('Activation credential issue failed:', actErr?.message)
+      await adminClient.from('profiles').delete().eq('id', userId)
+      await adminClient.auth.admin.deleteUser(userId)
+      return NextResponse.json(
+        { error: 'Could not prepare the account for activation. Nothing was created; please try again.' },
+        { status: 500 },
+      )
+    }
+
     // Student profile row
     if (role === 'student') {
       const studentRow: Record<string, any> = {
@@ -227,7 +247,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // ✅ Send welcome email with access code (activation is code-only - no password is ever surfaced)
+    // Send welcome email with the ACTIVATION code (single-use, expires).
     // Non-fatal - user is already created, email failure should not block the response
     try {
       const resendKey = process.env.RESEND_API_KEY
@@ -255,7 +275,7 @@ export async function POST(request: Request) {
                   <p style="color:#d1d5db;font-size:15px;">Hi <strong style="color:#fff;">${fullName}</strong>,</p>
                   <p style="color:#d1d5db;font-size:15px;">
                     Your <strong style="color:#a78bfa;">${roleLabel}</strong> account on SchoolOS is ready.
-                    Use your access code below to log in for the first time and set your password.
+                    Use your activation code below to log in for the first time and set your password.
                   </p>
                   <div style="background:#1a1a2e;border:1px solid #7C3AED;border-radius:10px;padding:24px;margin:24px 0;">
                     <h3 style="margin:0 0 16px;color:#a78bfa;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Your Login Details</h3>
@@ -265,8 +285,8 @@ export async function POST(request: Request) {
                         <td style="color:#fff;font-weight:600;font-size:14px;">${email.toLowerCase()}</td>
                       </tr>
                       <tr>
-                        <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Access Code</td>
-                        <td style="color:#fff;font-weight:700;font-family:monospace;font-size:18px;letter-spacing:2px;">${code}</td>
+                        <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Activation Code</td>
+                        <td style="color:#fff;font-weight:700;font-family:monospace;font-size:18px;letter-spacing:2px;">${activation.token}</td>
                       </tr>
                       <tr>
                         <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Role</td>
@@ -275,7 +295,7 @@ export async function POST(request: Request) {
                     </table>
                   </div>
                   <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
-                    ⚠️ On first login, choose the <strong>Access Code</strong> tab, enter your code above, and set a new password. Keep this email safe.
+                    ⚠️ On first login, choose the <strong>New User</strong> tab, enter your activation code above, and set a new password. The code works once and expires in 7 days. Keep this email safe.
                   </p>
                   <div style="text-align:center;margin:28px 0;">
                     <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
@@ -298,20 +318,26 @@ export async function POST(request: Request) {
       console.error('Welcome email failed (non-fatal):', emailErr)
     }
 
-    // Audit log
+    // Audit log. NEVER put the activation token here. (`code` is the visible
+    // default_code identifier; H7 will decide whether it belongs here at all.)
     try {
       await adminClient.from('portal_audit_log').insert({
         action:       'user_created',
         actor_id:     user.id,
         target_table: 'profiles',
         target_id:    userId,
-        metadata:     { role, code, school_id: (callerProfile as any).school_id },
+        metadata:     { role, code, school_id: (callerProfile as any).school_id, activation_issued: true },
         logged_at:    new Date().toISOString(),
       })
     } catch { /* non-critical */ }
 
+    // `code` is what every existing enrolment screen shows as "the code to
+    // share with the new user". It is now the one-time ACTIVATION code.
+    // `defaultCode` is the account's permanent visible identifier.
     return NextResponse.json({
-      code,
+      code:                activation.token,
+      activationExpiresAt: activation.expiresAt,
+      defaultCode:         code,
       userId,
       message:   'User created successfully',
       warning:   authWarning,

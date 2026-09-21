@@ -1,32 +1,27 @@
 // src/app/api/staff-codes/regenerate/route.ts
 //
-// Regenerates a profile's access code (`default_code`). This used to be a
-// direct `supabase.from('profiles').update(...)` call from the browser in
-// both Principal's and Secretary's CodesClient.tsx, with two problems:
+// Re-issues a person's code from the Codes screen. What "regenerate" means now
+// depends on whether the account has been activated yet (audit finding C1):
 //
-//   1. The new code was `Math.floor(1000 + Math.random() * 9000)` - a
-//      4-digit number with only 9,000 possibilities. This is the exact
-//      weak-randomness issue already fixed once in secretary/create-user
-//      (see the comment there): the access code is the sole credential
-//      needed to activate an unactivated account, so a short, guessable
-//      code lets anyone brute-force their way into hijacking it before the
-//      real user's first login.
-//   2. The update carried no `school_id` scoping and relied entirely on
-//      whatever RLS UPDATE policy exists live on `profiles` (unverified
-//      from code alone, per SECURITY_RLS_AUDIT_AND_POLICIES.sql) - the
-//      documented `profiles_update_own` policy only allows a user to
-//      update their own row, which would make this silently no-op in
-//      production, or, if a more permissive live policy exists, would let
-//      any authenticated user overwrite anyone's access code.
+//   * NOT yet activated (stage 'start' / 'stage_1_pending')
+//       -> issues a fresh ACTIVATION token (single-use, expiring, hash-only in
+//          the database, any previous token superseded) and returns it as
+//          `code`, exactly once. profiles.default_code is left untouched: it
+//          is only a visible identifier and is not what activates the account.
+//   * already activated
+//       -> unchanged behaviour: rotates default_code (the visible identifier
+//          used with code-signin) and returns it as `code`.
 //
-// This route restores the same guarantees create-user already has:
-// caller-role verification, same-school ownership check, and a long
-// cryptographically random code, written through the service-role client.
+// History kept from the original header: this used to be a direct browser
+// `profiles.update(...)`, then a 4-digit Math.random code. It is now a
+// caller-verified, same-school, service-role write with cryptographic
+// randomness.
 
 import { NextResponse }      from 'next/server'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateAccessCode, revokeAccessCode } from '@/lib/supabase/access-code-generator'
+import { issueActivationCredential } from '@/lib/credentials'
 
 export async function POST(request: Request) {
   try {
@@ -50,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     const { data: target } = await admin
-      .from('profiles').select('id, role, school_id, full_name').eq('id', profileId).single()
+      .from('profiles').select('id, role, school_id, full_name, onboarding_stage').eq('id', profileId).single()
 
     if (!target || target.school_id !== caller.school_id) {
       // Same error either way - don't reveal whether the id exists in
@@ -71,6 +66,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not permitted to regenerate this code' }, { status: 403 })
     }
 
+    // ── Not activated yet: issue a new activation token ─────────────────────
+    const stage = (target as any).onboarding_stage as string | null
+    if (stage === 'start' || stage === 'stage_1_pending') {
+      let activation: { token: string; expiresAt: string }
+      try {
+        activation = await issueActivationCredential(admin, { userId: profileId, createdBy: user.id })
+      } catch (actErr: any) {
+        console.error('Activation credential issue failed:', actErr?.message)
+        return NextResponse.json({ error: 'Could not issue a new activation code. Please try again.' }, { status: 500 })
+      }
+
+      try {
+        // NEVER put the token in the audit log.
+        await admin.from('portal_audit_log').insert({
+          action:       'activation_credential_issued',
+          actor_id:     user.id,
+          target_table: 'profiles',
+          target_id:    profileId,
+          metadata:     { role: target.role, school_id: caller.school_id },
+          logged_at:    new Date().toISOString(),
+        })
+      } catch { /* non-critical */ }
+
+      return NextResponse.json({ code: activation.token, kind: 'activation', expiresAt: activation.expiresAt })
+    }
+
+    // ── Already activated: rotate the visible identifier (unchanged behaviour) ─
     // Revoke whatever access_codes row is currently active for this
     // profile before issuing a new one, so a regenerated code can never
     // leave the old one still usable. Best-effort: a target with no prior
@@ -122,7 +144,7 @@ export async function POST(request: Request) {
       })
     } catch { /* non-critical */ }
 
-    return NextResponse.json({ code })
+    return NextResponse.json({ code, kind: 'identifier' })
   } catch (e: any) {
     return NextResponse.json({ error: e.message ?? 'Internal error' }, { status: 500 })
   }

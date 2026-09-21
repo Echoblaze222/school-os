@@ -22,6 +22,10 @@
 // so this route can't destabilize the already-working create-user path,
 // and because the two routes' permission/role rules genuinely differ
 // (this one is principal-only, appointment-role-only).
+//
+// C1: like create-user, the value a new hire activates with is a separate
+// single-use, expiring activation token (returned as `code`); default_code is
+// only the visible identifier (returned as `defaultCode`).
 
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -30,6 +34,7 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 import { generateAccessCode } from '@/lib/supabase/access-code-generator'
+import { issueActivationCredential } from '@/lib/credentials'
 
 const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_warden', 'house_parent', 'hostel_administrator'])
 
@@ -200,6 +205,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Profile error: ${profileErr.message}` }, { status: 500 })
     }
 
+    // C1: issue the single-use, expiring activation token (hash-only storage).
+    let activation: { token: string; expiresAt: string }
+    try {
+      activation = await issueActivationCredential(admin, { userId, createdBy: user.id })
+    } catch (actErr: any) {
+      console.error('Activation credential issue failed:', actErr?.message)
+      await admin.from('profiles').delete().eq('id', userId)
+      await admin.auth.admin.deleteUser(userId)
+      return NextResponse.json(
+        { error: 'Could not prepare the account for activation. Nothing was created; please try again.' },
+        { status: 500 },
+      )
+    }
+
     // ── Appointment (the actual new capability this route adds) ──
     let appointmentWarning: string | null = null
     if (appointmentType) {
@@ -232,19 +251,22 @@ export async function POST(request: Request) {
       }
     }
 
+    // Audit log. NEVER put the activation token here.
     try {
       await admin.from('portal_audit_log').insert({
         action: 'user_created_with_role',
         actor_id: user.id,
         target_table: 'profiles',
         target_id: userId,
-        metadata: { role: 'teacher', appointmentType: appointmentType ?? null, code, school_id: schoolId },
+        metadata: { role: 'teacher', appointmentType: appointmentType ?? null, code, school_id: schoolId, activation_issued: true },
         logged_at: new Date().toISOString(),
       })
     } catch { /* non-critical */ }
 
     return NextResponse.json({
-      code,
+      code:                activation.token,
+      activationExpiresAt: activation.expiresAt,
+      defaultCode:         code,
       userId,
       message: 'User created successfully',
       warning: authWarning ?? appointmentWarning,
