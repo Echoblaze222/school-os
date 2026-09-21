@@ -49,17 +49,19 @@ export function generateLinkCode(): string {
   return `LNK-${group(randomChars(16), 4).join('-')}`
 }
 
-// Uppercase, drop separators/whitespace, and apply the Crockford look-alike
-// mapping so a person reading a code aloud or typing it on a phone is not
-// punished for O/0 or I/L/1 confusion. None of those letters are in ALPHABET,
-// so this can never make two different codes collide. The prefix is optional
-// (people drop it), and is only stripped when the length proves it is there,
-// because a body may legitimately start with the same letters as the prefix.
+// Uppercase and drop separators/whitespace. The prefix is optional (people
+// drop it) and is only stripped when the length proves it is there, because a
+// body may legitimately start with the same letters as the prefix. The
+// prefix is stripped BEFORE the look-alike mapping below, because the link
+// prefix itself contains an 'L'. Then apply the Crockford look-alike mapping
+// (O->0, I/L->1) so a person reading a code aloud or typing it on a phone is
+// not punished for the confusion. None of those letters are in ALPHABET, so
+// this can never make two different codes collide.
 function normalize(raw: string, prefix: string, bodyLength: number): string | null {
   if (typeof raw !== 'string') return null
   let s = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
-  s = s.replace(/O/g, '0').replace(/[IL]/g, '1')
   if (s.length === prefix.length + bodyLength && s.startsWith(prefix)) s = s.slice(prefix.length)
+  s = s.replace(/O/g, '0').replace(/[IL]/g, '1')
   if (s.length !== bodyLength) return null
   for (const ch of s) if (!ALPHABET.includes(ch)) return null
   return s
@@ -102,7 +104,8 @@ export async function issueActivationCredential(
   params: { userId: string; createdBy: string | null; ttlHours?: number },
 ): Promise<{ token: string; expiresAt: string }> {
   const token = generateActivationToken()
-  const tokenHash = hashActivationToken(token)!
+  const tokenHash = hashActivationToken(token)
+  if (!tokenHash) throw new Error('Activation credential could not be issued: token generation failed')
   const { data, error } = await admin.rpc('issue_activation_credential', {
     p_user_id:    params.userId,
     p_token_hash: tokenHash,
@@ -150,9 +153,11 @@ export async function issueStudentLinkCode(
   params: { studentId: string; createdBy: string | null; ttlDays?: number },
 ): Promise<{ code: string; expiresAt: string }> {
   const code = generateLinkCode()
+  const codeHash = hashLinkCode(code)
+  if (!codeHash) throw new Error('Link code could not be issued: code generation failed')
   const { data, error } = await admin.rpc('issue_student_link_code', {
     p_student_id: params.studentId,
-    p_code_hash:  hashLinkCode(code)!,
+    p_code_hash:  codeHash,
     p_created_by: params.createdBy,
     p_ttl_days:   params.ttlDays ?? LINK_CODE_TTL_DAYS,
   })
