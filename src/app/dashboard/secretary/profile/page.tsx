@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SecretaryProfileClient from './ProfileClient'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -10,7 +11,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, schools(*)')
+    .select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`)
     .eq('id', user.id)
     .single()
 
