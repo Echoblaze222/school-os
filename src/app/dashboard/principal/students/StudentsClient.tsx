@@ -14,6 +14,15 @@ import { CheckIcon, XIcon, AlertIcon, TransferIcon, GraduationCapIcon, LayersIco
 
 const GENDER_OPTS = ['Male', 'Female', 'Other']
 
+// C2 security remediation: this page only ever displays/uses these columns
+// (name, email search, avatar, gender, DOB-derived age, access code, class,
+// school scope). It must never select('*') on profiles - that table also
+// holds nin/nin_number/nin_screenshot_url/pin_hash/secret_identifier/
+// temp_password/address, none of which this page needs, and profiles RLS
+// is row-scoped (same-school), not column-scoped, so select('*') here would
+// hand every sensitive field on every student to the browser.
+const STUDENT_LIST_COLUMNS = 'id, full_name, email, avatar_url, gender, date_of_birth, default_code, class_level, school_id'
+
 interface Props { profile: any; school: any; userId: string }
 
 // ── Success modal shown after enrolment ─────────────────────
@@ -198,7 +207,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
       if (!school?.id) { setLoading(false); return }
       const [clsRes, stuRes] = await Promise.all([
         supabase.from('classes').select('id, name, class_level, section').eq('school_id', school.id).order('name'),
-        supabase.from('profiles').select('*').eq('school_id', school.id).eq('role', 'student').order('full_name'),
+        supabase.from('profiles').select(STUDENT_LIST_COLUMNS).eq('school_id', school.id).eq('role', 'student').order('full_name'),
       ])
       if (clsRes.data) setClasses(clsRes.data)
       if (stuRes.data) setStudents(stuRes.data)
@@ -258,7 +267,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
 
       // Refresh list
       const { data: fresh } = await supabase
-        .from('profiles').select('*')
+        .from('profiles').select(STUDENT_LIST_COLUMNS)
         .eq('school_id', school.id).eq('role', 'student').order('full_name')
       if (fresh) setStudents(fresh)
 
