@@ -13,6 +13,16 @@ import { CheckIcon, XIcon, AlertIcon, EditIcon, PeopleIcon } from '@/components/
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from '@/lib/supabase/appointments-types'
 import { HostelPicker } from '@/components/org/HostelPicker'
 
+// C2 security remediation: this page only ever displays or edits these
+// columns (name, contact, role, gender, DOB, qualification, subject,
+// address, avatar, access code, join date, school scope). It must never
+// select('*') on profiles - that table also holds nin/nin_number/
+// nin_screenshot_url/pin_hash/secret_identifier/temp_password, none of
+// which this page needs, and profiles RLS is row-scoped (same-school),
+// not column-scoped, so select('*') here would hand every sensitive
+// field on every staff member to the browser.
+const STAFF_LIST_COLUMNS = 'id, full_name, email, phone, role, gender, date_of_birth, qualification, subject, address, avatar_url, default_code, created_at, school_id'
+
 // 'counselor' and 'admin' were never valid here - counselor is an
 // appointment type (see Leadership & Appointments / the Assign Role tab
 // on Enrolment & Codes), never a profiles.role value, and 'admin' isn't
@@ -276,7 +286,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
       if (!school?.id) return
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select(STAFF_LIST_COLUMNS)
         .eq('school_id', school.id)
         .not('role', 'in', '(student,parent,principal)')
         .order('full_name')
@@ -351,7 +361,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
 
       // Refresh list
       const { data: fresh } = await supabase
-        .from('profiles').select('*')
+        .from('profiles').select(STAFF_LIST_COLUMNS)
         .eq('school_id', school.id)
         .not('role', 'in', '(student,parent)')
         .order('full_name')
