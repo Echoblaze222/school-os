@@ -10,12 +10,28 @@
 // principal — this is the inner floor beneath middleware's outer check,
 // per "hidden nav item is not a security boundary" (neither check alone
 // is enough; both must independently hold).
+//
+// C2 security remediation: this was select('*, schools(*)') - profiles
+// also holds nin/nin_number/nin_screenshot_url/pin_hash/secret_identifier/
+// temp_password/address/date_of_birth/etc, none of which anything under
+// examination/ uses. Audited every consumer (dashboard, ai, chat,
+// results, sessions, meetings, timetable, documents, incidents,
+// attendance, invigilation, notifications, profile) before narrowing:
+// every one of them only ever reads full_name/email/phone/avatar_url/
+// role/school_id from `profile`, via RoleSubHeader/DashboardHeader/
+// UniversalAIPage/UniversalChatPage/StaffMeetingsClient, or this
+// function's own role/school_id derivation below - all already covered
+// by SELF_PROFILE_SAFE_COLUMNS. No consumer needed a role-specific
+// extra field (unlike e.g. teacher/profile's qualification/employee_id),
+// so no additions were needed here, unlike some of the per-role profile
+// pages.
 // -------------------------------------------------------
 
 import { createClient } from './server'
 import { redirect } from 'next/navigation'
 import { hasExamCapability, isOnExamCommittee, type ExamCapability, type ActiveAppointment } from './examPermissions'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from './appointments-types'
+import { SELF_PROFILE_SAFE_COLUMNS } from './profileSelectors'
 
 export interface ExamContext {
   supabase: Awaited<ReturnType<typeof createClient>>
@@ -36,7 +52,7 @@ export async function getExamContext(): Promise<ExamContext> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, schools(*)')
+    .select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`)
     .eq('id', user.id)
     .single()
 
