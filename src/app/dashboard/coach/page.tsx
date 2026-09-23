@@ -1,4 +1,5 @@
 // src/app/dashboard/coach/page.tsx
+import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
 import { checkSubscription } from '@/lib/subscription'
@@ -22,10 +23,11 @@ export default async function CoachDashboardPage() {
     return <SubscriptionGate schoolName={sub.schoolName} schoolColor={sub.schoolColor} status={sub.status as any} />
   }
 
-  const supabase = (await import('@/lib/supabase/server')).createClient
-  const supabaseClient = await supabase()
+  // Still needed here (not covered by getAuthedProfile) - hasActiveAppointment
+  // takes a live client, not just the resolved data.
+  const supabase = await createClient()
 
-  const isCoach = await hasActiveAppointment(supabaseClient, user.id, profile.school_id, 'coach')
+  const isCoach = await hasActiveAppointment(supabase, user.id, profile.school_id, 'coach')
   if (!isCoach) redirect('/dashboard')
 
   const schoolId = profile.school_id
