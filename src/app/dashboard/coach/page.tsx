@@ -1,34 +1,33 @@
 // src/app/dashboard/coach/page.tsx
-import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
 import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { hasActiveAppointment } from '@/lib/permissions'
 import CoachDashboardClient  from './CoachDashboardClient'
+import { getAuthedProfile }  from '@/lib/auth/getAuthedProfile'
 
 export default async function CoachDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with coach/layout.tsx (runs on this same request, just before
+  // this page) via React's cache() - see src/lib/auth/getAuthedProfile.ts.
+  // Was this page's own separate auth.getUser() + profile/schools(*)
+  // query, duplicating exactly what the layout above it already fetched
+  // on every navigation into any coach page.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile?.school_id) redirect('/login')
 
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return <SubscriptionGate schoolName={sub.schoolName} schoolColor={sub.schoolColor} status={sub.status as any} />
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
+  const supabase = (await import('@/lib/supabase/server')).createClient
+  const supabaseClient = await supabase()
 
-  if (!profile?.school_id) redirect('/login')
-
-  const isCoach = await hasActiveAppointment(supabase, user.id, profile.school_id, 'coach')
+  const isCoach = await hasActiveAppointment(supabaseClient, user.id, profile.school_id, 'coach')
   if (!isCoach) redirect('/dashboard')
 
-  const school   = (profile as any).schools ?? null
   const schoolId = profile.school_id
   const admin    = createAdminClient()
 
