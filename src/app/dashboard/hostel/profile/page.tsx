@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
 import { requireHostelStaff } from '@/lib/permissions'
 import ProfileClient from './ProfileClient'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function HostelProfilePage() {
   const supabase = await createClient()
@@ -15,7 +16,7 @@ export default async function HostelProfilePage() {
   if (!access) redirect('/dashboard')
 
   const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+    .from('profiles').select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`).eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
 
   return <ProfileClient profile={profile} school={school} userId={user.id} />
