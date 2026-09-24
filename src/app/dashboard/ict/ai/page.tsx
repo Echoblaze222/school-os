@@ -14,13 +14,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getIctAppointment } from '@/lib/permissions'
 import UniversalAIPage from '@/components/UniversalAIPage'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function IctAiPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`).eq('id', user.id).single()
   if (!profile?.school_id) redirect('/login')
 
   const admin = createAdminClient()
