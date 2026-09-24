@@ -7,17 +7,16 @@
 // src/lib/supabase/types.ts). Previously this queried the separate
 // `school_branding` table, which is the wrong source and is why branding
 // wasn't reliably applying here.
+//
+// Uses the shared getAuthedProfile() helper (src/lib/auth/
+// getAuthedProfile.ts) instead of its own separate auth.getUser() +
+// profile/school query - parent/page.tsx below this layout needs the
+// exact same data and was independently re-fetching it on every
+// navigation.
 
-import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
+import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 
-// Force fully dynamic, per-request rendering with no caching of any kind.
-// This layout reads the signed-in user's school (brand colours, role data)
-// from cookies on every request. Without this, Next.js can cache the
-// rendered output/data for this route and reuse it across different users
-// or sessions hitting the same URL - which is what caused stale brand
-// colours after a refresh, and briefly showed one signed-in user's
-// dashboard to the next person who logs in on the same device.
 export const dynamic    = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const revalidate = 0
@@ -27,25 +26,11 @@ export default async function ParentLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { school } = await getAuthedProfile()
 
-  let primaryColor   = '#7C3AED'
-  let secondaryColor: string | undefined
-  let fontFamily      = 'Inter'
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('schools(primary_color, secondary_color, font_family)')
-      .eq('id', user.id)
-      .single()
-
-    const school = (profile as any)?.schools
-    if (school?.primary_color)   primaryColor   = school.primary_color
-    if (school?.secondary_color) secondaryColor = school.secondary_color
-    if (school?.font_family)     fontFamily     = school.font_family
-  }
+  const primaryColor   = school?.primary_color   ?? '#7C3AED'
+  const secondaryColor = school?.secondary_color ?? undefined
+  const fontFamily     = school?.font_family     ?? 'Inter'
 
   return (
     <>
