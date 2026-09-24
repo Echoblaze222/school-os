@@ -1,5 +1,6 @@
 // src/app/dashboard/parent/page.tsx
 
+import { createClient }       from '@/lib/supabase/server'
 import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
@@ -26,9 +27,8 @@ export default async function ParentDashboardPage() {
   }
 
   // ── Recent activities (last 15, most recent first) ───────────────────
-  const supabase = (await getAuthedProfile()) && (await import('@/lib/supabase/server')).createClient
-  const client = await supabase()
-  const { data: activityRows } = await client
+  const supabase = await createClient()
+  const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
     .eq('user_id', user.id)
