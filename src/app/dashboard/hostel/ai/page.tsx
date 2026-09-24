@@ -11,6 +11,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { requireHostelStaff } from '@/lib/permissions'
 import UniversalAIPage from '@/components/UniversalAIPage'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function HostelAiPage() {
   const supabase = await createClient()
@@ -21,7 +22,7 @@ export default async function HostelAiPage() {
   const auth = await requireHostelStaff(adminClient, user.id)
   if (!auth) redirect('/dashboard')
 
-  const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`).eq('id', user.id).single()
   if (!profile?.school_id) redirect('/login')
 
   const school = (profile as any).schools ?? null
