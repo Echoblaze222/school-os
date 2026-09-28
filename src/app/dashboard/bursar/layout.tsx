@@ -23,7 +23,9 @@ import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 // rendered output/data for this route and reuse it across different users
 // or sessions hitting the same URL — which is what caused stale brand
 // colours after a refresh, and briefly showed one signed-in user's
-// dashboard to the next person who logs in on the same device.
+// dashboard to the next person who logs in on the same device. Unaffected
+// by getAuthedProfile's use of React's cache() - that only dedupes work
+// WITHIN one request and never caches across requests.
 export const dynamic    = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const revalidate = 0

@@ -14,7 +14,7 @@ export default async function BursarDashboardPage() {
   if (!user) redirect('/login')
   if (!profile || profile.role !== 'bursar') redirect('/login')
 
-  // ── Subscription check ──────────────────────────────────────────────────────────
+  // ── Subscription check ────────────────────────────────────────────────────────────────
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return (
@@ -29,7 +29,7 @@ export default async function BursarDashboardPage() {
   const supabase = await createClient()
   const schoolId = profile.school_id
 
-  // ── Counts for stats cards ────────────────────────────────────────────────────
+  // ── Counts for stats cards ─────────────────────────────────────────────────────────────
   // Source of truth for what's owed/paid per student is `school_fees`
   // (amount_ngn, paid_ngn, status). `payments` is the append-only log of
   // recorded transactions used for the "paid this month" count below.
@@ -37,10 +37,8 @@ export default async function BursarDashboardPage() {
   // bursar screen was already migrated off it, this stat card was the one
   // that got missed.)
   //
-  // recent_activities folded into this batch - was a separate, sequential
-  // await after the (genuinely dependent) debtor-name lookup below,
-  // adding one more full round trip after everything else finished
-  // instead of alongside the first batch. It depends on nothing else here.
+  // recent_activities folded into this batch - it was a separate,
+  // sequential await further down that didn't depend on anything here.
   const [
     { data: feeRows },
     { count: totalStudents },
@@ -90,8 +88,8 @@ export default async function BursarDashboardPage() {
 
   // Top 3 debtors (highest outstanding balance), for the home-screen preview.
   // No FK relationship is declared on school_fees.student_id in the schema,
-  // so we compute the top balances here and resolve names in a second query
-  // - genuinely sequential, this lookup needs the fee rows above.
+  // so we compute the top balances here and resolve names in a second query -
+  // genuinely sequential: this lookup needs feeRows' result first.
   const debtorTotals = new Map<string, { studentId: string; outstanding: number; term: string | null }>()
   for (const r of rows as any[]) {
     if (!r.student_id) continue
