@@ -9,6 +9,7 @@ import { createClient }      from '@/lib/supabase/server'
 import { redirect }          from 'next/navigation'
 import { getIctAppointment } from '@/lib/permissions'
 import UniversalChatPage from '@/components/UniversalChatPage'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function IctChatPage() {
   const supabase = await createClient()
@@ -16,7 +17,7 @@ export default async function IctChatPage() {
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+    .from('profiles').select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`).eq('id', user.id).single()
   if (!profile) redirect('/login')
 
   const appointment = await getIctAppointment(supabase, user.id, (profile as any).school_id)
