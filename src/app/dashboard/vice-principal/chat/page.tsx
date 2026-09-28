@@ -6,12 +6,13 @@
 
 import { requireAppointmentPage } from '@/lib/permissions'
 import UniversalChatPage from '@/components/UniversalChatPage'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function VpChatPage() {
   const { supabase, ctx } = await requireAppointmentPage('vice_principal')
 
   const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', ctx.userId).single()
+    .from('profiles').select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`).eq('id', ctx.userId).single()
   const school = (profile as any)?.schools ?? null
   const schoolColor = school?.primary_color ?? '#800020'
 
