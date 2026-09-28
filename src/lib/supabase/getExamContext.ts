@@ -16,6 +16,7 @@ import { createClient } from './server'
 import { redirect } from 'next/navigation'
 import { hasExamCapability, isOnExamCommittee, type ExamCapability, type ActiveAppointment } from './examPermissions'
 import { APPOINTMENT_TYPES, type AppointmentTypeId } from './appointments-types'
+import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 
 export interface ExamContext {
   supabase: Awaited<ReturnType<typeof createClient>>
@@ -30,16 +31,19 @@ export interface ExamContext {
 }
 
 export async function getExamContext(): Promise<ExamContext> {
+  // Creating the client is just local cookie-reading setup, not a network
+  // round trip - every page still needs this instance (returned below as
+  // ExamContext.supabase) for its own further queries.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  // user + profile + school via the shared, React-cache()-wrapped helper -
+  // dedupes against examination/layout.tsx (which now calls the same
+  // helper on the same request) instead of each doing its own separate
+  // auth.getUser() + profile/schools(*) query. See
+  // src/lib/auth/getAuthedProfile.ts for why. Behavior is otherwise
+  // unchanged: same redirects, same returned shape.
+  const { user, profile } = await getAuthedProfile()
   if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
   if (!profile) redirect('/login')
 
   const school   = (profile as any).schools ?? null
