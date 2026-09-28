@@ -11,6 +11,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
 import { requireHostelStaff } from '@/lib/permissions'
 import UniversalChatPage from '@/components/UniversalChatPage'
+import { SELF_PROFILE_SAFE_COLUMNS } from '@/lib/supabase/profileSelectors'
 
 export default async function HostelChatPage() {
   const supabase = await createClient()
@@ -22,7 +23,7 @@ export default async function HostelChatPage() {
   if (!access) redirect('/dashboard')
 
   const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', user.id).single()
+    .from('profiles').select(`${SELF_PROFILE_SAFE_COLUMNS}, schools(*)`).eq('id', user.id).single()
   const school = (profile as any)?.schools ?? null
   const schoolColor = school?.primary_color ?? '#800020'
 
