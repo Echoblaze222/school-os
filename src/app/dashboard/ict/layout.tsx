@@ -19,35 +19,36 @@
 // fix (an appointment-aware check alongside the existing role check)
 // rather than five lanes independently re-deriving this same layout
 // guard.
+//
+// The user+profile+school portion below is sourced from
+// getAuthedProfile() (src/lib/auth/getAuthedProfile.ts, wrapped in
+// React's cache()) instead of its own separate auth.getUser() + profile
+// query - ict/page.tsx (which runs on this same request, right after
+// this layout) needs the exact same data and was independently
+// re-fetching it. The getIctAppointment() check itself is intentionally
+// NOT deduped - ict/page.tsx re-verifies it independently too, on
+// purpose (see that file's own comment on why), and that's a real
+// defense-in-depth security check, not redundant waste to optimize away.
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getIctAppointment } from '@/lib/permissions'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
+import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 
 export const dynamic    = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const revalidate = 0
 
 export default async function IctLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id, schools(primary_color, secondary_color, font_family)')
-    .eq('id', user.id)
-    .single()
-
   if (!profile?.school_id) redirect('/login')
 
   const admin = createAdminClient()
   const appointment = await getIctAppointment(admin, user.id, profile.school_id)
   if (!appointment) redirect('/dashboard')
 
-  const school = (profile as any).schools
   const primaryColor   = school?.primary_color   ?? '#800020'
   const secondaryColor = school?.secondary_color ?? undefined
   const fontFamily     = school?.font_family     ?? 'Inter'
