@@ -6,9 +6,12 @@
 //
 // Uses the shared getAuthedProfile() helper (src/lib/auth/
 // getAuthedProfile.ts) instead of its own separate auth.getUser() +
-// profile/school query - getExamContext() (called by every page below
-// this layout) now uses the same helper, so the two dedupe against each
-// other on the same request instead of each fetching independently.
+// profile/school query - getExamContext.ts (called by every examination
+// page.tsx below this layout) needs the exact same user+profile+school
+// data and was independently re-fetching it on every navigation.
+// getAuthedProfile is wrapped in React's cache(), so calling it here AND
+// inside getExamContext() only does the actual Supabase work once per
+// request.
 
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'

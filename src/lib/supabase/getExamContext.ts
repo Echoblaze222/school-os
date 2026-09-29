@@ -10,6 +10,13 @@
 // principal — this is the inner floor beneath middleware's outer check,
 // per "hidden nav item is not a security boundary" (neither check alone
 // is enough; both must independently hold).
+//
+// The user/profile/school portion is sourced from getAuthedProfile()
+// (src/lib/auth/getAuthedProfile.ts) rather than its own separate query -
+// examination/layout.tsx (which runs on this same request, just before
+// any page that calls this function) needs the exact same data. Both are
+// wrapped in React's cache(), so this now does that lookup once per
+// request instead of twice.
 // -------------------------------------------------------
 
 import { createClient } from './server'
@@ -31,22 +38,15 @@ export interface ExamContext {
 }
 
 export async function getExamContext(): Promise<ExamContext> {
-  // Creating the client is just local cookie-reading setup, not a network
-  // round trip - every page still needs this instance (returned below as
-  // ExamContext.supabase) for its own further queries.
-  const supabase = await createClient()
-
-  // user + profile + school via the shared, React-cache()-wrapped helper -
-  // dedupes against examination/layout.tsx (which now calls the same
-  // helper on the same request) instead of each doing its own separate
-  // auth.getUser() + profile/schools(*) query. See
-  // src/lib/auth/getAuthedProfile.ts for why. Behavior is otherwise
-  // unchanged: same redirects, same returned shape.
-  const { user, profile } = await getAuthedProfile()
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
   if (!profile) redirect('/login')
 
-  const school   = (profile as any).schools ?? null
+  // Still needed - the returned ExamContext hands back a live client for
+  // every examination page's own queries (see examination/page.tsx),
+  // getAuthedProfile only resolves data, not a reusable client instance.
+  const supabase = await createClient()
+
   const schoolId = school?.id ?? profile.school_id ?? ''
   const role     = profile.role as string
 
