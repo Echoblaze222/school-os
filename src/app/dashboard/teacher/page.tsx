@@ -6,11 +6,18 @@ import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
 import TeacherDashboardClient from './TeacherDashboardClient'
+import { getAuthedProfile }   from '@/lib/auth/getAuthedProfile'
+import { EXAM_APPOINTMENT_TYPES, APPOINTMENT_TYPES } from '@/lib/supabase/appointments-types'
 
 export default async function TeacherDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with teacher/layout.tsx (runs on this same request, just
+  // before this page) via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts. Was this page's own separate
+  // auth.getUser() + profile/schools(*) query, duplicating exactly what
+  // the layout above it already fetched on every navigation.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile || profile.role !== 'teacher') redirect('/login')
 
   const userId = user.id
 
@@ -26,42 +33,21 @@ export default async function TeacherDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ──────────────────────────────────────
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', userId)
-    .single()
+  const supabase = await createClient()
 
-  if (!profile || profile.role !== 'teacher') redirect('/login')
-
-  const school = (profile as any)?.schools ?? null
-
-  // ── Exam-committee appointment (Phase 2, Lane C) ──────────────────────────
-  // Only used to decide whether to show the "Examination Team" link on this
-  // dashboard, actual access control for /dashboard/examination lives in
-  // that route's own layout.tsx, this is discoverability only, not a
-  // security boundary.
-  const { EXAM_APPOINTMENT_TYPES, APPOINTMENT_TYPES } = await import('@/lib/supabase/appointments-types')
-  const { data: examAppointment } = await supabase
-    .from('appointments')
-    .select('appointment_type')
-    .eq('profile_id', userId)
-    .eq('status', 'active')
-    .in('appointment_type', EXAM_APPOINTMENT_TYPES)
-    .limit(1)
-    .maybeSingle()
-
-  const examAppointmentLabel = examAppointment
-    ? APPOINTMENT_TYPES[examAppointment.appointment_type as keyof typeof APPOINTMENT_TYPES]?.label ?? null
-    : null
-
-  // ── Parallel count queries ────────────────────────────────────────────────
+  // ── Parallel queries ──────────────────────────────────────────────────────
+  // examAppointment and recent_activities were previously separate,
+  // sequential awaits (one before this block, one after) - neither
+  // depends on the other 4 count queries or on each other, so folded in
+  // here to run alongside them instead of adding two more full round
+  // trips on top.
   const [
     { count: classCount },
     { count: assignmentCount },
     { count: pendingGrading },
     { count: quizCount },
+    { data: examAppointment },
+    { data: activityRows },
   ] = await Promise.all([
     supabase
       .from('class_teachers')
@@ -88,9 +74,37 @@ export default async function TeacherDashboardPage() {
       .eq('teacher_id', userId)
       .eq('school_id', school?.id)
       .eq('status', 'published'),
+
+    // Exam-committee appointment (Phase 2, Lane C) - only used to decide
+    // whether to show the "Examination Team" link on this dashboard,
+    // actual access control for /dashboard/examination lives in that
+    // route's own layout.tsx, this is discoverability only, not a
+    // security boundary.
+    supabase
+      .from('appointments')
+      .select('appointment_type')
+      .eq('profile_id', userId)
+      .eq('status', 'active')
+      .in('appointment_type', EXAM_APPOINTMENT_TYPES)
+      .limit(1)
+      .maybeSingle(),
+
+    supabase
+      .from('recent_activities')
+      .select('id, type, title, subtitle, href, metadata, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(15),
   ])
 
-  // Total students across all teacher's classes
+  const examAppointmentLabel = examAppointment
+    ? APPOINTMENT_TYPES[examAppointment.appointment_type as keyof typeof APPOINTMENT_TYPES]?.label ?? null
+    : null
+
+  // Total students across all teacher's classes - genuinely sequential:
+  // studentCount's query depends on the class ids returned by
+  // teacherClasses, so this can't be folded into the batch above without
+  // restructuring the query itself.
   const { data: teacherClasses } = await supabase
     .from('class_teachers')
     .select('class_id')
@@ -116,14 +130,6 @@ export default async function TeacherDashboardPage() {
     pendingGrading:  pendingGrading  ?? 0,
     quizCount:       quizCount       ?? 0,
   }
-
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
-  const { data: activityRows } = await supabase
-    .from('recent_activities')
-    .select('id, type, title, subtitle, href, metadata, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(15)
 
   const activities = (activityRows ?? []).map(row => ({
     id:         row.id,

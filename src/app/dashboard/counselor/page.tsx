@@ -17,11 +17,14 @@ import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { hasActiveAppointment } from '@/lib/permissions'
 import CounselorDashboardClient from './CounselorDashboardClient'
+import { getAuthedProfile }  from '@/lib/auth/getAuthedProfile'
 
 export default async function CounselorDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with counselor/layout.tsx via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile || profile.role !== 'teacher') redirect('/login')
 
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
@@ -34,18 +37,13 @@ export default async function CounselorDashboardPage() {
     )
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'teacher') redirect('/login')
+  // Still needed here (not covered by getAuthedProfile) - hasActiveAppointment
+  // takes a live client, not just the resolved data.
+  const supabase = await createClient()
 
   const isCounselor = await hasActiveAppointment(supabase, user.id, profile.school_id, 'counselor')
   if (!isCounselor) redirect('/dashboard/teacher')
 
-  const school   = (profile as any)?.schools ?? null
   const schoolId = profile.school_id
 
   const [

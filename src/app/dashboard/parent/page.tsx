@@ -5,11 +5,14 @@ import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
 import ParentDashboardClient  from './ParentDashboardClient'
+import { getAuthedProfile }   from '@/lib/auth/getAuthedProfile'
 
 export default async function ParentDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with parent/layout.tsx via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile || profile.role !== 'parent') redirect('/login')
 
   // ── Subscription check (before any other data fetching) ──────────────────
   const sub = await checkSubscription(user.id)
@@ -23,18 +26,8 @@ export default async function ParentDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ──────────────────────────────────────
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'parent') redirect('/login')
-
-  const school = (profile as any)?.schools ?? null
-
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  // ── Recent activities (last 15, most recent first) ───────────────────
+  const supabase = await createClient()
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')

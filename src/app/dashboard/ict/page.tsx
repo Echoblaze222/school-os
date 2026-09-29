@@ -4,19 +4,22 @@
 // re-derives the appointment kind (officer vs administrator) itself
 // rather than trusting a value handed down some other way, the same
 // "never trust a hidden nav item as the real boundary" reasoning as the
-// layout's own comment.
+// layout's own comment. That re-check is intentional and kept as-is;
+// only the user+profile+school fetch below it is now shared with the
+// layout via getAuthedProfile() (src/lib/auth/getAuthedProfile.ts).
 
-import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
 import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { getIctAppointment } from '@/lib/permissions'
 import IctClient              from './IctClient'
+import { getAuthedProfile }   from '@/lib/auth/getAuthedProfile'
 
 export default async function IctPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with ict/layout.tsx via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
 
   const sub = await checkSubscription(user.id)
@@ -24,23 +27,19 @@ export default async function IctPage() {
     return <SubscriptionGate schoolName={sub.schoolName} schoolColor={sub.schoolColor} status={sub.status as any} />
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
   if (!profile?.school_id) redirect('/login')
 
   const admin = createAdminClient()
   const appointment = await getIctAppointment(admin, user.id, profile.school_id)
   if (!appointment) redirect('/dashboard')
 
-  const school   = (profile as any).schools ?? null
   const schoolId = profile.school_id
 
+  // recentTickets folded into this batch - was a separate, sequential
+  // await after the counts block, adding one more full round trip for
+  // no reason.
   const [
-    openTickets, urgentTickets, assetsUnderRepair, openAccountRequests, pendingApplications,
+    openTickets, urgentTickets, assetsUnderRepair, openAccountRequests, pendingApplications, recentTicketsRes,
   ] = await Promise.all([
     admin.from('ict_tickets').select('id', { count: 'exact', head: true })
       .eq('school_id', schoolId).in('status', ['new', 'assigned', 'in_progress', 'waiting']),
@@ -52,6 +51,12 @@ export default async function IctPage() {
       .eq('school_id', schoolId).eq('status', 'open'),
     admin.from('access_code_applications').select('id', { count: 'exact', head: true })
       .eq('school_id', schoolId).in('status', ['pending', 'under_review']),
+    admin
+      .from('ict_tickets')
+      .select('id, category, description, priority, status, created_at, profiles!ict_tickets_reporter_id_fkey(full_name)')
+      .eq('school_id', schoolId)
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
   const counts = {
@@ -62,13 +67,6 @@ export default async function IctPage() {
     pendingApplications:  pendingApplications.count   ?? 0,
   }
 
-  const { data: recentTickets } = await admin
-    .from('ict_tickets')
-    .select('id, category, description, priority, status, created_at, profiles!ict_tickets_reporter_id_fkey(full_name)')
-    .eq('school_id', schoolId)
-    .order('created_at', { ascending: false })
-    .limit(5)
-
   return (
     <IctClient
       profile={profile}
@@ -76,7 +74,7 @@ export default async function IctPage() {
       userId={user.id}
       appointment={appointment}
       counts={counts}
-      recentTickets={recentTickets ?? []}
+      recentTickets={recentTicketsRes.data ?? []}
     />
   )
 }

@@ -6,13 +6,16 @@
 import { requireAppointmentPage } from '@/lib/permissions'
 import { listDepartments, type DepartmentWithStats } from '@/lib/supabase/appointments'
 import VicePrincipalDashboardClient from './VicePrincipalDashboardClient'
+import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 
 export default async function VicePrincipalDashboardPage() {
   const { supabase, ctx, appointment } = await requireAppointmentPage('vice_principal')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', ctx.userId).single()
-  const school = (profile as any)?.schools ?? null
+  // Shared with vice-principal/layout.tsx via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts. Was this page's own separate
+  // profile/schools(*) query, duplicating exactly what the layout above
+  // it already fetched on every navigation.
+  const { profile, school } = await getAuthedProfile()
 
   const [
     { count: studentCount },
