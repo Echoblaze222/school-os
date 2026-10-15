@@ -28,6 +28,20 @@ Use `premium-ui-design-stack` for the design process and `schoolos-guard` before
 
 For each screen: read the existing component, keep its data code untouched, swap markup and styles to the primitives, then run the review checklist in `premium-ui-design-stack`.
 
+## Taste skills: which one for which screens
+
+Optional. Only if installed from https://github.com/Leonxlnx/taste-skill (`npx skills add ...`). Where they conflict with the hard rules above, **the hard rules and `assets/tokens.css` win**. Review their scripts before enabling them.
+
+| Screens | Use | Do not use |
+|---|---|---|
+| Public pages: landing, register-school, login | `design-taste-frontend` (art direction, look-and-fix loop on screenshots) | |
+| Logged-in dashboards and all role portals | `redesign-existing-projects`, as an audit and polish pass using this skill's tokens as the design system | `design-taste-frontend`: its own description says it is not for dashboards or app screens |
+| Any large file or full-screen rewrite | `full-output-enforcement`, to stop truncated or placeholder code | |
+
+Notes:
+- `redesign-existing-projects` suggests varying navigation and doubling whitespace. For SchoolOS keep the shared sidebar and bottom nav and the token spacing; dashboards are dense on purpose. Its advice to design composed empty states is good; follow it.
+- For public-page photos, use `design-taste-frontend`'s asset script, which finds freely licensed images and records each licence. Keep credits. For dashboards, use the school's own uploads (see `references/imagery.md`).
+
 ## Where things are
 
 - `assets/tokens.css`: colours, type scale, shadows, radii, spacing.
