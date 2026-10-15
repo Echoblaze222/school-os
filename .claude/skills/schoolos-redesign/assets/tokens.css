@@ -1,0 +1,61 @@
+/* SchoolOS design tokens, ported from the TailAdmin design language (MIT). */
+:root {
+  /* Brand: set --school-brand per school (e.g. on the app root from the school's saved colour). */
+  --school-brand: #7a1f3d;
+  --brand-50: color-mix(in srgb, var(--school-brand) 8%, white);
+  --brand-100: color-mix(in srgb, var(--school-brand) 16%, white);
+  --brand-500: var(--school-brand);
+  --brand-600: color-mix(in srgb, var(--school-brand) 88%, black);
+  --brand-700: color-mix(in srgb, var(--school-brand) 75%, black);
+
+  /* Neutrals */
+  --gray-25: #fcfcfd; --gray-50: #f9fafb; --gray-100: #f2f4f7; --gray-200: #e4e7ec;
+  --gray-300: #d0d5dd; --gray-400: #98a2b3; --gray-500: #667085; --gray-600: #475467;
+  --gray-700: #344054; --gray-800: #1d2939; --gray-900: #101828; --gray-950: #0c111d;
+
+  /* Status only */
+  --success-50: #ecfdf3; --success-500: #12b76a; --success-700: #027a48;
+  --warning-50: #fffaeb; --warning-500: #f79009; --warning-700: #b54708;
+  --error-50: #fef3f2;   --error-500: #f04438;   --error-700: #b42318;
+  --info-50: #f0f9ff;    --info-500: #0ba5ec;    --info-700: #026aa2;
+
+  /* Surfaces (light) */
+  --bg-page: var(--gray-50);
+  --bg-card: #ffffff;
+  --border: var(--gray-200);
+  --text-strong: var(--gray-800);
+  --text: var(--gray-700);
+  --text-muted: var(--gray-500);
+
+  /* Type: Outfit via next/font, exposed as --font-outfit */
+  --font-sans: var(--font-outfit), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-xs: 12px;  --lh-xs: 18px;
+  --text-sm: 14px;  --lh-sm: 20px;
+  --text-base: 16px; --lh-base: 24px;
+  --text-xl: 20px;  --lh-xl: 30px;
+  --title-sm: 30px; --lh-title-sm: 38px;
+  --title-md: 36px; --lh-title-md: 44px;
+
+  /* Shape and depth */
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+  --shadow-xs: 0 1px 2px 0 rgba(16,24,40,.05);
+  --shadow-sm: 0 1px 3px 0 rgba(16,24,40,.1), 0 1px 2px 0 rgba(16,24,40,.06);
+  --shadow-md: 0 4px 8px -2px rgba(16,24,40,.1), 0 2px 4px -2px rgba(16,24,40,.06);
+  --shadow-lg: 0 12px 16px -4px rgba(16,24,40,.08), 0 4px 6px -2px rgba(16,24,40,.03);
+  --focus-ring: 0 0 0 4px color-mix(in srgb, var(--school-brand) 14%, transparent);
+
+  /* Spacing scale (4px base) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+}
+
+:root[data-theme="dark"] {
+  --bg-page: var(--gray-950);
+  --bg-card: rgba(255,255,255,.03);
+  --border: var(--gray-800);
+  --text-strong: rgba(255,255,255,.9);
+  --text: var(--gray-300);
+  --text-muted: var(--gray-400);
+}
+
+body { background: var(--bg-page); color: var(--text); font-family: var(--font-sans); font-size: var(--text-sm); line-height: var(--lh-sm); }
