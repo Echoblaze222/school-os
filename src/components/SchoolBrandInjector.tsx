@@ -6,6 +6,12 @@
 // Usage (in any dashboard layout.tsx):
 //   import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 //   <SchoolBrandInjector primaryColor={school.primary_color} fontFamily={school.font_family} />
+//
+// SECURITY: every prop is re-validated here (hex colours must be #RRGGBB,
+// font must be on the BRAND_FONTS allowlist) and the CSS block reaches the
+// inline script as an escaped string literal. See src/lib/brand/brandInputs.ts.
+
+import { resolveBrandInputs, buildBrandScript } from '@/lib/brand/brandInputs'
 
 interface Props {
   primaryColor:   string   // e.g. "#800020"
@@ -67,7 +73,15 @@ function rgba(hex: string, alpha: number): string {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`
 }
 
-export default function SchoolBrandInjector({ primaryColor, secondaryColor, fontFamily = 'Inter' }: Props) {
+export default function SchoolBrandInjector(props: Props) {
+  // Re-validate everything that came from the database. Invalid values fall
+  // back to the platform defaults instead of reaching the inline script.
+  const { primaryColor, secondaryColor, fontFamily } = resolveBrandInputs({
+    primaryColor:   props.primaryColor,
+    secondaryColor: props.secondaryColor,
+    fontFamily:     props.fontFamily,
+  })
+
   // Derive the full palette from the single primary colour
   const brandLight  = lighten(primaryColor, 0.25)
   const brandDark   = darken(primaryColor, 0.25)
@@ -78,9 +92,10 @@ export default function SchoolBrandInjector({ primaryColor, secondaryColor, font
   const glassActive = rgba(primaryColor, 0.15)
   const glassBorderHover = rgba(primaryColor, 0.4)
 
-  // Second brand colour - falls back to a warm gold if the school hasn't
-  // set one, since most school brand kits are a primary + one accent.
-  const brand2 = secondaryColor || '#C99A3B'
+  // Second brand colour - resolveBrandInputs already falls back to a warm
+  // gold if the school hasn't set one (or set an invalid one), since most
+  // school brand kits are a primary + one accent.
+  const brand2 = secondaryColor
   const brand2Light  = lighten(brand2, 0.25)
   const brand2Dark   = darken(brand2, 0.25)
   const brand2Subtle = rgba(brand2, 0.14)
@@ -133,18 +148,11 @@ export default function SchoolBrandInjector({ primaryColor, secondaryColor, font
       {/*
         Inline script: sets CSS variables on <html> synchronously,
         before any CSS or React paint. No flash. No useEffect needed.
+        The css block is embedded as an escaped string literal (see
+        buildBrandScript), never spliced in as code.
       */}
       <script
-        dangerouslySetInnerHTML={{
-          __html: `(function(){try{
-            var el=document.documentElement;
-            var pairs="${css}".split(";");
-            pairs.forEach(function(p){
-              var i=p.indexOf(":");
-              if(i>0) el.style.setProperty(p.slice(0,i),p.slice(i+1));
-            });
-          }catch(e){}})();`,
-        }}
+        dangerouslySetInnerHTML={{ __html: buildBrandScript(css) }}
       />
     </>
   )
