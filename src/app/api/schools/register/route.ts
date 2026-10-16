@@ -10,6 +10,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 import crypto                 from 'crypto'
 
+import { parseOptionalBrandFont, parseOptionalHexColor } from '@/lib/brand/brandInputs'
+
 
 
 // One-time platform setup fee
@@ -31,6 +33,21 @@ export async function POST(request: Request) {
     // a school without ever agreeing to the Terms & Conditions.
     if (!principal?.agreedToTerms) {
       return NextResponse.json({ error: 'You must agree to the Terms & Conditions and Privacy Policy to register a school.' }, { status: 400 })
+    }
+
+    // SECURITY: this route is unauthenticated, and primary_color/font_family
+    // are later rendered into an inline <script> by SchoolBrandInjector on
+    // every page of the school's portal. Accept only a #RRGGBB colour and a
+    // font from the allowlist (omitted values fall back to the column
+    // defaults, exactly as before). The injector also re-validates at render
+    // time, so this is the first of two layers, not the only one.
+    const fontResult  = parseOptionalBrandFont(school?.font_family)
+    const colorResult = parseOptionalHexColor(school?.primary_color)
+    if (!fontResult.ok || !colorResult.ok) {
+      return NextResponse.json(
+        { error: 'Invalid school branding values. Please choose a colour and font from the registration form.' },
+        { status: 400 },
+      )
     }
 
     // paymentMode: 'full' | 'installment'
@@ -89,9 +106,9 @@ export async function POST(request: Request) {
 
         tagline:            school.tagline,
 
-        primary_color:      school.primary_color,
+        primary_color:      colorResult.value,
 
-        font_family:        school.font_family,
+        font_family:        fontResult.value,
 
         status:             'pending',
 
@@ -471,5 +488,3 @@ export async function POST(request: Request) {
   }
 
 }
-
-         
