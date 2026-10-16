@@ -37,7 +37,7 @@ export const DEFAULT_PRIMARY_COLOR   = '#800020'
 export const DEFAULT_SECONDARY_COLOR = '#C99A3B'
 
 const FONT_BY_LOWERCASE = new Map<string, BrandFont>(
-  BRAND_FONTS.map(f => [f.toLowerCase(), f]),
+  BRAND_FONTS.map(f => [f.toLowerCase(), f] as [string, BrandFont]),
 )
 
 const HEX6 = /^#[0-9A-Fa-f]{6}$/
