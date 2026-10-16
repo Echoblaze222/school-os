@@ -77,7 +77,7 @@ describe('normalizeBrandFont', () => {
 })
 
 describe('normalizeHexColor', () => {
-  it('accepts #RRGGBB in either case', () => {
+  it('accepts #RRGGBB in either case and trims surrounding whitespace', () => {
     expect(normalizeHexColor('#800020')).toBe('#800020')
     expect(normalizeHexColor('#c99a3b')).toBe('#c99a3b')
     expect(normalizeHexColor('  #00B4D8 ')).toBe('#00B4D8')
@@ -85,7 +85,7 @@ describe('normalizeHexColor', () => {
 
   it('rejects malformed and malicious values', () => {
     for (const bad of MALICIOUS) expect(normalizeHexColor(bad)).toBeNull()
-    for (const bad of ['#80002', '#8000200', '800020', '#GGGGGG', 'red', 'rgb(1,2,3)', '#800020\n', '']) {
+    for (const bad of ['#80002', '#8000200', '800020', '#GGGGGG', 'red', 'rgb(1,2,3)', '#80 0020', '']) {
       expect(normalizeHexColor(bad)).toBeNull()
     }
   })
