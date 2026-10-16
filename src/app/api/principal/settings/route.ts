@@ -6,6 +6,7 @@ import { NextResponse }    from 'next/server'
 import { createClient }    from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sanitizeOptionalUrl } from '@/lib/validation/safeUrl'
+import { ALLOWED_FONT_FAMILIES, normalizeFontFamily } from '@/lib/validation/brand'
 
 const ADMISSION_STATUSES = ['open', 'closed', 'waitlist']
 
@@ -20,7 +21,7 @@ interface SettingsBody {
   school_type?:     string
   primary_color?:   string
   secondary_color?: string
-  font_family?:     string
+  font_family?:     string | null
   logo_url?:        string | null
   build_image_url?: string | null
   is_publicly_listed?:   boolean
@@ -90,6 +91,20 @@ export async function POST(req: Request) {
     )
   }
 
+  // font_family is rendered into an inline <script> by SchoolBrandInjector, so
+  // it is restricted to an explicit allowlist (see lib/validation/brand.ts).
+  // null is still accepted so the field can be cleared.
+  if (
+    body.font_family !== undefined &&
+    body.font_family !== null &&
+    normalizeFontFamily(body.font_family) === null
+  ) {
+    return NextResponse.json(
+      { error: `font_family must be one of: ${ALLOWED_FONT_FAMILIES.join(', ')}.` },
+      { status: 400 },
+    )
+  }
+
   if (body.admission_status !== undefined && !ADMISSION_STATUSES.includes(body.admission_status)) {
     return NextResponse.json(
       { error: 'admission_status must be one of open, closed, waitlist.' },
@@ -130,6 +145,11 @@ export async function POST(req: Request) {
       const val = body[key]
       update[key] = typeof val === 'string' ? val.trim() : val
     }
+  }
+
+  // Store the canonical spelling of the (already validated) font name.
+  if (typeof update.font_family === 'string') {
+    update.font_family = normalizeFontFamily(update.font_family)
   }
 
   // website_url gets the same javascript:/data: scheme check every other
