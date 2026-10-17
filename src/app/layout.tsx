@@ -1,5 +1,5 @@
 // src/app/layout.tsx
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
 // FIX 1 — Icon path mismatch:
 //   metadata.icons referenced '/icons/icon-192.png' and '/icons/icon-512.png'
 //   but the actual files in public/icons/ are named 'icon-192x192.png' and
@@ -12,7 +12,15 @@
 //   "Enable Alerts". If the tap happens before 'load', navigator.serviceWorker
 //   .ready stalls. Changed to register immediately (the browser queues it
 //   safely) so the SW is ready well before any user interaction.
-// ─────────────────────────────────────────────────────────────────────────────
+//
+// SEO — metadataBase + OpenGraph/Twitter defaults:
+//   Every page's metadata (root layout and every page.tsx that doesn't
+//   override openGraph/twitter) now resolves relative OG image URLs and
+//   canonical links against SITE_URL instead of Next silently warning
+//   "metadataBase not set" and falling back to localhost in previews/
+//   social-share unfurls. See src/lib/seo.ts for the shared constants —
+//   update SITE_URL there once a production domain exists.
+// ─────────────────────────────────────────────────────────────────────────────────
 
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
@@ -21,6 +29,7 @@ import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import AndroidBackHandler from '@/components/AndroidBackHandler'
+import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE, TWITTER_HANDLE } from '@/lib/seo'
 
 const inter = Inter({
   subsets:  ['latin'],
@@ -29,17 +38,43 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title:       'SchoolOS | Nigeria\'s Smartest School Portal',
-  description: 'Complete school management system for Nigerian schools',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default:  DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    'school management system Nigeria', 'school portal Nigeria', 'school fees software',
+    'school ERP Nigeria', 'student management system', 'school admissions Nigeria',
+    'find schools in Nigeria', 'Nigerian secondary schools', 'school SaaS Nigeria',
+  ],
   manifest:    '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SchoolOS' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: SITE_NAME },
   icons: {
-    // FIX: was 'icon-192.png' and 'icon-512.png' — actual filenames are icon-192x192.png / icon-512x512.png
     icon: [
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [{ url: '/icons/apple-touch-icon.png' }],
+  },
+  robots: { index: true, follow: true },
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    title:       DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url:         SITE_URL,
+    siteName:    SITE_NAME,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
+    locale:      'en_NG',
+    type:        'website',
+  },
+  twitter: {
+    card:        'summary_large_image',
+    title:       DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images:      [DEFAULT_OG_IMAGE],
+    site:        TWITTER_HANDLE,
   },
 }
 

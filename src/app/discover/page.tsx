@@ -4,10 +4,18 @@
 // rather than round-tripping through /api/public/promotions from the
 // server (that API route exists for client-side use, e.g. "load more").
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import PublicHeader from './PublicHeader'
 import styles from './public.module.css'
 import PromotionCard from './PromotionCard'
+import { pageMetadata } from '@/lib/seo'
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Discover Schools',
+  description: 'Admissions, open days, scholarships, and events shared directly by Nigerian schools on SchoolOS.',
+  path: '/discover',
+})
 
 export const revalidate = 60 // public feed, safe to cache briefly
 

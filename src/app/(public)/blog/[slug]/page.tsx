@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ReportContentButton from '@/components/ReportContentButton'
 import { CalendarIcon } from '@/components/Icons'
+import { pageMetadata, blogPostJsonLd, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 async function getPost(slug: string) {
   const supabase = await createClient()
@@ -22,11 +23,15 @@ async function getPost(slug: string) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const post = await getPost(slug)
-  if (!post) return { title: 'Not Found | SchoolOS' }
-  return {
-    title: `${post.seo_title || post.title} | SchoolOS`,
-    description: post.seo_description || undefined,
-  }
+  if (!post) return { title: 'Not found', robots: { index: false, follow: false } }
+
+  return pageMetadata({
+    title: post.seo_title || post.title,
+    description: post.seo_description || `${post.title} — on the SchoolOS blog.`,
+    path: `/blog/${post.slug}`,
+    image: post.cover_image_url || DEFAULT_OG_IMAGE,
+    type: 'article',
+  })
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -34,8 +39,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = await getPost(slug)
   if (!post) notFound()
 
+  const jsonLd = blogPostJsonLd(post)
+
   return (
     <article>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {post.cover_image_url && (
         <img src={post.cover_image_url} alt="" style={{ width: '100%', borderRadius: 14, marginBottom: 20, display: 'block' }} />
       )}

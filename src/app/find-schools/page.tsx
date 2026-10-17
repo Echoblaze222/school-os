@@ -9,11 +9,13 @@ import { searchPublicSchools } from '@/lib/publicSchools'
 import PublicNav from '@/components/public/PublicNav'
 import PublicFooter from '@/components/public/PublicFooter'
 import DiscoveryClient from './DiscoveryClient'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Find Schools | SchoolOS',
-  description: 'Search schools on SchoolOS by location, type, and education level.',
-}
+export const metadata: Metadata = pageMetadata({
+  title: 'Find Schools in Nigeria',
+  description: 'Search Nigerian schools on SchoolOS by location, type, and education level — nursery through senior secondary, boarding and day.',
+  path: '/find-schools',
+})
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
