@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { useRouter } from 'next/navigation'
 import { LockIcon } from '@/components/Icons'
+import { getStoredSchoolBrand, shadeHex } from '@/lib/schoolBrand'
 import styles from './LockScreen.module.css'
 
 const MAX_ATTEMPTS = 5
@@ -25,6 +26,16 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
   const router = useRouter()
+
+  // Was previously missing entirely - this whole screen was hardcoded to
+  // a fixed violet (#7C3AED) regardless of which school's account was
+  // locked. Same localStorage source /school-locked now uses (see
+  // schoolBrand.ts) - synchronous, no extra query, no loading flash.
+  const [brand] = useState(() => getStoredSchoolBrand())
+  const accent = brand.primaryColor || null
+  const overlayStyle = accent
+    ? ({ '--lock-accent-a': accent, '--lock-accent-b': shadeHex(accent, 0.6) } as React.CSSProperties)
+    : undefined
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -66,7 +77,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   }
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.overlay} style={overlayStyle}>
       <div className={styles.card}>
         <div className={styles.iconWrap}><LockIcon size={26} color="white" /></div>
         <h1 className={styles.title}>{name ? `Welcome back, ${name}` : 'Locked'}</h1>

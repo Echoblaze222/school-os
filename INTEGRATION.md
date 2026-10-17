@@ -6,10 +6,12 @@
 src/
 ├── middleware.ts                          ← ROUTE PROTECTION + AUTO-LOGOUT (server)
 ├── lib/
-│   └── useAutoLogout.ts                  ← CLIENT-SIDE INACTIVITY TRACKER
+│   └── useAutoLock.ts                     ← CLIENT-SIDE INACTIVITY TRACKER (locks, doesn't sign out)
 ├── components/
 │   └── auth/
-│       ├── TimeoutBanner.tsx             ← Shows "logged out due to inactivity" banner
+│       ├── LockScreen.tsx                  ← Password re-entry screen shown while locked
+│       ├── LockScreen.module.css
+│       ├── TimeoutBanner.tsx               ← Shows "logged out due to inactivity" banner
 │       └── TimeoutBanner.module.css
 └── app/
     ├── splash/                           ← STEP 0: Logo animation (2.8s) → /select-school
@@ -28,7 +30,7 @@ src/
     │   ├── page.tsx
     │   └── reset-password.module.css
     └── dashboard/
-        ├── dashboard-layout.tsx          ← Wraps dashboard with auto-logout + warning toast
+        ├── layout.tsx                     ← Wraps dashboard with useAutoLock + <LockScreen>
         └── dashboard-layout.module.css
 ```
 
@@ -118,35 +120,33 @@ either empty or just `return null`.
 
 ---
 
-## 7. Inactivity timeout settings
-
-Change these two values in **both** files to stay in sync:
+## 7. Inactivity settings
 
 | File | Constant |
 |------|----------|
-| `src/middleware.ts` | `INACTIVITY_MINUTES = 30` |
-| `src/lib/useAutoLogout.ts` | `INACTIVITY_MS = 30 * 60 * 1000` |
-| `src/lib/useAutoLogout.ts` | `WARNING_MS = 25 * 60 * 1000` (warn at 25 min) |
+| `src/middleware.ts` | `INACTIVITY_MINUTES = 30` (hard sign-out, server-side fallback) |
+| `profiles.auto_lock_enabled` / `profiles.auto_lock_minutes` | Per-user lock preference, editable via `<AutoLockSettings/>` in each role's Settings page. Defaults: enabled, 10 minutes. |
 
 ---
 
-## 8. How the auto-logout works (two layers)
+## 8. How inactivity handling works (two layers)
 
-### Layer 1 — Middleware (server-side)
+### Layer 1 — Middleware (server-side, hard sign-out)
 - On every page navigation, reads `schoolos_last_activity` cookie
 - If > 30 min since last activity → signs out + redirects to `/login?reason=timeout`
 - Sets/refreshes the cookie on every request
+- This is a coarse, request-cadence-based fallback - it only notices inactivity between navigations, not while someone is sitting on one page
 
-### Layer 2 — `useAutoLogout` hook (client-side)
-- Listens for: `mousemove`, `mousedown`, `keydown`, `touchstart`, `scroll`, `click`
-- If 25 min of zero activity → triggers `onWarning` callback → shows warning toast
-- If 30 min of zero activity → calls `supabase.auth.signOut()` + redirects to `/login?reason=timeout`
-- Handles tab visibility changes (user switches away and comes back)
+### Layer 2 — `useAutoLock` hook (client-side, locks without signing out)
+- Listens for: `mousemove`, `mousedown`, `keydown`, `touchstart`, `touchmove`, `scroll`, `wheel`, `click`
+- After the user's own configured number of idle minutes (`profiles.auto_lock_minutes`, default 10) → shows `<LockScreen>` instead of signing out - the Supabase session stays valid so push notifications and background sync keep working
+- Uses `localStorage`, not a timer alone, so it also catches the case where the OS killed the app process while backgrounded and it's later relaunched
+- `LockScreen` requires the account's password to resume; 5 wrong attempts trigger a real sign-out via `signOutFlow.ts`
 
-Both layers together ensure logout happens whether the user is:
-- Navigating between pages (middleware catches it)
-- Sitting on one page doing nothing (hook catches it)
-- Left the tab open in the background (visibility handler catches it)
+Both layers together ensure something happens whether the user is:
+- Navigating between pages while genuinely away a long time (middleware catches it)
+- Sitting on one page doing nothing (the hook catches it first, well before the 30-minute middleware fallback)
+- Left the tab open in the background (the hook's visibility handler catches it)
 
 ---
 

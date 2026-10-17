@@ -10,7 +10,11 @@
 }
 .iconWrap {
   width: 56px; height: 56px; border-radius: 50%;
-  background: linear-gradient(135deg, #7C3AED, #4C1D95);
+  /* Was hardcoded to a fixed violet regardless of school - now uses the
+     --lock-accent-a/-b custom properties LockScreen.tsx sets inline from
+     the school's own primary_color, falling back to the original violet
+     for any school that hasn't set one. */
+  background: linear-gradient(135deg, var(--lock-accent-a, #7C3AED), var(--lock-accent-b, #4C1D95));
   display: flex; align-items: center; justify-content: center;
   margin-bottom: var(--space-5, 20px);
 }
@@ -24,11 +28,11 @@
   border-radius: 999px; color: var(--text-primary, #fff); font-size: 0.95rem;
   outline: none; text-align: center;
 }
-.input:focus { border-color: #7C3AED; }
+.input:focus { border-color: var(--lock-accent-a, #7C3AED); }
 .error { color: var(--danger, #EF4444); font-size: 0.78rem; margin: 0; }
 .unlockBtn {
   height: 48px; border-radius: 999px; border: none;
-  background: linear-gradient(135deg, #7C3AED, #4C1D95);
+  background: linear-gradient(135deg, var(--lock-accent-a, #7C3AED), var(--lock-accent-b, #4C1D95));
   color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer;
 }
 .unlockBtn:disabled { opacity: 0.5; cursor: not-allowed; }

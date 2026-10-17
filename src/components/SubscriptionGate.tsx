@@ -5,6 +5,17 @@
 // subscription has lapsed. Replaces the dashboard content entirely.
 // The principal must renew - then setup_status goes back to 'active'
 // and this gate disappears automatically on next page load.
+//
+// NOTE (found during the school-locked branding fix): middleware.ts
+// currently redirects any non-principal billing-locked or hard-locked
+// user to /school-locked BEFORE the dashboard page.tsx that renders this
+// component ever runs - so as of this commit, the `if (sub.locked)`
+// branches in every role's page.tsx that render <SubscriptionGate> are
+// unreachable in practice. Left in place deliberately (defense-in-depth
+// matches this codebase's own stated pattern of not relying on a single
+// enforcement layer - see middleware.ts's own comments), and fixed for
+// correctness anyway rather than left to drift further. Worth a decision
+// at some point on whether to keep both layers or simplify to one.
 
 import { PhoneIcon } from '@/components/Icons'
 import styles from './SubscriptionGate.module.css'
@@ -12,7 +23,7 @@ import styles from './SubscriptionGate.module.css'
 interface Props {
   schoolName:   string
   schoolColor?: string
-  status:       'expired' | 'suspended' | 'locked' | string
+  status:       'expired' | 'suspended' | 'locked' | 'cancelled' | string
 }
 
 const STATUS_COPY: Record<string, { emoji: string; heading: string; sub: string }> = {
@@ -30,6 +41,16 @@ const STATUS_COPY: Record<string, { emoji: string; heading: string; sub: string 
     emoji:   '🚫',
     heading: 'Account Locked',
     sub:     'Access to this dashboard has been locked. Please contact your school admin or principal for assistance.',
+  },
+  // Was missing entirely, so a cancelled school fell through to the
+  // 'expired' copy ('...has ended', implying a renewal is simply overdue)
+  // rather than reflecting that the school explicitly chose not to renew.
+  // docs/lane2-subscription-billing-payment-enforcement/00-README.md
+  // documents this distinct copy as the intended behavior.
+  cancelled: {
+    emoji:   '🚫',
+    heading: 'Subscription Cancelled',
+    sub:     'Your school chose not to renew its SchoolOS subscription. Please contact your school admin or principal if you believe this is a mistake, or to arrange renewal.',
   },
 }
 
