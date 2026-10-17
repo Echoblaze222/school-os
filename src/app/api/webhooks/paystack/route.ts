@@ -45,6 +45,7 @@ import { logger, newTraceId } from '@/lib/logger'
 import { logActivityWithClient } from '@/lib/logActivity'
 import { activateSchool } from '@/lib/activateSchool'
 import { activateSubscription } from '@/app/api/subscription/callback/route'
+import { queueEmail } from '@/lib/email/queueEmail'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
 
@@ -96,6 +97,14 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
     .single()
   if (invErr || !invoice) throw new Error('Invoice not found for webhook')
 
+  // Captured once so the SAME number is used in the payments row and in
+  // the receipt email below - previously nothing referenced this value
+  // outside the insert, but adding a second call here would generate a
+  // DIFFERENT random receipt number than what's actually stored,
+  // producing a receipt email whose number doesn't match its own
+  // database record.
+  const receiptNumber = generateReceiptNumber()
+
   const { error: payErr } = await admin
     .from('payments')
     .insert({
@@ -105,7 +114,7 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
       paid_by_parent_id: paidByParentId,
       amount_paid_ngn: amountNgn,
       currency_used: 'NGN',
-      receipt_number: generateReceiptNumber(),
+      receipt_number: receiptNumber,
       payment_method: 'paystack',
       payment_reference: reference,
       notes: 'Paid online via Paystack',
@@ -150,6 +159,59 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
       subtitle: 'via Paystack',
       href: '/dashboard/parent/fees',
     })
+
+    // Email receipt — was previously not sent at all (push/in-app above
+    // was the only notification a parent ever got for a fee payment).
+    // Fetches the parent's email + school name/address for the receipt
+    // header; skips silently (no email, push/in-app above still stands)
+    // if the parent has no email on file rather than failing the whole
+    // webhook over a missing optional field.
+    const [{ data: parentProfile }, { data: school }] = await Promise.all([
+      admin.from('profiles').select('email, full_name').eq('id', studentProfile.parent_id).single(),
+      admin.from('schools').select('name, address, phone, email, logo_url').eq('id', schoolId).single(),
+    ])
+
+    if (parentProfile?.email) {
+      const paidAtLagos = new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'long', timeStyle: 'short' })
+
+      await queueEmail({
+        schoolId,
+        recipientId: studentProfile.parent_id,
+        to: parentProfile.email,
+        subject: `Receipt: ₦${amountNgn.toLocaleString('en-NG')} payment for ${studentProfile.full_name}`,
+        referenceTable: 'payments',
+        referenceId: invoiceId,
+        // Reference (not receiptNumber) as the dedupe key - it's the one
+        // value guaranteed unique per Paystack charge; a retried webhook
+        // delivery for the same charge.success event must not re-queue
+        // this receipt a second time.
+        dedupeKey: `fee-receipt-${reference}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#fff;color:#111;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+            <div style="background:#111;padding:28px;text-align:center;">
+              ${school?.logo_url ? `<img src="${school.logo_url}" alt="${school?.name ?? ''}" style="height:40px;margin-bottom:10px;" />` : ''}
+              <h1 style="margin:0;font-size:20px;color:#fff;">${school?.name ?? 'SchoolOS'}</h1>
+              <p style="margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:13px;">Payment Receipt</p>
+            </div>
+            <div style="padding:28px;">
+              <p style="font-size:14px;color:#374151;">Hi <strong>${parentProfile.full_name ?? 'there'}</strong>,</p>
+              <p style="font-size:14px;color:#374151;">Your payment was successful. Details below.</p>
+              <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Receipt No.</td><td style="padding:8px 0;text-align:right;font-family:monospace;border-bottom:1px solid #f3f4f6;">${receiptNumber}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Student</td><td style="padding:8px 0;text-align:right;font-weight:600;border-bottom:1px solid #f3f4f6;">${studentProfile.full_name}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Amount Paid</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#059669;border-bottom:1px solid #f3f4f6;">₦${amountNgn.toLocaleString('en-NG')}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">New Balance</td><td style="padding:8px 0;text-align:right;border-bottom:1px solid #f3f4f6;">₦${newBalance.toLocaleString('en-NG')}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Payment Method</td><td style="padding:8px 0;text-align:right;border-bottom:1px solid #f3f4f6;">Paystack</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;">Date</td><td style="padding:8px 0;text-align:right;">${paidAtLagos}</td></tr>
+              </table>
+              <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:24px;">
+                ${school?.name ?? 'Your school'}${school?.address ? ` · ${school.address}` : ''}${school?.phone ? ` · ${school.phone}` : ''}
+              </p>
+            </div>
+          </div>
+        `,
+      })
+    }
   }
 
   const { data: staff } = await admin
