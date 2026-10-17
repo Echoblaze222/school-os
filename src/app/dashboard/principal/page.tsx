@@ -3,23 +3,26 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalDashboardClient from './PrincipalDashboardClient'
+import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 
 export default async function PrincipalDashboardPage() {
-  const supabase = await createClient()
-
-  // BUG 7 FIX: use getUser() not deprecated getSession()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with principal/layout.tsx (which runs on this same request,
+  // just before this page) via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts. This used to be this page's own
+  // separate auth.getUser() + profile/schools(*) query, duplicating
+  // exactly what the layout above it already fetched on every single
+  // navigation into any principal page.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles').select('*, schools(*)').eq('id', user.id).single()
-
   if (!profile || profile.role !== 'principal') redirect('/login')
 
-  const school   = (profile as any)?.schools ?? null
+  const supabase = await createClient()
   const schoolId = school?.id
 
-  // BUG 7 FIX: fetch all counts in parallel
+  // BUG 7 FIX: fetch all counts in parallel. recent_activities folded
+  // into this same Promise.all too - it was a separate, sequential
+  // await after this block finished, adding one more full round trip
+  // after the others instead of alongside them.
   const [
     { count: studentCount },
     { count: teacherCount },
@@ -28,6 +31,7 @@ export default async function PrincipalDashboardPage() {
     { data: feeRows },
     { data: notifRows },
     { count: unreadNotifCount },
+    { data: activityRows },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true })
       .eq('school_id', schoolId).eq('role', 'student'),
@@ -44,6 +48,11 @@ export default async function PrincipalDashboardPage() {
       .order('created_at', { ascending: false }).limit(3),
     supabase.from('notifications').select('*', { count: 'exact', head: true })
       .eq('user_id', user.id).eq('is_read', false),
+    supabase.from('recent_activities')
+      .select('id, type, title, subtitle, href, metadata, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(15),
   ])
 
   const scores   = (results ?? []).map((r: any) => r.score).filter((s: any) => s != null)
@@ -85,14 +94,6 @@ export default async function PrincipalDashboardPage() {
   // Health score: weighted from presence of students/teachers/classes + avg score
   const hasAll      = studentCount && teacherCount && classCount
   const healthScore = hasAll ? Math.min(100, 60 + Math.round((avgScore / 100) * 40)) : 30
-
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
-  const { data: activityRows } = await supabase
-    .from('recent_activities')
-    .select('id, type, title, subtitle, href, metadata, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(15)
 
   const activities = (activityRows ?? []).map(row => ({
     id:         row.id,

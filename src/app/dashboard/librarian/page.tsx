@@ -6,29 +6,27 @@ import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { hasActiveAppointment } from '@/lib/permissions'
 import LibrarianDashboardClient from './LibrarianDashboardClient'
+import { getAuthedProfile }  from '@/lib/auth/getAuthedProfile'
 
 export default async function LibrarianDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with librarian/layout.tsx via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile?.school_id) redirect('/login')
 
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return <SubscriptionGate schoolName={sub.schoolName} schoolColor={sub.schoolColor} status={sub.status as any} />
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/login')
+  // Still needed here (not covered by getAuthedProfile) - hasActiveAppointment
+  // takes a live client, not just the resolved data.
+  const supabase = await createClient()
 
   const isLibrarian = await hasActiveAppointment(supabase, user.id, profile.school_id, 'librarian')
   if (!isLibrarian) redirect('/dashboard')
 
-  const school   = (profile as any).schools ?? null
   const schoolId = profile.school_id
   const admin    = createAdminClient()
 

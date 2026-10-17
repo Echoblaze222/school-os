@@ -5,9 +5,20 @@
 // happen per-page via requireAppointmentPage('vice_principal'), not here -
 // see docs/phase1-foundation/06-SECURITY-NOTES.md on why a layout-only
 // check is not sufficient on its own.
+//
+// Uses the shared getAuthedProfile() helper (src/lib/auth/
+// getAuthedProfile.ts) instead of its own separate auth.getUser() +
+// profile/school query - vice-principal/page.tsx below this layout
+// independently re-fetched the exact same profile+schools(*) row on
+// every navigation. NOTE: requireAppointmentPage() (lib/permissions.ts)
+// still does its own separate, narrower profile lookup internally
+// (role/school_id only, for appointment resolution) - left as-is here
+// rather than refactored, since that's a security-critical function
+// shared across many roles' access checks and deserves its own careful,
+// isolated change rather than a side effect of this pass.
 
-import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
+import { getAuthedProfile } from '@/lib/auth/getAuthedProfile'
 
 export const dynamic    = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -18,25 +29,11 @@ export default async function VicePrincipalLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { school } = await getAuthedProfile()
 
-  let primaryColor   = '#7C3AED'
-  let secondaryColor: string | undefined
-  let fontFamily      = 'Inter'
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('schools(primary_color, secondary_color, font_family)')
-      .eq('id', user.id)
-      .single()
-
-    const school = (profile as any)?.schools
-    if (school?.primary_color)   primaryColor   = school.primary_color
-    if (school?.secondary_color) secondaryColor = school.secondary_color
-    if (school?.font_family)     fontFamily     = school.font_family
-  }
+  const primaryColor   = school?.primary_color   ?? '#7C3AED'
+  const secondaryColor = school?.secondary_color ?? undefined
+  const fontFamily     = school?.font_family     ?? 'Inter'
 
   return (
     <>

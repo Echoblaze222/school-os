@@ -5,11 +5,14 @@ import { redirect }          from 'next/navigation'
 import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import SecretaryClient       from './SecretaryClient'
+import { getAuthedProfile }  from '@/lib/auth/getAuthedProfile'
 
 export default async function SecretaryPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with secretary/layout.tsx via React's cache() - see
+  // src/lib/auth/getAuthedProfile.ts.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile || profile.role !== 'secretary') redirect('/login')
 
   // ── Subscription check (before any other data fetching) ──────────────────
   const sub = await checkSubscription(user.id)
@@ -23,22 +26,15 @@ export default async function SecretaryPage() {
     )
   }
 
-  // ── Profile + school (single query, join inline like principal/page.tsx) ──
-  // FIX: join schools(*) inline - separate schools query returned null due to RLS
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'secretary') redirect('/login')
-
-  const school   = (profile as any).schools ?? null
+  const supabase = await createClient()
   const schoolId = profile.school_id
 
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [students, transfers, weekly, activeUsers, pendingAdmissions, notifRows, unreadNotifCount] = await Promise.all([
+  // recent_activities folded into this batch - was a separate, sequential
+  // await after this block finished, adding one more full round trip for
+  // no reason (nothing else here depends on it or feeds into it).
+  const [students, transfers, weekly, activeUsers, pendingAdmissions, notifRows, unreadNotifCount, activityRowsRes] = await Promise.all([
     supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
@@ -77,6 +73,12 @@ export default async function SecretaryPage() {
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id).eq('is_read', false),
+    supabase
+      .from('recent_activities')
+      .select('id, type, title, subtitle, href, metadata, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(15),
   ])
 
   const counts = {
@@ -96,15 +98,7 @@ export default async function SecretaryPage() {
     href:       n.action_url ?? n.link_url ?? '/dashboard/secretary/notifications',
   }))
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
-  const { data: activityRows } = await supabase
-    .from('recent_activities')
-    .select('id, type, title, subtitle, href, metadata, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(15)
-
-  const activities = (activityRows ?? []).map(row => ({
+  const activities = (activityRowsRes.data ?? []).map(row => ({
     id:         row.id,
     type:       row.type,
     title:      row.title,

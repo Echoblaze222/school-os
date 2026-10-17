@@ -14,29 +14,27 @@ import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { hasActiveAppointment } from '@/lib/permissions'
 import NurseDashboardClient  from './NurseDashboardClient'
+import { getAuthedProfile }  from '@/lib/auth/getAuthedProfile'
 
 export default async function NurseDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Shared with nurse/layout.tsx (runs on this same request, just before
+  // this page) via React's cache() - see src/lib/auth/getAuthedProfile.ts.
+  const { user, profile, school } = await getAuthedProfile()
   if (!user) redirect('/login')
+  if (!profile?.school_id) redirect('/login')
 
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return <SubscriptionGate schoolName={sub.schoolName} schoolColor={sub.schoolColor} status={sub.status as any} />
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/login')
+  // Still needed here (not covered by getAuthedProfile) - hasActiveAppointment
+  // takes a live client, not just the resolved data.
+  const supabase = await createClient()
 
   const isNurse = await hasActiveAppointment(supabase, user.id, profile.school_id, 'nurse')
   if (!isNurse) redirect('/dashboard')
 
-  const school   = (profile as any).schools ?? null
   const schoolId = profile.school_id
   const admin    = createAdminClient()
 
