@@ -13,6 +13,7 @@ import {
   CheckIcon, AlertIcon, SchoolIcon, LayersIcon, PhoneIcon, WalletIcon,
 } from '@/components/Icons'
 import AutoLockSettings from '@/components/settings/AutoLockSettings'
+import NotificationPreferencesSettings from '@/components/settings/NotificationPreferencesSettings'
 
 interface Profile {
   id:        string
@@ -70,7 +71,7 @@ export default function SettingsClient({ profile, school }: Props) {
 
   const [tab, setTab] = useState<Tab>('identity')
 
-  // ── Form fields ─────────────────────────────────────────────────────────────
+  // ── Form fields ───────────────────────────────────────────────────
   const [name,        setName]        = useState(school.name        ?? '')
   const [tagline,     setTagline]     = useState(school.tagline     ?? '')
   const [address,     setAddress]     = useState(school.address     ?? '')
@@ -83,7 +84,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const [secondaryColor,setSecondaryColor]= useState(school.secondary_color ?? '#C99A3B')
   const [fontFamily,  setFontFamily]  = useState(school.font_family ?? 'Inter')
 
-  // ── Public directory profile (find-schools listing) ──────────────────────
+  // ── Public directory profile (find-schools listing) ─────────────────────
   // Off by default: a school only appears on /find-schools once a principal
   // explicitly turns this on here, after filling in the fields visitors
   // will see. Nothing here overrides super-admin's separate verified_status.
@@ -98,7 +99,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const [facilitiesText, setFacilitiesText] = useState((school.facilities ?? []).join(', '))
   const [programsText,   setProgramsText]   = useState((school.programs ?? []).join(', '))
 
-  // ── Banking fields ───────────────────────────────────────────────────────────
+  // ── Banking fields ─────────────────────────────────────────
   const [bankName,      setBankName]      = useState((school as any).bank_name      ?? '')
   const [accountNumber, setAccountNumber] = useState((school as any).account_number ?? '')
   const [accountName,   setAccountName]   = useState((school as any).account_name   ?? '')
@@ -107,7 +108,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const [connectingPaystack, setConnectingPaystack] = useState(false)
   const [paystackMsg,        setPaystackMsg]        = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  // ── Image state ──────────────────────────────────────────────────────────────
+  // ── Image state ───────────────────────────────────────────────
   const [logoUrl,       setLogoUrl]       = useState<string | null>(school.logo_url)
   const [buildImageUrl, setBuildImageUrl] = useState<string | null>(school.build_image_url)
 
@@ -124,7 +125,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const [logoError,           setLogoError]           = useState<string | null>(null)
   const [buildImageError,     setBuildImageError]     = useState<string | null>(null)
 
-  // ── Save state ───────────────────────────────────────────────────────────────
+  // ── Save state ────────────────────────────────────────────────
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
   const [saveErr, setSaveErr] = useState<string | null>(null)
@@ -133,7 +134,7 @@ export default function SettingsClient({ profile, school }: Props) {
   const sigInputRef        = useRef<HTMLInputElement>(null)
   const buildImageInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Upload helper ────────────────────────────────────────────────────────────
+  // ── Upload helper ─────────────────────────────────────────────────
   async function uploadImage(
     file: File,
     bucket: string,
@@ -177,7 +178,7 @@ export default function SettingsClient({ profile, school }: Props) {
     }
   }
 
-  // ── Signature file pick ──────────────────────────────────────────────────────
+  // ── Signature file pick ───────────────────────────────────────────
   async function onSigChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -211,7 +212,7 @@ export default function SettingsClient({ profile, school }: Props) {
     supabase.from('profiles').update({ signature_url: null }).eq('id', profile.id)
   }
 
-  // ── Logo file pick ───────────────────────────────────────────────────────────
+  // ── Logo file pick ───────────────────────────────────────────────
   async function onLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -231,7 +232,7 @@ export default function SettingsClient({ profile, school }: Props) {
     )
   }
 
-  // ── Build image file pick ────────────────────────────────────────────────────
+  // ── Build image file pick ─────────────────────────────────────────
   async function onBuildImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -250,7 +251,7 @@ export default function SettingsClient({ profile, school }: Props) {
     )
   }
 
-  // ── Remove image ─────────────────────────────────────────────────────────────
+  // ── Remove image ──────────────────────────────────────────────────
   function removeLogo() {
     setLogoUrl(null)
     setLogoPreview(null)
@@ -265,7 +266,7 @@ export default function SettingsClient({ profile, school }: Props) {
     if (buildImageInputRef.current) buildImageInputRef.current.value = ''
   }
 
-  // ── Drag-and-drop ────────────────────────────────────────────────────────────
+  // ── Drag-and-drop ─────────────────────────────────────────────────
   const [logoOver,  setLogoOver]  = useState(false)
   const [buildOver, setBuildOver] = useState(false)
 
@@ -284,7 +285,7 @@ export default function SettingsClient({ profile, school }: Props) {
     inputRef.current.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
-  // ── Save all settings ────────────────────────────────────────────────────────
+  // ── Save all settings ──────────────────────────────────────────────
   async function saveSettings() {
     setSaving(true)
     setSaveErr(null)
@@ -387,7 +388,7 @@ export default function SettingsClient({ profile, school }: Props) {
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
+  // ── Helpers ─────────────────────────────────────────────────────
   const SCHOOL_TYPES = [
     'Nursery',
     'Primary',
@@ -741,6 +742,10 @@ export default function SettingsClient({ profile, school }: Props) {
             {/* ── Account Security ── */}
             <p className={styles.sectionLabel}>Account Security</p>
             <AutoLockSettings userId={profile.id} />
+
+            {/* ── Notifications ── */}
+            <p className={styles.sectionLabel}>Notifications</p>
+            <NotificationPreferencesSettings userId={profile.id} />
           </>
         )}
 
