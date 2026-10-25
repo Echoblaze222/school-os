@@ -177,11 +177,28 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ── Get user (validated server-side, never trusts a stale/forged cookie) ──
-  // getUser() contacts Supabase Auth on every call, making it the only
-  // correct choice for route protection. getSession() is client-side only
-  // and must never be used for access control decisions.
-  const { data: { user } } = await supabase.auth.getUser()
+  // ── Get user ────────────────────────────────────────────────────────
+  // getClaims() verifies the session's JWT instead of asking the Supabase
+  // Auth server about it on every request:
+  //   - project uses asymmetric JWT signing keys: the signature is checked
+  //     locally against the project's public keys (JWKS, cached in memory),
+  //     so there is NO network call to Supabase Auth. The token is still
+  //     cryptographically verified and expiry is still enforced; a forged
+  //     or tampered cookie is rejected.
+  //   - project still uses the legacy shared (HS256) secret: supabase-js
+  //     itself falls back to getUser(), i.e. exactly the previous behaviour.
+  // It still refreshes an expired access token via the refresh token and
+  // writes the new cookies through setAll above.
+  //
+  // Trade-off: with local verification, a session revoked server-side (user
+  // banned/deleted, global sign-out from another device) is only noticed
+  // when the current access token expires (Supabase default: 1 hour), not on
+  // the very next request. Everything that must take effect immediately in
+  // this file - school lock, onboarding, role and appointment checks - is
+  // read from the database below on every request and is unaffected.
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const subject = claimsData?.claims?.sub
+  const user = subject ? { id: subject } : null
 
   const isPublicPath   = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthOnlyPath = AUTH_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
@@ -373,7 +390,7 @@ export async function middleware(request: NextRequest) {
     // Every check above has passed, and the profile is already in hand, so
     // send the user straight to their own dashboard from here instead of
     // rendering src/app/dashboard/page.tsx just to redirect (that page
-    // repeats getUser() and the profile query). If the destination can't
+    // repeats the auth check and the profile query). If the destination can't
     // be decided (profile missing, unknown role) fall through and let the
     // page handle it exactly as before.
     if (pathname === '/dashboard') {

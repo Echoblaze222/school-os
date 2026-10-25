@@ -20,6 +20,7 @@ let user: { id: string } | null
 let profileRow: Row
 let apptRow: Row
 let fromCalls: string[]
+let authCalls: string[]
 let refreshCookie: boolean
 
 vi.mock('@supabase/ssr', () => ({
@@ -29,10 +30,19 @@ vi.mock('@supabase/ssr', () => ({
     opts: { cookies: { setAll: (c: { name: string; value: string; options?: object }[]) => void } },
   ) => ({
     auth: {
-      getUser: async () => {
+      // The middleware must verify the session with getClaims() (local JWT
+      // verification) - never getUser(), which is a network call each time.
+      getClaims: async () => {
+        authCalls.push('getClaims')
         // Simulate Supabase refreshing the session: it writes a new cookie
-        // through the cookies adapter while resolving the user.
+        // through the cookies adapter while resolving the claims.
         if (refreshCookie) opts.cookies.setAll([{ name: 'sb-test-auth-token', value: 'refreshed', options: { path: '/' } }])
+        return user
+          ? { data: { claims: { sub: user.id } }, error: null }
+          : { data: null, error: { message: 'no session' } }
+      },
+      getUser: async () => {
+        authCalls.push('getUser')
         return { data: { user } }
       },
       signOut: async () => ({}),
@@ -67,6 +77,7 @@ beforeEach(() => {
   profileRow = student()
   apptRow = null
   fromCalls = []
+  authCalls = []
   refreshCookie = false
 })
 
@@ -175,6 +186,25 @@ describe('checks that must still win over dispatch', () => {
   it("the user's own dashboard just renders (no dispatch, one query)", async () => {
     const res = await middleware(req('/dashboard/student'))
     expect(location(res)).toBeNull()
+    expect(fromCalls).toEqual(['profiles'])
+  })
+})
+
+describe('authentication uses local claim verification', () => {
+  it('verifies the session with getClaims() and never calls getUser() (no Auth-server round-trip)', async () => {
+    await middleware(req('/'))
+    await middleware(req('/dashboard'))
+    await middleware(req('/dashboard/student'))
+    expect(authCalls).toEqual(['getClaims', 'getClaims', 'getClaims'])
+  })
+  it('a request with no valid session is treated as signed out', async () => {
+    user = null
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/login?next=%2Fdashboard%2Fstudent')
+    expect(fromCalls).toEqual([])
+  })
+  it('the user id comes from the verified claims (profile lookup uses the token subject)', async () => {
+    user = { id: 'abc-123' }
+    await middleware(req('/dashboard/student'))
     expect(fromCalls).toEqual(['profiles'])
   })
 })
