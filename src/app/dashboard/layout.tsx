@@ -19,12 +19,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return
+    // getSession() reads the already-present session locally (no network
+    // round-trip, unlike getUser()). That is safe here because nothing is
+    // being authorized on the client: the profiles query below is still
+    // enforced by RLS on the server, and middleware has already validated
+    // the user before this layout renders.
+    supabase.auth.getSession().then(async ({ data }) => {
+      const sessionUser = data.session?.user
+      if (!sessionUser) return
       const { data: profile } = await supabase
         .from('profiles')
         .select('auto_lock_enabled, auto_lock_minutes')
-        .eq('id', data.user.id)
+        .eq('id', sessionUser.id)
         .maybeSingle()
       if (profile) {
         setPrefs({

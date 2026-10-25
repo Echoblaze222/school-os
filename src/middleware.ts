@@ -237,9 +237,15 @@ export async function middleware(request: NextRequest) {
   // expired/suspended school kept working in full through the principal
   // account with no way to force renewal.
   if (user && pathname.startsWith('/dashboard')) {
+    // The school's lock fields are fetched in the SAME query as the profile
+    // (PostgREST embedded select over profiles_school_id_fkey) instead of a
+    // second, dependent `schools` query. That removes one full Supabase
+    // round-trip from every /dashboard navigation. RLS still applies to both
+    // tables exactly as before - same user, same policies. The explicit FK
+    // name avoids ambiguity if profiles ever gains another FK to schools.
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, school_id, onboarding_stage')
+      .select('role, school_id, onboarding_stage, school:schools!profiles_school_id_fkey(setup_status, is_platform_active)')
       .eq('id', user.id)
       .single()
 
@@ -285,35 +291,21 @@ export async function middleware(request: NextRequest) {
     const needsAppointmentCheck = !!appointmentTypes && profile?.role !== 'principal'
     const needsSchoolCheck = !!(profile && profile.school_id)
 
-    // The appointment-boundary check and the school-lock check are
-    // independent of each other (neither's result depends on the other),
-    // so fire both queries concurrently instead of sequentially. This
-    // trims one full Supabase round-trip off every /dashboard navigation
-    // that needs both - middleware runs before the page starts rendering,
-    // so this latency was previously paid on every single page-to-page
-    // click. Redirect priority (appointment boundary still wins over
-    // school lock, matching the original sequential order) is preserved
-    // below even though both queries have already resolved by then.
-    const [apptResult, schoolResult] = await Promise.all([
-      needsAppointmentCheck
-        ? supabase
-            .from('appointments')
-            .select('id')
-            .eq('profile_id', user.id)
-            .eq('school_id', profile?.school_id ?? '')
-            .eq('status', 'active')
-            .in('appointment_type', appointmentTypes!)
-            .limit(1)
-            .maybeSingle()
-        : Promise.resolve({ data: null as { id: string } | null }),
-      needsSchoolCheck
-        ? supabase
-            .from('schools')
-            .select('setup_status, is_platform_active')
-            .eq('id', profile!.school_id)
-            .single()
-        : Promise.resolve({ data: null as { setup_status: string; is_platform_active: boolean } | null }),
-    ])
+    // Only the appointment-boundary check still needs its own query (and
+    // only for appointment-gated dashboards); the school-lock fields already
+    // arrived with the profile above. Redirect priority is unchanged:
+    // appointment boundary still wins over school lock.
+    const apptResult = needsAppointmentCheck
+      ? await supabase
+          .from('appointments')
+          .select('id')
+          .eq('profile_id', user.id)
+          .eq('school_id', profile?.school_id ?? '')
+          .eq('status', 'active')
+          .in('appointment_type', appointmentTypes!)
+          .limit(1)
+          .maybeSingle()
+      : { data: null as { id: string } | null }
 
     if (needsAppointmentCheck && !apptResult.data) {
       const home = ROLE_HOME[profile?.role ?? ''] ?? '/login'
@@ -321,7 +313,13 @@ export async function middleware(request: NextRequest) {
     }
 
     if (needsSchoolCheck) {
-      const school = schoolResult.data
+      // An embedded to-one relation can be typed as an object or a
+      // single-item array depending on client typings; normalize both.
+      const embedded = (profile as { school?: unknown } | null)?.school
+      const school = (Array.isArray(embedded) ? embedded[0] : embedded) as
+        | { setup_status: string; is_platform_active: boolean }
+        | null
+        | undefined
       if (school) {
         const isHardLocked =
           !school.is_platform_active ||
