@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { dashboardDestination } from '@/lib/dashboardDispatch'
 
 // ── Config ──────────────────────────────────────────────────
 const INACTIVITY_MINUTES = 30          // Auto-logout after 30 min idle
@@ -147,6 +148,16 @@ export async function middleware(request: NextRequest) {
 
   // Build Supabase SSR client that reads/writes cookies
   const response = NextResponse.next()
+
+  // A redirect built with NextResponse.redirect() starts with no cookies, so
+  // any session-refresh cookies the Supabase client just wrote onto
+  // `response` would be dropped and the next request would have to refresh
+  // the token all over again. Used only by the launch-path redirects below.
+  const redirectKeepingCookies = (url: URL) => {
+    const redirect = NextResponse.redirect(url)
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie))
+    return redirect
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -357,12 +368,38 @@ export async function middleware(request: NextRequest) {
         }
       }
     }
+
+    // ── Role dispatch for the bare /dashboard URL ──────────────
+    // Every check above has passed, and the profile is already in hand, so
+    // send the user straight to their own dashboard from here instead of
+    // rendering src/app/dashboard/page.tsx just to redirect (that page
+    // repeats getUser() and the profile query). If the destination can't
+    // be decided (profile missing, unknown role) fall through and let the
+    // page handle it exactly as before.
+    if (pathname === '/dashboard') {
+      const destination = dashboardDestination(profile)
+      if (destination) {
+        return redirectKeepingCookies(new URL(destination, request.url))
+      }
+    }
   }
 
   // ── Root redirect ────────────────────────────────────────────
   if (pathname === '/') {
     if (user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      // Signed-in visitors never see the landing page. Previously this hopped
+      // to /dashboard, which then hopped again to the role dashboard - two
+      // full redirects on every app launch. Decide the destination here in
+      // one hop. The destination request still passes through this
+      // middleware, so onboarding, role and school-lock checks all still run
+      // on it. If the profile can't be read, keep the old behaviour.
+      const { data: launchProfile } = await supabase
+        .from('profiles')
+        .select('role, school_id')
+        .eq('id', user.id)
+        .single()
+      const destination = dashboardDestination(launchProfile)
+      return redirectKeepingCookies(new URL(destination ?? '/dashboard', request.url))
     }
     // Phase 4, Lane A (S38): '/' is now the public marketing landing
     // page (src/app/page.tsx renders it directly for a signed-out
