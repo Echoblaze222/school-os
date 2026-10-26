@@ -8,6 +8,7 @@
 // `school_branding` table, which is the wrong source and is why branding
 // wasn't reliably applying here.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
@@ -28,8 +29,7 @@ export default async function ParentLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   let primaryColor   = '#7C3AED'
   let secondaryColor: string | undefined
   let fontFamily      = 'Inter'
