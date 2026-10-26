@@ -12,7 +12,7 @@ export default async function BursarDashboardPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  // ── Subscription check ──────────────────────────────────────────────────────────
+  // ── Subscription check ────────────────────────────────────────────────────
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return (
@@ -24,7 +24,7 @@ export default async function BursarDashboardPage() {
     )
   }
 
-  // ── Profile + school ────────────────────────────────────────────────────────
+  // ── Profile + school ──────────────────────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -36,7 +36,7 @@ export default async function BursarDashboardPage() {
   const school   = (profile as any)?.schools ?? null
   const schoolId = profile.school_id
 
-  // ── Counts for stats cards ────────────────────────────────────────────────────────
+  // ── Counts for stats cards ────────────────────────────────────────
   // Source of truth for what's owed/paid per student is `school_fees`
   // (amount_ngn, paid_ngn, status). `payments` is the append-only log of
   // recorded transactions used for the "paid this month" count below.
