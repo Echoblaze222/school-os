@@ -1,6 +1,6 @@
 /* ============================================================
-   SchoolOS — Global Design System
-   Violet × Gold × Deep Space
+   SchoolOS: Global Design System
+   Burgundy × Cyan × Deep Space
    Mobile-first + Desktop sidebar layout
    ============================================================ */
 
@@ -120,6 +120,9 @@
   --input-border:   rgba(255,255,255,0.1);
   --input-focus:    var(--brand-glow);
 
+  /* Keyboard focus ring (visible on the dark backgrounds; burgundy alone is too low-contrast here) */
+  --focus-ring:     var(--gold-light);
+
   /* Sidebar (desktop) */
   --sidebar-bg:     #0A0F1C;
   --sidebar-border: rgba(255,255,255,0.06);
@@ -161,6 +164,9 @@
   --input-border:   rgba(0,0,0,0.12);
   --input-focus:    var(--brand-glow);
 
+  /* Keyboard focus ring (brand burgundy has strong contrast on light backgrounds) */
+  --focus-ring:     var(--brand);
+
   --sidebar-bg:     #FFFFFF;
   --sidebar-border: rgba(0,0,0,0.06);
   --sidebar-width:  260px;
@@ -195,9 +201,29 @@ a { color: inherit; text-decoration: none; }
 input, textarea, select { font-family: inherit; }
 ul, ol { list-style: none; }
 
+/* Keyboard focus ring. Only shows for keyboard / switch-access navigation
+   (:focus-visible), never on mouse or touch taps, so it adds no visual noise
+   for normal use. Placed before the component rules on purpose: .input sets
+   its own outline:none plus a custom focus ring further down, and the later
+   rule wins at equal specificity, so inputs keep their existing look. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Tabular figures: every digit gets the same width so numbers line up in
+   columns and do not jitter when values change. Applied to tables and to the
+   shared stat/number classes. Use the .tabular-nums utility on any other
+   element that shows money, GPA, percentages, counts, or dates. */
+table, th, td,
+.stat-card-value,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── LAYOUT SYSTEM ─────────────────────────────────────────── */
 
-/* Desktop shell — sidebar + content */
+/* Desktop shell: sidebar + content */
 .app-shell {
   display: flex;
   min-height: 100dvh;
@@ -320,10 +346,13 @@ ul, ol { list-style: none; }
 }
 .btn-secondary:hover { border-color: var(--brand-border); background: var(--glass-bg-hover); }
 
+/* Cyan accent button. Previously blended cyan into amber (#D97706) with an
+   amber shadow, which did not match the cyan --gold token. Now solid cyan with
+   a cyan-tinted shadow so it reads as one consistent accent. */
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold) 0%, #D97706 100%);
+  background: var(--gold);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+  box-shadow: 0 4px 16px var(--gold-border);
 }
 
 .btn-danger {
@@ -737,7 +766,7 @@ textarea.input {
 .animate-toast-out { animation: toast-out 0.2s cubic-bezier(0.4,0,0.2,1) forwards; }
 
 /* Used by ToastContext.tsx's stacked toast items, which live inside an
-   already-horizontally-centered container — unlike toast-in/toast-out
+   already-horizontally-centered container. Unlike toast-in/toast-out
    above (designed for a single element that centers itself via
    left:50% + translate(-50%,...)), these only animate vertically so
    they don't fight the parent's centering transform. */
@@ -769,7 +798,7 @@ textarea.input {
    motion collapses to an instant, accessible state; essential feedback
    (opacity/color changes) still communicates state without movement. */
 @media (prefers-reduced-motion: reduce) {
-  /* Universal catch-all — covers every animation/transition in the app,
+  /* Universal catch-all: covers every animation/transition in the app,
      whether applied via a CSS class (.animate-fade-up etc.) or via an
      inline style={{ animation: '...' }} on a component (chat bubbles,
      quick-prompt cards, typing indicators, etc). Targeted class-based
@@ -847,22 +876,22 @@ textarea.input {
 }
 
 /* ============================================================
-   Phase 1 Foundation — added design tokens (§68.14 gap-fill)
+   Phase 1 Foundation: added design tokens (§68.14 gap-fill)
    Button/link/table/modal/chart tokens, derived from the
    existing --brand / --gold / status palette.
    ============================================================ */
 /* ============================================================
-   SchoolOS — Phase 1 Foundation: missing token surfaces (§68.14)
+   SchoolOS Phase 1 Foundation: missing token surfaces (§68.14)
    Appended to src/app/globals.css, not a replacement.
    Every color below is derived from the EXISTING tokens already in
    globals.css (--brand, --brand-light, --brand-dark, --gold, --success,
-   --danger, --warning, --info, --text-*) — nothing invented, per
+   --danger, --warning, --info, --text-*), nothing invented, per
    "reuse before inventing." Confirmed gaps from the audit: buttons,
    links, tables, modals, charts had no dedicated tokens.
    ============================================================ */
 
 :root {
-  /* Buttons — states as tokens, not just hover CSS, so Phase 3/4 pages
+  /* Buttons: states as tokens, not just hover CSS, so Phase 3/4 pages
      read one source instead of re-deriving hover/active shades per file. */
   --btn-primary-bg:          var(--brand);
   --btn-primary-bg-hover:    var(--brand-light);
@@ -904,7 +933,7 @@ textarea.input {
   --modal-border:      var(--glass-border);
   --modal-shadow:      0 16px 64px rgba(0,0,0,0.5);
 
-  /* Charts — reuses brand/gold/status so charts never invent an
+  /* Charts: reuses brand/gold/status so charts never invent an
      off-palette color; ordered for series that need 4-5 distinguishable
      lines/bars before repeating. */
   --chart-series-1:  var(--brand);
@@ -915,7 +944,7 @@ textarea.input {
   --chart-grid-line: var(--glass-border);
   --chart-axis-text: var(--text-muted);
 
-  /* Status — already existed as flat colors; adding the text/bg pairing
+  /* Status: already existed as flat colors; adding the text/bg pairing
      Phase 3/4 badges and pills need so they don't recompute contrast. */
   --status-success-bg:  var(--success-subtle);
   --status-success-text: var(--success);
@@ -927,7 +956,7 @@ textarea.input {
   --status-info-text:    var(--info);
 }
 
-/* Light mode overrides — only where the value actually needs to differ
+/* Light mode overrides: only where the value actually needs to differ
    from the dark-mode default above (most button/link/chart tokens don't;
    tables and modals do, matching the existing light-mode pattern for
    bg-elevated / bg-raised). */
