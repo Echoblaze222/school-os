@@ -3,6 +3,7 @@
 // The middleware protects this route, so by the time we get here
 // there is always a valid session.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -18,8 +19,7 @@ const ROLE_ROUTES: Record<string, string> = {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   if (!user) {
     redirect('/login')
   }
@@ -49,4 +49,3 @@ export default async function DashboardPage() {
 
   redirect(destination)
 }
-

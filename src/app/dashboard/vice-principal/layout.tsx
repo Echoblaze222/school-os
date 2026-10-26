@@ -6,6 +6,7 @@
 // see docs/phase1-foundation/06-SECURITY-NOTES.md on why a layout-only
 // check is not sufficient on its own.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
@@ -19,8 +20,7 @@ export default async function VicePrincipalLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   let primaryColor   = '#7C3AED'
   let secondaryColor: string | undefined
   let fontFamily      = 'Inter'
