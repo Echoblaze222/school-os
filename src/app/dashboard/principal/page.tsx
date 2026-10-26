@@ -70,8 +70,9 @@ export default async function PrincipalDashboardPage() {
   const nairaCompact = (n: number) => new Intl.NumberFormat('en-NG', {
     style: 'currency', currency: 'NGN', notation: 'compact', maximumFractionDigits: 1,
   }).format(n)
+  const outstandingFees = Math.max(0, feeTotals.due - feeTotals.paid)
   const feesCollectedDisplay = nairaCompact(feeTotals.paid)
-  const outstandingFeesDisplay = nairaCompact(Math.max(0, feeTotals.due - feeTotals.paid))
+  const outstandingFeesDisplay = nairaCompact(outstandingFees)
 
   const pendingNotifications = (notifRows ?? []).map((n: any) => ({
     id:         n.id,
@@ -122,6 +123,7 @@ export default async function PrincipalDashboardPage() {
         healthScore,
         feeCollectionRate,
         feesCollectedDisplay,
+        outstandingFees,
         outstandingFeesDisplay,
         pendingActions: (unreadNotifCount ?? 0),
       }}

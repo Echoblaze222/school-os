@@ -29,6 +29,16 @@ function notifRelTime(iso: string) {
   return `${Math.floor(h / 24)}d ago`
 }
 
+// Notification hrefs come from the database. Only allow in-app absolute paths
+// so a malformed or malicious action_url can never become a javascript: or
+// external link from the dashboard.
+function safeHref(href: string | undefined | null): string {
+  const fallback = '/dashboard/principal/notifications'
+  if (!href) return fallback
+  if (!href.startsWith('/') || href.startsWith('//')) return fallback
+  return href
+}
+
 // Picks the lowest-scoring class-relevant signal we actually have to
 // surface as the AI insight, instead of a generic static line.
 function buildInsight(counts: any): string {
@@ -47,6 +57,12 @@ export default function PrincipalDashboardClient({
 }: Props) {
   const schoolColor = school?.primary_color ?? '#7C3AED'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Principal'
+
+  // "Needs your attention" is built only from data we really have: unpaid fees
+  // (when there is a balance) plus the latest unread notifications. Nothing is
+  // estimated or invented, and the strip says so plainly when it is empty.
+  const hasOutstandingFees = (counts.outstandingFees ?? 0) > 0
+  const needsYouCount = (hasOutstandingFees ? 1 : 0) + pendingNotifications.length
 
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
@@ -67,7 +83,7 @@ export default function PrincipalDashboardClient({
         profile={profile}
         school={school}
         greeting={`Good day, ${firstName}`}
-        headline={`${counts.feesCollectedDisplay ?? '—'} collected · ${counts.feeCollectionRate ?? 0}% of fees`}
+        headline={`${counts.feesCollectedDisplay ?? '-'} collected · ${counts.feeCollectionRate ?? 0}% of fees`}
         sub={`${counts.studentCount ?? 0} students on roll · ${counts.teacherCount ?? 0} staff`}
         featureGroups={FEATURE_GROUPS}
         showBranding
@@ -87,24 +103,24 @@ export default function PrincipalDashboardClient({
         <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)' }}>
           <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Fees Collected</p>
-            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
-              {counts.feesCollectedDisplay ?? '—'}
+            <p className="tabular-nums" style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {counts.feesCollectedDisplay ?? '-'}
             </p>
-            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
+            <p className="tabular-nums" style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
               {counts.feeCollectionRate ?? 0}% of fees this term
             </p>
             <div style={{ display: 'flex', gap: 16, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
               <div>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Students</p>
-                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.studentCount ?? 0}</p>
+                <p className="tabular-nums" style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{counts.studentCount ?? 0}</p>
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Teachers</p>
-                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.teacherCount ?? 0}</p>
+                <p className="tabular-nums" style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{counts.teacherCount ?? 0}</p>
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Classes</p>
-                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.classCount ?? 0}</p>
+                <p className="tabular-nums" style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{counts.classCount ?? 0}</p>
               </div>
             </div>
           </div>
@@ -112,17 +128,60 @@ export default function PrincipalDashboardClient({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Average score</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.avgScore ?? 0) < 50 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.avgScore ?? 0}%</p>
+              <p className="tabular-nums" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: (counts.avgScore ?? 0) < 50 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.avgScore ?? 0}%</p>
             </div>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Outstanding fees</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--status-warn, #E4572E)' }}>{counts.outstandingFeesDisplay ?? '—'}</p>
+              <p className="tabular-nums" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--status-warn, #E4572E)' }}>{counts.outstandingFeesDisplay ?? '-'}</p>
             </div>
             <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Waiting on you</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingActions ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.pendingActions ?? 0}</p>
+              <p className="tabular-nums" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: (counts.pendingActions ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.pendingActions ?? 0}</p>
             </div>
           </div>
+        </div>
+
+        {/* Needs your attention: the dashboard ranks what matters instead of
+            leaving the principal to scan. Unpaid fees first (money), then the
+            latest unread notifications. Reuses the existing notification card
+            styles, so no CSS module changes. */}
+        <div className={`${styles.notifCard} ${motion.riseIn}`} style={{ animationDelay: '120ms', marginBottom: 'var(--space-4)' }}>
+          <div className={styles.notifCardHeader}>
+            <p className={styles.sectionLabel} style={{ marginBottom: 0 }}>
+              Needs your attention {unreadNotifCount > 0 && <span className={styles.notifCountBadge}>{unreadNotifCount}</span>}
+            </p>
+            <Link href="/dashboard/principal/notifications" className={styles.notifViewAll}>View All</Link>
+          </div>
+
+          {needsYouCount === 0 && (
+            <div className={styles.notifRow} style={{ cursor: 'default' }}>
+              <div className={styles.notifBody}>
+                <p className={styles.notifText}>Nothing needs you right now. New fee balances and alerts will appear here.</p>
+              </div>
+            </div>
+          )}
+
+          {hasOutstandingFees && (
+            <Link href="/dashboard/principal/fees" className={styles.notifRow}>
+              <span className={styles.notifDot} style={{ background: 'var(--status-warn, #E4572E)' }} />
+              <div className={styles.notifBody}>
+                <p className={styles.notifTitle}>Unpaid fees</p>
+                <p className={`${styles.notifText} tabular-nums`}>{counts.outstandingFeesDisplay} still outstanding · {counts.feeCollectionRate ?? 0}% collected</p>
+              </div>
+              <span className={styles.notifTime}>Fees</span>
+            </Link>
+          )}
+
+          {pendingNotifications.map(n => (
+            <Link key={n.id} href={safeHref(n.href)} className={styles.notifRow}>
+              <span className={styles.notifDot} style={{ background: schoolColor }} />
+              <div className={styles.notifBody}>
+                <p className={styles.notifTitle}>{n.title}</p>
+                <p className={styles.notifText}>{n.body}</p>
+              </div>
+              <span className={styles.notifTime}>{notifRelTime(n.created_at)}</span>
+            </Link>
+          ))}
         </div>
 
         {/* AI Insight - one concrete, current observation, not a static blurb */}
@@ -133,28 +192,6 @@ export default function PrincipalDashboardClient({
             actionHref="/dashboard/principal/ai"
           />
         </div>
-
-        {/* Pending notifications preview */}
-        {pendingNotifications.length > 0 && (
-          <div className={`${styles.notifCard} ${motion.riseIn}`} style={{ animationDelay: '160ms' }}>
-            <div className={styles.notifCardHeader}>
-              <p className={styles.sectionLabel} style={{ marginBottom: 0 }}>
-                Pending Notifications {unreadNotifCount > 0 && <span className={styles.notifCountBadge}>{unreadNotifCount}</span>}
-              </p>
-              <Link href="/dashboard/principal/notifications" className={styles.notifViewAll}>View All</Link>
-            </div>
-            {pendingNotifications.map(n => (
-              <Link key={n.id} href={n.href} className={styles.notifRow}>
-                <span className={styles.notifDot} style={{ background: schoolColor }} />
-                <div className={styles.notifBody}>
-                  <p className={styles.notifTitle}>{n.title}</p>
-                  <p className={styles.notifText}>{n.body}</p>
-                </div>
-                <span className={styles.notifTime}>{notifRelTime(n.created_at)}</span>
-              </Link>
-            ))}
-          </div>
-        )}
 
         <RecentActivity
           items={activities}
