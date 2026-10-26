@@ -36,6 +36,22 @@
 //   SCH-REG-*  → school registration   (activateSchool)
 //   SCOS-*     → subscription renewal  (activateSubscription)
 //   anything else with metadata.invoice_id → fee/invoice payment (handled inline)
+//
+// Pre-pilot hardening pass (this branch):
+//   - Signature comparison is now constant-time, and a missing
+//     PAYSTACK_SECRET_KEY is an explicit 500 instead of an accidental one.
+//   - Receipt numbers use a 6-digit crypto-random suffix (was 4 digits from
+//     Math.random, which collides at roughly a hundred receipts a day).
+//   - Invoice payments are retry-safe: the payments row is only inserted if
+//     no row with this Paystack reference exists yet, so a retry after a
+//     partial failure can't double-record the payment.
+//   - Invoice totals are updated with an optimistic-concurrency guard (the
+//     UPDATE only applies if amount_paid_ngn is still what we read) and
+//     retried, so two concurrent payments on one invoice can't overwrite
+//     each other's increment.
+//   - Post-payment notifications/activity logging are best-effort: once the
+//     money is recorded, a notification failure must not throw and cause a
+//     retry that re-applies the payment.
 
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
@@ -46,19 +62,28 @@ import { logActivityWithClient } from '@/lib/logActivity'
 import { activateSchool } from '@/lib/activateSchool'
 import { activateSubscription } from '@/app/api/subscription/callback/route'
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
 
 const REGISTRATION_REFERENCE_PREFIX = 'SCH-REG-'
 const SUBSCRIPTION_REFERENCE_PREFIX = 'SCOS-'
 
+const MAX_INVOICE_UPDATE_ATTEMPTS = 4
+
 function generateReceiptNumber(): string {
   const d = new Date()
   const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
-  const rand = Math.floor(1000 + Math.random() * 9000)
+  const rand = crypto.randomInt(100000, 1000000)
   return `RCP-${stamp}-${rand}`
 }
 
-// ─── Invoice/fee payment ────────────────────────────────────────────────
+function signatureMatches(signature: string, expectedHash: string): boolean {
+  const a = Buffer.from(signature, 'utf8')
+  const b = Buffer.from(expectedHash, 'utf8')
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
+
+// ─── Invoice/fee payment ──────────────────────────────────────────────────────────
 // Kept inline (not its own lib function) because, unlike the other two
 // flows, this one has no separate "callback" redirect path duplicating
 // it elsewhere — the online-checkout flow does a full-page redirect to
@@ -89,94 +114,136 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
   // never are).
   const paidByParentId = typeof metadata?.parent_id === 'string' ? metadata.parent_id : null
 
-  const { data: invoice, error: invErr } = await admin
-    .from('payment_invoices')
-    .select('id, balance_ngn, amount_paid_ngn, amount_due_ngn')
-    .eq('id', invoiceId)
-    .single()
-  if (invErr || !invoice) throw new Error('Invoice not found for webhook')
-
-  const { error: payErr } = await admin
-    .from('payments')
-    .insert({
-      invoice_id: invoiceId,
-      student_id: studentId,
-      received_by: null, // null = parent self-service via Paystack, not recorded by a bursar
-      paid_by_parent_id: paidByParentId,
-      amount_paid_ngn: amountNgn,
-      currency_used: 'NGN',
-      receipt_number: generateReceiptNumber(),
-      payment_method: 'paystack',
-      payment_reference: reference,
-      notes: 'Paid online via Paystack',
-      paid_at: new Date().toISOString(),
-      school_id: schoolId,
-      platform_fee_ngn: platformFeeNgn,
-      school_amount_ngn: schoolAmountNgn,
-    })
-  if (payErr) throw new Error(`Failed to insert payment: ${payErr.message}`)
-
-  const newAmountPaid = (invoice.amount_paid_ngn ?? 0) + amountNgn
-  const newBalance = Math.max(0, invoice.amount_due_ngn - newAmountPaid)
-  const newStatus = newBalance <= 0 ? 'paid' : 'partial'
-
-  const { error: updateErr } = await admin
-    .from('payment_invoices')
-    .update({ amount_paid_ngn: newAmountPaid, balance_ngn: newBalance, status: newStatus })
-    .eq('id', invoiceId)
-  if (updateErr) throw new Error(`Failed to update invoice: ${updateErr.message}`)
-
-  const { data: studentProfile } = await admin
-    .from('profiles')
-    .select('parent_id, full_name')
-    .eq('id', studentId)
-    .single()
-
-  if (studentProfile?.parent_id) {
-    await admin.from('notifications').insert({
-      user_id: studentProfile.parent_id,
-      school_id: schoolId,
-      type: 'payment',
-      title: 'Payment Received',
-      body: `Your payment of ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name} was successful.`,
-      action_url: '/dashboard/parent/fees',
-      is_read: false,
-    })
-
-    await logActivityWithClient(admin, {
-      userId: studentProfile.parent_id, schoolId,
-      type: 'fee_paid',
-      title: `Paid ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name}`,
-      subtitle: 'via Paystack',
-      href: '/dashboard/parent/fees',
-    })
+  const readInvoice = async () => {
+    const { data: row, error } = await admin
+      .from('payment_invoices')
+      .select('id, balance_ngn, amount_paid_ngn, amount_due_ngn')
+      .eq('id', invoiceId)
+      .single()
+    if (error || !row) throw new Error('Invoice not found for webhook')
+    return row
   }
 
-  const { data: staff } = await admin
-    .from('profiles')
-    .select('id, role')
-    .eq('school_id', schoolId)
-    .in('role', ['bursar', 'principal'])
+  let invoice = await readInvoice()
 
-  if (staff && staff.length > 0) {
-    await admin.from('notifications').insert(
-      staff.map((s: any) => ({
-        user_id: s.id,
+  // Retry-safe insert: if a previous delivery already recorded a payment with
+  // this Paystack reference (and then failed before/while updating the
+  // invoice), skip the insert and carry on to the invoice update instead of
+  // recording the same money twice.
+  const { data: existingPayment } = await admin
+    .from('payments')
+    .select('id')
+    .eq('payment_reference', reference)
+    .limit(1)
+
+  if (!existingPayment || existingPayment.length === 0) {
+    const { error: payErr } = await admin
+      .from('payments')
+      .insert({
+        invoice_id: invoiceId,
+        student_id: studentId,
+        received_by: null, // null = parent self-service via Paystack, not recorded by a bursar
+        paid_by_parent_id: paidByParentId,
+        amount_paid_ngn: amountNgn,
+        currency_used: 'NGN',
+        receipt_number: generateReceiptNumber(),
+        payment_method: 'paystack',
+        payment_reference: reference,
+        notes: 'Paid online via Paystack',
+        paid_at: new Date().toISOString(),
+        school_id: schoolId,
+        platform_fee_ngn: platformFeeNgn,
+        school_amount_ngn: schoolAmountNgn,
+      })
+    if (payErr) throw new Error(`Failed to insert payment: ${payErr.message}`)
+  } else {
+    logger.warn('invoice payment: payments row already exists for reference, skipping insert', { traceId, reference, invoiceId })
+  }
+
+  // Optimistic-concurrency update: only applies if amount_paid_ngn is still
+  // the value we read. If another payment landed in between, re-read and
+  // recompute instead of overwriting its increment.
+  for (let attempt = 1; ; attempt++) {
+    const paidSoFar = invoice.amount_paid_ngn ?? 0
+    const newAmountPaid = paidSoFar + amountNgn
+    const newBalance = Math.max(0, invoice.amount_due_ngn - newAmountPaid)
+    const newStatus = newBalance <= 0 ? 'paid' : 'partial'
+
+    let update = admin
+      .from('payment_invoices')
+      .update({ amount_paid_ngn: newAmountPaid, balance_ngn: newBalance, status: newStatus })
+      .eq('id', invoiceId)
+    update = invoice.amount_paid_ngn == null
+      ? update.is('amount_paid_ngn', null)
+      : update.eq('amount_paid_ngn', invoice.amount_paid_ngn)
+
+    const { data: updatedRows, error: updateErr } = await update.select('id')
+    if (updateErr) throw new Error(`Failed to update invoice: ${updateErr.message}`)
+    if (updatedRows && updatedRows.length > 0) break
+
+    if (attempt >= MAX_INVOICE_UPDATE_ATTEMPTS) {
+      throw new Error('Invoice was modified concurrently; could not apply payment after retries')
+    }
+    invoice = await readInvoice()
+  }
+
+  // Everything below is best-effort. The payment and invoice are already
+  // recorded; a failure here must not throw (a throw triggers a retry).
+  try {
+    const { data: studentProfile } = await admin
+      .from('profiles')
+      .select('parent_id, full_name')
+      .eq('id', studentId)
+      .single()
+
+    if (studentProfile?.parent_id) {
+      await admin.from('notifications').insert({
+        user_id: studentProfile.parent_id,
         school_id: schoolId,
         type: 'payment',
-        title: 'Online Payment Received',
-        body: `${studentProfile?.full_name ?? 'A student'} paid ₦${amountNgn.toLocaleString('en-NG')} via Paystack. Receipt generated automatically.`,
-        action_url: s.role === 'bursar' ? '/dashboard/bursar/receipts' : '/dashboard/principal',
+        title: 'Payment Received',
+        body: `Your payment of ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name} was successful.`,
+        action_url: '/dashboard/parent/fees',
         is_read: false,
-      }))
-    )
+      })
+
+      await logActivityWithClient(admin, {
+        userId: studentProfile.parent_id, schoolId,
+        type: 'fee_paid',
+        title: `Paid ₦${amountNgn.toLocaleString('en-NG')} for ${studentProfile.full_name}`,
+        subtitle: 'via Paystack',
+        href: '/dashboard/parent/fees',
+      })
+    }
+
+    const { data: staff } = await admin
+      .from('profiles')
+      .select('id, role')
+      .eq('school_id', schoolId)
+      .in('role', ['bursar', 'principal'])
+
+    if (staff && staff.length > 0) {
+      await admin.from('notifications').insert(
+        staff.map((s: any) => ({
+          user_id: s.id,
+          school_id: schoolId,
+          type: 'payment',
+          title: 'Online Payment Received',
+          body: `${studentProfile?.full_name ?? 'A student'} paid ₦${amountNgn.toLocaleString('en-NG')} via Paystack. Receipt generated automatically.`,
+          action_url: s.role === 'bursar' ? '/dashboard/bursar/receipts' : '/dashboard/principal',
+          is_read: false,
+        }))
+      )
+    }
+  } catch (err: any) {
+    logger.warn('invoice payment recorded but notifications failed', { traceId, invoiceId, schoolId, error: err?.message })
   }
 
   logger.info('invoice payment webhook processed', { traceId, invoiceId, schoolId, amountNgn })
   return { handled: 'invoice_payment', invoiceId }
 }
 
-// ─── Subscription renewal ───────────────────────────────────────────────
+// ─── Subscription renewal ─────────────────────────────────────────────────────────────
 // activateSubscription() does its own SCOS- prefix check and
 // subscription_payments cross-check internally — this wrapper just
 // surfaces its {activated, reason} result as a thrown error on refusal,
@@ -203,7 +270,7 @@ async function handleSubscriptionRenewal(admin: ReturnType<typeof createAdminCli
   return { handled: 'subscription_renewal', schoolId }
 }
 
-// ─── School registration ────────────────────────────────────────────────
+// ─── School registration ──────────────────────────────────────────────────────────────
 // Same pattern — activateSchool() does its own SCH-REG- prefix check.
 async function handleSchoolRegistration(admin: ReturnType<typeof createAdminClient>, data: any, traceId: string) {
   const { reference, amount, metadata } = data
@@ -225,11 +292,19 @@ async function handleSchoolRegistration(admin: ReturnType<typeof createAdminClie
 
 export async function POST(req: Request) {
   const traceId = newTraceId()
+
+  if (!PAYSTACK_SECRET_KEY) {
+    // Misconfiguration, not a bad request: say so loudly instead of letting
+    // createHmac throw an anonymous 500.
+    logger.error('paystack webhook: PAYSTACK_SECRET_KEY is not configured', { traceId })
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+
   const rawBody = await req.text()
   const signature = req.headers.get('x-paystack-signature') ?? ''
 
   const expectedHash = crypto.createHmac('sha512', PAYSTACK_SECRET_KEY).update(rawBody).digest('hex')
-  if (signature !== expectedHash) {
+  if (!signatureMatches(signature, expectedHash)) {
     logger.warn('paystack webhook invalid signature', { traceId })
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
@@ -308,8 +383,8 @@ export async function POST(req: Request) {
   try {
     // Outer idempotency layer, independent of each handler's own
     // internal checks (activateSubscription/activateSchool refuse
-    // reprocessing via their own tables; the invoice path has no
-    // built-in duplicate guard of its own). A Paystack retry of the
+    // reprocessing via their own tables; the invoice path now has its own
+    // reference-based duplicate guard too). A Paystack retry of the
     // exact same event hits 'replay' here and skips straight to the
     // cached result without re-running the handler at all.
     const outcome = await withIdempotency(admin, scope, reference, handler)
@@ -337,6 +412,11 @@ export async function POST(req: Request) {
     // includes refused forgery attempts (activateSchool/
     // activateSubscription returning activated: false) — those are
     // correctly-blocked, not a system failure, so no retry is wanted.
+    //
+    // NOTE: a *genuine* failure here (e.g. invoice update exhausted its
+    // retries) leaves paid money unrecorded and nothing pages anyone. Until
+    // an alert is wired up, check paystack_webhook_events for rows with a
+    // non-null error_message regularly.
     return NextResponse.json({ received: true, error: err.message })
   }
 }
