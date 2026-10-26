@@ -1,5 +1,6 @@
 // src/app/dashboard/bursar/page.tsx
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }       from '@/lib/supabase/server'
 import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
@@ -8,10 +9,10 @@ import BursarDashboardClient  from './BursarDashboardClient'
 
 export default async function BursarDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  // ── Subscription check ────────────────────────────────────────────────────
+  // ── Subscription check ──────────────────────────────────────────────────────────
   const sub = await checkSubscription(user.id)
   if (sub.locked) {
     return (
@@ -23,7 +24,7 @@ export default async function BursarDashboardPage() {
     )
   }
 
-  // ── Profile + school ──────────────────────────────────────────────────────
+  // ── Profile + school ────────────────────────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -35,7 +36,7 @@ export default async function BursarDashboardPage() {
   const school   = (profile as any)?.schools ?? null
   const schoolId = profile.school_id
 
-  // ── Counts for stats cards ────────────────────────────────────────────────
+  // ── Counts for stats cards ────────────────────────────────────────────────────────
   // Source of truth for what's owed/paid per student is `school_fees`
   // (amount_ngn, paid_ngn, status). `payments` is the append-only log of
   // recorded transactions used for the "paid this month" count below.
