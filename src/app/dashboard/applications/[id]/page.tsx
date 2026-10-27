@@ -5,6 +5,7 @@
 // "doesn't exist" and "not yours" without distinguishing them, which is
 // the correct behavior (distinguishing the two would leak which IDs exist).
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ApplicationDetailClient from './ApplicationDetailClient'
@@ -12,7 +13,7 @@ import ApplicationDetailClient from './ApplicationDetailClient'
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: application } = await supabase
