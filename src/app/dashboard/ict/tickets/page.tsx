@@ -1,4 +1,5 @@
 // src/app/dashboard/ict/tickets/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
@@ -7,7 +8,7 @@ import TicketsClient          from './TicketsClient'
 
 export default async function IctTicketsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
