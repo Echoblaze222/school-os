@@ -6,6 +6,7 @@
 // top of a teacher base role, principal and secretary pass automatically
 // per requireHostelStaff's own rule.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
@@ -14,7 +15,7 @@ import UniversalChatPage from '@/components/UniversalChatPage'
 
 export default async function HostelChatPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const admin = createAdminClient()
