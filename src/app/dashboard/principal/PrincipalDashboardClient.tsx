@@ -39,6 +39,28 @@ function safeHref(href: string | undefined | null): string {
   return href
 }
 
+// Real week-over-week movement in money received. Built only from actual
+// `payments` rows (last 7 days vs the 7 days before), never estimated.
+function buildWeeklyDelta(counts: any): { text: string; tone: 'up' | 'down' | 'flat' } {
+  const now = counts.collected7d ?? 0
+  const prev = counts.collectedPrev7d ?? 0
+  if (now === 0 && prev === 0) {
+    return { text: 'No payments in the last 7 days', tone: 'flat' }
+  }
+  if (prev === 0) {
+    return { text: `${counts.collected7dDisplay} received in the last 7 days`, tone: 'up' }
+  }
+  const pct = Math.round(((now - prev) / prev) * 100)
+  if (pct === 0) {
+    return { text: `${counts.collected7dDisplay} in the last 7 days, same as the week before`, tone: 'flat' }
+  }
+  const arrow = pct > 0 ? '↑' : '↓'
+  return {
+    text: `${arrow} ${Math.abs(pct)}% vs previous 7 days · ${counts.collected7dDisplay} this week`,
+    tone: pct > 0 ? 'up' : 'down',
+  }
+}
+
 // Picks the lowest-scoring class-relevant signal we actually have to
 // surface as the AI insight, instead of a generic static line.
 function buildInsight(counts: any): string {
@@ -63,6 +85,11 @@ export default function PrincipalDashboardClient({
   // estimated or invented, and the strip says so plainly when it is empty.
   const hasOutstandingFees = (counts.outstandingFees ?? 0) > 0
   const needsYouCount = (hasOutstandingFees ? 1 : 0) + pendingNotifications.length
+  const weeklyDelta = buildWeeklyDelta(counts)
+  const deltaColor =
+    weeklyDelta.tone === 'up' ? 'var(--status-ok, #3FA66B)'
+    : weeklyDelta.tone === 'down' ? 'var(--status-warn, #E4572E)'
+    : 'var(--text-muted)'
 
   async function handleDeleteActivity(id: string) {
     const { createClient } = await import('@/lib/supabase/client')
@@ -96,10 +123,10 @@ export default function PrincipalDashboardClient({
         {/* Top-level school metrics - one primary hero (the money number,
             the thing the whole school picture hangs off) plus three
             smaller secondary tiles, instead of 8 equal-weight cards.
-            No trend shown on the secondary tiles since there's no real
-            prior-period comparison queried yet - a fabricated trend
-            would violate §6's "do not fabricate numbers" rule more than
-            an absent one costs us. */}
+            The hero carries a real week-over-week movement line computed from
+            actual payments rows. The secondary tiles still show no trend,
+            because a fabricated trend would violate §6's "do not fabricate
+            numbers" rule more than an absent one costs us. */}
         <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)' }}>
           <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Fees Collected</p>
@@ -107,7 +134,10 @@ export default function PrincipalDashboardClient({
               {counts.feesCollectedDisplay ?? '-'}
             </p>
             <p className="tabular-nums" style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
-              {counts.feeCollectionRate ?? 0}% of fees this term
+              {counts.feeCollectionRate ?? 0}% collected{counts.termLabel ? ` · ${counts.termLabel}` : ' this term'}
+            </p>
+            <p className="tabular-nums" style={{ margin: 0, fontSize: '0.72rem', fontWeight: 500, color: deltaColor }}>
+              {weeklyDelta.text}
             </p>
             <div style={{ display: 'flex', gap: 16, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
               <div>
