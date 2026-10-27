@@ -1,42 +1,47 @@
 // src/app/dashboard/loading.tsx
 //
-// Next.js automatically wraps every route segment in a Suspense boundary
-// keyed to its loading.tsx, and shows it INSTANTLY on navigation while the
-// destination page.tsx (a server component) finishes fetching its data.
-// There was no loading.tsx anywhere in the app, so every nav click froze
-// the screen with no feedback until the new page's data was fully ready.
+// Next.js shows this INSTANTLY on navigation (it is prefetched with the link)
+// while the destination page.tsx - a server component - finishes fetching
+// its data. One file covers every page under /dashboard/*.
 //
-// This one file covers all 273 pages under /dashboard/*, since Next.js
-// cascades a loading.tsx down to every nested route unless a more specific
-// one overrides it for a particular page.
+// It used to be a full-screen opaque spinner that blanked the whole screen on
+// every tap. Now it is a skeleton of the real page frame (header band,
+// content cards, dock pill) so the screen reacts immediately and the real
+// content fills in where the skeleton already is. See loading.module.css.
+import styles from './loading.module.css'
+
 export default function DashboardLoading() {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--bg-base, #080C14)',
-        zIndex: 50,
-      }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          border: '3px solid var(--brand-subtle, rgba(128,0,32,0.12))',
-          borderTopColor: 'var(--brand, #800020)',
-          animation: 'dashboard-loading-spin 0.7s linear infinite',
-        }}
-      />
-      <style>{`
-        @keyframes dashboard-loading-spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+    <div className={styles.page} role="status" aria-busy="true">
+      <span className={styles.srOnly}>Loading</span>
+
+      <div className={styles.hero}>
+        <div className={styles.frame}>
+          <div className={styles.left}>
+            <div className={`${styles.circle38} ${styles.pulse}`} />
+            <div className={`${styles.circle36} ${styles.pulse}`} />
+            <div className={`${styles.titleBar} ${styles.pulse}`} />
+          </div>
+          <div className={styles.right}>
+            <div className={`${styles.circle38} ${styles.pulse}`} />
+            <div className={`${styles.circle38} ${styles.pulse}`} />
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.main} aria-hidden="true">
+        <div className={styles.statRow}>
+          <div className={`${styles.card} ${styles.stat} ${styles.pulse}`} />
+          <div className={`${styles.card} ${styles.stat} ${styles.pulse}`} />
+          <div className={`${styles.card} ${styles.stat} ${styles.pulse}`} />
+          <div className={`${styles.card} ${styles.stat} ${styles.pulse}`} />
+        </div>
+        <div className={`${styles.card} ${styles.blockTall} ${styles.pulse}`} />
+        <div className={`${styles.card} ${styles.block} ${styles.pulse}`} />
+        <div className={`${styles.card} ${styles.block} ${styles.pulse}`} />
+      </div>
+
+      <div className={styles.dock} aria-hidden="true" />
     </div>
   )
 }
