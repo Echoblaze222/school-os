@@ -17,7 +17,6 @@ import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generatePickupCode, getPickupSecret, hashPickupCode } from '@/lib/pickupCode'
-import { isIsoDate } from '@/lib/dataProtection'
 
 type Admin = ReturnType<typeof createAdminClient>
 const MAX_ACTIVE_PER_CHILD = 10
@@ -25,6 +24,9 @@ const MIGRATION_HINT =
   'Pickup authorisation is not set up yet. Ask the school to run sql/migrations/2026-10-27-pickup-authorisation.sql.'
 
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
+
+const isIsoDate = (s: unknown): s is string =>
+  typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s))
 
 function fail(err: { message?: string } | null | undefined) {
   const m = (err?.message ?? '').toLowerCase()
