@@ -48,6 +48,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
   ]},
   { name: 'Account', items: [
     { id: 'profile',  label: 'Profile',  href: '/dashboard/principal/profile',  Icon: UserIcon },
+    { id: 'data-protection', label: 'Data protection', href: '/dashboard/principal/data-protection', Icon: ShieldIcon },
     { id: 'branding', label: 'Branding', href: '/dashboard/principal/settings', Icon: TagIcon },
     { id: 'settings', label: 'Settings', href: '/dashboard/principal/settings', Icon: SettingsIcon },
   ]},
