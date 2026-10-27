@@ -1,10 +1,13 @@
 {
   "name": "schoolos-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "bin": { "schoolos-mcp": "./index.mjs" },
-  "scripts": { "start": "node index.mjs" },
+  "scripts": {
+    "start": "node index.mjs",
+    "selftest": "node selftest.mjs"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@supabase/supabase-js": "^2.45.0",

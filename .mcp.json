@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "schoolos": {
+      "command": "node",
+      "args": ["mcp/schoolos-mcp/index.mjs"],
+      "env": { "REPO_ROOT": "." }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}
