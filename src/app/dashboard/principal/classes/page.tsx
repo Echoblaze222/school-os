@@ -2,13 +2,14 @@
 // FIX: Loads teacher assignments from class_teachers table
 // FIX: Each class now shows its Class Teacher + all Subject Teachers separately
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalClassesClient from './PrincipalClassesClient'
 
 export default async function PrincipalClassesPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
