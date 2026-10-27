@@ -64,6 +64,22 @@ export async function signOutFlow(
 
   try { await supabase.auth.signOut() } catch { /* proceed regardless */ }
 
+  // Ask the service worker to drop its runtime cache, and delete any
+  // leftover runtime caches directly (covers the case where no SW is
+  // controlling this page). Nothing user-specific is cached any more, but
+  // the Cache API outlives logout, so keep it empty on shared phones.
+  try {
+    navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_RUNTIME_CACHE' })
+    if (typeof caches !== 'undefined') {
+      const names = await caches.keys()
+      await Promise.all(
+        names.filter((n) => n.startsWith('schoolos-runtime-')).map((n) => caches.delete(n))
+      )
+    }
+  } catch {
+    // Non-fatal - logout must never fail because of cache cleanup.
+  }
+
   const nav = router.replace ?? router.push
   // A hard navigation, not a client-side route change: signing out is an
   // identity change, and Next's client Router Cache doesn't know that - // it can keep a signed-in dashboard page cached and hand it straight
