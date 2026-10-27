@@ -1,6 +1,7 @@
 // src/app/dashboard/teacher/page.tsx
 // FIX #4: Now fetches real counts for stats cards
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }       from '@/lib/supabase/server'
 import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
@@ -9,7 +10,7 @@ import TeacherDashboardClient from './TeacherDashboardClient'
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const userId = user.id

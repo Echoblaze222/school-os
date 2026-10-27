@@ -4,6 +4,7 @@
 // (inner floor, called by every page below), this layout only handles
 // per-school branding, it is not where the security check happens.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
@@ -17,8 +18,7 @@ export default async function ExaminationLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   let primaryColor   = '#800020'
   let secondaryColor: string | undefined
   let fontFamily      = 'Inter'

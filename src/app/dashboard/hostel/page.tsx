@@ -1,4 +1,5 @@
 // src/app/dashboard/hostel/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
@@ -9,7 +10,7 @@ import HostelDashboardClient from './HostelDashboardClient'
 
 export default async function HostelDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const sub = await checkSubscription(user.id)

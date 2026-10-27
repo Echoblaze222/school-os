@@ -6,6 +6,7 @@
 // `schools` table (added via the schools-branding-columns migration — see
 // src/lib/supabase/types.ts).
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
@@ -26,8 +27,7 @@ export default async function SecretaryLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   let primaryColor   = '#7C3AED'
   let secondaryColor: string | undefined
   let fontFamily      = 'Inter'

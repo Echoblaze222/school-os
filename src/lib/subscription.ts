@@ -17,6 +17,7 @@
 // check at all) — meaning an expired/suspended school kept working in full
 // through the principal account indefinitely. That's the bug this fixes.
 
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 export interface SubscriptionCheck {
@@ -27,12 +28,16 @@ export interface SubscriptionCheck {
   schoolColor: string
 }
 
-export async function checkSubscription(userId: string): Promise<SubscriptionCheck> {
+// One query (profile + the school's lock fields via the profiles_school_id_fkey
+// embed) instead of two sequential ones, and cached for the request so a
+// layout and its page - or several components - share a single lookup.
+// Same RLS as before: both tables are read as the signed-in user.
+export const checkSubscription = cache(async function checkSubscription(userId: string): Promise<SubscriptionCheck> {
   const supabase = await createClient()
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, school_id')
+    .select('role, school_id, school:schools!profiles_school_id_fkey(name, primary_color, setup_status, is_platform_active)')
     .eq('id', userId)
     .single()
 
@@ -40,11 +45,12 @@ export async function checkSubscription(userId: string): Promise<SubscriptionChe
     return { locked: false, hardLocked: false, status: 'active', schoolName: '', schoolColor: '#7C3AED' }
   }
 
-  const { data: school } = await supabase
-    .from('schools')
-    .select('name, primary_color, setup_status, is_platform_active')
-    .eq('id', profile.school_id)
-    .single()
+  // An embedded to-one relation can be typed as an object or a one-item array.
+  const embedded = (profile as { school?: unknown }).school
+  const school = (Array.isArray(embedded) ? embedded[0] : embedded) as
+    | { name: string; primary_color: string | null; setup_status: string; is_platform_active: boolean }
+    | null
+    | undefined
 
   if (!school) {
     return { locked: false, hardLocked: false, status: 'active', schoolName: '', schoolColor: '#7C3AED' }
@@ -71,4 +77,4 @@ export async function checkSubscription(userId: string): Promise<SubscriptionChe
     schoolName:  school.name,
     schoolColor: school.primary_color ?? '#7C3AED',
   }
-}
+})

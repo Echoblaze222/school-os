@@ -1,5 +1,6 @@
 // src/app/dashboard/bursar/page.tsx
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }       from '@/lib/supabase/server'
 import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
@@ -8,7 +9,7 @@ import BursarDashboardClient  from './BursarDashboardClient'
 
 export default async function BursarDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   // ── Subscription check ────────────────────────────────────────────────────

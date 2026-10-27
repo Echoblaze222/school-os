@@ -1,5 +1,6 @@
 // src/app/dashboard/principal/page.tsx
 // BUG 7 FIX: Was passing no counts - all zeros on dashboard. Now fetches real data.
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalDashboardClient from './PrincipalDashboardClient'
@@ -8,7 +9,7 @@ export default async function PrincipalDashboardPage() {
   const supabase = await createClient()
 
   // BUG 7 FIX: use getUser() not deprecated getSession()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

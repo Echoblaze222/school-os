@@ -6,6 +6,7 @@
 // "never trust a hidden nav item as the real boundary" reasoning as the
 // layout's own comment.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
@@ -16,7 +17,7 @@ import IctClient              from './IctClient'
 
 export default async function IctPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const sub = await checkSubscription(user.id)

@@ -7,6 +7,7 @@
 // page independently re-verifying the caller holds an ACTIVE 'nurse'
 // appointment at their school before rendering anything.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
@@ -17,7 +18,7 @@ import NurseDashboardClient  from './NurseDashboardClient'
 
 export default async function NurseDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const sub = await checkSubscription(user.id)
