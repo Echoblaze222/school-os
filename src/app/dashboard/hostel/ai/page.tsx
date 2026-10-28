@@ -6,6 +6,7 @@
 // this page does. The page-level gate is never the only thing standing
 // between an unauthorized caller and real hostel data.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
@@ -14,7 +15,7 @@ import UniversalAIPage from '@/components/UniversalAIPage'
 
 export default async function HostelAiPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const adminClient = createAdminClient()

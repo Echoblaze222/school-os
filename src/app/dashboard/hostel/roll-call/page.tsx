@@ -1,13 +1,12 @@
 // src/app/dashboard/hostel/roll-call/page.tsx
-import { createClient }      from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect }          from 'next/navigation'
 import { requireHostelStaff } from '@/lib/permissions'
 import RollCallClient from './RollCallClient'
 
 export default async function HostelRollCallPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const adminClient = createAdminClient()

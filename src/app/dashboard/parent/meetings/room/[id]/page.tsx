@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { redirect } from 'next/navigation'
 import MeetingRoomClient from '@/components/live/MeetingRoomClient'
 
 export default async function ParentMeetingRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
   return <MeetingRoomClient meetingId={id} backHref="/dashboard/parent/meetings" />
 }

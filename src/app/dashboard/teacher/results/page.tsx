@@ -8,13 +8,14 @@
 // FIXED: for results we still need class_subject_id - we resolve it by matching
 //        class_id + subject name to class_subjects after loading class_teachers
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }  from '@/lib/supabase/server'
 import { redirect }      from 'next/navigation'
 import PostResultsClient from './PostResultsClient'
 
 export default async function TeacherResultsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   // 1) Profile + school (schools.primary_color is on the schools table directly)

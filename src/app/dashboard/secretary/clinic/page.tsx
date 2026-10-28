@@ -1,11 +1,12 @@
 // src/app/dashboard/secretary/clinic/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ClinicClient from './ClinicClient'
 
 export default async function ClinicPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

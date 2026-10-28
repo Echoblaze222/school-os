@@ -6,6 +6,7 @@
 // components/org and lib/supabase/appointments building blocks Lane A
 // built for the Vice Principal side, rather than duplicating them.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { listDepartments } from '@/lib/supabase/appointments'
@@ -31,7 +32,7 @@ const GENERIC_TYPES = (Object.keys(APPOINTMENT_TYPES) as AppointmentTypeId[])
 
 export default async function LeadershipPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()

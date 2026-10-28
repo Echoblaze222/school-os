@@ -18,6 +18,7 @@
 //
 // The `Submission` type is exported so SubmissionsClient can import it.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SubmissionsClient from './SubmissionsClient'
@@ -44,7 +45,7 @@ export interface Submission {
 export default async function SubmissionsPage() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

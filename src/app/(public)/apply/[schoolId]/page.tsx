@@ -5,6 +5,7 @@
 // the client component, which shows a sign-in/create-account prompt
 // instead of the form when there's no session.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ApplyClient from './ApplyClient'
@@ -37,7 +38,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ schoolId
   const school = Array.isArray(rawSchool) ? rawSchool[0] : rawSchool
   const normalizedSettings = { ...settings, schools: school }
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   let existingDraft = null
   if (user) {
     const { data } = await supabase

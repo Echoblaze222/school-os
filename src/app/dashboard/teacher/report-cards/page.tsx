@@ -2,13 +2,14 @@
 // Only meaningful for the CLASS teacher (is_primary=true in class_teachers) -
 // subject teachers don't compile the overall report card.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ReportCardsClient from './ReportCardsClient'
 
 export default async function TeacherReportCardsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

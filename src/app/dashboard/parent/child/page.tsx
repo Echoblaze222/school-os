@@ -1,5 +1,6 @@
 // src/app/dashboard/parent/child/page.tsx
 // PARENT FIX: accept ?id= query param so parent can view any of their linked children
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ChildClient from './ChildClient'
@@ -10,7 +11,7 @@ interface PageProps {
 
 export default async function ChildPage({ searchParams }: PageProps) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
