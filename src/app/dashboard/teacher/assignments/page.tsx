@@ -1,11 +1,12 @@
 // src/app/dashboard/teacher/assignments/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AssignmentsClient from './AssignmentsClient'
 
 export default async function AssignmentsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
   const { data: profile } = await supabase
     .from('profiles')
