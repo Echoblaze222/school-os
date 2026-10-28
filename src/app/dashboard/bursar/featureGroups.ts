@@ -24,6 +24,7 @@ export const BURSAR_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'expenses',       label: 'Expenses',       href: '/dashboard/bursar/expenses',       Icon: WalletIcon },
   ]},
   { name: 'Collections', items: [
+    { id: 'analytics', label: 'Analytics', href: '/dashboard/bursar/analytics', Icon: BarChartIcon },
     { id: 'debtors',   label: 'Debtors',   href: '/dashboard/bursar/debtors',   Icon: PeopleIcon },
     { id: 'reminders', label: 'Reminders', href: '/dashboard/bursar/reminders', Icon: BellIcon },
     { id: 'reports',   label: 'Reports',   href: '/dashboard/bursar/reports',   Icon: BarChartIcon },
