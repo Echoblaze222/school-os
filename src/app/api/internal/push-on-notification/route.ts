@@ -29,6 +29,13 @@
 //      push passes through. No preference row means push stays on (the same
 //      default notifyUser.ts uses). Security and account alerts can never be
 //      muted (same list as notifyUser.ts's mandatory categories).
+//   4. Pushes stack instead of replacing each other. The database trigger
+//      sends the notification TYPE as `tag` (for example "fee_reminder").
+//      Used as the display tag, every push of the same type would take over
+//      the previous one's slot in the tray, so a second fee reminder silently
+//      wiped the first. The type is now used only as the preference category;
+//      the display tag is left unset so webpush.ts generates a unique one per
+//      push (the behaviour public/sw.js already documents).
 // -----------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server'
@@ -65,9 +72,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing user_id or title' }, { status: 400 })
   }
 
+  // `tag` from the trigger is the notification type, used as the category.
+  const category = typeof tag === 'string' && tag ? tag : null
+
   try {
     // Honour an explicit per-category push mute.
-    if (typeof tag === 'string' && tag && !MANDATORY_CATEGORIES.has(tag)) {
+    if (category && !MANDATORY_CATEGORIES.has(category)) {
       const admin = createAdminClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -76,7 +86,7 @@ export async function POST(req: Request) {
         .from('notification_preferences')
         .select('push_enabled')
         .eq('user_id', user_id)
-        .eq('category', tag)
+        .eq('category', category)
         .maybeSingle()
 
       if (pref && pref.push_enabled === false) {
@@ -84,11 +94,12 @@ export async function POST(req: Request) {
       }
     }
 
+    // No `tag` on purpose: webpush.ts then gives every push its own unique tag
+    // so notifications stack in the tray instead of replacing each other.
     await sendPushToUsers([user_id], {
       title,
       body: body ?? '',
       url:  safeInternalUrl(url),
-      tag:  tag  ?? 'schoolos',
     })
     return NextResponse.json({ ok: true })
   } catch (err: any) {
