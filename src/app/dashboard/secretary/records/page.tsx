@@ -1,11 +1,12 @@
 // src/app/dashboard/secretary/records/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import RecordsClient from './RecordsClient'
 
 export default async function RecordsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   // FIX: use profiles → schools(*) - same pattern as every other dashboard page

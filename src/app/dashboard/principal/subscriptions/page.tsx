@@ -1,3 +1,4 @@
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 
 import { redirect } from 'next/navigation'
@@ -12,8 +13,7 @@ export default async function SubscriptionPage() {
 
 
 
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
 
