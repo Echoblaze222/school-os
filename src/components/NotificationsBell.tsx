@@ -241,12 +241,15 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
   }
 
   function handleItemClick(n: NotificationItem) {
-    const target = resolveTarget(n)
+    // Most notifications are created without a link of their own. Rather than
+    // doing nothing when tapped, open the full notifications page with this
+    // item's detail already showing.
+    const target =
+      resolveTarget(n) ??
+      `/dashboard/${role}/notifications?open=${encodeURIComponent(n.id)}`
     markOneRead(n)
-    if (target) {
-      setOpen(false)
-      router.push(target)
-    }
+    setOpen(false)
+    router.push(target)
   }
 
   function togglePanel() {
