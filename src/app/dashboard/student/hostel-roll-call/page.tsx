@@ -13,6 +13,7 @@
 // redirect a non-prefect away with a clear reason - not as the thing
 // actually protecting the data.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
@@ -21,7 +22,7 @@ import HostelRollCallClient from './HostelRollCallClient'
 
 export default async function StudentHostelRollCallPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const ctx = await resolveUserContext(supabase, user.id)
