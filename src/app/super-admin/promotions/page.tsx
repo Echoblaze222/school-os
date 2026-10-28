@@ -6,13 +6,14 @@
 // with no UI anywhere to actually review it. Same auth-gate pattern as
 // content/page.tsx and reports/page.tsx.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PromotionsModerationClient from './PromotionsModerationClient'
 
 export default async function PromotionsModerationPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/super-admin/login')
 
   const { data: sa } = await supabase

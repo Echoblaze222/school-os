@@ -1,3 +1,4 @@
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import SchoolDetailClient from './SchoolDetailClient'
@@ -6,7 +7,7 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/super-admin/login')
 
   const { data: sa } = await supabase
