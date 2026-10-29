@@ -1,11 +1,10 @@
 // src/app/dashboard/student/boarding/page.tsx
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { redirect }     from 'next/navigation'
 import BoardingClient   from './BoardingClient'
 
 export default async function BoardingPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   // No separate "is boarding" flag to check here: the summary route

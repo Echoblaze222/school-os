@@ -1,11 +1,12 @@
 // src/app/dashboard/student/notifications/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import NotificationsPageClient from './NotificationsPageClient'
 
 export default async function StudentNotificationsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

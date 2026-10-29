@@ -4,6 +4,7 @@
 // same pattern already used by school-setup style routes elsewhere in
 // this app, rather than a separate /content/new route.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ContentEditorClient from './ContentEditorClient'
@@ -11,7 +12,7 @@ import ContentEditorClient from './ContentEditorClient'
 export default async function ContentEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/super-admin/login')
 
   const { data: sa } = await supabase

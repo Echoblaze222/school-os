@@ -1,11 +1,12 @@
 // src/app/dashboard/secretary/calendar/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CalendarClient from './CalendarClient'
 
 export default async function CalendarPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

@@ -3,14 +3,13 @@
 // specifically (not just platform_admins membership), so it stays
 // private even if a second platform admin account is ever added.
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import HqClient from './HqClient'
 
 export default async function HqPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/super-admin/login')
 
   const adminSupabase = createAdminClient()

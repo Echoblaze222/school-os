@@ -1,4 +1,5 @@
 // src/app/dashboard/ict/profile/page.tsx
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { redirect }          from 'next/navigation'
 import { getIctAppointment } from '@/lib/permissions'
@@ -6,7 +7,7 @@ import ProfileClient from './ProfileClient'
 
 export default async function IctProfilePage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

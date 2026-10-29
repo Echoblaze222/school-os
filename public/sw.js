@@ -12,16 +12,22 @@
 //   listener at all, so nothing was ever cached and offline visitors just
 //   saw the browser's default network-error page. Fixed below with:
 //     - App shell pre-cached on install (/offline + icons + manifest)
-//     - Navigations: network-first, falling back to a cached copy of the
-//       page, then to /offline if nothing cached is available
+//     - Navigations: network only; if the network fails, show /offline.
+//       Navigation responses are NEVER stored: they are per-user HTML
+//       (names, grades, fees) and the Cache API outlives logout, so on a
+//       shared phone the next person could be served the previous user's
+//       page while offline.
 //     - Hashed Next.js build assets (/_next/static/, /icons/): cache-first
 // - safe, since a given hashed URL's content never changes
 //     - /api/* requests: NEVER cached or intercepted - fee balances,
 //       attendance, and results must always be fetched live. Serving a
 //       stale API response offline would be actively misleading, not helpful.
-//     - Everything else: stale-while-revalidate
+//     - Everything else same-origin that is a font or image:
+//       stale-while-revalidate. Anything else (Next.js RSC/data fetches,
+//       cross-origin requests such as signed Supabase file URLs) is left
+//       completely alone and goes straight to the network.
 
-const CACHE_VERSION      = 'v3' // bumped: new logo/icon set replaced old cached PNGs at the same filenames
+const CACHE_VERSION      = 'v4' // bumped: v3 runtime cache held logged-in page HTML; the activate step below deletes every cache not named for this version, purging it from devices that already have it
 const APP_SHELL_CACHE    = `schoolos-shell-${CACHE_VERSION}`
 const RUNTIME_CACHE      = `schoolos-runtime-${CACHE_VERSION}`
 
@@ -92,21 +98,19 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
 
+  // Never touch other origins (e.g. signed Supabase storage URLs, fonts CDN):
+  // they can carry private, per-user content and are not ours to cache.
+  if (url.origin !== self.location.origin) return
+
   // Never cache API responses - always live data.
   if (url.pathname.startsWith('/api/')) return
 
-  // Full page navigations - network-first, cache fallback, /offline last resort.
+  // Full page navigations - network only, /offline as the last resort.
+  // The response is deliberately NOT cached (see the header comment): these
+  // are per-user pages and must not outlive the session that fetched them.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone()
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy))
-          return response
-        })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match('/offline'))
-        )
+      fetch(request).catch(() => caches.match('/offline'))
     )
     return
   }
@@ -126,19 +130,37 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Everything else (fonts, misc same-origin GETs) - stale-while-revalidate.
+  // Only same-origin fonts and images are worth a stale-while-revalidate
+  // copy. Everything else - RSC/data fetches for dashboard pages,
+  // cross-origin requests (e.g. signed Supabase storage URLs) - is not
+  // intercepted at all, so it can never be answered from a stale or
+  // previous-user cache.
+  if (request.destination !== 'font' && request.destination !== 'image') return
+
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request)
         .then((response) => {
-          const copy = response.clone()
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy))
+          if (response.ok) {
+            const copy = response.clone()
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy))
+          }
           return response
         })
         .catch(() => cached)
       return cached || network
     })
   )
+})
+
+// ── Sign-out: drop anything cached at runtime ─────────────
+// Posted by the app when a user logs out. After the change above the runtime
+// cache only holds fonts/images, but clearing it on logout keeps that true
+// even if caching rules are loosened later.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_RUNTIME_CACHE') {
+    event.waitUntil(caches.delete(RUNTIME_CACHE))
+  }
 })
 
 // ── Push received ─────────────────────────────────────────

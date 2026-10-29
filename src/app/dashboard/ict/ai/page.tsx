@@ -9,6 +9,7 @@
 // standing between an unauthorized caller and real data, the route
 // re-checks for exactly that reason.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
@@ -17,7 +18,7 @@ import UniversalAIPage from '@/components/UniversalAIPage'
 
 export default async function IctAiPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()

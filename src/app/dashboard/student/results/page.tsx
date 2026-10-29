@@ -3,13 +3,14 @@
 // FIXED: cast results to ResultRow[] to avoid Supabase inferred array-join type mismatch
 //        (Supabase infers FK joins as arrays; our interface expects a single object | null)
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import ResultsClient, { type ResultRow } from './ResultsClient'
 
 export default async function ResultsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   // Load profile + school in one query

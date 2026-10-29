@@ -6,13 +6,14 @@
 // and role-specific nav, which doesn't fit an applicant who may have
 // open applications to several different schools at once.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ApplicationsTrackerClient from './ApplicationsTrackerClient'
 
 export default async function ApplicationsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

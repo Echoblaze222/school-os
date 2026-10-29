@@ -1,3 +1,4 @@
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/public/PublicNav'
@@ -23,8 +24,7 @@ const ROLE_ROUTES: Record<string, string> = {
 
 export default async function RootPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')

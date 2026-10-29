@@ -6,6 +6,7 @@
 // FIXED: all display fields (student_name, subject_name, class_name, teacher_name)
 //        flattened into ResultRow before passing to client
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }       from '@/lib/supabase/server'
 import { redirect }           from 'next/navigation'
 import PrincipalResultsClient from './PrincipalResultsClient'
@@ -13,7 +14,7 @@ import type { ResultRow, ClassOption } from '../types'
 
 export default async function PrincipalResultsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

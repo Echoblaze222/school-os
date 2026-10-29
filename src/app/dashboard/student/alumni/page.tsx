@@ -17,6 +17,7 @@
 //      `description` falls back to the payment method, and `receipt_url`
 //      is left null until receipt PDFs are wired up (the download button
 //      simply won't render without it).
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import StudentAlumniClient from './StudentAlumniClient'
@@ -24,7 +25,7 @@ import type { AlumniProfile, AlumniResult, AlumniReceipt } from './types'
 
 export default async function StudentAlumniArchivePage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

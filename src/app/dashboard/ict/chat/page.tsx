@@ -5,6 +5,7 @@
 // dashboard/ict/layout.tsx's own comment on why the layout is the real
 // boundary here, this check is defense in depth, not the only gate).
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { redirect }          from 'next/navigation'
 import { getIctAppointment } from '@/lib/permissions'
@@ -12,7 +13,7 @@ import UniversalChatPage from '@/components/UniversalChatPage'
 
 export default async function IctChatPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

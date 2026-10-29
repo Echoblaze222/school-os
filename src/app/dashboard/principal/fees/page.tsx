@@ -18,6 +18,7 @@
 // This page fetches everything from the same live tables the rest of
 // the app uses: fee_structures, payment_invoices, payments, profiles.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import { unwrapEmbed }  from '@/lib/utils/unwrapEmbed'
@@ -41,7 +42,7 @@ export default async function PrincipalFeesPage({
   searchParams: Promise<{ term?: string; year?: string }>
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

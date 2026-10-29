@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { dashboardDestination } from '@/lib/dashboardDispatch'
 
 // ── Config ──────────────────────────────────────────────────
 const INACTIVITY_MINUTES = 30          // Auto-logout after 30 min idle
@@ -148,6 +149,16 @@ export async function middleware(request: NextRequest) {
   // Build Supabase SSR client that reads/writes cookies
   const response = NextResponse.next()
 
+  // A redirect built with NextResponse.redirect() starts with no cookies, so
+  // any session-refresh cookies the Supabase client just wrote onto
+  // `response` would be dropped and the next request would have to refresh
+  // the token all over again. Used only by the launch-path redirects below.
+  const redirectKeepingCookies = (url: URL) => {
+    const redirect = NextResponse.redirect(url)
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie))
+    return redirect
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -166,11 +177,28 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ── Get user (validated server-side, never trusts a stale/forged cookie) ──
-  // getUser() contacts Supabase Auth on every call, making it the only
-  // correct choice for route protection. getSession() is client-side only
-  // and must never be used for access control decisions.
-  const { data: { user } } = await supabase.auth.getUser()
+  // ── Get user ────────────────────────────────────────────────────────
+  // getClaims() verifies the session's JWT instead of asking the Supabase
+  // Auth server about it on every request:
+  //   - project uses asymmetric JWT signing keys: the signature is checked
+  //     locally against the project's public keys (JWKS, cached in memory),
+  //     so there is NO network call to Supabase Auth. The token is still
+  //     cryptographically verified and expiry is still enforced; a forged
+  //     or tampered cookie is rejected.
+  //   - project still uses the legacy shared (HS256) secret: supabase-js
+  //     itself falls back to getUser(), i.e. exactly the previous behaviour.
+  // It still refreshes an expired access token via the refresh token and
+  // writes the new cookies through setAll above.
+  //
+  // Trade-off: with local verification, a session revoked server-side (user
+  // banned/deleted, global sign-out from another device) is only noticed
+  // when the current access token expires (Supabase default: 1 hour), not on
+  // the very next request. Everything that must take effect immediately in
+  // this file - school lock, onboarding, role and appointment checks - is
+  // read from the database below on every request and is unaffected.
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const subject = claimsData?.claims?.sub
+  const user = subject ? { id: subject } : null
 
   const isPublicPath   = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthOnlyPath = AUTH_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
@@ -237,9 +265,15 @@ export async function middleware(request: NextRequest) {
   // expired/suspended school kept working in full through the principal
   // account with no way to force renewal.
   if (user && pathname.startsWith('/dashboard')) {
+    // The school's lock fields are fetched in the SAME query as the profile
+    // (PostgREST embedded select over profiles_school_id_fkey) instead of a
+    // second, dependent `schools` query. That removes one full Supabase
+    // round-trip from every /dashboard navigation. RLS still applies to both
+    // tables exactly as before - same user, same policies. The explicit FK
+    // name avoids ambiguity if profiles ever gains another FK to schools.
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, school_id, onboarding_stage')
+      .select('role, school_id, onboarding_stage, school:schools!profiles_school_id_fkey(setup_status, is_platform_active)')
       .eq('id', user.id)
       .single()
 
@@ -285,35 +319,21 @@ export async function middleware(request: NextRequest) {
     const needsAppointmentCheck = !!appointmentTypes && profile?.role !== 'principal'
     const needsSchoolCheck = !!(profile && profile.school_id)
 
-    // The appointment-boundary check and the school-lock check are
-    // independent of each other (neither's result depends on the other),
-    // so fire both queries concurrently instead of sequentially. This
-    // trims one full Supabase round-trip off every /dashboard navigation
-    // that needs both - middleware runs before the page starts rendering,
-    // so this latency was previously paid on every single page-to-page
-    // click. Redirect priority (appointment boundary still wins over
-    // school lock, matching the original sequential order) is preserved
-    // below even though both queries have already resolved by then.
-    const [apptResult, schoolResult] = await Promise.all([
-      needsAppointmentCheck
-        ? supabase
-            .from('appointments')
-            .select('id')
-            .eq('profile_id', user.id)
-            .eq('school_id', profile?.school_id ?? '')
-            .eq('status', 'active')
-            .in('appointment_type', appointmentTypes!)
-            .limit(1)
-            .maybeSingle()
-        : Promise.resolve({ data: null as { id: string } | null }),
-      needsSchoolCheck
-        ? supabase
-            .from('schools')
-            .select('setup_status, is_platform_active')
-            .eq('id', profile!.school_id)
-            .single()
-        : Promise.resolve({ data: null as { setup_status: string; is_platform_active: boolean } | null }),
-    ])
+    // Only the appointment-boundary check still needs its own query (and
+    // only for appointment-gated dashboards); the school-lock fields already
+    // arrived with the profile above. Redirect priority is unchanged:
+    // appointment boundary still wins over school lock.
+    const apptResult = needsAppointmentCheck
+      ? await supabase
+          .from('appointments')
+          .select('id')
+          .eq('profile_id', user.id)
+          .eq('school_id', profile?.school_id ?? '')
+          .eq('status', 'active')
+          .in('appointment_type', appointmentTypes!)
+          .limit(1)
+          .maybeSingle()
+      : { data: null as { id: string } | null }
 
     if (needsAppointmentCheck && !apptResult.data) {
       const home = ROLE_HOME[profile?.role ?? ''] ?? '/login'
@@ -321,7 +341,13 @@ export async function middleware(request: NextRequest) {
     }
 
     if (needsSchoolCheck) {
-      const school = schoolResult.data
+      // An embedded to-one relation can be typed as an object or a
+      // single-item array depending on client typings; normalize both.
+      const embedded = (profile as { school?: unknown } | null)?.school
+      const school = (Array.isArray(embedded) ? embedded[0] : embedded) as
+        | { setup_status: string; is_platform_active: boolean }
+        | null
+        | undefined
       if (school) {
         const isHardLocked =
           !school.is_platform_active ||
@@ -359,12 +385,38 @@ export async function middleware(request: NextRequest) {
         }
       }
     }
+
+    // ── Role dispatch for the bare /dashboard URL ──────────────
+    // Every check above has passed, and the profile is already in hand, so
+    // send the user straight to their own dashboard from here instead of
+    // rendering src/app/dashboard/page.tsx just to redirect (that page
+    // repeats the auth check and the profile query). If the destination can't
+    // be decided (profile missing, unknown role) fall through and let the
+    // page handle it exactly as before.
+    if (pathname === '/dashboard') {
+      const destination = dashboardDestination(profile)
+      if (destination) {
+        return redirectKeepingCookies(new URL(destination, request.url))
+      }
+    }
   }
 
   // ── Root redirect ────────────────────────────────────────────
   if (pathname === '/') {
     if (user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      // Signed-in visitors never see the landing page. Previously this hopped
+      // to /dashboard, which then hopped again to the role dashboard - two
+      // full redirects on every app launch. Decide the destination here in
+      // one hop. The destination request still passes through this
+      // middleware, so onboarding, role and school-lock checks all still run
+      // on it. If the profile can't be read, keep the old behaviour.
+      const { data: launchProfile } = await supabase
+        .from('profiles')
+        .select('role, school_id')
+        .eq('id', user.id)
+        .single()
+      const destination = dashboardDestination(launchProfile)
+      return redirectKeepingCookies(new URL(destination ?? '/dashboard', request.url))
     }
     // Phase 4, Lane A (S38): '/' is now the public marketing landing
     // page (src/app/page.tsx renders it directly for a signed-out

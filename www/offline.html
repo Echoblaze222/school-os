@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080C14" />
+  <title>SchoolOS</title>
+  <!--
+    Shown by the Android app (capacitor.config.ts -> server.errorPath) when the
+    live SchoolOS site can't be loaded. It is bundled INSIDE the APK, so it
+    appears even with no connection at all.
+
+    Notes for whoever edits this:
+    - It is served from the app's local origin and has no access to Capacitor
+      plugins (a Capacitor limitation for error pages on Android).
+    - Capacitor shows this page for ANY failed main-page load: no connection,
+      DNS failure, AND an HTTP error status (404/500...). So the wording is
+      deliberately about "couldn't load", not "you're offline".
+    - It must stay self-contained: no external fonts, scripts or images.
+  -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #080C14; }
+    body {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; padding: 24px; text-align: center; box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: #E8ECF4;
+    }
+    svg { opacity: .55; }
+    h1 { margin: 0 0 8px; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+    p  { margin: 0; font-size: .9rem; line-height: 1.6; color: #98A2B8; max-width: 22rem; }
+    button {
+      padding: 12px 28px; border: 0; border-radius: 999px; cursor: pointer;
+      font: inherit; font-weight: 700; font-size: .9rem; color: #080C14; background: #E8ECF4;
+    }
+    button:active { opacity: .8; }
+  </style>
+</head>
+<body>
+  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#98A2B8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 5-2.7M19 12.9a10 10 0 0 0-2.1-1.6M2 8.8a15 15 0 0 1 4.2-2.6M22 8.8a15 15 0 0 0-8.6-3.7M2 2l20 20" />
+  </svg>
+  <div>
+    <h1>Couldn&rsquo;t load SchoolOS</h1>
+    <p>Check your internet connection and try again. We&rsquo;ll also retry by ourselves as soon as your connection comes back.</p>
+  </div>
+  <button id="retry" type="button">Try again</button>
+
+  <script>
+    // Must match server.url in capacitor.config.ts. Navigating from this local
+    // page to that host is allowed by Capacitor (it is the app's own host).
+    var APP_URL = 'https://school-os-j4bn.vercel.app/';
+    function retry() { window.location.href = APP_URL; }
+    document.getElementById('retry').addEventListener('click', retry);
+    window.addEventListener('online', retry);
+  </script>
+</body>
+</html>

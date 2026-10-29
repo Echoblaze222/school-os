@@ -3,6 +3,7 @@
 // brand colors + font as CSS variables on <html> before first paint,
 // covering every librarian sub-page with zero client-component changes.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
@@ -16,8 +17,7 @@ export default async function LibrarianLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   let primaryColor   = '#00B4D8'
   let secondaryColor: string | undefined = '#800020'
   let fontFamily      = 'Inter'

@@ -11,6 +11,7 @@
 // rendering anything: the caller is signed in AND holds an ACTIVE
 // 'counselor' appointment at their school.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient }      from '@/lib/supabase/server'
 import { redirect }          from 'next/navigation'
 import { checkSubscription } from '@/lib/subscription'
@@ -20,7 +21,7 @@ import CounselorDashboardClient from './CounselorDashboardClient'
 
 export default async function CounselorDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const sub = await checkSubscription(user.id)

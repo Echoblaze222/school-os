@@ -1,12 +1,11 @@
 // src/app/super-admin/ai/page.tsx
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import AiAssistantClient from './AiAssistantClient'
 
 export default async function SuperAdminAiPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/super-admin/login')
 
   const adminSupabase = createAdminClient()

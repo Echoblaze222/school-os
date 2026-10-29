@@ -10,6 +10,7 @@
 // (#7C3AED) left over from before the brand correction; not touched here
 // since that's outside this file's scope, but worth a follow-up pass.
 
+import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
 
@@ -23,8 +24,7 @@ export default async function CounselorLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   let primaryColor   = '#00B4D8'
   let secondaryColor: string | undefined = '#800020'
   let fontFamily      = 'Inter'
