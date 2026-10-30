@@ -1,6 +1,6 @@
 /* ============================================================
-   SchoolOS — Global Design System
-   Violet × Gold × Deep Space
+   SchoolOS: Global Design System
+   Burgundy × Cyan × Deep Space
    Mobile-first + Desktop sidebar layout
    ============================================================ */
 
@@ -111,7 +111,7 @@
   /* Text */
   --text-primary:   #F0F4FF;
   --text-secondary: #A8B4CC;
-  --text-muted:     #5A6580;
+  --text-muted:     #8190AB;
   --text-faint:     #3A4258;
   --text-inverse:   #080C14;
 
@@ -119,6 +119,9 @@
   --input-bg:       rgba(255,255,255,0.05);
   --input-border:   rgba(255,255,255,0.1);
   --input-focus:    var(--brand-glow);
+
+  /* Keyboard focus ring (visible on the dark backgrounds; burgundy alone is too low-contrast here) */
+  --focus-ring:     var(--gold-light);
 
   /* Sidebar (desktop) */
   --sidebar-bg:     #0A0F1C;
@@ -153,13 +156,16 @@
 
   --text-primary:   #0F1623;
   --text-secondary: #374151;
-  --text-muted:     #6B7280;
+  --text-muted:     #5B6472;
   --text-faint:     #9CA3AF;
   --text-inverse:   #FFFFFF;
 
   --input-bg:       #FFFFFF;
   --input-border:   rgba(0,0,0,0.12);
   --input-focus:    var(--brand-glow);
+
+  /* Keyboard focus ring (brand burgundy has strong contrast on light backgrounds) */
+  --focus-ring:     var(--brand);
 
   --sidebar-bg:     #FFFFFF;
   --sidebar-border: rgba(0,0,0,0.06);
@@ -214,9 +220,29 @@ a, button, [role='button'], summary, select {
 input, textarea, select { font-family: inherit; }
 ul, ol { list-style: none; }
 
+/* Keyboard focus ring. Only shows for keyboard / switch-access navigation
+   (:focus-visible), never on mouse or touch taps, so it adds no visual noise
+   for normal use. Placed before the component rules on purpose: .input sets
+   its own outline:none plus a custom focus ring further down, and the later
+   rule wins at equal specificity, so inputs keep their existing look. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Tabular figures: every digit gets the same width so numbers line up in
+   columns and do not jitter when values change. Applied to tables and to the
+   shared stat/number classes. Use the .tabular-nums utility on any other
+   element that shows money, GPA, percentages, counts, or dates. */
+table, th, td,
+.stat-card-value,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── LAYOUT SYSTEM ─────────────────────────────────────────── */
 
-/* Desktop shell — sidebar + content */
+/* Desktop shell: sidebar + content */
 .app-shell {
   display: flex;
   min-height: 100dvh;
@@ -261,7 +287,7 @@ ul, ol { list-style: none; }
 }
 
 /* ── TYPOGRAPHY ────────────────────────────────────────────── */
-.h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; }
+.h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; }
 .h2 { font-size: clamp(1.4rem, 3vw, 2rem);    font-weight: 700; letter-spacing: -0.02em;  line-height: 1.2;  }
 .h3 { font-size: clamp(1.1rem, 2vw, 1.4rem);  font-weight: 600; letter-spacing: -0.015em; line-height: 1.3;  }
 .h4 { font-size: 1rem;  font-weight: 600; line-height: 1.4; }
@@ -269,28 +295,27 @@ ul, ol { list-style: none; }
 .caption { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); letter-spacing: 0.03em; }
 
 /* ── GLASS CARD ────────────────────────────────────────────── */
+/* Cards sit on the solid page background, so a backdrop blur had nothing to
+   blur and only cost GPU time (noticeable scroll jank on mid-range Android
+   WebViews). Blur is kept only on surfaces that float over scrolling content:
+   the bottom dock, the sticky page header, and modals. Hover now changes
+   border and tint only; lift and shadow are reserved for floating UI. */
 .glass-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  transition: all var(--transition-normal);
+  transition: background var(--transition-normal), border-color var(--transition-normal);
 }
 
 .glass-card:hover {
   background: var(--glass-bg-hover);
   border-color: var(--glass-border-hover);
-  box-shadow: var(--glass-shadow-hover);
-  transform: translateY(-2px);
 }
 
 .glass-card-flat {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 /* ── BUTTONS ───────────────────────────────────────────────── */
@@ -325,12 +350,14 @@ ul, ol { list-style: none; }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+/* Solid brand with a 1px inner top highlight for depth. The shared .btn
+   ::after overlay already lightens the button on hover, so no extra glow,
+   shadow, or lift is needed. */
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   color: #fff;
-  box-shadow: 0 4px 16px var(--brand-glow);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
 }
-.btn-primary:hover { box-shadow: 0 6px 24px var(--brand-glow); transform: translateY(-1px); }
 
 .btn-secondary {
   background: var(--glass-bg);
@@ -339,10 +366,13 @@ ul, ol { list-style: none; }
 }
 .btn-secondary:hover { border-color: var(--brand-border); background: var(--glass-bg-hover); }
 
+/* Cyan accent button. Previously blended cyan into amber (#D97706) with an
+   amber shadow, which did not match the cyan --gold token. Now solid cyan with
+   a cyan-tinted shadow so it reads as one consistent accent. */
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold) 0%, #D97706 100%);
+  background: var(--gold);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+  box-shadow: 0 4px 16px var(--gold-border);
 }
 
 .btn-danger {
@@ -492,7 +522,7 @@ textarea.input {
   width: 50px;
   height: 50px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   color: #fff;
   box-shadow: 0 4px 20px var(--brand-glow);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -561,7 +591,7 @@ textarea.input {
 /* ── SECTION LABEL ─────────────────────────────────────────── */
 .section-label {
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -577,16 +607,13 @@ textarea.input {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(12px);
-  transition: all var(--transition-normal);
+  transition: background var(--transition-normal), border-color var(--transition-normal);
 }
 .stat-card:hover {
   border-color: var(--glass-border-hover);
   background: var(--glass-bg-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--glass-shadow-hover);
 }
-.stat-card-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+.stat-card-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
 .stat-card-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ── PROGRESS BAR ──────────────────────────────────────────── */
@@ -667,14 +694,14 @@ textarea.input {
 
 /* ── CHAT BUBBLE ───────────────────────────────────────────── */
 .bubble-user {
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   color: #fff;
   border-radius: var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);
   padding: var(--space-3) var(--space-4);
   max-width: 75%;
   font-size: 0.875rem;
   line-height: 1.5;
-  box-shadow: 0 2px 12px var(--brand-glow);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
 }
 
 .bubble-ai {
@@ -756,7 +783,7 @@ textarea.input {
 .animate-toast-out { animation: toast-out 0.2s cubic-bezier(0.4,0,0.2,1) forwards; }
 
 /* Used by ToastContext.tsx's stacked toast items, which live inside an
-   already-horizontally-centered container — unlike toast-in/toast-out
+   already-horizontally-centered container. Unlike toast-in/toast-out
    above (designed for a single element that centers itself via
    left:50% + translate(-50%,...)), these only animate vertically so
    they don't fight the parent's centering transform. */
@@ -788,7 +815,7 @@ textarea.input {
    motion collapses to an instant, accessible state; essential feedback
    (opacity/color changes) still communicates state without movement. */
 @media (prefers-reduced-motion: reduce) {
-  /* Universal catch-all — covers every animation/transition in the app,
+  /* Universal catch-all: covers every animation/transition in the app,
      whether applied via a CSS class (.animate-fade-up etc.) or via an
      inline style={{ animation: '...' }} on a component (chat bubbles,
      quick-prompt cards, typing indicators, etc). Targeted class-based
@@ -866,22 +893,22 @@ textarea.input {
 }
 
 /* ============================================================
-   Phase 1 Foundation — added design tokens (§68.14 gap-fill)
+   Phase 1 Foundation: added design tokens (§68.14 gap-fill)
    Button/link/table/modal/chart tokens, derived from the
    existing --brand / --gold / status palette.
    ============================================================ */
 /* ============================================================
-   SchoolOS — Phase 1 Foundation: missing token surfaces (§68.14)
+   SchoolOS Phase 1 Foundation: missing token surfaces (§68.14)
    Appended to src/app/globals.css, not a replacement.
    Every color below is derived from the EXISTING tokens already in
    globals.css (--brand, --brand-light, --brand-dark, --gold, --success,
-   --danger, --warning, --info, --text-*) — nothing invented, per
+   --danger, --warning, --info, --text-*), nothing invented, per
    "reuse before inventing." Confirmed gaps from the audit: buttons,
    links, tables, modals, charts had no dedicated tokens.
    ============================================================ */
 
 :root {
-  /* Buttons — states as tokens, not just hover CSS, so Phase 3/4 pages
+  /* Buttons: states as tokens, not just hover CSS, so Phase 3/4 pages
      read one source instead of re-deriving hover/active shades per file. */
   --btn-primary-bg:          var(--brand);
   --btn-primary-bg-hover:    var(--brand-light);
@@ -923,7 +950,7 @@ textarea.input {
   --modal-border:      var(--glass-border);
   --modal-shadow:      0 16px 64px rgba(0,0,0,0.5);
 
-  /* Charts — reuses brand/gold/status so charts never invent an
+  /* Charts: reuses brand/gold/status so charts never invent an
      off-palette color; ordered for series that need 4-5 distinguishable
      lines/bars before repeating. */
   --chart-series-1:  var(--brand);
@@ -934,7 +961,7 @@ textarea.input {
   --chart-grid-line: var(--glass-border);
   --chart-axis-text: var(--text-muted);
 
-  /* Status — already existed as flat colors; adding the text/bg pairing
+  /* Status: already existed as flat colors; adding the text/bg pairing
      Phase 3/4 badges and pills need so they don't recompute contrast. */
   --status-success-bg:  var(--success-subtle);
   --status-success-text: var(--success);
@@ -946,7 +973,7 @@ textarea.input {
   --status-info-text:    var(--info);
 }
 
-/* Light mode overrides — only where the value actually needs to differ
+/* Light mode overrides: only where the value actually needs to differ
    from the dark-mode default above (most button/link/chart tokens don't;
    tables and modals do, matching the existing light-mode pattern for
    bg-elevated / bg-raised). */
