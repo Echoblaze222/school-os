@@ -16,6 +16,7 @@
 // user re-picks their school.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { clearSavedViews } from '@/lib/savedView/store'
 
 const SCHOOL_KEY         = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY  = 'schoolos_recent_school'
@@ -62,6 +63,12 @@ export async function signOutFlow(
   returnTo?: string
 ) {
   showSigningOutCover()
+
+  // Wipe the on-phone saved copies of screens BEFORE the network sign-out, so
+  // the next person to use this phone can never see this user's data, even
+  // if the sign-out request is slow or fails. Capped so it can't hold up
+  // logout.
+  await Promise.race([clearSavedViews(), new Promise<void>((r) => setTimeout(r, 800))])
 
   try {
     const stored = localStorage.getItem(SCHOOL_KEY)
