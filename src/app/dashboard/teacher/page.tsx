@@ -7,6 +7,8 @@ import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
 import TeacherDashboardClient from './TeacherDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient()
@@ -27,7 +29,7 @@ export default async function TeacherDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ──────────────────────────────────────
+  // ── Profile + school (single query) ────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -38,7 +40,7 @@ export default async function TeacherDashboardPage() {
 
   const school = (profile as any)?.schools ?? null
 
-  // ── Exam-committee appointment (Phase 2, Lane C) ──────────────────────────
+  // ── Exam-committee appointment (Phase 2, Lane C) ────────────────────────────
   // Only used to decide whether to show the "Examination Team" link on this
   // dashboard, actual access control for /dashboard/examination lives in
   // that route's own layout.tsx, this is discoverability only, not a
@@ -57,7 +59,7 @@ export default async function TeacherDashboardPage() {
     ? APPOINTMENT_TYPES[examAppointment.appointment_type as keyof typeof APPOINTMENT_TYPES]?.label ?? null
     : null
 
-  // ── Parallel count queries ────────────────────────────────────────────────
+  // ── Parallel count queries ────────────────────────────────────────────
   const [
     { count: classCount },
     { count: assignmentCount },
@@ -118,7 +120,7 @@ export default async function TeacherDashboardPage() {
     quizCount:       quizCount       ?? 0,
   }
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  // ── Recent activities (last 15, most recent first) ─────────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
@@ -141,14 +143,27 @@ export default async function TeacherDashboardPage() {
       : undefined,
   }))
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${counts.classCount} class${counts.classCount === 1 ? '' : 'es'} · ${counts.pendingGrading} to grade`, [
+    { label: 'Classes', value: String(counts.classCount) },
+    { label: 'Assignments', value: String(counts.assignmentCount) },
+    { label: 'To grade', value: String(counts.pendingGrading) },
+    { label: 'Quizzes', value: String(counts.quizCount) },
+  ])
+
   return (
-    <TeacherDashboardClient
-      profile={profile}
-      school={school}
-      userId={userId}
-      counts={counts}
-      activities={activities}
-      examAppointmentLabel={examAppointmentLabel}
-    />
+    <>
+      <TeacherDashboardClient
+        profile={profile}
+        school={school}
+        userId={userId}
+        counts={counts}
+        activities={activities}
+        examAppointmentLabel={examAppointmentLabel}
+      />
+      <SaveSnapshot userId={userId} routeKey={homeKey('teacher')} data={homeSnapshot} />
+    </>
   )
 }

@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalDashboardClient from './PrincipalDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function PrincipalDashboardPage() {
   const supabase = await createClient()
@@ -87,7 +89,7 @@ export default async function PrincipalDashboardPage() {
   const hasAll      = studentCount && teacherCount && classCount
   const healthScore = hasAll ? Math.min(100, 60 + Math.round((avgScore / 100) * 40)) : 30
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  // ── Recent activities (last 15, most recent first) ─────────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
@@ -110,25 +112,38 @@ export default async function PrincipalDashboardPage() {
       : undefined,
   }))
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${studentCount ?? 0} students · ${teacherCount ?? 0} teachers`, [
+    { label: 'Students', value: String(studentCount ?? 0) },
+    { label: 'Teachers', value: String(teacherCount ?? 0) },
+    { label: 'Classes', value: String(classCount ?? 0) },
+    { label: 'Unread alerts', value: String(unreadNotifCount ?? 0) },
+  ])
+
   return (
-    <PrincipalDashboardClient
-      profile={profile}
-      school={school}
-      userId={user.id}
-      counts={{
-        studentCount:   studentCount  ?? 0,
-        teacherCount:   teacherCount  ?? 0,
-        classCount:     classCount    ?? 0,
-        avgScore,
-        healthScore,
-        feeCollectionRate,
-        feesCollectedDisplay,
-        outstandingFeesDisplay,
-        pendingActions: (unreadNotifCount ?? 0),
-      }}
-      activities={activities}
-      pendingNotifications={pendingNotifications}
-      unreadNotifCount={unreadNotifCount ?? 0}
-    />
+    <>
+      <PrincipalDashboardClient
+        profile={profile}
+        school={school}
+        userId={user.id}
+        counts={{
+          studentCount:   studentCount  ?? 0,
+          teacherCount:   teacherCount  ?? 0,
+          classCount:     classCount    ?? 0,
+          avgScore,
+          healthScore,
+          feeCollectionRate,
+          feesCollectedDisplay,
+          outstandingFeesDisplay,
+          pendingActions: (unreadNotifCount ?? 0),
+        }}
+        activities={activities}
+        pendingNotifications={pendingNotifications}
+        unreadNotifCount={unreadNotifCount ?? 0}
+      />
+      <SaveSnapshot userId={user.id} routeKey={homeKey('principal')} data={homeSnapshot} />
+    </>
   )
 }
