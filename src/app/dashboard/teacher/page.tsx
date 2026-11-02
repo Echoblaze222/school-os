@@ -29,7 +29,7 @@ export default async function TeacherDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ────────────────────────────────────
+  // ── Profile + school (single query) ──────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -40,7 +40,7 @@ export default async function TeacherDashboardPage() {
 
   const school = (profile as any)?.schools ?? null
 
-  // ── Exam-committee appointment (Phase 2, Lane C) ────────────────────────────
+  // ── Exam-committee appointment (Phase 2, Lane C) ──────────────────────────
   // Only used to decide whether to show the "Examination Team" link on this
   // dashboard, actual access control for /dashboard/examination lives in
   // that route's own layout.tsx, this is discoverability only, not a
@@ -59,7 +59,7 @@ export default async function TeacherDashboardPage() {
     ? APPOINTMENT_TYPES[examAppointment.appointment_type as keyof typeof APPOINTMENT_TYPES]?.label ?? null
     : null
 
-  // ── Parallel count queries ────────────────────────────────────────────
+  // ── Parallel count queries ────────────────────────────────────────────────
   const [
     { count: classCount },
     { count: assignmentCount },
@@ -120,7 +120,7 @@ export default async function TeacherDashboardPage() {
     quizCount:       quizCount       ?? 0,
   }
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────────
+  // ── Recent activities (last 15, most recent first) ─────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
