@@ -6,6 +6,8 @@ import { redirect }          from 'next/navigation'
 import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import SecretaryClient       from './SecretaryClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function SecretaryPage() {
   const supabase = await createClient()
@@ -120,15 +122,29 @@ export default async function SecretaryPage() {
       : undefined,
   }))
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${counts.totalStudents} students`, [
+    { label: 'Students', value: String(counts.totalStudents) },
+    { label: 'Pending transfers', value: String(counts.pendingApps) },
+    { label: 'New this week', value: String(counts.newThisWeek) },
+    { label: 'Active users', value: String(counts.activeUsers) },
+    { label: 'Pending admissions', value: String(counts.pendingAdmissions) },
+  ])
+
   return (
-    <SecretaryClient
-      profile={profile}
-      school={school}
-      userId={user.id}
-      counts={counts}
-      activities={activities}
-      pendingNotifications={pendingNotifications}
-      unreadNotifCount={unreadNotifCount.count ?? 0}
-    />
+    <>
+      <SecretaryClient
+        profile={profile}
+        school={school}
+        userId={user.id}
+        counts={counts}
+        activities={activities}
+        pendingNotifications={pendingNotifications}
+        unreadNotifCount={unreadNotifCount.count ?? 0}
+      />
+      <SaveSnapshot userId={user.id} routeKey={homeKey('secretary')} data={homeSnapshot} />
+    </>
   )
 }

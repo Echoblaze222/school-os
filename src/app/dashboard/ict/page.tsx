@@ -14,6 +14,8 @@ import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { getIctAppointment } from '@/lib/permissions'
 import IctClient              from './IctClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function IctPage() {
   const supabase = await createClient()
@@ -70,14 +72,28 @@ export default async function IctPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${counts.openTickets} open ticket${counts.openTickets === 1 ? '' : 's'}`, [
+    { label: 'Open tickets', value: String(counts.openTickets) },
+    { label: 'Urgent', value: String(counts.urgentTickets) },
+    { label: 'Assets under repair', value: String(counts.assetsUnderRepair) },
+    { label: 'Account requests', value: String(counts.openAccountRequests) },
+    { label: 'Pending applications', value: String(counts.pendingApplications) },
+  ])
+
   return (
-    <IctClient
-      profile={profile}
-      school={school}
-      userId={user.id}
-      appointment={appointment}
-      counts={counts}
-      recentTickets={recentTickets ?? []}
-    />
+    <>
+      <IctClient
+        profile={profile}
+        school={school}
+        userId={user.id}
+        appointment={appointment}
+        counts={counts}
+        recentTickets={recentTickets ?? []}
+      />
+      <SaveSnapshot userId={user.id} routeKey={homeKey('ict')} data={homeSnapshot} />
+    </>
   )
 }
