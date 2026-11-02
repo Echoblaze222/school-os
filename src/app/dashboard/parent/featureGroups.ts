@@ -6,7 +6,7 @@
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   UserIcon, BarChartIcon, WalletIcon, MessageIcon,
-  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, BookIcon, ActivityIcon,
+  CalendarIcon, ClipboardIcon, ClockIcon, TrophyIcon, BookIcon, ActivityIcon, ShieldIcon,
 } from '@/components/Icons'
 
 export const PARENT_FEATURE_GROUPS: FeatureGroup[] = [
@@ -15,6 +15,7 @@ export const PARENT_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'attendance',  label: 'Attendance',       href: '/dashboard/parent/attendance',  Icon: CalendarIcon },
     { id: 'timetable',   label: 'Timetable',        href: '/dashboard/parent/timetable',   Icon: ClockIcon },
     { id: 'assignments', label: 'Assignments',      href: '/dashboard/parent/assignments', Icon: ClipboardIcon },
+    { id: 'pickups',     label: 'Pickup',           href: '/dashboard/parent/pickups',     Icon: ShieldIcon },
   ]},
   { name: 'Progress', items: [
     { id: 'results',     label: 'Results',     href: '/dashboard/parent/results',     Icon: BarChartIcon },

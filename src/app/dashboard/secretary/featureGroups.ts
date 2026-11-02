@@ -10,7 +10,7 @@ import {
   UserIcon, UsersIcon, CalendarIcon,
   MessageIcon, BellIcon, SettingsIcon, FolderIcon,
   ClipboardIcon, CheckCircleIcon, BookOpenIcon,
-  RefreshIcon, GraduationCapIcon, FileTextIcon, BookIcon, ActivityIcon,
+  RefreshIcon, GraduationCapIcon, FileTextIcon, BookIcon, ActivityIcon, ShieldIcon,
 } from '@/components/Icons'
 
 export const SECRETARY_FEATURE_GROUPS: FeatureGroup[] = [
@@ -21,6 +21,7 @@ export const SECRETARY_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'admissions',  label: 'Admissions',  href: '/dashboard/secretary/admissions',  Icon: GraduationCapIcon },
     { id: 'transfers',   label: 'Transfers',   href: '/dashboard/secretary/transfers',   Icon: RefreshIcon },
     { id: 'clinic',      label: 'Clinic',      href: '/dashboard/secretary/clinic',      Icon: ActivityIcon },
+    { id: 'pickup',      label: 'Gate pickup', href: '/dashboard/secretary/pickup',      Icon: ShieldIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/secretary/codes',       Icon: CheckCircleIcon },
   ]},
   { name: 'Records', items: [
