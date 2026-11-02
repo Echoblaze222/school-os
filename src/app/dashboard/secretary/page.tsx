@@ -99,7 +99,7 @@ export default async function SecretaryPage() {
     href:       n.action_url ?? n.link_url ?? '/dashboard/secretary/notifications',
   }))
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────────
+  // ── Recent activities (last 15, most recent first) ─────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
