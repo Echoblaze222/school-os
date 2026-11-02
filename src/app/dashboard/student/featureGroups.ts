@@ -16,6 +16,7 @@ export const STUDENT_FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Learning', items: [
     { id: 'assignments', label: 'Assignments', href: '/dashboard/student/assignments', Icon: ClipboardIcon },
     { id: 'results',     label: 'Results',     href: '/dashboard/student/results',     Icon: BarChartIcon },
+    { id: 'analytics',   label: 'My progress', href: '/dashboard/student/analytics',   Icon: BarChartIcon },
     { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/student/quizzes',     Icon: AwardIcon },
     { id: 'classes',     label: 'Live classes',href: '/dashboard/student/classes',     Icon: VideoIcon },
     { id: 'notes',       label: 'Notes',       href: '/dashboard/student/notes',       Icon: BookIcon },

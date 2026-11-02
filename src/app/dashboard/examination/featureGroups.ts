@@ -1,9 +1,5 @@
 // src/app/dashboard/examination/featureGroups.ts
-// Shared across every examination sub-page that uses RoleSubHeader, so the
-// bottom dock / "all features" sheet is identical everywhere an
-// examination-committee member navigates - not just on the dashboard home
-// screen. Extracted from ExaminationDashboardClient.tsx, which now imports
-// this instead of defining its own local copy.
+// Shared across every examination sub-page that uses RoleSubHeader.
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
@@ -20,6 +16,7 @@ export const EXAMINATION_FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Exams', items: [
     { id: 'sessions',   label: 'Exam Sessions', href: '/dashboard/examination/sessions',   Icon: CalendarIcon },
     { id: 'timetable',  label: 'Timetable',     href: '/dashboard/examination/timetable',  Icon: ClockIcon },
+    { id: 'analytics',  label: 'Analytics',     href: '/dashboard/examination/analytics',  Icon: BarChartIcon },
   ]},
   { name: 'Conduct', items: [
     { id: 'invigilation', label: 'Invigilation',    href: '/dashboard/examination/invigilation', Icon: ShieldIcon },

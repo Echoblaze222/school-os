@@ -17,6 +17,7 @@ export const PARENT_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'assignments', label: 'Assignments',      href: '/dashboard/parent/assignments', Icon: ClipboardIcon },
   ]},
   { name: 'Progress', items: [
+    { id: 'analytics',   label: 'Progress',    href: '/dashboard/parent/analytics',   Icon: BarChartIcon },
     { id: 'results',     label: 'Results',     href: '/dashboard/parent/results',     Icon: BarChartIcon },
     { id: 'fees',        label: 'Fees',        href: '/dashboard/parent/fees',        Icon: WalletIcon },
     { id: 'leaderboard', label: 'Leaderboard', href: '/dashboard/parent/leaderboard', Icon: TrophyIcon },
