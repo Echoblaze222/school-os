@@ -20,6 +20,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'staff',    label: 'Staff',    href: '/dashboard/principal/staff',    Icon: PeopleIcon },
     { id: 'teachers', label: 'Teachers', href: '/dashboard/principal/teachers', Icon: UserIcon },
     { id: 'students', label: 'Students', href: '/dashboard/principal/students', Icon: SchoolIcon },
+    { id: 'dnemis',   label: 'LIN & D-NEMIS', href: '/dashboard/principal/dnemis', Icon: ShieldIcon },
     { id: 'leadership', label: 'Leadership', href: '/dashboard/principal/leadership', Icon: TrophyIcon },
     { id: 'alumni',   label: 'Alumni',   href: '/dashboard/principal/alumni',   Icon: GlobeIcon },
     { id: 'certificates', label: 'Certificates', href: '/dashboard/principal/certificates', Icon: GraduationCapIcon },
