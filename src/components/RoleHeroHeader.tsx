@@ -9,6 +9,7 @@ import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
 import GlobalSearchOverlay from './GlobalSearchOverlay'
+import RoleHomeCharts from './analytics/RoleHomeCharts'
 import { SunIcon, MoonIcon, UserIcon, TagIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
 import { ripple } from '@/lib/ripple'
@@ -36,6 +37,7 @@ export default function RoleHeroHeader({
   const initials = (school?.name ?? 'S').slice(0, 2).toUpperCase()
 
   return (
+    <>
     <header className={styles.hero}>
       <div className={styles.frame}>
         <div className={styles.topRow}>
@@ -100,5 +102,8 @@ export default function RoleHeroHeader({
         </div>
       </div>
     </header>
+    {/* Principal renders its own richer block inside its page. */}
+    {role !== 'principal' && <RoleHomeCharts role={role} />}
+    </>
   )
 }

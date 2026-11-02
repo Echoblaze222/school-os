@@ -13,7 +13,7 @@ import {
 interface Range { days: number; label: string }
 interface Props { rpc: string; brand: string; ranges?: Range[]; defaultDays?: number }
 
-function Card({ c }: { c: any }) {
+export function Card({ c }: { c: any }) {
   const fmt = c.unit === '%' ? (v: number) => `${v}%` : undefined
   const data: any[] = c.data ?? []
   const series: any[] = c.series ?? []
