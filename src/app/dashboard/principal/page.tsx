@@ -89,7 +89,7 @@ export default async function PrincipalDashboardPage() {
   const hasAll      = studentCount && teacherCount && classCount
   const healthScore = hasAll ? Math.min(100, 60 + Math.round((avgScore / 100) * 40)) : 30
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────────
+  // ── Recent activities (last 15, most recent first) ─────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
