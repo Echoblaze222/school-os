@@ -1,0 +1,84 @@
+/* ============================================================
+   SchoolOS — mobile polish (spacing, layout, overlays)
+   Imported from layout.tsx AFTER globals.css + legacy-tokens.css.
+   Additive only: no existing token is removed or renamed.
+   ============================================================ */
+
+:root {
+  /* Floating Menu/AI dock (~48px pill + 14-20px offset) plus breathing room.
+     Anything that scrolls underneath the dock should end with this much
+     bottom padding so the last item is never hidden behind it. */
+  --dock-clearance: 104px;
+  --safe-top:       env(safe-area-inset-top, 0px);
+  --safe-bottom:    env(safe-area-inset-bottom, 0px);
+  --page-pad:       var(--space-5);
+
+  /* Text colour for content that sits on a school's brand colours.
+     Fallbacks first; the @supports block below upgrades them to an
+     automatic black/white pick so a dark brand colour never gets dark text. */
+  --on-brand:   #fff;
+  --on-brand-2: var(--brand-dark);
+}
+
+@supports (color: oklch(from red l c h)) {
+  :root {
+    --on-brand:   oklch(from var(--brand, #800020)   clamp(0, (0.68 - l) * 1000, 1) 0 0);
+    --on-brand-2: oklch(from var(--brand-2, #C99A3B) clamp(0, (0.68 - l) * 1000, 1) 0 0);
+  }
+}
+
+html {
+  /* A focused input or scrollIntoView() never lands behind the dock. */
+  scroll-padding-bottom: calc(var(--dock-clearance) + var(--safe-bottom));
+}
+
+/* ── Never let a wide child push the page sideways or get clipped ── */
+main,
+main > * { min-width: 0; }
+main :where(p, h1, h2, h3, h4, span, label) { overflow-wrap: break-word; }
+
+/* ── Horizontally scrollable chip / tab rows ──────────────────────
+   Rows of buttons used to overflow the screen: the last button was cut
+   in half and the row could not be swiped, because the page itself is
+   overflow-x:hidden. A row now scrolls on its own, buttons keep their
+   natural width, and the row bleeds to the screen edge.
+   - .scroll-row : opt-in class for new code
+   - the main > div:has(...) selector upgrades existing inline-styled rows
+     (a flex row with two or more direct buttons/links) without touching
+     every page. */
+.scroll-row,
+main > div[style*="flex"]:not([style*="column"]):has(> :is(button, a) ~ :is(button, a)) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-block: 2px;
+  margin-inline: calc(var(--page-pad) * -1);
+  padding-inline: var(--page-pad);
+  scroll-padding-inline: var(--page-pad);
+}
+.scroll-row { display: flex; gap: var(--space-2); }
+.scroll-row::-webkit-scrollbar,
+main > div[style*="flex"]:not([style*="column"]):has(> :is(button, a) ~ :is(button, a))::-webkit-scrollbar { display: none; }
+.scroll-row > *,
+main > div[style*="flex"]:not([style*="column"]):has(> :is(button, a) ~ :is(button, a)) > * { flex-shrink: 0; }
+
+@media (min-width: 1024px) {
+  .scroll-row,
+  main > div[style*="flex"]:not([style*="column"]):has(> :is(button, a) ~ :is(button, a)) {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+/* ── Touch screens have no real hover: stop cards staying "lifted" ── */
+@media (hover: none) {
+  .glass-card:hover,
+  .stat-card:hover,
+  .btn-primary:hover,
+  .nav-item:hover,
+  .nav-home-btn:hover {
+    transform: none;
+  }
+}

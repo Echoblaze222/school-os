@@ -17,12 +17,17 @@
 //   Imports ./legacy-tokens.css so the old --burgundy / --text-accent / --error
 //   style names used by 34 CSS modules resolve to the live design tokens
 //   instead of being undefined on every page except register-school.
+//
+// FIX 4: Mobile polish
+//   Imports ./mobile-polish.css (dock clearance, scrollable chip rows,
+//   touch-hover reset, automatic text colour on brand fills).
 // -----------------------------------------------------------------------------
 
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import './legacy-tokens.css'
+import './mobile-polish.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'

@@ -40,8 +40,11 @@ const CSS = `
 
 /* ---- Glass skin (inspired by frosted-glass dashboards) ---- */
 .viz-root{ position:relative; isolation:isolate; }
+/* The glow stays inside the section's own box (it used to bleed 24px above
+   and 12px past each side, drawing over the banner above and the page
+   margins). */
 .viz-root::before{
-  content:""; position:absolute; inset:-24px -12px; z-index:-1; pointer-events:none; border-radius:28px;
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; border-radius:28px;
   background:
     radial-gradient(420px 280px at 8% 0%, color-mix(in srgb, var(--series-4) 26%, transparent), transparent 70%),
     radial-gradient(480px 320px at 95% 12%, color-mix(in srgb, var(--series-1) 20%, transparent), transparent 70%),
@@ -57,7 +60,11 @@ const CSS = `
   transition:transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease;
   animation:viz-rise .6s cubic-bezier(.2,.8,.2,1) both;
 }
-.viz-root .glass-card:hover{ transform:translateY(-5px); box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent), 0 16px 38px rgba(20,16,10,.16); }
+/* Hover lift only where a real pointer exists; on touch screens :hover sticks
+   after a tap and left cards stuck in the lifted position. */
+@media (hover:hover){
+  .viz-root .glass-card:hover{ transform:translateY(-5px); box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent), 0 16px 38px rgba(20,16,10,.16); }
+}
 .viz-root .glass-card:nth-child(2){ animation-delay:.06s } .viz-root .glass-card:nth-child(3){ animation-delay:.12s }
 .viz-root .glass-card:nth-child(4){ animation-delay:.18s } .viz-root .glass-card:nth-child(5){ animation-delay:.24s }
 .viz-root .glass-card:nth-child(6){ animation-delay:.30s } .viz-root .glass-card:nth-child(n+7){ animation-delay:.36s }
