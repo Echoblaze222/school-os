@@ -1,8 +1,9 @@
 // src/lib/email/queueEmail.ts
 // Server-only. The single entry point for sending any email in this app -
 // every caller (school activation, fee receipts, future access-code
-// sends) should go through this instead of calling Resend directly, the
-// same way notifyUser.ts is the one entry point for WhatsApp/SMS.
+// sends) should go through this instead of calling an email provider
+// directly, the same way notifyUser.ts is the one entry point for
+// WhatsApp/SMS.
 //
 // WHY THIS EXISTS: before this file, the only email code in the entire
 // codebase (activateSchool.ts) called Resend directly, inline, with no
@@ -15,6 +16,14 @@
 // whom. This file fixes that class of problem generally, not just for
 // that one call site.
 //
+// PROVIDERS: Brevo or Resend, chosen by environment variables, no code
+// change needed to switch.
+//   - EMAIL_PROVIDER=brevo | resend  (explicit choice), otherwise
+//   - Brevo is used when BREVO_API_KEY is set, otherwise Resend.
+// Brevo works with a single verified sender address (no domain needed),
+// which is why it is the default when configured. See
+// docs/email/BREVO_SETUP.md.
+//
 // Mirrors notifyUser.ts's shape deliberately (dedupeKey, admin client,
 // per-delivery logging table) so anyone already familiar with that file
 // already knows how this one works.
@@ -22,6 +31,15 @@
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+type EmailProvider = 'brevo' | 'resend'
+
+export function getEmailProvider(): EmailProvider {
+  const explicit = (process.env.EMAIL_PROVIDER ?? '').trim().toLowerCase()
+  if (explicit === 'brevo' || explicit === 'resend') return explicit
+  return process.env.BREVO_API_KEY ? 'brevo' : 'resend'
+}
+
+// ── Resend ───────────────────────────────────────────────────
 let _resend: Resend | null = null
 
 export function getResend(): Resend {
@@ -39,14 +57,88 @@ export function getResend(): Resend {
  * own verified email - never a real end user like a principal or
  * parent. Once a domain is verified in the Resend dashboard (Settings ->
  * Domains), set RESEND_FROM_EMAIL to an address on that domain (e.g.
- * "SchoolOS <noreply@yourdomain.com>") and every email in this app
- * switches over automatically - no code change needed. Until that's
- * set, every non-owner send below will be classified as a permanent
- * failure (see isPermanentFailure) and logged clearly in
- * email_deliveries rather than silently vanishing.
+ * "SchoolOS <noreply@yourdomain.com>"). Only used when the provider is
+ * Resend.
  */
 export function getEmailFrom(): string {
   return process.env.RESEND_FROM_EMAIL || 'SchoolOS <onboarding@resend.dev>'
+}
+
+// ── Brevo ────────────────────────────────────────────────────
+const BREVO_ENDPOINT   = 'https://api.brevo.com/v3/smtp/email'
+const BREVO_TIMEOUT_MS = 10_000
+
+class EmailSendError extends Error {
+  statusCode?: number
+  permanent: boolean
+  constructor(message: string, opts: { statusCode?: number; permanent?: boolean } = {}) {
+    super(message)
+    this.name = 'EmailSendError'
+    this.statusCode = opts.statusCode
+    this.permanent = opts.permanent ?? false
+  }
+}
+
+/**
+ * Sends one email through Brevo's transactional API and returns Brevo's
+ * message id. The sender must be a verified sender in the Brevo account
+ * (Senders, Domains and Dedicated IPs -> Senders); BREVO_SENDER_EMAIL
+ * has to match it exactly. Brevo has no idempotency key, so a retry after
+ * a network timeout where Brevo had already accepted the message could in
+ * rare cases deliver twice. That is the accepted trade-off for a
+ * provider that needs no domain.
+ */
+async function sendViaBrevo(to: string, subject: string, html: string): Promise<string | null> {
+  const apiKey      = process.env.BREVO_API_KEY
+  const senderEmail = process.env.BREVO_SENDER_EMAIL
+  const senderName  = process.env.BREVO_SENDER_NAME || 'SchoolOS'
+
+  // Missing configuration can never fix itself by retrying.
+  if (!apiKey)      throw new EmailSendError('BREVO_API_KEY is not set', { permanent: true })
+  if (!senderEmail) throw new EmailSendError('BREVO_SENDER_EMAIL is not set', { permanent: true })
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), BREVO_TIMEOUT_MS)
+
+  let res: Response
+  try {
+    res = await fetch(BREVO_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'accept':       'application/json',
+        'content-type': 'application/json',
+        'api-key':      apiKey,
+      },
+      body: JSON.stringify({
+        sender:      { name: senderName, email: senderEmail },
+        to:          [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+      signal: controller.signal,
+    })
+  } catch (err: any) {
+    // Network failure or timeout: transient, worth retrying.
+    throw new EmailSendError(
+      err?.name === 'AbortError' ? 'Brevo request timed out' : `Brevo request failed: ${err?.message ?? err}`,
+    )
+  } finally {
+    clearTimeout(timer)
+  }
+
+  let payload: any = null
+  try { payload = await res.json() } catch { /* empty or non-JSON body */ }
+
+  if (!res.ok) {
+    const detail = payload?.message ?? payload?.code ?? res.statusText
+    // 400 (bad request, including an unverified sender or invalid address),
+    // 401 (bad key or blocked IP) and 403/404 are configuration or data
+    // problems. 429 and 5xx are transient.
+    const permanent = [400, 401, 402, 403, 404, 422].includes(res.status)
+    throw new EmailSendError(`Brevo ${res.status}: ${detail}`, { statusCode: res.status, permanent })
+  }
+
+  return payload?.messageId ?? null
 }
 
 export interface QueueEmailInput {
@@ -76,16 +168,17 @@ function backoffMinutes(attempts: number): number {
 }
 
 /**
- * Classifies a Resend error as permanent (a config/auth problem that
- * retrying can't fix - e.g. the sandbox-domain 403, a bad API key, or
- * Resend rejecting the request shape) vs. transient (a network blip,
- * Resend-side outage, or rate limit - worth retrying). Retrying a
- * permanent error forever just burns through max_attempts without ever
- * self-healing; it needs a human to go fix RESEND_FROM_EMAIL or
- * RESEND_API_KEY, and email_deliveries.error is where that human should
- * be able to see exactly why.
+ * Classifies a send error as permanent (a config/auth problem that
+ * retrying can't fix - e.g. Resend's sandbox-domain 403, a bad API key,
+ * an unverified Brevo sender, or the provider rejecting the request
+ * shape) vs. transient (a network blip, provider outage, or rate limit -
+ * worth retrying). Retrying a permanent error forever just burns through
+ * max_attempts without ever self-healing; it needs a human to fix the
+ * configuration, and email_deliveries.error is where that human should be
+ * able to see exactly why.
  */
 function isPermanentFailure(err: any): boolean {
+  if (err?.permanent === true) return true
   const status = err?.statusCode ?? err?.status
   return status === 401 || status === 403 || status === 422
 }
@@ -98,24 +191,30 @@ async function attemptSend(
   html: string,
 ): Promise<'sent' | 'queued' | 'failed'> {
   try {
-    const { data, error } = await getResend().emails.send(
-      { from: getEmailFrom(), to, subject, html },
-      {
-        // Stable per-row key so a retry of this exact call (ours, or a
-        // network-level retry upstream) can't create a second real send -
-        // Resend dedupes server-side on this key for 24h. Safe to reuse
-        // across our own retry attempts for the same row since the
-        // payload never changes between attempts.
-        idempotencyKey: `email-delivery-${deliveryId}`,
-      },
-    )
+    let providerMessageId: string | null = null
 
-    if (error) throw error
+    if (getEmailProvider() === 'brevo') {
+      providerMessageId = await sendViaBrevo(to, subject, html)
+    } else {
+      const { data, error } = await getResend().emails.send(
+        { from: getEmailFrom(), to, subject, html },
+        {
+          // Stable per-row key so a retry of this exact call (ours, or a
+          // network-level retry upstream) can't create a second real send -
+          // Resend dedupes server-side on this key for 24h. Safe to reuse
+          // across our own retry attempts for the same row since the
+          // payload never changes between attempts.
+          idempotencyKey: `email-delivery-${deliveryId}`,
+        },
+      )
+      if (error) throw error
+      providerMessageId = (data as { id?: string } | null)?.id ?? null
+    }
 
     await admin.from('email_deliveries').update({
       status: 'sent',
       sent_at: new Date().toISOString(),
-      provider_message_id: (data as { id?: string } | null)?.id ?? null,
+      provider_message_id: providerMessageId,
     }).eq('id', deliveryId)
 
     return 'sent'
@@ -161,7 +260,7 @@ async function attemptSend(
 
 /**
  * Queues an email and makes one immediate send attempt inline, so the
- * common case (Resend healthy, domain verified) has zero added latency
+ * common case (provider healthy, sender verified) has zero added latency
  * and never needs the cron at all. On a transient failure, the row is
  * left 'queued' for api/internal/email-retry (run on a schedule via
  * pg_cron - see docs/lane3-notifications/03-email-retry-cron.sql) to
