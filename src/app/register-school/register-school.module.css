@@ -1,9 +1,10 @@
 /* src/app/register-school/register-school.module.css */
-/* Restyled to match select-school's dark, pill-based aesthetic - same
-   near-black backdrop, red glow + cyan grid, pill inputs/buttons, and
-   Orbitron wordmark treatment. This module is fully self-contained
-   (hardcoded colors, no dependency on the shared light/dark tokens) so
-   it always renders dark, exactly like select-school does. */
+/* Dark, pill-based aesthetic matching select-school. Fully self-contained
+   (hardcoded colors) so it always renders dark.
+
+   SPACING: 8px base scale (4, 8, 12, 16, 24, 32, 48). Controls are 48px tall
+   (Material's 48dp / Apple's 44pt minimum touch target). Related items sit
+   closer together than unrelated ones. */
 
 .page {
   min-height: 100dvh;
@@ -11,7 +12,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 28px 20px 56px;
+  padding: 24px 20px 48px;
   position: relative;
   overflow-x: hidden;
 }
@@ -37,7 +38,7 @@
   pointer-events: none;
 }
 
-/* ── Content column - fades/rises in on mount, like select-school ── */
+/* Content column - fades/rises in on mount, like select-school */
 .content {
   width: 100%;
   max-width: 560px;
@@ -56,15 +57,15 @@
   transform: translateY(0);
 }
 
-/* ── Top back link - returns to select-school ── */
+/* Top back link - returns to select-school */
 .topBackBtn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   align-self: flex-start;
-  height: 36px;
-  padding: 0 16px 0 14px;
-  margin-bottom: 18px;
+  height: 44px;
+  padding: 0 16px;
+  margin-bottom: 16px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
@@ -81,13 +82,14 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* ── Brand block ── */
+/* Brand block: logo, wordmark and tagline are one unit (tight, 8px);
+   32px separates the whole block from the progress track below. */
 .brandBlock {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 8px;
+  margin-bottom: 32px;
 }
 
 .brandLogo {
@@ -116,17 +118,17 @@
   color: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  margin: 2px 0 0;
+  margin: 0;
 }
 
-/* ── Step indicator ── */
+/* Legacy step indicator (no longer used by the wizard) */
 .stepIndicator {
   width: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 18px;
-  margin-bottom: 26px;
+  gap: 16px;
+  margin-bottom: 24px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -137,7 +139,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -181,52 +183,55 @@
 
 .stepDone .stepLabel { color: rgba(28, 147, 172, 0.9); }
 
-/* ── Main card ── */
+/* Main card: 24px padding on every side, 24px between blocks. */
 .card {
   width: 100%;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
-  padding: 28px 24px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .stepContent {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .stepTitle {
-  font-size: 1.22rem;
+  font-size: 1.25rem;
   font-weight: 700;
+  line-height: 1.25;
   color: #fff;
   margin: 0;
   letter-spacing: -0.01em;
 }
 
 .stepSubtitle {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.55);
   line-height: 1.55;
-  margin: -10px 0 0;
+  margin: -16px 0 0;
 }
 
-/* ── Form grid ── */
+/* Form grid (legacy) */
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
+/* label -> input is 8px: much tighter than the 24px between fields, so each
+   label visibly belongs to the input under it. */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .fieldFull {
@@ -234,7 +239,7 @@
 }
 
 .label {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -242,21 +247,21 @@
 }
 
 .hint {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
   line-height: 1.4;
 }
 
-/* ── Pill inputs - matches select-school's searchBox ── */
+/* Pill inputs: 48px tall */
 .formInput {
   width: 100%;
-  height: 46px;
+  height: 48px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
-  padding: 0 18px;
+  padding: 0 24px;
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
@@ -275,8 +280,8 @@
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='0.4' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 18px center;
-  padding-right: 40px;
+  background-position: right 24px center;
+  padding-right: 48px;
 }
 
 .formSelect option {
@@ -284,27 +289,27 @@
   color: #fff;
 }
 
-/* ── Color picker ── */
+/* Color picker */
 .colorPickerRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .colorInput {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border: none;
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
   padding: 0;
   background: none;
 }
 
 .colorPreview {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
   border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -316,15 +321,16 @@
   letter-spacing: 0.04em;
 }
 
+/* Swatches: 40px with 12px gaps, comfortably tappable. */
 .colorPresets {
   display: flex;
-  gap: 9px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .colorPreset {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
@@ -332,22 +338,22 @@
   transition: transform 0.15s, border-color 0.15s;
 }
 
-.colorPreset:hover { transform: scale(1.1); }
+.colorPreset:hover { transform: scale(1.08); }
 
 .colorPresetActive {
   border-color: #fff;
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
-/* ── Logo upload ── */
+/* Logo upload */
 .logoUpload {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px;
+  gap: 16px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1.5px dashed rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -358,15 +364,15 @@
 }
 
 .logoPreview {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
   border-radius: 12px;
 }
 
 .logoPlaceholder {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -378,18 +384,27 @@
   flex-shrink: 0;
 }
 
-.logoUploadText p:first-child {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 2px;
+.logoUploadText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* ── Background photo upload ── */
+.logoUploadText p {
+  margin: 0;
+}
+
+.logoUploadText p:first-child {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Background photo upload */
 .bgUpload {
-  height: 120px;
+  height: 128px;
   border: 1.5px dashed rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -408,11 +423,12 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  padding: 0 16px;
   text-align: center;
 }
 
 .bgPlaceholder p {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.55);
   margin: 0;
@@ -435,38 +451,38 @@
   font-weight: 600;
 }
 
-/* ── Live preview ── */
+/* Live preview */
 .previewBox {
   padding: 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .previewLabel {
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 
 .previewCard {
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .previewHeader {
-  padding: 10px 14px;
+  padding: 12px 16px;
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .previewBody {
-  padding: 14px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
@@ -474,36 +490,36 @@
 }
 
 .previewBtn {
-  height: 26px;
+  height: 24px;
   border-radius: 9999px;
-  width: 116px;
+  width: 112px;
 }
 
 .previewText {
-  height: 7px;
+  height: 8px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
   width: 80%;
 }
 
-/* ── Plan grid ── */
+/* Plan grid (legacy) */
 .planGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .planCard {
-  padding: 18px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  border-radius: 16px;
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.15s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .planCard:hover { border-color: rgba(255, 255, 255, 0.22); }
@@ -518,7 +534,7 @@
   color: #fff;
   font-size: 0.58rem;
   font-weight: 700;
-  padding: 2px 10px;
+  padding: 2px 8px;
   border-radius: 9999px;
   white-space: nowrap;
   letter-spacing: 0.04em;
@@ -533,7 +549,7 @@
 .planPrice {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: 4px;
 }
 
 .planAmount {
@@ -543,22 +559,23 @@
 }
 
 .planPeriod {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
 .planStudents {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.4);
   font-weight: 600;
   margin: 0;
 }
 
+/* Feature checklist (welcome card): 12px rows so each line scans on its own. */
 .planFeatures {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   margin: 0;
   padding: 0;
 }
@@ -566,21 +583,21 @@
 .planFeatures li {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.65);
-  line-height: 1.3;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
 }
 
-/* ── Total box ── */
+/* Total box (legacy) */
 .totalBox {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 18px;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .totalRow {
@@ -592,22 +609,22 @@
 }
 
 .totalFinal {
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-weight: 700;
   font-size: 0.98rem;
   color: #fff;
 }
 
-/* ── Summary ── */
+/* Summary (legacy) */
 .summaryBox {
   background: rgba(128, 0, 32, 0.08);
   border: 1px solid rgba(128, 0, 32, 0.25);
-  border-radius: 18px;
-  padding: 18px;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .summaryTitle {
@@ -620,6 +637,7 @@
 .summaryRow {
   display: flex;
   justify-content: space-between;
+  gap: 16px;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
 }
@@ -627,41 +645,45 @@
 .summaryRow strong { color: #fff; }
 
 .summaryNote {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: rgba(255, 255, 255, 0.4);
   line-height: 1.5;
-  padding-top: 8px;
+  padding-top: 12px;
   border-top: 1px solid rgba(128, 0, 32, 0.2);
   margin: 0;
 }
 
-/* ── Error ── */
+/* Error: sits with the form it belongs to. The card's 24px gap minus 8px
+   puts it 16px under the fields; the buttons below it still get 32px. */
 .error {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
+  margin-top: -8px;
+  font-size: 0.82rem;
   color: #FCA5A5;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 12px 16px;
 }
 
-/* ── Buttons - pill style matching select-school's submitBtn/ghostPill ── */
+/* Buttons: 48px tall, 12px apart. margin-top 8 + the 24px block gap = 32px
+   of clear space between the content and the actions. */
 .btnRow {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
+  margin-top: 8px;
 }
 
 .backBtn {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 50px;
-  padding: 0 20px;
+  gap: 8px;
+  height: 48px;
+  padding: 0 24px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 9999px;
@@ -684,7 +706,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 50px;
+  height: 48px;
   background: linear-gradient(135deg, #800020, #A0002A);
   border: none;
   border-radius: 9999px;
@@ -714,11 +736,11 @@
 .poweredBy {
   position: relative;
   z-index: 1;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.25);
   letter-spacing: 0.04em;
   text-align: center;
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .poweredBy strong { color: rgba(255, 255, 255, 0.4); }
@@ -727,24 +749,26 @@
   .planGrid { grid-template-columns: 1fr; }
   .formGrid { grid-template-columns: 1fr; }
   .fieldFull { grid-column: span 1; }
-  .card { padding: 22px 18px; border-radius: 20px; }
-  .stepIndicator { gap: 14px; }
+  /* 20px side padding on phones keeps inputs wide; still on the 4px grid. */
+  .card { padding: 24px 20px; border-radius: 24px; }
+  .stepIndicator { gap: 16px; }
 }
 
 @media (max-width: 390px) {
   .brandLogo { width: 44px; height: 44px; }
   .brandName { font-size: 1.18rem; }
-  .brandBlock { margin-bottom: 22px; }
+  .brandBlock { margin-bottom: 24px; }
 }
 
-/* ── Terms acceptance ── */
+/* Terms acceptance. Own padding/gap on the scale; no outer margin (the
+   parent's 24px field gap handles separation). */
 .termsCheck {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 14px 16px;
-  border-radius: 14px;
+  gap: 12px;
+  margin-top: 0;
+  padding: 16px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
@@ -752,15 +776,15 @@
 
 .termsCheck input[type="checkbox"] {
   margin-top: 2px;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   accent-color: #800020;
   cursor: pointer;
 }
 
 .termsCheck span {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.7);
 }
