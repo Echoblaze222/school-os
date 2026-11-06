@@ -1,6 +1,13 @@
 /* src/app/register-school/wizard.module.css
    Step-by-step registration: connected-dot progress track + page slide
-   transitions. Complements register-school.module.css (same dark palette). */
+   transitions. Complements register-school.module.css (same dark palette).
+
+   Spacing rhythm used throughout (px): 6 / 10 / 14 / 18 / 24
+     title -> subtitle   10
+     subtitle -> fields  24
+     field -> field      18
+     label -> input       7 (from the base module)
+     side-by-side gap    14 */
 
 /* ── Progress track: dots joined by a string that fills as you advance ── */
 .track {
@@ -10,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin: 0 0 14px;
 }
 
 .line,
@@ -74,7 +81,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 22px;
+  margin: 0 0 20px;
 }
 
 .caption strong {
@@ -85,7 +92,18 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+}
+
+/* Title -> subtitle 10px, subtitle -> content 24px. (Overrides the base
+   module's -10px subtitle margin so the rhythm is the same on every page.) */
+.page > h2 {
+  margin: 0;
+}
+
+.page > p {
+  margin: -8px 0 6px;
+  line-height: 1.55;
 }
 
 .fwd  { animation: slideFromRight 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
@@ -94,7 +112,7 @@
 .fields {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .row2 {
@@ -106,8 +124,8 @@
 .recap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 16px 18px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -115,19 +133,20 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
-.recap div { display: flex; justify-content: space-between; gap: 12px; }
-.recap strong { color: #fff; text-align: right; }
+.recap div { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; }
+.recap strong { color: #fff; text-align: right; overflow-wrap: anywhere; }
 
 .guideStep {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
 }
 
 .guideNum {
   flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
   border-radius: 50%;
   background: rgba(28, 147, 172, 0.16);
   border: 1px solid #1C93AC;
@@ -139,16 +158,22 @@
   justify-content: center;
 }
 
-.guideText { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; color: #fff; }
-.guideText span { font-size: 0.72rem; color: rgba(255, 255, 255, 0.5); line-height: 1.45; }
+.guideText { display: flex; flex-direction: column; gap: 4px; font-size: 0.84rem; font-weight: 600; color: #fff; }
+.guideText span { font-size: 0.74rem; font-weight: 400; color: rgba(255, 255, 255, 0.5); line-height: 1.5; }
 
 .codeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   text-align: center;
-  padding: 16px;
+  padding: 18px;
   border-radius: 16px;
   background: rgba(128, 0, 32, 0.08);
   border: 1px solid rgba(128, 0, 32, 0.25);
 }
+
+.codeBox p { margin: 0; }
 
 .code {
   font-family: monospace;
@@ -156,7 +181,6 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #fff;
-  margin: 6px 0;
 }
 
 @keyframes slideFromRight {
@@ -181,7 +205,10 @@
 }
 
 @media (max-width: 560px) {
-  .row2 { grid-template-columns: 1fr; }
+  .row2 { grid-template-columns: 1fr; gap: 18px; }
+  .caption { margin-bottom: 16px; }
+  .page { gap: 16px; }
+  .fields { gap: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
