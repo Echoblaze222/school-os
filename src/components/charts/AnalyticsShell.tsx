@@ -35,8 +35,8 @@ export function Chip({ active, onClick, children, brand }: { active: boolean; on
       onClick={onClick}
       aria-pressed={active}
       style={{
-        padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-        background: active ? brand : 'var(--glass-bg)', color: active ? '#fff' : 'var(--text-muted)',
+        padding: '8px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+        background: active ? brand : 'transparent', color: active ? '#fff' : 'var(--text-secondary)',
         border: active ? `1px solid ${brand}` : '1px solid var(--glass-border)',
       }}
     >
@@ -72,22 +72,24 @@ function useCountUp(text: string, ms = 900): string {
   return out;
 }
 
-/** Stat tile: label, count-up value, change pill (first→last of trend), optional note + sparkline. */
+/** Stat tile: small muted label, one proportional-figure value, change pill, optional note + sparkline. */
 export function Stat({ label, value, sub, trend }: { label: string; value: string; sub?: string; trend?: number[] }) {
   const shown = useCountUp(value);
   let delta: number | null = null;
   if (trend && trend.length >= 2 && trend[0] !== 0) delta = ((trend[trend.length - 1] - trend[0]) / Math.abs(trend[0])) * 100;
   return (
-    <div className="glass-card" style={{ padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
+    <div className="glass-card" style={{ padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.15, fontVariantNumeric: 'tabular-nums' }}>{shown}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-          {delta !== null && Math.abs(delta) >= 0.1 && (
-            <span className={`viz-delta${delta < 0 ? ' down' : ''}`}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%</span>
-          )}
-          {sub && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{sub}</span>}
-        </div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{label}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.2, margin: '8px 0 0', fontVariantNumeric: 'tabular-nums' }}>{shown}</div>
+        {(delta !== null && Math.abs(delta) >= 0.1) || sub ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            {delta !== null && Math.abs(delta) >= 0.1 && (
+              <span className="viz-delta">{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%</span>
+            )}
+            {sub && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{sub}</span>}
+          </div>
+        ) : null}
       </div>
       {trend && <Sparkline values={trend} />}
     </div>
@@ -95,17 +97,17 @@ export function Stat({ label, value, sub, trend }: { label: string; value: strin
 }
 
 export function StatGrid({ children, min = 150 }: { children: ReactNode; min?: number }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 12 }}>{children}</div>;
+  return <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 16 }}>{children}</div>;
 }
 
 /** One filter row above the content it scopes. */
 export function FilterRow({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', overflowX: 'auto' }}>{children}</div>;
+  return <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', overflowX: 'auto' }}>{children}</div>;
 }
 
 export function ErrorNote({ message }: { message: string }) {
   return (
-    <div role="alert" style={{ padding: 12, borderRadius: 10, fontSize: 13, color: 'var(--danger)', border: '1px solid var(--glass-border)' }}>
+    <div role="alert" style={{ padding: 16, borderRadius: 12, fontSize: 13, color: 'var(--danger)', border: '1px solid var(--glass-border)' }}>
       Couldn’t load analytics: {message}
     </div>
   );
@@ -117,11 +119,11 @@ export function DataTable({ columns, rows }: { columns: string[]; rows: (string 
     <div style={{ overflow: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
-          <tr>{columns.map(c => <th key={c} style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 500, borderBottom: '1px solid var(--glass-border)' }}>{c}</th>)}</tr>
+          <tr>{columns.map(c => <th key={c} style={{ textAlign: 'left', padding: '8px', color: 'var(--text-muted)', fontWeight: 500, borderBottom: '1px solid var(--glass-border)' }}>{c}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i}>{r.map((v, j) => <td key={j} style={{ padding: '6px 8px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--glass-border)' }}>{v}</td>)}</tr>
+            <tr key={i}>{r.map((v, j) => <td key={j} style={{ padding: '8px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--glass-border)' }}>{v}</td>)}</tr>
           ))}
         </tbody>
       </table>
@@ -129,4 +131,4 @@ export function DataTable({ columns, rows }: { columns: string[]; rows: (string 
   );
 }
 
-export const gridStyle = { display: 'grid', gap: 'var(--space-4)' } as const;
+export const gridStyle = { display: 'grid', gap: 16 } as const;

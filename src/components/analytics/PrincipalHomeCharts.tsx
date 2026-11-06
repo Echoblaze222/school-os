@@ -23,18 +23,18 @@ export default function PrincipalHomeCharts() {
 
   return (
     <ChartTheme>
-      <section style={{ display: 'grid', gap: 12, margin: 'var(--space-4) 0' }}>
+      <section style={{ display: 'grid', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-          <h2 style={{ margin: 0, fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>School at a glance</h2>
-          <Link href="/dashboard/principal/analytics" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--brand)' }}>Full analytics →</Link>
+          <h2 style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Trends</h2>
+          <Link href="/dashboard/principal/analytics" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Full analytics →</Link>
         </div>
 
         {(fin.error || att.error) && <ErrorNote message={(fin.error || att.error) as string} />}
 
         {fin.loading || att.loading ? (
-          <div style={{ display: 'grid', gap: 12 }}>
-            <SkeletonBlock height={240} radius={20} />
-            <SkeletonBlock height={240} radius={20} />
+          <div style={{ display: 'grid', gap: 16 }}>
+            <SkeletonBlock height={240} radius={16} />
+            <SkeletonBlock height={240} radius={16} />
           </div>
         ) : (
           <>
@@ -54,7 +54,7 @@ export default function PrincipalHomeCharts() {
               empty={!daily.length}
               table={{ columns: ['Date', 'Present %'], rows: daily.map((d: any) => [d.date, d.rate]) }}
             >
-              <TrendArea data={daily} xKey="date" series={[{ key: 'rate', label: 'Present %', slot: 2 }]}
+              <TrendArea data={daily} xKey="date" series={[{ key: 'rate', label: 'Present %' }]}
                 xFormat={dayLabel} yFormat={(v: number) => `${v}`} valueFormat={(v: number) => `${v}%`} yDomain={[0, 100]} height={200} />
             </ChartCard>
 
