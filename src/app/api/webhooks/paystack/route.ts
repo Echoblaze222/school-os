@@ -127,7 +127,12 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
 
   const newAmountPaid = (invoice.amount_paid_ngn ?? 0) + amountNgn
   const newBalance = Math.max(0, invoice.amount_due_ngn - newAmountPaid)
-  const newStatus = newBalance <= 0 ? 'paid' : 'partial'
+  // 'completed', not 'paid': the payment_status enum is
+  // pending | partial | completed | overdue | refunded - it has no 'paid'
+  // value, so writing 'paid' made this update fail AFTER the payment row
+  // was already inserted, leaving the invoice unpaid despite the money
+  // having arrived. Matches RecordPaymentClient and confirm-claim.
+  const newStatus = newBalance <= 0 ? 'completed' : 'partial'
 
   const { error: updateErr } = await admin
     .from('payment_invoices')
