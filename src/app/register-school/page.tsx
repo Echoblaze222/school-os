@@ -14,43 +14,30 @@ import styles from './register-school.module.css'
 
 const SCHOOL_TYPES = ['secondary', 'primary', 'combined']
 
-// Every school gets the SAME full feature set (AI tutor, bulk SMS, live
-// classes, NIN verification, custom domain, everything) - there is no
-// tiered plan to pick anymore. Recurring per-student/per-term billing is
-// computed automatically after onboarding, based on active student count
-// (see lib/billing.ts: getSubscriptionTier). This screen only collects
-// how the ONE-TIME setup fee is paid.
-const SETUP_FEE = 150000 // ₦150,000 one-time, in full or via installment plan
-
-const PAYMENT_OPTIONS = [
-  {
-    id:          'full',
-    label:       'Pay in Full',
-    amountDue:   SETUP_FEE,
-    description: `₦${SETUP_FEE.toLocaleString()} today, setup fee fully settled`,
-    color:       '#800020',
-  },
-  {
-    id:          'installment',
-    label:       '3-Month Installment',
-    amountDue:   Math.round(SETUP_FEE / 3),
-    description: `₦${Math.round(SETUP_FEE / 3).toLocaleString()} today, then 2 more monthly payments of the same amount`,
-    color:       '#2471A3',
-  },
-]
-
+// Registration is free. Every school gets the same full feature set.
+// Recurring per-student/per-term billing is computed after onboarding
+// (see lib/billing.ts: getSubscriptionTier).
 const ALL_FEATURES_INCLUDED = [
   'Full student, staff & parent portal', 'Fee management', 'Results & assignments',
   'AI Tutor for all roles', 'Live online classes', 'WhatsApp & SMS notifications',
   'AI face-match NIN verification', 'Priority support',
 ]
 
+const GETTING_STARTED_STEPS = [
+  { title: 'Log in to your portal',        body: 'Go to Select School, find your school, and sign in with your principal email and password.' },
+  { title: 'Finish your verification',     body: 'Complete the short onboarding stages the first time you sign in (terms and identity verification).' },
+  { title: 'Review subjects and classes',  body: 'Default subjects are already added for you. Create your classes and adjust subjects to match your school.' },
+  { title: 'Add staff and students',       body: 'Use the Secretary dashboard to add teachers, students and parents, then share their access codes.' },
+  { title: 'Set up fees and results',      body: 'Configure fee structures with your bursar and let teachers start recording results and assignments.' },
+]
+
 export default function RegisterSchoolPage() {
   const router   = useRouter()
   const supabase = createClient()
 
-  // Step management
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+  // 'form' = the 3 registration steps, then two cards shown after registering
+  const [phase, setPhase] = useState<'form' | 'welcome' | 'guide'>('form')
+  const [step, setStep]   = useState<1 | 2 | 3>(1)
   const [mounted, setMounted] = useState(false)
 
   // Step 1: School details
@@ -71,15 +58,16 @@ export default function RegisterSchoolPage() {
   const [bgPreview,     setBgPreview]     = useState<string | null>(null)
   const [fontFamily,    setFontFamily]    = useState('DM Sans')
 
-  // Step 3: Setup fee payment mode
-  const [paymentMode,  setPaymentMode]  = useState<'full' | 'installment'>('full')
-
-  // Step 4: Principal account
+  // Step 3: Principal account
   const [principalName,     setPrincipalName]     = useState('')
   const [principalEmail,    setPrincipalEmail]    = useState('')
   const [principalPassword, setPrincipalPassword] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [principalPhone,    setPrincipalPhone]    = useState('')
+
+  // Result of a successful registration
+  const [registeredName, setRegisteredName] = useState('')
+  const [accessCode,     setAccessCode]     = useState('')
 
   // UI
   const [loading, setLoading] = useState(false)
@@ -106,7 +94,6 @@ export default function RegisterSchoolPage() {
     reader.readAsDataURL(file)
   }
 
-  // Validate each step before proceeding
   function validateStep1() {
     if (!schoolName.trim()) { setError('School name is required.'); return false }
     if (!city.trim())       { setError('City is required.'); return false }
@@ -116,7 +103,7 @@ export default function RegisterSchoolPage() {
     return true
   }
 
-  function validateStep4() {
+  function validateStep3() {
     if (!principalName.trim())  { setError('Principal name is required.'); return false }
     if (!principalEmail.trim()) { setError('Principal email is required.'); return false }
     if (!principalEmail.includes('@')) { setError('Please enter a valid email.'); return false }
@@ -128,13 +115,12 @@ export default function RegisterSchoolPage() {
   function nextStep() {
     setError(null)
     if (step === 1 && !validateStep1()) return
-    if (step === 4 && !validateStep4()) return
-    setStep(s => Math.min(s + 1, 4) as 1 | 2 | 3 | 4)
+    setStep(s => Math.min(s + 1, 3) as 1 | 2 | 3)
   }
 
-  // Final submission - create school + initiate Paystack payment
+  // Final submission: creates the school, which is live immediately.
   async function handleSubmit() {
-    if (!validateStep4()) return
+    if (!validateStep3()) return
     setLoading(true)
     setError(null)
 
@@ -155,7 +141,6 @@ export default function RegisterSchoolPage() {
             primary_color: primaryColor,
             font_family:  fontFamily,
           },
-          paymentMode,
           principal: {
             full_name: principalName.trim(),
             email:     principalEmail.trim(),
@@ -182,21 +167,18 @@ export default function RegisterSchoolPage() {
           .upload(`${data.schoolId}/logo.${logoExt}`, logoFile, { upsert: true })
       }
 
-      // Redirect to Paystack payment page
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl
-      } else {
-        router.push('/register-school/pending')
-      }
+      // Don't leave the principal's password sitting in component state.
+      setPrincipalPassword('')
+      setRegisteredName(data.schoolName ?? schoolName.trim())
+      setAccessCode(data.defaultCode ?? '')
+      setLoading(false)
+      setPhase('welcome')
 
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
     }
   }
-
-  const selectedOption = PAYMENT_OPTIONS.find(p => p.id === paymentMode)!
-  const amountDueToday  = selectedOption.amountDue
 
   const NIGERIAN_STATES = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
@@ -213,39 +195,44 @@ export default function RegisterSchoolPage() {
 
       <div className={`${styles.content} ${mounted ? styles.visible : ''}`}>
 
-        {/* Back to school selection */}
-        <button
-          type="button"
-          className={`${styles.topBackBtn} ${motion.focusable}`}
-          onClick={() => router.push('/select-school')}
-          aria-label="Back to select school"
-        >
-          <ArrowLeftIcon size={15} /> Select School
-        </button>
+        {phase === 'form' && (
+          <button
+            type="button"
+            className={`${styles.topBackBtn} ${motion.focusable}`}
+            onClick={() => router.push('/select-school')}
+            aria-label="Back to select school"
+          >
+            <ArrowLeftIcon size={15} /> Select School
+          </button>
+        )}
 
         {/* Brand - logo + wordmark, matching the select-school entry screen */}
         <div className={styles.brandBlock}>
           <AnimatedLogo size={52} variant="dark-bg" className={styles.brandLogo} />
           <h1 className={styles.brandName}>School<span className={styles.brandAccent}>OS</span></h1>
-          <p className={styles.headerSubtitle}>Register Your School</p>
+          <p className={styles.headerSubtitle}>
+            {phase === 'form' ? 'Register Your School, Free' : 'Welcome aboard'}
+          </p>
         </div>
 
-        {/* Step indicator */}
-        <div className={styles.stepIndicator}>
-          {['School Details', 'Branding', 'Setup Fee', 'Admin Account'].map((label, i) => (
-            <div key={i} className={`${styles.stepItem} ${step > i + 1 ? styles.stepDone : ''} ${step === i + 1 ? styles.stepActive : ''}`}>
-              <div className={styles.stepDot}>
-                {step > i + 1 ? <CheckIcon size={14} color="#1C93AC" /> : i + 1}
+        {/* Step indicator (form only) */}
+        {phase === 'form' && (
+          <div className={styles.stepIndicator}>
+            {['School Details', 'Branding', 'Admin Account'].map((label, i) => (
+              <div key={i} className={`${styles.stepItem} ${step > i + 1 ? styles.stepDone : ''} ${step === i + 1 ? styles.stepActive : ''}`}>
+                <div className={styles.stepDot}>
+                  {step > i + 1 ? <CheckIcon size={14} color="#1C93AC" /> : i + 1}
+                </div>
+                <span className={styles.stepLabel}>{label}</span>
               </div>
-              <span className={styles.stepLabel}>{label}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className={styles.card}>
 
           {/* ── STEP 1: School Details ── */}
-          {step === 1 && (
+          {phase === 'form' && step === 1 && (
             <div className={styles.stepContent}>
               <h2 className={styles.stepTitle}>School Information</h2>
 
@@ -311,14 +298,13 @@ export default function RegisterSchoolPage() {
           )}
 
           {/* ── STEP 2: Branding ── */}
-          {step === 2 && (
+          {phase === 'form' && step === 2 && (
             <div className={styles.stepContent}>
               <h2 className={styles.stepTitle}>School Branding</h2>
               <p className={styles.stepSubtitle}>
                 Customize how your portal looks. Your school's uniform color will be used throughout the entire platform.
               </p>
 
-              {/* Color picker */}
               <div className={styles.field}>
                 <label className={styles.label}>School Color (Primary)</label>
                 <div className={styles.colorPickerRow}>
@@ -337,7 +323,6 @@ export default function RegisterSchoolPage() {
                 <p className={styles.hint}>This color will appear on buttons, headers, and accents across the portal</p>
               </div>
 
-              {/* Quick color presets */}
               <div className={styles.colorPresets}>
                 {['#800020', '#1A3C6B', '#2D6A2D', '#8B4513', '#4A148C', '#006064', '#B71C1C', '#1B5E20'].map(color => (
                   <button
@@ -350,7 +335,6 @@ export default function RegisterSchoolPage() {
                 ))}
               </div>
 
-              {/* Font selector */}
               <div className={styles.field}>
                 <label className={styles.label}>Portal Font</label>
                 <select className={`${styles.formInput} ${styles.formSelect}`} value={fontFamily} onChange={e => setFontFamily(e.target.value)}>
@@ -362,7 +346,6 @@ export default function RegisterSchoolPage() {
                 </select>
               </div>
 
-              {/* Logo upload */}
               <div className={styles.field}>
                 <label className={styles.label}>School Logo (Optional)</label>
                 <div
@@ -390,7 +373,6 @@ export default function RegisterSchoolPage() {
                 />
               </div>
 
-              {/* Building photo */}
               <div className={styles.field}>
                 <label className={styles.label}>Login Page Background (Optional)</label>
                 <div
@@ -420,7 +402,6 @@ export default function RegisterSchoolPage() {
                 />
               </div>
 
-              {/* Live preview */}
               <div className={styles.previewBox}>
                 <p className={styles.previewLabel}>Preview</p>
                 <div className={styles.previewCard}>
@@ -437,66 +418,8 @@ export default function RegisterSchoolPage() {
             </div>
           )}
 
-          {/* ── STEP 3: Setup Fee Payment Mode ── */}
-          {step === 3 && (
-            <div className={styles.stepContent}>
-              <h2 className={styles.stepTitle}>Setup Fee Payment</h2>
-              <p className={styles.stepSubtitle}>
-                Every school gets the full SchoolOS feature set. No tiers to choose.
-                One-time setup fee of ₦{SETUP_FEE.toLocaleString()}, paid in full or across 3 months.
-              </p>
-
-              <div className={styles.planGrid}>
-                {PAYMENT_OPTIONS.map((opt, i) => (
-                  <div
-                    key={opt.id}
-                    className={`${styles.planCard} ${paymentMode === opt.id ? styles.planSelected : ''} ${motion.staggerItem} ${motion.pressable}`}
-                    onClick={() => setPaymentMode(opt.id as 'full' | 'installment')}
-                    style={{
-                      animationDelay: `${i * 60}ms`,
-                      ...(paymentMode === opt.id ? { borderColor: opt.color, boxShadow: `0 0 0 2px ${opt.color}40` } : {}),
-                    }}
-                  >
-                    {opt.id === 'full' && <span className={styles.popularBadge}>Recommended</span>}
-                    <h3 className={styles.planName} style={{ color: opt.color }}>{opt.label}</h3>
-                    <div className={styles.planPrice}>
-                      <span className={styles.planAmount}>₦{opt.amountDue.toLocaleString()}</span>
-                      <span className={styles.planPeriod}>{opt.id === 'installment' ? '/month × 3' : ' today'}</span>
-                    </div>
-                    <p className={styles.planStudents}>{opt.description}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* What's included, same for every school */}
-              <ul className={styles.planFeatures}>
-                {ALL_FEATURES_INCLUDED.map((f, i) => (
-                  <li key={i}>
-                    <CheckIcon size={13} color={selectedOption.color} /> {f}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Total */}
-              <div className={styles.totalBox}>
-                <div className={styles.totalRow}>
-                  <span>Setup fee ({paymentMode === 'installment' ? '1st of 3 installments' : 'paid in full'})</span>
-                  <span>₦{amountDueToday.toLocaleString()}</span>
-                </div>
-                <div className={`${styles.totalRow} ${styles.totalFinal}`}>
-                  <span>Total due today</span>
-                  <span>₦{amountDueToday.toLocaleString()}</span>
-                </div>
-              </div>
-              <p className={styles.hint}>
-                Recurring per-student, per-term billing starts after onboarding and is based on
-                your active student count. You'll see that rate on your first billing cycle, not here.
-              </p>
-            </div>
-          )}
-
-          {/* ── STEP 4: Principal Account ── */}
-          {step === 4 && (
+          {/* ── STEP 3: Principal Account ── */}
+          {phase === 'form' && step === 3 && (
             <div className={styles.stepContent}>
               <h2 className={styles.stepTitle}>Principal Account</h2>
               <p className={styles.stepSubtitle}>
@@ -530,20 +453,16 @@ export default function RegisterSchoolPage() {
                 </div>
               </div>
 
-              {/* Summary */}
               <div className={styles.summaryBox}>
                 <h3 className={styles.summaryTitle}>Registration Summary</h3>
                 <div className={styles.summaryRow}>
                   <span>School</span><strong>{schoolName}</strong>
                 </div>
                 <div className={styles.summaryRow}>
-                  <span>Setup fee</span><strong>{selectedOption.label}</strong>
-                </div>
-                <div className={styles.summaryRow}>
-                  <span>Due today</span><strong>₦{amountDueToday.toLocaleString()}</strong>
+                  <span>Registration fee</span><strong>Free</strong>
                 </div>
                 <p className={styles.summaryNote}>
-                  You will be redirected to Paystack to complete payment after submitting.
+                  Your school goes live the moment you register. No payment needed.
                 </p>
               </div>
 
@@ -564,6 +483,83 @@ export default function RegisterSchoolPage() {
             </div>
           )}
 
+          {/* ── WELCOME CARD (after registering) ── */}
+          {phase === 'welcome' && (
+            <div className={styles.stepContent}>
+              <h2 className={styles.stepTitle}>Welcome to SchoolOS, {registeredName}! 🎉</h2>
+              <p className={styles.stepSubtitle}>
+                Your school is registered and already live. Registration is free, and everything below is included from day one.
+              </p>
+
+              <ul className={styles.planFeatures}>
+                {ALL_FEATURES_INCLUDED.map((f, i) => (
+                  <li key={i}>
+                    <CheckIcon size={13} color={primaryColor} /> {f}
+                  </li>
+                ))}
+              </ul>
+
+              <div className={styles.btnRow}>
+                <button
+                  className={`${styles.nextBtn} ${motion.rippleHost} ${motion.focusable}`}
+                  onClick={() => setPhase('guide')}
+                  onMouseDown={ripple(motion)}
+                  type="button"
+                >
+                  Show me how to get started <ArrowRightIcon size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── GETTING-STARTED CARD ── */}
+          {phase === 'guide' && (
+            <div className={styles.stepContent}>
+              <h2 className={styles.stepTitle}>Getting started with SchoolOS</h2>
+              <p className={styles.stepSubtitle}>
+                Five quick steps to get {registeredName} up and running.
+              </p>
+
+              <div className={styles.summaryBox}>
+                {GETTING_STARTED_STEPS.map((s, i) => (
+                  <div key={i} className={styles.summaryRow} style={{ alignItems: 'flex-start', gap: 12 }}>
+                    <span><strong>{i + 1}.</strong></span>
+                    <span style={{ flex: 1 }}>
+                      <strong>{s.title}</strong><br />
+                      <span className={styles.hint}>{s.body}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {accessCode && (
+                <div className={styles.summaryBox}>
+                  <h3 className={styles.summaryTitle}>Your principal access code</h3>
+                  <p style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, margin: '6px 0' }}>{accessCode}</p>
+                  <p className={styles.summaryNote}>Keep this safe. You may be asked for it the first time you sign in.</p>
+                </div>
+              )}
+
+              <div className={styles.btnRow}>
+                <button
+                  className={`${styles.backBtn} ${motion.focusable}`}
+                  onClick={() => setPhase('welcome')}
+                  type="button"
+                >
+                  <ArrowLeftIcon size={15} /> Back
+                </button>
+                <button
+                  className={`${styles.nextBtn} ${motion.rippleHost} ${motion.focusable}`}
+                  onClick={() => router.push('/select-school')}
+                  onMouseDown={ripple(motion)}
+                  type="button"
+                >
+                  Go to my portal <ArrowRightIcon size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className={styles.error}>
               <AlertIcon size={15} color="#FCA5A5" />
@@ -571,39 +567,41 @@ export default function RegisterSchoolPage() {
             </div>
           )}
 
-          {/* Navigation buttons */}
-          <div className={styles.btnRow}>
-            {step > 1 && (
-              <button
-                className={`${styles.backBtn} ${motion.focusable}`}
-                onClick={() => { setStep(s => Math.max(s - 1, 1) as 1|2|3|4); setError(null) }}
-                type="button"
-              >
-                <ArrowLeftIcon size={15} /> Back
-              </button>
-            )}
+          {/* Navigation buttons (form only) */}
+          {phase === 'form' && (
+            <div className={styles.btnRow}>
+              {step > 1 && (
+                <button
+                  className={`${styles.backBtn} ${motion.focusable}`}
+                  onClick={() => { setStep(s => Math.max(s - 1, 1) as 1 | 2 | 3); setError(null) }}
+                  type="button"
+                >
+                  <ArrowLeftIcon size={15} /> Back
+                </button>
+              )}
 
-            {step < 4 ? (
-              <button
-                className={`${styles.nextBtn} ${motion.rippleHost} ${motion.focusable}`}
-                onClick={nextStep}
-                onMouseDown={ripple(motion)}
-                type="button"
-              >
-                Continue <ArrowRightIcon size={15} />
-              </button>
-            ) : (
-              <button
-                className={`${styles.nextBtn} ${motion.rippleHost} ${motion.focusable}`}
-                onClick={handleSubmit}
-                onMouseDown={ripple(motion)}
-                disabled={loading}
-                type="button"
-              >
-                {loading ? 'Processing...' : <>Pay ₦{amountDueToday.toLocaleString()} & Register <ArrowRightIcon size={15} /></>}
-              </button>
-            )}
-          </div>
+              {step < 3 ? (
+                <button
+                  className={`${styles.nextBtn} ${motion.rippleHost} ${motion.focusable}`}
+                  onClick={nextStep}
+                  onMouseDown={ripple(motion)}
+                  type="button"
+                >
+                  Continue <ArrowRightIcon size={15} />
+                </button>
+              ) : (
+                <button
+                  className={`${styles.nextBtn} ${motion.rippleHost} ${motion.focusable}`}
+                  onClick={handleSubmit}
+                  onMouseDown={ripple(motion)}
+                  disabled={loading}
+                  type="button"
+                >
+                  {loading ? 'Registering...' : <>Register for free <ArrowRightIcon size={15} /></>}
+                </button>
+              )}
+            </div>
+          )}
 
         </div>
 
