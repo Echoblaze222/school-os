@@ -72,6 +72,27 @@ main > div[style*="flex"]:not([style*="column"]):has(> :is(button, a) ~ :is(butt
   }
 }
 
+/* ── KPI grids: no lone half-width card ──────────────────────────────
+   On a phone a grid of KPI cards is two columns wide, so an odd count left
+   the last card alone with an empty slot beside it. The last card now
+   spans the full row. (KpiCard.tsx stamps data-kpi on its card.) Limited
+   to ≤420px, where the grids that use minmax(120-140px) are always 2
+   columns. */
+@media (max-width: 420px) {
+  *:has(> [data-kpi]:last-child:nth-child(odd)) > [data-kpi]:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Chat button vs chart tooltips ──────────────────────────────
+   The floating chat button sits above the page and used to cover the right
+   end of an open chart tooltip. While a tooltip is showing, the button fades
+   to a faint ghost (still tappable); it returns when the tooltip closes. */
+[class*="ChatWidget_container"] { transition: opacity 0.15s ease; }
+body:has(.recharts-tooltip-wrapper[style*="visibility: visible"]) [class*="ChatWidget_container"] {
+  opacity: 0.15;
+}
+
 /* ── Touch screens have no real hover: stop cards staying "lifted" ── */
 @media (hover: none) {
   .glass-card:hover,
