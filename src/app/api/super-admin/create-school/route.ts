@@ -95,7 +95,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: schoolErr.message }, { status: 500 })
     }
 
-    // ── Seed the subscriptions row ────────────────────────────────────────────────────────────────────────
+    // ── Seed the subscriptions row ──────────────────────────────────────────────
     // Without this, the principal's /dashboard/principal/subscription page
     // finds no subscriptions row at all (that page only ever reads
     // subscriptions.expiry_date - it never looks at schools.free_month_ends
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       type:    'system',
     })
 
-    // ── Email, via the queue ────────────────────────────────────────────────────
+    // ── Email, via the queue ────────────────────────────────────────────
     // Was a direct, unlogged getResend().emails.send() wrapped in a
     // try/catch that just console.error'd on failure - the principal's
     // access code, generated above, had no delivery record and no
