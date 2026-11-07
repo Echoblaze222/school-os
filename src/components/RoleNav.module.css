@@ -27,7 +27,7 @@
 .badge {
   width: 40px; height: 40px;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-2-light), var(--brand-2), var(--brand-2-light));
+  background: var(--brand-2-light);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden; flex-shrink: 0;
   font-weight: 800; font-size: 1rem; color: var(--brand-dark);
@@ -96,4 +96,3 @@
 .footerBtn:hover { background: var(--glass-bg); color: var(--text-primary); }
 .logoutBtn       { color: var(--danger) !important; }
 .logoutBtn:hover { background: var(--danger-subtle) !important; }
-

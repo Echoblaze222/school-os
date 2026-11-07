@@ -4,7 +4,7 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   padding: var(--space-8) var(--space-5);
   text-align: center;
   display: flex;
@@ -21,7 +21,7 @@
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.14) 0%, transparent 70%);
+  background: transparent;
   pointer-events: none;
 }
 
