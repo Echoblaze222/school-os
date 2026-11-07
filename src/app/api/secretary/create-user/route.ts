@@ -247,7 +247,7 @@ export async function POST(request: Request) {
             subject: `🎓 Your SchoolOS Account is Ready, ${fullName}`,
             html: `
               <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
+                <div style="background:#7C3AED;padding:32px;text-align:center;">
                   <h1 style="margin:0;font-size:26px;color:#fff;">Welcome to SchoolOS 🎓</h1>
                   <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">Your account has been created</p>
                 </div>
@@ -278,7 +278,7 @@ export async function POST(request: Request) {
                     ⚠️ On first login, choose the <strong>Access Code</strong> tab, enter your code above, and set a new password. Keep this email safe.
                   </p>
                   <div style="text-align:center;margin:28px 0;">
-                    <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
+                    <a href="${loginUrl}" style="background:#7C3AED;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
                       Login to SchoolOS →
                     </a>
                   </div>
