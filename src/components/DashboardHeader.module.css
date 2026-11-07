@@ -12,13 +12,13 @@
   background: linear-gradient(180deg, var(--brand), var(--brand-dark));
   color: #F6F1E4;
   border-bottom: 3px solid var(--brand-2);
-  min-height: 60px;
+  min-height: 64px;
 }
 
 .left, .right { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 
 .schoolBadge {
-  width: 36px; height: 36px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   background: conic-gradient(var(--brand-2-light), var(--brand-2), var(--brand-2-light));
   display: flex; align-items: center; justify-content: center;
@@ -35,11 +35,11 @@
 }
 .pageSubtitle {
   font-size: 0.62rem; color: rgba(246,241,228,0.65); font-weight: 600;
-  letter-spacing: 0.08em; text-transform: uppercase; margin: 1px 0 0;
+  letter-spacing: 0.08em; text-transform: uppercase; margin: 2px 0 0;
 }
 
 .iconBtn {
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
   background: rgba(246,241,228,0.10);
@@ -50,7 +50,7 @@
 .iconBtn:hover { background: rgba(246,241,228,0.2); }
 
 .avatar {
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
