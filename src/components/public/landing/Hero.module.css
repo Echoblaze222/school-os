@@ -53,14 +53,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .chipRow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  margin-top: var(--space-1);
 }
 
 .chip {
@@ -76,7 +76,7 @@
   color: var(--text-muted);
 }
 
-/* ── Report card mockup ──────────────────────────────────────────────── */
+/* ── Report card mockup ────────────────────────────────────────────────────────────────────── */
 
 .cardWrap {
   display: none;
@@ -97,7 +97,7 @@
 .reportCardHeader {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--glass-border);
