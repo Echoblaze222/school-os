@@ -70,7 +70,7 @@ export function Heatmap({ cells, rows, cols, valueFormat = v => String(Math.roun
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 11, color: 'var(--viz-muted)' }}>
         <span>{valueFormat(lo)}</span>
-        <span aria-hidden style={{ height: 8, width: 120, borderRadius: 4, background: `linear-gradient(90deg, ${seq(0)}, ${seq(1)})` }} />
+        <span aria-hidden style={{ display: 'inline-flex', gap: 2 }}>{[0, 0.25, 0.5, 0.75, 1].map(t => <span key={t} style={{ height: 8, width: 24, borderRadius: 2, background: seq(t) }} />)}</span>
         <span>{valueFormat(hi)}</span>
         <span style={{ marginLeft: 'auto', color: 'var(--viz-ink-2)', minHeight: 14 }} aria-live="polite">
           {hover && hover.value != null ? `${hover.row} · ${hover.col}: ${valueFormat(hover.value)}` : ''}
