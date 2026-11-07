@@ -6,7 +6,8 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  min-height: 44px;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--brand);
@@ -29,8 +30,8 @@
 }
 
 .content {
-  margin-top: 6px;
-  padding-left: 1px;
+  margin-top: 0;
+  padding-left: 0;
   font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.6;
