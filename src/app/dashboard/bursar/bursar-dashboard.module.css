@@ -140,7 +140,7 @@
   object-fit: cover;
 }
 
-/* ── Main scroll area ──────────────────────────────────────── */
+/* ── Main scroll area ────────────────────────────────────── */
 .main {
   flex: 1;
   padding: 20px 20px 0;
@@ -152,7 +152,7 @@
   width: 100%;
 }
 
-/* ── Greeting ─────────────────────────────────────────────── */
+/* ── Greeting ────────────────────────────────────────────── */
 .greetingSection { padding: 4px 0; }
 
 .greetingLabel {
@@ -232,7 +232,7 @@
   50%       { box-shadow: 0 0 0 5px rgba(239,68,68,0.08); }
 }
 
-/* ── Section header ────────────────────────────────────────── */
+/* ── Section header ──────────────────────────────────────── */
 .sectionHeader {
   display: flex;
   align-items: center;
@@ -247,7 +247,7 @@
   color: var(--text-muted);
 }
 
-/* ── Module grid ──────────────────────────────────────────── */
+/* ── Module grid ───────────────────────────────────────────── */
 .moduleGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -303,7 +303,7 @@
   letter-spacing: 0.01em;
 }
 
-/* ── Quick links ──────────────────────────────────────────── */
+/* ── Quick links ───────────────────────────────────────────── */
 .quickLinks {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -335,7 +335,7 @@
   text-align: center;
 }
 
-/* ── Bottom navigation ───────────────────────────────────────── */
+/* ── Bottom navigation ──────────────────────────────────── */
 .bottomNav {
   position: fixed;
   bottom: 0;
@@ -414,7 +414,7 @@
   backdrop-filter: blur(12px);
 }
 
-/* ── Classes / activity list ─────────────────────────────────── */
+/* ── Classes / activity list ─────────────────────────────── */
 .listItem {
   display: flex;
   align-items: center;
@@ -504,7 +504,7 @@
   color: var(--text-muted);
 }
 
-/* ── Cashflow card (Bursar) ────────────────────────────────── */
+/* ── Cashflow card (Bursar) ──────────────────────────────── */
 .cashCard {
   padding: 20px;
   background: var(--glass-bg);
@@ -559,7 +559,7 @@
   color: var(--text-muted);
 }
 
-/* ── Children list (Parent) ────────────────────────────────── */
+/* ── Children list (Parent) ──────────────────────────────── */
 .childRow {
   display: flex;
   align-items: center;
