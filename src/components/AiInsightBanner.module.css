@@ -25,7 +25,9 @@
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 44px;
   background: var(--brand-2);
-  color: var(--brand-dark);
+  /* Auto black/white (see mobile-polish.css) so a dark school colour never
+     ends up with dark-on-dark text. Falls back to the old colour. */
+  color: var(--on-brand-2, var(--brand-dark));
   border: none; border-radius: 999px;
   padding: 12px 16px;
   font-weight: 700; font-size: 0.76rem;

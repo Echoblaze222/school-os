@@ -38,40 +38,29 @@ const CSS = `
 .viz-root{ font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
 .viz-root .viz-fade{ transition:opacity .15s ease; }
 
-/* ---- Glass skin (inspired by frosted-glass dashboards) ---- */
-.viz-root{ position:relative; isolation:isolate; }
-.viz-root::before{
-  content:""; position:absolute; inset:-24px -12px; z-index:-1; pointer-events:none; border-radius:28px;
-  background:
-    radial-gradient(420px 280px at 8% 0%, color-mix(in srgb, var(--series-4) 26%, transparent), transparent 70%),
-    radial-gradient(480px 320px at 95% 12%, color-mix(in srgb, var(--series-1) 20%, transparent), transparent 70%),
-    radial-gradient(520px 340px at 40% 100%, color-mix(in srgb, var(--series-3) 18%, transparent), transparent 70%);
-  filter:blur(8px);
-}
+/* ---- Flat cards that match the rest of the app ----
+   Used by every role's home screen and analytics page. The old "frosted
+   glass" skin (coloured radial-gradient glow behind the section, gradient +
+   blur card fill, hover lift) is gone: the glow bled over the AI banner so
+   the two looked welded together, and the gradients read as generic
+   AI-template styling. Cards now use the same surface and border tokens as
+   KpiCard, and the section gets a little air above it. */
+.viz-root{ padding-top:12px; }
 .viz-root .glass-card{
-  background:linear-gradient(145deg, color-mix(in srgb, var(--viz-surface) 62%, transparent), color-mix(in srgb, var(--viz-surface) 34%, transparent));
-  -webkit-backdrop-filter:blur(18px) saturate(160%); backdrop-filter:blur(18px) saturate(160%);
-  border:1px solid color-mix(in srgb, #fff 38%, transparent);
-  box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent), 0 8px 28px rgba(20,16,10,.10);
-  border-radius:20px;
-  transition:transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease;
-  animation:viz-rise .6s cubic-bezier(.2,.8,.2,1) both;
+  background:var(--glass-bg, var(--viz-surface));
+  border:1px solid var(--glass-border, var(--viz-grid));
+  border-radius:var(--radius-xl, 20px);
+  animation:viz-rise .45s cubic-bezier(.2,.8,.2,1) both;
 }
-.viz-root .glass-card:hover{ transform:translateY(-5px); box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent), 0 16px 38px rgba(20,16,10,.16); }
-.viz-root .glass-card:nth-child(2){ animation-delay:.06s } .viz-root .glass-card:nth-child(3){ animation-delay:.12s }
-.viz-root .glass-card:nth-child(4){ animation-delay:.18s } .viz-root .glass-card:nth-child(5){ animation-delay:.24s }
-.viz-root .glass-card:nth-child(6){ animation-delay:.30s } .viz-root .glass-card:nth-child(n+7){ animation-delay:.36s }
+.viz-root .glass-card:nth-child(2){ animation-delay:.05s } .viz-root .glass-card:nth-child(3){ animation-delay:.10s }
+.viz-root .glass-card:nth-child(4){ animation-delay:.15s } .viz-root .glass-card:nth-child(5){ animation-delay:.20s }
+.viz-root .glass-card:nth-child(6){ animation-delay:.25s } .viz-root .glass-card:nth-child(n+7){ animation-delay:.30s }
 .viz-root .viz-delta{ display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px;
   color:var(--viz-ink); background:color-mix(in srgb, var(--series-3) 22%, transparent); }
 .viz-root .viz-delta.down{ background:color-mix(in srgb, var(--series-2) 22%, transparent); }
-@keyframes viz-rise{ from{ opacity:0; transform:translateY(14px) scale(.985) } to{ opacity:1; transform:none } }
-@media (max-width:640px){
-  .viz-root .glass-card{ -webkit-backdrop-filter:blur(10px) saturate(140%); backdrop-filter:blur(10px) saturate(140%); }
-  .viz-root::before{ filter:none; }
-}
+@keyframes viz-rise{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
 @media (prefers-reduced-motion: reduce){
-  .viz-root .glass-card{ animation:none; transition:none; }
-  .viz-root .glass-card:hover{ transform:none; }
+  .viz-root .glass-card{ animation:none; }
 }
 `;
 
