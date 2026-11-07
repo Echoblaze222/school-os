@@ -4,7 +4,7 @@
    Copy and rename for each role - same base, different accent
    ============================================================ */
 
-/* ── Page shell ────────────────────────────────────────────── */
+/* ── Page shell ──────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   background: var(--bg-base);
@@ -172,7 +172,7 @@
   letter-spacing: -0.02em;
 }
 
-/* ── Stats strip ───────────────────────────────────────────── */
+/* ── Stats strip ─────────────────────────────────────────── */
 .statsStrip {
   display: flex;
   align-items: center;
@@ -247,7 +247,7 @@
   color: var(--text-muted);
 }
 
-/* ── Module grid ───────────────────────────────────────────── */
+/* ── Module grid ─────────────────────────────────────────── */
 .moduleGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -303,7 +303,7 @@
   letter-spacing: 0.01em;
 }
 
-/* ── Quick links ───────────────────────────────────────────── */
+/* ── Quick links ─────────────────────────────────────────── */
 .quickLinks {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -335,7 +335,7 @@
   text-align: center;
 }
 
-/* ── Bottom navigation ──────────────────────────────────── */
+/* ── Bottom navigation ───────────────────────────────────── */
 .bottomNav {
   position: fixed;
   bottom: 0;
@@ -406,7 +406,7 @@
 
 .navHome:active { transform: scale(0.97); }
 
-/* ── Cards shared ─────────────────────────────────────────── */
+/* ── Cards shared ────────────────────────────────────────── */
 .roleCard {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -460,7 +460,7 @@
   margin-top: 2px;
 }
 
-/* ── Big stat cards ───────────────────────────────────────── */
+/* ── Big stat cards ──────────────────────────────────────── */
 .bigStatRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
