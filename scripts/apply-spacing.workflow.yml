@@ -1,0 +1,49 @@
+name: Apply spacing codemods
+
+# Phone-friendly way to run the spacing codemods without a terminal.
+#  1. Open a PR from this branch into main.
+#  2. Add the label "apply-spacing" to the PR (GitHub app works).
+#  3. This workflow runs both codemods and commits the result to the PR branch.
+# Remove and re-add the label to run it again. Also runnable from the Actions tab
+# (workflow_dispatch) once this file exists on the default branch.
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'apply-spacing' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run codemods
+        run: |
+          node scripts/snap-spacing.mjs --write
+          node scripts/snap-inline-spacing.mjs src --write
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src
+          git commit -m "style: snap spacing to 4/8 grid, lift tap targets to 44px"
+          git push
