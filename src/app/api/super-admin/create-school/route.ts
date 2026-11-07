@@ -95,7 +95,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: schoolErr.message }, { status: 500 })
     }
 
-    // ── Seed the subscriptions row ──────────────────────────────────────────────
+    // ── Seed the subscriptions row ────────────────────────────────────────────────────────────────────────
     // Without this, the principal's /dashboard/principal/subscription page
     // finds no subscriptions row at all (that page only ever reads
     // subscriptions.expiry_date - it never looks at schools.free_month_ends
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       type:    'system',
     })
 
-    // ── Email, via the queue ────────────────────────────────────────────
+    // ── Email, via the queue ────────────────────────────────────────────────────
     // Was a direct, unlogged getResend().emails.send() wrapped in a
     // try/catch that just console.error'd on failure - the principal's
     // access code, generated above, had no delivery record and no
@@ -256,7 +256,7 @@ export async function POST(req: Request) {
       dedupeKey: `super-admin-create-school-${school.id}`,
       html: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
-          <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
+          <div style="background:#7C3AED;padding:32px;text-align:center;">
             <h1 style="margin:0;font-size:28px;color:#fff;">Welcome to SchoolOS</h1>
             <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">Your school has been successfully set up</p>
           </div>
@@ -281,7 +281,7 @@ export async function POST(req: Request) {
               ⚠️ Tap "New User" on the login page and enter this access code to set your own password and PIN. Keep this email safe until then.
             </p>
             <div style="text-align:center;margin:28px 0;">
-              <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
+              <a href="${loginUrl}" style="background:#7C3AED;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
                 Login to SchoolOS →
               </a>
             </div>

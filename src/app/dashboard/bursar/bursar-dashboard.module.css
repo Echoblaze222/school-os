@@ -4,7 +4,7 @@
    Copy and rename for each role - same base, different accent
    ============================================================ */
 
-/* ── Page shell ──────────────────────────────────────────── */
+/* ── Page shell ──────────────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   background: var(--bg-base);
@@ -13,7 +13,7 @@
   overflow-x: hidden;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────── */
 .header {
   position: sticky;
   top: 0;
@@ -140,7 +140,7 @@
   object-fit: cover;
 }
 
-/* ── Main scroll area ────────────────────────────────────── */
+/* ── Main scroll area ────────────────────────────────────────────── */
 .main {
   flex: 1;
   padding: 20px 20px 0;
@@ -152,7 +152,7 @@
   width: 100%;
 }
 
-/* ── Greeting ────────────────────────────────────────────── */
+/* ── Greeting ──────────────────────────────────────────────────────── */
 .greetingSection { padding: 4px 0; }
 
 .greetingLabel {
@@ -172,7 +172,7 @@
   letter-spacing: -0.02em;
 }
 
-/* ── Stats strip ─────────────────────────────────────────── */
+/* ── Stats strip ───────────────────────────────────────────────────── */
 .statsStrip {
   display: flex;
   align-items: center;
@@ -232,7 +232,7 @@
   50%       { box-shadow: 0 0 0 5px rgba(239,68,68,0.08); }
 }
 
-/* ── Section header ──────────────────────────────────────── */
+/* ── Section header ────────────────────────────────────────────────── */
 .sectionHeader {
   display: flex;
   align-items: center;
@@ -247,7 +247,7 @@
   color: var(--text-muted);
 }
 
-/* ── Module grid ─────────────────────────────────────────── */
+/* ── Module grid ───────────────────────────────────────────────────── */
 .moduleGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -303,7 +303,7 @@
   letter-spacing: 0.01em;
 }
 
-/* ── Quick links ─────────────────────────────────────────── */
+/* ── Quick links ───────────────────────────────────────────────────── */
 .quickLinks {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -335,7 +335,7 @@
   text-align: center;
 }
 
-/* ── Bottom navigation ───────────────────────────────────── */
+/* ── Bottom navigation ─────────────────────────────────────────────── */
 .bottomNav {
   position: fixed;
   bottom: 0;
@@ -406,7 +406,7 @@
 
 .navHome:active { transform: scale(0.97); }
 
-/* ── Cards shared ────────────────────────────────────────── */
+/* ── Cards shared ──────────────────────────────────────────────────── */
 .roleCard {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -414,7 +414,7 @@
   backdrop-filter: blur(12px);
 }
 
-/* ── Classes / activity list ─────────────────────────────── */
+/* ── Classes / activity list ───────────────────────────────────── */
 .listItem {
   display: flex;
   align-items: center;
@@ -460,7 +460,7 @@
   margin-top: 2px;
 }
 
-/* ── Big stat cards ──────────────────────────────────────── */
+/* ── Big stat cards ────────────────────────────────────────────────── */
 .bigStatRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -504,7 +504,7 @@
   color: var(--text-muted);
 }
 
-/* ── Cashflow card (Bursar) ──────────────────────────────── */
+/* ── Cashflow card (Bursar) ─────────────────────────────────────── */
 .cashCard {
   padding: 20px;
   background: var(--glass-bg);
@@ -548,7 +548,7 @@
 .cashBarFill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   transition: width 0.5s ease;
 }
 
@@ -559,7 +559,7 @@
   color: var(--text-muted);
 }
 
-/* ── Children list (Parent) ──────────────────────────────── */
+/* ── Children list (Parent) ──────────────────────────────────────── */
 .childRow {
   display: flex;
   align-items: center;
@@ -615,7 +615,7 @@
   color: var(--success);
 }
 
-/* ── Responsive ──────────────────────────────────────────── */
+/* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 380px) {
   .moduleGrid  { grid-template-columns: repeat(2, 1fr); }
   .quickLinks  { grid-template-columns: repeat(3, 1fr); }
