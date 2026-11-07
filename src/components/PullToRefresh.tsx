@@ -20,6 +20,11 @@
 //
 // Only attaches touch listeners when the device actually supports touch,
 // so this is inert (zero overhead) on desktop.
+//
+// Look: the page itself never moves. The loading sign is a small floating
+// chip that slides down from the top edge over the page while you pull, then
+// spins while the reload happens. (It used to push the whole page down with
+// your finger, leaving a big empty gap above the content.)
 
 import { useEffect, useRef, useState } from 'react'
 import { RefreshIcon } from './Icons'
@@ -28,6 +33,8 @@ import styles from './PullToRefresh.module.css'
 const PULL_THRESHOLD  = 72   // px of pull needed to trigger a refresh on release
 const MAX_PULL        = 120  // px - visual cap so the indicator doesn't fly off-screen
 const RESISTANCE      = 0.5  // pull distance grows slower than the finger for a natural feel
+const CHIP_SIZE       = 40   // px - must match .indicator width/height in the CSS module
+const CHIP_REST_GAP   = 28   // px - how far below the top edge the chip rests while loading
 
 export default function PullToRefresh({ children, disabled = false }: { children: React.ReactNode; disabled?: boolean }) {
   const [pullDistance, setPullDistance] = useState(0)
@@ -81,6 +88,9 @@ export default function PullToRefresh({ children, disabled = false }: { children
   }, [pullDistance, refreshing, disabled])
 
   const progress = Math.min(pullDistance / PULL_THRESHOLD, 1)
+  // Hidden just above the top edge at rest, slides down as you pull, and
+  // settles at CHIP_REST_GAP while the reload runs.
+  const chipY = refreshing ? CHIP_REST_GAP : pullDistance - CHIP_SIZE
 
   return (
     <>
@@ -88,24 +98,20 @@ export default function PullToRefresh({ children, disabled = false }: { children
         <div
           className={styles.indicator}
           style={{
-            height: refreshing ? PULL_THRESHOLD : pullDistance,
-            opacity: progress,
-            transition: pullDistance === 0 ? 'height 0.3s var(--ease-overshoot)' : undefined,
+            transform: `translate(-50%, ${chipY}px)`,
+            opacity: refreshing ? 1 : progress,
           }}
+          aria-hidden="true"
         >
-          <RefreshIcon
-            size={22}
+          <span
             className={refreshing ? styles.spinning : styles.icon}
-            strokeWidth={2}
-          />
+            style={refreshing ? undefined : { transform: `rotate(${Math.round(progress * 270)}deg)` }}
+          >
+            <RefreshIcon size={22} strokeWidth={2} />
+          </span>
         </div>
       )}
-      <div
-        style={{
-          transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
-          transition: pullDistance === 0 ? 'transform 0.3s var(--ease-overshoot)' : undefined,
-        }}
-      >
+      <div>
         {children}
       </div>
     </>

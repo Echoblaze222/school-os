@@ -1,22 +1,28 @@
 // src/app/layout.tsx
-// ─────────────────────────────────────────────────────────────────────────────
-// FIX 1 — Icon path mismatch:
+// -----------------------------------------------------------------------------
+// FIX 1: Icon path mismatch
 //   metadata.icons referenced '/icons/icon-192.png' and '/icons/icon-512.png'
 //   but the actual files in public/icons/ are named 'icon-192x192.png' and
 //   'icon-512x512.png' (matching manifest.json). Wrong paths cause the PWA
 //   install prompt to fail and the home screen icon to be blank.
 //
-// FIX 2 — SW registration timing:
+// FIX 2: SW registration timing
 //   The inline <script> waited for the 'load' event before registering sw.js.
 //   On Android Chrome, 'load' fires late relative to when the user might tap
 //   "Enable Alerts". If the tap happens before 'load', navigator.serviceWorker
 //   .ready stalls. Changed to register immediately (the browser queues it
 //   safely) so the SW is ready well before any user interaction.
-// ─────────────────────────────────────────────────────────────────────────────
+//
+// FIX 3: Legacy token aliases
+//   Imports ./legacy-tokens.css so the old --burgundy / --text-accent / --error
+//   style names used by 34 CSS modules resolve to the live design tokens
+//   instead of being undefined on every page except register-school.
+// -----------------------------------------------------------------------------
 
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import './legacy-tokens.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
@@ -34,7 +40,7 @@ export const metadata: Metadata = {
   manifest:    '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SchoolOS' },
   icons: {
-    // FIX: was 'icon-192.png' and 'icon-512.png' — actual filenames are icon-192x192.png / icon-512x512.png
+    // FIX: was 'icon-192.png' and 'icon-512.png'. Actual filenames are icon-192x192.png / icon-512x512.png
     icon: [
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },

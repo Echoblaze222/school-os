@@ -39,6 +39,7 @@ const PUBLIC_PATHS = [
   '/api/schools/paystack-webhook',
   '/api/webhooks/paystack',            // Paystack payment webhook
   '/api/internal/push-on-notification', // pg_net → push trigger, no session cookie; gated by its own x-internal-secret check below, not this middleware
+  '/api/internal/email-retry',          // pg_net → email-retry cron (every 5 min), no session cookie; gated by its own x-internal-secret check in the route. Without this entry the cron POST was redirected to /login and never reached the route (405 every time).
   '/api/push/send',                     // pg_net → fire_pending_reminders, same reasoning
   '/api/cron', 
   '/super-admin/login',                 // super admin login must be publicly reachable

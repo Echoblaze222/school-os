@@ -6,6 +6,8 @@ import { redirect }            from 'next/navigation'
 import { checkSubscription }   from '@/lib/subscription'
 import SubscriptionGate        from '@/components/SubscriptionGate'
 import StudentDashboardClient  from './StudentDashboardClient'
+import SaveSnapshot           from '@/components/savedView/SaveSnapshot'
+import { STUDENT_HOME_KEY, SNAPSHOT_VERSION, type StudentHomeSnapshot } from './studentHomeSnapshot'
 
 function getCurrentTerm() {
   const m = new Date().getMonth() + 1
@@ -35,7 +37,7 @@ export default async function StudentDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ──────────────────────────────────────
+  // ── Profile + school (single query) ────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -141,7 +143,7 @@ export default async function StudentDashboardPage() {
   const rankPos = leaderboardRows?.findIndex((r: any) => r.student_id === user.id) ?? -1
   const rank    = rankPos >= 0 ? rankPos + 1 : null
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  // ── Recent activities (last 15, most recent first) ─────────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
@@ -172,21 +174,37 @@ export default async function StudentDashboardPage() {
     }).catch(() => {})
   }
 
+  const counts = {
+    pendingTasks,
+    upcomingQuizzes: upcomingQuizzes ?? 0,
+    isLive:          (liveClass?.length ?? 0) > 0,
+    notifications:   notifications ?? 0,
+    attendance,
+    gpa,
+    rank,
+  }
+
+  // A small copy of what this screen shows, kept on the phone so the next
+  // visit can appear instantly while fresh data loads (see StudentHomeSaved).
+  const snapshot: StudentHomeSnapshot = {
+    v:           SNAPSHOT_VERSION,
+    firstName:   profile?.full_name?.split(' ')[0] ?? 'there',
+    schoolName:  school?.name ?? '',
+    schoolColor: school?.primary_color ?? '#7C3AED',
+    counts,
+    activities:  activities.map(a => ({ id: a.id, title: a.title, subtitle: a.subtitle })),
+  }
+
   return (
-    <StudentDashboardClient
-      profile={profile}
-      school={school}
-      userId={user.id}
-      counts={{
-        pendingTasks,
-        upcomingQuizzes: upcomingQuizzes ?? 0,
-        isLive:          (liveClass?.length ?? 0) > 0,
-        notifications:   notifications ?? 0,
-        attendance,
-        gpa,
-        rank,
-      }}
-      activities={activities}
-    />
+    <>
+      <StudentDashboardClient
+        profile={profile}
+        school={school}
+        userId={user.id}
+        counts={counts}
+        activities={activities}
+      />
+      <SaveSnapshot userId={user.id} routeKey={STUDENT_HOME_KEY} data={snapshot} />
+    </>
   )
 }

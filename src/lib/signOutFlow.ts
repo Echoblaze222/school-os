@@ -16,6 +16,7 @@
 // user re-picks their school.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { clearSavedViews } from '@/lib/savedView/store'
 
 const SCHOOL_KEY         = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY  = 'schoolos_recent_school'
@@ -29,12 +30,46 @@ interface StoredSchool {
   logoUrl?: string | null
 }
 
+// Shown the instant a sign-out starts. The real sign-out needs a network round
+// trip (it revokes the session on the server), which on a slow connection can
+// take seconds - without this the tap appears to do nothing. Pure DOM so every
+// caller (about 20 buttons) gets it from this one place, and so it cannot
+// affect the auth logic below. The page is hard-navigated away right after, so
+// it never needs removing.
+function showSigningOutCover() {
+  if (typeof document === 'undefined') return
+  if (document.getElementById('schoolos-signing-out')) return
+  try {
+    const cover = document.createElement('div')
+    cover.id = 'schoolos-signing-out'
+    cover.setAttribute('role', 'status')
+    cover.setAttribute('aria-live', 'polite')
+    cover.textContent = 'Signing out…'
+    cover.style.cssText =
+      'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;' +
+      'justify-content:center;background:var(--bg-base,#080C14);' +
+      'color:var(--text-primary,#F6F1E4);font:600 15px/1.4 system-ui,sans-serif;' +
+      'letter-spacing:.2px;'
+    document.body.appendChild(cover)
+  } catch {
+    // Cosmetic only - never block signing out.
+  }
+}
+
 export async function signOutFlow(
   supabase: SupabaseClient,
   router: { push: (href: string) => void; replace?: (href: string) => void; refresh?: () => void },
   reason?: string,
   returnTo?: string
 ) {
+  showSigningOutCover()
+
+  // Wipe the on-phone saved copies of screens BEFORE the network sign-out, so
+  // the next person to use this phone can never see this user's data, even
+  // if the sign-out request is slow or fails. Capped so it can't hold up
+  // logout.
+  await Promise.race([clearSavedViews(), new Promise<void>((r) => setTimeout(r, 800))])
+
   try {
     const stored = localStorage.getItem(SCHOOL_KEY)
     if (stored) {

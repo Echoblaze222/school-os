@@ -7,6 +7,8 @@ import { redirect }           from 'next/navigation'
 import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
 import TeacherDashboardClient from './TeacherDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient()
@@ -141,14 +143,27 @@ export default async function TeacherDashboardPage() {
       : undefined,
   }))
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${counts.classCount} class${counts.classCount === 1 ? '' : 'es'} · ${counts.pendingGrading} to grade`, [
+    { label: 'Classes', value: String(counts.classCount) },
+    { label: 'Assignments', value: String(counts.assignmentCount) },
+    { label: 'To grade', value: String(counts.pendingGrading) },
+    { label: 'Quizzes', value: String(counts.quizCount) },
+  ])
+
   return (
-    <TeacherDashboardClient
-      profile={profile}
-      school={school}
-      userId={userId}
-      counts={counts}
-      activities={activities}
-      examAppointmentLabel={examAppointmentLabel}
-    />
+    <>
+      <TeacherDashboardClient
+        profile={profile}
+        school={school}
+        userId={userId}
+        counts={counts}
+        activities={activities}
+        examAppointmentLabel={examAppointmentLabel}
+      />
+      <SaveSnapshot userId={userId} routeKey={homeKey('teacher')} data={homeSnapshot} />
+    </>
   )
 }

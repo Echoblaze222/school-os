@@ -1,6 +1,8 @@
 // src/app/dashboard/examination/page.tsx
 import { getExamContext } from '@/lib/supabase/getExamContext'
 import ExaminationDashboardClient from './ExaminationDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function ExaminationDashboardPage() {
   const { supabase, userId, profile, school, schoolId, appointmentLabels, can } = await getExamContext()
@@ -51,28 +53,41 @@ export default async function ExaminationDashboardPage() {
       .limit(5),
   ])
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, 'Examinations', [
+    { label: 'Upcoming exams', value: String(upcomingExamCount ?? 0) },
+    { label: 'Pending verification', value: String(can('verify_results') ? (pendingVerificationCount ?? 0) : 0) },
+    { label: 'Open incidents', value: String(openIncidentCount ?? 0) },
+    { label: 'My duties', value: String(myDutyCount ?? 0) },
+  ])
+
   return (
-    <ExaminationDashboardClient
-      userId={userId}
-      profile={profile}
-      school={school}
-      appointmentLabels={appointmentLabels}
-      activeSession={activeSession}
-      upcomingExamCount={upcomingExamCount ?? 0}
-      pendingVerificationCount={can('verify_results') ? (pendingVerificationCount ?? 0) : 0}
-      openIncidentCount={openIncidentCount ?? 0}
-      myDutyCount={myDutyCount ?? 0}
-      myUpcomingDuties={myUpcomingDuties ?? []}
-      capabilities={{
-        manageExams:        can('manage_exams'),
-        assignInvigilators: can('assign_invigilators'),
-        createDocuments:    can('create_documents'),
-        reviewDocuments:    can('review_documents'),
-        enterResults:       can('enter_results'),
-        verifyResults:      can('verify_results'),
-        publishResults:     can('publish_results'),
-        resolveIncident:    can('resolve_incident'),
-      }}
-    />
+    <>
+      <ExaminationDashboardClient
+        userId={userId}
+        profile={profile}
+        school={school}
+        appointmentLabels={appointmentLabels}
+        activeSession={activeSession}
+        upcomingExamCount={upcomingExamCount ?? 0}
+        pendingVerificationCount={can('verify_results') ? (pendingVerificationCount ?? 0) : 0}
+        openIncidentCount={openIncidentCount ?? 0}
+        myDutyCount={myDutyCount ?? 0}
+        myUpcomingDuties={myUpcomingDuties ?? []}
+        capabilities={{
+          manageExams:        can('manage_exams'),
+          assignInvigilators: can('assign_invigilators'),
+          createDocuments:    can('create_documents'),
+          reviewDocuments:    can('review_documents'),
+          enterResults:       can('enter_results'),
+          verifyResults:      can('verify_results'),
+          publishResults:     can('publish_results'),
+          resolveIncident:    can('resolve_incident'),
+        }}
+      />
+      <SaveSnapshot userId={userId} routeKey={homeKey('examination')} data={homeSnapshot} />
+    </>
   )
 }
