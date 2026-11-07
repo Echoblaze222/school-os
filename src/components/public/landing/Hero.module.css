@@ -4,9 +4,7 @@
   position: relative;
   overflow: hidden;
   padding: var(--space-12) var(--space-5) var(--space-8);
-  background:
-    radial-gradient(ellipse 900px 500px at 85% -10%, var(--brand-glow) 0%, transparent 60%),
-    radial-gradient(ellipse 700px 500px at -10% 110%, var(--gold-subtle) 0%, transparent 55%);
+  background: transparent;
 }
 
 .inner {
@@ -135,7 +133,7 @@
   display: block;
   height: 100%;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  background: var(--brand);
 }
 
 .reportCardScore {
