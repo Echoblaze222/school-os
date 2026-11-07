@@ -222,7 +222,7 @@ export default function SplashPage() {
       <span
         style={{
           fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 12,
-          color: TEXT_SECONDARY, marginTop: 10, letterSpacing: 2,
+          color: TEXT_SECONDARY, marginTop: 12, letterSpacing: 2,
           opacity: stage === 'draw' ? 0 : 0.8,
           transition: 'opacity 0.4s 0.2s',
         }}

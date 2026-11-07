@@ -48,7 +48,7 @@ export function Toast({ toast }: { toast: ToastState | null }) {
       aria-live="polite"
       style={{
         position: 'fixed', top: 80, left: '50%', zIndex: 999,
-        background: '#1a1a2e', color: '#fff', padding: '10px 20px',
+        background: '#1a1a2e', color: '#fff', padding: '12px 20px',
         borderRadius: 10, fontSize: '0.82rem', boxShadow: '0 4px 20px #0008',
         border: '1px solid var(--glass-border)', maxWidth: '90vw', textAlign: 'center',
       }}

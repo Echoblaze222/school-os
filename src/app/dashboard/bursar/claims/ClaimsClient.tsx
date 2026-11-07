@@ -136,7 +136,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
       {toast && (
         <div className={toastLeaving ? 'animate-toast-out' : 'animate-toast-in'}
           style={{ position:'fixed', top:80, left:'50%',
-          background:'#1a1a2e', color:'#fff', padding:'10px 20px', borderRadius:10,
+          background:'#1a1a2e', color:'#fff', padding:'12px 20px', borderRadius:10,
           fontSize:'0.82rem', zIndex:999, boxShadow:'0 4px 20px #0008',
           border:'1px solid var(--glass-border)', maxWidth:'90vw', textAlign:'center' }}>
           {toast}
@@ -151,8 +151,8 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
             style={tab===t ? { background:sc, color:'#fff', borderColor:sc } : {}}>
             {TAB_META[t].label}
             {t === 'pending' && pendingCount !== null && pendingCount > 0 && (
-              <span style={{ marginLeft:6, background:'var(--danger)', color:'#fff',
-                borderRadius:20, padding:'1px 7px', fontSize:'0.7rem', fontWeight:800 }}>
+              <span style={{ marginLeft:8, background:'var(--danger)', color:'#fff',
+                borderRadius:20, padding:'1px 8px', fontSize:'0.7rem', fontWeight:800 }}>
                 {pendingCount}
               </span>
             )}
@@ -164,9 +164,9 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
         ? <div style={{ display:'grid', gap:'var(--space-3)' }}>
             {[0,1,2].map(i => (
               <div key={i} style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
-                borderRadius:14, padding:'var(--space-4)', display:'grid', gap:10 }}>
+                borderRadius:14, padding:'var(--space-4)', display:'grid', gap:12 }}>
                 <div style={{ display:'flex', justifyContent:'space-between' }}>
-                  <div style={{ display:'grid', gap:6 }}>
+                  <div style={{ display:'grid', gap:8 }}>
                     <div className="skeleton" style={{ width:120, height:14 }} />
                     <div className="skeleton" style={{ width:160, height:11 }} />
                   </div>
@@ -184,7 +184,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
           : <div className="stagger" style={{ display:'grid', gap:'var(--space-3)' }}>
               {claims.map((c: any) => (
                 <div key={c.id} className="animate-fade-up" style={{ background:'var(--glass-bg)', border:'1px solid var(--glass-border)',
-                  borderRadius:14, padding:'var(--space-4)', display:'grid', gap:10, position:'relative', overflow:'hidden' }}>
+                  borderRadius:14, padding:'var(--space-4)', display:'grid', gap:12, position:'relative', overflow:'hidden' }}>
 
                   {justConfirmed === c.id && (
                     <div className="animate-success-pop" style={{ position:'absolute', inset:0, zIndex:2,
@@ -226,7 +226,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                   {/* Parent note */}
                   {c.notes && (
                     <p style={{ fontSize:'0.78rem', color:'var(--text-secondary)',
-                      background:'var(--input-bg)', padding:'6px 10px', borderRadius:7, margin:0 }}>
+                      background:'var(--input-bg)', padding:'8px 12px', borderRadius:7, margin:0 }}>
                       "{c.notes}"
                     </p>
                   )}
@@ -234,9 +234,9 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                   {/* Proof link */}
                   {c.proof_url && (
                     <a href={c.proof_url} target="_blank" rel="noopener noreferrer"
-                      style={{ display:'flex', alignItems:'center', gap:6,
+                      style={{ display:'flex', alignItems:'center', gap:8,
                         fontSize:'0.78rem', color:sc, fontWeight:600, textDecoration:'none',
-                        background: sc + '10', padding:'6px 12px', borderRadius:8, width:'fit-content' }}>
+                        background: sc + '10', padding:'8px 12px', borderRadius:8, width:'fit-content' }}>
                       <ImageIcon size={14} color={sc}/>
                       View payment proof screenshot
                     </a>
@@ -244,7 +244,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
 
                   {/* Reject note if rejected */}
                   {c.status === 'rejected' && c.bursar_note && (
-                    <div style={{ background:'rgba(239,68,68,0.08)', borderRadius:8, padding:'7px 12px' }}>
+                    <div style={{ background:'rgba(239,68,68,0.08)', borderRadius:8, padding:'8px 12px' }}>
                       <p style={{ fontSize:'0.75rem', color:'var(--danger)', margin:0 }}>
                         Rejected: {c.bursar_note}
                       </p>
@@ -253,9 +253,9 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
 
                   {/* Confirmed note */}
                   {c.status === 'confirmed' && (
-                    <div style={{ background:'rgba(16,185,129,0.08)', borderRadius:8, padding:'7px 12px' }}>
+                    <div style={{ background:'rgba(16,185,129,0.08)', borderRadius:8, padding:'8px 12px' }}>
                       <p style={{ fontSize:'0.75rem', color:'var(--success)', margin:0, fontWeight:700,
-                        display:'flex', alignItems:'center', gap:5 }}>
+                        display:'flex', alignItems:'center', gap:4 }}>
                         <CheckIcon size={12} /> Confirmed, balance auto-deducted
                       </p>
                     </div>
@@ -282,7 +282,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                             </button>
                             <button onClick={() => { setRejectId(null); setRejectNote('') }}
                               className="pressable"
-                              style={{ padding:'0 14px', height:38, background:'var(--input-bg)',
+                              style={{ padding:'0 16px', height:38, background:'var(--input-bg)',
                                 border:'1px solid var(--input-border)', borderRadius:8,
                                 color:'var(--text-muted)', fontWeight:700, cursor:'pointer' }}>
                               Cancel
@@ -299,7 +299,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                             style={{ flex:1, height:40, background:'var(--success)', color:'#fff',
                               border:'none', borderRadius:9, fontWeight:700, fontSize:'0.82rem',
                               cursor:'pointer', display:'flex', alignItems:'center',
-                              justifyContent:'center', gap:6,
+                              justifyContent:'center', gap:8,
                               opacity: reviewing===c.id ? 0.5 : 1 }}>
                             <CheckIcon size={14} color="#fff"/>
                             {reviewing===c.id ? 'Confirming…' : 'Confirm Payment'}
@@ -309,7 +309,7 @@ export default function ClaimsClient({ profile, school, userId }: Props) {
                             style={{ flex:1, height:40, background:'rgba(239,68,68,0.08)', color:'var(--danger)',
                               border:'1px solid rgba(239,68,68,0.19)', borderRadius:9, fontWeight:700,
                               fontSize:'0.82rem', cursor:'pointer', display:'flex',
-                              alignItems:'center', justifyContent:'center', gap:6 }}>
+                              alignItems:'center', justifyContent:'center', gap:8 }}>
                             <XIcon size={14} color="var(--danger)"/>
                             Reject
                           </button>

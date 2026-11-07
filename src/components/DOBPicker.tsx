@@ -58,7 +58,7 @@ export default function DOBPicker({ value, onChange, inputStyle, minAge = 2, max
   }
 
   return (
-    <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{ display: 'flex', gap: 8 }}>
       <select
         value={dd || ''}
         onChange={e => emit(yyyy || currentYear - 10, mm || 1, Number(e.target.value))}

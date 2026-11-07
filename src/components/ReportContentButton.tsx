@@ -51,7 +51,7 @@ export default function ReportContentButton({ targetType, targetId }: { targetTy
     <>
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true) }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 999, color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 12px', background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: 999, color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}
       >
         <AlertCircleIcon size={12} /> Report
       </button>
@@ -79,15 +79,15 @@ export default function ReportContentButton({ targetType, targetId }: { targetTy
               <>
                 <p style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>Report this</p>
                 <select value={reason} onChange={e => setReason(e.target.value)}
-                  style={{ width: '100%', height: 38, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none', marginBottom: 10 }}>
+                  style={{ width: '100%', height: 38, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none', marginBottom: 12 }}>
                   <option value="">Choose a reason...</option>
                   {REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
                 <textarea value={details} onChange={e => setDetails(e.target.value)}
                   placeholder="Add any details that would help our team (optional)"
-                  style={{ width: '100%', height: 70, padding: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.8rem', outline: 'none', resize: 'vertical', marginBottom: 10 }}
+                  style={{ width: '100%', height: 70, padding: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.8rem', outline: 'none', resize: 'vertical', marginBottom: 12 }}
                 />
-                {error && <p style={{ color: 'var(--danger)', fontSize: '0.78rem', margin: '0 0 10px' }}>{error}</p>}
+                {error && <p style={{ color: 'var(--danger)', fontSize: '0.78rem', margin: '0 0 12px' }}>{error}</p>}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setOpen(false)}
                     style={{ flex: 1, height: 38, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>

@@ -48,10 +48,10 @@ export function Donut({ data, valueFormat, centerValue, centerLabel, height = 20
           </div>
         )}
       </div>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 6, fontSize: 12, color: 'var(--viz-ink-2)', flex: 1, minWidth: 140 }}>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8, fontSize: 12, color: 'var(--viz-ink-2)', flex: 1, minWidth: 140 }}>
         {data.map((d, i) => (
           <li key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: colorOf(i) }} />
               {d.label}
             </span>

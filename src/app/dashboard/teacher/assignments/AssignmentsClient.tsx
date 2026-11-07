@@ -321,10 +321,10 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
           {/* BUG 1 FIX: error banner inside form */}
           {saveError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px',
               background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10,
               marginBottom: 'var(--space-4)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={13} color="var(--danger)" /> {saveError}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={13} color="var(--danger)" /> {saveError}</span>
               <button className="pressable" onClick={() => setSaveError(null)}
                 style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)',
                   cursor: 'pointer' }}><XIcon size={15} color="var(--danger)" /></button>
@@ -488,13 +488,13 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               <div style={{ display: 'flex', gap: 8, paddingLeft: 52, flexWrap: 'wrap' }}>
                 <Link
                   href={`/dashboard/teacher/assignments/${item.id}/submissions`}
-                  style={{ padding: '5px 12px', background: sc + '15', color: sc, borderRadius: 8,
+                  style={{ padding: '4px 12px', background: sc + '15', color: sc, borderRadius: 8,
                     fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none' }}>
                   View Submissions ({submCounts[item.id] ?? 0})
                 </Link>
 
                 <button className="pressable" onClick={() => openEdit(item)}
-                  style={{ padding: '5px 12px', background: 'var(--glass-bg)', color: 'var(--text-secondary)',
+                  style={{ padding: '4px 12px', background: 'var(--glass-bg)', color: 'var(--text-secondary)',
                     border: '1px solid var(--glass-border)', borderRadius: 8,
                     fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
                   Edit
@@ -502,7 +502,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
                 {item.file_url && (
                   <a href={item.file_url} target="_blank" rel="noreferrer"
-                    style={{ padding: '5px 12px', background: 'var(--glass-bg)', color: 'var(--text-muted)',
+                    style={{ padding: '4px 12px', background: 'var(--glass-bg)', color: 'var(--text-muted)',
                       border: '1px solid var(--glass-border)', borderRadius: 8,
                       fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none' }}>
                     <span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={12} /></span> View File

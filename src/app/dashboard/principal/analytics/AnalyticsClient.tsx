@@ -45,7 +45,7 @@ function Chip({ active, onClick, children, brand }: { active: boolean; onClick: 
       onClick={onClick}
       aria-pressed={active}
       style={{
-        padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+        padding: '8px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
         background: active ? brand : 'var(--glass-bg)', color: active ? '#fff' : 'var(--text-muted)',
         border: active ? `1px solid ${brand}` : '1px solid var(--glass-border)',
       }}
@@ -57,7 +57,7 @@ function Chip({ active, onClick, children, brand }: { active: boolean; onClick: 
 
 function Stat({ label, value, sub, trend }: { label: string; value: string; sub?: string; trend?: number[] }) {
   return (
-    <div className="glass-card" style={{ padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
+    <div className="glass-card" style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
         <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.15 }}>{value}</div>
@@ -154,14 +154,14 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
     <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Analytics" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       <ChartTheme>
         {/* One filter row above everything it scopes */}
-        <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div role="tablist" style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+        <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div role="tablist" style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
             {TABS.map(t => (
               <Chip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)} brand={brand}>{t.label}</Chip>
             ))}
           </div>
           {(tab === 'academics' || tab === 'overview') && sel && (
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {years.length > 0 && (
                 <select
                   className="input"
@@ -179,7 +179,7 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
             </div>
           )}
           {(tab === 'attendance' || tab === 'overview') && (
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {RANGES.map(r => (
                 <Chip key={r.days} active={days === r.days} onClick={() => setDays(r.days)} brand={brand}>{r.label}</Chip>
               ))}

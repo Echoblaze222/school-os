@@ -1227,7 +1227,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                     </button>
                   </div>
                 ) : (
-                  <p className={styles.profileMeta} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                  <p className={styles.profileMeta} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                     Group · {memberCount} member{memberCount === 1 ? '' : 's'}
                     {isGroupAdmin && (
                       <button
@@ -1468,7 +1468,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
                       )}
                       {msg.file_type === 'file' && msg.file_url && (
                         <a href={msg.file_url} target="_blank" rel="noreferrer" className={styles.fileLink}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                           <PaperclipIcon size={14} /> {msg.content}
                         </a>
                       )}
@@ -1615,7 +1615,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
         <div className={styles.replyBanner}>
           <div className={styles.replyBannerBar} style={{ background: '#f59e0b' }} />
           <div className={styles.replyBannerContent}>
-            <p className={styles.replyBannerAuthor} style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <p className={styles.replyBannerAuthor} style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 8 }}>
               <EditIcon size={13} /> Editing message
             </p>
           </div>
@@ -1725,7 +1725,7 @@ export default function ChatRoomClient({ roomId, userId, role, school }: Props) 
           </div>
         )
       ) : (
-        <div className={styles.readOnlyBar} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+        <div className={styles.readOnlyBar} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
           <LockIcon size={13} /> Only {roomInfo?.room_type === 'school_group' ? 'staff' : 'the teacher'} can post here, you can still react and comment with emoji
         </div>
       )}

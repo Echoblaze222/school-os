@@ -90,7 +90,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
           {error && (
             <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
+              padding: '12px 16px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
               <AlertIcon size={16} color="var(--danger)" />
               <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
               <button onClick={() => setError(null)} className={motion.pressable}
@@ -118,14 +118,14 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                     return (
                       <div key={q.id} className={`glass-card ${motion.staggerItem}`} style={{
                         borderColor: done ? 'rgba(16,185,129,0.3)' : undefined,
-                        flexDirection: 'column', alignItems: 'stretch', gap: 10, animationDelay: `${idx * 40}ms`,
+                        flexDirection: 'column', alignItems: 'stretch', gap: 12, animationDelay: `${idx * 40}ms`,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                           <div style={{ width: 40, height: 40, borderRadius: 10, background: STATUS_BG[status], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <AwardIcon size={18} color={STATUS_COLOR[status]} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {q.title}
                             </p>
                             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -133,14 +133,14 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                               {q.attempt_limit > 1 && ` · ${q.attempt_limit} attempts`}
                             </p>
                           </div>
-                          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0, background: STATUS_BG[status], color: STATUS_COLOR[status] }}>
+                          <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0, background: STATUS_BG[status], color: STATUS_COLOR[status] }}>
                             {done ? (pct !== null ? `${pct}%` : 'Done') : STATUS_LABEL[status]}
                           </span>
                         </div>
 
                         {/* Score display if graded */}
                         {done && attempt.score !== null && (
-                          <div style={{ background: 'var(--success-subtle)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ background: 'var(--success-subtle)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Your score</span>
                             <span style={{ fontWeight: 800, color: 'var(--success)', fontSize: '0.92rem' }}>
                               {attempt.score}/{attempt.max_score}
@@ -150,7 +150,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
 
                         {/* Timing info */}
                         {!done && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                             <ClockIcon size={12} color="var(--text-muted)" />
                             {status === 'live'
                               ? `Closes ${new Date(q.ends_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`

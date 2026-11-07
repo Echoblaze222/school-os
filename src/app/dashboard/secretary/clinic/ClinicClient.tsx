@@ -153,13 +153,13 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
     <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Clinic" featureGroups={SECRETARY_FEATURE_GROUPS}>
       {/* Stats */}
       <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
-        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
           <GaugeStat label="Total visits" value={visits.length} color={sc} size={56} />
         </div>
-        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
           <GaugeStat label="Sent home" value={visits.filter(v => v.sent_home).length} color="var(--status-warn, #F59E0B)" size={56} delayMs={80} />
         </div>
-        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
           <GaugeStat label="Records on file" value={records.length} color="var(--status-ok, #10B981)" size={56} delayMs={160} />
         </div>
       </div>
@@ -283,10 +283,10 @@ export default function ClinicClient({ visits: initVisits, records: initRecords,
             <div className={styles.formGroup}><label className={styles.formLabel}>Treatment given</label><textarea className={styles.formTextarea} value={visitForm.treatment_given} onChange={e => setVisitForm(p => ({ ...p, treatment_given: e.target.value }))} rows={2} /></div>
             <div className={styles.formGroup}><label className={styles.formLabel}>Temperature (°C)</label><input type="number" step="0.1" className={styles.formInput} value={visitForm.temperature_c} onChange={e => setVisitForm(p => ({ ...p, temperature_c: e.target.value }))} placeholder="Optional" /></div>
             <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={visitForm.sent_home} onChange={e => setVisitForm(p => ({ ...p, sent_home: e.target.checked }))} /> Sent home
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={visitForm.parent_notified} onChange={e => setVisitForm(p => ({ ...p, parent_notified: e.target.checked }))} /> Parent notified
               </label>
             </div>

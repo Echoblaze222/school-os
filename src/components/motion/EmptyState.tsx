@@ -17,7 +17,7 @@ export default function EmptyState({ icon, title, subtitle, action }: EmptyState
   return (
     <div className="animate-fade-up" style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', gap: 10, padding: 'var(--space-6) var(--space-4)',
+      justifyContent: 'center', gap: 12, padding: 'var(--space-6) var(--space-4)',
       textAlign: 'center',
     }}>
       {icon}
@@ -30,7 +30,7 @@ export default function EmptyState({ icon, title, subtitle, action }: EmptyState
           onClick={action.onClick}
           className="pressable"
           style={{
-            marginTop: 6, height: 36, padding: '0 16px', background: 'var(--brand)',
+            marginTop: 8, height: 36, padding: '0 16px', background: 'var(--brand)',
             color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700,
             fontSize: '0.78rem', cursor: 'pointer',
           }}

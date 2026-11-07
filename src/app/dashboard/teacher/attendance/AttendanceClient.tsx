@@ -264,7 +264,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         {teacherClasses.map(cls => (
           <button className="pressable" key={cls.class_id + (cls.subject ?? "")}
             onClick={() => { setSelectedClass(cls); setSaved(false) }}
-            style={{ flexShrink: 0, padding: "6px 14px", borderRadius: 999, border: "1px solid " + (selectedClass?.class_id === cls.class_id ? sc : sc + "40"), background: selectedClass?.class_id === cls.class_id ? sc : "transparent", color: selectedClass?.class_id === cls.class_id ? "#fff" : sc, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+            style={{ flexShrink: 0, padding: "8px 16px", borderRadius: 999, border: "1px solid " + (selectedClass?.class_id === cls.class_id ? sc : sc + "40"), background: selectedClass?.class_id === cls.class_id ? sc : "transparent", color: selectedClass?.class_id === cls.class_id ? "#fff" : sc, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
             {cls.class_name}{cls.subject ? " · " + cls.subject : ""}{cls.is_primary && <span style={{ display:'inline-flex', marginLeft: 4, verticalAlign: "middle" }}><CrownIcon size={12} /></span>}
           </button>
         ))}
@@ -282,7 +282,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
       {tab === "mark" && (<>
         {/* Date picker */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "var(--space-4)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "var(--space-4)" }}>
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setSaved(false) }}
             className="input" style={{ width: 'auto' }} />
           {saved && (
@@ -293,7 +293,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         </div>
 
         {saveError && (
-          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid var(--danger)", borderRadius: 8, padding: "10px 14px", marginBottom: "var(--space-4)", color: "var(--danger)", fontSize: "0.82rem" }}>
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid var(--danger)", borderRadius: 8, padding: "12px 16px", marginBottom: "var(--space-4)", color: "var(--danger)", fontSize: "0.82rem" }}>
             Failed to save attendance: {saveError}
           </div>
         )}
@@ -306,7 +306,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
               { label: "Absent",  count: absentCount,  color: "var(--danger)" },
               { label: "Late",    count: lateCount,    color: "var(--warning)" },
             ].map((s, i) => (
-              <div key={s.label} className="glass-card" style={{ flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: "var(--radius-lg)" }}>
+              <div key={s.label} className="glass-card" style={{ flex: 1, textAlign: "center", padding: "12px 4px", borderRadius: "var(--radius-lg)" }}>
                 <GaugeStat label={s.label} value={students.length ? Math.round((s.count / students.length) * 100) : 0}
                   isPercent displayValue={String(s.count)} color={s.color} size={52} delayMs={i * 80} />
               </div>
@@ -320,13 +320,13 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         ) : students.length === 0 ? (
           <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 20 }}>No students in this class.</div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: "var(--space-4)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "var(--space-4)" }}>
             {students.map((s: any) => {
               const status = records[s.id] ?? "present"
               const st = STATUS_COLORS[status]
               return (
                 <button className="pressable" key={s.id} onClick={() => toggle(s.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: st.bg, border: "1px solid " + st.color + "40", borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.15s" }}>
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: st.bg, border: "1px solid " + st.color + "40", borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.15s" }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: sc + "20", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
                     {s.avatar_url
                       ? <Image src={s.avatar_url} alt="" width={36} height={36} style={{ objectFit: "cover" }} />
@@ -337,7 +337,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                     <p style={{ margin: 0, fontWeight: 600, color: "var(--text-primary)", fontSize: "0.88rem" }}>{s.full_name}</p>
                     <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.72rem" }}>{s.default_code}</p>
                   </div>
-                  <span style={{ padding: "4px 10px", borderRadius: 999, background: st.bg, border: "1px solid " + st.color + "60", color: st.color, fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.06em" }}>
+                  <span style={{ padding: "4px 12px", borderRadius: 999, background: st.bg, border: "1px solid " + st.color + "60", color: st.color, fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.06em" }}>
                     {status.toUpperCase()}
                   </span>
                 </button>
@@ -348,7 +348,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
         {students.length > 0 && (
           <button className="pressable" onClick={submit} disabled={saving || saved}
-            style={{ width: "100%", height: 46, background: saved ? "color-mix(in srgb, var(--success) 13%, transparent)" : sc, border: "1px solid " + (saved ? "var(--success)" : "transparent"), borderRadius: 10, color: saved ? "var(--success)" : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            style={{ width: "100%", height: 46, background: saved ? "color-mix(in srgb, var(--success) 13%, transparent)" : sc, border: "1px solid " + (saved ? "var(--success)" : "transparent"), borderRadius: 10, color: saved ? "var(--success)" : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             {saved
               ? <><CheckCircleIcon size={16} color="var(--success)" /> Attendance Saved</>
               : saving ? "Saving..."
@@ -361,11 +361,11 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       {tab === "history" && (
         <div>
           {historyLoading ? (
-            <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 30 }}>Loading history...</div>
+            <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 32 }}>Loading history...</div>
           ) : history.length === 0 ? (
             <div style={{ textAlign: "center", padding: 40 }}>
               <CalendarIcon size={36} color="var(--text-faint)" strokeWidth={1} />
-              <p style={{ color: "var(--text-muted)", marginTop: 10, fontSize: "0.85rem" }}>No attendance records in the last 90 days.</p>
+              <p style={{ color: "var(--text-muted)", marginTop: 12, fontSize: "0.85rem" }}>No attendance records in the last 90 days.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -378,7 +378,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                 return (
                   <div key={h.date} className="glass-card" style={{ borderRadius: 10, overflow: "hidden" }}>
                     <button className="pressable" onClick={() => loadExpandedDay(h.date)}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                       {/* Rate circle */}
                       <div style={{ width: 40, height: 40, borderRadius: "50%", background: rateColor + "18", border: "2px solid " + rateColor + "50", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <span style={{ fontSize: "0.65rem", fontWeight: 800, color: rateColor }}>{rate}%</span>
@@ -409,7 +409,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
                           const sc2 = STATUS_COLORS[st] ?? STATUS_COLORS.absent
                           const p = (r as any).profiles
                           return (
-                            <div key={r.student_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px", background: sc2.bg, borderRadius: 7 }}>
+                            <div key={r.student_id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 8px", background: sc2.bg, borderRadius: 7 }}>
                               <div style={{ width: 28, height: 28, borderRadius: "50%", background: sc + "20", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, fontSize: "0.75rem", fontWeight: 700, color: sc }}>
                                 {p?.avatar_url ? <Image src={p.avatar_url} alt="" width={28} height={28} style={{ objectFit: "cover" }} /> : p?.full_name?.[0] ?? "?"}
                               </div>

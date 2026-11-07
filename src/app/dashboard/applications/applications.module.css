@@ -46,7 +46,7 @@
   color: #fff;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 9px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full, 999px);
   text-decoration: none;
   white-space: nowrap;
@@ -54,7 +54,7 @@
 
 .signOutBtn {
   width: 36px;
-  height: 36px;
+  height: 44px;
   border-radius: var(--radius-full, 999px);
   border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
   background: var(--glass-bg, rgba(255,255,255,0.03));
@@ -67,14 +67,14 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
+  padding: 16px;
   background: var(--glass-bg, rgba(255,255,255,0.03));
   border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
   border-radius: var(--radius-lg, 16px);
@@ -88,7 +88,7 @@
 
 .cardIcon {
   width: 40px;
-  height: 40px;
+  height: 44px;
   border-radius: var(--radius-md, 12px);
   display: flex;
   align-items: center;
@@ -123,7 +123,7 @@
 .badge {
   font-size: 0.65rem;
   font-weight: 800;
-  padding: 5px 10px;
+  padding: 4px 12px;
   border-radius: var(--radius-full, 999px);
   white-space: nowrap;
 }
@@ -140,7 +140,7 @@
   align-items: center;
   text-align: center;
   padding: 60px 20px;
-  gap: 6px;
+  gap: 8px;
 }
 
 .emptyTitle {
@@ -162,7 +162,7 @@
   color: #fff;
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 10px 18px;
+  padding: 12px 20px;
   border-radius: var(--radius-full, 999px);
   text-decoration: none;
 }

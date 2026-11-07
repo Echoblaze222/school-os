@@ -257,10 +257,10 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
               {pinnedEntries.map(({ entry, rank }) => (
                 <div key={entry.student_id} className={styles.myRankBanner} style={{ borderColor: schoolColor }}>
                   <span style={{ color: schoolColor, fontWeight: 800, fontSize: '1.1rem' }}>#{rank}</span>
-                  <div style={{ flex: 1, marginLeft: 10 }}>
+                  <div style={{ flex: 1, marginLeft: 12 }}>
                     <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem', margin: 0 }}>
                       {entry.full_name}
-                      <span style={{ color: schoolColor, fontSize: '0.75rem', marginLeft: 6 }}>
+                      <span style={{ color: schoolColor, fontSize: '0.75rem', marginLeft: 8 }}>
                         {isParent ? 'Your child' : '(You)'}
                       </span>
                     </p>
@@ -342,7 +342,7 @@ export default function LeaderboardClient({ profile, school, userId, childIds = 
                       <div className={styles.cardBody}>
                         <p className={styles.cardTitle}>
                           {entry.full_name}
-                          {hl && <span style={{ color: schoolColor, fontSize: '0.72rem', marginLeft: 6, fontWeight: 700 }}>{isParent ? '· Your child' : '· You'}</span>}
+                          {hl && <span style={{ color: schoolColor, fontSize: '0.72rem', marginLeft: 8, fontWeight: 700 }}>{isParent ? '· Your child' : '· You'}</span>}
                         </p>
                         <p className={styles.cardMeta}>{entry.class_level}</p>
                         <div className={styles.miniBar}>

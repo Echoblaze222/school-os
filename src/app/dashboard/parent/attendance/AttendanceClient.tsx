@@ -112,10 +112,10 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
           : <>
               {/* Child switcher - shown when parent has multiple children */}
               {children.length > 1 && (
-                <div style={{ display:'flex', gap:6, overflowX:'auto', marginBottom:'var(--space-3)', paddingBottom:2 }}>
+                <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:'var(--space-3)', paddingBottom:2 }}>
                   {children.map(c => (
                     <button className="pressable" key={c.id} onClick={() => switchChild(c)}
-                      style={{ flexShrink:0, padding:'5px 12px', borderRadius:999, border:'1px solid ' + (child?.id === c.id ? sc : sc + '40'), background: child?.id === c.id ? sc : 'transparent', color: child?.id === c.id ? '#fff' : sc, fontSize:'0.75rem', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      style={{ flexShrink:0, padding:'4px 12px', borderRadius:999, border:'1px solid ' + (child?.id === c.id ? sc : sc + '40'), background: child?.id === c.id ? sc : 'transparent', color: child?.id === c.id ? '#fff' : sc, fontSize:'0.75rem', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
                       {c.full_name.split(' ')[0]}
                     </button>
                   ))}

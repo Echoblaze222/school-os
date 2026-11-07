@@ -48,13 +48,13 @@
   border: 1px solid rgba(255,255,255,0.1);
   color: var(--text-secondary, #888);
   font-size: 0.82rem;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
   margin-bottom: 1.5rem;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: border-color 0.2s, color 0.2s;
 }
 .backBtn:hover {
@@ -71,7 +71,7 @@
   color: var(--brand, #7c3aed);
   background: rgba(124, 58, 237, 0.12);
   border: 1px solid rgba(124, 58, 237, 0.25);
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
   margin-bottom: 1rem;
 }
@@ -169,7 +169,7 @@
 .listItem {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   font-size: 0.875rem;
   color: var(--text-secondary, #888);
   line-height: 1.6;
@@ -216,7 +216,7 @@
   color: var(--brand, #7c3aed);
   font-size: 0.82rem;
   font-weight: 600;
-  padding: 8px 18px;
+  padding: 8px 20px;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;

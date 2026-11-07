@@ -37,7 +37,7 @@
 .metaRow {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   flex-wrap: wrap;
   margin-bottom: var(--space-2);
 }
@@ -45,7 +45,7 @@
 .urgentBadge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -64,7 +64,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 2px 9px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   border: 1px solid transparent;
   white-space: nowrap;
@@ -73,7 +73,7 @@
 .timeMeta {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 0.67rem;
   color: var(--text-muted);
   font-weight: 500;
@@ -116,7 +116,7 @@
   font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 5px 0 0;
+  padding: 4px 0 0;
   transition: opacity 0.18s;
 }
 

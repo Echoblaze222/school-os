@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 16px 20px;
   background: var(--bg-overlay);
   backdrop-filter: blur(24px);
   border-bottom: 1px solid var(--glass-border);
@@ -42,7 +42,7 @@
 
 .backBtn, .iconBtn {
   width: 36px;
-  height: 36px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,8 +63,8 @@
 .addBtn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 8px 16px;
   border: none;
   border-radius: 10px;
   font-family: var(--font-body);
@@ -81,8 +81,8 @@
 /* Stats row */
 .statsRow {
   display: flex;
-  gap: 10px;
-  padding: 14px 20px;
+  gap: 12px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--glass-border);
 }
 
@@ -90,8 +90,8 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 12px 12px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
@@ -116,9 +116,9 @@
 .searchBar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 14px 20px 0;
-  padding: 10px 14px;
+  gap: 12px;
+  margin: 16px 20px 0;
+  padding: 12px 16px;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
   border-radius: 12px;
@@ -176,7 +176,7 @@
   transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .classCard:hover {
@@ -211,14 +211,14 @@
 
 .classStats {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .classStats span {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 0.62rem;
   color: var(--text-muted);
 }
@@ -324,8 +324,8 @@
 .subjectRow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 12px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 10px;
@@ -348,7 +348,7 @@
 
 .detailActions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .detailBtn {
@@ -356,7 +356,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   padding: 12px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -379,7 +379,7 @@
 .createForm {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .formField { display: flex; flex-direction: column; gap: 6px; }
@@ -397,12 +397,12 @@
   color: var(--error);
   background: var(--error-bg);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 12px;
 }
 
 .createBtn {
   width: 100%;
-  padding: 13px;
+  padding: 12px;
   background: var(--burgundy);
   color: white;
   border: none;
@@ -453,7 +453,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .rateTop {
@@ -528,7 +528,7 @@
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .statIcon {
@@ -538,7 +538,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .statVal {
@@ -555,7 +555,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 /* Balance card */
@@ -563,10 +563,10 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .balanceRow {
@@ -598,7 +598,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .classTop {
@@ -652,7 +652,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 16px 16px;
   background: var(--glass-bg);
   border: 1px solid rgba(239,68,68,0.2);
   border-radius: 14px;
@@ -725,7 +725,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
@@ -733,7 +733,7 @@
 
 .recentIcon {
   width: 36px;
-  height: 36px;
+  height: 44px;
   background: var(--burgundy-subtle);
   border-radius: 9px;
   display: flex;

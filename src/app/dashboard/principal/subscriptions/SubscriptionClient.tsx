@@ -253,7 +253,7 @@ export default function SubscriptionClient({
           zIndex:       9999,
           display:      'flex',
           alignItems:   'center',
-          gap:          '10px',
+          gap:          '12px',
           padding:      '12px 20px',
           borderRadius: '10px',
           background:   toast.type === 'success' ? 'var(--success-bg, #052e16)' : 'var(--error-bg, #2d0a0a)',

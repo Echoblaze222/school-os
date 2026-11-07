@@ -109,7 +109,7 @@ export default function TimetableClient({
       )}
 
       {showForm && (
-        <form onSubmit={createEntry} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 10 }}>
+        <form onSubmit={createEntry} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 12 }}>
           <select value={form.exam_session_id} onChange={e => setForm(f => ({ ...f, exam_session_id: e.target.value }))} style={inputStyle}>
             {sessions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
@@ -132,7 +132,7 @@ export default function TimetableClient({
               </button>
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               Exam Date
               <input type="date" value={form.exam_date} onChange={e => setForm(f => ({ ...f, exam_date: e.target.value }))} required style={{ ...inputStyle, display: 'block', marginTop: 4, width: '100%' }} />
@@ -157,9 +157,9 @@ export default function TimetableClient({
           <p style={{ margin: 0, opacity: 0.75 }}>Nothing on the timetable yet.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {rows.map(r => (
-            <div key={r.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-xl)', display: 'flex', justifyContent: 'space-between' }}>
+            <div key={r.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)', display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 700 }}>
                   {r.class_subjects?.subjects?.name ?? 'Subject'} · {r.class_subjects?.classes?.name ?? 'Class'}
@@ -178,6 +178,6 @@ export default function TimetableClient({
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+  padding: '12px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
   background: 'var(--surface)', color: 'inherit', fontSize: 14, width: '100%',
 }

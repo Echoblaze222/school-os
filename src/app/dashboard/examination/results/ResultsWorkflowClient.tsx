@@ -115,7 +115,7 @@ export default function ResultsWorkflowClient({
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <button className="btn" style={{ fontSize: 13 }} onClick={toggleAll}>
               {selected.size === rows.length ? 'Deselect all' : `Select all ${rows.length}`}
             </button>

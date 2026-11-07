@@ -63,7 +63,7 @@ export default function ReportsClient() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: 'var(--space-5)' }}>
-      <Link href="/super-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
+      <Link href="/super-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
         <ArrowLeftIcon size={14} /> Back
       </Link>
 
@@ -78,7 +78,7 @@ export default function ReportsClient() {
         {(['active', 'actioned', 'dismissed'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             style={{
-              padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
               background: filter === f ? 'var(--brand)' : 'var(--glass-bg)',
               color: filter === f ? '#fff' : 'var(--text-muted)',
               border: `1px solid ${filter === f ? 'var(--brand)' : 'var(--glass-border)'}`,
@@ -137,16 +137,16 @@ export default function ReportsClient() {
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     {r.status === 'open' && (
                       <button onClick={() => resolve(r.id, 'reviewing')} disabled={busyId === r.id}
-                        style={{ padding: '6px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B' }}>
+                        style={{ padding: '8px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B' }}>
                         Mark Reviewing
                       </button>
                     )}
                     <button onClick={() => resolve(r.id, 'actioned')} disabled={busyId === r.id}
-                      style={{ padding: '6px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10B981' }}>
+                      style={{ padding: '8px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10B981' }}>
                       Actioned
                     </button>
                     <button onClick={() => resolve(r.id, 'dismissed')} disabled={busyId === r.id}
-                      style={{ padding: '6px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
+                      style={{ padding: '8px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
                       Dismiss
                     </button>
                   </div>

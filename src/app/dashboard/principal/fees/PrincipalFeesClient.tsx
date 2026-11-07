@@ -123,8 +123,8 @@ export default function PrincipalFeesClient({
           return (
             <div style={OVERLAY} onClick={closeItemPreview}>
               <div style={SHEET} onClick={e => e.stopPropagation()}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
-                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', letterSpacing: '0.07em', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><AlertCircleIcon size={13} /> OVERDUE INVOICE</p>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 20px' }} />
+                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', letterSpacing: '0.07em', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircleIcon size={13} /> OVERDUE INVOICE</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                   <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EF444420', border: '1px solid #EF444440', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#EF4444', flexShrink: 0 }}>
                     {student?.full_name?.[0]?.toUpperCase() ?? '?'}
@@ -134,14 +134,14 @@ export default function PrincipalFeesClient({
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{student?.class_level || 'N/A'}</p>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   {[
                     { label: 'Balance Due', val: fmt(previewItem.balance_ngn), color: 'var(--error)' },
                     { label: 'Amount Due',  val: fmt(previewItem.amount_due_ngn), color: 'var(--text-primary)' },
                     { label: 'Amount Paid', val: fmt(previewItem.amount_paid_ngn), color: 'var(--success)' },
                     { label: 'Due Date',    val: previewItem.due_date ? fmtDate(previewItem.due_date) : 'N/A', color: 'var(--text-muted)' },
                   ].map(({ label, val, color }) => (
-                    <div key={label} style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 12px' }}>
+                    <div key={label} style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 12px' }}>
                       <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label.toUpperCase()}</p>
                       <p style={{ fontSize: '0.92rem', fontWeight: 800, color, margin: 0 }}>{val}</p>
                     </div>
@@ -166,8 +166,8 @@ export default function PrincipalFeesClient({
           return (
             <div style={OVERLAY} onClick={closeItemPreview}>
               <div style={SHEET} onClick={e => e.stopPropagation()}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
-                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.07em', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><CreditCardIcon size={13} /> PAYMENT RECEIPT</p>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 20px' }} />
+                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.07em', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}><CreditCardIcon size={13} /> PAYMENT RECEIPT</p>
                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
                   <p style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>{display}</p>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>#{previewItem.receipt_number}</p>
@@ -178,7 +178,7 @@ export default function PrincipalFeesClient({
                   { label: 'Currency', val: previewItem.currency_used ?? 'NGN' },
                   { label: 'Date',     val: fmtDate(previewItem.paid_at) },
                 ].map(({ label, val }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{label}</span>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700 }}>{val}</span>
                   </div>
@@ -204,7 +204,7 @@ export default function PrincipalFeesClient({
           the term from today's calendar date with no way to correct it,
           which is exactly what caused it to show all zeros when the
           school's actual term didn't match that guess. */}
-      <div style={{ display: 'flex', gap: 10, padding: '0 16px 12px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, padding: '0 16px 12px', alignItems: 'center' }}>
         <input
           value={yearInput}
           onChange={e => setYearInput(e.target.value)}
@@ -212,12 +212,12 @@ export default function PrincipalFeesClient({
           onKeyDown={e => { if (e.key === 'Enter') goToTermYear(currentTerm, yearInput) }}
           placeholder="2025/2026"
           style={{
-            height: 38, width: 108, flexShrink: 0, padding: '0 10px',
+            height: 38, width: 108, flexShrink: 0, padding: '0 12px',
             background: 'var(--input-bg)', border: '1px solid var(--input-border)',
             borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.8rem', outline: 'none',
           }}
         />
-        <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+        <div style={{ display: 'flex', gap: 8, flex: 1 }}>
           {TERM_OPTIONS.map(t => (
             <button className="pressable"
               key={t.key}

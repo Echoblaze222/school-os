@@ -126,7 +126,7 @@ export default function IncidentsClient({ hostels }: { hostels: Hostel[] }) {
         )}
 
         {showForm && (
-          <div className="glass-card" style={{ padding: 14, marginBottom: 16 }}>
+          <div className="glass-card" style={{ padding: 16, marginBottom: 16 }}>
             <select className={styles.select} value={formType} onChange={e => setFormType(e.target.value)}>
               {ISSUE_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
             </select>
@@ -139,7 +139,7 @@ export default function IncidentsClient({ hostels }: { hostels: Hostel[] }) {
         )}
 
         {status === 'loading' && (
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div style={{ display: 'grid', gap: 12 }}>
             <SkeletonCard /><SkeletonCard /><SkeletonCard />
           </div>
         )}
@@ -158,7 +158,7 @@ export default function IncidentsClient({ hostels }: { hostels: Hostel[] }) {
         )}
 
         {status === 'ready' && incidents.map(inc => (
-          <div key={inc.id} className="glass-card-flat" style={{ padding: 14, borderRadius: 'var(--radius-lg)', marginBottom: 8 }}>
+          <div key={inc.id} className="glass-card-flat" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 8 }}>
             <div className={styles.incHeader}>
               <span className={styles.incType}>{inc.incident_type.replace('_', ' ')}</span>
               <span className={`${styles.statusPill} ${styles[`status_${inc.status}`]}`}>{inc.status}</span>

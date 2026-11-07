@@ -92,19 +92,19 @@
 .groupChips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 .groupChip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-primary);
   background: var(--brand-subtle);
   border: 1px solid var(--brand-border);
   border-radius: var(--radius-full);
-  padding: 4px 6px 4px 10px;
+  padding: 4px 8px 4px 12px;
 }
 .groupChip button {
   display: flex; align-items: center; justify-content: center;
@@ -195,7 +195,7 @@
   background: var(--danger-subtle);
   border: 1px solid rgba(239,68,68,0.2);
   border-radius: var(--radius-md);
-  padding: 6px 10px; margin: 0;
+  padding: 8px 12px; margin: 0;
 }
 
 /* Found user card */
@@ -226,7 +226,7 @@
   text-transform: capitalize; margin: 0;
 }
 .dmBtn {
-  padding: 6px 12px; border: none; border-radius: var(--radius-full);
+  padding: 8px 12px; border: none; border-radius: var(--radius-full);
   color: #fff; font-size: 0.75rem; font-weight: 700;
   cursor: pointer; flex-shrink: 0;
   transition: all var(--transition-fast);
@@ -312,7 +312,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 7px 8px;
+  padding: 8px 8px;
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -342,7 +342,7 @@
   background: var(--brand-subtle);
   border: 1px solid var(--brand-border);
   border-radius: var(--radius-full);
-  padding: 2px 6px;
+  padding: 2px 8px;
   flex-shrink: 0;
   white-space: nowrap;
 }

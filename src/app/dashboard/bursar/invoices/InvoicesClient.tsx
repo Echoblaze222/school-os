@@ -179,7 +179,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           <div style={OVERLAY} onClick={closePreview}>
             <div style={SHEET} onClick={e => e.stopPropagation()}>
               {/* Handle */}
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 20px' }} />
 
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -198,7 +198,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
               </div>
 
               {/* Fee info */}
-              <div style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+              <div style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
                 <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
                   {fee?.description ?? 'School Fees'}
                 </p>
@@ -215,7 +215,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                   { label: 'Paid',    val: fmt(previewInv.amount_paid_ngn), color: 'var(--success)' },
                   { label: 'Balance', val: fmt(previewInv.balance_ngn),     color: previewInv.balance_ngn > 0 ? 'var(--error)' : 'var(--success)' },
                 ].map(({ label, val, color }) => (
-                  <div key={label} style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                  <div key={label} style={{ background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, padding: '12px 8px', textAlign: 'center' }}>
                     <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label.toUpperCase()}</p>
                     <p style={{ fontSize: '0.9rem', fontWeight: 800, color, margin: 0 }}>{val}</p>
                   </div>
@@ -223,9 +223,9 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
               </div>
 
               {/* ── Edit Fields ── */}
-              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: '0 0 10px' }}>EDIT INVOICE</p>
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: '0 0 12px' }}>EDIT INVOICE</p>
 
-              <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+              <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
                 <div>
                   <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>DUE DATE</label>
                   <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} style={inp} />
@@ -242,12 +242,12 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
               </div>
 
               {saveMsg && (
-                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: saveMsg.startsWith('Error') ? 'var(--danger)' : 'var(--success)', margin: '0 0 10px' }}>
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: saveMsg.startsWith('Error') ? 'var(--danger)' : 'var(--success)', margin: '0 0 12px' }}>
                   {saveMsg}
                 </p>
               )}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
                 <button onClick={saveInvoiceEdit} disabled={saving} className="pressable"
                   style={{ flex: 1, height: 42, background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
                   {saving ? 'Saving…' : 'Save Changes'}
@@ -255,7 +255,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                 {previewInv.balance_ngn > 0 && (
                   <Link href={`/dashboard/bursar/record-payment?invoice=${previewInv.id}&student=${student?.full_name ?? ''}`}
                     className="pressable"
-                    style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
+                    style={{ flex: 1, height: 42, background: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
                     <CreditCardIcon size={15} color="var(--text-primary)" /> Record Payment
                   </Link>
                 )}
@@ -294,7 +294,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
           borderRadius: 12, padding: '16px', marginBottom: 16,
         }}>
-          <p style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ZapIcon size={14} color="var(--brand)" /> Generate Invoices from Fee Structures
           </p>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
@@ -302,7 +302,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
             Safe to run multiple times. Existing invoices are not duplicated.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <input
               value={genYear}
               onChange={e => setGenYear(e.target.value)}
@@ -327,12 +327,12 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
           {genResult && (
             <div style={{
-              padding: '10px 14px', marginBottom: 12,
+              padding: '12px 16px', marginBottom: 12,
               background: genResult.ok ? 'var(--success-subtle)' : 'var(--danger-subtle)',
               border: `1px solid ${genResult.ok ? 'var(--success)' : 'var(--danger)'}`,
               borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
               color: genResult.ok ? 'var(--success)' : 'var(--danger)',
-              display: 'flex', alignItems: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
               {genResult.ok
                 ? <CheckIcon size={14} color="var(--success)" />
@@ -376,7 +376,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
 
       {/* Balance card */}
       <div className={`glass-card ${styles.balanceCard}`}>
-        <p className={styles.balanceLabel} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+        <p className={styles.balanceLabel} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
           <WalletIcon size={14} color="var(--text-muted)" /> Outstanding Balance
         </p>
         <p className={styles.balanceAmount}>{fmt(stats.totalBalance)}</p>
@@ -417,7 +417,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           <div className={styles.emptyState}>
             <p className={styles.emptyEmoji}><ReceiptIcon size={40} color="var(--text-faint)" strokeWidth={1} /></p>
             <p className={styles.emptyTitle}>No invoices found</p>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
               Tap the Generate button above to create invoices from your fee structures,{'\n'}
               or create fee structures first under Fee Records.
             </p>
@@ -471,7 +471,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
                 </div>
 
                 {inv.due_date && (
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>
                     Due: {fmtDate(inv.due_date)}
                   </p>
                 )}

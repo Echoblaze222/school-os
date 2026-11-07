@@ -79,9 +79,9 @@ export default function RoleAnalyticsPanel({ rpc, brand, ranges, defaultDays }: 
 
   return (
     <ChartTheme>
-      <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {tabs.length > 1 && (
-          <div role="tablist" style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+          <div role="tablist" style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
             {tabs.map(t => <Chip key={t.id} active={active?.id === t.id} onClick={() => setTab(t.id)} brand={brand}>{t.label}</Chip>)}
           </div>
         )}

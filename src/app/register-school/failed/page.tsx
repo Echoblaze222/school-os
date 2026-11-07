@@ -38,7 +38,7 @@ export default function RegistrationFailedPage() {
           </a>
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           <button
             className="btn btn-primary"
             onClick={() => router.push('/register-school')}

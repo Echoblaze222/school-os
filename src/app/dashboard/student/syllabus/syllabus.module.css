@@ -171,7 +171,7 @@
 
 .subjectIcon {
   width: 40px;
-  height: 40px;
+  height: 44px;
   border-radius: var(--radius-lg);
   background: var(--burgundy-subtle);
   border: 1px solid rgba(128,0,32,0.18);
@@ -296,7 +296,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   background: var(--success-bg);
   color: var(--success);

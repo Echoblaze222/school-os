@@ -128,7 +128,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
 
           {error && (
             <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
+              padding: '12px 16px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
               <AlertIcon size={16} color="var(--danger)" />
               <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
               <button onClick={() => setError(null)} className={motion.pressable}
@@ -143,7 +143,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
             {/* Syllabus PDF section */}
             {pdfUrl && (
               <a href={pdfUrl} target="_blank" rel="noreferrer" className={`glass-card ${motion.riseIn} ${motion.pressable}`}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px',
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px',
                   background: 'var(--brand-subtle)', borderColor: 'var(--brand-border)', marginBottom: 'var(--space-4)', textDecoration: 'none' }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--brand-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <FileTextIcon size={18} color={schoolColor} />
@@ -163,7 +163,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                   {['all', ...subjects].map((s, i) => (
                     <button key={s} onClick={() => setSelected(s)} className={motion.pressable}
                       style={{
-                        padding: '5px 12px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700,
+                        padding: '4px 12px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700,
                         background: selected === s ? (s === 'all' ? schoolColor : SUBJECT_COLORS[(i - 1) % SUBJECT_COLORS.length]) : 'var(--glass-bg)',
                         color: selected === s ? '#fff' : 'var(--text-muted)',
                         border: `1px solid ${selected === s ? 'transparent' : 'var(--glass-border)'}`,
@@ -182,7 +182,7 @@ export default function SyllabusClient({ profile, school, userId }: Props) {
                   <div className={styles.progressTrack}>
                     <div className={styles.progressFill} style={{ width: `${pct}%`, background: schoolColor }} />
                   </div>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>{covered} of {filtered.length} topics taught</p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8 }}>{covered} of {filtered.length} topics taught</p>
                 </div>
 
                 <div className={styles.topicList}>

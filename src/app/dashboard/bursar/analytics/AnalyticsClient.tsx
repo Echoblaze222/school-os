@@ -67,8 +67,8 @@ export default function AnalyticsClient({ profile, school, userId }: Props) {
   return (
     <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Analytics" featureGroups={BURSAR_FEATURE_GROUPS}>
       <ChartTheme>
-        <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div role="tablist" style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+        <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div role="tablist" style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
             {TABS.map(t => <Chip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)} brand={brand}>{t.label}</Chip>)}
           </div>
           <FilterRow>

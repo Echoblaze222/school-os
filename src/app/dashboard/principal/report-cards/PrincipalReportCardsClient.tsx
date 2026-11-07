@@ -90,17 +90,17 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
       <DashboardHeader profile={profile} school={school} userId={principalId} role="principal" title="Report Cards" showBack />
 
       {!hasSignature && (
-        <div style={{ background: 'var(--warning-subtle)', border: '1px solid var(--warning)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: 'var(--warning)', fontSize: '0.85rem' }}>
+        <div style={{ background: 'var(--warning-subtle)', border: '1px solid var(--warning)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: 'var(--warning)', fontSize: '0.85rem' }}>
           You haven't uploaded a signature yet. Add one in Settings before approving report cards.
         </div>
       )}
       {error && (
-        <div style={{ background: 'var(--danger-subtle)', border: '1px solid var(--danger)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: 'var(--danger)', fontSize: '0.85rem' }}>
+        <div style={{ background: 'var(--danger-subtle)', border: '1px solid var(--danger)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: 'var(--danger)', fontSize: '0.85rem' }}>
           {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <ClipboardIcon size={18} color="var(--text-muted)" />
         <h3 style={{ margin: 0 }}>Pending Approval</h3>
         <span className="badge badge-gold" style={{ fontSize: '0.72rem' }}>{pending.length}</span>
@@ -115,8 +115,8 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
         </div>
       )}
       {pending.map((rc: any) => (
-        <div key={rc.id} style={{ border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div key={rc.id} style={{ border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <strong>{rc.student?.full_name}</strong>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               {rc.classes?.name ?? rc.classes?.class_level} · {TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}
@@ -134,18 +134,18 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
           />
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="pressable" onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
-              style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600 }}>
+              style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600 }}>
               {downloadingId === rc.id ? 'Loading…' : 'Preview'}
             </button>
             <button className="pressable" onClick={() => approve(rc.id)} disabled={savingId === rc.id}
-              style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: sc, color: '#fff', fontWeight: 700 }}>
+              style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: sc, color: '#fff', fontWeight: 700 }}>
               {savingId === rc.id ? 'Approving…' : 'Approve & Sign'}
             </button>
           </div>
         </div>
       ))}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '24px 0 10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '24px 0 12px' }}>
         <CheckCircleIcon size={18} color="var(--text-muted)" />
         <h3 style={{ margin: 0 }}>Approved</h3>
         <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>{approved.length}</span>
@@ -158,10 +158,10 @@ export default function PrincipalReportCardsClient({ profile, school, principalI
         />
       )}
       {approved.map((rc: any) => (
-        <div key={rc.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', borderRadius: 10, marginBottom: 8 }}>
+        <div key={rc.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', borderRadius: 10, marginBottom: 8 }}>
           <span>{rc.student?.full_name}, {TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}</span>
           <button className="pressable" onClick={() => downloadPreview(rc.id)} disabled={downloadingId === rc.id}
-            style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem' }}>
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem' }}>
             {downloadingId === rc.id ? 'Loading…' : 'View PDF'}
           </button>
         </div>

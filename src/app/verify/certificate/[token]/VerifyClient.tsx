@@ -37,7 +37,7 @@ export default function VerifyClient({ data }: { data: VerifyData }) {
     <div style={{ minHeight: '100dvh', background: '#F4F6FB', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 440, background: '#fff', borderRadius: 16, border: '1px solid #E5E7EB', padding: '36px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 24 }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: config.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Icon size={30} color={config.color} />
           </div>
@@ -89,7 +89,7 @@ export default function VerifyClient({ data }: { data: VerifyData }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 10, borderBottom: '1px solid #F3F4F6', fontSize: '0.85rem' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 12, borderBottom: '1px solid #F3F4F6', fontSize: '0.85rem' }}>
       <span style={{ color: '#9CA3AF' }}>{label}</span>
       <span style={{ color: '#111827', fontWeight: 600, textAlign: 'right' as const }}>{value}</span>
     </div>

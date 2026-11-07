@@ -112,11 +112,11 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
           Issue a Book
         </ActionButton>
 
-        <div style={{ display: 'flex', gap: 8, margin: '14px 0' }}>
+        <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
           {(['open', 'overdue', 'all'] as const).map(s => (
             <button key={s} onClick={() => setScope(s)}
               style={{
-                padding: '6px 14px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer',
+                padding: '8px 16px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer',
                 border: s === scope ? 'none' : '1px solid var(--glass-border)',
                 background: s === scope ? 'var(--brand)' : 'transparent',
                 color: s === scope ? '#fff' : 'var(--text-secondary)',
@@ -130,12 +130,12 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
         {loading ? <SkeletonList count={4} variant="card" /> : checkouts.length === 0 ? (
           <EmptyState icon={<RefreshIcon size={28} />} title="Nothing here" subtitle="Issued books will show up here." />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {checkouts.map(c => {
               const book = one(c.book); const borrower = one(c.borrower)
               const overdue = isOverdue(c.due_at, c.returned_at)
               return (
-                <div key={c.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-lg)' }}>
+                <div key={c.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: '0.86rem', margin: 0 }}>{book?.title ?? 'Book'}</p>
@@ -162,7 +162,7 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
       {showForm && (
         <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Issue a Book</p>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
@@ -170,11 +170,11 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {!selectedBook ? (
                 <div>
-                  <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 6 }}>Book</p>
+                  <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 8 }}>Book</p>
                   <div style={{ position: 'relative', marginBottom: 8 }}>
                     <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                     <input value={bookQuery} onChange={e => setBookQuery(e.target.value)} placeholder="Search title"
-                      style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                      style={{ width: '100%', padding: '12px 12px 12px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {bookResults.map(b => (
@@ -186,7 +186,7 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--glass-bg)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 10, background: 'var(--glass-bg)' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.86rem' }}>{selectedBook.title}</span>
                   <button onClick={() => setSelectedBook(null)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.78rem', cursor: 'pointer' }}>Change</button>
                 </div>
@@ -194,11 +194,11 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
 
               {!selectedBorrower ? (
                 <div>
-                  <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 6 }}>Borrower</p>
+                  <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 8 }}>Borrower</p>
                   <div style={{ position: 'relative', marginBottom: 8 }}>
                     <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                     <input value={borrowerQuery} onChange={e => setBorrowerQuery(e.target.value)} placeholder="Search student or teacher"
-                      style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                      style={{ width: '100%', padding: '12px 12px 12px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {borrowerResults.map(b => (
@@ -210,16 +210,16 @@ export default function CheckoutsClient({ profile, school, userId }: Props) {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--glass-bg)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 10, background: 'var(--glass-bg)' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.86rem' }}>{selectedBorrower.full_name}</span>
                   <button onClick={() => setSelectedBorrower(null)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.78rem', cursor: 'pointer' }}>Change</button>
                 </div>
               )}
 
               <div>
-                <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 6 }}>Due date</p>
+                <p style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 8 }}>Due date</p>
                 <input type="date" value={dueAt} onChange={e => setDueAt(e.target.value)}
-                  style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               </div>
 
               <ActionButton onClick={submitCheckout} loading={saving} loadingLabel="Issuing…" fullWidth disabled={!selectedBook || !selectedBorrower || !dueAt}>

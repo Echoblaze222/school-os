@@ -63,14 +63,14 @@ const STATES_NG = [
 ]
 
 const thStyle: React.CSSProperties = {
-  padding: '8px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
+  padding: '8px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
   color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
   borderBottom: '1px solid var(--glass-border)', whiteSpace: 'nowrap',
 }
-const tdStyle: React.CSSProperties = { padding: '4px 6px', verticalAlign: 'middle' }
+const tdStyle: React.CSSProperties = { padding: '4px 8px', verticalAlign: 'middle' }
 const cellInputStyle: React.CSSProperties = {
   width: '100%', background: 'transparent', border: 'none', outline: 'none',
-  color: 'var(--text-primary)', fontSize: '0.82rem', padding: '6px 4px',
+  color: 'var(--text-primary)', fontSize: '0.82rem', padding: '8px 4px',
   borderRadius: 'var(--radius-sm)', fontFamily: 'inherit',
 }
 
@@ -163,7 +163,7 @@ function CodeSuccessScreen({
             {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
           </button>
         </div>
-        <p className={styles.credWarning} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+        <p className={styles.credWarning} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <BulbIcon size={14} /> The user enters this code on the <strong>New User</strong> tab at login to set their own password.
         </p>
       </div>
@@ -518,21 +518,21 @@ export default function CodesClient({ entries: init, students, classes, profile,
                     <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                       <button className="pressable" onClick={() => copyCode(e.default_code, e.id)}
                         title="Copy login code"
-                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: copied === e.id ? '#10B98122' : 'var(--glass-bg)', border: `1px solid ${copied === e.id ? '#10B981' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: copied === e.id ? '#10B981' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 'var(--radius-md)', background: copied === e.id ? '#10B98122' : 'var(--glass-bg)', border: `1px solid ${copied === e.id ? '#10B981' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: copied === e.id ? '#10B981' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                         {copied === e.id ? <><CheckIcon size={12} color="#10B981" /> Copied</> : <><ClipboardIcon size={12} /> Copy</>}
                       </button>
 
                       <button className="pressable" onClick={() => regenerateCode(e)}
                         disabled={saving === e.id}
                         title="Regenerate login code"
-                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', opacity: saving === e.id ? 0.5 : 1 }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', opacity: saving === e.id ? 0.5 : 1 }}>
                         <RefreshIcon size={12} /> {saving === e.id ? 'Regenerating…' : 'Regen'}
                       </button>
 
                       <button className="pressable" onClick={() => resetPassword(e)}
                         disabled={resetting === e.id}
                         title="Reset this user's password"
-                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 'var(--radius-md)', background: rev ? '#F59E0B15' : 'var(--glass-bg)', border: `1px solid ${rev ? '#F59E0B55' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: resetting === e.id ? 'var(--text-muted)' : '#F59E0B', whiteSpace: 'nowrap', opacity: resetting === e.id ? 0.6 : 1 }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 'var(--radius-md)', background: rev ? '#F59E0B15' : 'var(--glass-bg)', border: `1px solid ${rev ? '#F59E0B55' : 'var(--glass-border)'}`, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, color: resetting === e.id ? 'var(--text-muted)' : '#F59E0B', whiteSpace: 'nowrap', opacity: resetting === e.id ? 0.6 : 1 }}>
                         <KeyIcon size={12} color={resetting === e.id ? 'var(--text-muted)' : '#F59E0B'} /> {resetting === e.id ? 'Resetting…' : 'Reset Pwd'}
                       </button>
                     </div>
@@ -545,7 +545,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                         {rev.password}
                       </code>
                       <button className="pressable" onClick={() => copyNewPassword(e.id, rev.password)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: `1px solid ${rev.copied ? '#10B981' : '#F59E0B55'}`, color: rev.copied ? '#10B981' : '#F59E0B', whiteSpace: 'nowrap' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', background: 'var(--glass-bg)', border: `1px solid ${rev.copied ? '#10B981' : '#F59E0B55'}`, color: rev.copied ? '#10B981' : '#F59E0B', whiteSpace: 'nowrap' }}>
                         {rev.copied ? <><CheckIcon size={12} color="#10B981" /> Copied</> : 'Copy'}
                       </button>
                       <button className="pressable" onClick={() => dismissPassword(e.id)}
@@ -553,7 +553,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 4px', display: 'flex' }}>
                         <XIcon size={16} />
                       </button>
-                      <p style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', color: '#F59E0B99', margin: 0 }}>
+                      <p style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.68rem', color: '#F59E0B99', margin: 0 }}>
                         <AlertIcon size={12} color="#F59E0B99" /> Copy this now. It won't be shown again once you dismiss it.
                       </p>
                     </div>
@@ -628,7 +628,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
                   <DOBPicker value={fDOB} onChange={setFDOB} inputStyle={{
                     background: 'var(--input-bg)', border: '1px solid var(--input-border)',
                     borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-                    fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+                    fontSize: '0.82rem', padding: '12px 8px', fontFamily: 'inherit',
                   }} />
                 </div>
                 <div className={styles.fieldGroup}>
@@ -916,7 +916,7 @@ export default function CodesClient({ entries: init, students, classes, profile,
               <button
                 onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
+                  display: 'flex', alignItems: 'center', gap: 8,
                   background: 'none', border: '1px dashed var(--glass-border)',
                   borderRadius: 'var(--radius-md)', padding: '8px 16px',
                   color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700,

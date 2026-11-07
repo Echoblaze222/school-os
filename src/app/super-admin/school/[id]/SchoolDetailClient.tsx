@@ -278,13 +278,13 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
                 <>
                   <div className={styles.actionRow}>
                     <span style={{ fontSize:'0.82rem', color:'var(--text-secondary)' }}>Extend trial by</span>
-                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                    <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                       <input type="number" min={1} max={90} value={extendDays}
                         onChange={e => setExtendDays(+e.target.value)}
                         style={{ width:52, height:32, padding:'0 8px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:8, color:'var(--text-primary)', fontSize:'0.85rem', outline:'none' }}/>
                       <span style={{ fontSize:'0.8rem', color:'var(--text-muted)' }}>days</span>
                       <button onClick={extendTrial} disabled={saving}
-                        style={{ padding:'6px 12px', background:'var(--gold-subtle)', border:'1px solid var(--gold-border)', borderRadius:999, color:'var(--gold)', fontSize:'0.75rem', fontWeight:700, cursor:'pointer' }}>
+                        style={{ padding:'8px 12px', background:'var(--gold-subtle)', border:'1px solid var(--gold-border)', borderRadius:999, color:'var(--gold)', fontSize:'0.75rem', fontWeight:700, cursor:'pointer' }}>
                         Extend
                       </button>
                     </div>
@@ -315,7 +315,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'var(--space-3)' }}>
               <h3 className={styles.cardTitle}>Private Notes</h3>
               <button onClick={toggleEditNotes}
-                style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, color:'var(--text-muted)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
+                style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, color:'var(--text-muted)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
                 <EditIcon size={11}/> {editNotes ? 'Cancel' : 'Edit'}
               </button>
             </div>
@@ -541,20 +541,20 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
               onChange={e => setComplianceNotes(e.target.value)}
               placeholder="e.g. Confirmed via phone call with principal, CAC docs reviewed..."
               rows={3}
-              style={{ width:'100%', borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'10px 12px', marginBottom:12, fontSize:'0.85rem', resize:'vertical' }}
+              style={{ width:'100%', borderRadius:8, border:'1px solid var(--glass-border)', background:'var(--surface-2)', color:'var(--text-primary)', padding:'12px 12px', marginBottom:12, fontSize:'0.85rem', resize:'vertical' }}
             />
 
             <button
               disabled={saving}
               onClick={saveCompliance}
-              style={{ width:'100%', height:40, background:'var(--surface-2)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-primary)', fontWeight:700, fontSize:'0.82rem', cursor:'pointer', marginBottom:10, opacity: saving ? 0.6 : 1 }}
+              style={{ width:'100%', height:40, background:'var(--surface-2)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-primary)', fontWeight:700, fontSize:'0.82rem', cursor:'pointer', marginBottom:12, opacity: saving ? 0.6 : 1 }}
             >
               Save Details
             </button>
 
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderTop:'1px solid var(--glass-border)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderTop:'1px solid var(--glass-border)' }}>
               <div>
-                <p style={{ fontSize:'0.85rem', fontWeight:700, color: isVerified ? '#10B981' : 'var(--text-muted)', display:'flex', alignItems:'center', gap:5 }}>
+                <p style={{ fontSize:'0.85rem', fontWeight:700, color: isVerified ? '#10B981' : 'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
                   {isVerified ? <><CheckCircleIcon size={13} /> Verified</> : 'Not Verified'}
                 </p>
                 {isVerified && verifiedAt && (
@@ -567,7 +567,7 @@ export default function SchoolDetailClient({ school, payments, staff, reminders,
                 disabled={saving}
                 onClick={toggleVerified}
                 style={{
-                  height:38, padding:'0 18px',
+                  height:38, padding:'0 20px',
                   background: isVerified ? 'var(--danger-subtle)' : '#10B981',
                   border: isVerified ? '1px solid rgba(239,68,68,0.2)' : 'none',
                   borderRadius:8,

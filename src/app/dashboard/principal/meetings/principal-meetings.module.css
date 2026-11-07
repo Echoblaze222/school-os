@@ -106,8 +106,8 @@
 .createBtn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
+  gap: 8px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
   color: #fff;
   font-size: 0.78rem;

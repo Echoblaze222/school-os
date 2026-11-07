@@ -68,17 +68,17 @@ export default function LibrarianDashboardClient({ userId, librarianName, profil
 
       <main className={styles.main}>
         <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginBottom: 'var(--space-4)' }}>
-          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+          <div className="glass-card-flat" style={{ padding: 20, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total books</p>
             <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.totalBooks}</p>
             <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>in catalog</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Checked out</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.openCheckouts}</p>
             </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Overdue</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: stats.overdueCheckouts > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{stats.overdueCheckouts}</p>
             </div>

@@ -59,7 +59,7 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
         {error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: '0.82rem', color: 'var(--danger)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: '0.82rem', color: 'var(--danger)' }}>
             <AlertIcon size={14} /><span style={{ flex: 1 }}>{error}</span>
           </div>
         )}
@@ -83,9 +83,9 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
         )}
 
         {!loading && certs.map(cert => (
-          <div key={cert.id} className={`glass-card ${motion.riseIn}`} style={{ flexDirection: 'column', padding: 'var(--space-5)', gap: 14 }}>
+          <div key={cert.id} className={`glass-card ${motion.riseIn}`} style={{ flexDirection: 'column', padding: 'var(--space-5)', gap: 16 }}>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: cert.status === 'issued' ? `${sc}18` : 'var(--danger-subtle)',
@@ -101,28 +101,28 @@ export default function StudentCertificatesClient({ userId, profile, school }: P
                 </p>
               </div>
               {cert.status === 'issued'
-                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'var(--success-subtle)', color: 'var(--success)' }}>
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: 999, background: 'var(--success-subtle)', color: 'var(--success)' }}>
                     <CheckCircleIcon size={12} /> Valid
                   </span>
-                : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'var(--danger-subtle)', color: 'var(--danger)' }}>
+                : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: 999, background: 'var(--danger-subtle)', color: 'var(--danger)' }}>
                     <XIcon size={12} /> Revoked
                   </span>
               }
             </div>
 
             {cert.status === 'revoked' && (
-              <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: '0.78rem', color: 'var(--danger)' }}>
+              <div style={{ padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: '0.78rem', color: 'var(--danger)' }}>
                 This certificate was revoked{cert.revokedAt ? ` on ${new Date(cert.revokedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
                 {cert.revokedReason ? `: ${cert.revokedReason}` : '.'} Contact your school if you believe this is a mistake.
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, fontSize: '0.78rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, fontSize: '0.78rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>Certificate No.</span>
               <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{cert.certificateNumber}</span>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
               {cert.status === 'issued' && cert.pdfUrl && (
                 <a href={cert.pdfUrl} target="_blank" rel="noopener noreferrer" className={`btn ${motion.pressable}`}
                   style={{ flex: 1, minWidth: 140, background: sc, color: '#fff', textDecoration: 'none' }}>

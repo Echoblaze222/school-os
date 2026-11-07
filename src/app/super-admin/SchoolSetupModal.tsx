@@ -125,7 +125,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                   </code>
                   <button
                     onClick={async () => { await navigator.clipboard.writeText(credentials!.defaultCode).catch(()=>{}); setCopiedCode(true); setTimeout(()=>setCopiedCode(false), 2000) }}
-                    style={{ padding: '6px 14px', borderRadius: 8, border: copiedCode ? '1px solid #10B981' : '1px solid rgba(167,139,250,0.4)', background: copiedCode ? 'rgba(16,185,129,0.1)' : 'rgba(167,139,250,0.1)', color: copiedCode ? '#10B981' : '#a78bfa', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
+                    style={{ padding: '8px 16px', borderRadius: 8, border: copiedCode ? '1px solid #10B981' : '1px solid rgba(167,139,250,0.4)', background: copiedCode ? 'rgba(16,185,129,0.1)' : 'rgba(167,139,250,0.1)', color: copiedCode ? '#10B981' : '#a78bfa', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
                     {copiedCode ? <><CheckIcon size={12} /> Copied</> : 'Copy'}
                   </button>
                 </div>
@@ -142,7 +142,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 {copiedAll ? <><CheckIcon size={13} /> All credentials copied!</> : <><ClipboardIcon size={13} /> Copy All Credentials</>}
               </button>
 
-              <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'left' }}>
+              <p style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8, textAlign: 'left' }}>
                 <span style={{ flexShrink: 0, marginTop: 1 }}><AlertCircleIcon size={13} /></span>
                 <span>The principal sets their own password on first login using this access code. Keep it safe until then.</span>
               </p>
@@ -371,7 +371,7 @@ export default function SchoolSetupModal({ onClose, onSuccess }: Props) {
                 <div className={styles.confirmRow}><span>Location</span><strong>{[form.city, form.state].filter(Boolean).join(', ') || 'N/A'}</strong></div>
                 <div className={styles.confirmRow}><span>Type</span><strong style={{ textTransform: 'capitalize' }}>{form.schoolType}</strong></div>
                 <div className={styles.confirmRow}><span>Setup Type</span>
-                  <strong style={{ color: setupType === 'trial' ? '#F59E0B' : '#10B981', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <strong style={{ color: setupType === 'trial' ? '#F59E0B' : '#10B981', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     {setupType === 'trial' ? <><FlameIcon size={13} /> Free Trial ({form.trialDays} days)</> : <><CheckCircleIcon size={13} /> Permanent Setup</>}
                   </strong>
                 </div>

@@ -53,7 +53,7 @@ export default function SavedHome({ role, groups }: Props) {
         role="status"
         style={{
           position: 'fixed', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 200,
-          padding: '6px 12px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 600,
+          padding: '8px 12px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 600,
           background: 'var(--bg-elevated)', color: 'var(--text-secondary)',
           border: '1px solid var(--glass-border)', boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
         }}
@@ -71,7 +71,7 @@ export default function SavedHome({ role, groups }: Props) {
           }}
         >
           <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>{greeting}, {snap.firstName}</p>
-          <p style={{ margin: '6px 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>{snap.headline}</p>
+          <p style={{ margin: '8px 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>{snap.headline}</p>
           <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>{snap.schoolName}</p>
         </div>
 
@@ -81,7 +81,7 @@ export default function SavedHome({ role, groups }: Props) {
               <div
                 key={t.label}
                 className="glass-card-flat"
-                style={{ padding: '14px 16px', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: 4 }}
+                style={{ padding: '16px 16px', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: 4 }}
               >
                 <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t.label}</p>
                 <p style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{t.value}</p>

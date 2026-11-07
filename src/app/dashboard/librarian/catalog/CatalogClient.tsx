@@ -75,10 +75,10 @@ export default function CatalogClient({ profile, school, userId }: Props) {
           Add a Book
         </ActionButton>
 
-        <div style={{ position: 'relative', margin: '14px 0' }}>
+        <div style={{ position: 'relative', margin: '16px 0' }}>
           <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title or author"
-            style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+            style={{ width: '100%', padding: '12px 12px 12px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
         </div>
 
         {loading ? <SkeletonList count={5} variant="row" /> : books.length === 0 ? (
@@ -106,26 +106,26 @@ export default function CatalogClient({ profile, school, userId }: Props) {
       {showForm && (
         <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Add a Book</p>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input placeholder="Title" value={title} onChange={e => setTitle(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Author" value={author} onChange={e => setAuthor(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="ISBN (optional)" value={isbn} onChange={e => setIsbn(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <select value={category} onChange={e => setCategory(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}>
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
                 <input placeholder="Copies" type="number" value={totalCopies} onChange={e => setTotalCopies(e.target.value)}
-                  style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <input placeholder="Shelf location" value={shelfLocation} onChange={e => setShelfLocation(e.target.value)}
-                  style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               </div>
               <ActionButton onClick={submitBook} loading={saving} loadingLabel="Saving…" fullWidth>Add Book</ActionButton>
             </div>

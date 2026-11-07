@@ -139,10 +139,10 @@ export default function HistoryClient({ profile, school, userId }: Props) {
       {preview && (
         <div style={OVERLAY} onClick={() => setPreview(null)}>
           <div className="animate-slide-up" style={SHEET} onClick={e => e.stopPropagation()}>
-            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
+            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 20px' }}/>
 
             <p style={{ fontSize:'0.68rem', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.07em', margin:'0 0 12px',
-              display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
               <CreditCardIcon size={13} /> PAYMENT RECORD
             </p>
 
@@ -167,7 +167,7 @@ export default function HistoryClient({ profile, school, userId }: Props) {
               ['Currency',   preview.currency     || 'NGN'],
               ['Date',       fmtDate(preview.created_at)],
             ] as [string, string][]).map(([label, value]) => (
-              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid var(--glass-border)' }}>
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 0', borderBottom:'1px solid var(--glass-border)' }}>
                 <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>{label}</span>
                 <span style={{ fontSize:'0.82rem', color:'var(--text-primary)', fontWeight:700, textAlign:'right', maxWidth:'60%' }}>{value}</span>
               </div>
@@ -206,9 +206,9 @@ export default function HistoryClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+        <div style={{ padding:'12px 16px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
           borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600,
-          display:'flex', alignItems:'center', gap:6 }}>
+          display:'flex', alignItems:'center', gap:8 }}>
           <AlertIcon size={14} /> {error}
         </div>
       )}

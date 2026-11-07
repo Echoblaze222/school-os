@@ -81,7 +81,7 @@ function QuestionBuilder({
   return (
     <>
       {saveError && (
-        <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
+        <div style={{ padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
           borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--danger)' }}>
           <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={13} /></span>{saveError}
         </div>
@@ -114,7 +114,7 @@ function QuestionBuilder({
                       ? { ...x, options: x.options.map((o, j) => j === oi ? { ...o, text: e.target.value } : o) }
                       : x))}
                     placeholder={`Option ${opt.label}`}
-                    style={{ flex: 1, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? 'var(--success)' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
+                    style={{ flex: 1, height: 36, padding: '0 12px', background: 'var(--input-bg)', border: `1px solid ${q.answer === opt.label ? 'var(--success)' : 'var(--input-border)'}`, borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
                 </div>
               ))}
             </div>
@@ -123,7 +123,7 @@ function QuestionBuilder({
                 <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Correct Answer</label>
                 <select value={q.answer}
                   onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, answer: e.target.value } : x))}
-                  style={{ height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--success)', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
+                  style={{ height: 36, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--success)', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}>
                   {q.options.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </div>
@@ -131,7 +131,7 @@ function QuestionBuilder({
                 <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>Marks</label>
                 <input type="number" min={1} value={q.marks}
                   onChange={e => setQuestions(prev => prev.map((x, i) => i === qi ? { ...x, marks: Number(e.target.value) } : x))}
-                  style={{ width: 64, height: 36, padding: '0 10px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                  style={{ width: 64, height: 36, padding: '0 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
               </div>
             </div>
           </div>
@@ -559,14 +559,14 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
     <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="New Quiz" onBack={backToList} featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {saveError && (
-        <div style={{ padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
+        <div style={{ padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)',
           borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--danger)' }}>
           <span style={{ display:'inline-flex', verticalAlign:"middle",marginRight:4 }}><AlertIcon size={13} /></span>{saveError}
         </div>
       )}
 
       {aiDraftBanner && (
-        <div style={{ padding: '10px 14px', background: 'var(--brand-subtle)', border: `1px solid ${sc}44`,
+        <div style={{ padding: '12px 16px', background: 'var(--brand-subtle)', border: `1px solid ${sc}44`,
           borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
           {aiDraftBanner}
         </div>
@@ -711,7 +711,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
       )}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
         <button className="pressable" onClick={() => setStep('create')}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> New Quiz
         </button>
       </div>
@@ -730,7 +730,7 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
             const statusCol  = status === 'live' ? 'var(--success)' : status === 'scheduled' ? 'var(--warning)' : '#6B7280'
             const statusLabel = status === 'live' ? 'Live' : status === 'scheduled' ? 'Scheduled' : 'Closed'
             return (
-              <div key={q.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12 }}>
+              <div key={q.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 8, background: sc + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <AwardIcon size={18} color={sc} />
                 </div>
@@ -740,11 +740,11 @@ export default function QuizzesClient({ profile, school, userId }: Props) {
                     {q.classes?.name ?? 'N/A'} · {q.total_marks} marks · {attemptCounts[q.id] ?? 0} attempt{(attemptCounts[q.id] ?? 0) !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                  <span style={{ padding: '3px 8px', borderRadius: 999, background: statusCol + '20', color: statusCol, fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                  <span style={{ padding: '4px 8px', borderRadius: 999, background: statusCol + '20', color: statusCol, fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {statusLabel}
                   </span>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button className="pressable" onClick={() => openPreview(q)}
                       style={{ fontSize: '0.7rem', fontWeight: 700, color: sc, background: 'none', border: 'none', cursor: 'pointer' }}>
                       Edit

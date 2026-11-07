@@ -26,9 +26,9 @@ function styles(primary: string) {
     page: { padding: 40, fontSize: 10.5, fontFamily: 'Helvetica', color: '#1a1a1a' },
     header: {
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      borderBottomWidth: 3, borderBottomColor: primary, paddingBottom: 14, marginBottom: 18,
+      borderBottomWidth: 3, borderBottomColor: primary, paddingBottom: 16, marginBottom: 20,
     },
-    schoolRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    schoolRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     logo: { width: 44, height: 44, objectFit: 'contain', borderRadius: 6 },
     schoolName: { fontSize: 16, fontWeight: 700, color: primary },
     schoolSub: { fontSize: 8, color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 },
@@ -39,29 +39,29 @@ function styles(primary: string) {
 
     infoGrid: {
       flexDirection: 'row', flexWrap: 'wrap', backgroundColor: '#f8f8f8',
-      borderRadius: 8, padding: 12, marginBottom: 18,
+      borderRadius: 8, padding: 12, marginBottom: 20,
     },
-    infoRow: { width: '50%', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2, paddingRight: 10 },
+    infoRow: { width: '50%', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2, paddingRight: 12 },
     infoLabel: { color: '#888', fontWeight: 700, fontSize: 9 },
     infoValue: { fontWeight: 700, fontSize: 9 },
 
-    table: { marginBottom: 18 },
+    table: { marginBottom: 20 },
     tHeadRow: { flexDirection: 'row', backgroundColor: primary },
-    th: { color: '#fff', fontSize: 8.5, fontWeight: 700, padding: 6, textTransform: 'uppercase' },
+    th: { color: '#fff', fontSize: 8.5, fontWeight: 700, padding: 8, textTransform: 'uppercase' },
     tRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee' },
     tRowAlt: { backgroundColor: '#fafafa' },
-    td: { fontSize: 9, padding: 6 },
+    td: { fontSize: 9, padding: 8 },
     colSubject: { width: '30%' }, colType: { width: '18%' }, colScore: { width: '15%' },
     colGrade: { width: '12%' }, colRemarks: { width: '25%' },
-    emptyRow: { textAlign: 'center', color: '#aaa', fontSize: 9, padding: 14 },
+    emptyRow: { textAlign: 'center', color: '#aaa', fontSize: 9, padding: 16 },
 
-    summary: { flexDirection: 'row', gap: 10, marginBottom: 18 },
-    summaryBox: { flex: 1, backgroundColor: '#f8f8f8', borderRadius: 8, padding: 10, alignItems: 'center' },
+    summary: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+    summaryBox: { flex: 1, backgroundColor: '#f8f8f8', borderRadius: 8, padding: 12, alignItems: 'center' },
     summaryVal: { fontSize: 16, fontWeight: 700, color: primary },
     summaryLbl: { fontSize: 7.5, color: '#888', fontWeight: 700, textTransform: 'uppercase', marginTop: 2 },
 
-    remarkBlock: { marginBottom: 14 },
-    remarkTitle: { fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', color: '#888', marginBottom: 3 },
+    remarkBlock: { marginBottom: 16 },
+    remarkTitle: { fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', color: '#888', marginBottom: 4 },
     remarkText: { fontSize: 10, lineHeight: 1.4, padding: 8, backgroundColor: '#f8f8f8', borderRadius: 6, minHeight: 16 },
 
     signRow: {
@@ -69,8 +69,8 @@ function styles(primary: string) {
       marginTop: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#eee',
     },
     signBox: { alignItems: 'center', width: 180 },
-    signImg: { height: 38, objectFit: 'contain', marginBottom: 3 },
-    signLine: { borderTopWidth: 1, borderTopColor: '#333', paddingTop: 3, fontSize: 9.5, fontWeight: 700 },
+    signImg: { height: 38, objectFit: 'contain', marginBottom: 4 },
+    signLine: { borderTopWidth: 1, borderTopColor: '#333', paddingTop: 4, fontSize: 9.5, fontWeight: 700 },
     signRole: { fontSize: 8, color: '#888' },
 
     footer: { textAlign: 'center', color: '#aaa', fontSize: 8, marginTop: 20 },

@@ -20,22 +20,22 @@ type Filter = 'all' | 'pending' | 'submitted' | 'graded'
 const c = {
   page: { minHeight: '100dvh', background: 'var(--bg-base)', fontFamily: 'var(--font-body)', paddingBottom: 60 } as React.CSSProperties,
   header: { position: 'sticky' as const, top: 0, zIndex: 50, padding: '20px 24px 16px', background: 'var(--bg-overlay)', backdropFilter: 'blur(24px) saturate(160%)', borderBottom: '1px solid var(--glass-border)' },
-  backBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' as const, textDecoration: 'none', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', transition: 'all var(--transition-fast)', marginBottom: 12 },
+  backBtn: { display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' as const, textDecoration: 'none', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', transition: 'all var(--transition-fast)', marginBottom: 12 },
   title: { fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 },
   titleSpan: { color: 'var(--text-accent)' },
   sub: { fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 },
   content: { padding: '20px 24px', display: 'flex', flexDirection: 'column' as const, gap: 16, maxWidth: 900 },
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 },
-  statCard: { background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: '14px 18px', display: 'flex', flexDirection: 'column' as const, gap: 3 },
+  statCard: { background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', padding: '16px 20px', display: 'flex', flexDirection: 'column' as const, gap: 4 },
   statVal: { fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.02em' },
   statLbl: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-muted)' },
-  filterBar: { display: 'flex', gap: 6 },
-  fBtn: (active: boolean) => ({ padding: '6px 16px', borderRadius: 99999, border: 'none', background: active ? 'linear-gradient(135deg, var(--brand), var(--brand-light))' : 'var(--glass-bg)', color: active ? '#fff' : 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: '0.76rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' as const, cursor: 'pointer', boxShadow: active ? '0 3px 12px var(--brand-glow)' : 'none', border2: '1px solid var(--glass-border)' }),
+  filterBar: { display: 'flex', gap: 8 },
+  fBtn: (active: boolean) => ({ padding: '8px 16px', borderRadius: 99999, border: 'none', background: active ? 'linear-gradient(135deg, var(--brand), var(--brand-light))' : 'var(--glass-bg)', color: active ? '#fff' : 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: '0.76rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' as const, cursor: 'pointer', boxShadow: active ? '0 3px 12px var(--brand-glow)' : 'none', border2: '1px solid var(--glass-border)' }),
   card: { background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)', backdropFilter: 'blur(20px)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' },
-  tableHead: { display: 'grid', gridTemplateColumns: '1fr 110px 110px 160px 1fr 120px', gap: 0, padding: '10px 20px', borderBottom: '1px solid var(--glass-border)', background: 'var(--glass-bg)' },
+  tableHead: { display: 'grid', gridTemplateColumns: '1fr 110px 110px 160px 1fr 120px', gap: 0, padding: '12px 20px', borderBottom: '1px solid var(--glass-border)', background: 'var(--glass-bg)' },
   thCell: { fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', whiteSpace: 'nowrap' as const },
-  row: { display: 'grid', gridTemplateColumns: '1fr 110px 110px 160px 1fr 120px', gap: 0, padding: '14px 20px', borderBottom: '1px solid var(--glass-border)', alignItems: 'center', transition: 'background var(--transition-fast)' },
-  avatar: { width: 32, height: 32, borderRadius: 99999, background: 'var(--brand-subtle)', border: '1px solid rgba(128,0,32,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.66rem', fontWeight: 700, color: 'var(--text-accent)', flexShrink: 0, marginRight: 10 },
+  row: { display: 'grid', gridTemplateColumns: '1fr 110px 110px 160px 1fr 120px', gap: 0, padding: '16px 20px', borderBottom: '1px solid var(--glass-border)', alignItems: 'center', transition: 'background var(--transition-fast)' },
+  avatar: { width: 32, height: 32, borderRadius: 99999, background: 'var(--brand-subtle)', border: '1px solid rgba(128,0,32,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.66rem', fontWeight: 700, color: 'var(--text-accent)', flexShrink: 0, marginRight: 12 },
   name: { fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' },
   num:  { fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 1 },
   badge: (type: string) => {
@@ -46,13 +46,13 @@ const c = {
       graded:    ['var(--success-bg)', 'var(--success)', 'rgba(45,139,85,0.2)'],
     }
     const [bg, color, border] = map[type] ?? map.pending
-    return { display: 'inline-flex', alignItems: 'center', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, padding: '3px 9px', borderRadius: 99999, background: bg, color, border: `1px solid ${border}`, whiteSpace: 'nowrap' as const }
+    return { display: 'inline-flex', alignItems: 'center', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' as const, padding: '4px 8px', borderRadius: 99999, background: bg, color, border: `1px solid ${border}`, whiteSpace: 'nowrap' as const }
   },
   fileBtn: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--info)', textDecoration: 'none', padding: '2px 8px', borderRadius: 6, background: 'var(--info-bg)', border: '1px solid rgba(36,113,163,0.2)' },
-  scoreInput: { width: 68, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 8px', fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--input-text)', textAlign: 'center' as const, outline: 'none' },
-  feedbackInput: { width: '100%', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px', fontFamily: 'var(--font-body)', fontSize: '0.80rem', color: 'var(--input-text)', outline: 'none', resize: 'none' as const },
-  saveBtn: (disabled: boolean) => ({ padding: '6px 14px', borderRadius: 99999, background: disabled ? 'var(--glass-bg)' : 'linear-gradient(135deg, var(--brand), var(--brand-light))', color: disabled ? 'var(--text-muted)' : '#fff', border: 'none', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' as const, cursor: disabled ? 'not-allowed' : 'pointer', boxShadow: disabled ? 'none' : '0 3px 10px var(--brand-glow)', transition: 'all var(--transition-fast)' }),
-  toast: { position: 'fixed' as const, bottom: 28, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: 99999, padding: '10px 24px', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)', zIndex: 300, boxShadow: '0 8px 32px rgba(0,0,0,.5)', whiteSpace: 'nowrap' as const },
+  scoreInput: { width: 68, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 8px', fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--input-text)', textAlign: 'center' as const, outline: 'none' },
+  feedbackInput: { width: '100%', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 12px', fontFamily: 'var(--font-body)', fontSize: '0.80rem', color: 'var(--input-text)', outline: 'none', resize: 'none' as const },
+  saveBtn: (disabled: boolean) => ({ padding: '8px 16px', borderRadius: 99999, background: disabled ? 'var(--glass-bg)' : 'linear-gradient(135deg, var(--brand), var(--brand-light))', color: disabled ? 'var(--text-muted)' : '#fff', border: 'none', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' as const, cursor: disabled ? 'not-allowed' : 'pointer', boxShadow: disabled ? 'none' : '0 3px 10px var(--brand-glow)', transition: 'all var(--transition-fast)' }),
+  toast: { position: 'fixed' as const, bottom: 28, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: 99999, padding: '12px 24px', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)', zIndex: 300, boxShadow: '0 8px 32px rgba(0,0,0,.5)', whiteSpace: 'nowrap' as const },
   empty: { padding: '48px 24px', textAlign: 'center' as const, color: 'var(--text-muted)', fontSize: '0.84rem' },
 }
 
@@ -243,7 +243,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                   </div>
 
                   {/* Score + save */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
                     {isGraded && scores[sub.student_id] === undefined ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--success)' }}>
@@ -256,7 +256,7 @@ export default function SubmissionsClient({ assignment, submissions: initialSubs
                       </div>
                     ) : hasSub ? (
                       <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <input
                             style={c.scoreInput}
                             type="number" min={0} max={assignment.max_score}

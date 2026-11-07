@@ -45,7 +45,7 @@
 .tabCount {
   font-size: 10px; font-weight: 700;
   background: var(--color-bg-input); color: var(--color-text-muted);
-  padding: 2px 6px; border-radius: var(--radius-full);
+  padding: 2px 8px; border-radius: var(--radius-full);
 }
 
 /* ── Main ── */
@@ -81,7 +81,7 @@
   display: flex; align-items: center; gap: 5px;
   font-size: var(--font-size-xs); font-weight: 800;
   color: var(--color-error); background: var(--color-error-bg);
-  padding: 3px var(--space-2); border-radius: var(--radius-full);
+  padding: 4px var(--space-2); border-radius: var(--radius-full);
 }
 .liveDot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--color-error);
@@ -90,17 +90,17 @@
 .upcomingBadge {
   font-size: var(--font-size-xs); font-weight: 700;
   color: var(--color-info); background: var(--color-info-bg);
-  padding: 3px var(--space-2); border-radius: var(--radius-full);
+  padding: 4px var(--space-2); border-radius: var(--radius-full);
 }
 .attemptedBadge {
   font-size: var(--font-size-xs); font-weight: 700;
   color: var(--color-success); background: var(--color-success-bg);
-  padding: 3px var(--space-2); border-radius: var(--radius-full);
+  padding: 4px var(--space-2); border-radius: var(--radius-full);
 }
 .missedBadge {
   font-size: var(--font-size-xs); font-weight: 700;
   color: var(--color-text-muted); background: var(--color-bg-input);
-  padding: 3px var(--space-2); border-radius: var(--radius-full);
+  padding: 4px var(--space-2); border-radius: var(--radius-full);
 }
 
 .quizTitle { font-size: var(--font-size-base); font-weight: 700; color: var(--color-text-primary); line-height: 1.4; }

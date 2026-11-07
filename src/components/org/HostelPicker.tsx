@@ -93,21 +93,21 @@ export function HostelPicker({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          style={{ marginTop: 6, fontSize: '0.76rem', color: accentColor, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
+          style={{ marginTop: 8, fontSize: '0.76rem', color: accentColor, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
         >
           + Add another hostel
         </button>
       )}
 
       {adding && (
-        <div style={{ display: 'flex', gap: 6, marginTop: hostels.length > 0 ? 8 : 4, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: hostels.length > 0 ? 8 : 4, alignItems: 'center' }}>
           <input
             autoFocus
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
             placeholder="Hostel name"
-            style={{ flex: 1, fontSize: '0.82rem', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border, #333)', background: 'var(--surface, #111)', color: 'inherit' }}
+            style={{ flex: 1, fontSize: '0.82rem', padding: '8px 8px', borderRadius: 6, border: '1px solid var(--border, #333)', background: 'var(--surface, #111)', color: 'inherit' }}
           />
           <button type="button" onClick={handleAdd} disabled={saving || !name.trim()} style={{ fontSize: '0.78rem', color: accentColor, background: 'none', border: 'none', cursor: 'pointer' }}>
             {saving ? 'Adding…' : 'Add'}

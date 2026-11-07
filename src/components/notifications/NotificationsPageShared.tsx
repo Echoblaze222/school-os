@@ -442,7 +442,7 @@ export default function NotificationsPageShared({
           background:  push.subscribed ? 'var(--success-subtle)' : 'var(--glass-bg)',
           color:       push.subscribed ? 'var(--success)' : 'var(--text-primary)',
           borderColor: push.subscribed ? 'var(--success)' : 'var(--glass-border)',
-          display: 'inline-flex', alignItems: 'center', gap: 6,
+          display: 'inline-flex', alignItems: 'center', gap: 8,
         }}
         onClick={push.subscribed ? push.unsubscribe : push.subscribe}
         title={push.subscribed ? 'Tap to disable push alerts' : 'Tap to enable push alerts on this device'}
@@ -467,14 +467,14 @@ export default function NotificationsPageShared({
         <div className={styles.headerRight}>
           <PushBtn />
           {localUnread > 0 && (
-            <button className={`${styles.markAllBtn} pressable`} onClick={markAllRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className={`${styles.markAllBtn} pressable`} onClick={markAllRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <CheckIcon size={14} /> All read
             </button>
           )}
           {isPrincipal && (
             <button
               className={styles.markAllBtn}
-              style={{ background: 'var(--brand)', color: '#fff', borderColor: 'transparent', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              style={{ background: 'var(--brand)', color: '#fff', borderColor: 'transparent', display: 'inline-flex', alignItems: 'center', gap: 8 }}
               onClick={() => setShowSend(v => !v)}
             >
               <UploadIcon size={14} /> Send
@@ -486,10 +486,10 @@ export default function NotificationsPageShared({
       {/* Realtime disconnected banner */}
       {realtimeStatus === 'disconnected' && (
         <div style={{
-          margin: '8px 16px', padding: '8px 14px', borderRadius: 10,
+          margin: '8px 16px', padding: '8px 16px', borderRadius: 10,
           background: 'var(--warning-subtle)', border: '1px solid var(--warning)',
           color: 'var(--warning)', fontSize: '0.78rem',
-          display: 'flex', alignItems: 'center', gap: 6,
+          display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <AlertIcon size={13} /> Reconnecting, new notifications may be delayed
         </div>
@@ -498,10 +498,10 @@ export default function NotificationsPageShared({
       {/* Push error banner */}
       {push.error && (
         <div style={{
-          margin: '8px 16px', padding: '10px 14px', borderRadius: 10,
+          margin: '8px 16px', padding: '12px 16px', borderRadius: 10,
           background: 'var(--danger-subtle)', border: '1px solid var(--danger)',
           color: 'var(--danger)', fontSize: '0.8rem',
-          display: 'flex', alignItems: 'center', gap: 6,
+          display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <AlertIcon size={14} /> {push.error}
         </div>
@@ -510,16 +510,16 @@ export default function NotificationsPageShared({
       {/* Principal broadcast panel */}
       {isPrincipal && showSend && (
         <div className={styles.broadcastPanel}>
-          <p className={styles.broadcastTitle} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className={styles.broadcastTitle} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <MegaphoneIcon size={15} /> Send Notification to School
           </p>
           {sendResult === 'success' && (
-            <div className={`${styles.sendSuccess} animate-success-pop`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className={`${styles.sendSuccess} animate-success-pop`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <CheckCircleIcon size={14} /> Notification sent!
             </div>
           )}
           {sendResult === 'error' && (
-            <div className={`${styles.sendError} animate-shake`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className={`${styles.sendError} animate-shake`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <XIcon size={14} /> {sendError || 'Failed to send'}
             </div>
           )}
@@ -555,7 +555,7 @@ export default function NotificationsPageShared({
             <button className={`${styles.cancelBroadcast} pressable`} onClick={() => setShowSend(false)}>Cancel</button>
             <button className={`${styles.sendBroadcast} pressable`} onClick={sendBroadcast}
               disabled={sending || !sendTitle.trim() || !sendBody.trim()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               {sending ? 'Sending...' : <><UploadIcon size={14} /> Send to {sendTarget === 'all' ? 'Everyone' : sendTarget}</>}
             </button>
           </div>
@@ -648,7 +648,7 @@ export default function NotificationsPageShared({
         )}
 
         {hasMore && (
-          <button className={`${styles.loadMoreBtn} pressable`} onClick={loadMore} disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button className={`${styles.loadMoreBtn} pressable`} onClick={loadMore} disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {loading ? <><RefreshIcon size={14} /> Loading...</> : 'Load more notifications'}
           </button>
         )}
@@ -685,7 +685,7 @@ export default function NotificationsPageShared({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 {(() => { const Icon = TYPE_ICONS[selected.type] ?? BellIcon; return <Icon size={22} /> })()}
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>{selected.title}</h2>
               </div>
@@ -715,7 +715,7 @@ export default function NotificationsPageShared({
               <button
                 onClick={viewLinkedItem}
                 style={{
-                  marginTop: 12, width: '100%', padding: '10px 16px',
+                  marginTop: 12, width: '100%', padding: '12px 16px',
                   borderRadius: 10, border: 'none', cursor: 'pointer',
                   background: 'var(--brand)', color: '#fff',
                   fontWeight: 600, fontSize: '0.9rem',

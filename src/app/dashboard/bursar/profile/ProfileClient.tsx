@@ -305,8 +305,8 @@ export default function ProfileClient({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              padding: '5px 12px',
+              gap: 4,
+              padding: '4px 12px',
               background: editing
                 ? 'var(--glass-bg)'
                 : 'var(--brand-subtle)',
@@ -355,7 +355,7 @@ export default function ProfileClient({
             ].map(
               ([label, val, setter]: any) => (
                 <div key={label}>
-                  <label className="input-label" style={{ display: 'block', marginBottom: 6 }}>
+                  <label className="input-label" style={{ display: 'block', marginBottom: 8 }}>
                     {label}
                   </label>
 

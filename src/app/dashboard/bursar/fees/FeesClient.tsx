@@ -184,7 +184,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
           <button
             onClick={() => { setForm({ ...BLANK }); setShowForm(true); setError('') }}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px',
+              display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px',
               background: sc, color: '#fff', border: 'none', borderRadius: 8,
               fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0,
             }}>
@@ -205,10 +205,10 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
           {error && (
             <div style={{
-              padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+              padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
               borderRadius: 8, marginBottom: 'var(--space-3)',
               fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <AlertIcon size={14} /> {error}
             </div>
@@ -318,7 +318,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                         {item.description}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                       <span style={{ fontSize: '0.9rem', fontWeight: 800, color: sc }}>
                         {fmtAmt(item.amount_ngn)}
                       </span>
@@ -327,13 +327,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
                           <button onClick={() => del(item.id)} disabled={deleting === item.id}
                             className="pressable"
                             style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 6,
-                              padding: '5px 10px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700,
+                              padding: '4px 12px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700,
                               opacity: deleting === item.id ? 0.6 : 1 }}>
                             {deleting === item.id ? '…' : 'Confirm'}
                           </button>
                           <button onClick={() => setConfirmDeleteId(null)} className="pressable"
                             style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)',
-                              borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: '0.72rem',
+                              borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: '0.72rem',
                               fontWeight: 700, color: 'var(--text-muted)' }}>
                             Cancel
                           </button>
@@ -345,7 +345,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                           className="pressable"
                           style={{
                             background: 'var(--danger-subtle)', border: 'none', borderRadius: 6,
-                            padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                            padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
                             opacity: deleting === item.id ? 0.5 : 1,
                           }}>
                           <TrashIcon size={13} color="var(--danger)" />

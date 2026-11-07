@@ -136,9 +136,9 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'var(--danger-subtle)', border:'1px solid rgba(239,68,68,0.3)',
+        <div style={{ padding:'12px 16px', background:'var(--danger-subtle)', border:'1px solid rgba(239,68,68,0.3)',
           borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600,
-          display:'flex', alignItems:'center', gap:6 }}>
+          display:'flex', alignItems:'center', gap:8 }}>
           <AlertIcon size={14} /> {error}
         </div>
       )}
@@ -182,7 +182,7 @@ export default function DebtorsClient({ profile, school, userId }: Props) {
                       <p className={styles.cardTitle}>{d.full_name}</p>
                       <p className={styles.cardMeta}>{d.default_code} · {d.class_level}</p>
                       {d.expected > 0 && (
-                        <div style={{ marginTop:5 }}>
+                        <div style={{ marginTop:4 }}>
                           <div style={{ height:4, background:'var(--glass-border)', borderRadius:2 }}>
                             <div style={{ height:'100%', width:`${paidPct}%`,
                               background:'var(--success)', borderRadius:2 }}/>

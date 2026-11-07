@@ -34,20 +34,20 @@ function styles(primary: string) {
       padding: 48, fontFamily: 'Helvetica', color: '#1a1a1a',
       border: `3pt solid ${primary}`, margin: 12,
     },
-    header: { alignItems: 'center', marginBottom: 22 },
+    header: { alignItems: 'center', marginBottom: 24 },
     logo: { width: 56, height: 56, objectFit: 'contain', marginBottom: 8 },
     schoolName: { fontSize: 20, fontWeight: 700, color: primary, textAlign: 'center' },
-    schoolMotto: { fontSize: 9, color: '#888', fontStyle: 'italic', marginTop: 3, textAlign: 'center' },
+    schoolMotto: { fontSize: 9, color: '#888', fontStyle: 'italic', marginTop: 4, textAlign: 'center' },
 
-    title: { fontSize: 15, letterSpacing: 3, textTransform: 'uppercase', textAlign: 'center', color: '#555', marginTop: 18, marginBottom: 22 },
+    title: { fontSize: 15, letterSpacing: 3, textTransform: 'uppercase', textAlign: 'center', color: '#555', marginTop: 20, marginBottom: 24 },
 
     bodyText: { fontSize: 11.5, textAlign: 'center', color: '#333', lineHeight: 1.7, marginBottom: 4 },
     studentName: { fontSize: 26, fontWeight: 700, textAlign: 'center', color: '#111', marginVertical: 10 },
 
     footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 40 },
     signBlock: { alignItems: 'center', width: 170 },
-    signImg: { height: 34, objectFit: 'contain', marginBottom: 3 },
-    signLine: { borderTopWidth: 1, borderTopColor: '#333', paddingTop: 3, fontSize: 9.5, fontWeight: 700, width: '100%', textAlign: 'center' },
+    signImg: { height: 34, objectFit: 'contain', marginBottom: 4 },
+    signLine: { borderTopWidth: 1, borderTopColor: '#333', paddingTop: 4, fontSize: 9.5, fontWeight: 700, width: '100%', textAlign: 'center' },
     signRole: { fontSize: 8, color: '#888' },
 
     qrBlock: { alignItems: 'center', width: 130 },
@@ -56,7 +56,7 @@ function styles(primary: string) {
 
     stampImg: { width: 70, height: 70, objectFit: 'contain' },
 
-    bottomRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: '#ddd' },
+    bottomRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: '#ddd' },
     certNo: { fontSize: 8.5, color: '#999' },
   })
 }

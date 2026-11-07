@@ -132,7 +132,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <Link href="/dashboard/principal" style={{
-            display: 'flex', alignItems: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', gap: 8,
             color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600,
             textDecoration: 'none',
           }}>
@@ -142,8 +142,8 @@ export default function PrincipalResultsClient({ results: initialResults, classO
             <button className="pressable"
               onClick={exportCSV}
               style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '7px 12px', borderRadius: 8,
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '8px 12px', borderRadius: 8,
                 background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
                 color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
               }}
@@ -154,7 +154,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
               <button className="pressable"
                 onClick={approveAll}
                 style={{
-                  padding: '7px 12px', borderRadius: 8,
+                  padding: '8px 12px', borderRadius: 8,
                   background: '#22c55e', border: 'none',
                   color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
                 }}
@@ -172,13 +172,13 @@ export default function PrincipalResultsClient({ results: initialResults, classO
       <div style={{ padding: '16px 16px 0' }}>
 
         {/* ── Term filter ── */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 2 }}>
           {TERM_OPTIONS.map(t => (
             <button className="pressable"
               key={t.value}
               onClick={() => setTermFilter(t.value)}
               style={{
-                flexShrink: 0, padding: '6px 14px', borderRadius: 999,
+                flexShrink: 0, padding: '8px 16px', borderRadius: 999,
                 fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
                 background: termFilter === t.value ? sc              : 'var(--glass-bg)',
                 color:      termFilter === t.value ? '#fff'         : 'var(--text-muted)',
@@ -191,11 +191,11 @@ export default function PrincipalResultsClient({ results: initialResults, classO
         </div>
 
         {/* ── Type filter ── */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 2 }}>
           <button className="pressable"
             onClick={() => setTypeFilter('')}
             style={{
-              flexShrink: 0, padding: '6px 14px', borderRadius: 999,
+              flexShrink: 0, padding: '8px 16px', borderRadius: 999,
               fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
               background: !typeFilter ? sc              : 'var(--glass-bg)',
               color:      !typeFilter ? '#fff'         : 'var(--text-muted)',
@@ -209,7 +209,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
               key={t.value}
               onClick={() => setTypeFilter(prev => prev === t.value ? '' : t.value)}
               style={{
-                flexShrink: 0, padding: '6px 14px', borderRadius: 999,
+                flexShrink: 0, padding: '8px 16px', borderRadius: 999,
                 fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
                 background: typeFilter === t.value ? sc              : 'var(--glass-bg)',
                 color:      typeFilter === t.value ? '#fff'         : 'var(--text-muted)',
@@ -222,7 +222,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
         </div>
 
         {/* ── Class filter + stats ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <select
             value={classFilter}
             onChange={e => setClassFilter(e.target.value)}
@@ -238,7 +238,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
           <button className="pressable"
             onClick={exportCSV}
             style={{
-              display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
               padding: '8px 12px', borderRadius: 8,
               background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
               color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
@@ -249,7 +249,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
         </div>
 
         {/* ── Stats row ── */}
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 14 }}>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 16 }}>
           {filtered.length} result{filtered.length !== 1 ? 's' : ''} · {pendingCount} pending approval
         </p>
 
@@ -265,7 +265,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtered.map(r => {
               const isApproved  = approvedIds.has(r.id)
               const isApproving = approving.has(r.id)
@@ -279,7 +279,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                     background:    'var(--glass-bg)',
                     border:        `1px solid ${isApproved ? '#22c55e44' : 'var(--glass-border)'}`,
                     borderRadius:  14,
-                    padding:       '12px 14px',
+                    padding:       '12px 16px',
                     display:       'flex',
                     alignItems:    'center',
                     gap:           12,
@@ -307,7 +307,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                     <p style={{ margin: '0 0 4px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                       {r.student_number ?? 'N/A'}
                     </p>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                         {r.subject_name}
                       </span>
@@ -317,7 +317,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                       </span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>·</span>
                       <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 7px',
+                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px',
                         borderRadius: 999, background: 'var(--glass-border)',
                         color: 'var(--text-muted)',
                       }}>
@@ -325,7 +325,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                       </span>
                     </div>
                     {/* Score bar */}
-                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: 1, height: 4, background: 'var(--glass-border)', borderRadius: 999, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: gradeColor(r.grade), borderRadius: 999, transition: 'width 0.4s' }}/>
                       </div>
@@ -348,7 +348,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                     </div>
                     {isApproved ? (
                       <div style={{
-                        display: 'flex', alignItems: 'center', gap: 3,
+                        display: 'flex', alignItems: 'center', gap: 4,
                         fontSize: '0.65rem', fontWeight: 700, color: '#22c55e',
                       }}>
                         <IcCheck /> Done
@@ -358,7 +358,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
                         onClick={() => approveResult(r.id)}
                         disabled={isApproving}
                         style={{
-                          padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+                          padding: '4px 12px', borderRadius: 6, cursor: 'pointer',
                           background: isApproving ? 'var(--glass-border)' : '#22c55e',
                           border: 'none', color: '#fff',
                           fontSize: '0.68rem', fontWeight: 700,
@@ -380,7 +380,7 @@ export default function PrincipalResultsClient({ results: initialResults, classO
       {toast && (
         <div style={{
           position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
-          background: '#1f2937', color: '#fff', padding: '10px 20px',
+          background: '#1f2937', color: '#fff', padding: '12px 20px',
           borderRadius: 10, fontSize: '0.82rem', fontWeight: 600,
           zIndex: 999, whiteSpace: 'nowrap', boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
         }}>

@@ -97,7 +97,7 @@ export default function CasesClient({ profile, school, userId }: Props) {
           }
         />
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {cases.map((c: any, i: number) => (
             <Link
               key={c.id}
@@ -117,7 +117,7 @@ export default function CasesClient({ profile, school, userId }: Props) {
                   </p>
                 </div>
                 <span style={{
-                  fontSize: '0.68rem', fontWeight: 700, padding: '3px 9px', borderRadius: 999,
+                  fontSize: '0.68rem', fontWeight: 700, padding: '4px 8px', borderRadius: 999,
                   color: RISK_COLOR[c.risk_level] ?? RISK_COLOR.low,
                   background: `${RISK_COLOR[c.risk_level] ?? RISK_COLOR.low}18`,
                   textTransform: 'capitalize',
@@ -126,7 +126,7 @@ export default function CasesClient({ profile, school, userId }: Props) {
                 </span>
               </div>
               {c.summary && (
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '10px 0 0' }}>{c.summary}</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '12px 0 0' }}>{c.summary}</p>
               )}
             </Link>
           ))}
@@ -194,7 +194,7 @@ function NewCaseForm({
       </div>
 
       {selected ? (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 9, background: 'var(--input-bg)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 12px', borderRadius: 9, background: 'var(--input-bg)' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{selected.full_name}</span>
           <button onClick={() => { setSelected(null); setQuery('') }} className={motion.pressable} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>
             Change
@@ -212,7 +212,7 @@ function NewCaseForm({
             />
           </div>
           {(searching || results.length > 0) && query.trim().length >= 2 && (
-            <div className="glass-card" style={{ marginTop: 6, borderRadius: 9, overflow: 'hidden' }}>
+            <div className="glass-card" style={{ marginTop: 8, borderRadius: 9, overflow: 'hidden' }}>
               {searching ? (
                 <div style={{ padding: 12, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Searching…</div>
               ) : (
@@ -221,7 +221,7 @@ function NewCaseForm({
                     key={r.id}
                     onClick={() => { setSelected(r); setResults([]) }}
                     className={motion.pressable}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}
                   >
                     {r.full_name} <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.class_level}</span>
                   </button>
@@ -232,7 +232,7 @@ function NewCaseForm({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <select value={category} onChange={e => setCategory(e.target.value)}
           style={{ height: 38, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 8px', fontSize: '0.8rem' }}>
           <option value="general">General</option>
@@ -257,7 +257,7 @@ function NewCaseForm({
         onChange={e => setSummary(e.target.value)}
         placeholder="Short, non-clinical summary for the case list (optional)"
         rows={2}
-        style={{ borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: 10, fontSize: '0.82rem', resize: 'vertical' }}
+        style={{ borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: 12, fontSize: '0.82rem', resize: 'vertical' }}
       />
 
       <ActionButton onClick={submit} loading={saving} loadingLabel="Opening case…" disabled={!selected} fullWidth>

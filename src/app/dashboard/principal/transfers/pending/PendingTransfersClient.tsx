@@ -149,13 +149,13 @@ export default function PendingTransfersClient({
                       From: {t.origin_school_name ?? 'Unknown'} · {relTime(t.initiated_at)}
                     </p>
                     {t.notes && (
-                      <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '3px 0 0' }}>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                         {t.notes}
                       </p>
                     )}
                   </div>
                   <span style={{
-                    fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px',
+                    fontSize: '0.65rem', fontWeight: 700, padding: '4px 12px',
                     borderRadius: 'var(--radius-full)', flexShrink: 0,
                     background: 'rgba(245,158,11,0.15)', color: '#F59E0B',
                   }}>
@@ -177,7 +177,7 @@ export default function PendingTransfersClient({
                   ] as [string, any, boolean][]).map(([lbl, val, isRed]) => (
                     <div key={lbl} style={{
                       padding: 'var(--space-3) var(--space-4)',
-                      display: 'flex', flexDirection: 'column', gap: 3,
+                      display: 'flex', flexDirection: 'column', gap: 4,
                       borderRight: lbl !== 'Outstanding Fees' ? '1px solid var(--glass-border)' : undefined,
                     }}>
                       <span style={{ fontSize: '1.1rem', fontWeight: 800, lineHeight: 1, color: isRed ? '#EF4444' : 'var(--text-primary)' }}>
@@ -240,7 +240,7 @@ export default function PendingTransfersClient({
           position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
           backdropFilter: 'blur(16px)', borderRadius: 'var(--radius-full)',
-          padding: '10px 20px', fontSize: '0.82rem', fontWeight: 600,
+          padding: '12px 20px', fontSize: '0.82rem', fontWeight: 600,
           color: 'var(--text-primary)', zIndex: 9999, whiteSpace: 'nowrap',
           boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
         }}>

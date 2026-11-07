@@ -35,7 +35,7 @@ export function Chip({ active, onClick, children, brand }: { active: boolean; on
       onClick={onClick}
       aria-pressed={active}
       style={{
-        padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+        padding: '8px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
         background: active ? brand : 'var(--glass-bg)', color: active ? '#fff' : 'var(--text-muted)',
         border: active ? `1px solid ${brand}` : '1px solid var(--glass-border)',
       }}
@@ -78,11 +78,11 @@ export function Stat({ label, value, sub, trend }: { label: string; value: strin
   let delta: number | null = null;
   if (trend && trend.length >= 2 && trend[0] !== 0) delta = ((trend[trend.length - 1] - trend[0]) / Math.abs(trend[0])) * 100;
   return (
-    <div className="glass-card" style={{ padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
+    <div className="glass-card" style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
         <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.15, fontVariantNumeric: 'tabular-nums' }}>{shown}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
           {delta !== null && Math.abs(delta) >= 0.1 && (
             <span className={`viz-delta${delta < 0 ? ' down' : ''}`}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%</span>
           )}
@@ -100,7 +100,7 @@ export function StatGrid({ children, min = 150 }: { children: ReactNode; min?: n
 
 /** One filter row above the content it scopes. */
 export function FilterRow({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', overflowX: 'auto' }}>{children}</div>;
+  return <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', overflowX: 'auto' }}>{children}</div>;
 }
 
 export function ErrorNote({ message }: { message: string }) {
@@ -117,11 +117,11 @@ export function DataTable({ columns, rows }: { columns: string[]; rows: (string 
     <div style={{ overflow: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
-          <tr>{columns.map(c => <th key={c} style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 500, borderBottom: '1px solid var(--glass-border)' }}>{c}</th>)}</tr>
+          <tr>{columns.map(c => <th key={c} style={{ textAlign: 'left', padding: '8px 8px', color: 'var(--text-muted)', fontWeight: 500, borderBottom: '1px solid var(--glass-border)' }}>{c}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i}>{r.map((v, j) => <td key={j} style={{ padding: '6px 8px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--glass-border)' }}>{v}</td>)}</tr>
+            <tr key={i}>{r.map((v, j) => <td key={j} style={{ padding: '8px 8px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--glass-border)' }}>{v}</td>)}</tr>
           ))}
         </tbody>
       </table>

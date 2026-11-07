@@ -101,7 +101,7 @@ export default function DocumentsClient({ userId, profile, school, schoolId, ini
       )}
 
       {showForm && (
-        <form onSubmit={createDraft} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 10 }}>
+        <form onSubmit={createDraft} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 12 }}>
           <select value={form.exam_timetable_id} onChange={e => setForm(f => ({ ...f, exam_timetable_id: e.target.value }))} style={inputStyle}>
             {timetable.map(t => (
               <option key={t.id} value={t.id}>
@@ -122,12 +122,12 @@ export default function DocumentsClient({ userId, profile, school, schoolId, ini
           <p style={{ margin: 0, opacity: 0.75 }}>No documents yet.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {docs.map(d => {
             const isOwner = d.created_by === userId
             const canAdvance = canReview || (isOwner && d.status === 'drafting')
             return (
-              <div key={d.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-xl)' }}>
+              <div key={d.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
                 <p style={{ margin: 0, fontWeight: 700, textTransform: 'capitalize' }}>{d.doc_type.replace('_', ' ')}</p>
                 <p style={{ margin: 0, fontSize: 13, opacity: 0.7 }}>
                   {d.exam_timetable?.exam_date} · {d.exam_timetable?.class_subjects?.subjects?.name}, {d.exam_timetable?.class_subjects?.classes?.name}
@@ -137,7 +137,7 @@ export default function DocumentsClient({ userId, profile, school, schoolId, ini
                   {' '}· Currently with {d.profiles?.full_name ?? (d.current_custodian_id === userId ? 'you' : 'unknown')}
                 </p>
                 {canAdvance && NEXT_STEP[d.status] && (
-                  <button className="btn" style={{ marginTop: 10, fontSize: 13 }} disabled={movingId === d.id} onClick={() => advance(d)}>
+                  <button className="btn" style={{ marginTop: 12, fontSize: 13 }} disabled={movingId === d.id} onClick={() => advance(d)}>
                     {movingId === d.id ? 'Updating…' : NEXT_LABEL[d.status]}
                   </button>
                 )}
@@ -151,6 +151,6 @@ export default function DocumentsClient({ userId, profile, school, schoolId, ini
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+  padding: '12px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
   background: 'var(--surface)', color: 'inherit', fontSize: 14, width: '100%',
 }

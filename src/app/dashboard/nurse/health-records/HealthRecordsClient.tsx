@@ -94,12 +94,12 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
   return (
     <RoleSubHeader userId={userId} role="nurse" profile={profile} school={school} title="Health Records" featureGroups={NURSE_FEATURE_GROUPS}>
       <main className={styles.main}>
-        <div style={{ position: 'relative', marginBottom: 14 }}>
+        <div style={{ position: 'relative', marginBottom: 16 }}>
           <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search students by name"
-            style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}
+            style={{ width: '100%', padding: '12px 12px 12px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}
           />
         </div>
 
@@ -112,7 +112,7 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
               return (
                 <button key={r.student.id} onClick={() => openRecord(r)}
                   className={`glass-card ${motion.pressable}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderRadius: 'var(--radius-lg)', border: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 'var(--radius-lg)', border: 'none', textAlign: 'left', cursor: 'pointer' }}>
                   <div style={{ width: 34, height: 34, borderRadius: 999, background: 'var(--brand-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <UserIcon size={16} />
                   </div>
@@ -135,31 +135,31 @@ export default function HealthRecordsClient({ profile, school, userId }: Props) 
       {selected && (
         <div onClick={() => setSelected(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>{selected.student.full_name}</p>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input placeholder="Blood group" value={bloodGroup} onChange={e => setBloodGroup(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Allergies (comma separated)" value={allergies} onChange={e => setAllergies(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Chronic conditions (comma separated)" value={chronicConditions} onChange={e => setChronicConditions(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Current medications (comma separated)" value={currentMedications} onChange={e => setCurrentMedications(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Emergency contact name" value={emergencyContactName} onChange={e => setEmergencyContactName(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Emergency contact phone" value={emergencyContactPhone} onChange={e => setEmergencyContactPhone(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Relationship to student (e.g. Mother)" value={emergencyContactRelationship} onChange={e => setEmergencyContactRelationship(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Physician name" value={physicianName} onChange={e => setPhysicianName(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Physician phone" value={physicianPhone} onChange={e => setPhysicianPhone(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <textarea placeholder="Notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <ActionButton onClick={saveRecord} loading={saving} loadingLabel="Saving…" fullWidth>Save Record</ActionButton>
             </div>
           </div>

@@ -97,7 +97,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: var(--text-muted);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
@@ -112,7 +112,7 @@
 .payBtn {
   display: inline-flex;
   align-items: center;
-  padding: 8px 18px;
+  padding: 8px 20px;
   background: linear-gradient(135deg, #10B981, #059669);
   color: #fff;
   font-size: 0.78rem;

@@ -206,14 +206,14 @@ export default function TimetableClient({ profile, school, userId }: Props) {
           </button>
         ))}
         <button className="pressable" onClick={() => setShowForm(true)}
-          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}>
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}>
           <PlusIcon size={13} color="white" /> Add
         </button>
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
           <button className="pressable" onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
@@ -292,13 +292,13 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                   </div>
                   <div className={styles.periodBody} style={{ borderLeftColor: sc }}>
                     <p className={styles.periodSubject}>{subjectName}</p>
-                    <p className={styles.periodMeta}>{p.room ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><MapPinIcon size={11} /></span>{p.room}</> : ''}</p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                    <p className={styles.periodMeta}>{p.room ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><MapPinIcon size={11} /></span>{p.room}</> : ''}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                       <div className={styles.periodDuration}>
                         <ClockIcon size={11} color="var(--text-muted)" />
                         <span>{duration(p.start_time, p.end_time)}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         {/* Reminder - only if the period hasn't started yet today */}
                         {stillFuture && (
                           <ReminderButton

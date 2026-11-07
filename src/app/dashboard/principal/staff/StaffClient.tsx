@@ -95,7 +95,7 @@ function StaffSuccessModal({
 
         {/* User badge */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
           borderRadius: 10, marginBottom: 16,
         }}>
@@ -117,12 +117,12 @@ function StaffSuccessModal({
         {/* Access Code */}
         <div style={{
           border: `1px solid ${roleColor}44`, background: roleColor + '0a',
-          borderRadius: 10, padding: '12px 14px', marginBottom: 10,
+          borderRadius: 10, padding: '12px 16px', marginBottom: 12,
         }}>
-          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Access Code
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <code style={{
               flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
               color: roleColor, fontFamily: 'monospace',
@@ -130,7 +130,7 @@ function StaffSuccessModal({
             <button className="pressable"
               onClick={() => copy(result.code, 'code')}
               style={{
-                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                padding: '4px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
                 background: copiedCode ? '#10B98122' : 'transparent',
                 border: `1px solid ${copiedCode ? '#10B981' : roleColor + '55'}`,
                 color: copiedCode ? '#10B981' : roleColor,
@@ -144,12 +144,12 @@ function StaffSuccessModal({
         {/* Temp Password */}
         <div style={{
           border: '1px solid #F59E0B44', background: '#F59E0B0a',
-          borderRadius: 10, padding: '12px 14px', marginBottom: 16,
+          borderRadius: 10, padding: '12px 16px', marginBottom: 16,
         }}>
-          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Temporary Password
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <code style={{
               flex: 1, fontSize: '1rem', fontWeight: 700,
               color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
@@ -157,7 +157,7 @@ function StaffSuccessModal({
             <button className="pressable"
               onClick={() => copy(result.password, 'pwd')}
               style={{
-                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                padding: '4px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
                 background: copiedPwd ? '#10B98122' : 'transparent',
                 border: `1px solid ${copiedPwd ? '#10B981' : '#F59E0B55'}`,
                 color: copiedPwd ? '#10B981' : '#F59E0B',
@@ -166,7 +166,7 @@ function StaffSuccessModal({
               {copiedPwd ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
             </button>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 4 }}>
             <AlertIcon size={13} /> Staff must change this password on first login.
           </p>
         </div>
@@ -175,7 +175,7 @@ function StaffSuccessModal({
         <button className="pressable"
           onClick={copyAllDetails}
           style={{
-            width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
+            width: '100%', padding: '12px', borderRadius: 8, marginBottom: 8,
             fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
             background: copiedAll ? '#10B98122' : 'var(--glass-bg)',
             border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
@@ -570,13 +570,13 @@ export default function StaffClient({ profile, school, userId }: Props) {
                     </optgroup>
                   ))}
                 </select>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>
                   Vice Principal and Head of Department need department/portfolio setup - use{' '}
                   <Link href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</Link> for those.
                 </p>
 
                 {appointmentType && HOSTEL_SCOPED_TYPES.has(appointmentType) && (
-                  <div style={{ marginTop: 10 }}>
+                  <div style={{ marginTop: 12 }}>
                     <label className={styles.fieldLabel}>Hostel(s)</label>
                     <HostelPicker
                       hostels={hostels}
@@ -708,7 +708,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
               })()}
               <div>
                 <p style={{ fontWeight:800, fontSize:'1.1rem', color:'var(--text-primary)', margin:0 }}>{previewMember.full_name}</p>
-                <span style={{ fontSize:'0.72rem', fontWeight:700, padding:'2px 10px', borderRadius:'var(--radius-full)', background:(ROLE_COLORS[previewMember.role]??sc)+'22', color:ROLE_COLORS[previewMember.role]??sc, textTransform:'capitalize' }}>
+                <span style={{ fontSize:'0.72rem', fontWeight:700, padding:'2px 12px', borderRadius:'var(--radius-full)', background:(ROLE_COLORS[previewMember.role]??sc)+'22', color:ROLE_COLORS[previewMember.role]??sc, textTransform:'capitalize' }}>
                   {previewMember.role}
                 </span>
               </div>
@@ -844,7 +844,7 @@ export default function StaffClient({ profile, school, userId }: Props) {
                   </optgroup>
                 ))}
               </select>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>
                 Vice Principal and Head of Department need department/portfolio setup - use{' '}
                 <Link href="/dashboard/principal/leadership" style={{ color: sc }}>Leadership &amp; Appointments</Link> for those.
               </p>

@@ -192,14 +192,14 @@ export default function DepartmentDetailClient({
               )}
             </div>
             <div className={`glass-card ${styles.perfCard}`}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <PeopleIcon size={14} color="var(--brand)" />
                 <p className={styles.statLbl} style={{ margin: 0 }}>Members</p>
               </div>
               <p className={styles.statVal}>{members.length}</p>
             </div>
             <div className={`glass-card ${styles.perfCard}`}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <BookOpenIcon size={14} color="var(--brand)" />
                 <p className={styles.statLbl} style={{ margin: 0 }}>Subjects</p>
               </div>

@@ -70,7 +70,7 @@ export default function OnboardingStage1() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#800020,#5C0018)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(128,0,32,0.3)' }}>🎓</div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3: Set up your profile</p>
         </div>
 
@@ -85,30 +85,30 @@ export default function OnboardingStage1() {
 
           {/* Full Name */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Full Name *</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Full Name *</label>
             <input
               type="text"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               placeholder="e.g. Adaeze Okonkwo"
-              style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+              style={{ width: '100%', height: 48, padding: '0 16px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
             />
           </div>
 
           {/* Phone */}
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Phone Number</label>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>Optional, used for account recovery</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>Optional, used for account recovery</p>
             <input
               type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="e.g. 08012345678"
-              style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+              style={{ width: '100%', height: 48, padding: '0 16px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
             />
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 12, background: 'var(--input-bg)', border: '1px solid var(--input-border)', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', borderRadius: 12, background: 'var(--input-bg)', border: '1px solid var(--input-border)', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={agreedToTerms}
@@ -124,7 +124,7 @@ export default function OnboardingStage1() {
           </label>
 
           {error && (
-            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', margin: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '12px 16px', margin: 0 }}>
               {error}
             </p>
           )}

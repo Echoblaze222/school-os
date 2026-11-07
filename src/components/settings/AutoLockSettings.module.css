@@ -19,7 +19,7 @@
 .durationLabel { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 var(--space-2, 8px); }
 .durationOptions { display: flex; gap: 6px; flex-wrap: wrap; }
 .durationBtn {
-  padding: 6px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+  padding: 8px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
   background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-muted); cursor: pointer;
 }
 .durationBtnActive { background: var(--brand-subtle, rgba(124,58,237,0.12)); border-color: var(--brand, #7C3AED); color: var(--brand, #7C3AED); }

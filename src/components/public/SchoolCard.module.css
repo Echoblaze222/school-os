@@ -81,7 +81,7 @@
 .tagRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin-top: auto;
   padding-top: var(--space-2);
 }

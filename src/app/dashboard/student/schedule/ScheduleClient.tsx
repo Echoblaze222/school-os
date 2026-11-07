@@ -159,7 +159,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
           {error && (
             <div className={`glass-card ${motion.riseIn}`} style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', background: 'var(--danger-subtle)',
+              padding: '12px 16px', background: 'var(--danger-subtle)',
               borderColor: 'rgba(239,68,68,0.3)',
               marginBottom: 'var(--space-4)',
             }}>
@@ -176,8 +176,8 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
             <button
               onClick={() => setShowAdd(true)} className={motion.pressable}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '9px 18px', background: schoolColor, color: '#fff',
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 20px', background: schoolColor, color: '#fff',
                 border: 'none', borderRadius: 999, fontWeight: 700,
                 fontSize: '0.82rem', cursor: 'pointer',
               }}
@@ -188,8 +188,8 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
               onClick={generateAIPlan}
               disabled={generating} className={motion.pressable}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '9px 18px', background: 'rgba(236,72,153,0.12)',
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 20px', background: 'rgba(236,72,153,0.12)',
                 border: '1px solid rgba(236,72,153,0.25)', color: '#EC4899',
                 borderRadius: 999, fontWeight: 700, fontSize: '0.82rem',
                 cursor: 'pointer', opacity: generating ? 0.6 : 1,
@@ -254,7 +254,7 @@ export default function ScheduleClient({ profile, school, userId }: Props) {
                 </div>
 
                 {/* Color */}
-                <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Color</label>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {COLORS.map(c => (

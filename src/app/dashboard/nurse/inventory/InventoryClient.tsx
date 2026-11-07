@@ -84,11 +84,11 @@ export default function InventoryClient({ profile, school, userId }: Props) {
         {loading ? <SkeletonList count={4} variant="row" /> : items.length === 0 ? (
           <EmptyState icon={<GridIcon size={28} />} title="No inventory items yet" />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {items.map(item => {
               const low = item.quantity_on_hand <= item.reorder_level
               return (
-                <div key={item.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-lg)' }}>
+                <div key={item.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: '0.86rem', margin: 0 }}>{item.item_name}</p>
@@ -96,7 +96,7 @@ export default function InventoryClient({ profile, school, userId }: Props) {
                         {item.quantity_on_hand} {item.unit} on hand{low ? ' · Low stock' : ''}{item.category ? ` · ${item.category}` : ''}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={() => adjustQuantity(item.id, -1, item.quantity_on_hand)} disabled={restockingId === item.id}
                         style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--glass-border)', background: 'transparent', cursor: 'pointer' }}>-</button>
                       <button onClick={() => adjustQuantity(item.id, 1, item.quantity_on_hand)} disabled={restockingId === item.id}
@@ -114,23 +114,23 @@ export default function InventoryClient({ profile, school, userId }: Props) {
       {showForm && (
         <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Add Inventory Item</p>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input placeholder="Item name" value={itemName} onChange={e => setItemName(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Category (e.g. First Aid)" value={category} onChange={e => setCategory(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
-              <div style={{ display: 'flex', gap: 10 }}>
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+              <div style={{ display: 'flex', gap: 12 }}>
                 <input placeholder="Quantity" type="number" value={quantityOnHand} onChange={e => setQuantityOnHand(e.target.value)}
-                  style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <input placeholder="Unit" value={unit} onChange={e => setUnit(e.target.value)}
-                  style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               </div>
               <input placeholder="Reorder level" type="number" value={reorderLevel} onChange={e => setReorderLevel(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <ActionButton onClick={submitItem} loading={saving} loadingLabel="Saving…" fullWidth>Add Item</ActionButton>
             </div>
           </div>

@@ -219,20 +219,20 @@ export default function PrincipalTransfersClient({
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
         {(['students', 'transfers'] as const).map(t => (
           <button className="pressable" key={t} onClick={() => setMainTab(t)}
-            style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+            style={{ padding: '8px 20px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
               background: mainTab === t ? sc + '22' : 'var(--glass-bg)',
               borderColor: mainTab === t ? sc : 'var(--glass-border)',
               color: mainTab === t ? sc : 'var(--text-muted)',
             }}>
             {t === 'students'
-              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GraduationCapIcon size={15} /> Students ({allStudents.length})</span>
-              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><TransferIcon size={15} /> Transfers ({sent.length + received.length})</span>}
+              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><GraduationCapIcon size={15} /> Students ({allStudents.length})</span>
+              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><TransferIcon size={15} /> Transfers ({sent.length + received.length})</span>}
           </button>
         ))}
         <div style={{ flex: 1 }} />
         <Link href="/dashboard/principal/transfers/pending"
           className={styles.btnGhost}
-          style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+          style={{ height: 40, padding: '0 var(--space-4)', fontSize: '0.78rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <ClockIcon size={14} /> Pending
         </Link>
         <button className={`${styles.btnPrimary} pressable`}
@@ -293,7 +293,7 @@ export default function PrincipalTransfersClient({
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             {(['sent', 'received'] as const).map(d => (
               <button className="pressable" key={d} onClick={() => { setDirection(d); setStatusTab('all') }}
-                style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                   background: direction === d ? sc + '22' : 'var(--glass-bg)',
                   borderColor: direction === d ? sc : 'var(--glass-border)',
                   color: direction === d ? sc : 'var(--text-muted)',
@@ -309,7 +309,7 @@ export default function PrincipalTransfersClient({
               const color = t === 'all' ? sc : STATUS_COLORS[t]
               return (
                 <button className="pressable" key={t} onClick={() => setStatusTab(t)}
-                  style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                  style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                     background: statusTab === t ? color + '22' : 'var(--glass-bg)',
                     borderColor: statusTab === t ? color : 'var(--glass-border)',
                     color: statusTab === t ? color : 'var(--text-muted)',
@@ -463,7 +463,7 @@ export default function PrincipalTransfersClient({
                       <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{s.class_label} · {s.admission_number}</p>
                     </div>
                     {s.outstanding_fees > 0 && (
-                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.12)', padding: '3px 8px', borderRadius: 'var(--radius-full)', flexShrink: 0 }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.12)', padding: '4px 8px', borderRadius: 'var(--radius-full)', flexShrink: 0 }}>
                         ₦{s.outstanding_fees.toLocaleString()} owed
                       </span>
                     )}
@@ -472,7 +472,7 @@ export default function PrincipalTransfersClient({
 
                 {selectedStudent && hasDebt && (
                   <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginTop: 'var(--space-3)' }}>
-                    <p style={{ fontWeight: 800, color: '#F59E0B', marginBottom: 'var(--space-2)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}><AlertIcon size={16} /> Outstanding Fees</p>
+                    <p style={{ fontWeight: 800, color: '#F59E0B', marginBottom: 'var(--space-2)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 8 }}><AlertIcon size={16} /> Outstanding Fees</p>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', lineHeight: 1.6 }}>
                       This student has ₦{selectedStudent.outstanding_fees.toLocaleString()} in unpaid fees. This debt will follow the student to the new school.
                     </p>

@@ -201,10 +201,10 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       {selected && (
         <div style={OVERLAY} onClick={() => setSelected(null)}>
           <div className="animate-slide-up" style={SHEET} onClick={e => e.stopPropagation()}>
-            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
+            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 20px' }}/>
 
             {/* Header */}
-            <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)', paddingBottom:14, marginBottom:14 }}>
+            <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)', paddingBottom:16, marginBottom:16 }}>
               <p style={{ fontSize:'1rem', fontWeight:800, color:sc, margin:'0 0 2px' }}>
                 {school?.name}
               </p>
@@ -243,14 +243,14 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
               selected.notes     ? ['Notes',               selected.notes]    : null,
               ['Date',           fmtDate(selected.created_at)],
             ] as any[]).filter(Boolean).map(([label, value]: [string, string]) => (
-              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'9px 0', borderBottom:'1px solid var(--glass-border)' }}>
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'8px 0', borderBottom:'1px solid var(--glass-border)' }}>
                 <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600, flexShrink:0 }}>{label}</span>
                 <span style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-primary)', textTransform:'capitalize', textAlign:'right', maxWidth:'60%' }}>{value}</span>
               </div>
             ))}
 
             {school?.account_number && (
-              <div style={{ marginTop:14, padding:'10px 12px', background:sc+'12', borderRadius:8 }}>
+              <div style={{ marginTop:16, padding:'12px 12px', background:sc+'12', borderRadius:8 }}>
                 <p style={{ fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)', letterSpacing:'0.06em', margin:'0 0 4px' }}>SCHOOL BANK ACCOUNT</p>
                 <p style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-primary)', margin:'0 0 2px' }}>{school.account_name}</p>
                 <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0 }}>
@@ -260,10 +260,10 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
             )}
 
             {/* Actions */}
-            <div style={{ display:'flex', gap:10, marginTop:16 }}>
+            <div style={{ display:'flex', gap:12, marginTop:16 }}>
               <button onClick={() => downloadReceipt(selected)} className="pressable"
                 style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
                 <DownloadIcon size={15} color="#fff" /> Download / Print
               </button>
               <button onClick={() => setSelected(null)} className="pressable"
@@ -290,9 +290,9 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+        <div style={{ padding:'12px 16px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
           borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600,
-          display:'flex', alignItems:'center', gap:6 }}>
+          display:'flex', alignItems:'center', gap:8 }}>
           <AlertIcon size={14} /> {error}
         </div>
       )}
@@ -337,7 +337,7 @@ export default function ReceiptsClient({ profile, school, userId }: Props) {
                     <button onClick={e => { e.stopPropagation(); downloadReceipt(p) }} className="pressable"
                       style={{ fontSize:'0.65rem', fontWeight:700, color:sc,
                         background:sc+'15', border:`1px solid ${sc}40`,
-                        borderRadius:5, padding:'2px 7px', cursor:'pointer',
+                        borderRadius:5, padding:'2px 8px', cursor:'pointer',
                         display:'inline-flex', alignItems:'center', gap:4 }}>
                       <DownloadIcon size={11} /> PDF
                     </button>

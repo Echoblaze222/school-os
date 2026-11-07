@@ -18,7 +18,7 @@
 .backBtn:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
 
 .msgBadge {
-  padding: 6px 14px;
+  padding: 8px 16px;
   background: var(--success-subtle); border: 1px solid rgba(16,185,129,0.25);
   border-radius: var(--radius-full);
   font-size: 0.78rem; font-weight: 700; color: var(--success);
@@ -45,20 +45,20 @@
 
 .statusBadge {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: var(--radius-full);
+  padding: 4px 12px; border-radius: var(--radius-full);
   font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em;
   text-transform: uppercase; border: 1px solid;
 }
 .planBadge {
   display: inline-flex; align-items: center;
-  padding: 3px 10px; border-radius: var(--radius-full);
+  padding: 4px 12px; border-radius: var(--radius-full);
   font-size: 0.68rem; font-weight: 700;
   background: var(--brand-subtle); color: var(--brand-light);
   border: 1px solid var(--brand-border);
 }
 .extendedBadge {
   display: inline-flex; align-items: center;
-  padding: 3px 10px; border-radius: var(--radius-full);
+  padding: 4px 12px; border-radius: var(--radius-full);
   font-size: 0.68rem; font-weight: 700;
   background: var(--gold-subtle); color: var(--gold);
   border: 1px solid var(--gold-border);
@@ -72,7 +72,7 @@
 /* Tabs */
 .tabs { display: flex; gap: var(--space-2); margin-bottom: var(--space-6); border-bottom: 1px solid var(--glass-border); padding-bottom: var(--space-4); flex-wrap: wrap; }
 .tabBtn {
-  padding: 8px 18px; border-radius: var(--radius-full);
+  padding: 8px 20px; border-radius: var(--radius-full);
   font-size: 0.82rem; font-weight: 600;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
   color: var(--text-muted); cursor: pointer;

@@ -99,17 +99,17 @@ export default function SessionsClient({ userId, profile, school, schoolId, init
       )}
 
       {showForm && canManage && (
-        <form onSubmit={createSession} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 10 }}>
+        <form onSubmit={createSession} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 12 }}>
           <input placeholder="Session name (e.g. First Term Examination)" value={form.name}
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required
             style={inputStyle} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <input placeholder="Term (e.g. First Term)" value={form.term}
               onChange={e => setForm(f => ({ ...f, term: e.target.value }))} required style={inputStyle} />
             <input placeholder="Academic year (e.g. 2025/2026)" value={form.academic_year}
               onChange={e => setForm(f => ({ ...f, academic_year: e.target.value }))} required style={inputStyle} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <label style={labelStyle}>Start date
               <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} required style={inputStyle} />
             </label>
@@ -130,9 +130,9 @@ export default function SessionsClient({ userId, profile, school, schoolId, init
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {sessions.map(s => (
-            <div key={s.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-xl)' }}>
+            <div key={s.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 700 }}>{s.name}</p>
@@ -144,11 +144,11 @@ export default function SessionsClient({ userId, profile, school, schoolId, init
                 </span>
               </div>
               {canManage && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                   {NEXT_STATUS[s.status]?.map(next => (
                     <button key={next} className="btn" disabled={statusBusyId === s.id}
                       onClick={() => changeStatus(s.id, next)}
-                      style={{ fontSize: 12, padding: '6px 10px' }}>
+                      style={{ fontSize: 12, padding: '8px 12px' }}>
                       {statusBusyId === s.id ? 'Updating…' : `Mark ${next}`}
                     </button>
                   ))}
@@ -171,7 +171,7 @@ const NEXT_STATUS: Record<string, string[]> = {
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+  padding: '12px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
   background: 'var(--surface)', color: 'inherit', fontSize: 14, width: '100%',
 }
 const labelStyle: React.CSSProperties = { fontSize: 12, opacity: 0.7, display: 'flex', flexDirection: 'column', gap: 4 }

@@ -47,20 +47,20 @@ const DEFAULT_ROWS = 5
 interface GeneratedEntry extends BulkRow { code: string; saved: boolean; error: string | null }
 
 const thStyle: React.CSSProperties = {
-  padding: '8px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
+  padding: '8px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
   color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
   borderBottom: '1px solid var(--glass-border)', whiteSpace: 'nowrap',
 }
-const tdStyle: React.CSSProperties = { padding: '4px 6px', verticalAlign: 'middle' }
+const tdStyle: React.CSSProperties = { padding: '4px 8px', verticalAlign: 'middle' }
 const cellInputStyle: React.CSSProperties = {
   width: '100%', background: 'transparent', border: 'none', outline: 'none',
-  color: 'var(--text-primary)', fontSize: '0.82rem', padding: '6px 4px',
+  color: 'var(--text-primary)', fontSize: '0.82rem', padding: '8px 4px',
   borderRadius: 'var(--radius-sm)', fontFamily: 'inherit',
 }
 const dobInputStyle: React.CSSProperties = {
   background: 'var(--input-bg)', border: '1px solid var(--input-border)',
   borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-  fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+  fontSize: '0.82rem', padding: '12px 8px', fontFamily: 'inherit',
 }
 
 export default function StudentsClient({ students: init, profile, school, userId, classes }: Props) {
@@ -459,7 +459,7 @@ export default function StudentsClient({ students: init, profile, school, userId
           <button
             onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, background: 'none',
+              display: 'flex', alignItems: 'center', gap: 8, background: 'none',
               border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-md)',
               padding: '8px 16px', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700,
               cursor: 'pointer', width: '100%', justifyContent: 'center', margin: 'var(--space-3) 0',
@@ -502,7 +502,7 @@ export default function StudentsClient({ students: init, profile, school, userId
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button onClick={() => copyAllCodes(bResults)} disabled={bLoading}
                     style={{
-                      padding: '6px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: 700,
+                      padding: '8px 16px', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: 700,
                       cursor: 'pointer', background: 'var(--glass-bg)',
                       border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
                       color: copiedAll ? '#10B981' : 'var(--text-secondary)',
@@ -514,7 +514,7 @@ export default function StudentsClient({ students: init, profile, school, userId
               </div>
 
               {bResults.map((r, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i > 0 ? '1px solid var(--glass-border)' : 'none', flexWrap: 'wrap' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: i > 0 ? '1px solid var(--glass-border)' : 'none', flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 160px', minWidth: 0 }}>
                     <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.full_name}</p>
                     <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0 }}>{r.email}</p>

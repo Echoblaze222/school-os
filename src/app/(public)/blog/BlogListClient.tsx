@@ -38,7 +38,7 @@ export default function BlogListClient() {
 
   return (
     <div>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
         SchoolOS Blog
       </h1>
       <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 24px' }}>
@@ -60,7 +60,7 @@ export default function BlogListClient() {
               <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {CATEGORY_LABEL[p.category] ?? p.category}
               </span>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0 6px' }}>{p.title}</h2>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0 8px' }}>{p.title}</h2>
               {p.excerpt && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 8px' }}>{p.excerpt}</p>}
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, margin: 0 }}>
                 <CalendarIcon size={11} /> {p.publish_at ? new Date(p.publish_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : ''} - {p.author_name}

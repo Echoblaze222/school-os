@@ -137,7 +137,7 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
           subtitle={tab === 'pending' ? 'Referrals from teachers, parents, or staff will appear here for your review.' : undefined}
         />
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {referrals.map((r: any, i: number) => (
             <div key={r.id} className={`glass-card ${motion.riseIn}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)', animationDelay: `${i * 40}ms` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -149,7 +149,7 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
                 </div>
                 {r.urgency !== 'normal' && (
                   <span style={{
-                    fontSize: '0.68rem', fontWeight: 700, padding: '3px 9px', borderRadius: 999,
+                    fontSize: '0.68rem', fontWeight: 700, padding: '4px 8px', borderRadius: 999,
                     color: URGENCY_COLOR[r.urgency], background: `${URGENCY_COLOR[r.urgency]}18`,
                     textTransform: 'capitalize',
                   }}>
@@ -158,7 +158,7 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
                 )}
               </div>
 
-              <p style={{ fontSize: '0.84rem', margin: '10px 0 0', whiteSpace: 'pre-wrap' }}>{r.reason}</p>
+              <p style={{ fontSize: '0.84rem', margin: '12px 0 0', whiteSpace: 'pre-wrap' }}>{r.reason}</p>
 
               {tab === 'pending' && (
                 decliningId === r.id ? (
@@ -167,7 +167,7 @@ export default function ReferralsClient({ profile, school, userId }: Props) {
                       value={declineReason}
                       onChange={e => setDeclineReason(e.target.value)}
                       placeholder="Reason for declining (optional)"
-                      style={{ height: 36, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 10px', fontSize: '0.8rem' }}
+                      style={{ height: 36, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 12px', fontSize: '0.8rem' }}
                     />
                     <div style={{ display: 'flex', gap: 8 }}>
                       <ActionButton onClick={() => { setDecliningId(null); setDeclineReason('') }} variant="ghost" fullWidth>Cancel</ActionButton>

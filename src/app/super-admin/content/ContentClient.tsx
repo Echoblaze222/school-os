@@ -46,7 +46,7 @@ export default function ContentClient() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 'var(--space-5)' }}>
-      <Link href="/super-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
+      <Link href="/super-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
         <ArrowLeftIcon size={14} /> Back
       </Link>
 
@@ -56,7 +56,7 @@ export default function ContentClient() {
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Official SchoolOS editorial content (§54, §55).</p>
         </div>
         <Link href="/super-admin/content/new"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: 'var(--brand)', color: '#fff', borderRadius: 10, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--brand)', color: '#fff', borderRadius: 10, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>
           <PlusIcon size={14} /> New Post
         </Link>
       </div>
@@ -65,7 +65,7 @@ export default function ContentClient() {
         {['', 'draft', 'review', 'scheduled', 'published', 'archived'].map(s => (
           <button key={s || 'all'} onClick={() => setFilter(s)}
             style={{
-              padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
               background: filter === s ? 'var(--brand)' : 'var(--glass-bg)',
               color: filter === s ? '#fff' : 'var(--text-muted)',
               border: `1px solid ${filter === s ? 'var(--brand)' : 'var(--glass-border)'}`,
@@ -86,14 +86,14 @@ export default function ContentClient() {
         <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 14, overflow: 'hidden' }}>
           {posts.map(p => (
             <Link key={p.id} href={`/super-admin/content/${p.id}`}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--glass-border)', textDecoration: 'none' }}>
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--glass-border)', textDecoration: 'none' }}>
               <div>
                 <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{p.title}</p>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
                   {CATEGORY_LABEL[p.category] ?? p.category} · {p.author_name} · Updated {new Date(p.updated_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                 </p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: STATUS_COLOR[p.status], textTransform: 'uppercase' }}>{p.status}</span>
                 <EditIcon size={14} color="var(--text-faint)" />
               </div>

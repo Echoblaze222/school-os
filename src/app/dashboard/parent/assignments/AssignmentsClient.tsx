@@ -165,10 +165,10 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
       {/* Error banner */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px',
           background: '#EF444415', border: '1px solid #EF444440', borderRadius: 10,
           marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#EF4444', flex: 1 }}><AlertIcon size={14} /> {error}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#EF4444', flex: 1 }}><AlertIcon size={14} /> {error}</span>
           <button className="pressable" onClick={() => setError(null)} style={{ background: 'none', border: 'none',
             color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><XIcon size={16} /></button>
         </div>
@@ -204,7 +204,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
               </p>
 
               {items.length > 0 && (
-                <div className="glass-card-flat" style={{ display:'flex', alignItems:'center', padding:'14px 18px', marginBottom:'var(--space-4)' }}>
+                <div className="glass-card-flat" style={{ display:'flex', alignItems:'center', padding:'16px 20px', marginBottom:'var(--space-4)' }}>
                   <GaugeStat
                     label="Submitted"
                     value={Math.round((items.filter(i => ['submitted','graded','late'].includes(i.submission?.status)).length / items.length) * 100)}
@@ -220,7 +220,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                 {([['pending', 'Pending'], ['submitted', 'Submitted'], ['all', 'All']] as const).map(([v, l]) => (
                   <button key={v} onClick={() => setTab(v)}
                     className={`${tab === v ? 'btn-primary' : 'btn-secondary'} pressable`}
-                    style={{ padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                    style={{ padding: '8px 16px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                     {l}
                   </button>
                 ))}
@@ -242,7 +242,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
 
                         return (
                           <div key={item.id} className={styles.card}
-                            style={{ flexDirection: 'column', gap: 10, cursor: 'default' }}>
+                            style={{ flexDirection: 'column', gap: 12, cursor: 'default' }}>
 
                             {/* Header row */}
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%' }}>
@@ -267,15 +267,15 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                   {item.due_date
                                     ? `Due ${new Date(item.due_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}`
                                     : 'No due date'}
-                                  {overdue && <span style={{ color: '#EF4444', marginLeft: 6, fontWeight: 700 }}>· Overdue</span>}
+                                  {overdue && <span style={{ color: '#EF4444', marginLeft: 8, fontWeight: 700 }}>· Overdue</span>}
                                   {graded && (
-                                    <span style={{ color: '#10B981', marginLeft: 6, fontWeight: 700 }}>
+                                    <span style={{ color: '#10B981', marginLeft: 8, fontWeight: 700 }}>
                                       · Score: {sub.score}/{item.max_score}
                                     </span>
                                   )}
                                 </p>
                               </div>
-                              <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700,
+                              <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700,
                                 flexShrink: 0, whiteSpace: 'nowrap',
                                 background: submitted ? '#10B98120' : overdue ? '#EF444420' : '#F59E0B20',
                                 color:      submitted ? '#10B981'   : overdue ? '#EF4444'   : '#F59E0B' }}>
@@ -287,9 +287,9 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                             {item.file_url && (
                               <div style={{ paddingLeft: 52 }}>
                                 <a href={item.file_url} target="_blank" rel="noreferrer"
-                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem',
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem',
                                     fontWeight: 700, color: sc, textDecoration: 'none',
-                                    padding: '5px 12px', background: sc + '15', borderRadius: 8 }}>
+                                    padding: '4px 12px', background: sc + '15', borderRadius: 8 }}>
                                   <PaperclipIcon size={14} /> View Assignment Brief
                                 </a>
                               </div>
@@ -300,9 +300,9 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                               <div style={{ paddingLeft: 52, display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 {(sub?.text_response || sub?.answer_text) && (
                                   <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-                                    borderRadius: 10, padding: '10px 14px' }}>
+                                    borderRadius: 10, padding: '12px 16px' }}>
                                     <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)',
-                                      textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                                      textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                                       {child?.full_name?.split(' ')[0] ?? 'Their'}'s Written Answer
                                     </p>
                                     <p style={{ fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
@@ -312,15 +312,15 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                                 )}
                                 {sub?.file_url && (
                                   <a href={sub.file_url} target="_blank" rel="noreferrer"
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.72rem',
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.72rem',
                                       fontWeight: 600, color: '#10B981', textDecoration: 'none',
-                                      padding: '5px 10px', background: '#10B98115', borderRadius: 8, alignSelf: 'flex-start' }}>
+                                      padding: '4px 12px', background: '#10B98115', borderRadius: 8, alignSelf: 'flex-start' }}>
                                     <UploadIcon size={14} /> Submitted File
                                   </a>
                                 )}
                                 {sub?.feedback && (
                                   <div style={{ background: sc + '10', border: `1px solid ${sc}30`,
-                                    borderRadius: 10, padding: '10px 14px' }}>
+                                    borderRadius: 10, padding: '12px 16px' }}>
                                     <p style={{ fontSize: '0.65rem', fontWeight: 700, color: sc,
                                       textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
                                       Teacher Feedback

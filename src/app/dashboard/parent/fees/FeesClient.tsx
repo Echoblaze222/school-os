@@ -480,7 +480,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
       {/* Toast */}
       {toast && (
         <div style={{ position:'fixed', top:80, left:'50%', transform:'translateX(-50%)',
-          background:'#1a1a2e', color:'#fff', padding:'10px 20px', borderRadius:10,
+          background:'#1a1a2e', color:'#fff', padding:'12px 20px', borderRadius:10,
           fontSize:'0.82rem', zIndex:999, boxShadow:'0 4px 20px #0008', maxWidth:'90vw',
           textAlign:'center', border:'1px solid var(--glass-border)' }}>
           {toast}
@@ -496,8 +496,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
             border:'1px solid var(--glass-border)', borderRadius:'18px 18px 0 0',
             padding:'20px 20px 36px', maxHeight:'90vh', overflowY:'auto' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 18px' }}/>
-            <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)', paddingBottom:14, marginBottom:14 }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:'var(--glass-border)', margin:'0 auto 20px' }}/>
+            <div style={{ textAlign:'center', borderBottom:'1px solid var(--glass-border)', paddingBottom:16, marginBottom:16 }}>
               <p style={{ fontSize:'1rem', fontWeight:800, color:sc, margin:'0 0 2px' }}>{school?.name}</p>
               <p style={{ fontSize:'0.65rem', fontWeight:800, letterSpacing:'0.12em', color:'var(--text-muted)', margin:'0 0 4px' }}>
                 PAYMENT RECEIPT
@@ -522,12 +522,12 @@ export default function FeesClient({ profile, school, userId }: Props) {
               selectedReceipt.reference ? ['Reference / Teller', selectedReceipt.reference] : null,
               ['Date',           fmtDate(selectedReceipt.created_at)],
             ] as any[]).filter(Boolean).map(([label, value]: [string, string]) => (
-              <div key={label} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:'1px solid var(--glass-border)' }}>
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--glass-border)' }}>
                 <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>{label}</span>
                 <span style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-primary)', textTransform:'capitalize', textAlign:'right', maxWidth:'60%' }}>{value}</span>
               </div>
             ))}
-            <div style={{ display:'flex', gap:10, marginTop:16 }}>
+            <div style={{ display:'flex', gap:12, marginTop:16 }}>
               <button className="pressable" onClick={() => downloadReceipt(selectedReceipt)}
                 style={{ flex:2, height:44, background:sc, color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:'0.85rem', cursor:'pointer' }}>
                 ↓ Download / Print
@@ -544,7 +544,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
       {/* School payment account details */}
       {(school?.bank_name || school?.account_number) && (
         <div style={{ background:'var(--glass-bg)', border:`1px solid ${sc}40`, borderRadius:12,
-          padding:'14px 16px', marginBottom:'var(--space-4)' }}>
+          padding:'16px 16px', marginBottom:'var(--space-4)' }}>
           <p style={{ fontSize:'0.68rem', fontWeight:800, color:'var(--text-muted)', letterSpacing:'0.06em', margin:'0 0 8px' }}>
             SCHOOL PAYMENT ACCOUNT
           </p>
@@ -554,7 +554,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
           <p style={{ fontSize:'0.82rem', color:'var(--text-secondary)', margin:0 }}>
             {school.bank_name} · <strong style={{ color:sc }}>{school.account_number}</strong>
           </p>
-          <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:6 }}>
+          <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:8 }}>
             Use your child's name as payment reference
           </p>
         </div>
@@ -605,9 +605,9 @@ export default function FeesClient({ profile, school, userId }: Props) {
               </div>
 
               {error && (
-                <div style={{ padding:'10px 14px', background:'#EF444415', border:'1px solid #EF444440',
+                <div style={{ padding:'12px 16px', background:'#EF444415', border:'1px solid #EF444440',
                   borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'#EF4444', fontWeight:600,
-                  display:'flex', alignItems:'center', gap:6 }}>
+                  display:'flex', alignItems:'center', gap:8 }}>
                   <AlertIcon size={14} /> {error}
                 </div>
               )}
@@ -623,8 +623,8 @@ export default function FeesClient({ profile, school, userId }: Props) {
                   <button key={t} onClick={() => setTab(t)}
                     className={`${styles.tab} ${tab===t ? styles.tabActive : ''} pressable`}
                     style={tab===t
-                      ? { background:sc, color:'#fff', borderColor:sc, display:'flex', alignItems:'center', gap:6 }
-                      : { display:'flex', alignItems:'center', gap:6 }}>
+                      ? { background:sc, color:'#fff', borderColor:sc, display:'flex', alignItems:'center', gap:8 }
+                      : { display:'flex', alignItems:'center', gap:8 }}>
                     <TabIcon size={14} /> {label}
                   </button>
                 ))}
@@ -641,7 +641,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             <p>No fee structure set for {term} {year} yet.</p>
                           </div>
                         : <>
-                            <div className="glass-card-flat" style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', padding:'16px 18px', marginBottom:'var(--space-4)', flexWrap:'wrap' }}>
+                            <div className="glass-card-flat" style={{ display:'flex', alignItems:'center', gap:'var(--space-4)', padding:'16px 20px', marginBottom:'var(--space-4)', flexWrap:'wrap' }}>
                               <GaugeStat
                                 label="Paid"
                                 value={totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0}
@@ -670,7 +670,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             </div>
 
                             <div className="glass-card-flat" style={{
-                              padding:'10px 16px', marginBottom:'var(--space-4)', display:'flex', justifyContent:'space-between' }}>
+                              padding:'12px 16px', marginBottom:'var(--space-4)', display:'flex', justifyContent:'space-between' }}>
                               <span style={{ fontSize:'0.8rem', color:'var(--text-secondary)', fontWeight:600 }}>Total Paid</span>
                               <span style={{ fontSize:'0.9rem', fontWeight:800, color:'var(--status-ok, #10B981)' }}>{fmtAmt(totalPaid)}</span>
                             </div>
@@ -697,7 +697,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                       </p>
                                     </div>
                                     <span style={{ fontSize:'0.7rem', fontWeight:800, color:meta.color,
-                                      background:meta.bg, padding:'3px 10px', borderRadius:20, flexShrink:0 }}>
+                                      background:meta.bg, padding:'4px 12px', borderRadius:20, flexShrink:0 }}>
                                       {meta.label}
                                     </span>
                                     {hasBalance && school?.paystack_subaccount_active && (
@@ -707,7 +707,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                             <div style={{
                                               flex: 1, display: 'flex', alignItems: 'center',
                                               background: 'var(--surface-2, #1a1a1f)', borderRadius: 8,
-                                              border: `1px solid ${sc}40`, padding: '0 10px', height: 40,
+                                              border: `1px solid ${sc}40`, padding: '0 12px', height: 40,
                                             }}>
                                               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginRight: 4 }}>₦</span>
                                               <input
@@ -732,7 +732,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                               }}
                                             ><XIcon size={16} /></button>
                                           </div>
-                                          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0' }}>
+                                          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '8px 0' }}>
                                             Balance owed: {fmtAmt(inv.balance_ngn)}. You can pay part or all of it.
                                           </p>
                                           <button className="pressable"
@@ -748,7 +748,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                               background: payingInvoiceId === inv.id ? '#9CA3AF' : sc,
                                               color: '#fff', border: 'none', borderRadius: 8,
                                               fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-                                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                             }}
                                           >
                                             <WalletIcon size={14} color="#fff" />
@@ -764,7 +764,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                             width: '100%', height: 40, marginTop: 8,
                                             background: sc, color: '#fff', border: 'none', borderRadius: 8,
                                             fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                           }}
                                         >
                                           <WalletIcon size={14} color="#fff" />
@@ -778,7 +778,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                             </div>
 
                             {payError && (
-                              <p style={{ color: '#EF4444', fontSize: '0.8rem', marginTop: 10 }}>{payError}</p>
+                              <p style={{ color: '#EF4444', fontSize: '0.8rem', marginTop: 12 }}>{payError}</p>
                             )}
 
                             {totalOwed > 0 && (
@@ -866,7 +866,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
 
                               <div>
                                 <label style={{ fontSize:'0.7rem', color:'var(--text-muted)', fontWeight:700,
-                                  letterSpacing:'0.05em', display:'block', marginBottom:5 }}>
+                                  letterSpacing:'0.05em', display:'block', marginBottom:4 }}>
                                   AMOUNT YOU PAID (₦) *
                                 </label>
                                 <input type="number" placeholder="e.g. 45000" value={claimAmount}
@@ -928,7 +928,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                               </button>
                               <button onClick={() => { setShowForm(false); resetForm() }}
                                 className="btn-secondary pressable"
-                                style={{ padding:'0 18px', height:44, borderRadius:9, fontWeight:700, cursor:'pointer' }}>
+                                style={{ padding:'0 20px', height:44, borderRadius:9, fontWeight:700, cursor:'pointer' }}>
                                 Cancel
                               </button>
                             </div>
@@ -949,7 +949,7 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                 {claims.map((c: any) => {
                                   const meta = CLAIM_STATUS_META[c.status] ?? CLAIM_STATUS_META.pending
                                   return (
-                                    <div key={c.id} className={styles.card} style={{ flexDirection:'column', alignItems:'flex-start', gap:10 }}>
+                                    <div key={c.id} className={styles.card} style={{ flexDirection:'column', alignItems:'flex-start', gap:12 }}>
                                       <div style={{ display:'flex', justifyContent:'space-between', width:'100%', alignItems:'center' }}>
                                         <div>
                                           <p className={styles.cardTitle} style={{ marginBottom:2 }}>
@@ -962,13 +962,13 @@ export default function FeesClient({ profile, school, userId }: Props) {
                                           </p>
                                         </div>
                                         <span style={{ fontSize:'0.72rem', fontWeight:800, color:meta.color,
-                                          background:meta.bg, padding:'3px 10px', borderRadius:20, flexShrink:0 }}>
+                                          background:meta.bg, padding:'4px 12px', borderRadius:20, flexShrink:0 }}>
                                           {meta.label}
                                         </span>
                                       </div>
                                       {c.proof_url && (
                                         <a href={c.proof_url} target="_blank" rel="noopener noreferrer"
-                                          style={{ display:'flex', alignItems:'center', gap:6,
+                                          style={{ display:'flex', alignItems:'center', gap:8,
                                             fontSize:'0.75rem', color:sc, fontWeight:600, textDecoration:'none' }}>
                                           <ImageIcon size={14} color={sc}/>
                                           View proof screenshot

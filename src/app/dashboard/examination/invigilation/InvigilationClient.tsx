@@ -80,12 +80,12 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
           <p style={{ margin: 0, opacity: 0.75 }}>No upcoming sittings on the timetable yet.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {timetable.map(t => {
             const assigned = assignments.filter(a => a.exam_timetable_id === t.id)
             const myRow = assigned.find(a => a.profile_id === userId)
             return (
-              <div key={t.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-xl)' }}>
+              <div key={t.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
                 <p style={{ margin: 0, fontWeight: 700 }}>
                   {t.class_subjects?.subjects?.name ?? 'Subject'} · {t.class_subjects?.classes?.name ?? 'Class'}
                 </p>
@@ -94,13 +94,13 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
                 </p>
 
                 {assigned.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                     {assigned.map(a => (
                       <span key={a.id} style={{
                         fontSize: 12, padding: '4px 8px', borderRadius: 'var(--radius-full)',
                         background: a.status === 'confirmed' ? 'var(--success-subtle, rgba(63,166,107,0.15))' : 'var(--warning-subtle, rgba(228,87,46,0.15))',
                         color: a.status === 'confirmed' ? 'var(--success, #3FA66B)' : 'var(--warning, #E4572E)',
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        display: 'inline-flex', alignItems: 'center', gap: 8,
                       }}>
                         {a.profiles?.full_name ?? 'Teacher'} · {a.status}
                         {canAssign && (
@@ -113,14 +113,14 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
                 )}
 
                 {myRow && myRow.status === 'assigned' && (
-                  <button className="btn btn-primary" style={{ marginTop: 10, fontSize: 13 }}
+                  <button className="btn btn-primary" style={{ marginTop: 12, fontSize: 13 }}
                     disabled={busyKey === myRow.id} onClick={() => confirmMyDuty(myRow.id)}>
                     {busyKey === myRow.id ? 'Confirming…' : 'Confirm my duty'}
                   </button>
                 )}
 
                 {canAssign && (
-                  <div style={{ marginTop: 10 }}>
+                  <div style={{ marginTop: 12 }}>
                     {pickerFor === t.id ? (
                       <select autoFocus defaultValue="" onChange={e => e.target.value && assign(t.id, t.exam_rooms?.id ?? null, e.target.value)} style={inputStyle}>
                         <option value="" disabled>Select a teacher…</option>
@@ -145,6 +145,6 @@ export default function InvigilationClient({ userId, profile, school, schoolId, 
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+  padding: '12px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
   background: 'var(--surface)', color: 'inherit', fontSize: 14, width: '100%',
 }

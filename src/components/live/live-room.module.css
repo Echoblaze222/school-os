@@ -61,7 +61,7 @@
    plain icon-style button in the control row. */
 .controlBtn {
   width: 40px !important;
-  height: 40px !important;
+  height: 44px !important;
   padding: 0 !important;
   display: inline-flex !important;
   align-items: center;

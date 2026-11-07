@@ -170,7 +170,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
                       key={c.id}
                       href={`/dashboard/parent/child?id=${c.id}`}
                       style={{
-                        padding:'5px 14px', borderRadius:999, fontSize:'0.73rem', fontWeight:700,
+                        padding:'4px 16px', borderRadius:999, fontSize:'0.73rem', fontWeight:700,
                         textDecoration:'none',
                         background: c.id === child.id ? schoolColor : 'var(--glass-bg)',
                         color:      c.id === child.id ? '#fff' : 'var(--text-muted)',
@@ -192,7 +192,7 @@ export default function ChildClient({ profile, school, userId, childId }: Props)
                   }
                 </div>
                 <div>
-                  <p style={{ fontSize:'1rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 3px' }}>{child.full_name}</p>
+                  <p style={{ fontSize:'1rem', fontWeight:800, color:'var(--text-primary)', margin:'0 0 4px' }}>{child.full_name}</p>
                   <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', margin:0 }}>
                     {child.class_level} · {child.default_code} · {school?.name}
                   </p>

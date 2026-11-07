@@ -115,7 +115,7 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
           placeholder="2025/2026" className="input" style={{ width: 110 }} />
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
         <div>
           <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Attendance from</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="input" />
@@ -127,7 +127,7 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: 'var(--danger)', fontSize: '0.82rem' }}>
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: 'var(--danger)', fontSize: '0.82rem' }}>
           {error}
         </div>
       )}
@@ -141,11 +141,11 @@ export default function ReportCardsClient({ profile, school, teacherId, classes,
           const status = statuses[s.id] ?? 'draft'
           const locked = status === 'approved'
           return (
-            <div key={s.id} style={{ border: '1px solid var(--glass-border)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+            <div key={s.id} style={{ border: '1px solid var(--glass-border)', borderRadius: 10, padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <strong>{s.full_name}</strong>
                 <span style={{
-                  fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 999,
+                  fontSize: '0.72rem', fontWeight: 700, padding: '2px 12px', borderRadius: 999,
                   background: locked ? 'color-mix(in srgb, var(--success) 13%, transparent)' : status === 'pending_approval' ? 'color-mix(in srgb, var(--warning) 13%, transparent)' : 'var(--glass-border)',
                   color: locked ? 'var(--success)' : status === 'pending_approval' ? 'var(--warning)' : 'var(--text-muted)',
                 }}>

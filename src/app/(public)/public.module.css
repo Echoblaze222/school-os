@@ -2,7 +2,7 @@
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  padding: 16px 20px; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
   position: sticky; top: 0; backdrop-filter: blur(20px);
   background: rgba(11,11,15,0.7); z-index: 10;
 }

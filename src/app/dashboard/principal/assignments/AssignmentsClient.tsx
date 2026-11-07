@@ -160,8 +160,8 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
   return (
     <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Assignments" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {subsError && (
-        <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
-          borderRadius: 8, marginBottom: 16, fontSize: '0.78rem', color: '#EF4444', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ padding: '12px 16px', background: '#EF444415', border: '1px solid #EF444440',
+          borderRadius: 8, marginBottom: 16, fontSize: '0.78rem', color: '#EF4444', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
           <AlertIcon size={14} /> Submissions query failed: {subsError}
         </div>
       )}
@@ -339,7 +339,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                   {/* Expandable: every student's submission status for this assignment */}
                   {expanded === asgn.id && (
                     <div style={{ borderTop: '1px solid var(--glass-border)',
-                      marginTop: 10, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      marginTop: 12, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {(() => {
                         const subs = submissions.filter(s => s.assignment_id === asgn.id)
                         if (subs.length === 0) {
@@ -349,7 +349,7 @@ export default function AssignmentsClient({ profile, school, userId }: Props) {
                         }
                         return subs.map((s: any) => (
                           <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '6px 10px', background: 'var(--glass-bg)', borderRadius: 8 }}>
+                            padding: '8px 12px', background: 'var(--glass-bg)', borderRadius: 8 }}>
                             <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 600 }}>
                               {s.student?.full_name ?? 'Unknown student'}
                             </span>

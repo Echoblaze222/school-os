@@ -94,7 +94,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
           <div style={{ width: 64, height: 64, background: schoolColor, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: `0 4px 20px ${schoolColor}40` }}>
             <UserIcon size={28} color="white" />
           </div>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
             Link Your Child
           </h1>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
@@ -104,7 +104,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>
               Student Access Code
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -113,7 +113,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
                 onChange={e => setCode(e.target.value.toUpperCase())}
                 onKeyDown={e => e.key === 'Enter' && findChild()}
                 placeholder="e.g. STU-2024-001"
-                style={{ flex: 1, height: 46, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', letterSpacing: '0.04em', fontFamily: 'monospace' }}
+                style={{ flex: 1, height: 46, padding: '0 16px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', letterSpacing: '0.04em', fontFamily: 'monospace' }}
               />
               <button
                 onClick={findChild}
@@ -125,7 +125,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
           </div>
 
           {error && (
-            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', margin: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '12px 16px', margin: 0 }}>
               {error}
             </p>
           )}
@@ -151,7 +151,7 @@ export default function LinkChildPrompt({ userId, schoolColor, schoolId, onLinke
             </div>
           )}
 
-          <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 14px', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '12px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             <strong style={{ color: 'var(--text-secondary)' }}>Where to find the code?</strong><br />
             The access code is given by your school's secretary or principal. It looks like{' '}
             <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>STU-2024-001</span>.

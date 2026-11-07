@@ -25,7 +25,7 @@ interface Props {
 export function ChartCard({ title, insight, subtitle, loading, empty, emptyText, table, children }: Props) {
   const [showTable, setShowTable] = useState(false);
   return (
-    <section className="glass-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+    <section className="glass-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
           <h3 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>{title}</h3>
@@ -40,7 +40,7 @@ export function ChartCard({ title, insight, subtitle, loading, empty, emptyText,
             className="btn"
             onClick={() => setShowTable(v => !v)}
             aria-pressed={showTable}
-            style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
+            style={{ fontSize: 11, padding: '4px 12px', flexShrink: 0 }}
           >
             {showTable ? 'Chart' : 'Table'}
           </button>
@@ -59,7 +59,7 @@ export function ChartCard({ title, insight, subtitle, loading, empty, emptyText,
             <thead>
               <tr>
                 {table.columns.map(c => (
-                  <th key={c} style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 500, borderBottom: '1px solid var(--glass-border)' }}>{c}</th>
+                  <th key={c} style={{ textAlign: 'left', padding: '8px 8px', color: 'var(--text-muted)', fontWeight: 500, borderBottom: '1px solid var(--glass-border)' }}>{c}</th>
                 ))}
               </tr>
             </thead>
@@ -67,7 +67,7 @@ export function ChartCard({ title, insight, subtitle, loading, empty, emptyText,
               {table.rows.map((r, i) => (
                 <tr key={i}>
                   {r.map((v, j) => (
-                    <td key={j} style={{ padding: '6px 8px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--glass-border)' }}>{v}</td>
+                    <td key={j} style={{ padding: '8px 8px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--glass-border)' }}>{v}</td>
                   ))}
                 </tr>
               ))}

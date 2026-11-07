@@ -92,7 +92,7 @@ export default function IctClient({ profile, school, userId, appointment, counts
 
         {counts.pendingApplications > 0 && (
           <Link href="/dashboard/ict/applications" className={motion.riseIn} style={{
-            display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit',
             padding: 'var(--space-4)', marginBottom: 'var(--space-4)', borderRadius: 'var(--radius-lg)',
             background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
           }}>

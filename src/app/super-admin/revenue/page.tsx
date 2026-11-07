@@ -129,7 +129,7 @@ export default function RevenuePage() {
                 {payments.map(p => (
                   <tr key={p.id} className={styles.tr}>
                     <td className={styles.td}>{(p.schools as any)?.name ?? 'N/A'}</td>
-                    <td className={styles.td} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <td className={styles.td} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {(() => { const t = TYPE_LABELS[p.payment_type]; return t ? <><t.Icon size={13} /> {t.label}</> : p.payment_type })()}
                     </td>
                     <td className={styles.td}>{p.plan ? PLAN_LABELS[p.plan] ?? p.plan : 'N/A'}</td>

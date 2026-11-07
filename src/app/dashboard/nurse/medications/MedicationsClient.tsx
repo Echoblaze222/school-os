@@ -107,11 +107,11 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
           Schedule a Medication
         </ActionButton>
 
-        <div style={{ display: 'flex', gap: 8, margin: '14px 0' }}>
+        <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
           {(['pending', 'all'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{
-                padding: '6px 14px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer',
+                padding: '8px 16px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer',
                 border: f === filter ? 'none' : '1px solid var(--glass-border)',
                 background: f === filter ? 'var(--brand)' : 'transparent',
                 color: f === filter ? '#fff' : 'var(--text-secondary)',
@@ -124,11 +124,11 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
         {loading ? <SkeletonList count={4} variant="card" /> : meds.length === 0 ? (
           <EmptyState icon={<ClockIcon size={28} />} title="Nothing scheduled" subtitle="Scheduled medications will show up here." />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {meds.map(m => {
               const student = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
               return (
-                <div key={m.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-lg)' }}>
+                <div key={m.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: '0.86rem', margin: 0 }}>{student?.full_name ?? 'Student'}</p>
@@ -138,7 +138,7 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
                     <span style={{ fontSize: '0.68rem', fontWeight: 700, color: STATUS_COLOR[m.status], whiteSpace: 'nowrap' }}>{m.status}</span>
                   </div>
                   {m.status === 'pending' && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                       <button onClick={() => markStatus(m.id, 'administered')} disabled={markingId === m.id}
                         style={{ flex: 1, padding: 8, borderRadius: 8, border: 'none', background: 'var(--status-ok, #10B981)', color: '#fff', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer' }}>
                         <CheckIcon size={12} /> Administered
@@ -160,17 +160,17 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
       {showForm && (
         <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Schedule a Medication</p>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
 
             {!selectedStudent ? (
               <div>
-                <div style={{ position: 'relative', marginBottom: 10 }}>
+                <div style={{ position: 'relative', marginBottom: 12 }}>
                   <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
                   <input value={studentQuery} onChange={e => setStudentQuery(e.target.value)} placeholder="Search student by name"
-                    style={{ width: '100%', padding: '10px 12px 10px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                    style={{ width: '100%', padding: '12px 12px 12px 32px', borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {studentResults.map(s => (
@@ -182,19 +182,19 @@ export default function MedicationsClient({ profile, school, userId }: Props) {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--glass-bg)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 10, background: 'var(--glass-bg)' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.86rem' }}>{selectedStudent.full_name}</span>
                   <button onClick={() => setSelectedStudent(null)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.78rem', cursor: 'pointer' }}>Change</button>
                 </div>
                 <input placeholder="Medication name" value={medicationName} onChange={e => setMedicationName(e.target.value)}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <input placeholder="Dosage (e.g. 5ml, twice daily)" value={dosage} onChange={e => setDosage(e.target.value)}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <input type="datetime-local" value={scheduledFor} onChange={e => setScheduledFor(e.target.value)}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <textarea placeholder="Notes" value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                  style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
                 <ActionButton onClick={submitSchedule} loading={saving} loadingLabel="Saving…" fullWidth>Schedule</ActionButton>
               </div>
             )}

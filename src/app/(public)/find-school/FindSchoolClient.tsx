@@ -93,7 +93,7 @@ export default function FindSchoolClient() {
                       <CalendarIcon size={11} color="var(--text-muted)" /> Deadline {new Date(s.application_deadline).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                   )}
-                  <div style={{ marginTop: 6 }}>
+                  <div style={{ marginTop: 8 }}>
                     <ReportContentButton targetType="school" targetId={s.school_id} />
                   </div>
                 </div>

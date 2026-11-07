@@ -14,7 +14,7 @@
 
 .primaryBtn {
   display: block; width: 100%; text-align: center; color: #fff; border: none; border-radius: var(--radius-md,12px);
-  padding: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none;
+  padding: 16px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none;
   transition: opacity 150ms ease, transform 150ms ease;
 }
 .primaryBtn:active { transform: scale(0.98); }

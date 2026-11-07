@@ -224,7 +224,7 @@ export default function TransfersClient({
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
         {(['students', 'transfers'] as const).map(t => (
           <button key={t} onClick={() => setMainTab(t)}
-            style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+            style={{ padding: '8px 20px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
               background: mainTab === t ? sc + '22' : 'var(--glass-bg)',
               borderColor: mainTab === t ? sc : 'var(--glass-border)',
               color: mainTab === t ? sc : 'var(--text-muted)',
@@ -261,7 +261,7 @@ export default function TransfersClient({
               { label: 'Active',    value: allStudents.filter(s => s.is_active).length, color: '#3B82F6' },
               { label: 'Transfers', value: sent.length,                                  color: '#F59E0B' },
             ].map((s, i) => (
-              <div key={s.label} className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+              <div key={s.label} className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
                 <GaugeStat label={s.label} value={s.value} color={s.color} size={56} delayMs={i * 80} />
               </div>
             ))}
@@ -303,7 +303,7 @@ export default function TransfersClient({
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             {(['sent', 'received'] as const).map(d => (
               <button key={d} onClick={() => { setDirection(d); setStatusTab('all') }}
-                style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                   background: direction === d ? sc + '22' : 'var(--glass-bg)',
                   borderColor: direction === d ? sc : 'var(--glass-border)',
                   color: direction === d ? sc : 'var(--text-muted)',
@@ -320,7 +320,7 @@ export default function TransfersClient({
               const color = t === 'all' ? sc : STATUS_COLORS[t]
               return (
                 <button key={t} onClick={() => setStatusTab(t)}
-                  style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                  style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                     background: statusTab === t ? color + '22' : 'var(--glass-bg)',
                     borderColor: statusTab === t ? color : 'var(--glass-border)',
                     color: statusTab === t ? color : 'var(--text-muted)',
@@ -402,7 +402,7 @@ export default function TransfersClient({
                 setModal(true)
               }}
               className={styles.btnPrimary}
-              style={{ width: '100%', marginTop: 'var(--space-5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              style={{ width: '100%', marginTop: 'var(--space-5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <TransferIcon size={14} color="#fff" /> Initiate Transfer for this Student
             </button>
           </div>
@@ -482,7 +482,7 @@ export default function TransfersClient({
                       <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{s.class_label} · {s.admission_number}</p>
                     </div>
                     {s.outstanding_fees > 0 && (
-                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.12)', padding: '3px 8px', borderRadius: 'var(--radius-full)', flexShrink: 0 }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.12)', padding: '4px 8px', borderRadius: 'var(--radius-full)', flexShrink: 0 }}>
                         ₦{s.outstanding_fees.toLocaleString()} owed
                       </span>
                     )}
@@ -492,7 +492,7 @@ export default function TransfersClient({
                 {/* Debt warning */}
                 {selectedStudent && hasDebt && (
                   <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginTop: 'var(--space-3)' }}>
-                    <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, color: '#F59E0B', marginBottom: 'var(--space-2)', fontSize: '0.85rem' }}><AlertIcon size={14} color="#F59E0B" /> Outstanding Fees</p>
+                    <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, color: '#F59E0B', marginBottom: 'var(--space-2)', fontSize: '0.85rem' }}><AlertIcon size={14} color="#F59E0B" /> Outstanding Fees</p>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', lineHeight: 1.6 }}>
                       This student has ₦{selectedStudent.outstanding_fees.toLocaleString()} in unpaid fees. This debt will follow the student to the new school.
                     </p>
@@ -539,7 +539,7 @@ export default function TransfersClient({
                       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>The destination school's principal will approve or reject this request.</p>
                     </div>
                     {formError && <p style={{ fontSize: '0.78rem', color: '#EF4444', marginBottom: 'var(--space-3)' }}>{formError}</p>}
-                    <button className={styles.btnPrimary} onClick={submitTransfer} disabled={submitting} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <button className={styles.btnPrimary} onClick={submitTransfer} disabled={submitting} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                       {submitting ? 'Sending…' : <><TransferIcon size={14} color="#fff" /> Send Transfer Request</>}
                     </button>
                   </>

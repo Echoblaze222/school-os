@@ -239,8 +239,8 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             Personal Info
           </p>
           <button className="pressable" onClick={toggleEditing} style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            padding: '5px 12px',
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 12px',
             background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)',
             border: `1px solid ${editing ? 'var(--glass-border)' : 'var(--brand-border)'}`,
             borderRadius: 999,
@@ -353,14 +353,14 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                   </p>
                 </div>
                 <span style={{
-                  padding: '3px 10px', borderRadius: 999,
+                  padding: '4px 12px', borderRadius: 999,
                   background: cls.is_primary ? 'color-mix(in srgb, var(--warning) 13%, transparent)' : sc + '15',
                   border: `1px solid ${cls.is_primary ? 'color-mix(in srgb, var(--warning) 25%, transparent)' : sc + '30'}`,
                   color: cls.is_primary ? 'var(--warning)' : sc,
                   fontSize: '0.65rem', fontWeight: 700,
                   textTransform: 'uppercase' as const,
                 }}>
-                  {cls.is_primary ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><CrownIcon size={12} /></span>Class Teacher</> : 'Subject Teacher'}
+                  {cls.is_primary ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CrownIcon size={12} /></span>Class Teacher</> : 'Subject Teacher'}
                 </span>
               </div>
             ))}
@@ -371,10 +371,10 @@ export default function ProfileClient({ profile, school, userId }: Props) {
                 <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' }}>
                   Subjects Taught
                 </p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                   {subjectsTaught.map(subj => (
                     <span key={subj} style={{
-                      padding: '4px 10px', borderRadius: 999,
+                      padding: '4px 12px', borderRadius: 999,
                       background: sc + '15',
                       border: `1px solid ${sc + '30'}`,
                       color: sc, fontSize: '0.72rem', fontWeight: 600,

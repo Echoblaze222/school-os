@@ -102,9 +102,9 @@ function LockedContent() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 10,
+            gap: 12,
             width: '100%',
-            padding: '14px 20px',
+            padding: '16px 20px',
             background: '#25D366',
             borderRadius: 12,
             color: '#fff',
@@ -124,7 +124,7 @@ function LockedContent() {
           background: 'rgba(37,211,102,0.07)',
           border: '1px solid rgba(37,211,102,0.18)',
           borderRadius: 10,
-          padding: '10px 16px',
+          padding: '12px 16px',
           marginBottom: 24,
         }}>
           <p style={{

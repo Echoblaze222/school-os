@@ -121,7 +121,7 @@ export default function ReminderButton({
         style={{
           display:      'inline-flex',
           alignItems:   'center',
-          gap:          5,
+          gap:          4,
           padding:      btnPad,
           borderRadius: 999,
           fontSize:     btnFnt,
@@ -146,7 +146,7 @@ export default function ReminderButton({
           background: 'var(--glass-bg)',
           border:     '1px solid var(--glass-border)',
           borderRadius: 12,
-          padding:    '12px 14px',
+          padding:    '12px 16px',
           width:      210,
           boxShadow:  '0 8px 24px rgba(0,0,0,0.25)',
         }}>
@@ -155,11 +155,11 @@ export default function ReminderButton({
           </p>
 
           {/* Quick picks */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
             {['5', '10', '15', '30'].map(m => (
               <button key={m} onClick={() => setMinutes(m)}
                 style={{
-                  padding:      '4px 10px',
+                  padding:      '4px 12px',
                   borderRadius: 999,
                   fontSize:     '0.7rem',
                   fontWeight:   700,
@@ -174,7 +174,7 @@ export default function ReminderButton({
           </div>
 
           {/* Custom input */}
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="number"
               min={1}
@@ -184,7 +184,7 @@ export default function ReminderButton({
               style={{
                 flex:         1,
                 height:       34,
-                padding:      '0 10px',
+                padding:      '0 12px',
                 background:   'var(--input-bg)',
                 border:       '1px solid var(--input-border)',
                 borderRadius: 8,
@@ -195,7 +195,7 @@ export default function ReminderButton({
             <button onClick={save} disabled={saving}
               style={{
                 height:       34,
-                padding:      '0 14px',
+                padding:      '0 16px',
                 background:   color,
                 color:        '#fff',
                 border:       'none',
@@ -210,7 +210,7 @@ export default function ReminderButton({
           </div>
 
           {error && (
-            <p style={{ fontSize: '0.68rem', color: '#EF4444', marginTop: 6 }}>⚠️ {error}</p>
+            <p style={{ fontSize: '0.68rem', color: '#EF4444', marginTop: 8 }}>⚠️ {error}</p>
           )}
 
           <button onClick={() => { setShowPicker(false); setError(null) }}

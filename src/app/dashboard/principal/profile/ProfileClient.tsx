@@ -302,8 +302,8 @@ export default function ProfileClient({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              padding: '5px 12px',
+              gap: 4,
+              padding: '4px 12px',
               background: editing
                 ? 'var(--glass-bg)'
                 : 'var(--brand-subtle)',
@@ -346,7 +346,7 @@ export default function ProfileClient({
                     fontWeight: 600,
                     color: 'var(--text-secondary)',
                     display: 'block',
-                    marginBottom: 6,
+                    marginBottom: 8,
                   }}
                 >
                   {label}
@@ -358,7 +358,7 @@ export default function ProfileClient({
                   style={{
                     width: '100%',
                     height: 44,
-                    padding: '0 14px',
+                    padding: '0 16px',
                     background: 'var(--input-bg)',
                     border: '1px solid var(--input-border)',
                     borderRadius: 10,

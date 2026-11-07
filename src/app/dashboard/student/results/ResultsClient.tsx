@@ -212,7 +212,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
             {reportCards.map(rc => (
               <div key={rc.id} className="glass-card" style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '10px 14px',
+                padding: '12px 16px',
               }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                   {DB_TO_TERM_LABEL[rc.term] ?? rc.term} · {rc.academic_year}
@@ -222,10 +222,10 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                   disabled={downloadingKey === rc.id}
                   className={motion.pressable}
                   style={{
-                    fontSize: '0.7rem', fontWeight: 700, padding: '6px 12px', borderRadius: 999,
+                    fontSize: '0.7rem', fontWeight: 700, padding: '8px 12px', borderRadius: 999,
                     border: `1px solid ${sc}`,
                     background: 'transparent', color: sc,
-                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}
                 >
                   {downloadingKey === rc.id ? 'Preparing…' : <><FileTextIcon size={12} /> Download</>}
@@ -287,7 +287,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
             onClick={() => setTermFilter(t)}
             className={motion.pressable}
             style={{
-              padding:    '6px 14px',
+              padding:    '8px 16px',
               borderRadius: 999,
               cursor:     'pointer',
               flexShrink: 0,
@@ -343,7 +343,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                     style={{
                       display:    'flex',
                       alignItems: 'center',
-                      gap:        14,
+                      gap:        16,
                       padding:    '12px 16px',
                       animationDelay: `${i * 30}ms`,
                     }}
@@ -364,7 +364,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                       <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                         {TYPE_LABELS[r.result_type] ?? r.result_type}
                         {r.remarks && (
-                          <span style={{ marginLeft: 6, fontStyle: 'italic' }}>
+                          <span style={{ marginLeft: 8, fontStyle: 'italic' }}>
                             · {r.remarks}
                           </span>
                         )}
@@ -393,7 +393,7 @@ const DB_TO_TERM_LABEL: Record<string, string> = {
                         </span>
                       </div>
                       {/* Bar + percentage */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{
                           width: 64,
                           height: 4,

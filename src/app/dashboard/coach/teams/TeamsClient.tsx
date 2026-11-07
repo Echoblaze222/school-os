@@ -110,11 +110,11 @@ export default function TeamsClient({ profile, school, userId }: Props) {
         {loading ? <SkeletonList count={3} variant="card" /> : teams.length === 0 ? (
           <EmptyState icon={<PeopleIcon size={28} />} title="No teams yet" subtitle="Create your first team to start building a roster." />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {teams.map(t => {
               const expanded = expandedTeam === t.id
               return (
-                <div key={t.id} className="glass-card" style={{ padding: 14, borderRadius: 'var(--radius-lg)' }}>
+                <div key={t.id} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)' }}>
                   <button onClick={() => setExpandedTeam(expanded ? null : t.id)}
                     style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
                     <div>
@@ -127,7 +127,7 @@ export default function TeamsClient({ profile, school, userId }: Props) {
                   {expanded && (
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--glass-border)' }}>
                       {(t.members ?? []).length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                           {t.members.map((m: any) => {
                             const student = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
                             return (
@@ -149,14 +149,14 @@ export default function TeamsClient({ profile, school, userId }: Props) {
                           onFocus={() => setRosterTeamId(t.id)}
                           onChange={e => { setRosterTeamId(t.id); setStudentQuery(e.target.value) }}
                           placeholder="Add a player by name"
-                          style={{ width: '100%', padding: '8px 10px 8px 28px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', fontSize: '0.82rem' }}
+                          style={{ width: '100%', padding: '8px 12px 8px 28px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', fontSize: '0.82rem' }}
                         />
                       </div>
                       {rosterTeamId === t.id && studentResults.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
                           {studentResults.map(s => (
                             <button key={s.id} onClick={() => addPlayer(t.id, s.id)} disabled={addingId === s.id}
-                              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 7, borderRadius: 8, border: 'none', background: 'var(--glass-bg)', cursor: 'pointer', textAlign: 'left', fontSize: '0.8rem' }}>
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderRadius: 8, border: 'none', background: 'var(--glass-bg)', cursor: 'pointer', textAlign: 'left', fontSize: '0.8rem' }}>
                               <UserIcon size={13} /> {addingId === s.id ? 'Adding…' : s.full_name}
                             </button>
                           ))}
@@ -175,17 +175,17 @@ export default function TeamsClient({ profile, school, userId }: Props) {
       {showTeamForm && (
         <div onClick={() => setShowTeamForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Create a Team</p>
               <button onClick={() => setShowTeamForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input placeholder="Team name (e.g. Senior Football)" value={name} onChange={e => setName(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Sport" value={sport} onChange={e => setSport(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Season (optional)" value={season} onChange={e => setSeason(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <ActionButton onClick={createTeam} loading={savingTeam} loadingLabel="Creating…" fullWidth>Create Team</ActionButton>
             </div>
           </div>

@@ -17,10 +17,10 @@ export function SkeletonCard() {
   return (
     <div style={{
       background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-      borderRadius: 14, padding: 'var(--space-4)', display: 'grid', gap: 10,
+      borderRadius: 14, padding: 'var(--space-4)', display: 'grid', gap: 12,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ display: 'grid', gap: 6 }}>
+        <div style={{ display: 'grid', gap: 8 }}>
           <SkeletonBlock width={120} height={14} />
           <SkeletonBlock width={160} height={11} />
         </div>
@@ -37,7 +37,7 @@ export function SkeletonRow() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-3) 0' }}>
       <SkeletonBlock width={40} height={40} radius={999} />
-      <div style={{ display: 'grid', gap: 6, flex: 1 }}>
+      <div style={{ display: 'grid', gap: 8, flex: 1 }}>
         <SkeletonBlock width="60%" height={13} />
         <SkeletonBlock width="40%" height={10} />
       </div>

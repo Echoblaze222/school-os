@@ -12,7 +12,7 @@
 .seeAll {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--brand);

@@ -72,7 +72,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
           {/* No class assigned warning */}
           {!profile?.class_id && !loading && (
             <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', background: 'var(--warning-subtle)', borderColor: 'rgba(245,158,11,0.3)',
+              padding: '12px 16px', background: 'var(--warning-subtle)', borderColor: 'rgba(245,158,11,0.3)',
               marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--warning)' }}>
               <AlertIcon size={16} color="var(--warning)" />
               You have not been assigned to a class yet. Please contact your school administrator.
@@ -84,11 +84,11 @@ export default function ClassesClient({ profile, school, userId }: Props) {
             {(Object.keys(TAB_CONFIG) as Tab[]).map(t => (
               <button key={t} onClick={() => setTab(t)} className={motion.pressable}
                 style={{
-                  padding: '6px 16px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700,
+                  padding: '8px 16px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700,
                   background: tab === t ? TAB_CONFIG[t].color : 'var(--glass-bg)',
                   color:      tab === t ? '#fff' : 'var(--text-muted)',
                   border: `1px solid ${tab === t ? TAB_CONFIG[t].color : 'var(--glass-border)'}`,
-                  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+                  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
                 }}>
                 {t === 'live' && <span style={{ width: 7, height: 7, borderRadius: 999, background: tab === t ? '#fff' : 'var(--danger)', display: 'inline-block' }} className={motion.pulseDot} />}
                 {t === 'upcoming' && <CalendarIcon size={12} />}
@@ -97,7 +97,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 {/* Count badge */}
                 {all.filter(s => deriveTab(s) === t).length > 0 && (
                   <span style={{
-                    marginLeft: 1, padding: '1px 6px', borderRadius: 999,
+                    marginLeft: 1, padding: '1px 8px', borderRadius: 999,
                     fontSize: '0.62rem', fontWeight: 800,
                     background: tab === t ? 'rgba(255,255,255,0.25)' : TAB_CONFIG[t].bg,
                     color: tab === t ? '#fff' : TAB_CONFIG[t].color,
@@ -151,11 +151,11 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                         {actionUrl && (
                           <a href={actionUrl} target="_blank" rel="noreferrer" className={motion.pressable}
                             style={{
-                              padding: '7px 14px', background: iconColor,
+                              padding: '8px 16px', background: iconColor,
                               color: '#fff', borderRadius: '999px',
                               fontSize: '0.72rem', fontWeight: 700,
                               textDecoration: 'none', flexShrink: 0,
-                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
                             }}>
                             {tab === 'live' && <span style={{ width: 6, height: 6, borderRadius: 999, background: '#fff', display: 'inline-block' }} className={motion.pulseDot} />}
                             {tab === 'recorded' && <VideoIcon size={12} color="#fff" />}

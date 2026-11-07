@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   width: 36px;
-  height: 36px;
+  height: 44px;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   background: var(--color-bg-input);
@@ -89,7 +89,7 @@
   justify-content: center;
   min-width: 20px;
   height: 20px;
-  padding: 0 6px;
+  padding: 0 8px;
   border-radius: var(--radius-full);
   font-size: 10px;
   font-weight: 700;
@@ -165,7 +165,7 @@
   font-weight: 700;
   color: var(--color-brand);
   background: var(--color-brand-dim);
-  padding: 3px var(--space-2);
+  padding: 4px var(--space-2);
   border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -188,7 +188,7 @@
 .dueLabel {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-weight: 500;
@@ -224,7 +224,7 @@
   font-weight: 700;
   color: var(--color-success);
   background: var(--color-success-bg);
-  padding: 3px var(--space-2);
+  padding: 4px var(--space-2);
   border-radius: var(--radius-full);
 }
 
@@ -233,7 +233,7 @@
   font-weight: 700;
   color: var(--color-info);
   background: var(--color-info-bg);
-  padding: 3px var(--space-2);
+  padding: 4px var(--space-2);
   border-radius: var(--radius-full);
 }
 
@@ -242,7 +242,7 @@
   font-weight: 700;
   color: var(--color-warning);
   background: var(--color-warning-bg);
-  padding: 3px var(--space-2);
+  padding: 4px var(--space-2);
   border-radius: var(--radius-full);
 }
 
@@ -251,7 +251,7 @@
   font-weight: 700;
   color: var(--color-error);
   background: var(--color-error-bg);
-  padding: 3px var(--space-2);
+  padding: 4px var(--space-2);
   border-radius: var(--radius-full);
 }
 

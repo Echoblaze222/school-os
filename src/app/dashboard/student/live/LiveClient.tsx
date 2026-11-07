@@ -91,14 +91,14 @@ export default function LiveClient({ profile, school, userId }: Props) {
         {(['live', 'scheduled', 'ended'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`${styles.tab} ${tab === t ? styles.tabActive : ''} ${motion.pressable}`}
             style={tab === t ? { background: STATUS_COLOR[t], color: '#fff', borderColor: STATUS_COLOR[t] } : {}}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               {t === 'live' ? <><span style={{ width: 8, height: 8, borderRadius: 999, background: tab === t ? '#fff' : 'var(--success)', display: 'inline-block' }} className={motion.pulseDot} /> Live</>
                 : t === 'scheduled' ? <><CalendarIcon size={13} /> Upcoming</>
                 : <><CheckCircleIcon size={13} /> Ended</>}
             </span>
             {counts[t] > 0 && (
               <span style={{
-                marginLeft: 5, padding: '1px 6px', borderRadius: 999,
+                marginLeft: 4, padding: '1px 8px', borderRadius: 999,
                 fontSize: '0.65rem', fontWeight: 800,
                 background: tab === t ? 'rgba(255,255,255,0.25)' : STATUS_BG[t],
                 color: tab === t ? '#fff' : STATUS_COLOR[t],
@@ -112,7 +112,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
       {error && (
         <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
+          padding: '12px 16px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 'var(--space-4)' }}>
           <AlertIcon size={16} color="var(--danger)" />
           <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>
           <button onClick={() => setError(null)} className={motion.pressable}
@@ -157,17 +157,17 @@ export default function LiveClient({ profile, school, userId }: Props) {
                           </p>
                         )}
                       </div>
-                      <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
+                      <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
                         background: STATUS_BG[status], color: STATUS_COLOR[status], display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {status === 'live' && <StatusDotIcon size={8} color="var(--success)" />}
                         {status === 'live' ? 'LIVE' : status === 'scheduled' ? 'Upcoming' : 'Ended'}
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10, marginLeft: 52, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12, marginLeft: 52, flexWrap: 'wrap', alignItems: 'center' }}>
                       {status === 'live' && s.meeting_url && (
                         <a href={s.meeting_url} target="_blank" rel="noreferrer" className={motion.pressable}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
                             background: 'var(--success)', color: '#fff', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
                           <StatusDotIcon size={8} color="#fff" /> Join Now
                         </a>
@@ -179,14 +179,14 @@ export default function LiveClient({ profile, school, userId }: Props) {
                         // page and it calls /api/live/token — nothing here
                         // grants access, it's just a link.
                         <button className={motion.pressable} onClick={() => router.push(`/dashboard/student/live/room/${s.id}`)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
                             background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
                           <StatusDotIcon size={8} color="#fff" /> Join Now
                         </button>
                       )}
                       {status === 'ended' && s.recording_url && (
                         <a href={s.recording_url} target="_blank" rel="noreferrer" className={motion.pressable}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
                             background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)',
                             borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>
                           <VideoIcon size={14} /> Watch Recording

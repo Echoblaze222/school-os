@@ -567,7 +567,7 @@ export default function RoleNav({ userId, profile, school, role, schoolColor = '
                       <span style={{
                         marginLeft: 'auto', background: '#EF4444', color: '#fff',
                         borderRadius: 999, fontSize: '0.6rem', fontWeight: 700,
-                        padding: '1px 6px', minWidth: 18, textAlign: 'center',
+                        padding: '1px 8px', minWidth: 18, textAlign: 'center',
                       }}>
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>

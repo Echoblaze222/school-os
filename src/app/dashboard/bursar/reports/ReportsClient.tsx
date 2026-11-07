@@ -178,7 +178,7 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div className="animate-shake" style={{ padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
+        <div className="animate-shake" style={{ padding:'12px 16px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
           borderRadius:8, marginBottom:'var(--space-4)', fontSize:'0.8rem', color:'var(--danger)', fontWeight:600 }}>
           ⚠️ {error}
         </div>

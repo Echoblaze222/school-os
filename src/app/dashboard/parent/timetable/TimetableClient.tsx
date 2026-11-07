@@ -180,14 +180,14 @@ export default function TimetableClient({ profile, school, userId }: Props) {
               </p>
 
               {/* Day tabs */}
-              <div style={{ display:'flex', gap:6, overflowX:'auto', marginBottom:'var(--space-5)', paddingBottom:4 }}>
+              <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:'var(--space-5)', paddingBottom:4 }}>
                 {DAYS.map(d => (
                   <button className="pressable"
                     key={d}
                     onClick={() => setDay(d)}
                     style={{
                       flexShrink: 0,
-                      padding: '6px 14px',
+                      padding: '8px 16px',
                       borderRadius: 20,
                       border: 'none',
                       cursor: 'pointer',
@@ -225,7 +225,7 @@ export default function TimetableClient({ profile, school, userId }: Props) {
                               textAlign: 'center',
                               background: sc + '15',
                               borderRadius: 10,
-                              padding: '6px 4px',
+                              padding: '8px 4px',
                             }}>
                               <p style={{ fontSize:'0.65rem', fontWeight:700, color: sc, lineHeight:1.3 }}>
                                 {slot.start_time ? slot.start_time.slice(0,5) : '--'}

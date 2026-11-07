@@ -179,7 +179,7 @@ export default function AnnouncementsClient({
     <RoleSubHeader userId={userId} role="principal" profile={profile} school={school} title="Announcements" featureGroups={PRINCIPAL_FEATURE_GROUPS}>
       {/* Toast */}
       {toast && (
-        <div className={`${styles.toast} ${styles.toastOk}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CheckIcon size={14} /> {toast}</div>
+        <div className={`${styles.toast} ${styles.toastOk}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CheckIcon size={14} /> {toast}</div>
       )}
 
       {/* Delete confirm */}
@@ -270,7 +270,7 @@ export default function AnnouncementsClient({
 
           <div className={styles.composePanelBody}>
             {aiDraftBanner && (
-              <div style={{ padding: '10px 14px', background: 'var(--brand-subtle, rgba(128,0,32,0.08))', border: '1px solid rgba(128,0,32,0.25)',
+              <div style={{ padding: '12px 16px', background: 'var(--brand-subtle, rgba(128,0,32,0.08))', border: '1px solid rgba(128,0,32,0.25)',
                 borderRadius: 10, marginBottom: 12, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 {aiDraftBanner}
               </div>

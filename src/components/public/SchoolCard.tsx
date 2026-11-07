@@ -69,7 +69,7 @@ export function SchoolCardSkeleton() {
       <div className={styles.cover} style={{ backgroundColor: 'var(--bg-raised)' }} />
       <div className={styles.body}>
         <div className="skeleton" style={{ width: '70%', height: 15, marginBottom: 8 }} />
-        <div className="skeleton" style={{ width: '45%', height: 11, marginBottom: 10 }} />
+        <div className="skeleton" style={{ width: '45%', height: 11, marginBottom: 12 }} />
         <div className="skeleton" style={{ width: '90%', height: 11 }} />
       </div>
     </div>

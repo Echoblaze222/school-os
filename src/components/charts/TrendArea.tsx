@@ -32,12 +32,12 @@ export function ChartTooltip({ active, payload, label, xFormat, valueFormat, col
   return (
     <div style={{
       background: 'var(--viz-surface)', border: '1px solid var(--viz-grid)', borderRadius: 10,
-      padding: '8px 10px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', fontSize: 12, minWidth: 120,
+      padding: '8px 12px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', fontSize: 12, minWidth: 120,
     }}>
       <div style={{ color: 'var(--viz-ink-2)', marginBottom: 4 }}>{xFormat ? xFormat(label) : label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--viz-ink-2)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--viz-ink-2)' }}>
             <span aria-hidden style={{ width: 10, height: 2, borderRadius: 1, background: colors?.[p.dataKey] ?? p.color }} />
             {p.name}
           </span>
@@ -96,9 +96,9 @@ export function TrendArea({
 
 export function Legend({ items, line }: { items: { label: string; color: string }[]; line?: boolean }) {
   return (
-    <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', listStyle: 'none', margin: '8px 0 0', padding: 0, fontSize: 12, color: 'var(--viz-ink-2)' }}>
+    <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', listStyle: 'none', margin: '8px 0 0', padding: 0, fontSize: 12, color: 'var(--viz-ink-2)' }}>
       {items.map(i => (
-        <li key={i.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <li key={i.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <span aria-hidden style={{ width: line ? 12 : 10, height: line ? 2 : 10, borderRadius: line ? 1 : 2, background: i.color }} />
           {i.label}
         </li>

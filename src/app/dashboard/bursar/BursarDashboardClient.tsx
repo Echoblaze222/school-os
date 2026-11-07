@@ -95,7 +95,7 @@ export default function BursarDashboardClient({
           display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="glass-card-flat" style={{ padding: 20, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Collected</p>
             <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
               ₦{totalCollected.toLocaleString()}
@@ -103,7 +103,7 @@ export default function BursarDashboardClient({
             <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
               {collectionRate}% of fees · {counts.currentTerm ?? 'this term'}
             </p>
-            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 12, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
               <div>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Paid students</p>
                 <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.paidCount ?? 0}</p>
@@ -116,15 +116,15 @@ export default function BursarDashboardClient({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Collection rate</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{collectionRate}%</p>
             </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Claims pending</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: pendingClaims > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{pendingClaims}</p>
             </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Overdue</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.overdueCount ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.overdueCount ?? 0}</p>
             </div>

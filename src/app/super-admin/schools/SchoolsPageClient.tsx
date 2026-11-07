@@ -111,7 +111,7 @@ export default function SchoolsPageClient({ schools: initial }: Props) {
           {STATUS_TABS.map(tab => (
             <button key={tab.value} onClick={() => setStatus(tab.value)}
               style={{
-                padding:'6px 14px', borderRadius:999, fontSize:'0.75rem', fontWeight:700,
+                padding:'8px 16px', borderRadius:999, fontSize:'0.75rem', fontWeight:700,
                 background: status===tab.value ? 'rgba(239,68,68,0.12)' : 'var(--glass-bg)',
                 border: `1px solid ${status===tab.value ? 'rgba(239,68,68,0.3)' : 'var(--glass-border)'}`,
                 color: status===tab.value ? '#EF4444' : 'var(--text-muted)',

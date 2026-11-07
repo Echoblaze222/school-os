@@ -17,7 +17,7 @@
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0 4px;
   border-radius: var(--radius-full);
   background: var(--brand);
   color: #fff;

@@ -98,7 +98,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
           {error && (
             <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)',
+              padding: '12px 16px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)',
               marginBottom: 'var(--space-4)' }}>
               <AlertIcon size={16} color="var(--danger)" />
               <span style={{ fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}>{error}</span>

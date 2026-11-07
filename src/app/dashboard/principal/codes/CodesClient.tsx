@@ -78,7 +78,7 @@ const HOSTEL_SCOPED_TYPES = new Set<AppointmentTypeId>(['warden', 'assistant_war
 
 // ── FIX 1: Table style objects that were missing in the new bulk grid UI ──────
 const thStyle: React.CSSProperties = {
-  padding: '8px 10px',
+  padding: '8px 12px',
   textAlign: 'left',
   fontSize: '0.7rem',
   fontWeight: 700,
@@ -90,7 +90,7 @@ const thStyle: React.CSSProperties = {
 }
 
 const tdStyle: React.CSSProperties = {
-  padding: '4px 6px',
+  padding: '4px 8px',
   verticalAlign: 'middle',
 }
 
@@ -101,7 +101,7 @@ const cellInputStyle: React.CSSProperties = {
   outline: 'none',
   color: 'var(--text-primary)',
   fontSize: '0.82rem',
-  padding: '6px 4px',
+  padding: '8px 4px',
   borderRadius: 'var(--radius-sm)',
   fontFamily: 'inherit',
 }
@@ -202,7 +202,7 @@ function CodeSuccessScreen({
             {copiedCode ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
           </button>
         </div>
-        <p className={styles.credWarning} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+        <p className={styles.credWarning} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <BulbIcon size={14} /> The user enters this code on the <strong>New User</strong> tab at login to set their own password.
         </p>
       </div>
@@ -656,7 +656,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   </select>
 
                   {sAppointmentType === 'hod' && (
-                    <div style={{ marginTop: 10 }}>
+                    <div style={{ marginTop: 12 }}>
                       <label className={styles.fieldLabel}>Department</label>
                       <select className={`${styles.fieldInput} ${styles.fieldSelect}`} value={sDepartmentId} onChange={e => setSDepartmentId(e.target.value)}>
                         <option value="">Select department...</option>
@@ -666,7 +666,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   )}
 
                   {sAppointmentType === 'vice_principal' && (
-                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
                       <input className={styles.fieldInput} placeholder="Portfolio (optional, e.g. Academics)" value={sPortfolio} onChange={e => setSPortfolio(e.target.value)} />
                       {departments.length > 0 && (
                         <div>
@@ -685,7 +685,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   )}
 
                   {sAppointmentType && HOSTEL_SCOPED_TYPES.has(sAppointmentType) && (
-                    <div style={{ marginTop: 10 }}>
+                    <div style={{ marginTop: 12 }}>
                       <label className={styles.fieldLabel}>Hostel(s)</label>
                       <HostelPicker
                         hostels={hostels}
@@ -727,7 +727,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                   <DOBPicker value={fDOB} onChange={setFDOB} inputStyle={{
                     background: 'var(--input-bg)', border: '1px solid var(--input-border)',
                     borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-                    fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+                    fontSize: '0.82rem', padding: '12px 8px', fontFamily: 'inherit',
                   }} />
                 </div>
                 <div className={styles.fieldGroup}>
@@ -851,11 +851,11 @@ export default function CodesClient({ entries: init, classes, profile, school, u
                       placeholder="Search by name"
                     />
                   </div>
-                  {arLoading && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>Searching…</p>}
+                  {arLoading && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 8 }}>Searching…</p>}
                   {!arLoading && arQuery.trim() && arCandidates.length === 0 && (
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>No eligible teacher found (already holding this role is excluded).</p>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 8 }}>No eligible teacher found (already holding this role is excluded).</p>
                   )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
                     {arCandidates.map(s => (
                       <button key={s.id} onClick={() => setArSelected(s)}
                         className="pressable"
@@ -868,7 +868,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               ) : (
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Staff Member</label>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--glass-bg)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 10, background: 'var(--glass-bg)' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.86rem' }}>{arSelected.full_name}</span>
                     <button onClick={() => setArSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.78rem', cursor: 'pointer' }}>Change</button>
                   </div>
@@ -1086,7 +1086,7 @@ export default function CodesClient({ entries: init, classes, profile, school, u
               <button className="pressable"
                 onClick={() => setBRows(r => [...r, EMPTY_ROW()])}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
+                  display: 'flex', alignItems: 'center', gap: 8,
                   background: 'none', border: '1px dashed var(--glass-border)',
                   borderRadius: 'var(--radius-md)', padding: '8px 16px',
                   color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700,

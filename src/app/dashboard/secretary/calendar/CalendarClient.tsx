@@ -119,7 +119,7 @@ export default function CalendarClient({ events: init, profile, school, userId }
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {dayEvents.slice(0,2).map(e => (
                     <div key={e.id} onClick={ev => { ev.stopPropagation(); openEdit(e) }}
-                      style={{ fontSize: '0.5rem', fontWeight: 600, background: (TYPE_COLORS[e.event_type] ?? '#6B7280') + '33', color: TYPE_COLORS[e.event_type] ?? '#6B7280', borderRadius: 2, padding: '1px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      style={{ fontSize: '0.5rem', fontWeight: 600, background: (TYPE_COLORS[e.event_type] ?? '#6B7280') + '33', color: TYPE_COLORS[e.event_type] ?? '#6B7280', borderRadius: 2, padding: '1px 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {e.title}
                     </div>
                   ))}

@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
 .left { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .right { display: flex; align-items: center; gap: 8px; }
@@ -32,9 +32,9 @@
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
-  padding: var(--space-6, 24px) var(--space-5, 20px) 110px;
+  padding: var(--space-6, 24px) var(--space-5, 20px) 112px;
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 .statRow { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 @media (min-width: 640px) { .statRow { grid-template-columns: repeat(4, 1fr); } }

@@ -11,7 +11,7 @@
 
 .pill {
   flex: 0 0 auto;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 600;

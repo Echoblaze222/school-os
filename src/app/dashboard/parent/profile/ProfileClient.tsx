@@ -134,7 +134,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>Personal Info</p>
           <button className="pressable"
             onClick={toggleEditing}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: '1px solid ' + (editing ? 'var(--glass-border)' : 'var(--brand-border)'), borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: '1px solid ' + (editing ? 'var(--glass-border)' : 'var(--brand-border)'), borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
           >
             <EditIcon size={11} /> {editing ? 'Cancel' : 'Edit'}
           </button>
@@ -144,11 +144,11 @@ export default function ProfileClient({ profile, school, userId }: Props) {
           <div style={{ padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {[['Full Name', fullName, setFullName], ['Phone', phone, setPhone]].map(([label, val, setter]: any) => (
               <div key={label}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>{label}</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>{label}</label>
                 <input
                   value={val}
                   onChange={e => setter(e.target.value)}
-                  style={{ width: '100%', height: 44, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }}
+                  style={{ width: '100%', height: 44, padding: '0 16px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }}
                 />
               </div>
             ))}

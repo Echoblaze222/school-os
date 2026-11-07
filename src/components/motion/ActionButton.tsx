@@ -42,7 +42,7 @@ export default function ActionButton({
       style={{
         height: 40, borderRadius: 9, fontWeight: 700, fontSize: '0.82rem',
         cursor: isDisabled ? 'default' : 'pointer', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', gap: 6,
+        alignItems: 'center', justifyContent: 'center', gap: 8,
         opacity: isDisabled ? 0.55 : 1, flex: fullWidth ? 1 : undefined,
         ...base,
         ...(color ? { background: variant === 'primary' ? color : base.background } : {}),

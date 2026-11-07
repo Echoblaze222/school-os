@@ -77,7 +77,7 @@
   align-items: center;
   justify-content: center;
   width: 36px;
-  height: 36px;
+  height: 44px;
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -95,7 +95,7 @@
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .pageTitle span { color: var(--text-accent); }
@@ -287,7 +287,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 3px 9px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
 }
 
@@ -304,7 +304,7 @@
 .sendBtn {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
@@ -336,7 +336,7 @@
 .sentIndicator {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 0.68rem;
   font-weight: 600;
   color: var(--success);
@@ -352,7 +352,7 @@
 }
 
 .channelBtn {
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -399,7 +399,7 @@
 
 .historyIcon {
   width: 36px;
-  height: 36px;
+  height: 44px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -432,7 +432,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 3px 9px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
 }
 

@@ -27,7 +27,7 @@ import {
 import styles from './student-dashboard.module.css'
 
 const card: React.CSSProperties = {
-  padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1,
+  padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1,
   display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2,
 }
 const label: React.CSSProperties = { margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }
@@ -60,7 +60,7 @@ export default function StudentHomeSaved() {
         role="status"
         style={{
           position: 'fixed', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 200,
-          padding: '6px 12px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 600,
+          padding: '8px 12px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 600,
           background: 'var(--bg-elevated)', color: 'var(--text-secondary)',
           border: '1px solid var(--glass-border)', boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
         }}
@@ -78,7 +78,7 @@ export default function StudentHomeSaved() {
           }}
         >
           <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>{greeting}, {snap.firstName}</p>
-          <p style={{ margin: '6px 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>
+          <p style={{ margin: '8px 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>
             {c.gpa != null ? `${c.gpa.toFixed(1)}/5.0 GPA · ${c.attendance ?? 0}% attendance` : 'Your day, at a glance.'}
           </p>
           <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>
@@ -88,13 +88,13 @@ export default function StudentHomeSaved() {
 
         <main className={styles.main}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, margin: 'var(--space-6) 0 var(--space-4)' }}>
-            <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="glass-card-flat" style={{ padding: 20, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <p style={{ ...label, fontSize: '0.72rem' }}>Term GPA</p>
               <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
                 {c.gpa != null ? c.gpa.toFixed(1) : 'N/A'}
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}> / 5.0</span>
               </p>
-              <div style={{ paddingTop: 10, borderTop: '1px solid var(--glass-border)' }}>
+              <div style={{ paddingTop: 12, borderTop: '1px solid var(--glass-border)' }}>
                 <p style={label}>Class rank</p>
                 <p style={{ ...value, fontSize: '0.95rem' }}>{c.rank ? `#${c.rank}` : 'N/A'}</p>
               </div>

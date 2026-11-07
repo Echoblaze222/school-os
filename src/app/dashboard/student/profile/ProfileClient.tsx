@@ -146,7 +146,7 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--space-4) var(--space-5)', borderBottom:'1px solid var(--glass-border)' }}>
               <p style={{ fontSize:'0.72rem', fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--text-muted)', margin:0 }}>Personal Info</p>
               <button className="pressable" onClick={toggleEditing}
-                style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', background:editing?'var(--glass-bg)':'var(--brand-subtle)', border:`1px solid ${editing?'var(--glass-border)':'var(--brand-border)'}`, borderRadius:'999px', color:editing?'var(--text-muted)':'var(--brand-light)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
+                style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 12px', background:editing?'var(--glass-bg)':'var(--brand-subtle)', border:`1px solid ${editing?'var(--glass-border)':'var(--brand-border)'}`, borderRadius:'999px', color:editing?'var(--text-muted)':'var(--brand-light)', fontSize:'0.72rem', fontWeight:700, cursor:'pointer' }}>
                 <EditIcon size={12}/> {editing ? 'Cancel' : 'Edit'}
               </button>
             </div>
@@ -154,14 +154,14 @@ export default function ProfileClient({ profile, school, userId }: Props) {
             {editing ? (
               <div style={{ padding:'var(--space-5)', display:'flex', flexDirection:'column', gap:'var(--space-4)' }}>
                 <div>
-                  <label style={{ fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', display:'block', marginBottom:6 }}>Full Name</label>
+                  <label style={{ fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', display:'block', marginBottom:8 }}>Full Name</label>
                   <input value={fullName} onChange={e => setFullName(e.target.value)}
-                    style={{ width:'100%', height:44, padding:'0 14px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:'var(--radius-md)', color:'var(--text-primary)', fontSize:'0.875rem', outline:'none' }}/>
+                    style={{ width:'100%', height:44, padding:'0 16px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:'var(--radius-md)', color:'var(--text-primary)', fontSize:'0.875rem', outline:'none' }}/>
                 </div>
                 <div>
-                  <label style={{ fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', display:'block', marginBottom:6 }}>Phone Number</label>
+                  <label style={{ fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', display:'block', marginBottom:8 }}>Phone Number</label>
                   <input value={phone} onChange={e => setPhone(e.target.value)}
-                    style={{ width:'100%', height:44, padding:'0 14px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:'var(--radius-md)', color:'var(--text-primary)', fontSize:'0.875rem', outline:'none' }}/>
+                    style={{ width:'100%', height:44, padding:'0 16px', background:'var(--input-bg)', border:'1px solid var(--input-border)', borderRadius:'var(--radius-md)', color:'var(--text-primary)', fontSize:'0.875rem', outline:'none' }}/>
                 </div>
                 {msg && <p style={{ fontSize:'0.78rem', color: msg.includes('!') ? 'var(--success)' : 'var(--danger)', margin:0 }}>{msg}</p>}
                 <button className="btn pressable" onClick={saveProfile} disabled={saving}

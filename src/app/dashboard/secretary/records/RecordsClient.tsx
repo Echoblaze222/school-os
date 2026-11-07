@@ -162,7 +162,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
           const color = t === 'all' ? sc : TYPE_COLORS[t]
           return (
             <button key={t} onClick={() => setTypeTab(t)}
-              style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                 background: typeTab === t ? color + '22' : 'var(--glass-bg)',
                 borderColor: typeTab === t ? color : 'var(--glass-border)',
                 color: typeTab === t ? color : 'var(--text-muted)',
@@ -203,7 +203,7 @@ export default function RecordsClient({ records: init, profile, school, userId, 
               </div>
             ))}
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)', lineHeight: 1.6 }}>{viewItem.description}</p>
-            <button className="pressable" onClick={() => setConfirmDeleteId(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} color="var(--danger)" /> Delete record</button>
+            <button className="pressable" onClick={() => setConfirmDeleteId(viewItem.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} color="var(--danger)" /> Delete record</button>
           </div>
         </div>
       )}

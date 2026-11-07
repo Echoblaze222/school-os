@@ -126,7 +126,7 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
       revoked:          { bg: 'var(--danger-subtle)', color: 'var(--danger)', label: 'Revoked' },
     }
     const s = map[status] ?? map.draft
-    return <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: s.bg, color: s.color }}>{s.label}</span>
+    return <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '4px 8px', borderRadius: 999, background: s.bg, color: s.color }}>{s.label}</span>
   }
 
   return (
@@ -134,20 +134,20 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
         {error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: '0.82rem', color: 'var(--danger)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: '0.82rem', color: 'var(--danger)' }}>
             <AlertIcon size={14} /><span style={{ flex: 1 }}>{error}</span>
             <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'flex' }}><XIcon size={13} /></button>
           </div>
         )}
         {notice && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--success-subtle)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10, fontSize: '0.82rem', color: 'var(--success)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--success-subtle)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10, fontSize: '0.82rem', color: 'var(--success)' }}>
             <CheckCircleIcon size={14} /><span style={{ flex: 1 }}>{notice}</span>
             <button onClick={() => setNotice(null)} style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', display: 'flex' }}><XIcon size={13} /></button>
           </div>
         )}
 
         <button onClick={() => setShowSettings(s => !s)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start', padding: '8px 14px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <SettingsIcon size={14} /> Certificate Settings
         </button>
         {showSettings && <CertificateSettingsForm school={school} onClose={() => setShowSettings(false)} />}
@@ -158,28 +158,28 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
             <GraduationCapIcon size={18} color={sc} /> Issue Graduation Certificates
           </h2>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' as const }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' as const }}>
             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Graduating class of</label>
             <select value={year ?? ''} onChange={e => { setYear(Number(e.target.value)); setEligibility({}); setSelected(new Set()) }}
-              style={{ padding: '6px 10px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
+              style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
               {years.length === 0 && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-faint)' }}>{studentsForYear.length} graduated student{studentsForYear.length === 1 ? '' : 's'}</span>
             <button onClick={checkEligibility} disabled={checking || studentsForYear.length === 0}
-              style={{ marginLeft: 'auto', padding: '8px 14px', borderRadius: 8, background: sc, color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', opacity: checking ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: 8, background: sc, color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', opacity: checking ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               {checking ? <RefreshIcon size={13} /> : null} {checking ? 'Checking...' : 'Check Eligibility'}
             </button>
           </div>
 
           {Object.keys(eligibility).length > 0 && (
             <>
-              <div style={{ maxHeight: 280, overflowY: 'auto' as const, display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+              <div style={{ maxHeight: 280, overflowY: 'auto' as const, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {studentsForYear.map(s => {
                   const e = eligibility[s.id]
                   const isSelected = selected.has(s.id)
                   return (
-                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', opacity: e?.eligible ? 1 : 0.6 }}>
+                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', opacity: e?.eligible ? 1 : 0.6 }}>
                       <input type="checkbox" checked={isSelected} disabled={!e?.eligible}
                         onChange={() => setSelected(prev => { const next = new Set(prev); next.has(s.id) ? next.delete(s.id) : next.add(s.id); return next })} />
                       <span style={{ flex: 1, fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 600 }}>{s.full_name}</span>
@@ -191,7 +191,7 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
                 })}
               </div>
               <button onClick={generate} disabled={generating || selected.size === 0}
-                style={{ padding: '10px 18px', borderRadius: 10, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: generating || selected.size === 0 ? 0.6 : 1 }}>
+                style={{ padding: '12px 20px', borderRadius: 10, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: generating || selected.size === 0 ? 0.6 : 1 }}>
                 {generating ? 'Generating...' : `Generate ${selected.size} Certificate${selected.size === 1 ? '' : 's'}`}
               </button>
             </>
@@ -208,7 +208,7 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {certs.map(c => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', flexWrap: 'wrap' as const }}>
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', flexWrap: 'wrap' as const }}>
                   <div style={{ flex: 1, minWidth: 160 }}>
                     <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.student?.full_name ?? 'Unknown'}</p>
                     <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-faint)' }}>{c.certificate_number} · {c.graduation_year}</p>
@@ -221,13 +221,13 @@ export default function CertificatesClient({ graduatedStudents, school, profile,
                   )}
                   {(c.status === 'draft' || c.status === 'pending_approval') && (
                     <button onClick={() => approve(c.id)} disabled={busyId === c.id}
-                      style={{ padding: '6px 12px', borderRadius: 8, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', opacity: busyId === c.id ? 0.6 : 1 }}>
+                      style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', opacity: busyId === c.id ? 0.6 : 1 }}>
                       {busyId === c.id ? '...' : 'Approve & Issue'}
                     </button>
                   )}
                   {c.status === 'issued' && (
                     <button onClick={() => revoke(c.id)} disabled={busyId === c.id}
-                      style={{ padding: '6px 12px', borderRadius: 8, background: 'transparent', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', opacity: busyId === c.id ? 0.6 : 1 }}>
+                      style={{ padding: '8px 12px', borderRadius: 8, background: 'transparent', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', opacity: busyId === c.id ? 0.6 : 1 }}>
                       {busyId === c.id ? '...' : 'Revoke'}
                     </button>
                   )}
@@ -291,24 +291,24 @@ function CertificateSettingsForm({ school, onClose }: { school: any; onClose: ()
   return (
     <div className="glass-card" style={{ flexDirection: 'column', padding: 'var(--space-5)', gap: 12 }}>
       {error && <p style={{ fontSize: '0.78rem', color: 'var(--danger)', margin: 0 }}>{error}</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
         <Field label="Principal Name" value={form.principal_name} onChange={v => setForm(f => ({ ...f, principal_name: v }))} />
         <Field label="Principal Title" value={form.principal_title} onChange={v => setForm(f => ({ ...f, principal_title: v }))} />
         <Field label="Certificate Prefix" value={form.certificate_prefix} onChange={v => setForm(f => ({ ...f, certificate_prefix: v.toUpperCase() }))} placeholder="CERT" />
         <Field label="Verification Base URL" value={form.verification_base_url} onChange={v => setForm(f => ({ ...f, verification_base_url: v }))} placeholder="https://yourschool.schoolos.app" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
         <AssetUpload label="Principal Signature" url={form.signature_url} uploading={uploadingField === 'signature_url'} onUpload={f => uploadAsset('signature_url', f)} />
         <AssetUpload label="School Stamp / Seal" url={form.stamp_url} uploading={uploadingField === 'stamp_url'} onUpload={f => uploadAsset('stamp_url', f)} />
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+      <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
         <button onClick={save} disabled={saving}
-          style={{ padding: '9px 16px', borderRadius: 8, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          style={{ padding: '8px 16px', borderRadius: 8, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
           {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Settings'}
         </button>
-        <button onClick={onClose} style={{ padding: '9px 16px', borderRadius: 8, background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+        <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 8, background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           Close
         </button>
       </div>
@@ -324,7 +324,7 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>{label}</span>
       <input value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
-        style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem', width: '100%', boxSizing: 'border-box' as const }} />
+        style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: '0.82rem', width: '100%', boxSizing: 'border-box' as const }} />
     </label>
   )
 }
@@ -335,7 +335,7 @@ function AssetUpload({ label, url, uploading, onUpload }: { label: string; url: 
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>{label}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {url ? <img src={url} alt={label} style={{ height: 32, objectFit: 'contain' as const, background: '#fff', borderRadius: 4, padding: 2 }} /> : null}
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', borderRadius: 8, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
           <UploadIcon size={13} /> {uploading ? 'Uploading...' : url ? 'Replace' : 'Upload'}
           <input type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={uploading}
             onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])} />

@@ -394,7 +394,7 @@ export default function PostResultsClient({
       <RoleSubHeader userId={teacherId} role="teacher" profile={profile} school={school} title="Results" featureGroups={TEACHER_FEATURE_GROUPS}>
         {/* Post Results button */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-          <button className="pressable" onClick={openNewWizard} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
+          <button className="pressable" onClick={openNewWizard} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 10, background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
             <IcPlus /> Post Results
           </button>
         </div>
@@ -407,7 +407,7 @@ export default function PostResultsClient({
               { label: 'Records',  value: liveResults.length },
             ].map(s => (
               <div key={s.label} style={{
-                textAlign: 'center', padding: '10px 8px',
+                textAlign: 'center', padding: '12px 8px',
                 background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12,
               }}>
                 <p style={{ margin: '0 0 2px', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{s.value}</p>
@@ -426,7 +426,7 @@ export default function PostResultsClient({
             <button className="pressable"
               onClick={openNewWizard}
               style={{
-                padding: '10px 20px', borderRadius: 10,
+                padding: '12px 20px', borderRadius: 10,
                 background: primaryColor, color: '#fff',
                 border: 'none', cursor: 'pointer',
                 fontSize: '0.82rem', fontWeight: 700,
@@ -436,11 +436,11 @@ export default function PostResultsClient({
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {overviewGroups.map(g => (
               <div key={g.key} style={{
                 background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-                borderRadius: 14, padding: '14px 16px',
+                borderRadius: 14, padding: '16px 16px',
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
                 {/* Info */}
@@ -448,10 +448,10 @@ export default function PostResultsClient({
                   <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {g.subjectName}
                   </p>
-                  <p style={{ margin: '0 0 6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                     {g.className} · {g.term} · {RESULT_TYPE_LABELS[g.resultType]}
                   </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     {/* Avg badge */}
                     <span style={{
                       fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999,
@@ -473,7 +473,7 @@ export default function PostResultsClient({
                     title="Preview scores"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                      padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
                       background: 'var(--glass-border)', border: '1px solid var(--glass-border)',
                       color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700,
                     }}
@@ -485,7 +485,7 @@ export default function PostResultsClient({
                     title="Edit scores"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                      padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
                       background: primaryColor, border: 'none',
                       color: '#fff', fontSize: '0.72rem', fontWeight: 700,
                     }}
@@ -507,11 +507,11 @@ export default function PostResultsClient({
     return (
       <RoleSubHeader userId={teacherId} role="teacher" profile={profile} school={school} title={previewGroup.subjectName} onBack={() => setMode('overview')} featureGroups={TEACHER_FEATURE_GROUPS}>
         {/* Meta + edit row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', flex: 1 }}>
             {previewGroup.className} · {previewGroup.term} · {RESULT_TYPE_LABELS[previewGroup.resultType]}
           </p>
-          <button className="pressable" onClick={() => openEditWizard(previewGroup)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontSize: '0.78rem', fontWeight: 700 }}>
+          <button className="pressable" onClick={() => openEditWizard(previewGroup)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', borderRadius: 8, cursor: 'pointer', background: primaryColor, border: 'none', color: '#fff', fontSize: '0.78rem', fontWeight: 700 }}>
             <IcEdit /> Edit
           </button>
         </div>
@@ -522,7 +522,7 @@ export default function PostResultsClient({
             { label: 'Avg Score', value: `${avgPct}%`, color: avgPct >= 50 ? 'var(--success)' : 'var(--danger)' },
             { label: 'Max Score', value: previewGroup.maxScore },
           ].map(s => (
-            <div key={s.label} style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10 }}>
+            <div key={s.label} style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10 }}>
               <p style={{ margin: '0 0 2px', fontSize: '1.2rem', fontWeight: 800, color: (s as any).color ?? 'var(--text-primary)' }}>{s.value}</p>
               <p style={{ margin: 0, fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
             </div>
@@ -536,7 +536,7 @@ export default function PostResultsClient({
             return (
               <div key={r.id} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 14px', background: 'var(--glass-bg)',
+                padding: '12px 16px', background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)', borderRadius: 12,
               }}>
                 <div style={{
@@ -555,7 +555,7 @@ export default function PostResultsClient({
                 </div>
                 {/* Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {r.score}<span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>/{r.max_score}</span>
                     </span>
@@ -584,14 +584,14 @@ export default function PostResultsClient({
     <RoleSubHeader userId={teacherId} role="teacher" profile={profile} school={school} title={wizardTitle} onBack={() => { setMode('overview'); setStep(1) }} featureGroups={TEACHER_FEATURE_GROUPS}>
 
       {/* Step info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
           Step {step} of 3{step > 1 && selectedCS ? ` · ${selectedCS.class_name}` : ''}
         </p>
       </div>
 
       {/* Step indicators */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {[1, 2, 3].map(n => (
           <div key={n} style={{
             flex: 1, height: 4, borderRadius: 999,
@@ -609,14 +609,14 @@ export default function PostResultsClient({
               <p>You are not assigned to any classes yet.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {teacherClasses.map(tc => (
                 <button className="pressable"
                   key={tc.class_subject_id}
                   onClick={() => { setSelectedCS(tc); setStep(2) }}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '14px 16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
+                    padding: '16px 16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
                     background: selectedCS?.class_subject_id === tc.class_subject_id
                       ? primaryColor : 'var(--glass-bg)',
                     border: `1px solid ${selectedCS?.class_subject_id === tc.class_subject_id
@@ -642,14 +642,14 @@ export default function PostResultsClient({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Term */}
           <div>
-            <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Term</p>
+            <p style={{ margin: '0 0 12px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Term</p>
             <div style={{ display: 'flex', gap: 8 }}>
               {(['first', 'second', 'third'] as Term[]).map(t => (
                 <button className="pressable"
                   key={t}
                   onClick={() => setTerm(t)}
                   style={{
-                    flex: 1, padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
+                    flex: 1, padding: '12px 4px', borderRadius: 10, cursor: 'pointer',
                     fontSize: '0.78rem', fontWeight: 700,
                     background: term === t ? primaryColor : 'var(--glass-bg)',
                     border: `1px solid ${term === t ? primaryColor : 'var(--glass-border)'}`,
@@ -665,14 +665,14 @@ export default function PostResultsClient({
 
           {/* Assessment type */}
           <div>
-            <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Assessment Type</p>
+            <p style={{ margin: '0 0 12px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Assessment Type</p>
             <div style={{ display: 'flex', gap: 8 }}>
               {(['day_test', 'mid_term', 'exam'] as ResultType[]).map(rt => (
                 <button className="pressable"
                   key={rt}
                   onClick={() => setResultType(rt)}
                   style={{
-                    flex: 1, padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
+                    flex: 1, padding: '12px 4px', borderRadius: 10, cursor: 'pointer',
                     fontSize: '0.78rem', fontWeight: 700,
                     background: resultType === rt ? primaryColor : 'var(--glass-bg)',
                     border: `1px solid ${resultType === rt ? primaryColor : 'var(--glass-border)'}`,
@@ -688,14 +688,14 @@ export default function PostResultsClient({
 
           {/* Max score */}
           <div>
-            <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Maximum Score</p>
+            <p style={{ margin: '0 0 12px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Maximum Score</p>
             <input
               type="number" min="1" max="1000"
               value={maxScore}
               onChange={e => setMaxScore(e.target.value)}
               placeholder="100"
               style={{
-                width: '100%', padding: '12px 14px', borderRadius: 10, boxSizing: 'border-box',
+                width: '100%', padding: '12px 16px', borderRadius: 10, boxSizing: 'border-box',
                 background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
                 color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 600,
               }}
@@ -703,7 +703,7 @@ export default function PostResultsClient({
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
             <button className="pressable" onClick={() => setStep(1)} style={{ flex: 1, padding: '12px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>
               ← Back
             </button>
@@ -722,18 +722,18 @@ export default function PostResultsClient({
       {step === 3 && (
         <div>
           {/* Context reminder */}
-          <div style={{ padding: '10px 14px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, marginBottom: 16, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <div style={{ padding: '12px 16px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, marginBottom: 16, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             {TERM_LABELS[term]} · {RESULT_TYPE_LABELS[resultType]} · Max {maxNum} · {currentAcademicYear}
           </div>
 
           {/* Status banners */}
           {submitStatus === 'success' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--success) 13%, transparent)', border: '1px solid var(--success)', color: 'var(--success)', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 10, background: 'color-mix(in srgb, var(--success) 13%, transparent)', border: '1px solid var(--success)', color: 'var(--success)', marginBottom: 16, fontSize: '0.82rem', fontWeight: 700 }}>
               <IcCheck /> Saved {savedCount} result{savedCount !== 1 ? 's' : ''} successfully!
             </div>
           )}
           {submitStatus === 'error' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 13%, transparent)', border: '1px solid var(--danger)', color: 'var(--danger)', marginBottom: 14, fontSize: '0.82rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 13%, transparent)', border: '1px solid var(--danger)', color: 'var(--danger)', marginBottom: 16, fontSize: '0.82rem', fontWeight: 700 }}>
               <IcAlert /> {errorMsg || 'Failed to save results.'}
             </div>
           )}
@@ -753,7 +753,7 @@ export default function PostResultsClient({
                 return (
                   <div key={s.student_id} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 14px', background: 'var(--glass-bg)',
+                    padding: '12px 16px', background: 'var(--glass-bg)',
                     border: `1px solid ${isOver ? 'var(--danger)' : 'var(--glass-border)'}`,
                     borderRadius: 12,
                   }}>
@@ -773,7 +773,7 @@ export default function PostResultsClient({
                       value={raw}
                       onChange={e => setScores(prev => ({ ...prev, [s.student_id]: e.target.value }))}
                       style={{
-                        width: 68, padding: '8px 10px', borderRadius: 8, textAlign: 'center',
+                        width: 68, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
                         background: 'var(--glass-bg)', fontWeight: 700, fontSize: '0.95rem',
                         color: isOver ? 'var(--danger)' : 'var(--text-primary)',
                         border: `1px solid ${isOver ? 'var(--danger)' : 'var(--glass-border)'}`,
@@ -793,7 +793,7 @@ export default function PostResultsClient({
           )}
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <button className="pressable"
               onClick={() => setStep(2)}
               style={{ padding: '12px 16px', borderRadius: 10, cursor: 'pointer', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}
@@ -804,7 +804,7 @@ export default function PostResultsClient({
               onClick={handleSubmit}
               disabled={isSubmitting || filledCount === 0}
               style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 padding: '12px', borderRadius: 10, cursor: 'pointer',
                 background: primaryColor, border: 'none',
                 color: '#fff', fontWeight: 700, fontSize: '0.85rem',
@@ -815,7 +815,7 @@ export default function PostResultsClient({
               {isSubmitting ? 'Saving…' : `Save ${filledCount > 0 ? `(${filledCount}) ` : ''}Results`}
             </button>
           </div>
-          <p style={{ textAlign: 'center', margin: '10px 0 0', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+          <p style={{ textAlign: 'center', margin: '12px 0 0', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             {filledCount} of {classStudents.length} students filled
           </p>
         </div>

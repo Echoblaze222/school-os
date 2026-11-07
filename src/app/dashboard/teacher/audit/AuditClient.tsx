@@ -207,7 +207,7 @@ export default function AuditClient({ entries, totalCount, page, actionTypes, fi
         <button className="pressable"
           onClick={() => exportCSV(entries)}
           disabled={entries.length === 0}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', background: 'var(--success-bg)', border: '1px solid rgba(45,139,85,0.25)', color: 'var(--success)', fontWeight: 700, fontSize: '0.75rem', borderRadius: 8, cursor: entries.length === 0 ? 'not-allowed' : 'pointer', opacity: entries.length === 0 ? 0.4 : 1 }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', background: 'var(--success-bg)', border: '1px solid rgba(45,139,85,0.25)', color: 'var(--success)', fontWeight: 700, fontSize: '0.75rem', borderRadius: 8, cursor: entries.length === 0 ? 'not-allowed' : 'pointer', opacity: entries.length === 0 ? 0.4 : 1 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>

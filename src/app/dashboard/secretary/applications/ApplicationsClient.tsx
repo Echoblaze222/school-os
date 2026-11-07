@@ -71,7 +71,7 @@ export default function ApplicationsClient({ applications: init, profile, school
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1, overflowX: 'auto' }}>
           {['all', 'pending', 'admitted', 'rejected'].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t ? sc + '22' : 'var(--glass-bg)', borderColor: tab === t ? sc : 'var(--glass-border)', color: tab === t ? sc : 'var(--text-muted)' }}>
+            <button key={t} onClick={() => setTab(t)} style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t ? sc + '22' : 'var(--glass-bg)', borderColor: tab === t ? sc : 'var(--glass-border)', color: tab === t ? sc : 'var(--text-muted)' }}>
               {t.charAt(0).toUpperCase() + t.slice(1)} ({apps.filter(a => t === 'all' || a.status === t).length})
             </button>
           ))}
@@ -105,11 +105,11 @@ export default function ApplicationsClient({ applications: init, profile, school
             ))}
             {msg && <p style={{ fontSize: '0.78rem', color: '#EF4444', margin: 'var(--space-3) 0 0' }}>{msg}</p>}
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
-              {viewItem.status !== 'admitted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'admitted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><CheckCircleIcon size={14} color="#fff" /> Admit</button>}
-              {viewItem.status !== 'rejected' && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
+              {viewItem.status !== 'admitted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'admitted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><CheckCircleIcon size={14} color="#fff" /> Admit</button>}
+              {viewItem.status !== 'rejected' && <button className={styles.btnDanger}  onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
               {viewItem.status !== 'pending'  && <button className={styles.btnGhost}   onClick={() => updateStatus(viewItem.id, 'pending')}  disabled={saving} style={{ flex: 1 }}>↺ Back to Pending</button>}
             </div>
-            <button className="pressable" onClick={() => setConfirmDelete(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} /> Delete application</button>
+            <button className="pressable" onClick={() => setConfirmDelete(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}><TrashIcon size={13} /> Delete application</button>
           </div>
         </div>
       )}

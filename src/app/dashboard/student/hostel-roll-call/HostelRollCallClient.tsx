@@ -110,7 +110,7 @@ export default function HostelRollCallClient({ hostels }: { hostels: Hostel[] })
           </Link>
         </div>
         <h1 className={styles.title}>Hostel roll call</h1>
-        <div className="glass-card" style={{ padding: 16, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div className="glass-card" style={{ padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           <AlertCircleIcon size={20} />
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
             You hold a Hostel Prefect appointment, but no hostel has been assigned to it yet.

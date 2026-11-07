@@ -314,7 +314,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
   ]
 
   const lbl: React.CSSProperties = { fontSize:'0.72rem', fontWeight:700,
-    color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:6, display:'block' }
+    color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:8, display:'block' }
 
   return (
     <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Export Data" featureGroups={BURSAR_FEATURE_GROUPS}>
@@ -361,7 +361,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
         <div style={{ padding:'var(--space-4)', marginTop:'var(--space-5)',
           background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)',
           borderRadius:10, fontSize:'0.85rem', fontWeight:700, color:'var(--danger)',
-          display:'flex', alignItems:'center', gap:6 }}>
+          display:'flex', alignItems:'center', gap:8 }}>
           <AlertIcon size={15} /> {error}
         </div>
       )}
@@ -372,7 +372,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
           border: `1px solid ${result.count > 0 ? 'rgba(16,185,129,0.25)' : '#F59E0B40'}`,
           borderRadius:10, fontSize:'0.85rem', fontWeight:700,
           color: result.count > 0 ? 'var(--success)' : '#F59E0B',
-          display:'flex', alignItems:'center', gap:6 }}>
+          display:'flex', alignItems:'center', gap:8 }}>
           {result.count > 0
             ? <><CheckCircleIcon size={15} /> {`Downloaded ${result.count} record${result.count !== 1 ? 's' : ''}`}</>
             : 'No records found for this selection'}
@@ -393,7 +393,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
                 <thead>
                   <tr style={{ background:'var(--input-bg)' }}>
                     {preview.cols.map(col => (
-                      <th key={col} style={{ padding:'8px 10px', textAlign:'left', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.04em', borderBottom:'1px solid var(--glass-border)', whiteSpace:'nowrap' }}>
+                      <th key={col} style={{ padding:'8px 12px', textAlign:'left', fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.04em', borderBottom:'1px solid var(--glass-border)', whiteSpace:'nowrap' }}>
                         {col.replace(/_/g,' ').toUpperCase()}
                       </th>
                     ))}
@@ -403,7 +403,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
                   {preview.rows.map((row, i) => (
                     <tr key={i} style={{ borderBottom:'1px solid var(--glass-border)' }}>
                       {preview.cols.map(col => (
-                        <td key={col} style={{ padding:'8px 10px', color:'var(--text-primary)', maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        <td key={col} style={{ padding:'8px 12px', color:'var(--text-primary)', maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                           {typeof row[col] === 'number' ? row[col].toLocaleString() : (row[col] ?? 'N/A')}
                         </td>
                       ))}
@@ -416,13 +416,13 @@ export default function ExportClient({ profile, school, userId }: Props) {
         </div>
       )}
 
-      <div style={{ display:'flex', gap:10, marginTop:'var(--space-5)' }}>
+      <div style={{ display:'flex', gap:12, marginTop:'var(--space-5)' }}>
         <button onClick={previewData} disabled={previewing} className="pressable"
           style={{ flex:1, height:50, background:'var(--input-bg)',
             color:'var(--text-primary)', border:'1px solid var(--input-border)',
             borderRadius:10, fontWeight:700, fontSize:'0.88rem',
             cursor:'pointer', opacity:previewing ? 0.7 : 1,
-            display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
           {previewing ? 'Loading…' : <><EyeIcon size={16} /> Preview</>}
         </button>
 
@@ -431,7 +431,7 @@ export default function ExportClient({ profile, school, userId }: Props) {
             border:'none', borderRadius:10, fontWeight:700, fontSize:'0.9rem',
             cursor:'pointer',
             display:'flex', alignItems:'center', justifyContent:'center',
-            gap:10, opacity:exporting ? 0.7 : 1 }}>
+            gap:12, opacity:exporting ? 0.7 : 1 }}>
           <DownloadIcon size={18} color="#fff"/>
           {exporting ? 'Preparing download…' : 'Download CSV'}
         </button>

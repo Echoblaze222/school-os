@@ -106,7 +106,7 @@
 }
 
 .statusChip {
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;

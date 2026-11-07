@@ -183,20 +183,20 @@ export default function LiveClient({ profile, school, userId }: Props) {
           </button>
         ))}
         <button className="pressable" onClick={() => setShowForm(true)}
-          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> Schedule
         </button>
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
           <button className="pressable" onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
 
       {teacherClasses.length === 0 && !loading && (
-        <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)', borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--warning)' }}>
+        <div style={{ padding: '12px 16px', background: 'color-mix(in srgb, var(--warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)', borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--warning)' }}>
           No classes assigned yet. Ask the principal to assign you a class before scheduling live classes.
         </div>
       )}
@@ -294,8 +294,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
                         </p>
                       )}
                     </div>
-                    <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, background: (STATUS_COLOR[status] ?? '#6B7280') + '20', color: STATUS_COLOR[status] ?? '#6B7280', flexShrink: 0 }}>
-                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? <><span style={{ display:'inline-flex', marginRight: 3 }}><StatusDotIcon size={9} color="#fff" /></span>LIVE</> : 'Ended'}
+                    <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, background: (STATUS_COLOR[status] ?? '#6B7280') + '20', color: STATUS_COLOR[status] ?? '#6B7280', flexShrink: 0 }}>
+                      {status === 'scheduled' ? 'Upcoming' : status === 'live' ? <><span style={{ display:'inline-flex', marginRight: 4 }}><StatusDotIcon size={9} color="#fff" /></span>LIVE</> : 'Ended'}
                     </span>
                   </div>
 
@@ -303,7 +303,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
                     {status === 'scheduled' && (
                       s.meeting_url ? (
                         <button className="pressable" onClick={() => startClass(s.id)}
-                          style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          style={{ padding: '8px 16px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                           <PlayIcon size={13} color="#fff" /> Start Now
                         </button>
                       ) : (
@@ -315,7 +315,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
                         // /api/live/token performs. The room page itself is
                         // what actually starts the session.
                         <button className="pressable" onClick={() => router.push(`/dashboard/teacher/live/room/${s.id}`)}
-                          style={{ padding: '6px 14px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          style={{ padding: '8px 16px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                           <PlayIcon size={13} color="#fff" /> Start Live Session
                         </button>
                       )
@@ -323,7 +323,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
                     {status === 'live' && (
                       s.meeting_url ? (
                         <button className="pressable" onClick={() => endClass(s.id)}
-                          style={{ padding: '6px 14px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          style={{ padding: '8px 16px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                           <StopIcon size={13} color="#fff" /> End Class
                         </button>
                       ) : (
@@ -331,20 +331,20 @@ export default function LiveClient({ profile, school, userId }: Props) {
                         // (it needs to close the actual LiveKit room, not
                         // just flip a database flag) — from here, rejoin it.
                         <button className="pressable" onClick={() => router.push(`/dashboard/teacher/live/room/${s.id}`)}
-                          style={{ padding: '6px 14px', background: 'var(--warning, #B45309)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          style={{ padding: '8px 16px', background: 'var(--warning, #B45309)', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                           <VideoIcon size={13} color="#fff" /> Rejoin Live Class
                         </button>
                       )
                     )}
                     {s.meeting_url && (
                       <a href={s.meeting_url} target="_blank" rel="noreferrer"
-                        style={{ padding: '6px 14px', background: sc + '20', color: sc, border: `1px solid ${sc}40`, borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
+                        style={{ padding: '8px 16px', background: sc + '20', color: sc, border: `1px solid ${sc}40`, borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
                         <LinkIcon size={13} color={sc} /> Open Meeting
                       </a>
                     )}
                     {s.recording_url && status === 'ended' && (
                       <a href={s.recording_url} target="_blank" rel="noreferrer"
-                        style={{ padding: '6px 14px', background: 'var(--glass-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
+                        style={{ padding: '8px 16px', background: 'var(--glass-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>
                         <VideoIcon size={13} color="var(--text-secondary)" /> Recording
                       </a>
                     )}
@@ -364,7 +364,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
                     {status !== 'live' && (
                       <button className="pressable" onClick={() => deleteSession(s.id)}
-                        style={{ padding: '6px 14px', background: 'transparent', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        style={{ padding: '8px 16px', background: 'transparent', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                         Delete
                       </button>
                     )}

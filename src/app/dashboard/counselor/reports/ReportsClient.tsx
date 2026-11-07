@@ -69,10 +69,10 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             </div>
           </div>
 
-          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '0 0 10px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '0 0 12px' }}>
             Caseload summary
           </p>
-          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 20, display: 'grid', gap: 10 }}>
+          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 20, display: 'grid', gap: 12 }}>
             <Row label="Total cases handled" value={report.totalCases} />
             <Row label="Closed cases" value={report.closedCases} />
             <Row label="Average days to close" value={report.averageDaysToClose ?? 'N/A'} />
@@ -80,10 +80,10 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             <Row label="No-shows" value={report.noShowSessions} />
           </div>
 
-          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '0 0 10px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '0 0 12px' }}>
             Cases by category
           </p>
-          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 20, display: 'grid', gap: 10 }}>
+          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 20, display: 'grid', gap: 12 }}>
             {Object.entries(report.casesByCategory as Record<string, number>).length === 0 ? (
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>No cases yet.</p>
             ) : (
@@ -93,10 +93,10 @@ export default function ReportsClient({ profile, school, userId }: Props) {
             )}
           </div>
 
-          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '0 0 10px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '0 0 12px' }}>
             Referrals
           </p>
-          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 40, display: 'grid', gap: 10 }}>
+          <div className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 40, display: 'grid', gap: 12 }}>
             <Row label="Total received" value={report.referrals.total} />
             <Row label="Pending review" value={report.referrals.pending} />
             <Row label="Converted to cases" value={report.referrals.converted} />

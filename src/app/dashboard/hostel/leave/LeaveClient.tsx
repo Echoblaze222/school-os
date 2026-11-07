@@ -95,7 +95,7 @@ export default function LeaveClient({ hostels }: { hostels: Hostel[] }) {
         </div>
 
         {status === 'loading' && (
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div style={{ display: 'grid', gap: 12 }}>
             <SkeletonCard /><SkeletonCard /><SkeletonCard />
           </div>
         )}
@@ -115,7 +115,7 @@ export default function LeaveClient({ hostels }: { hostels: Hostel[] }) {
         )}
 
         {status === 'ready' && requests.map(r => (
-          <div key={r.id} className="glass-card-flat" style={{ padding: 14, borderRadius: 'var(--radius-lg)', marginBottom: 8 }}>
+          <div key={r.id} className="glass-card-flat" style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 8 }}>
             <div className={styles.reqHeader}>
               <span className={styles.reqName}>{r.profiles?.full_name ?? 'Student'}</span>
               {r.is_emergency && <span className={styles.emergencyTag}>Emergency</span>}

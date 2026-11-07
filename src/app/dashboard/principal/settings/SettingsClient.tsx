@@ -1211,7 +1211,7 @@ export default function SettingsClient({ profile, school }: Props) {
               {paystackMsg && (
                 <p
                   className={paystackMsg.type === 'error' ? styles.fieldError : styles.fieldHint}
-                  style={{ marginTop: 10, color: paystackMsg.type === 'success' ? '#10B981' : undefined }}
+                  style={{ marginTop: 12, color: paystackMsg.type === 'success' ? '#10B981' : undefined }}
                 >
                   {paystackMsg.type === 'error' && <AlertIcon size={14} />} {paystackMsg.text}
                 </p>

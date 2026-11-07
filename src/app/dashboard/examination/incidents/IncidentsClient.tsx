@@ -92,14 +92,14 @@ export default function IncidentsClient({ userId, profile, school, schoolId, tim
       </button>
 
       {showForm && (
-        <form onSubmit={report} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 10 }}>
+        <form onSubmit={report} className="glass-card" style={{ padding: 16, borderRadius: 'var(--radius-xl)', marginBottom: 16, display: 'grid', gap: 12 }}>
           <select value={form.exam_timetable_id} onChange={e => setForm(f => ({ ...f, exam_timetable_id: e.target.value }))} style={inputStyle}>
             <option value="">Not tied to a specific sitting</option>
             {timetable.map(t => (
               <option key={t.id} value={t.id}>{t.exam_date} · {t.class_subjects?.subjects?.name}, {t.class_subjects?.classes?.name}</option>
             ))}
           </select>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <select value={form.incident_type} onChange={e => setForm(f => ({ ...f, incident_type: e.target.value }))} style={inputStyle}>
               <option value="malpractice">Malpractice</option>
               <option value="technical">Technical</option>
@@ -125,9 +125,9 @@ export default function IncidentsClient({ userId, profile, school, schoolId, tim
           <p style={{ margin: 0, opacity: 0.75 }}>No incidents reported.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {incidents.map(i => (
-            <div key={i.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-xl)' }}>
+            <div key={i.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <p style={{ margin: 0, fontWeight: 700, textTransform: 'capitalize' }}>{i.incident_type}</p>
                 <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'capitalize', color: SEVERITY_COLOR[i.severity] }}>{i.severity}</span>
@@ -137,10 +137,10 @@ export default function IncidentsClient({ userId, profile, school, schoolId, tim
                 Reported by {i.reporter_name} · {new Date(i.created_at).toLocaleDateString()} · Status: <strong style={{ textTransform: 'capitalize' }}>{i.status.replace('_', ' ')}</strong>
               </p>
               {i.resolution_notes && (
-                <p style={{ margin: '6px 0 0', fontSize: 13, opacity: 0.8, fontStyle: 'italic' }}>Resolution: {i.resolution_notes}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 13, opacity: 0.8, fontStyle: 'italic' }}>Resolution: {i.resolution_notes}</p>
               )}
               {canResolve && i.status !== 'resolved' && (
-                <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
                   <input placeholder="Resolution notes (optional)" value={resolvingId === i.id ? resolutionNotes : ''}
                     onFocus={() => setResolvingId(i.id)}
                     onChange={e => { setResolvingId(i.id); setResolutionNotes(e.target.value) }}
@@ -160,6 +160,6 @@ export default function IncidentsClient({ userId, profile, school, schoolId, tim
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+  padding: '12px 12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
   background: 'var(--surface)', color: 'inherit', fontSize: 14, width: '100%',
 }

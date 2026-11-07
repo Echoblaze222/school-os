@@ -97,12 +97,12 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
           marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)',
         }}>
-          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="glass-card-flat" style={{ padding: 20, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Students</p>
             <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
               {counts.studentCount ?? 0}
             </p>
-            <div style={{ display: 'flex', gap: 20, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'flex', gap: 20, paddingTop: 12, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
               <div>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Classes</p>
                 <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.classCount ?? 0}</p>
@@ -111,15 +111,15 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>To grade</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingGrading ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.pendingGrading ?? 0}</p>
             </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Assignments</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.assignmentCount ?? 0}</p>
             </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
               <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Quizzes</p>
               <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.quizCount ?? 0}</p>
             </div>
@@ -139,7 +139,7 @@ export default function TeacherDashboardClient({ profile, school, userId, counts
             href="/dashboard/examination"
             className={`glass-card ${motion.pressable}`}
             style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: 14,
+              display: 'flex', alignItems: 'center', gap: 12, padding: 16,
               borderRadius: 'var(--radius-xl)', marginBottom: 'var(--space-4)',
               textDecoration: 'none', color: 'inherit',
             }}

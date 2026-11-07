@@ -116,7 +116,7 @@ export default function LeadershipClient({
             href="/dashboard/student/hostel-roll-call"
             className="glass-card"
             style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: 14,
+              display: 'flex', alignItems: 'center', gap: 12, padding: 16,
               marginBottom: 16, textDecoration: 'none',
             }}
           >
@@ -162,7 +162,7 @@ export default function LeadershipClient({
         {status === 'ready' && duties.length > 0 && (
           <div className={styles.list}>
             {pending.map(duty => (
-              <div key={duty.id} className="glass-card-flat" style={{ padding: 14, borderRadius: 'var(--radius-lg)' }}>
+              <div key={duty.id} className="glass-card-flat" style={{ padding: 16, borderRadius: 'var(--radius-lg)' }}>
                 <div className={styles.dutyTitle}>{duty.title}</div>
                 {duty.description && <p className={styles.dutyDesc}>{duty.description}</p>}
                 {duty.due_date && <div className={styles.dutyDue}><ClockIcon size={14} /> Due {duty.due_date}</div>}
@@ -196,7 +196,7 @@ export default function LeadershipClient({
               <>
                 <h2 className={styles.sectionLabel}>Escalated</h2>
                 {escalated.map(duty => (
-                  <div key={duty.id} className="glass-card-flat" style={{ padding: 14, borderRadius: 'var(--radius-lg)', opacity: 0.85 }}>
+                  <div key={duty.id} className="glass-card-flat" style={{ padding: 16, borderRadius: 'var(--radius-lg)', opacity: 0.85 }}>
                     <div className={styles.dutyTitle}>{duty.title}</div>
                     <div className={styles.dutyEscalated}><AlertCircleIcon size={14} /> Sent to staff: {duty.escalation_note}</div>
                   </div>
@@ -208,7 +208,7 @@ export default function LeadershipClient({
               <>
                 <h2 className={styles.sectionLabel}>Completed</h2>
                 {done.map(duty => (
-                  <div key={duty.id} className="glass-card-flat" style={{ padding: 14, borderRadius: 'var(--radius-lg)', opacity: 0.7 }}>
+                  <div key={duty.id} className="glass-card-flat" style={{ padding: 16, borderRadius: 'var(--radius-lg)', opacity: 0.7 }}>
                     <div className={styles.dutyTitle}><CheckCircleIcon size={14} /> {duty.title}</div>
                   </div>
                 ))}

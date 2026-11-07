@@ -134,7 +134,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 onClick={() => setSelected(cls)}
                 style={{
                   flexShrink: 0,
-                  padding: '6px 14px',
+                  padding: '8px 16px',
                   borderRadius: 999,
                   border: `1px solid ${selected?.class_id === cls.class_id ? sc : sc + '40'}`,
                   background: selected?.class_id === cls.class_id ? sc : 'transparent',
@@ -146,7 +146,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 }}
               >
                 {cls.class_name}
-                {cls.is_primary && <span style={{ display:'inline-flex', verticalAlign: 'middle', marginLeft: 3 }}><CrownIcon size={11} /></span>}
+                {cls.is_primary && <span style={{ display:'inline-flex', verticalAlign: 'middle', marginLeft: 4 }}><CrownIcon size={11} /></span>}
                 {cls.subject ? ` (${cls.subject})` : ''}
               </button>
             ))}
@@ -159,7 +159,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '12px 14px',
+                padding: '12px 16px',
                 marginBottom: 'var(--space-4)',
               }}>
                 <div>
@@ -173,7 +173,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{
-                    padding: '4px 10px',
+                    padding: '4px 12px',
                     borderRadius: 999,
                     background: selected.is_primary ? 'color-mix(in srgb, var(--warning) 13%, transparent)' : 'color-mix(in srgb, var(--info) 13%, transparent)',
                     border: `1px solid ${selected.is_primary ? 'color-mix(in srgb, var(--warning) 31%, transparent)' : 'color-mix(in srgb, var(--info) 31%, transparent)'}`,
@@ -183,7 +183,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                     textTransform: 'uppercase' as const,
                     letterSpacing: '0.06em',
                   }}>
-                    {selected.is_primary ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><CrownIcon size={12} /></span>Class Teacher</> : 'Subject Teacher'}
+                    {selected.is_primary ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><CrownIcon size={12} /></span>Class Teacher</> : 'Subject Teacher'}
                   </span>
                   <p style={{ margin: '4px 0 0', color: sc, fontWeight: 700, fontSize: '0.82rem' }}>
                     {students.length} student{students.length !== 1 ? 's' : ''}
@@ -213,7 +213,7 @@ export default function ClassesClient({ profile, school, userId }: Props) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
-                      padding: '10px 12px',
+                      padding: '12px 12px',
                       background: sc + '12',
                       border: `1px solid ${sc}30`,
                       borderRadius: 10,
@@ -239,13 +239,13 @@ export default function ClassesClient({ profile, school, userId }: Props) {
               }}>
                 Students in {selected.class_name} ({students.length})
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {students.map((s: any, i: number) => (
                   <div key={s.id} className="glass-card-flat" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
-                    padding: '10px 14px',
+                    padding: '12px 16px',
                   }}>
                     {/* Rank */}
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', minWidth: 20, textAlign: 'center' as const }}>

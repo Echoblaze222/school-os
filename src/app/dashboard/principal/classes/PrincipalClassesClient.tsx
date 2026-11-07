@@ -325,11 +325,11 @@ export default function PrincipalClassesClient({
 
                     {/* FIX: Show class teacher name on card */}
                     {cls.class_teacher ? (
-                      <p style={{ fontSize: '0.65rem', color: '#F59E0B', margin: '2px 0 4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <p style={{ fontSize: '0.65rem', color: '#F59E0B', margin: '2px 0 4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <CrownIcon size={11} /> {cls.class_teacher.full_name.split(' ')[0]}
                       </p>
                     ) : (
-                      <p style={{ fontSize: '0.65rem', color: '#EF4444', margin: '2px 0 4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <p style={{ fontSize: '0.65rem', color: '#EF4444', margin: '2px 0 4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <AlertIcon size={11} /> No class teacher
                       </p>
                     )}
@@ -392,14 +392,14 @@ export default function PrincipalClassesClient({
             {activeClass.class_teacher ? (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px',
+                padding: '12px 12px',
                 background: '#F59E0B10',
                 border: '1px solid #F59E0B30',
                 borderRadius: 8,
                 marginBottom: 12,
               }}>
                 <div>
-                  <p style={{ margin: '0 0 1px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <p style={{ margin: '0 0 1px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <CrownIcon size={13} /> {activeClass.class_teacher.full_name}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.7rem', color: '#F59E0B' }}>All subjects · Class admin</p>
@@ -413,7 +413,7 @@ export default function PrincipalClassesClient({
               </div>
             ) : (
               <div style={{
-                padding: '10px 12px',
+                padding: '12px 12px',
                 background: '#EF444410',
                 border: '1px solid #EF444430',
                 borderRadius: 8,
@@ -423,7 +423,7 @@ export default function PrincipalClassesClient({
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 4,
               }}>
                 <AlertIcon size={13} /> No class teacher assigned
               </div>
@@ -459,12 +459,12 @@ export default function PrincipalClassesClient({
             <button className="pressable"
               onClick={() => { setShowAssign(true); setAssignTeacher(''); setAssignSubject(''); setAssignIsPrimary(false); setError(null) }}
               style={{
-                width: '100%', padding: '10px',
+                width: '100%', padding: '12px',
                 background: 'var(--brand)', color: '#fff',
                 border: 'none', borderRadius: 8,
                 fontWeight: 700, fontSize: '0.82rem',
                 cursor: 'pointer', marginBottom: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
               <PlusIcon size={13} color="white" /> Assign Teacher
             </button>

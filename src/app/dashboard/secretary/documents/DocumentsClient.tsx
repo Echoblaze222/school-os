@@ -101,7 +101,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input className={styles.searchInput} placeholder="Search documents…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ title: '', category: 'General' }); setModal(true) }} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>
+        <button className={styles.btnPrimary} onClick={() => { setMsg(''); setFile(null); setForm({ title: '', category: 'General' }); setModal(true) }} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 var(--space-4)', whiteSpace: 'nowrap' }}>
           <UploadIcon size={15} color="#fff" /> Upload
         </button>
       </div>
@@ -109,7 +109,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
         {['all', ...DOC_CATS].map(c => (
           <button key={c} onClick={() => setCatTab(c)}
-            style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+            style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
               background: catTab === c ? (CAT_COLORS[c] ?? sc) + '22' : 'var(--glass-bg)',
               borderColor: catTab === c ? (CAT_COLORS[c] ?? sc) : 'var(--glass-border)',
               color: catTab === c ? (CAT_COLORS[c] ?? sc) : 'var(--text-muted)',
@@ -158,7 +158,7 @@ export default function DocumentsClient({ docs: init, profile, school, userId }:
             <img src={previewItem.file_url!} alt={previewItem.title} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)' }} />
             <div className={styles.modalActions} style={{ marginTop: 'var(--space-4)' }}>
               <button className={styles.btnGhost} onClick={() => setPreviewItem(null)}>Close</button>
-              <a href={previewItem.file_url!} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none', textAlign: 'center' }}>
+              <a href={previewItem.file_url!} target="_blank" rel="noopener noreferrer" className={styles.btnPrimary} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none', textAlign: 'center' }}>
                 <DownloadIcon size={14} color="#fff" /> Download
               </a>
             </div>

@@ -173,23 +173,23 @@ export default function OnboardingStage3() {
 
   const ninIndicator = () => {
     if (ninStatus === 'verifying') return (
-      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
         <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#800020', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
         Verifying with NIMC...
       </span>
     )
     if (ninStatus === 'verified') return (
-      <span style={{ fontSize: '0.72rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontWeight: 600 }}>
+      <span style={{ fontSize: '0.72rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, fontWeight: 600 }}>
         ✅ NIN verified
       </span>
     )
     if (ninStatus === 'bypassed') return (
-      <span style={{ fontSize: '0.72rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+      <span style={{ fontSize: '0.72rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
         ⏭️ NIN saved, will be verified later by admin
       </span>
     )
     if (ninStatus === 'failed') return (
-      <span style={{ fontSize: '0.72rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+      <span style={{ fontSize: '0.72rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
         ❌ {ninError}
       </span>
     )
@@ -203,7 +203,7 @@ export default function OnboardingStage3() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#10B981,#059669)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}><CameraIcon size={28} color="#fff" strokeWidth={2} /></div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Final Step</h1>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 3 of 3: Passport photo &amp; NIN verification</p>
         </div>
 
@@ -272,7 +272,7 @@ export default function OnboardingStage3() {
                 }}
                 placeholder="e.g. 12345678901"
                 style={{
-                  flex: 1, height: 48, padding: '0 14px',
+                  flex: 1, height: 48, padding: '0 16px',
                   background: 'var(--input-bg)',
                   border: `1px solid ${
                     ninStatus === 'verified' ? '#10B981' :
@@ -312,7 +312,7 @@ export default function OnboardingStage3() {
             <div style={{
               background: 'rgba(16,185,129,0.06)',
               border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: 14, padding: '16px 18px',
+              borderRadius: 14, padding: '16px 20px',
               display: 'flex', gap: 16, alignItems: 'flex-start',
             }}>
               {verifiedId.photo ? (
@@ -322,7 +322,7 @@ export default function OnboardingStage3() {
                 <div style={{ width: 52, height: 52, borderRadius: 10, background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🪪</div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Identity Verified</p>
+                <p style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Identity Verified</p>
                 <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
                   {[verifiedId.firstName, verifiedId.middleName, verifiedId.lastName].filter(Boolean).join(' ')}
                 </p>
@@ -333,7 +333,7 @@ export default function OnboardingStage3() {
           )}
 
           {error && (
-            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', margin: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '12px 16px', margin: 0 }}>
               {error}
             </p>
           )}

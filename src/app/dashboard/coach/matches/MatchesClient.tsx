@@ -101,11 +101,11 @@ export default function MatchesClient({ profile, school, userId }: Props) {
         {loading ? <SkeletonList count={4} variant="card" /> : matches.length === 0 ? (
           <EmptyState icon={<TrophyIcon size={28} />} title="No matches scheduled yet" />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {matches.map(m => {
               const team = one(m.team)
               return (
-                <div key={m.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-lg)' }}>
+                <div key={m.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: '0.86rem', margin: 0 }}>{team?.name ?? 'Team'} vs {m.opponent}</p>
@@ -116,10 +116,10 @@ export default function MatchesClient({ profile, school, userId }: Props) {
                     <span style={{ fontSize: '0.68rem', fontWeight: 700, color: STATUS_COLOR[m.status], whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{m.status}</span>
                   </div>
                   {m.status === 'completed' ? (
-                    <p style={{ fontSize: '0.9rem', fontWeight: 800, margin: '10px 0 0' }}>{m.our_score} - {m.opponent_score}</p>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 800, margin: '12px 0 0' }}>{m.our_score} - {m.opponent_score}</p>
                   ) : m.status === 'scheduled' ? (
                     <button onClick={() => openResult(m)}
-                      style={{ marginTop: 10, padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: '#fff', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer' }}>
+                      style={{ marginTop: 12, padding: '8px 12px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: '#fff', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer' }}>
                       Record Result
                     </button>
                   ) : null}
@@ -134,22 +134,22 @@ export default function MatchesClient({ profile, school, userId }: Props) {
       {showForm && (
         <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Schedule a Match</p>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <select value={teamId} onChange={e => setTeamId(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}>
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }}>
                 <option value="">Select team</option>
                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
               <input placeholder="Opponent" value={opponent} onChange={e => setOpponent(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <input placeholder="Location" value={location} onChange={e => setLocation(e.target.value)}
-                style={{ padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
+                style={{ padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)' }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
                 <input type="checkbox" checked={isHome} onChange={e => setIsHome(e.target.checked)} /> Home match
               </label>
@@ -162,16 +162,16 @@ export default function MatchesClient({ profile, school, userId }: Props) {
       {resultMatch && (
         <div onClick={() => setResultMatch(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 'var(--z-modal)' }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: '100%', padding: 20, borderRadius: '20px 20px 0 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>Record Result</p>
               <button onClick={() => setResultMatch(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XIcon size={18} /></button>
             </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
               <input type="number" placeholder="Us" value={ourScore} onChange={e => setOurScore(e.target.value)}
-                style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)', textAlign: 'center', fontSize: '1.2rem', fontWeight: 800 }} />
+                style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)', textAlign: 'center', fontSize: '1.2rem', fontWeight: 800 }} />
               <span style={{ fontWeight: 800 }}>-</span>
               <input type="number" placeholder="Them" value={opponentScore} onChange={e => setOpponentScore(e.target.value)}
-                style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)', textAlign: 'center', fontSize: '1.2rem', fontWeight: 800 }} />
+                style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid var(--input-border)', background: 'var(--input-bg)', textAlign: 'center', fontSize: '1.2rem', fontWeight: 800 }} />
             </div>
             <ActionButton onClick={saveResult} loading={savingResult} loadingLabel="Saving…" fullWidth>Save Result</ActionButton>
           </div>

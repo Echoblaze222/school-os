@@ -272,7 +272,7 @@ export default function GradeSubmissionsPage() {
   if (assignmentGroups.length === 0 && quizGroups.length === 0) return (
     <RoleSubHeader userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions" featureGroups={TEACHER_FEATURE_GROUPS}>
       <div style={{textAlign:'center' as const,padding:'60px 20px',color:'var(--text-muted)'}}>
-        <p style={{fontWeight:700,color:'var(--text-primary)',fontSize:'1rem',marginBottom:6}}>No submissions yet</p>
+        <p style={{fontWeight:700,color:'var(--text-primary)',fontSize:'1rem',marginBottom:8}}>No submissions yet</p>
         <p style={{fontSize:'0.85rem'}}>Once students submit assignments or quiz attempts, they'll show up here for grading.</p>
       </div>
     </RoleSubHeader>
@@ -282,7 +282,7 @@ export default function GradeSubmissionsPage() {
   return (
     <RoleSubHeader userId={userId!} role="teacher" profile={profile} school={school} title="Grade Submissions" featureGroups={TEACHER_FEATURE_GROUPS}>
 
-      {fetchErr&&<div className="alert-error" style={{padding:'8px 14px',borderRadius:8,marginBottom:16,fontSize:'0.75rem'}}><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><AlertIcon size={13} /></span>{fetchErr}</div>}
+      {fetchErr&&<div className="alert-error" style={{padding:'8px 16px',borderRadius:8,marginBottom:16,fontSize:'0.75rem'}}><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><AlertIcon size={13} /></span>{fetchErr}</div>}
 
       {/* ── Stat summary - matches dashboard GaugeStat treatment ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
@@ -299,14 +299,14 @@ export default function GradeSubmissionsPage() {
       {/* ── Main tab switcher ── */}
       <div style={{display:'flex',gap:8,marginBottom:20}}>
         <button onClick={()=>setMainTab('assignments')} className="glass-card pressable"
-          style={{flex:1,padding:'10px 0',borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',border:`1.5px solid ${mainTab==='assignments'?color:'var(--glass-border)'}`,background:mainTab==='assignments'?color+'18':'var(--glass-bg)',color:mainTab==='assignments'?color:'var(--text-muted)'}}>
+          style={{flex:1,padding:'12px 0',borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',border:`1.5px solid ${mainTab==='assignments'?color:'var(--glass-border)'}`,background:mainTab==='assignments'?color+'18':'var(--glass-bg)',color:mainTab==='assignments'?color:'var(--text-muted)'}}>
           <span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><ClipboardIcon size={14} /></span>Assignments
-          {totalPending>0&&<span style={{marginLeft:6,padding:'1px 6px',borderRadius:999,background:'var(--danger)',color:'#fff',fontSize:'0.65rem',fontWeight:800}}>{totalPending}</span>}
+          {totalPending>0&&<span style={{marginLeft:8,padding:'1px 8px',borderRadius:999,background:'var(--danger)',color:'#fff',fontSize:'0.65rem',fontWeight:800}}>{totalPending}</span>}
         </button>
         <button onClick={()=>setMainTab('quizzes')} className="glass-card pressable"
-          style={{flex:1,padding:'10px 0',borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',border:`1.5px solid ${mainTab==='quizzes'?color:'var(--glass-border)'}`,background:mainTab==='quizzes'?color+'18':'var(--glass-bg)',color:mainTab==='quizzes'?color:'var(--text-muted)'}}>
+          style={{flex:1,padding:'12px 0',borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',border:`1.5px solid ${mainTab==='quizzes'?color:'var(--glass-border)'}`,background:mainTab==='quizzes'?color+'18':'var(--glass-bg)',color:mainTab==='quizzes'?color:'var(--text-muted)'}}>
           <span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><TrophyIcon size={14} /></span>Quizzes
-          {totalQuizAttempts>0&&<span style={{marginLeft:6,padding:'1px 6px',borderRadius:999,background:color,color:'#fff',fontSize:'0.65rem',fontWeight:800}}>{totalQuizAttempts}</span>}
+          {totalQuizAttempts>0&&<span style={{marginLeft:8,padding:'1px 8px',borderRadius:999,background:color,color:'#fff',fontSize:'0.65rem',fontWeight:800}}>{totalQuizAttempts}</span>}
         </button>
       </div>
 
@@ -318,19 +318,19 @@ export default function GradeSubmissionsPage() {
           {assignmentGroups.length===0
             ? <div style={{textAlign:'center' as const,padding:'40px 0',color:'var(--text-muted)'}}>No assignment submissions yet.</div>
             : <>
-                <p style={{fontSize:'0.65rem',fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase' as const,color:'var(--text-muted)',margin:'0 0 10px'}}>
+                <p style={{fontSize:'0.65rem',fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase' as const,color:'var(--text-muted)',margin:'0 0 12px'}}>
                   Assignments ({assignmentGroups.length})
                 </p>
-                <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:20}}>
+                <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
                   {assignmentGroups.map(g=>(
                     <button className="pressable" key={g.assignment_id} onClick={()=>{setSelectedAsgId(g.assignment_id);setFilterTab('pending')}}
-                      style={{textAlign:'left' as const,padding:'10px 14px',background:selectedAsgId===g.assignment_id?color+'18':'var(--glass-bg)',border:`1px solid ${selectedAsgId===g.assignment_id?color+'60':'var(--glass-border)'}`,borderRadius:10,cursor:'pointer',width:'100%'}}>
+                      style={{textAlign:'left' as const,padding:'12px 16px',background:selectedAsgId===g.assignment_id?color+'18':'var(--glass-bg)',border:`1px solid ${selectedAsgId===g.assignment_id?color+'60':'var(--glass-border)'}`,borderRadius:10,cursor:'pointer',width:'100%'}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{margin:'0 0 2px',fontWeight:700,fontSize:'0.88rem',color:selectedAsgId===g.assignment_id?color:'var(--text-primary)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{g.title}</p>
                           <p style={{margin:0,color:'var(--text-muted)',fontSize:'0.7rem'}}>{g.class_name} · {g.max_score}pts</p>
                         </div>
-                        <div style={{display:'flex',gap:5,flexShrink:0,marginLeft:8}}>
+                        <div style={{display:'flex',gap:4,flexShrink:0,marginLeft:8}}>
                           {g.pending_count>0&&<span style={{padding:'2px 8px',borderRadius:999,background:'color-mix(in srgb, var(--danger) 13%, transparent)',color:'var(--danger)',fontSize:'0.68rem',fontWeight:800}}>{g.pending_count} pending</span>}
                           {g.graded_count>0&&<span style={{padding:'2px 8px',borderRadius:999,background:'color-mix(in srgb, var(--success) 13%, transparent)',color:'var(--success)',fontSize:'0.68rem',fontWeight:800}}>{g.graded_count} graded</span>}
                         </div>
@@ -341,10 +341,10 @@ export default function GradeSubmissionsPage() {
 
                 {selectedAsgGrp&&(
                   <>
-                    <div style={{display:'flex',gap:6,marginBottom:16}}>
+                    <div style={{display:'flex',gap:8,marginBottom:16}}>
                       {(['pending','graded','all'] as const).map(t=>(
                         <button className="pressable" key={t} onClick={()=>setFilterTab(t)}
-                          style={{padding:'6px 12px',borderRadius:999,background:filterTab===t?color:'var(--glass-bg)',border:`1px solid ${filterTab===t?color:'var(--glass-border)'}`,color:filterTab===t?'#fff':'var(--text-muted)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>
+                          style={{padding:'8px 12px',borderRadius:999,background:filterTab===t?color:'var(--glass-bg)',border:`1px solid ${filterTab===t?color:'var(--glass-border)'}`,color:filterTab===t?'#fff':'var(--text-muted)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>
                           {t==='pending'?`Needs Grading (${selectedAsgGrp.pending_count})`:t==='graded'?`Graded (${selectedAsgGrp.graded_count})`:'All'}
                         </button>
                       ))}
@@ -352,15 +352,15 @@ export default function GradeSubmissionsPage() {
 
                     {visibleSubs.length===0
                       ? <div style={{textAlign:'center' as const,padding:'28px 0',color:'var(--text-muted)'}}>{filterTab==='pending'?<><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><CheckCircleIcon size={13} /></span>All caught up!</>:'No submissions here.'}</div>
-                      : <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      : <div style={{display:'flex',flexDirection:'column',gap:12}}>
                           {visibleSubs.map(sub=>{
                             const isGraded=sub.status==='graded', isSaving=savingIds.has(sub.id)
                             const scoreStr=scoreInputs[sub.id]??(sub.score!==null?String(sub.score):'')
                             const gr=scoreStr!==''?gradeInfo(Number(scoreStr),sub.max_score):null
                             const editing=scoreInputs[sub.id]!==undefined
                             return (
-                              <div key={sub.id} className="glass-card" style={{padding:14,background:'var(--glass-bg)',border:`1px solid ${isGraded&&!editing?'color-mix(in srgb, var(--success) 19%, transparent)':'var(--glass-border)'}`,borderRadius:12}}>
-                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                              <div key={sub.id} className="glass-card" style={{padding:16,background:'var(--glass-bg)',border:`1px solid ${isGraded&&!editing?'color-mix(in srgb, var(--success) 19%, transparent)':'var(--glass-border)'}`,borderRadius:12}}>
+                                <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
                                   <div style={{width:36,height:36,borderRadius:'50%',background:color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,color,fontSize:'0.8rem',flexShrink:0}}>{initials(sub.student_name)}</div>
                                   <div style={{flex:1}}>
                                     <p style={{margin:'0 0 1px',fontWeight:700,color:'var(--text-primary)',fontSize:'0.88rem'}}>{sub.student_name}</p>
@@ -369,7 +369,7 @@ export default function GradeSubmissionsPage() {
                                   {isGraded&&!editing&&(
                                     <div style={{textAlign:'right' as const}}>
                                       <span style={{fontSize:'1.1rem',fontWeight:800,color:gradeInfo(sub.score!,sub.max_score).c}}>{sub.score}/{sub.max_score}</span>
-                                      <span style={{marginLeft:6,padding:'2px 7px',borderRadius:4,background:gradeInfo(sub.score!,sub.max_score).c+'20',color:gradeInfo(sub.score!,sub.max_score).c,fontSize:'0.72rem',fontWeight:800}}>{gradeInfo(sub.score!,sub.max_score).g}</span>
+                                      <span style={{marginLeft:8,padding:'2px 8px',borderRadius:4,background:gradeInfo(sub.score!,sub.max_score).c+'20',color:gradeInfo(sub.score!,sub.max_score).c,fontSize:'0.72rem',fontWeight:800}}>{gradeInfo(sub.score!,sub.max_score).g}</span>
                                     </div>
                                   )}
                                 </div>
@@ -379,12 +379,12 @@ export default function GradeSubmissionsPage() {
                                 {(!isGraded||editing)&&(
                                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
                                     <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                      <input type="number" min={0} max={sub.max_score} placeholder={`0 - ${sub.max_score}`} value={scoreStr} onChange={e=>setScoreInputs(p=>({...p,[sub.id]:e.target.value}))} style={{width:90,height:38,padding:'0 10px',background:'var(--input-bg)',border:`1px solid ${color}60`,borderRadius:8,color:'var(--text-primary)',fontSize:'0.9rem',fontWeight:700,outline:'none'}}/>
+                                      <input type="number" min={0} max={sub.max_score} placeholder={`0 - ${sub.max_score}`} value={scoreStr} onChange={e=>setScoreInputs(p=>({...p,[sub.id]:e.target.value}))} style={{width:90,height:38,padding:'0 12px',background:'var(--input-bg)',border:`1px solid ${color}60`,borderRadius:8,color:'var(--text-primary)',fontSize:'0.9rem',fontWeight:700,outline:'none'}}/>
                                       <span style={{color:'var(--text-muted)',fontSize:'0.82rem'}}>/ {sub.max_score}</span>
-                                      {gr&&<span style={{padding:'3px 10px',borderRadius:6,background:gr.c+'20',color:gr.c,fontSize:'0.8rem',fontWeight:800}}>{gr.g}</span>}
+                                      {gr&&<span style={{padding:'4px 12px',borderRadius:6,background:gr.c+'20',color:gr.c,fontSize:'0.8rem',fontWeight:800}}>{gr.g}</span>}
                                     </div>
                                     <textarea placeholder="Feedback (optional)..." value={feedbackInputs[sub.id]??sub.feedback??''} onChange={e=>setFeedbackInputs(p=>({...p,[sub.id]:e.target.value}))} rows={2} style={{width:'100%',padding:'8px 12px',background:'var(--input-bg)',border:'1px solid var(--input-border)',borderRadius:8,color:'var(--text-primary)',fontSize:'0.82rem',outline:'none',resize:'vertical',boxSizing:'border-box' as const}}/>
-                                    <div style={{display:'flex',gap:6}}>
+                                    <div style={{display:'flex',gap:8}}>
                                       <button className="pressable" onClick={()=>saveGrade(sub)} disabled={isSaving||scoreStr===''} style={{flex:1,height:38,background:scoreStr!==''?color:'var(--glass-bg)',color:scoreStr!==''?'#fff':'var(--text-muted)',border:'none',borderRadius:8,fontWeight:700,fontSize:'0.82rem',cursor:scoreStr!==''?'pointer':'default',opacity:isSaving?0.6:1}}>{isSaving?'Saving...':isGraded?<><span style={{ display:'inline-flex', verticalAlign:'middle',marginRight:4 }}><EditIcon size={12} /></span>Update</>:'Save Grade'}</button>
                                       {editing&&<button className="pressable" onClick={()=>{setScoreInputs(p=>{const n={...p};delete n[sub.id];return n});setFeedbackInputs(p=>{const n={...p};delete n[sub.id];return n})}} style={{height:38,padding:'0 12px',background:'transparent',border:'1px solid var(--glass-border)',borderRadius:8,color:'var(--text-muted)',fontSize:'0.78rem',cursor:'pointer'}}>Cancel</button>}
                                     </div>
@@ -411,13 +411,13 @@ export default function GradeSubmissionsPage() {
           {quizGroups.length===0
             ? <div style={{textAlign:'center' as const,padding:'40px 0',color:'var(--text-muted)'}}>No quiz attempts yet.</div>
             : <>
-                <p style={{fontSize:'0.65rem',fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase' as const,color:'var(--text-muted)',margin:'0 0 10px'}}>
+                <p style={{fontSize:'0.65rem',fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase' as const,color:'var(--text-muted)',margin:'0 0 12px'}}>
                   Quizzes ({quizGroups.length})
                 </p>
-                <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:20}}>
+                <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
                   {quizGroups.map(g=>(
                     <button className="pressable" key={g.quiz_id} onClick={()=>setSelectedQId(g.quiz_id)}
-                      style={{textAlign:'left' as const,padding:'10px 14px',background:selectedQId===g.quiz_id?color+'18':'var(--glass-bg)',border:`1px solid ${selectedQId===g.quiz_id?color+'60':'var(--glass-border)'}`,borderRadius:10,cursor:'pointer',width:'100%'}}>
+                      style={{textAlign:'left' as const,padding:'12px 16px',background:selectedQId===g.quiz_id?color+'18':'var(--glass-bg)',border:`1px solid ${selectedQId===g.quiz_id?color+'60':'var(--glass-border)'}`,borderRadius:10,cursor:'pointer',width:'100%'}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{margin:'0 0 2px',fontWeight:700,fontSize:'0.88rem',color:selectedQId===g.quiz_id?color:'var(--text-primary)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{g.title}</p>
@@ -438,7 +438,7 @@ export default function GradeSubmissionsPage() {
                         { label:'Avg Score', val: `${selectedQGrp.avg_score}%` },
                         { label:'Max Marks', val: selectedQGrp.total_marks },
                       ].map(s=>(
-                        <div key={s.label} className="glass-card" style={{borderRadius:10,padding:'10px 12px',textAlign:'center' as const}}>
+                        <div key={s.label} className="glass-card" style={{borderRadius:10,padding:'12px 12px',textAlign:'center' as const}}>
                           <p style={{margin:'0 0 2px',fontSize:'1rem',fontWeight:800,color}}>{s.val}</p>
                           <p style={{margin:0,fontSize:'0.65rem',color:'var(--text-muted)',textTransform:'uppercase' as const,letterSpacing:'0.05em'}}>{s.label}</p>
                         </div>
@@ -446,14 +446,14 @@ export default function GradeSubmissionsPage() {
                     </div>
 
                     {/* Individual attempts - read-only, auto-scored */}
-                    <p style={{fontSize:'0.65rem',fontWeight:800,color:'var(--text-muted)',textTransform:'uppercase' as const,letterSpacing:'0.08em',margin:'0 0 10px'}}>
+                    <p style={{fontSize:'0.65rem',fontWeight:800,color:'var(--text-muted)',textTransform:'uppercase' as const,letterSpacing:'0.08em',margin:'0 0 12px'}}>
                       Student Results
                     </p>
                     <div style={{display:'flex',flexDirection:'column',gap:8}}>
                       {visibleAttempts.map(a=>{
                         const gi = gradeInfo(a.score, a.max_score)
                         return (
-                          <div key={a.id} className="glass-card" style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12}}>
+                          <div key={a.id} className="glass-card" style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',borderRadius:12}}>
                             <div style={{width:36,height:36,borderRadius:'50%',background:color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,color,fontSize:'0.8rem',flexShrink:0}}>{initials(a.student_name)}</div>
                             <div style={{flex:1,minWidth:0}}>
                               <p style={{margin:'0 0 2px',fontWeight:700,color:'var(--text-primary)',fontSize:'0.88rem'}}>{a.student_name}</p>
@@ -463,7 +463,7 @@ export default function GradeSubmissionsPage() {
                               <p style={{margin:'0 0 2px',fontSize:'1rem',fontWeight:800,color:gi.c}}>{a.pct}%</p>
                               <p style={{margin:0,fontSize:'0.7rem',color:'var(--text-muted)'}}>{a.score}/{a.max_score}</p>
                             </div>
-                            <span style={{padding:'3px 9px',borderRadius:6,background:gi.c+'20',color:gi.c,fontSize:'0.75rem',fontWeight:800,flexShrink:0}}>{gi.g}</span>
+                            <span style={{padding:'4px 8px',borderRadius:6,background:gi.c+'20',color:gi.c,fontSize:'0.75rem',fontWeight:800,flexShrink:0}}>{gi.g}</span>
                           </div>
                         )
                       })}

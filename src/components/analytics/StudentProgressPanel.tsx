@@ -92,8 +92,8 @@ export default function StudentProgressPanel({ audience, brand }: { audience: Au
 
   return (
     <ChartTheme>
-      <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div role="tablist" style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+      <div style={{ padding: '0 var(--space-5) var(--space-3)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div role="tablist" style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
           {tabs.map(t => <Chip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)} brand={brand}>{t.label}</Chip>)}
         </div>
         <FilterRow>
@@ -204,7 +204,7 @@ export default function StudentProgressPanel({ audience, brand }: { audience: Au
                   <div style={{ height: 10, borderRadius: 5, background: 'var(--viz-grid)', overflow: 'hidden' }}>
                     <div style={{ width: `${Math.min(100, paidPct)}%`, height: '100%', background: 'var(--series-3)' }} />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12, color: 'var(--viz-ink-2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 12, color: 'var(--viz-ink-2)' }}>
                     <span>{nairaFull(fees.paid)} paid</span><span>{nairaFull(fees.billed)} billed</span>
                   </div>
                 </div>

@@ -172,7 +172,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 4 }}>
             {['all', ...CATEGORIES].map(c => (
               <button key={c} onClick={() => setCatTab(c)}
-                style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                   background: catTab === c ? (CAT_COLORS[c] ?? sc) + '22' : 'var(--glass-bg)',
                   borderColor: catTab === c ? (CAT_COLORS[c] ?? sc) : 'var(--glass-border)',
                   color: catTab === c ? (CAT_COLORS[c] ?? sc) : 'var(--text-muted)' }}>{c}</button>
@@ -224,7 +224,7 @@ export default function LibraryClient({ books: initBooks, loans: initLoans, stud
                   </div>
                   <span className={styles.listBadge} style={{ background: (STATUS_COLORS[l.status] ?? '#6B7280') + '22', color: STATUS_COLORS[l.status] ?? '#6B7280', textTransform: 'capitalize' }}>{l.status}</span>
                   {l.status === 'borrowed' && (
-                    <button className={styles.btnGhost} onClick={() => returnLoan(l)} style={{ padding: '6px 12px', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>Mark returned</button>
+                    <button className={styles.btnGhost} onClick={() => returnLoan(l)} style={{ padding: '8px 12px', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>Mark returned</button>
                   )}
                 </div>
               )

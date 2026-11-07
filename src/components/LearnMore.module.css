@@ -6,7 +6,7 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--brand);
@@ -29,7 +29,7 @@
 }
 
 .content {
-  margin-top: 6px;
+  margin-top: 8px;
   padding-left: 1px;
   font-size: 0.75rem;
   color: var(--text-muted);

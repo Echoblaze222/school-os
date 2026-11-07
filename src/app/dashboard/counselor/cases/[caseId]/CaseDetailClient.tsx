@@ -170,20 +170,20 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
       <Toast toast={toast} />
 
       <div className={`glass-card ${motion.riseIn}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)', marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
             <p style={{ fontWeight: 700, fontSize: '1rem', margin: 0 }}>{c.student?.full_name}</p>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>{c.student?.class_level}</p>
           </div>
           <span style={{
-            fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 999,
+            fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: 999,
             textTransform: 'capitalize', background: 'var(--input-bg)', color: 'var(--text-secondary)',
           }}>
             {c.status}
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {(['low', 'moderate', 'high'] as const).map(r => (
             <button
               key={r}
@@ -219,14 +219,14 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
         Follow-ups
       </p>
       {pendingFollowUps.length === 0 ? (
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 10px' }}>No pending follow-ups.</p>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>No pending follow-ups.</p>
       ) : (
-        <div style={{ display: 'grid', gap: 8, marginBottom: 10 }}>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
           {pendingFollowUps.map((f: any) => (
-            <div key={f.id} className="glass-card" style={{ padding: 12, borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+            <div key={f.id} className="glass-card" style={{ padding: 12, borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
                 <p style={{ fontSize: '0.82rem', margin: 0 }}>{f.note}</p>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '3px 0 0' }}>Due {formatDate(f.due_at)}</p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Due {formatDate(f.due_at)}</p>
               </div>
               <button onClick={() => markFollowUpDone(f.id)} className={motion.pressable} style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Mark done">
                 <CheckCircleIcon size={20} color="var(--status-ok, #10B981)" />
@@ -242,14 +242,14 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
             type="datetime-local"
             value={followUpDue}
             onChange={e => setFollowUpDue(e.target.value)}
-            style={{ height: 36, borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 10px', fontSize: '0.8rem' }}
+            style={{ height: 36, borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 12px', fontSize: '0.8rem' }}
           />
           <textarea
             value={followUpNote}
             onChange={e => setFollowUpNote(e.target.value)}
             placeholder="What to check in on"
             rows={2}
-            style={{ borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: 10, fontSize: '0.8rem', resize: 'vertical' }}
+            style={{ borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: 12, fontSize: '0.8rem', resize: 'vertical' }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
             <ActionButton onClick={() => setShowFollowUp(false)} variant="ghost" fullWidth>Cancel</ActionButton>
@@ -258,7 +258,7 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
         </div>
       ) : (
         <button onClick={() => setShowFollowUp(true)} className={motion.pressable}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
           <PlusIcon size={16} /> Add follow-up
         </button>
       )}
@@ -270,7 +270,7 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
           </p>
           <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
             {sessions.map((s: any) => (
-              <div key={s.id} className="glass-card" style={{ padding: 12, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div key={s.id} className="glass-card" style={{ padding: 12, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <CalendarIcon size={16} color="var(--text-muted)" />
                 <div>
                   <p style={{ fontSize: '0.82rem', margin: 0 }}>{formatDate(s.scheduled_at)}</p>
@@ -285,7 +285,7 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
       <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: '4px 0 8px' }}>
         Confidential notes
       </p>
-      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 10px' }}>
+      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
         Visible only to you. Notes cannot be edited or deleted once saved.
       </p>
 
@@ -295,7 +295,7 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
           onChange={e => setNoteText(e.target.value)}
           placeholder="Add a confidential note about this session or observation"
           rows={3}
-          style={{ borderRadius: 9, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: 10, fontSize: '0.82rem', resize: 'vertical' }}
+          style={{ borderRadius: 9, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: 12, fontSize: '0.82rem', resize: 'vertical' }}
         />
         <ActionButton onClick={addNote} loading={savingNote} loadingLabel="Saving…" disabled={!noteText.trim()}>
           Save note
@@ -305,7 +305,7 @@ export default function CaseDetailClient({ profile, school, userId, caseId }: Pr
       {notes.length === 0 ? (
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No notes yet.</p>
       ) : (
-        <div style={{ display: 'grid', gap: 10, marginBottom: 40 }}>
+        <div style={{ display: 'grid', gap: 12, marginBottom: 40 }}>
           {notes.map((n: any) => (
             <div key={n.id} className="glass-card" style={{ padding: 12, borderRadius: 10 }}>
               <p style={{ fontSize: '0.82rem', margin: 0, whiteSpace: 'pre-wrap' }}>{n.note}</p>

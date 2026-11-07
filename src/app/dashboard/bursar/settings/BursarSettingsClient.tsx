@@ -27,7 +27,7 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
   }
 
   const lbl: React.CSSProperties = { fontSize:'0.72rem', fontWeight:700,
-    color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:6, display:'block' }
+    color:'var(--text-muted)', letterSpacing:'0.05em', marginBottom:8, display:'block' }
 
   return (
     <RoleSubHeader userId={userId} role="bursar" profile={profile} school={school} title="Settings" featureGroups={BURSAR_FEATURE_GROUPS}>

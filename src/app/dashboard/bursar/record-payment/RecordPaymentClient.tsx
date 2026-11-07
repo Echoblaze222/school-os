@@ -423,7 +423,7 @@ export default function RecordPaymentClient({
             ].map(([label, value]) => (
               <div key={label} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                padding: '10px 0', borderBottom: '1px solid var(--glass-border)',
+                padding: '12px 0', borderBottom: '1px solid var(--glass-border)',
               }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{label}</span>
                 <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'right', maxWidth: '60%' }}>
@@ -432,7 +432,7 @@ export default function RecordPaymentClient({
               </div>
             ))}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
               <button
                 onClick={() => window.print()}
                 className="btn btn-primary"
@@ -457,7 +457,7 @@ export default function RecordPaymentClient({
 
   // ── Main Form ─────────────────────────────────────────
   const inp: React.CSSProperties = {
-    width: '100%', height: 44, padding: '0 14px',
+    width: '100%', height: 44, padding: '0 16px',
     background: 'var(--input-bg)', border: '1px solid var(--input-border)',
     borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.85rem',
     outline: 'none', boxSizing: 'border-box',
@@ -487,16 +487,16 @@ export default function RecordPaymentClient({
         {/* ── Step 1: Student search ── */}
         <div style={{
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-          borderRadius: 14, padding: 16, marginBottom: 14,
+          borderRadius: 14, padding: 16, marginBottom: 16,
         }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+          <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 12px' }}>
             STEP 1: SELECT STUDENT
           </p>
 
           {selectedStudent ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 14px', background: 'var(--brand-subtle)',
+              padding: '12px 16px', background: 'var(--brand-subtle)',
               border: '1px solid var(--brand-border)', borderRadius: 10,
             }}>
               <div style={{
@@ -530,7 +530,7 @@ export default function RecordPaymentClient({
                 style={inp}
               />
               {isSearching && (
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '0 4px' }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '8px 0 0', padding: '0 4px' }}>
                   Searching…
                 </p>
               )}
@@ -545,7 +545,7 @@ export default function RecordPaymentClient({
                       key={s.id}
                       onClick={() => selectStudent(s)}
                       style={{
-                        padding: '10px 14px', cursor: 'pointer',
+                        padding: '12px 16px', cursor: 'pointer',
                         borderBottom: '1px solid var(--glass-border)',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-subtle)')}
@@ -561,7 +561,7 @@ export default function RecordPaymentClient({
                 </div>
               )}
               {showDropdown && !isSearching && searchResults.length === 0 && searchQuery.length >= 2 && (
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '0 4px' }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '8px 0 0', padding: '0 4px' }}>
                   No students found.
                 </p>
               )}
@@ -573,9 +573,9 @@ export default function RecordPaymentClient({
         {selectedStudent && (
           <div style={{
             background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-            borderRadius: 14, padding: 16, marginBottom: 14,
+            borderRadius: 14, padding: 16, marginBottom: 16,
           }}>
-            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 12px' }}>
               STEP 2: SELECT OUTSTANDING INVOICES
             </p>
 
@@ -587,7 +587,7 @@ export default function RecordPaymentClient({
                 borderRadius: 10, textAlign: 'center',
               }}>
                 <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981', margin: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <CheckIcon size={14} /> No outstanding invoices
                 </p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
@@ -605,7 +605,7 @@ export default function RecordPaymentClient({
                       onClick={() => toggleInvoice(inv.id)}
                       style={{
                         display: 'flex', flexDirection: 'column', gap: 0,
-                        padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                        padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
                         border: `1px solid ${selected ? 'var(--brand-border)' : 'var(--glass-border)'}`,
                         background: selected ? 'var(--brand-subtle)' : 'var(--input-bg)',
                       }}>
@@ -649,8 +649,8 @@ export default function RecordPaymentClient({
                             { label: 'Paid',    val: `₦${inv.amount_paid.toLocaleString()}`, color: 'var(--success)' },
                             { label: 'Balance', val: `₦${inv.balance.toLocaleString()}`,     color: inv.balance > 0 ? 'var(--error)' : 'var(--success)' },
                           ].map(({ label, val, color }) => (
-                            <div key={label} style={{ background: 'var(--glass-bg)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                              <p style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 3px' }}>{label.toUpperCase()}</p>
+                            <div key={label} style={{ background: 'var(--glass-bg)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
+                              <p style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label.toUpperCase()}</p>
                               <p style={{ fontSize: '0.82rem', fontWeight: 800, color, margin: 0 }}>{val}</p>
                             </div>
                           ))}
@@ -675,15 +675,15 @@ export default function RecordPaymentClient({
         {selectedStudent && selectedInvoices.size > 0 && (
           <div style={{
             background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-            borderRadius: 14, padding: 16, marginBottom: 14,
+            borderRadius: 14, padding: 16, marginBottom: 16,
           }}>
-            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 14px' }}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', margin: '0 0 16px' }}>
               STEP 3: PAYMENT DETAILS
             </p>
 
             <div style={{
-              padding: '10px 14px', background: 'var(--brand-subtle)',
-              border: '1px solid var(--brand-border)', borderRadius: 10, marginBottom: 14, textAlign: 'center',
+              padding: '12px 16px', background: 'var(--brand-subtle)',
+              border: '1px solid var(--brand-border)', borderRadius: 10, marginBottom: 16, textAlign: 'center',
             }}>
               <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', margin: 0 }}>
                 TOTAL SELECTED BALANCE
@@ -699,9 +699,9 @@ export default function RecordPaymentClient({
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
                   AMOUNT + CURRENCY *
                 </label>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -720,14 +720,14 @@ export default function RecordPaymentClient({
                 </div>
                 {amountInNgn > totalBalanceNgn + 0.5 && (
                   <p style={{ fontSize: '0.72rem', color: '#EF4444', margin: '4px 0 0', padding: '0 4px',
-                    display: 'flex', alignItems: 'center', gap: 5 }}>
+                    display: 'flex', alignItems: 'center', gap: 4 }}>
                     <AlertIcon size={12} /> Amount exceeds selected balance of {fmtCurrency(totalBalanceDisplay, currency)}
                   </p>
                 )}
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
                   PAYMENT METHOD *
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
@@ -736,7 +736,7 @@ export default function RecordPaymentClient({
                       key={m.value}
                       onClick={() => setPaymentMethod(m.value)}
                       style={{
-                        padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontWeight: 700,
+                        padding: '12px 8px', borderRadius: 10, cursor: 'pointer', fontWeight: 700,
                         fontSize: '0.75rem', textAlign: 'center',
                         border: `1.5px solid ${paymentMethod === m.value ? 'var(--brand)' : 'var(--input-border)'}`,
                         background: paymentMethod === m.value ? 'var(--brand-subtle)' : 'var(--input-bg)',
@@ -749,14 +749,14 @@ export default function RecordPaymentClient({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
                   PAYMENT DATE *
                 </label>
                 <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} style={inp} />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
                   REFERENCE / TELLER NO. (optional)
                 </label>
                 <input
@@ -767,23 +767,23 @@ export default function RecordPaymentClient({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>
                   NOTES (optional)
                 </label>
                 <textarea
                   rows={2} placeholder="Any additional notes…"
                   value={notes} onChange={e => setNotes(e.target.value)}
-                  style={{ ...inp, height: 'auto', resize: 'none', padding: '10px 14px' }}
+                  style={{ ...inp, height: 'auto', resize: 'none', padding: '12px 16px' }}
                 />
               </div>
             </div>
 
             {errorMsg && (
               <div style={{
-                marginTop: 12, padding: '10px 14px',
+                marginTop: 12, padding: '12px 16px',
                 background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.3)',
                 borderRadius: 8, fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
-                display: 'flex', alignItems: 'center', gap: 6,
+                display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <AlertIcon size={14} /> {errorMsg}
               </div>

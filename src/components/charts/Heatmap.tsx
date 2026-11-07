@@ -68,7 +68,7 @@ export function Heatmap({ cells, rows, cols, valueFormat = v => String(Math.roun
           ))}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 11, color: 'var(--viz-muted)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 11, color: 'var(--viz-muted)' }}>
         <span>{valueFormat(lo)}</span>
         <span aria-hidden style={{ height: 8, width: 120, borderRadius: 4, background: `linear-gradient(90deg, ${seq(0)}, ${seq(1)})` }} />
         <span>{valueFormat(hi)}</span>

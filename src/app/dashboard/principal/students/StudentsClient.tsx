@@ -63,7 +63,7 @@ function EnrolSuccessModal({
 
         {/* User badge */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
           background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
           borderRadius: 10, marginBottom: 16,
         }}>
@@ -81,12 +81,12 @@ function EnrolSuccessModal({
         {/* Access Code */}
         <div style={{
           border: `1px solid ${sc}44`, background: sc + '0a',
-          borderRadius: 10, padding: '12px 14px', marginBottom: 10,
+          borderRadius: 10, padding: '12px 16px', marginBottom: 12,
         }}>
-          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Access Code
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <code style={{
               flex: 1, fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.08em',
               color: sc, fontFamily: 'monospace',
@@ -94,7 +94,7 @@ function EnrolSuccessModal({
             <button className="pressable"
               onClick={() => copy(result.code, 'code')}
               style={{
-                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                padding: '4px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
                 background: copiedCode ? '#10B98122' : 'transparent',
                 border: `1px solid ${copiedCode ? '#10B981' : sc + '55'}`,
                 color: copiedCode ? '#10B981' : sc,
@@ -108,12 +108,12 @@ function EnrolSuccessModal({
         {/* Temp Password */}
         <div style={{
           border: '1px solid #F59E0B44', background: '#F59E0B0a',
-          borderRadius: 10, padding: '12px 14px', marginBottom: 16,
+          borderRadius: 10, padding: '12px 16px', marginBottom: 16,
         }}>
-          <p style={{ margin: '0 0 6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Temporary Password
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <code style={{
               flex: 1, fontSize: '1rem', fontWeight: 700,
               color: '#F59E0B', fontFamily: 'monospace', letterSpacing: '0.05em',
@@ -121,7 +121,7 @@ function EnrolSuccessModal({
             <button className="pressable"
               onClick={() => copy(result.password, 'pwd')}
               style={{
-                padding: '5px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                padding: '4px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
                 background: copiedPwd ? '#10B98122' : 'transparent',
                 border: `1px solid ${copiedPwd ? '#10B981' : '#F59E0B55'}`,
                 color: copiedPwd ? '#10B981' : '#F59E0B',
@@ -130,7 +130,7 @@ function EnrolSuccessModal({
               {copiedPwd ? <><CheckIcon size={13} /> Copied</> : 'Copy'}
             </button>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#F59E0B', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 4 }}>
             <AlertIcon size={13} /> Student must change this password on first login.
           </p>
         </div>
@@ -139,7 +139,7 @@ function EnrolSuccessModal({
         <button className="pressable"
           onClick={copyAllDetails}
           style={{
-            width: '100%', padding: '10px', borderRadius: 8, marginBottom: 8,
+            width: '100%', padding: '12px', borderRadius: 8, marginBottom: 8,
             fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
             background: copiedAll ? '#10B98122' : 'var(--glass-bg)',
             border: `1px solid ${copiedAll ? '#10B981' : 'var(--glass-border)'}`,
@@ -378,7 +378,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
         <div className={styles.overlay}>
           <div className={styles.dialog} style={{ maxWidth: 400 }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: '50%', background: sc + '20',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -402,14 +402,14 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                 No classes found. Create classes first under the Classes section.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                 {classes.map(c => (
                   <button className="pressable"
                     key={c.id}
                     onClick={() => setAssignClassId(c.id)}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
+                      padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
                       background: assignClassId === c.id ? sc + '18' : 'var(--glass-bg)',
                       border: `1.5px solid ${assignClassId === c.id ? sc + '66' : 'var(--glass-border)'}`,
                       color: assignClassId === c.id ? sc : 'var(--text-base)',
@@ -503,7 +503,7 @@ export default function StudentsClient({ profile, school, userId }: Props) {
                 <DOBPicker value={form.date_of_birth} onChange={v => setForm(f=>({...f,date_of_birth:v}))} inputStyle={{
                   background: 'var(--input-bg)', border: '1px solid var(--input-border)',
                   borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-                  fontSize: '0.82rem', padding: '10px 8px', fontFamily: 'inherit',
+                  fontSize: '0.82rem', padding: '12px 8px', fontFamily: 'inherit',
                 }} />
               </div>
               <div className={styles.fieldGroup}>

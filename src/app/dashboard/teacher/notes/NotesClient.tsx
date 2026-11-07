@@ -202,15 +202,15 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
         <button className="pressable" onClick={() => setShowForm(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
           <PlusIcon size={13} color="white" /> New Note
         </button>
       </div>
 
       {/* FIX: visible error banner, dismissible */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 'var(--space-4)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--danger)', flex: 1 }}><AlertIcon size={14} color="var(--danger)" /> {error}</span>
           <button className="pressable" onClick={() => setError(null)} style={{ display: 'inline-flex', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><XIcon size={16} color="var(--danger)" /></button>
         </div>
       )}
@@ -269,7 +269,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Note Content *</label>
               <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                 placeholder="Write your note here..." rows={6}
-                style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }} />
+                style={{ padding: '12px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }} />
             </div>
           ) : (
             <div style={{ marginBottom: 'var(--space-3)' }}>
@@ -280,7 +280,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                   ? <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><PaperclipIcon size={14} /></span>{uploadedFile.name}</>
                   : 'Tap to select PDF or document'}
               </button>
-              {uploading && <p style={{ fontSize: '0.75rem', color: sc, marginTop: 6 }}>Uploading...</p>}
+              {uploading && <p style={{ fontSize: '0.75rem', color: sc, marginTop: 8 }}>Uploading...</p>}
             </div>
           )}
 
@@ -329,18 +329,18 @@ export default function NotesClient({ profile, school, userId }: Props) {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 'var(--space-2)' }}>
                       {item.description && (
                         <button className="pressable" onClick={() => setPreviewBook(item)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                           <BookOpenIcon size={13} color="#fff" /> Preview as Flip-Book
                         </button>
                       )}
                       {item.file_url && (
                         <>
                           <button className="pressable" onClick={() => setPreviewDoc(item)}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc + '20', color: sc, border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: sc + '20', color: sc, border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                             <FileTextIcon size={13} color={sc} /> Preview In-App
                           </button>
                           <a href={item.file_url} target="_blank" rel="noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '8px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
                             <DownloadIcon size={13} color="var(--text-muted)" /> Download
                           </a>
                         </>
@@ -348,7 +348,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                     </div>
                     <br />
                     <button className="pressable" onClick={() => deleteNote(item.id)}
-                      style={{ marginTop: 6, padding: '5px 12px', background: 'transparent', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.72rem', color: 'var(--danger)', cursor: 'pointer' }}>
+                      style={{ marginTop: 8, padding: '4px 12px', background: 'transparent', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 999, fontWeight: 700, fontSize: '0.72rem', color: 'var(--danger)', cursor: 'pointer' }}>
                       Delete Note
                     </button>
                   </div>

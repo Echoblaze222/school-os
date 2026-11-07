@@ -122,9 +122,9 @@ export default function LiveClient({ profile, school, userId }: Props) {
   }
 
   const TABS: { key: Tab; label: ReactNode; badge?: number }[] = [
-    { key: 'live',     label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><StatusDotIcon size={9} color="#EF4444" /> Live Now</span>,  badge: counts.live || undefined },
-    { key: 'upcoming', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CalendarIcon size={13} /> Upcoming</span> },
-    { key: 'history',  label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CheckCircleIcon size={13} /> History</span>  },
+    { key: 'live',     label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><StatusDotIcon size={9} color="#EF4444" /> Live Now</span>,  badge: counts.live || undefined },
+    { key: 'upcoming', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CalendarIcon size={13} /> Upcoming</span> },
+    { key: 'history',  label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircleIcon size={13} /> History</span>  },
   ]
 
   const stats = [
@@ -152,8 +152,8 @@ export default function LiveClient({ profile, school, userId }: Props) {
             {t.label}
             {t.badge ? (
               <span style={{
-                marginLeft: 5, background: '#10B981', color: '#fff',
-                borderRadius: 999, fontSize: '0.6rem', fontWeight: 800, padding: '1px 6px',
+                marginLeft: 4, background: '#10B981', color: '#fff',
+                borderRadius: 999, fontSize: '0.6rem', fontWeight: 800, padding: '1px 8px',
               }}>
                 {t.badge}
               </span>
@@ -215,7 +215,7 @@ export default function LiveClient({ profile, school, userId }: Props) {
 
                       {/* Ended: show when it ended */}
                       {status === 'ended' && item.ended_at && (
-                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 3, display: 'block' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
                           Ended {fmtDate(item.ended_at)} at {fmtTime(item.ended_at)}
                         </span>
                       )}

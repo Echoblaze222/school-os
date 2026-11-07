@@ -134,7 +134,7 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
       <div className="glass-card" style={{ overflow: 'hidden', marginBottom: 'var(--space-5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--glass-border)' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>Personal Info</p>
-          <button className="pressable" onClick={toggleEditing} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: `1px solid ${editing ? 'var(--glass-border)' : 'var(--brand-border)'}`, borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
+          <button className="pressable" onClick={toggleEditing} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', background: editing ? 'var(--glass-bg)' : 'var(--brand-subtle)', border: `1px solid ${editing ? 'var(--glass-border)' : 'var(--brand-border)'}`, borderRadius: 999, color: editing ? 'var(--text-muted)' : 'var(--brand-light)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
             <EditIcon size={12} color={editing ? 'var(--text-muted)' : 'var(--brand-light)'} /> {editing ? 'Cancel' : 'Edit'}
           </button>
         </div>
@@ -143,8 +143,8 @@ export default function SecretaryProfileClient({ profile, school, userId }: Prop
           <div style={{ padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {[['Full Name', fullName, setFullName], ['Phone', phone, setPhone]].map(([label, val, setter]: any) => (
               <div key={label}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>{label}</label>
-                <input value={val} onChange={e => setter(e.target.value)} style={{ width: '100%', height: 44, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }} />
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>{label}</label>
+                <input value={val} onChange={e => setter(e.target.value)} style={{ width: '100%', height: 44, padding: '0 16px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 10, color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }} />
               </div>
             ))}
             {msg && <p style={{ fontSize: '0.78rem', color: msg.includes('!') ? 'var(--success)' : 'var(--danger)', margin: 0 }}>{msg}</p>}

@@ -85,7 +85,7 @@ export default function LibraryClient({ profile, school, userId }: Props) {
                   {children.map(c => (
                     <button className="pressable" key={c.id} onClick={() => switchChild(c)}
                       style={{
-                        padding: '6px 14px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+                        padding: '8px 16px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
                         background: child.id === c.id ? sc : 'var(--glass-bg)',
                         color:      child.id === c.id ? '#fff' : 'var(--text-muted)',
                         border:     `1px solid ${child.id === c.id ? sc : 'var(--glass-border)'}`,

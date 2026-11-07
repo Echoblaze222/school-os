@@ -87,7 +87,7 @@
 
 .themeToggle {
   width: 38px;
-  height: 38px;
+  height: 44px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
@@ -117,7 +117,7 @@
 
 .menuToggle {
   width: 38px;
-  height: 38px;
+  height: 44px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;

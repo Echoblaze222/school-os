@@ -94,7 +94,7 @@ export default function RecordsClient({ profile, school, userId }: Props) {
                   <div className={styles.progressTrack}>
                     <div className={styles.progressFill} style={{ width:`${rate}%`, background: rate >= 75 ? '#10B981' : rate >= 50 ? '#F59E0B' : '#EF4444' }}/>
                   </div>
-                  <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:6 }}>{total} days recorded</p>
+                  <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:8 }}>{total} days recorded</p>
                 </div>
               </>
             )}
@@ -112,7 +112,7 @@ export default function RecordsClient({ profile, school, userId }: Props) {
                         <p className={styles.cardTitle}>{new Date(a.date).toLocaleDateString('en-NG',{weekday:'long',day:'numeric',month:'long'})}</p>
                         {a.note && <p className={styles.cardText}>{a.note}</p>}
                       </div>
-                      <span style={{ padding:'3px 10px', borderRadius:999, fontSize:'0.68rem', fontWeight:700, flexShrink:0, background:sColor(a.status)+'20', color:sColor(a.status) }}>
+                      <span style={{ padding:'4px 12px', borderRadius:999, fontSize:'0.68rem', fontWeight:700, flexShrink:0, background:sColor(a.status)+'20', color:sColor(a.status) }}>
                         {a.status}
                       </span>
                     </div>
@@ -133,7 +133,7 @@ export default function RecordsClient({ profile, school, userId }: Props) {
                         <p className={styles.cardTitle}>{b.description}</p>
                         <p className={styles.cardMeta}>{(b.recorded_by as any)?.full_name ?? 'Teacher'} · {new Date(b.created_at).toLocaleDateString('en-NG',{day:'numeric',month:'short'})}</p>
                       </div>
-                      <span style={{ padding:'3px 10px', borderRadius:999, fontSize:'0.68rem', fontWeight:700, flexShrink:0, background:bColor(b.type)+'20', color:bColor(b.type) }}>
+                      <span style={{ padding:'4px 12px', borderRadius:999, fontSize:'0.68rem', fontWeight:700, flexShrink:0, background:bColor(b.type)+'20', color:bColor(b.type) }}>
                         {b.type}
                       </span>
                     </div>

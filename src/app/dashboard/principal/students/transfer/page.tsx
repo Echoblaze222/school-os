@@ -230,7 +230,7 @@ function TransferPageContent() {
             )}
             {hasDebt && (
               <div className={styles.warningBox}>
-                <p className={styles.warningTitle} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><AlertIcon size={15} /> Outstanding Fees</p>
+                <p className={styles.warningTitle} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><AlertIcon size={15} /> Outstanding Fees</p>
                 <p className={styles.warningText}>
                   This student has ₦{selectedStudent.outstanding_fees.toLocaleString()} in unpaid fees.
                   You must acknowledge this debt before initiating transfer.

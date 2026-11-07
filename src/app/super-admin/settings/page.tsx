@@ -223,7 +223,7 @@ export default function SettingsPage() {
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`${styles.tabBtn} ${tab===t.id ? styles.tabBtnActive : ''}`}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <t.Icon size={14} /> {t.label}
           </button>
         ))}
@@ -383,7 +383,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className={styles.previewBox}>
-              <p style={{ fontWeight:700, marginBottom:6 }}>Preview</p>
+              <p style={{ fontWeight:700, marginBottom:8 }}>Preview</p>
               <p style={{ fontSize:'0.82rem', color:'var(--text-secondary)' }}>
                 Trial → <strong>{trial.default_days} days</strong> full access →
                 Auto-locked + <strong>{trial.grace_hours}h grace</strong> →
@@ -531,7 +531,7 @@ function PlanEditor({ plan, onChange, onSave, onCancel, saving }: {
       <div style={{ marginTop:'var(--space-4)' }}>
         <label className={styles.fieldLabel}>Features (shown on plan card)</label>
         {plan.features.map((f, i) => (
-          <div key={i} style={{ display:'flex', gap:6, marginBottom:6 }}>
+          <div key={i} style={{ display:'flex', gap:8, marginBottom:8 }}>
             <input className={styles.fieldInput} value={f}
               onChange={e => updateFeature(i, e.target.value)}
               placeholder={`Feature ${i+1}`}/>
@@ -542,7 +542,7 @@ function PlanEditor({ plan, onChange, onSave, onCancel, saving }: {
           </div>
         ))}
         <button onClick={addFeature}
-          style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-muted)', fontSize:'0.78rem', fontWeight:600, cursor:'pointer', marginTop:4 }}>
+          style={{ display:'flex', alignItems:'center', gap:4, padding:'8px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:8, color:'var(--text-muted)', fontSize:'0.78rem', fontWeight:600, cursor:'pointer', marginTop:4 }}>
           <PlusIcon size={13}/> Add Feature
         </button>
       </div>

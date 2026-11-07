@@ -100,9 +100,9 @@ export default function AppointmentsClient({ profile, school, userId }: Props) {
           subtitle={scope === 'upcoming' ? 'Schedule one above to see it here.' : 'Completed and cancelled appointments will show up here.'}
         />
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
           {sessions.map((s: any, i: number) => (
-            <div key={s.id} className={`glass-card ${motion.riseIn}`} style={{ padding: 14, borderRadius: 'var(--radius-lg)', animationDelay: `${i * 40}ms` }}>
+            <div key={s.id} className={`glass-card ${motion.riseIn}`} style={{ padding: 16, borderRadius: 'var(--radius-lg)', animationDelay: `${i * 40}ms` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <p style={{ fontWeight: 700, fontSize: '0.88rem', margin: 0 }}>{s.student?.full_name ?? 'Student'}</p>
@@ -110,14 +110,14 @@ export default function AppointmentsClient({ profile, school, userId }: Props) {
                   {s.location && <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{s.location}</p>}
                 </div>
                 <span style={{
-                  fontSize: '0.68rem', fontWeight: 700, padding: '3px 9px', borderRadius: 999,
+                  fontSize: '0.68rem', fontWeight: 700, padding: '4px 8px', borderRadius: 999,
                   background: 'var(--input-bg)', color: 'var(--text-secondary)', textTransform: 'capitalize',
                 }}>
                   {s.status.replace('_', ' ')}
                 </span>
               </div>
               {s.status === 'scheduled' && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <ActionButton onClick={() => markStatus(s.id, 'completed')} variant="ghost" fullWidth>Mark completed</ActionButton>
                   <ActionButton onClick={() => markStatus(s.id, 'no_show')} variant="ghost" fullWidth>No-show</ActionButton>
                   <ActionButton onClick={() => markStatus(s.id, 'cancelled')} variant="danger" fullWidth>Cancel</ActionButton>
@@ -189,7 +189,7 @@ function NewSessionForm({
       </div>
 
       {selected ? (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 9, background: 'var(--input-bg)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 12px', borderRadius: 9, background: 'var(--input-bg)' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{selected.full_name}</span>
           <button onClick={() => { setSelected(null); setQuery('') }} className={motion.pressable} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>
             Change
@@ -207,7 +207,7 @@ function NewSessionForm({
             />
           </div>
           {(searching || results.length > 0) && query.trim().length >= 2 && (
-            <div className="glass-card" style={{ marginTop: 6, borderRadius: 9, overflow: 'hidden' }}>
+            <div className="glass-card" style={{ marginTop: 8, borderRadius: 9, overflow: 'hidden' }}>
               {searching ? (
                 <div style={{ padding: 12, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Searching…</div>
               ) : (
@@ -216,7 +216,7 @@ function NewSessionForm({
                     key={r.id}
                     onClick={() => { setSelected(r); setResults([]) }}
                     className={motion.pressable}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}
                   >
                     {r.full_name} <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.class_level}</span>
                   </button>
@@ -231,9 +231,9 @@ function NewSessionForm({
         type="datetime-local"
         value={scheduledAt}
         onChange={e => setScheduledAt(e.target.value)}
-        style={{ height: 38, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 10px', fontSize: '0.8rem' }}
+        style={{ height: 38, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 12px', fontSize: '0.8rem' }}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
         <select value={duration} onChange={e => setDuration(Number(e.target.value))}
           style={{ height: 38, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 8px', fontSize: '0.8rem' }}>
           <option value={15}>15 min</option>
@@ -245,7 +245,7 @@ function NewSessionForm({
           value={location}
           onChange={e => setLocation(e.target.value)}
           placeholder="Location (optional)"
-          style={{ height: 38, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 10px', fontSize: '0.8rem' }}
+          style={{ height: 38, borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', padding: '0 12px', fontSize: '0.8rem' }}
         />
       </div>
 

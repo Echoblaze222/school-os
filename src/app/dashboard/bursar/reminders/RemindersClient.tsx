@@ -425,19 +425,19 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         return (
           <div style={OVERLAY} onClick={() => setPreviewMsg(null)}>
             <div style={SHEET} onClick={e => e.stopPropagation()}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 18px' }} />
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--glass-border)', margin: '0 auto 20px' }} />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                 <div>
                   <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                     {student?.full_name ?? 'Unknown Student'}
                   </p>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
                     {student?.class_level ?? 'N/A'} · {fmtDate(previewMsg.sent_at ?? previewMsg.created_at)}
                   </p>
                 </div>
                 <span style={{
-                  padding: '3px 10px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
+                  padding: '4px 12px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
                   background: previewMsg.status === 'sent' ? 'var(--success-subtle)' : '#F59E0B20',
                   color:      previewMsg.status === 'sent' ? 'var(--success)'   : '#F59E0B',
                 }}>
@@ -450,7 +450,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               </p>
               <div style={{
                 background: 'var(--input-bg)', border: '1px solid var(--glass-border)',
-                borderRadius: 10, padding: '14px', fontSize: '0.82rem',
+                borderRadius: 10, padding: '16px', fontSize: '0.82rem',
                 color: 'var(--text-primary)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
               }}>
                 {previewMsg.message_body ?? '(No message body recorded)'}
@@ -471,7 +471,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
         {(['send', 'history'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
-            style={tab === t ? { background: sc, color: '#fff', borderColor: sc, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' } : { display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+            style={tab === t ? { background: sc, color: '#fff', borderColor: sc, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' } : { display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
             {t === 'send' ? <MegaphoneIcon size={15} /> : <ClipboardIcon size={15} />}
             {t === 'send' ? 'Send Reminders' : 'Sent History'}
           </button>
@@ -482,7 +482,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
       {tab === 'send' && (
         <>
           {aiDraftBanner && (
-            <div style={{ padding: '10px 14px', background: `${sc}14`, border: `1px solid ${sc}44`,
+            <div style={{ padding: '12px 16px', background: `${sc}14`, border: `1px solid ${sc}44`,
               borderRadius: 10, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               {aiDraftBanner}
             </div>
@@ -508,10 +508,10 @@ export default function RemindersClient({ profile, school, userId }: Props) {
 
           {error && (
             <div style={{
-              padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+              padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
               borderRadius: 8, marginBottom: 'var(--space-4)',
               fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <AlertCircleIcon size={15} /> {error}
             </div>
@@ -523,7 +523,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10,
               marginBottom: 'var(--space-4)', fontSize: '0.85rem',
               fontWeight: 700, color: 'var(--success)',
-              display: 'flex', alignItems: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <CheckCircleIcon size={15} /> {sentCount} reminder{sentCount !== 1 ? 's' : ''} sent successfully and saved to records
             </div>
@@ -536,7 +536,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)',
               marginBottom: 'var(--space-4)',
             }}>
-              <p style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--space-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <p style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--space-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <EditIcon size={14} /> Compose Reminder, {selected.size} student{selected.size !== 1 ? 's' : ''}
               </p>
 
@@ -545,22 +545,22 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                 <button
                   onClick={() => setUseCustom(false)}
                   style={{
-                    padding: '6px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 700,
+                    padding: '8px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 700,
                     border: `1px solid ${!useCustom ? sc : 'var(--input-border)'}`,
                     background: !useCustom ? sc + '20' : 'var(--input-bg)',
                     color: !useCustom ? sc : 'var(--text-muted)', cursor: 'pointer',
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}>
                   <SparkleIcon size={13} /> Auto (personalised)
                 </button>
                 <button
                   onClick={() => setUseCustom(true)}
                   style={{
-                    padding: '6px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 700,
+                    padding: '8px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 700,
                     border: `1px solid ${useCustom ? sc : 'var(--input-border)'}`,
                     background: useCustom ? sc + '20' : 'var(--input-bg)',
                     color: useCustom ? sc : 'var(--text-muted)', cursor: 'pointer',
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}>
                   <EditIcon size={13} /> Write custom
                 </button>
@@ -587,7 +587,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                 /* Preview of auto-generated message */
                 preview && (
                   <div style={{
-                    padding: '12px 14px', background: 'var(--input-bg)',
+                    padding: '12px 16px', background: 'var(--input-bg)',
                     border: '1px solid var(--input-border)', borderRadius: 8,
                     fontSize: '0.78rem', color: 'var(--text-primary)',
                     lineHeight: 1.7, whiteSpace: 'pre-wrap',
@@ -610,7 +610,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                   background: sc, color: '#fff', border: 'none', borderRadius: 8,
                   fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
                   opacity: (sending || (useCustom && !customMsg.trim())) ? 0.6 : 1,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}>
                 {sending
                   ? `Sending… (${sentCount}/${selected.size})`
@@ -670,7 +670,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                             {d.class_level}
                             {d.parent_name
                               ? <span style={{ color: 'var(--success)' }}> · {d.parent_name}</span>
-                              : <span style={{ color: '#F59E0B', display: 'inline-flex', alignItems: 'center', gap: 3 }}> · <AlertCircleIcon size={11} /> No parent linked</span>
+                              : <span style={{ color: '#F59E0B', display: 'inline-flex', alignItems: 'center', gap: 4 }}> · <AlertCircleIcon size={11} /> No parent linked</span>
                             }
                           </p>
                         </div>
@@ -707,10 +707,10 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                   return (
                     <div key={item.id} style={{
                       background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-                      borderRadius: 12, padding: '14px 16px', marginBottom: 8,
+                      borderRadius: 12, padding: '16px 16px', marginBottom: 8,
                       cursor: 'pointer',
                     }} onClick={() => setPreviewMsg(item)}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                         <div>
                           <p style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                             {student?.full_name ?? 'Unknown Student'}
@@ -720,7 +720,7 @@ export default function RemindersClient({ profile, school, userId }: Props) {
                           </p>
                         </div>
                         <span style={{
-                          padding: '3px 10px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
+                          padding: '4px 12px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 700,
                           background: item.status === 'sent' ? 'var(--success-subtle)' : '#F59E0B20',
                           color:      item.status === 'sent' ? 'var(--success)'   : '#F59E0B',
                         }}>

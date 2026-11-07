@@ -133,13 +133,13 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
   return (
     <RoleSubHeader userId={userId} role="secretary" profile={profile} school={school} title="Admissions" featureGroups={SECRETARY_FEATURE_GROUPS}>
       <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 'var(--space-5)' }}>
-        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
           <GaugeStat label="Awaiting Review" value={admissions.filter(a => ['submitted', 'under_review'].includes(a.status)).length} color="var(--status-warn, #F59E0B)" size={56} />
         </div>
-        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
           <GaugeStat label="Accepted" value={admissions.filter(a => a.status === 'accepted').length} color="var(--status-ok, #10B981)" size={56} delayMs={80} />
         </div>
-        <div className={`glass-card ${motion.pressable}`} style={{ padding: 14 }}>
+        <div className={`glass-card ${motion.pressable}`} style={{ padding: 16 }}>
           <GaugeStat label="Total" value={admissions.length} color={sc} size={56} delayMs={160} />
         </div>
       </div>
@@ -148,7 +148,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
         <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1, overflowX: 'auto' }}>
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
-              style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                 background: tab === t ? sc + '22' : 'var(--glass-bg)',
                 borderColor: tab === t ? sc : 'var(--glass-border)',
                 color: tab === t ? sc : 'var(--text-muted)',
@@ -159,7 +159,7 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
       </div>
 
       {msg && !modal && (
-        <p style={{ fontSize: '0.8rem', color: msgIsError ? '#EF4444' : '#10B981', margin: '0 0 var(--space-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <p style={{ fontSize: '0.8rem', color: msgIsError ? '#EF4444' : '#10B981', margin: '0 0 var(--space-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
           {msgIsError && <AlertCircleIcon size={13} color="#EF4444" />} {msg}
         </p>
       )}
@@ -203,9 +203,9 @@ export default function AdmissionsClient({ admissions: init, profile, school, us
               </div>
             ))}
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
-              {viewItem.status !== 'accepted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'accepted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><CheckCircleIcon size={14} color="#fff" /> Accept</button>}
-              {viewItem.status !== 'shortlisted' && <button className={styles.btnGhost} onClick={() => updateStatus(viewItem.id, 'shortlisted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><ClockIcon size={14} /> Shortlist</button>}
-              {viewItem.status !== 'rejected' && <button className={styles.btnDanger} onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
+              {viewItem.status !== 'accepted' && <button className={styles.btnPrimary} onClick={() => updateStatus(viewItem.id, 'accepted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><CheckCircleIcon size={14} color="#fff" /> Accept</button>}
+              {viewItem.status !== 'shortlisted' && <button className={styles.btnGhost} onClick={() => updateStatus(viewItem.id, 'shortlisted')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><ClockIcon size={14} /> Shortlist</button>}
+              {viewItem.status !== 'rejected' && <button className={styles.btnDanger} onClick={() => updateStatus(viewItem.id, 'rejected')} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><XIcon size={14} color="var(--danger)" /> Reject</button>}
             </div>
             {viewItem.status !== 'more_info_required' && (
               <button className={styles.btnGhost} onClick={() => updateStatus(viewItem.id, 'more_info_required')} disabled={saving} style={{ width: '100%', marginTop: 'var(--space-2)' }}>

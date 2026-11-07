@@ -351,10 +351,10 @@ ul, ol { list-style: none; }
   color: var(--danger);
 }
 
-.btn-sm { height: 34px; padding: 0 var(--space-4); font-size: 0.8rem; }
+.btn-sm { height: 40px; padding: 0 var(--space-4); font-size: 0.8rem; }
 .btn-lg { height: 52px; padding: 0 var(--space-8); font-size: 1rem; }
-.btn-icon { width: 40px; padding: 0; border-radius: var(--radius-md); }
-.btn-icon-round { width: 40px; padding: 0; border-radius: var(--radius-full); }
+.btn-icon { width: 44px; padding: 0; border-radius: var(--radius-md); }
+.btn-icon-round { width: 44px; padding: 0; border-radius: var(--radius-full); }
 
 /* ── INPUTS ────────────────────────────────────────────────── */
 .input-group { display: flex; flex-direction: column; gap: var(--space-2); }

@@ -76,13 +76,13 @@ export default function AttendanceClient({ userId, profile, school, schoolId, ti
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: 10 }}>
+      <div style={{ display: 'grid', gap: 12 }}>
         {timetable.map(t => {
           const roster = initialRoster[t.id] ?? []
           const marked = Object.keys(attendance[t.id] ?? {}).length
           const isOpen = openId === t.id
           return (
-            <div key={t.id} className={`glass-card ${motion.pressable}`} style={{ padding: 14, borderRadius: 'var(--radius-xl)' }}>
+            <div key={t.id} className={`glass-card ${motion.pressable}`} style={{ padding: 16, borderRadius: 'var(--radius-xl)' }}>
               <button onClick={() => setOpenId(isOpen ? null : t.id)} style={{ all: 'unset', cursor: 'pointer', width: '100%', display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 700 }}>
@@ -94,14 +94,14 @@ export default function AttendanceClient({ userId, profile, school, schoolId, ti
               </button>
 
               {isOpen && (
-                <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+                <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
                   {roster.length === 0 && <p style={{ fontSize: 13, opacity: 0.6 }}>No students found for this class.</p>}
                   {roster.map(s => {
                     const current = attendance[t.id]?.[s.id]?.status
                     return (
-                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 14 }}>{s.full_name}</span>
-                        <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
                           {(['present', 'absent', 'excused'] as const).map(st => {
                             const key = `${t.id}:${s.id}`
                             const active = current === st

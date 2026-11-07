@@ -166,8 +166,8 @@ export default function ReportsClient({ profile, school, userId }: Props) {
       </div>
 
       {error && (
-        <div style={{ padding: '10px 14px', background: '#EF444415', border: '1px solid #EF444440',
-          borderRadius: 8, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: '#EF4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ padding: '12px 16px', background: '#EF444415', border: '1px solid #EF444440',
+          borderRadius: 8, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: '#EF4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
           <AlertIcon size={14} /> {error}
         </div>
       )}

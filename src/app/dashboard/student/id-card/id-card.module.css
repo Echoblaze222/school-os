@@ -160,7 +160,7 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .schoolLogo {
@@ -215,7 +215,7 @@
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 2px 8px;
   flex-shrink: 0;
 }
 .idBadge span {
@@ -275,7 +275,7 @@
   background: var(--burgundy-subtle);
   border: 1px solid rgba(128,0,32,0.3);
   border-radius: 4px;
-  padding: 1px 5px;
+  padding: 1px 4px;
 }
 .bloodGroupLabel {
   font-family: var(--font-body);

@@ -80,7 +80,7 @@ export default function PromotionsModerationClient() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 'var(--space-5)' }}>
-      <Link href="/super-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
+      <Link href="/super-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
         <ArrowLeftIcon size={14} /> Back
       </Link>
 
@@ -94,7 +94,7 @@ export default function PromotionsModerationClient() {
           </p>
         </div>
         {!loading && queue.length > 0 && (
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 999, padding: '5px 12px' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 999, padding: '4px 12px' }}>
             {queue.length} pending
           </span>
         )}
@@ -116,20 +116,20 @@ export default function PromotionsModerationClient() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {queue.map(p => (
             <div key={p.id} style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 14, overflow: 'hidden' }}>
               {p.image_url ? (
                 <img src={p.image_url} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', color: 'var(--text-faint)', fontSize: '0.75rem', borderBottom: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', color: 'var(--text-faint)', fontSize: '0.75rem', borderBottom: '1px solid var(--glass-border)' }}>
                   <ImageIcon size={14} /> No image attached
                 </div>
               )}
 
-              <div style={{ padding: '14px 18px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle, rgba(128,0,32,0.08))', borderRadius: 999, padding: '2px 10px' }}>
+              <div style={{ padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle, rgba(128,0,32,0.08))', borderRadius: 999, padding: '2px 12px' }}>
                     {TYPE_LABEL[p.promotion_type] ?? p.promotion_type}
                   </span>
                   {p.is_sponsored && (
@@ -138,9 +138,9 @@ export default function PromotionsModerationClient() {
                 </div>
 
                 <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{p.title}</p>
-                {p.summary && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>{p.summary}</p>}
+                {p.summary && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>{p.summary}</p>}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <SchoolIcon size={13} /> {p.schools?.name ?? 'Unknown school'}
                     {p.schools?.city && ` · ${p.schools.city}${p.schools.state ? `, ${p.schools.state}` : ''}`}
@@ -162,19 +162,19 @@ export default function PromotionsModerationClient() {
                       onChange={e => setRejectReason(e.target.value)}
                       placeholder="Reason this is being rejected - the school will see this"
                       rows={2}
-                      style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', fontSize: '0.82rem', resize: 'vertical' }}
+                      style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 12px', color: 'var(--text-primary)', fontSize: '0.82rem', resize: 'vertical' }}
                     />
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={() => decide(p.id, 'reject', rejectReason)}
                         disabled={!rejectReason.trim() || decidingId === p.id}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: (!rejectReason.trim() || decidingId === p.id) ? 0.6 : 1 }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: (!rejectReason.trim() || decidingId === p.id) ? 0.6 : 1 }}
                       >
                         {decidingId === p.id ? 'Rejecting...' : <><XIcon size={13} /> Confirm Reject</>}
                       </button>
                       <button
                         onClick={() => { setRejectingId(null); setRejectReason('') }}
-                        style={{ padding: '7px 16px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', borderRadius: 8, fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                        style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', borderRadius: 8, fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                       >
                         Cancel
                       </button>
@@ -185,14 +185,14 @@ export default function PromotionsModerationClient() {
                     <button
                       onClick={() => decide(p.id, 'approve')}
                       disabled={decidingId === p.id}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: '#10B981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: decidingId === p.id ? 0.6 : 1 }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#10B981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: decidingId === p.id ? 0.6 : 1 }}
                     >
                       {decidingId === p.id ? 'Approving...' : <><CheckCircleIcon size={13} /> Approve</>}
                     </button>
                     <button
                       onClick={() => { setRejectingId(p.id); setRejectReason('') }}
                       disabled={decidingId === p.id}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
                     >
                       <XIcon size={13} /> Reject
                     </button>

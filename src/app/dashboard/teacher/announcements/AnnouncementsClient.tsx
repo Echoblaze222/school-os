@@ -113,7 +113,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
         <div className="glass-card-flat" style={{ padding:'var(--space-5)', marginBottom:'var(--space-5)' }}>
           <p style={{ fontWeight:700, color:'var(--text-primary)', marginBottom:'var(--space-4)', fontSize:'0.9rem' }}>New Announcement</p>
           {aiDraftBanner && (
-            <div style={{ padding: '10px 14px', background: 'rgba(128,0,32,0.08)', border: `1px solid ${sc}44`,
+            <div style={{ padding: '12px 16px', background: 'rgba(128,0,32,0.08)', border: `1px solid ${sc}44`,
               borderRadius: 8, marginBottom: 'var(--space-4)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               {aiDraftBanner}
             </div>
@@ -138,7 +138,7 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
               <label className="input-label">Message *</label>
               <textarea value={form.body} onChange={e => setForm(p => ({ ...p, body: e.target.value }))}
                 placeholder="Write your announcement here..." rows={4}
-                className="input" style={{ height: 'auto', padding:'10px 12px', resize:'vertical' }}/>
+                className="input" style={{ height: 'auto', padding:'12px 12px', resize:'vertical' }}/>
             </div>
           </div>
           <div style={{ display:'flex', gap:'var(--space-2)', marginTop:'var(--space-4)' }}>
@@ -166,8 +166,8 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
                     <MegaphoneIcon size={16} color={sc}/>
                   </div>
                   <div className={styles.cardBody}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3, flexWrap:'wrap' }}>
-                      {item.is_pinned && <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.65rem', fontWeight:800, color:sc }}><MapPinIcon size={11} color={sc} />PINNED</span>}
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
+                      {item.is_pinned && <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:'0.65rem', fontWeight:800, color:sc }}><MapPinIcon size={11} color={sc} />PINNED</span>}
                       <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'0.65rem', fontWeight:700, background:(AUDIENCE_COLOR[item.audience]??'#6B7280')+'20', color:AUDIENCE_COLOR[item.audience]??'#6B7280' }}>
                         {item.audience}
                       </span>
@@ -181,12 +181,12 @@ export default function AnnouncementsClient({ profile, school, userId }: Props) 
                 </div>
                 <div style={{ display:'flex', gap:'var(--space-2)', paddingLeft:56 }}>
                   <button className="pressable" onClick={() => togglePin(item.id, item.is_pinned)}
-                    style={{ padding:'5px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--text-muted)', cursor:'pointer' }}>
-                    {item.is_pinned ? 'Unpin' : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 3 }}><MapPinIcon size={11} /></span>Pin</>}
+                    style={{ padding:'4px 12px', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--text-muted)', cursor:'pointer' }}>
+                    {item.is_pinned ? 'Unpin' : <><span style={{ display:'inline-flex', verticalAlign: 'middle', marginRight: 4 }}><MapPinIcon size={11} /></span>Pin</>}
                   </button>
                   {item.author?.id === userId || !item.author ? (
                     <button className="pressable" onClick={() => deleteRow(item.id)}
-                      style={{ padding:'5px 12px', background:'transparent', border:'1px solid rgba(239,68,68,0.2)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--danger)', cursor:'pointer' }}>
+                      style={{ padding:'4px 12px', background:'transparent', border:'1px solid rgba(239,68,68,0.2)', borderRadius:999, fontWeight:700, fontSize:'0.72rem', color:'var(--danger)', cursor:'pointer' }}>
                       Delete
                     </button>
                   ) : null}

@@ -173,7 +173,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   // ── Loading ──────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', background: 'var(--bg-base)' }}>
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
         {[0, 1, 2].map(i => (
           <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: sc, opacity: 0.5, animation: `pulse 1.2s ease-in-out ${i * 0.15}s infinite` }} />
         ))}
@@ -188,7 +188,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem' }}>Couldn't load this quiz</p>
       <p style={{ color: 'var(--danger)', fontSize: '0.82rem', textAlign: 'center', maxWidth: 320 }}>{error}</p>
       <button onClick={() => router.push('/dashboard/student/quizzes')} className={motion.pressable}
-        style={{ padding: '10px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+        style={{ padding: '12px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
         Back to Quizzes
       </button>
     </div>
@@ -196,7 +196,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
 
   // ── Already attempted ────────────────────────────────────
   if (alreadyDone && !submitted) return (
-    <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 18, background: 'var(--bg-base)', padding: 24 }}>
+    <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 20, background: 'var(--bg-base)', padding: 24 }}>
       <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--success-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CheckCircleIcon size={36} color="var(--success)" />
       </div>
@@ -230,7 +230,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
         The teacher hasn't added questions to this quiz yet. Check back soon.
       </p>
       <button onClick={() => router.push('/dashboard/student/quizzes')} className={motion.pressable}
-        style={{ padding: '10px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+        style={{ padding: '12px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
         Back to Quizzes
       </button>
     </div>
@@ -260,7 +260,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
             </div>
           </div>
 
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
             {pct >= 70 ? 'Excellent!' : pct >= 50 ? 'Good effort!' : 'Keep studying!'}
           </h1>
           <p style={{ fontSize: '1rem', fontWeight: 700, color: resultColor, margin: '0 0 4px' }}>
@@ -271,7 +271,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
           </p>
 
           {error && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--warning)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--warning)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
               <AlertIcon size={13} color="var(--warning)" /> Your answers were scored locally. Saving may have had an issue: {error}
             </p>
           )}
@@ -292,7 +292,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <header style={{ position: 'sticky' as const, top: 0, zIndex: 10, background: 'var(--bg-base)', borderBottom: '1px solid var(--glass-border)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <header style={{ position: 'sticky' as const, top: 0, zIndex: 10, background: 'var(--bg-base)', borderBottom: '1px solid var(--glass-border)', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={() => router.back()} className={motion.pressable}
           style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           <ArrowLeftIcon size={16} color="var(--text-secondary)" />
@@ -301,7 +301,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
           <p style={{ margin: 0, fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quiz?.title}</p>
           <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>{answered}/{questions.length} answered</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 999, border: `1px solid ${timerColor}40`, color: timerColor, fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 999, border: `1px solid ${timerColor}40`, color: timerColor, fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
           <ClockIcon size={13} color="currentColor" />
           {formatTime(timeLeft)}
         </div>
@@ -325,14 +325,14 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       {/* Question card */}
       {q && (
         <div className={motion.riseIn} style={{ flex: 1, padding: '24px 16px', display: 'flex', flexDirection: 'column' }} key={q.id}>
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: sc, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 10 }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: sc, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 12 }}>
             Question {current + 1} of {questions.length}
           </span>
           <p style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 24 }}>
             {q.text || q.question}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {(q.options ?? []).map(opt => {
               const selected = answers[q.id] === opt.label
               return (
@@ -341,7 +341,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
                   className={motion.pressable}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '14px 16px', borderRadius: 14, textAlign: 'left' as const,
+                    padding: '16px 16px', borderRadius: 14, textAlign: 'left' as const,
                     background: selected ? sc + '15' : 'var(--glass-bg)',
                     border: `1.5px solid ${selected ? sc : 'var(--glass-border)'}`,
                     cursor: 'pointer', transition: 'all 0.15s ease',
@@ -367,13 +367,13 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
       )}
 
       {/* Bottom nav */}
-      <div style={{ position: 'sticky' as const, bottom: 0, background: 'var(--bg-base)', borderTop: '1px solid var(--glass-border)', padding: '12px 16px calc(12px + env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ position: 'sticky' as const, bottom: 0, background: 'var(--bg-base)', borderTop: '1px solid var(--glass-border)', padding: '12px 16px calc(12px + env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button disabled={current === 0} onClick={() => setCurrent(c => c - 1)} className={motion.pressable}
           style={{ height: 44, padding: '0 16px', borderRadius: 12, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: current === 0 ? 'var(--text-faint)' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: current === 0 ? 'default' : 'pointer' }}>
           ← Prev
         </button>
 
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 5, overflowX: 'auto' as const }}>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 4, overflowX: 'auto' as const }}>
           {questions.map((_, i) => {
             const isCurrent = i === current
             const isAnswered = answers[questions[i]?.id] !== undefined
@@ -394,7 +394,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
               Next →
             </button>
           : <button onClick={handleSubmit} disabled={submitting} className={motion.pressable}
-              style={{ height: 44, padding: '0 20px', borderRadius: 12, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              style={{ height: 44, padding: '0 20px', borderRadius: 12, background: 'var(--success)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: submitting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               {submitting ? '...' : <>Submit <CheckCircleIcon size={14} color="#fff" /></>}
             </button>
         }

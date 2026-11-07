@@ -21,7 +21,7 @@
   margin: 0 auto;
   height: 100dvh;
   box-sizing: border-box;
-  padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
 
 /* On larger screens, present it as a floating card instead of full-bleed */
@@ -36,7 +36,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 4px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
@@ -112,12 +112,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 8px calc(env(safe-area-inset-bottom, 0px));
+  padding: 12px 8px calc(env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .navBtn {
-  height: 36px;
+  height: 44px;
   padding: 0 12px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -173,7 +173,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   z-index: 1;
 }
 
@@ -197,7 +197,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
   height: 100%;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.85rem;
@@ -206,7 +206,7 @@
 }
 
 .downloadLink {
-  padding: 10px 18px;
+  padding: 12px 20px;
   border-radius: 999px;
   background: var(--accent, #7C3AED);
   color: #fff;

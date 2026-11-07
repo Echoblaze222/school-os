@@ -353,7 +353,7 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
                 return (
                   <div key={n.id}>
                     {showGroup && (
-                      <p className="section-label" style={{ margin: 0, padding: '10px 14px 4px' }}>
+                      <p className="section-label" style={{ margin: 0, padding: '12px 16px 4px' }}>
                         {group}
                       </p>
                     )}

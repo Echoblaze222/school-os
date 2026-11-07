@@ -219,7 +219,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
   // ── Loading ──
   if (checking) return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: sc, animation: 'b 1.2s ease infinite', animationDelay: `${i * 0.2}s` }} />
       ))}
@@ -265,13 +265,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
 
         {/* Child selector chips */}
         {children.length > 1 && (
-          <div className={motion.riseIn} style={{ display: 'flex', gap: 8, marginTop: 'var(--space-6)', marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
+          <div className={motion.riseIn} style={{ display: 'flex', gap: 8, marginTop: 'var(--space-6)', marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
             {children.map((c: any) => (
               <button key={c.id}
                 onClick={() => setActiveChildId(c.id)}
                 className={`${motion.pressable} pressable`}
                 style={{
-                  padding: '7px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
+                  padding: '8px 16px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
                   background: activeChildId === c.id ? sc : 'var(--glass-bg)',
                   color:      activeChildId === c.id ? '#fff' : 'var(--text-muted)',
                   border:     `1px solid ${activeChildId === c.id ? sc : 'var(--glass-border)'}`,
@@ -288,7 +288,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
             display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12,
             marginTop: children.length > 1 ? 0 : 'var(--space-6)', marginBottom: 'var(--space-4)',
           }}>
-            <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+            <div className="glass-card-flat" style={{ padding: 20, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
               <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Term GPA</p>
               <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
                 {statsLoading ? '…' : (childStats.gpa != null ? childStats.gpa.toFixed(1) : 'N/A')}
@@ -297,13 +297,13 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
               <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>{getCurrentTerm()}</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Attendance</p>
                 <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (childStats.attendance ?? 100) < 80 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>
                   {statsLoading ? '…' : `${childStats.attendance ?? 0}%`}
                 </p>
               </div>
-              <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+              <div className="glass-card-flat" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Tasks due</p>
                 <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: childStats.pendingTasks > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>
                   {statsLoading ? '…' : childStats.pendingTasks}
@@ -348,7 +348,7 @@ export default function ParentDashboardClient({ profile, school, userId, counts 
         <button onClick={() => setShowLinkForm(true)}
           className={`${motion.pressable} pressable`}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', margin: '14px 0 20px',
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', margin: '16px 0 20px',
             background: 'var(--glass-bg)', border: `1px solid ${sc}40`,
             borderRadius: 999, color: sc, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
           }}>

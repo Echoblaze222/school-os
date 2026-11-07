@@ -82,7 +82,7 @@ export default function ResultsClient({ profile, school, userId, child, results 
     <RoleSubHeader userId={userId} role="parent" profile={profile} school={school} title="Child's Results" featureGroups={PARENT_FEATURE_GROUPS}>
 
       {/* Child info banner */}
-      <div className="glass-card-flat" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
+      <div className="glass-card-flat" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 16px', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
         <div style={{ width: 40, height: 40, borderRadius: 10, background: sc + '30', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: sc, fontSize: '1rem', flexShrink: 0 }}>
           {child.full_name.slice(0, 2).toUpperCase()}
         </div>
@@ -110,7 +110,7 @@ export default function ResultsClient({ profile, school, userId, child, results 
         {TERMS.map(t => (
           <button key={t} onClick={() => setTermFilter(t)}
             className={`${termFilter === t ? 'btn-primary' : 'btn-secondary'} pressable`}
-            style={{ padding: '6px 14px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, fontSize: '0.75rem', fontWeight: 700 }}>
+            style={{ padding: '8px 16px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, fontSize: '0.75rem', fontWeight: 700 }}>
             {t}
           </button>
         ))}
@@ -128,26 +128,26 @@ export default function ResultsClient({ profile, school, userId, child, results 
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
                 {['Subject', 'Type', 'Term', 'Score', 'Grade'].map(h => (
-                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((r: any, i: number) => (
                 <tr key={r.id ?? i} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  <td style={{ padding: '12px', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
                     {r.subject_name}
                   </td>
-                  <td style={{ padding: '10px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <td style={{ padding: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     {TYPE_LABELS[r.result_type] ?? r.result_type}
                   </td>
-                  <td style={{ padding: '10px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <td style={{ padding: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     {r.term}
                   </td>
-                  <td style={{ padding: '10px', fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+                  <td style={{ padding: '12px', fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 700 }}>
                     {r.score}<span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>/{r.max_score ?? 100}</span>
                   </td>
-                  <td style={{ padding: '10px' }}>
+                  <td style={{ padding: '12px' }}>
                     <span style={{ fontWeight: 800, color: gradeColor(r.grade), fontSize: '0.9rem' }}>{r.grade ?? 'N/A'}</span>
                   </td>
                 </tr>

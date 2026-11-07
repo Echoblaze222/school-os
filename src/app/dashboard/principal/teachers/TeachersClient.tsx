@@ -311,7 +311,7 @@ export default function TeachersClient({ teachers, profile, school, userId }: Pr
                             color:      a.is_primary ? '#F59E0B'   : '#3B82F6',
                           }}
                         >
-                          {a.is_primary ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><CrownIcon size={11} /> Class</span> : 'Subject'}
+                          {a.is_primary ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CrownIcon size={11} /> Class</span> : 'Subject'}
                         </span>
                       </div>
                     ))}

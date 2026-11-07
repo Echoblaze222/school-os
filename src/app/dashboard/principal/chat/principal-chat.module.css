@@ -41,7 +41,7 @@
 
 .iconBtn {
   width: 36px;
-  height: 36px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,7 +85,7 @@
   background: var(--glass-border);
   font-size: 0.6rem;
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 1px 8px;
   border-radius: var(--radius-full);
   color: var(--text-muted);
 }
@@ -175,7 +175,7 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .chatName {
@@ -396,7 +396,7 @@
   display: block;
   font-size: 0.62rem;
   color: var(--text-muted);
-  margin-top: 3px;
+  margin-top: 4px;
   text-align: right;
 }
 

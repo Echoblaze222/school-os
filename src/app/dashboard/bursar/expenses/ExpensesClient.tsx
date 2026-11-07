@@ -125,7 +125,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
         </div>
         {!showForm && (
           <button onClick={openCreate} className="pressable"
-            style={{ display:'flex', alignItems:'center', gap:6, height:36, padding:'0 14px',
+            style={{ display:'flex', alignItems:'center', gap:8, height:36, padding:'0 16px',
               background:sc, color:'#fff', border:'none', borderRadius:8,
               fontWeight:700, fontSize:'0.8rem', cursor:'pointer', flexShrink:0 }}>
             <PlusIcon size={14} color="#fff"/> Add
@@ -159,7 +159,7 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
               onChange={e => setForm(p => ({...p, description:e.target.value}))} className="input"/>
             <div>
               <label style={{ fontSize:'0.72rem', color:'var(--text-muted)', fontWeight:700,
-                letterSpacing:'0.05em', display:'block', marginBottom:6 }}>DATE PAID (optional)</label>
+                letterSpacing:'0.05em', display:'block', marginBottom:8 }}>DATE PAID (optional)</label>
               <input type="date" value={form.paid_at}
                 onChange={e => setForm(p => ({...p, paid_at:e.target.value}))} className="input"/>
             </div>
@@ -226,14 +226,14 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
                         <button onClick={() => del(item.id)} disabled={deleting===item.id}
                           className="pressable"
                           style={{ background:'var(--danger)', color:'#fff', border:'none', borderRadius:6,
-                            padding:'5px 10px', cursor:'pointer', fontSize:'0.72rem', fontWeight:700,
+                            padding:'4px 12px', cursor:'pointer', fontSize:'0.72rem', fontWeight:700,
                             opacity:deleting===item.id ? 0.6 : 1 }}>
                           {deleting===item.id ? '…' : 'Confirm'}
                         </button>
                         <button onClick={() => setConfirmDeleteId(null)}
                           className="pressable"
                           style={{ background:'var(--input-bg)', border:'1px solid var(--input-border)',
-                            borderRadius:6, padding:'5px 10px', cursor:'pointer', fontSize:'0.72rem',
+                            borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:'0.72rem',
                             fontWeight:700, color:'var(--text-muted)' }}>
                           Cancel
                         </button>
@@ -242,12 +242,12 @@ export default function ExpensesClient({ profile, school, userId }: Props) {
                       <>
                         <button onClick={() => openEdit(item)} className="pressable"
                           style={{ background:'#3B82F620', border:'none', borderRadius:6,
-                            padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
+                            padding:'4px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
                           <EditIcon size={13} color="#3B82F6"/>
                         </button>
                         <button onClick={() => setConfirmDeleteId(item.id)} className="pressable"
                           style={{ background:'var(--danger-subtle)', border:'none', borderRadius:6,
-                            padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
+                            padding:'4px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}>
                           <TrashIcon size={13} color="var(--danger)"/>
                         </button>
                       </>
