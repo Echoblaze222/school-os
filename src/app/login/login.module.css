@@ -55,7 +55,7 @@
 .topBar {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 20px 20px 0;
 }
 
@@ -112,7 +112,8 @@
   color: #00b4d8;
   cursor: pointer;
   font-size: 0.7rem;
-  padding: 0;
+  padding: 0 8px;
+  min-height: 44px;
   flex-shrink: 0;
 }
 
@@ -132,8 +133,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 18px;
-  padding-top: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid rgba(255,255,255,0.08);
   font-size: 0.78rem;
   color: rgba(255,255,255,0.5);
@@ -145,8 +146,8 @@
   color: var(--login-brand-2, var(--login-brand));
   font-weight: 700;
   text-decoration: none;
-  padding: 10px 6px;
-  margin: -10px -6px;
+  padding: 12px 6px;
+  margin: -12px -6px;
   min-height: 44px;
   border-radius: 8px;
 }
@@ -161,12 +162,12 @@
 .modeToggle {
   display: flex;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .modeBtn {
   flex: 1;
-  height: 36px;
+  height: 44px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
@@ -202,8 +203,8 @@
   color: rgba(255,255,255,0.5);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-top: 10px;
-  margin-bottom: 2px;
+  margin-top: 12px;
+  margin-bottom: 4px;
 }
 
 .input {
@@ -212,7 +213,7 @@
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
-  padding: 0 14px;
+  padding: 0 16px;
   color: #fff;
   font-size: 0.9rem;
   font-family: 'Inter', sans-serif;
@@ -234,7 +235,7 @@
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
-  padding: 0 14px;
+  padding: 0 16px;
   color: #fff;
   font-size: 0.9rem;
   font-family: 'Inter', sans-serif;
@@ -269,7 +270,7 @@
 
 .eyeBtn {
   position: absolute;
-  right: 12px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -277,6 +278,8 @@
   cursor: pointer;
   font-size: 1rem;
   padding: 0;
+  width: 44px;
+  height: 44px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -293,8 +296,9 @@
   font-size: 0.78rem;
   cursor: pointer;
   text-align: right;
-  padding: 2px 0;
-  margin-top: 4px;
+  padding: 0;
+  min-height: 44px;
+  margin-top: 0;
   font-family: 'Inter', sans-serif;
 }
 
@@ -311,8 +315,9 @@
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 0 2px;
-  margin-top: var(--space-2, 10px);
+  padding: 0;
+  min-height: 44px;
+  margin-top: var(--space-2, 8px);
   font-family: 'Inter', sans-serif;
 }
 
@@ -322,7 +327,7 @@
   background: rgba(0, 180, 216, 0.07);
   border: 1px solid rgba(0, 180, 216, 0.15);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   font-size: 0.78rem;
   color: rgba(255,255,255,0.55);
   line-height: 1.5;
@@ -332,7 +337,7 @@
 /* ── Submit button ── */
 .submitBtn {
   width: 100%;
-  height: 50px;
+  height: 48px;
   background: var(--login-brand);
   border: none;
   border-radius: 14px;
@@ -374,7 +379,7 @@
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   color: #fca5a5;
   font-size: 0.8rem;
   margin-bottom: 8px;
@@ -385,7 +390,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   position: relative;
 }
 
@@ -448,7 +453,7 @@
 .planCard {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
-  padding: 14px 10px;
+  padding: 16px 12px;
   cursor: pointer;
   text-align: center;
   transition: all 0.2s;
@@ -484,12 +489,12 @@
   color: rgba(255,255,255,0.35);
 }
 
-/* ── Setup fee note ─────────────────────────────────────────── */
+/* ── Setup fee note ─────────────────────────────────────────────────────── */
 .setupFeeNote {
   background: rgba(0, 180, 216, 0.07);
   border: 1px solid rgba(0, 180, 216, 0.15);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   font-size: 0.77rem;
   color: rgba(255,255,255,0.55);
   line-height: 1.6;
@@ -500,13 +505,13 @@
   color: rgba(255,255,255,0.85);
 }
 
-/* ── Installment timeline ───────────────────────────────────── */
+/* ── Installment timeline ───────────────────────────────────────────────────── */
 .installmentTimeline {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin: 8px 0 4px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   background: rgba(128, 0, 32, 0.06);
   border: 1px solid rgba(128, 0, 32, 0.2);
   border-radius: 12px;
@@ -516,7 +521,7 @@
 .installmentStep {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .installDot {
@@ -558,7 +563,7 @@
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* ── Summary box ── */
@@ -566,8 +571,8 @@
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
-  padding: 14px;
-  margin-top: 10px;
+  padding: 16px;
+  margin-top: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -597,13 +602,13 @@
 /* ── Back btn ── */
 .regBtnRow {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .backBtn {
   flex: 0 0 auto;
-  height: 50px;
-  padding: 0 18px;
+  height: 48px;
+  padding: 0 16px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
@@ -650,9 +655,9 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════════════
    SPLASH OVERLAY - baked into login page
-   ═══════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════════════ */
 
 .splashOverlay {
   position: fixed;
@@ -838,7 +843,7 @@
 
 /* Brand */
 .spBrandWrap {
-  margin-top: 28px;
+  margin-top: 24px;
   text-align: center;
   opacity: 0;
   animation: spFadeUp 0.6s ease 0.9s forwards;
@@ -895,7 +900,7 @@
   display: inline-block;
   width: 2px; height: 0.72em;
   background: #A0002A;
-  margin-left: 3px;
+  margin-left: 4px;
   vertical-align: middle;
   animation: spBlink 0.75s step-end infinite;
 }
@@ -915,7 +920,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   padding: 0 20px;
 }
 
@@ -942,12 +947,12 @@
 
 /* Loader */
 .spLoaderWrap {
-  margin-top: 38px;
+  margin-top: 40px;
   width: 190px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   opacity: 0;
   animation: spFadeUp 0.45s ease 2s forwards;
 }
@@ -1010,12 +1015,12 @@
   animation: spFadeUp 0.4s ease 2.3s forwards;
 }
 
-/* ── Terms & Privacy ─────────────────────────────────────── */
+/* ── Terms & Privacy ───────────────────────────────────────────────── */
 .termsRow {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 16px;
   cursor: pointer;
 }
 
@@ -1059,15 +1064,15 @@
 @media (max-width: 390px) {
   .spBrandName { font-size: 2.1rem; }
   .spStatVal   { font-size: 1rem; }
-  .spStat      { padding: 0 14px; }
+  .spStat      { padding: 0 16px; }
   .spLogoArea  { width: 130px; height: 130px; }
   .spLogo      { width: 110px; height: 110px; }
   .spLoaderWrap{ width: 168px; }
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════════════
    PAGE CONTENT WRAPPER
-   ══════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════════════ */
 
 .pageContent {
   display: flex;
@@ -1077,13 +1082,13 @@
   max-width: 440px;
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════════════
    SITE FOOTER - below login card
-   ══════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════════════ */
 
 .siteFooter {
   width: 100%;
-  padding: 28px 8px 12px;
+  padding: 24px 8px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1101,7 +1106,7 @@
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.07em;
-  margin: 0 0 7px;
+  margin: 0 0 8px;
   line-height: 1;
 }
 
@@ -1132,7 +1137,7 @@
   background: rgba(255,255,255,0.035);
   border: 1px solid rgba(255,255,255,0.065);
   border-radius: 20px;
-  padding: 4px 11px;
+  padding: 4px 12px;
   font-size: 0.64rem;
   color: rgba(255,255,255,0.36);
   white-space: nowrap;
@@ -1159,7 +1164,8 @@
 .footerContactLink {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-height: 44px;
   color: rgba(255,255,255,0.3);
   font-size: 0.68rem;
   text-decoration: none;
@@ -1196,7 +1202,10 @@
   font-size: 0.67rem;
   text-decoration: none;
   transition: color 0.2s;
-  padding: 2px 7px;
+  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.01em;
 }
@@ -1217,6 +1226,6 @@
 
 /* ── Mobile tweaks ── */
 @media (max-width: 390px) {
-  .footerBadge   { font-size: 0.6rem; padding: 3px 9px; }
+  .footerBadge   { font-size: 0.6rem; padding: 4px 8px; }
   .footerTagline { font-size: 0.67rem; }
 }

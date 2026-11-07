@@ -5,14 +5,15 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
   flex-wrap: wrap;
 }
 
 .seeAll {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-height: 44px;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--brand);
@@ -35,8 +36,8 @@
 }
 
 .emptyIcon {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-lg);
   background: var(--brand-subtle);
   color: var(--brand-light);
