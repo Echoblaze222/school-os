@@ -5,6 +5,7 @@ import PublicNav from '@/components/public/PublicNav'
 import PublicFooter from '@/components/public/PublicFooter'
 import Hero from '@/components/public/landing/Hero'
 import ValueProps from '@/components/public/landing/ValueProps'
+import FeatureBand from '@/components/public/landing/FeatureBand'
 import AudienceSection from '@/components/public/landing/AudienceSection'
 import StatsStrip from '@/components/public/landing/StatsStrip'
 import FeaturedSchools from '@/components/public/landing/FeaturedSchools'
@@ -52,6 +53,10 @@ export default async function RootPage() {
   // they keep sitting flush against each other (no gap), which was the
   // original, presumably intentional layout - the outer gap still
   // applies normally around that pair as a single unit.
+  //
+  // Photos are spread through the page (Hero, FeatureBand x3, the role
+  // tabs and the final CTA) instead of sitting together in one gallery.
+  // They live in public/branding.
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PublicNav />
@@ -62,8 +67,33 @@ export default async function RootPage() {
           <StatsStrip />
         </div>
         <ValueProps />
+        <FeatureBand
+          image="/branding/focused-pupil.png"
+          alt="A young pupil writing in her exercise book at her desk"
+          caption="Pay from home, term by term"
+          label="For parents and bursars"
+          title="Fees without the queue"
+          body="Parents pay school fees on Paystack and get a digital receipt straight away. The bursar sees every payment as it lands, so the school's books and the parent's receipt always agree."
+        />
         <AudienceSection />
+        <FeatureBand
+          reverse
+          image="/branding/library-reading.webp"
+          alt="Four pupils reading books together in the school library"
+          caption="Books, notes and live classes in one place"
+          label="For teachers and students"
+          title="Learning does not stop at the classroom door"
+          body="Students use the school library and join live classes from the same app. Teachers post assignments and notes once, and every pupil in the class can find them."
+        />
         <FeaturedSchools />
+        <FeatureBand
+          image="/branding/pupil-portrait.png"
+          alt="A smiling pupil in school uniform seated in a classroom"
+          caption="Private records, kept separate for every school"
+          label="For every school"
+          title="Every pupil gets their own space"
+          body="Each pupil has their own login and profile. Their records are visible only to them, their parents and the staff who need them, and each school's data stays separate from every other school's."
+        />
         <FaqSection />
         <FinalCta />
       </main>
