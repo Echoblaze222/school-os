@@ -256,7 +256,7 @@
   width: 100%;
   padding: var(--space-4);
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   color: #fff;
   font-family: var(--font-body);
   font-size: 0.88rem;
