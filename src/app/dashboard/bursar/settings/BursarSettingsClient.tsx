@@ -5,6 +5,7 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { BURSAR_FEATURE_GROUPS } from '../featureGroups'
 import { SaveIcon, CheckIcon } from '@/components/Icons'
 import AutoLockSettings from '@/components/settings/AutoLockSettings'
+import NotificationPreferencesSettings from '@/components/settings/NotificationPreferencesSettings'
 import styles from '@/app/dashboard/student/records/page.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -83,6 +84,10 @@ export default function BursarSettingsClient({ profile, school, userId }: Props)
 
       <div style={{ marginTop: 'var(--space-6)' }}>
         <AutoLockSettings userId={userId} />
+      </div>
+
+      <div style={{ marginTop: 'var(--space-4)' }}>
+        <NotificationPreferencesSettings userId={userId} />
       </div>
 
       <button onClick={save} disabled={saving} className="pressable"

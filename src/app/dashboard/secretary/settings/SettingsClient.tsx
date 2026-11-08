@@ -14,6 +14,7 @@ import {
 } from '@/components/Icons'
 import styles from '../secretary.module.css'
 import AutoLockSettings from '@/components/settings/AutoLockSettings'
+import NotificationPreferencesSettings from '@/components/settings/NotificationPreferencesSettings'
 
 interface Props { profile: any; school: any; userId: string }
 
@@ -33,11 +34,6 @@ export default function SettingsClient({ profile, school, userId }: Props) {
   // Profile form
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [phone,    setPhone]    = useState(profile?.phone ?? '')
-
-  // Notification prefs (stored locally for demo; could be a DB table)
-  const [notifs, setNotifs] = useState({
-    newStudents: true, admissions: true, notices: false, system: true,
-  })
 
   // Theme
   const [theme, setTheme] = useState<'dark' | 'light'>(
@@ -116,26 +112,11 @@ export default function SettingsClient({ profile, school, userId }: Props) {
       )}
 
       {section === 'notifs' && (
-        <div className="glass-card" style={{ overflow: 'hidden' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', padding: 'var(--space-4) var(--space-5)' }}>Notification Preferences</p>
-          {([
-            ['newStudents', 'New Student Registrations', 'Alert when a new student is added'],
-            ['admissions',  'Admission Updates',          'Alerts on new or changed applications'],
-            ['notices',     'School Notices',             'Get notified when notices are posted'],
-            ['system',      'System Alerts',              'Important system and security alerts'],
-          ] as [keyof typeof notifs, string, string][]).map(([key, label, desc]) => (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--glass-border)', gap: 'var(--space-4)' }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{label}</p>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>{desc}</p>
-              </div>
-              <button className="pressable" onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))}
-                style={{ width: 44, height: 24, borderRadius: 12, background: notifs[key] ? sc : 'var(--glass-border)', border: 'none', cursor: 'pointer', transition: 'background 0.2s', position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: notifs[key] ? 23 : 3, transition: 'left 0.2s' }} />
-              </button>
-            </div>
-          ))}
-        </div>
+        // Was a local-only useState demo ('could be a DB table' per its own
+        // comment) - four toggles that reset on refresh and did nothing.
+        // Replaced with the real notification_preferences-backed component,
+        // the same one now used across every other role's settings page.
+        <NotificationPreferencesSettings userId={userId} />
       )}
 
       {section === 'security' && (
