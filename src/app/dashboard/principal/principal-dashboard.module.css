@@ -548,7 +548,7 @@
 .cashBarFill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   transition: width 0.5s ease;
 }
 
