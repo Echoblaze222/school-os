@@ -1,12 +1,12 @@
 /* src/components/public/landing/Hero.module.css */
+/* Premium black: flat canvas, no gradients or glows. Depth comes from the
+   1px hairline under the hero and from the report card's own border. */
 
 .hero {
   position: relative;
   overflow: hidden;
   padding: var(--space-12) var(--space-5) var(--space-8);
-  background:
-    radial-gradient(ellipse 900px 500px at 85% -10%, var(--brand-glow) 0%, transparent 60%),
-    radial-gradient(ellipse 700px 500px at -10% 110%, var(--gold-subtle) 0%, transparent 55%);
+  background: transparent;
 }
 
 .inner {
@@ -36,8 +36,8 @@
 .headline {
   font-size: clamp(2.1rem, 4.6vw, 3.4rem);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
   color: var(--text-primary);
   max-width: 15ch;
 }
@@ -69,44 +69,14 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: var(--radius-full);
-  background: var(--glass-bg);
+  background: transparent;
   border: 1px solid var(--glass-border);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
-/* ── Hero photo (blob) with the report card overlapping it on desktop ───────────────────────── */
-
-.visual {
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-.figure {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.heroBlob {
-  width: 100%;
-  max-width: 420px;
-  height: auto;
-  display: block;
-}
-
-.figCaption {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  text-align: center;
-  max-width: 320px;
-}
-
-/* ── Report card mockup ────────────────────────────────────────────────────────────────────── */
+/* ── Report card mockup ── */
 
 .cardWrap {
   display: none;
@@ -115,12 +85,12 @@
 
 .reportCard {
   width: 100%;
-  max-width: 300px;
+  max-width: 340px;
   background: var(--bg-elevated);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 30px 70px rgba(0,0,0,0.45);
-  padding: var(--space-5);
+  box-shadow: var(--float-shadow, none);
+  padding: var(--space-6);
   transform: rotate(-4deg);
 }
 
@@ -157,15 +127,16 @@
 .reportCardBar {
   height: 6px;
   border-radius: var(--radius-full);
-  background: var(--glass-bg);
+  background: var(--glass-border);
   overflow: hidden;
 }
 
+/* Solid fill in the readable tint of the brand, not a gradient. */
 .reportCardBar i {
   display: block;
   height: 100%;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  background: var(--accent-text, var(--brand-light));
 }
 
 .reportCardScore {
@@ -190,8 +161,8 @@
 .reportCardStamp {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--gold);
-  border: 1.5px solid var(--gold-border);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--glass-border-hover);
   border-radius: var(--radius-sm);
   padding: 4px 8px;
   transform: rotate(3deg);
@@ -199,15 +170,7 @@
 
 @media (min-width: 900px) {
   .inner { grid-template-columns: 1.15fr 0.85fr; }
-  /* Card overlaps the photo's lower-left edge. Hidden on phones, where
-     the photo and its caption carry the hero on their own. */
-  .cardWrap {
-    display: flex;
-    position: absolute;
-    left: -12%;
-    bottom: 12%;
-    width: 300px;
-  }
+  .cardWrap { display: flex; }
 }
 
 @media (prefers-reduced-motion: reduce) {

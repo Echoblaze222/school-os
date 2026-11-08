@@ -21,6 +21,12 @@
 // FIX 4: Mobile polish
 //   Imports ./mobile-polish.css (dock clearance, scrollable chip rows,
 //   touch-hover reset, automatic text colour on brand fills).
+//
+// FIX 5: Premium black / white surface
+//   Imports ./premium-surface.css, which retokens the document to a neutral
+//   black (dark) or white (light) canvas on any page whose root carries
+//   data-surface="premium" (landing, select-school, register-school,
+//   onboarding). Pages without the attribute are unaffected.
 // -----------------------------------------------------------------------------
 
 import type { Metadata, Viewport } from 'next'
@@ -28,6 +34,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import './legacy-tokens.css'
 import './mobile-polish.css'
+import './premium-surface.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
