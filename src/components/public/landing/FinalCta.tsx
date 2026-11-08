@@ -12,7 +12,7 @@ export default function FinalCta() {
         <div className={styles.glow} aria-hidden="true" />
         <figure className={styles.figure}>
           <Image
-            src="/landing/student-speaker.webp"
+            src="/branding/student-speaker.png"
             alt="A schoolgirl in a blazer speaking confidently into a microphone"
             width={900}
             height={900}

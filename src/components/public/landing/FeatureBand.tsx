@@ -2,7 +2,7 @@
 // One blob-shaped photo beside a short explanation of how SchoolOS helps.
 // Used as a standalone band between other landing sections so photos are
 // spread through the page instead of grouped in a gallery. Images are
-// pre-masked transparent WebP files in public/landing.
+// pre-masked transparent files in public/branding (pass the full path).
 
 import Image from 'next/image'
 import styles from './FeatureBand.module.css'
@@ -23,7 +23,7 @@ export default function FeatureBand({ image, alt, caption, label, title, body, r
       <div className={`${styles.band} ${reverse ? styles.reverse : ''}`}>
         <figure className={styles.figure}>
           <Image
-            src={`/landing/${image}.webp`}
+            src={image}
             alt={alt}
             width={900}
             height={900}

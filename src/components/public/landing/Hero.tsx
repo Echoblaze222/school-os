@@ -47,7 +47,7 @@ export default function Hero() {
         <div className={styles.visual}>
           <figure className={styles.figure}>
             <Image
-              src="/landing/hero-school-entrance.webp"
+              src="/branding/hero-school-entrance.webp"
               alt="Pupils in uniform walking toward a modern school building at sunrise"
               width={900}
               height={900}

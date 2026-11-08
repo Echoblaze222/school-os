@@ -3,7 +3,7 @@
 // Tabbed "who it's for" section. Content is grounded in features that
 // actually exist in the product (role dashboards already shipped), not
 // aspirational marketing copy. Each role also shows a blob-shaped photo
-// with a caption (pre-masked WebP in public/landing).
+// with a caption (pre-masked files in public/branding).
 
 import { useState } from 'react'
 import Image from 'next/image'
@@ -16,7 +16,7 @@ const AUDIENCES = [
     key: 'schools',
     label: 'Principals & Proprietors',
     icon: CrownIcon,
-    image: 'classroom-maths',
+    image: '/branding/classroom-maths.webp',
     alt: 'A teacher at a blackboard teaching a full classroom of students',
     caption: 'Results and report cards that are accurate and ready on time',
     points: [
@@ -29,7 +29,7 @@ const AUDIENCES = [
     key: 'teachers',
     label: 'Teachers',
     icon: BookOpenIcon,
-    image: 'raised-hand',
+    image: '/branding/raised-hand.webp',
     alt: 'A pupil raising her hand to answer a teacher\u2019s question',
     caption: 'More time for the pupils who need you, less for registers',
     points: [
@@ -42,7 +42,7 @@ const AUDIENCES = [
     key: 'parents',
     label: 'Parents',
     icon: UsersIcon,
-    image: 'smiling-class',
+    image: '/branding/smiling-class.webp',
     alt: 'A smiling pupil sitting at her desk in a full classroom',
     caption: 'Know how your child is doing, without a trip to the office',
     points: [
@@ -55,7 +55,7 @@ const AUDIENCES = [
     key: 'students',
     label: 'Students',
     icon: GraduationCapIcon,
-    image: 'happy-student',
+    image: '/branding/happy-student.webp',
     alt: 'A smiling girl in a yellow jacket celebrating in class',
     caption: 'Learning they look forward to, with everything in one place',
     points: [
@@ -102,7 +102,7 @@ export default function AudienceSection() {
         </ul>
         <figure className={styles.figure}>
           <Image
-            src={`/landing/${current.image}.webp`}
+            src={current.image}
             alt={current.alt}
             width={900}
             height={900}
