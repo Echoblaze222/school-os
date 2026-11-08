@@ -1,12 +1,12 @@
 /* page.module.css - Leaderboard */
 
-/* ── Layout ─────────────────────────────────────────────── */
+/* ── Layout ───────────────────────────────────────────────── */
 .page    { display: flex; min-height: 100vh; background: var(--bg-primary); }
 .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .main    { flex: 1; padding: 16px 16px 100px; max-width: 600px; margin: 0 auto; width: 100%; }
 .spacer  { height: 40px; }
 
-/* ── Loading dots ────────────────────────────────────────── */
+/* ── Loading dots ──────────────────────────────────────────── */
 .loading {
   display: flex; gap: 8px; justify-content: center; margin-top: 60px;
 }
@@ -22,7 +22,7 @@
   50%       { opacity: 1;   transform: scale(1.1); }
 }
 
-/* ── Empty state ─────────────────────────────────────────── */
+/* ── Empty state ───────────────────────────────────────────── */
 .empty {
   display: flex; flex-direction: column; align-items: center;
   gap: 12px; margin-top: 60px; color: var(--text-faint);
@@ -39,7 +39,7 @@
   gap: 6px;
 }
 
-/* ── Legend ──────────────────────────────────────────────── */
+/* ── Legend ────────────────────────────────────────────────── */
 .legend {
   display: flex; gap: 14px; flex-wrap: wrap;
   margin-bottom: 18px; font-size: 0.75rem;
@@ -50,7 +50,7 @@
   border-radius: 50%; margin-right: 5px; flex-shrink: 0;
 }
 
-/* ── Podium ──────────────────────────────────────────────── */
+/* ── Podium ────────────────────────────────────────────────── */
 .podium {
   display: grid;
   grid-template-columns: 1fr 1.15fr 1fr;
@@ -71,7 +71,7 @@
 .podiumCard:active { transform: scale(0.97); }
 .podiumFirst {
   padding-top: 18px;
-  background: linear-gradient(145deg, var(--glass-bg), rgba(255,215,0,0.05));
+  background: var(--glass-bg);
   border-color: rgba(255,215,0,0.25);
 }
 .podiumMedal  { font-size: 1.4rem; line-height: 1; }
@@ -104,7 +104,7 @@
 }
 .podiumFirst .ringScore { font-size: 0.78rem; }
 
-/* ── Breakdown bar ───────────────────────────────────────── */
+/* ── Breakdown bar ─────────────────────────────────────────── */
 .breakdownBar, .miniBar {
   height: 4px; border-radius: 4px;
   background: var(--glass-border);
@@ -116,7 +116,7 @@
   height: 100%; transition: width 0.6s ease;
 }
 
-/* ── Ranked list ─────────────────────────────────────────── */
+/* ── Ranked list ───────────────────────────────────────────── */
 .list { display: flex; flex-direction: column; gap: 8px; }
 
 .card {
@@ -146,7 +146,7 @@
 .scoreValue { font-size: 1rem; font-weight: 800; color: var(--text-primary); }
 .scorePts   { font-size: 0.65rem; color: var(--text-faint); }
 
-/* ── Expanded detail rows ────────────────────────────────── */
+/* ── Expanded detail rows ───────────────────────────────────────────── */
 .expandedDetail {
   display: flex; flex-direction: column; gap: 6px;
   margin-top: 10px; padding-top: 10px;

@@ -148,8 +148,8 @@ function MeetingCard({
           background: isPast
             ? 'var(--text-muted)'
             : meeting.meeting_url
-              ? 'linear-gradient(180deg,#7B2FBE,#9B59B6)'
-              : 'linear-gradient(180deg,var(--burgundy),var(--burgundy-light,#a0002a))',
+              ? '#7B2FBE'
+              : 'var(--burgundy)',
         }}
       />
       <div className={styles.listCardBody}>
