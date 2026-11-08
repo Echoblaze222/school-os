@@ -1,7 +1,20 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+
+// Premium black / light: all colour from --pm-* tokens (src/app/premium.css).
+// Flat surfaces, hairline borders, no gradients, no glow.
+const fieldStyle: React.CSSProperties = {
+  width: '100%', height: 48, padding: '0 20px',
+  background: 'var(--pm-bg)', border: '1px solid var(--pm-line-strong)',
+  borderRadius: 9999, color: 'var(--pm-text)', fontSize: '0.9rem', outline: 'none',
+}
+const labelStyle: React.CSSProperties = {
+  fontSize: '0.7rem', fontWeight: 700, color: 'var(--pm-text-3)',
+  letterSpacing: '0.07em', textTransform: 'uppercase', display: 'block', marginBottom: 8,
+}
 
 export default function OnboardingStage1() {
   const [fullName,   setFullName]   = useState('')
@@ -60,71 +73,68 @@ export default function OnboardingStage1() {
   if (prefilling) return null
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: 20, position: 'relative', overflow: 'hidden' }}>
-      {/* Background orbs */}
-      <div style={{ position: 'absolute', top: -100, left: -80, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(128,0,32,0.2) 0%,transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: -80, right: -60, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pm-bg)', color: 'var(--pm-text)', padding: 20, position: 'relative', overflow: 'hidden' }}>
 
-      <div style={{ width: '100%', maxWidth: 420, background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: 24, padding: '40px 36px', position: 'relative', zIndex: 1, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+      <div style={{ width: '100%', maxWidth: 420, background: 'var(--pm-surface)', border: '1px solid var(--pm-line)', borderRadius: 24, padding: '40px 36px', position: 'relative', zIndex: 1 }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#800020,#5C0018)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem', boxShadow: '0 4px 16px rgba(128,0,32,0.3)' }}>🎓</div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 1 of 3: Set up your profile</p>
+          <Image src="/icons/logo.png" alt="SchoolOS" width={56} height={56} style={{ margin: '0 auto 16px', borderRadius: 16, objectFit: 'contain' }} />
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--pm-text)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Welcome to SchoolOS</h1>
+          <p style={{ fontSize: '0.78rem', color: 'var(--pm-text-3)', margin: 0 }}>Step 1 of 3: Set up your profile</p>
         </div>
 
         {/* Progress dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
           {[1, 2, 3].map(n => (
-            <div key={n} style={{ width: n === 1 ? 24 : 8, height: 8, borderRadius: 99, background: n === 1 ? '#800020' : 'var(--glass-border)', transition: 'all 0.3s' }} />
+            <div key={n} style={{ width: n === 1 ? 24 : 8, height: 8, borderRadius: 99, background: n === 1 ? 'var(--pm-text)' : 'var(--pm-line-strong)', transition: 'all 0.3s' }} />
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* Full Name */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Full Name *</label>
+            <label style={labelStyle}>Full Name *</label>
             <input
               type="text"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               placeholder="e.g. Adaeze Okonkwo"
-              style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+              style={fieldStyle}
             />
           </div>
 
           {/* Phone */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Phone Number</label>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>Optional, used for account recovery</p>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>Phone Number</label>
+            <p style={{ fontSize: '0.72rem', color: 'var(--pm-text-3)', margin: '0 0 8px' }}>Optional, used for account recovery</p>
             <input
               type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="e.g. 08012345678"
-              style={{ width: '100%', height: 48, padding: '0 14px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 12, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+              style={fieldStyle}
             />
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 12, background: 'var(--input-bg)', border: '1px solid var(--input-border)', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px', borderRadius: 16, background: 'var(--pm-bg)', border: '1px solid var(--pm-line)', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={agreedToTerms}
               onChange={e => setAgreedToTerms(e.target.checked)}
-              style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#800020', cursor: 'pointer' }}
+              style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: 'var(--pm-accent)', cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.76rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '0.76rem', lineHeight: 1.5, color: 'var(--pm-text-2)' }}>
               I agree to the{' '}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#c98a94', textDecoration: 'underline' }}>Terms &amp; Conditions</a>
+              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pm-link)', textDecoration: 'underline' }}>Terms &amp; Conditions</a>
               {' '}and{' '}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#c98a94', textDecoration: 'underline' }}>Privacy Policy</a>
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pm-link)', textDecoration: 'underline' }}>Privacy Policy</a>
             </span>
           </label>
 
           {error && (
-            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', margin: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--pm-danger)', background: 'var(--pm-bg)', border: '1px solid var(--pm-danger)', borderRadius: 16, padding: '10px 14px', margin: 0 }}>
               {error}
             </p>
           )}
@@ -132,10 +142,10 @@ export default function OnboardingStage1() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', height: 50, background: 'linear-gradient(135deg,#800020,#5C0018)', color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(128,0,32,0.3)', opacity: loading ? 0.7 : 1 }}
+            style={{ width: '100%', height: 50, background: 'var(--pm-accent)', color: 'var(--pm-accent-text)', border: 'none', borderRadius: 9999, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}
           >
             {loading
-              ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+              ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
               : 'Continue →'
             }
           </button>
