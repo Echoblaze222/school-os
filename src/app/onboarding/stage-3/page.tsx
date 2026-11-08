@@ -14,6 +14,9 @@
 //
 // Once you add DOJAH_APP_ID + DOJAH_API_KEY to Vercel env vars,
 // the full live verification flow resumes automatically - no code change needed.
+//
+// Styling: premium black / light via --pm-* tokens (src/app/premium.css).
+// Flat surfaces, hairline borders, no gradients. Logic is unchanged.
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -40,6 +43,11 @@ type VerifiedIdentity = {
 }
 
 type NinStatus = 'idle' | 'verifying' | 'verified' | 'failed' | 'bypassed'
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '0.7rem', fontWeight: 700, color: 'var(--pm-text-3)',
+  letterSpacing: '0.07em', textTransform: 'uppercase', display: 'block',
+}
 
 export default function OnboardingStage3() {
   const [photo,      setPhoto]      = useState<File | null>(null)
@@ -173,23 +181,23 @@ export default function OnboardingStage3() {
 
   const ninIndicator = () => {
     if (ninStatus === 'verifying') return (
-      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-        <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#800020', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+      <span style={{ fontSize: '0.72rem', color: 'var(--pm-text-3)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, marginLeft: 16 }}>
+        <span style={{ width: 12, height: 12, border: '2px solid var(--pm-line-strong)', borderTopColor: 'var(--pm-text)', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
         Verifying with NIMC...
       </span>
     )
     if (ninStatus === 'verified') return (
-      <span style={{ fontSize: '0.72rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontWeight: 600 }}>
+      <span style={{ fontSize: '0.72rem', color: 'var(--pm-success)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, marginLeft: 16, fontWeight: 600 }}>
         ✅ NIN verified
       </span>
     )
     if (ninStatus === 'bypassed') return (
-      <span style={{ fontSize: '0.72rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+      <span style={{ fontSize: '0.72rem', color: 'var(--pm-warn-text)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, marginLeft: 16 }}>
         ⏭️ NIN saved, will be verified later by admin
       </span>
     )
     if (ninStatus === 'failed') return (
-      <span style={{ fontSize: '0.72rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+      <span style={{ fontSize: '0.72rem', color: 'var(--pm-danger)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, marginLeft: 16 }}>
         ❌ {ninError}
       </span>
     )
@@ -197,46 +205,46 @@ export default function OnboardingStage3() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: 20 }}>
-      <div style={{ width: '100%', maxWidth: 440, background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: 24, padding: 40, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pm-bg)', color: 'var(--pm-text)', padding: 20 }}>
+      <div style={{ width: '100%', maxWidth: 440, background: 'var(--pm-surface)', border: '1px solid var(--pm-line)', borderRadius: 24, padding: 40 }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#10B981,#059669)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}><CameraIcon size={28} color="#fff" strokeWidth={2} /></div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 3 of 3: Passport photo &amp; NIN verification</p>
+          <div style={{ width: 56, height: 56, background: 'var(--pm-accent)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><CameraIcon size={28} color="#fff" strokeWidth={2} /></div>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--pm-text)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
+          <p style={{ fontSize: '0.78rem', color: 'var(--pm-text-3)', margin: 0 }}>Step 3 of 3: Passport photo &amp; NIN verification</p>
         </div>
 
         {/* Progress dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
           {[1, 2, 3].map(n => (
-            <div key={n} style={{ width: n === 3 ? 24 : 8, height: 8, borderRadius: 99, background: n === 3 ? '#10B981' : 'var(--glass-border)', transition: 'all 0.3s' }} />
+            <div key={n} style={{ width: n === 3 ? 24 : 8, height: 8, borderRadius: 99, background: n === 3 ? 'var(--pm-text)' : 'var(--pm-line-strong)', transition: 'all 0.3s' }} />
           ))}
         </div>
 
         {/* Bypass info banner - only shown when API keys not set */}
         {ninBypassed && (
           <div style={{
-            background: 'rgba(245,158,11,0.08)',
-            border: '1px solid rgba(245,158,11,0.3)',
-            borderRadius: 12, padding: '12px 16px', marginBottom: 20,
-            fontSize: '0.78rem', color: '#F59E0B', lineHeight: 1.5,
+            background: 'var(--pm-warn-bg)',
+            border: '1px solid var(--pm-warn-line)',
+            borderRadius: 16, padding: '12px 16px', marginBottom: 24,
+            fontSize: '0.78rem', color: 'var(--pm-warn-text)', lineHeight: 1.5,
           }}>
             ℹ️ Live NIN verification is not yet active on this platform. Your NIN will be recorded and verified by your school admin. You can still complete setup now.
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* Photo upload */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Passport Photo</label>
-            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 24, background: 'var(--glass-bg)', border: `2px dashed ${preview ? '#10B981' : 'var(--glass-border)'}`, borderRadius: 16, cursor: 'pointer', transition: 'border-color 0.2s' }}>
+            <label style={{ ...labelStyle, marginBottom: 8 }}>Passport Photo</label>
+            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 24, background: 'var(--pm-bg)', border: `1.5px dashed ${preview ? 'var(--pm-text)' : 'var(--pm-line-strong)'}`, borderRadius: 16, cursor: 'pointer', transition: 'border-color 0.2s' }}>
               {preview
-                ? <img src={preview} alt="Preview" style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '3px solid #10B981' }} />
-                : <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--glass-bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>👤</div>
+                ? <img src={preview} alt="Preview" style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--pm-text)' }} />
+                : <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--pm-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>👤</div>
               }
-              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: preview ? '#10B981' : 'var(--brand-light)' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: preview ? 'var(--pm-text)' : 'var(--pm-link)' }}>
                 {preview ? '✓ Photo uploaded, tap to change' : 'Tap to upload'}
               </span>
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhoto} />
@@ -245,11 +253,11 @@ export default function OnboardingStage3() {
 
           {/* NIN field */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>
               National Identification Number (NIN)
-              {ninBypassed && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>, optional for now</span>}
+              {ninBypassed && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>, optional for now</span>}
             </label>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+            <p style={{ fontSize: '0.72rem', color: 'var(--pm-text-3)', margin: '0 0 8px' }}>
               11 digits{ninBypassed ? ', enter if available' : ', verified in real time against NIMC'}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -272,15 +280,15 @@ export default function OnboardingStage3() {
                 }}
                 placeholder="e.g. 12345678901"
                 style={{
-                  flex: 1, height: 48, padding: '0 14px',
-                  background: 'var(--input-bg)',
+                  flex: 1, height: 48, padding: '0 20px',
+                  background: 'var(--pm-bg)',
                   border: `1px solid ${
-                    ninStatus === 'verified' ? '#10B981' :
-                    ninStatus === 'bypassed' ? '#F59E0B' :
-                    ninStatus === 'failed'   ? 'var(--danger)' :
-                    'var(--input-border)'
+                    ninStatus === 'verified' ? 'var(--pm-success)' :
+                    ninStatus === 'bypassed' ? 'var(--pm-warn-text)' :
+                    ninStatus === 'failed'   ? 'var(--pm-danger)' :
+                    'var(--pm-line-strong)'
                   }`,
-                  borderRadius: 12, color: 'var(--text-primary)',
+                  borderRadius: 9999, color: 'var(--pm-text)',
                   fontSize: '0.9rem', outline: 'none',
                   letterSpacing: '0.08em', transition: 'border-color 0.2s',
                 }}
@@ -291,10 +299,10 @@ export default function OnboardingStage3() {
                   onClick={verifyNin}
                   disabled={ninStatus === 'verifying'}
                   style={{
-                    height: 48, padding: '0 16px',
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 12, color: 'var(--text-secondary)',
+                    height: 48, padding: '0 20px',
+                    background: 'transparent',
+                    border: '1px solid var(--pm-line-strong)',
+                    borderRadius: 9999, color: 'var(--pm-text-2)',
                     fontSize: '0.78rem', fontWeight: 700,
                     cursor: ninStatus === 'verifying' ? 'not-allowed' : 'pointer',
                     whiteSpace: 'nowrap',
@@ -310,30 +318,30 @@ export default function OnboardingStage3() {
           {/* Verified identity card */}
           {ninStatus === 'verified' && verifiedId && (
             <div style={{
-              background: 'rgba(16,185,129,0.06)',
-              border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: 14, padding: '16px 18px',
+              background: 'var(--pm-bg)',
+              border: '1px solid var(--pm-success)',
+              borderRadius: 16, padding: '16px 18px',
               display: 'flex', gap: 16, alignItems: 'flex-start',
             }}>
               {verifiedId.photo ? (
                 <img src={`data:image/jpeg;base64,${verifiedId.photo}`} alt="NIMC photo"
-                  style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: '2px solid rgba(16,185,129,0.4)', flexShrink: 0 }} />
+                  style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--pm-line-strong)', flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🪪</div>
+                <div style={{ width: 52, height: 52, borderRadius: 10, background: 'var(--pm-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🪪</div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Identity Verified</p>
-                <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                <p style={{ fontSize: '0.7rem', color: 'var(--pm-success)', fontWeight: 700, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Identity Verified</p>
+                <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--pm-text)', margin: '0 0 2px' }}>
                   {[verifiedId.firstName, verifiedId.middleName, verifiedId.lastName].filter(Boolean).join(' ')}
                 </p>
-                {verifiedId.dateOfBirth && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 1px' }}>DOB: {verifiedId.dateOfBirth}</p>}
-                {verifiedId.gender      && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, textTransform: 'capitalize' }}>{verifiedId.gender}</p>}
+                {verifiedId.dateOfBirth && <p style={{ fontSize: '0.75rem', color: 'var(--pm-text-3)', margin: '0 0 1px' }}>DOB: {verifiedId.dateOfBirth}</p>}
+                {verifiedId.gender      && <p style={{ fontSize: '0.75rem', color: 'var(--pm-text-3)', margin: 0, textTransform: 'capitalize' }}>{verifiedId.gender}</p>}
               </div>
             </div>
           )}
 
           {error && (
-            <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-subtle)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', margin: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--pm-danger)', background: 'var(--pm-bg)', border: '1px solid var(--pm-danger)', borderRadius: 16, padding: '10px 14px', margin: 0 }}>
               {error}
             </p>
           )}
@@ -343,22 +351,19 @@ export default function OnboardingStage3() {
             disabled={loading || !canSubmit}
             style={{
               width: '100%', height: 50,
-              background: canSubmit
-                ? 'linear-gradient(135deg,#10B981,#059669)'
-                : 'var(--glass-bg)',
-              color:  canSubmit ? '#fff' : 'var(--text-muted)',
-              border: canSubmit ? 'none' : '1px solid var(--glass-border)',
-              borderRadius: 12, fontSize: '0.9rem', fontWeight: 700,
+              background: canSubmit ? 'var(--pm-accent)' : 'var(--pm-surface-2)',
+              color:  canSubmit ? 'var(--pm-accent-text)' : 'var(--pm-text-3)',
+              border: canSubmit ? 'none' : '1px solid var(--pm-line)',
+              borderRadius: 9999, fontSize: '0.9rem', fontWeight: 700,
               cursor: canSubmit ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: canSubmit ? '0 4px 16px rgba(16,185,129,0.3)' : 'none',
-              transition: 'all 0.25s',
+              transition: 'background 0.25s',
               opacity: loading ? 0.7 : 1,
             }}
           >
             {loading
-              ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
-              : canSubmit ? '🚀 Complete Setup' : 'Upload photo to continue'
+              ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+              : canSubmit ? 'Complete Setup' : 'Upload photo to continue'
             }
           </button>
 
@@ -367,5 +372,4 @@ export default function OnboardingStage3() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
-                       }
-      
+}
