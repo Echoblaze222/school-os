@@ -7,12 +7,14 @@
 //    - Hard lock (super-admin suspended) → everyone, incl. principal, to /school-locked
 //    - Billing lock (expired/suspended)  → non-principals to /school-locked;
 //      principal confined to /dashboard/principal/subscriptions to renew
+// 5. Gates /api/cron/* with CRON_SECRET (fail-closed) before anything else runs
 // ─────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { dashboardDestination } from '@/lib/dashboardDispatch'
+import { isCronAuthorized } from '@/lib/cronAuth'
 
 // ── Config ──────────────────────────────────────────────────
 const INACTIVITY_MINUTES = 30          // Auto-logout after 30 min idle
@@ -41,11 +43,11 @@ const PUBLIC_PATHS = [
   '/api/internal/push-on-notification', // pg_net → push trigger, no session cookie; gated by its own x-internal-secret check below, not this middleware
   '/api/internal/email-retry',          // pg_net → email-retry cron (every 5 min), no session cookie; gated by its own x-internal-secret check in the route. Without this entry the cron POST was redirected to /login and never reached the route (405 every time).
   '/api/push/send',                     // pg_net → fire_pending_reminders, same reasoning
-  '/api/cron', 
+  '/api/cron',                          // no session cookie; gated by the CRON_SECRET check at the top of middleware() (fail-closed) AND by each route's own check
   '/super-admin/login',                 // super admin login must be publicly reachable
   '/school-locked',                     // lock page itself must be reachable
 
-  // ── Public platform (Phase 4, Lane C) ──────────────────────
+  // ── Public platform (Phase 4, Lane C) ──────────────────────────
   // Self-service signup - the one path that creates a SchoolOS
   // identity WITHOUT an admin-issued access code. Distinct from
   // /login (existing code-based staff/student/parent onboarding),
@@ -61,7 +63,7 @@ const PUBLIC_PATHS = [
   '/api/admission/schools',
   '/api/schools/search',                // "Find Your School" live search - public, unauthenticated (route already scopes columns + rate-limits internally)
 
-  // ── Public platform (Phase 4, Lane E/F) ────────────────────
+  // ── Public platform (Phase 4, Lane E/F) ───────────────────────
   '/api/public',                        // Lane E/F/G/H public discovery, promotions, rankings, reports, content - read/track endpoints only
   '/discover',                          // public promotions feed (Lane E)
   '/rankings',                          // public rankings (Lane F)
@@ -152,6 +154,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ── Cron gate (fail-closed) ──────────────────────────────────
+  // /api/cron is listed in PUBLIC_PATHS because cron callers (Vercel Cron,
+  // GitHub Actions) have no session cookie. That made each route's own
+  // `Bearer ${process.env.CRON_SECRET}` check the ONLY gate, and that check
+  // silently degrades to "Bearer undefined" if the env var is ever unset.
+  // Enforcing it here, once, fails closed: no CRON_SECRET configured means
+  // every cron request is rejected, and the route-level checks stay in place
+  // as a second layer. Runs before the Supabase client is built, so cron
+  // calls also skip the auth round trip.
+  if (pathname === '/api/cron' || pathname.startsWith('/api/cron/')) {
+    if (!isCronAuthorized(request.headers.get('authorization'), process.env.CRON_SECRET)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
   // Build Supabase SSR client that reads/writes cookies
   const response = NextResponse.next()
 
@@ -183,7 +201,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ── Get user ────────────────────────────────────────────────────────
+  // ── Get user ────────────────────────────────────────────────────────────────────
   // getClaims() verifies the session's JWT instead of asking the Supabase
   // Auth server about it on every request:
   //   - project uses asymmetric JWT signing keys: the signature is checked
@@ -392,7 +410,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // ── Role dispatch for the bare /dashboard URL ──────────────
+    // ── Role dispatch for the bare /dashboard URL ──────────────────────
     // Every check above has passed, and the profile is already in hand, so
     // send the user straight to their own dashboard from here instead of
     // rendering src/app/dashboard/page.tsx just to redirect (that page
