@@ -1,52 +1,28 @@
 /* src/components/public/landing/FinalCta.module.css */
+/* Premium black: one flat brand-colored block, the single loud element on the
+   page. No gradient and no glow. White on #800020 is about 11:1. */
 
 .card {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   padding: var(--space-8) var(--space-5);
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-5);
-}
-
-.glow {
-  position: absolute;
-  top: -80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 400px;
-  height: 400px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.14) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.figure {
-  margin: 0;
-  position: relative;
-}
-
-.blob {
-  width: 160px;
-  height: auto;
-  display: block;
-}
-
-.content {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
 }
 
+/* The glow element is still rendered by FinalCta.tsx; it is switched off here. */
+.glow {
+  display: none;
+}
+
 .title {
   font-size: clamp(1.5rem, 3.5vw, 2.1rem);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: #fff;
   position: relative;
@@ -65,16 +41,4 @@
   position: relative;
   min-height: 48px;
   margin-top: var(--space-4);
-}
-
-@media (min-width: 900px) {
-  .card {
-    flex-direction: row;
-    justify-content: center;
-    gap: var(--space-8);
-    text-align: left;
-    padding: var(--space-8);
-  }
-  .content { align-items: flex-start; }
-  .blob { width: 240px; }
 }
