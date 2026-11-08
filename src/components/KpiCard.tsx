@@ -43,7 +43,8 @@ export default function KpiCard({
   const positive = trend ? (trend.positive ?? trend.direction === 'up') : false
 
   return (
-    <div className={styles.card}>
+    // data-kpi lets mobile-polish.css find KPI grids (odd last card spans the row)
+    <div className={styles.card} data-kpi="">
       <div className={styles.top}>
         <p className={styles.label}>{label}</p>
         {icon && (

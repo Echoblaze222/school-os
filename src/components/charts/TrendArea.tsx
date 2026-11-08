@@ -62,7 +62,9 @@ export function TrendArea({
     <div>
       <div style={{ width: '100%', height }}>
         <ResponsiveContainer>
-          <Chart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          {/* right margin 20 (was 8): the last x-axis label (e.g. "Oct 26") is
+              centred under the final point and was clipped at the card edge. */}
+          <Chart data={data} margin={{ top: 8, right: 20, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--viz-grid)" strokeWidth={1} />
             <XAxis dataKey={xKey} tick={AXIS_TICK} tickFormatter={xFormat} axisLine={{ stroke: 'var(--viz-axis)' }} tickLine={false} minTickGap={24} />
             <YAxis tick={AXIS_TICK} tickFormatter={yFormat} axisLine={false} tickLine={false} width={44} domain={yDomain ?? ['auto', 'auto']} />
