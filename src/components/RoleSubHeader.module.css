@@ -79,9 +79,6 @@
   overflow: hidden;
 }
 
-/* display: contents keeps the wrapped control's layout identical on mobile. */
-.mobileOnly { display: contents; }
-
 @media (min-width: 1024px) {
   .main {
     padding: var(--space-8) var(--space-8);
@@ -96,7 +93,9 @@
 /* ── Desktop top bar ───────────────────────────────────────────────
    The sidebar (DesktopShell) now carries brand, theme, account and the
    full feature list, so the header shrinks to a quiet sticky bar: back,
-   page title, notifications. Solid surface, no gradient. */
+   page title, notifications. Solid surface, no gradient.
+   .mobileOnly has no rule below 1024px on purpose: it only hides the
+   controls the sidebar replaces, so mobile layout is untouched. */
 @media (min-width: 1024px) {
   .mobileOnly { display: none; }
 

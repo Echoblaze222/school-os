@@ -42,14 +42,13 @@
 .headline h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin: 8px 0 4px; font-weight: 600; line-height: 1.15; }
 .headline p { color: rgba(246,241,228,0.72); font-size: 0.88rem; margin: 0; }
 
-/* display: contents keeps the wrapped control's layout identical on mobile. */
-.mobileOnly { display: contents; }
-
 /* ── Desktop greeting area ─────────────────────────────────────────
    The sidebar (DesktopShell) already shows the school, role, theme and
    account, so the burgundy band gives way to a clean surface with the
    headline as the focal point. Brand colour stays as a thin top rule and
-   the eyebrow. */
+   the eyebrow.
+   .mobileOnly has no rule below 1024px on purpose: it only hides the
+   controls the sidebar replaces, so mobile layout is untouched. */
 @media (min-width: 1024px) {
   .mobileOnly { display: none; }
 
