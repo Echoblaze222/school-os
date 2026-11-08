@@ -5,6 +5,7 @@ import { cookies }            from 'next/headers'
 import { NextResponse }       from 'next/server'
 import crypto                 from 'crypto'
 import { generateAccessCode } from '@/lib/supabase/access-code-generator'
+import { escapeHtml }          from '@/lib/escapeHtml'
 
 export async function POST(request: Request) {
   try {
@@ -235,6 +236,15 @@ export async function POST(request: Request) {
         const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`
         const roleLabel = role.charAt(0).toUpperCase() + role.slice(1)
 
+        // Everything below that came from a person (name, email) or a request
+        // field (role) is HTML-escaped before it goes into the template, so a
+        // name like `<a href="https://evil">` can't inject a link or markup
+        // into an email that arrives from SchoolOS's own sender address.
+        const safeName  = escapeHtml(fullName)
+        const safeEmail = escapeHtml(email.toLowerCase())
+        const safeRole  = escapeHtml(roleLabel)
+        const safeCode  = escapeHtml(code)
+
         await fetch('https://api.resend.com/emails', {
           method:  'POST',
           headers: {
@@ -252,9 +262,9 @@ export async function POST(request: Request) {
                   <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">Your account has been created</p>
                 </div>
                 <div style="padding:32px;">
-                  <p style="color:#d1d5db;font-size:15px;">Hi <strong style="color:#fff;">${fullName}</strong>,</p>
+                  <p style="color:#d1d5db;font-size:15px;">Hi <strong style="color:#fff;">${safeName}</strong>,</p>
                   <p style="color:#d1d5db;font-size:15px;">
-                    Your <strong style="color:#a78bfa;">${roleLabel}</strong> account on SchoolOS is ready.
+                    Your <strong style="color:#a78bfa;">${safeRole}</strong> account on SchoolOS is ready.
                     Use your access code below to log in for the first time and set your password.
                   </p>
                   <div style="background:#1a1a2e;border:1px solid #7C3AED;border-radius:10px;padding:24px;margin:24px 0;">
@@ -262,15 +272,15 @@ export async function POST(request: Request) {
                     <table style="width:100%;border-collapse:collapse;">
                       <tr>
                         <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Email</td>
-                        <td style="color:#fff;font-weight:600;font-size:14px;">${email.toLowerCase()}</td>
+                        <td style="color:#fff;font-weight:600;font-size:14px;">${safeEmail}</td>
                       </tr>
                       <tr>
                         <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Access Code</td>
-                        <td style="color:#fff;font-weight:700;font-family:monospace;font-size:18px;letter-spacing:2px;">${code}</td>
+                        <td style="color:#fff;font-weight:700;font-family:monospace;font-size:18px;letter-spacing:2px;">${safeCode}</td>
                       </tr>
                       <tr>
                         <td style="color:#9ca3af;padding:7px 0;font-size:14px;">Role</td>
-                        <td style="color:#a78bfa;font-weight:600;font-size:14px;">${roleLabel}</td>
+                        <td style="color:#a78bfa;font-weight:600;font-size:14px;">${safeRole}</td>
                       </tr>
                     </table>
                   </div>
