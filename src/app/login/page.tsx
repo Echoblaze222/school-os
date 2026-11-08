@@ -9,12 +9,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
+import { useTheme } from '@/hooks/useTheme'
 import styles from './login.module.css'
 import {
   MailIcon, EyeIcon, EyeOffIcon,
-  PlusIcon, ArrowLeftIcon,
+  PlusIcon, ArrowLeftIcon, SunIcon, MoonIcon,
 } from '@/components/Icons'
 
 type LoginMode = 'existing' | 'new-user'
@@ -27,6 +29,22 @@ interface SelectedSchool {
 }
 
 const SCHOOL_KEY = 'schoolos_selected_school'
+
+// Picks black or white text for a school's brand colour so the Sign In
+// button label stays readable whatever colour a school chose (a pale or
+// grey-teal brand colour with white text was hard to read).
+function readableTextOn(hex: string): string {
+  let h = hex.trim().replace('#', '')
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  if (!/^[0-9a-f]{6}$/i.test(h)) return '#FFFFFF'
+  const n = parseInt(h, 16)
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return luminance > 0.179 ? '#111827' : '#FFFFFF'
+}
 
 // Fired right before the hard navigation away from this page on a
 // successful sign-in, for the /super-admin/hq usage dashboard.
@@ -45,6 +63,7 @@ function logLoginEvent() {
 export default function LoginPage() {
   const router   = useRouter()
   const supabase = createClient()
+  const { theme, toggleTheme } = useTheme()
 
   const [checkingSchool, setCheckingSchool] = useState(true)
 
@@ -281,156 +300,197 @@ export default function LoginPage() {
     return <div className={styles.schoolCheckGate} />
   }
 
+  const brand = school?.primaryColor || '#800020'
+  const isExisting = loginMode === 'existing'
+
   return (
-    <>
-      {/* ── LOGIN PAGE ─────────────────────────────────────────────────────── */}
-      <div
-        className={styles.page}
-        style={{
-          '--login-brand': school?.primaryColor || '#800020',
-          '--login-brand-2': secondaryColor || school?.primaryColor || '#800020',
-        } as React.CSSProperties}
-      >
-        <div className={styles.bgGlow} />
-        <div className={styles.bgGrid} />
+    <div
+      className={styles.page}
+      style={{
+        '--login-brand': brand,
+        '--login-brand-2': secondaryColor || brand,
+        '--login-brand-text': readableTextOn(brand),
+      } as React.CSSProperties}
+    >
+      <div className={styles.bgGlow} aria-hidden="true" />
 
-        <div className={styles.pageContent}>
+      <header className={styles.topRow}>
+        <span className={styles.wordmark}>School<span className={styles.wordmarkAccent}>OS</span></span>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className={styles.themeToggle}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
+        </button>
+      </header>
 
+      <main className={styles.pageContent}>
         <div className={`${styles.card} ${mounted ? styles.visible : ''}`}>
 
-          <div className={styles.topBar}>
+          <div className={styles.identity}>
             {school?.logoUrl ? (
-              <Image src={school.logoUrl} alt={school.name} width={44} height={44} className={styles.logo} />
+              <Image src={school.logoUrl} alt={school.name} width={52} height={52} className={styles.logo} />
             ) : school ? (
-              <span className={styles.logoFallback} style={{ background: school.primaryColor || '#800020' }}>
-                {school.name[0]?.toUpperCase()}
-              </span>
+              <span className={styles.logoFallback}>{school.name[0]?.toUpperCase()}</span>
             ) : (
-              <Image src="/icons/logo.png" alt="SchoolOS" width={44} height={44} className={styles.logo} />
+              <Image src="/icons/logo.png" alt="SchoolOS" width={52} height={52} className={styles.logo} />
             )}
-            <div className={styles.topBarText}>
-              <span className={styles.appName}>SchoolOS</span>
-              {school ? (
-                <span className={styles.schoolBadge}>
-                  {school.name}
-                  <button className={styles.changeSchoolBtn} onClick={() => router.push('/select-school')}>
-                    ‹ Change
-                  </button>
-                </span>
-              ) : (
-                <button className={styles.changeSchoolBtn} onClick={() => router.push('/select-school')}>
-                  Select your school →
-                </button>
-              )}
+            <div className={styles.identityText}>
+              <span className={styles.schoolName}>{school?.name ?? 'SchoolOS'}</span>
+              <button type="button" className={styles.changeSchoolBtn} onClick={() => router.push('/select-school')}>
+                {school ? 'Change school' : 'Select your school'}
+              </button>
             </div>
           </div>
 
-          <h2 className={styles.signInHeading}>Sign in</h2>
+          <div className={styles.heading}>
+            <h1 className={styles.title}>{isExisting ? 'Welcome back' : 'Activate your account'}</h1>
+            <p className={styles.subtitle}>
+              {isExisting
+                ? 'Sign in with your email or the access code from your school.'
+                : 'Enter the access code your school administrator gave you and choose a password.'}
+            </p>
+          </div>
 
-          <div className={styles.formWrap}>
-              <div className={styles.modeToggle}>
-                <button
-                  className={`${styles.modeBtn} ${loginMode === 'existing' ? styles.modeBtnActive : ''}`}
-                  onClick={() => { setLoginMode('existing'); setLoginError(''); setNewUserError('') }}
-                ><MailIcon size={14} /> Email / Access Code</button>
-                <button
-                  className={`${styles.modeBtn} ${loginMode === 'new-user' ? styles.modeBtnActive : ''}`}
-                  onClick={() => { setLoginMode('new-user'); setLoginError(''); setNewUserError('') }}
-                ><PlusIcon size={14} /> New User</button>
+          <div className={styles.modeToggle} role="group" aria-label="Sign in method">
+            <button
+              type="button"
+              aria-pressed={isExisting}
+              className={`${styles.modeBtn} ${isExisting ? styles.modeBtnActive : ''}`}
+              onClick={() => { setLoginMode('existing'); setLoginError(''); setNewUserError('') }}
+            ><MailIcon size={15} /> Sign in</button>
+            <button
+              type="button"
+              aria-pressed={!isExisting}
+              className={`${styles.modeBtn} ${!isExisting ? styles.modeBtnActive : ''}`}
+              onClick={() => { setLoginMode('new-user'); setLoginError(''); setNewUserError('') }}
+            ><PlusIcon size={15} /> New user</button>
+          </div>
+
+          {isExisting && (
+            <form onSubmit={handleExistingLogin} className={styles.form}>
+              {loginError && <div className={styles.errorBanner} role="alert">{loginError}</div>}
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="login-identifier">Email or access code</label>
+                <input
+                  id="login-identifier"
+                  type="text" value={identifier}
+                  onChange={e => {
+                    const v = e.target.value
+                    // Access codes always contain a hyphen (PRIN-528-F0A);
+                    // emails don't, in the overwhelming majority of cases.
+                    // Checking for "-" instead of "@" fixes a real bug the
+                    // old check had: checking for @ ABSENCE meant every
+                    // character typed before the @ got force-uppercased,
+                    // and that stuck permanently once @ was typed, since
+                    // the old logic only stopped transforming going
+                    // forward - it never fixed what was already wrong.
+                    // Checking the whole current value on every keystroke
+                    // avoids that: nothing gets uppercased until a hyphen
+                    // actually appears, and once it does, the full value
+                    // (including what was typed before the hyphen) is
+                    // transformed together, so there's no stuck partial
+                    // state either way.
+                    setIdentifier(v.includes('-') ? v.toUpperCase() : v)
+                  }}
+                  className={styles.input} placeholder="you@school.edu.ng or PRIN-528-F0A"
+                  required autoComplete="off" autoCapitalize="off"
+                />
               </div>
 
-              {loginMode === 'existing' && (
-                <form onSubmit={handleExistingLogin} className={styles.form}>
-                  {loginError && <div className={styles.errorBanner}>{loginError}</div>}
-                  <label className={styles.label}>Email or Access Code</label>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="login-password">Password</label>
+                <div className={styles.passWrap}>
                   <input
-                    type="text" value={identifier}
-                    onChange={e => {
-                      const v = e.target.value
-                      // Access codes always contain a hyphen (PRIN-528-F0A);
-                      // emails don't, in the overwhelming majority of cases.
-                      // Checking for "-" instead of "@" fixes a real bug the
-                      // old check had: checking for @ ABSENCE meant every
-                      // character typed before the @ got force-uppercased,
-                      // and that stuck permanently once @ was typed, since
-                      // the old logic only stopped transforming going
-                      // forward - it never fixed what was already wrong.
-                      // Checking the whole current value on every keystroke
-                      // avoids that: nothing gets uppercased until a hyphen
-                      // actually appears, and once it does, the full value
-                      // (including what was typed before the hyphen) is
-                      // transformed together, so there's no stuck partial
-                      // state either way.
-                      setIdentifier(v.includes('-') ? v.toUpperCase() : v)
-                    }}
-                    className={styles.input} placeholder="you@school.edu.ng or PRIN-528-F0A"
-                    required autoComplete="off" autoCapitalize="off"
+                    id="login-password"
+                    type={showPass ? 'text' : 'password'} value={password}
+                    onChange={e => setPassword(e.target.value)} className={styles.input}
+                    placeholder="Enter your password" required autoComplete="current-password"
                   />
-                  <label className={styles.label}>Password</label>
-                  <div className={styles.passWrap}>
-                    <input
-                      type={showPass ? 'text' : 'password'} value={password}
-                      onChange={e => setPassword(e.target.value)} className={styles.input}
-                      placeholder="Enter your password" required autoComplete="current-password"
-                    />
-                    <button type="button" className={styles.eyeBtn} onClick={toggleShowPass} tabIndex={-1}>
-                      {showPass ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-                    </button>
-                  </div>
+                  <button
+                    type="button" className={styles.eyeBtn} onClick={toggleShowPass} tabIndex={-1}
+                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                  >
+                    {showPass ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
+                  </button>
+                </div>
+                <div className={styles.forgotRow}>
                   <button type="button" className={styles.forgotLink} onClick={() => router.push('/forgot-password')}>
                     Forgot password?
                   </button>
-                  <button type="submit" className={styles.submitBtn} disabled={loginLoading}>
-                    {loginLoading ? <span className={styles.btnSpinner} /> : 'Sign In'}
-                  </button>
-                </form>
-              )}
+                </div>
+              </div>
 
-              {loginMode === 'new-user' && (
-                <form onSubmit={handleNewUserActivation} className={styles.form}>
-                  <div className={styles.accessCodeNote}>
-                    Get your access code from your school administrator.
-                  </div>
-                  {newUserError && <div className={styles.errorBanner}>{newUserError}</div>}
-                  <label className={styles.label}>Access Code</label>
-                  <input
-                    type="text" value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())}
-                    className={`${styles.input} ${styles.codeInput}`} placeholder="e.g. TEA-2026-XXXX"
-                    required autoComplete="off"
-                  />
-                  <label className={styles.label}>Set New Password</label>
-                  <div className={styles.passWrap}>
-                    <input
-                      type={showNewPass ? 'text' : 'password'} value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)} className={styles.input}
-                      placeholder="Min. 8 characters" required minLength={8}
-                    />
-                    <button type="button" className={styles.eyeBtn} onClick={toggleShowNewPass} tabIndex={-1}>
-                      {showNewPass ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-                    </button>
-                  </div>
-                  <label className={styles.label}>Confirm Password</label>
-                  <div className={styles.passWrap}>
-                    <input
-                      type={showNewPass ? 'text' : 'password'} value={confirmPass}
-                      onChange={e => setConfirmPass(e.target.value)} className={styles.input}
-                      placeholder="Repeat your password" required minLength={8}
-                    />
-                  </div>
-                  <button type="submit" className={styles.submitBtn} disabled={newUserLoading}>
-                    {newUserLoading ? <span className={styles.btnSpinner} /> : 'Activate Account'}
-                  </button>
-                </form>
-              )}
-
-              <button className={styles.backHomeLink} onClick={() => router.push('/')} type="button">
-                <ArrowLeftIcon size={13} /> Back to home
+              <button type="submit" className={styles.submitBtn} disabled={loginLoading}>
+                {loginLoading ? <span className={styles.btnSpinner} /> : 'Sign in'}
               </button>
-          </div>
+            </form>
+          )}
+
+          {!isExisting && (
+            <form onSubmit={handleNewUserActivation} className={styles.form}>
+              {newUserError && <div className={styles.errorBanner} role="alert">{newUserError}</div>}
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="new-code">Access code</label>
+                <input
+                  id="new-code"
+                  type="text" value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())}
+                  className={`${styles.input} ${styles.codeInput}`} placeholder="e.g. TEA-2026-XXXX"
+                  required autoComplete="off"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="new-password">New password</label>
+                <div className={styles.passWrap}>
+                  <input
+                    id="new-password"
+                    type={showNewPass ? 'text' : 'password'} value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)} className={styles.input}
+                    placeholder="At least 8 characters" required minLength={8}
+                  />
+                  <button
+                    type="button" className={styles.eyeBtn} onClick={toggleShowNewPass} tabIndex={-1}
+                    aria-label={showNewPass ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPass ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="confirm-password">Confirm password</label>
+                <div className={styles.passWrap}>
+                  <input
+                    id="confirm-password"
+                    type={showNewPass ? 'text' : 'password'} value={confirmPass}
+                    onChange={e => setConfirmPass(e.target.value)} className={styles.input}
+                    placeholder="Repeat your password" required minLength={8}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className={styles.submitBtn} disabled={newUserLoading}>
+                {newUserLoading ? <span className={styles.btnSpinner} /> : 'Activate account'}
+              </button>
+            </form>
+          )}
         </div>{/* end .card */}
 
-        </div>{/* end .pageContent */}
-      </div>{/* end .page */}
-    </>
+        <footer className={styles.pageFooter}>
+          <button className={styles.backHomeLink} onClick={() => router.push('/')} type="button">
+            <ArrowLeftIcon size={14} /> Back to home
+          </button>
+          <p className={styles.legal}>
+            By signing in you agree to our <Link href="/terms" className={styles.legalLink}>Terms</Link> and{' '}
+            <Link href="/privacy" className={styles.legalLink}>Privacy Policy</Link>.
+          </p>
+        </footer>
+      </main>
+    </div>
   )
 }
