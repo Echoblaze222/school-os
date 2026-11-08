@@ -42,6 +42,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/principal/chat',          Icon: MessageIcon },
     { id: 'notices',       label: 'Notices',       href: '/dashboard/principal/notices',       Icon: BellIcon },
     { id: 'announcements', label: 'Announcements', href: '/dashboard/principal/announcements', Icon: MegaphoneIcon },
+    { id: 'closure',       label: 'Closure mode',  href: '/dashboard/principal/closure',       Icon: ShieldIcon },
     { id: 'promotions',    label: 'Promotions',    href: '/dashboard/principal/promotions',    Icon: StarIcon },
     { id: 'meetings',      label: 'Meetings',      href: '/dashboard/principal/meetings',      Icon: CalendarIcon },
     { id: 'live',          label: 'Live classes',  href: '/dashboard/principal/live',          Icon: VideoIcon },
