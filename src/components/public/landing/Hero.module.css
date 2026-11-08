@@ -1,12 +1,11 @@
 /* src/components/public/landing/Hero.module.css */
+/* Premium black / light: flat canvas, hairline borders, no gradients or glow. */
 
 .hero {
   position: relative;
   overflow: hidden;
   padding: var(--space-12) var(--space-5) var(--space-8);
-  background:
-    radial-gradient(ellipse 900px 500px at 85% -10%, var(--brand-glow) 0%, transparent 60%),
-    radial-gradient(ellipse 700px 500px at -10% 110%, var(--gold-subtle) 0%, transparent 55%);
+  background: transparent;
 }
 
 .inner {
@@ -36,8 +35,8 @@
 .headline {
   font-size: clamp(2.1rem, 4.6vw, 3.4rem);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
   color: var(--text-primary);
   max-width: 15ch;
 }
@@ -89,7 +88,6 @@
   background: var(--bg-elevated);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 30px 70px rgba(0,0,0,0.45);
   padding: var(--space-6);
   transform: rotate(-4deg);
 }
@@ -127,7 +125,7 @@
 .reportCardBar {
   height: 6px;
   border-radius: var(--radius-full);
-  background: var(--glass-bg);
+  background: var(--bg-raised);
   overflow: hidden;
 }
 
@@ -135,7 +133,7 @@
   display: block;
   height: 100%;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  background: var(--text-primary);
 }
 
 .reportCardScore {
@@ -160,8 +158,8 @@
 .reportCardStamp {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--gold);
-  border: 1.5px solid var(--gold-border);
+  color: var(--pm-link);
+  border: 1.5px solid var(--pm-link);
   border-radius: var(--radius-sm);
   padding: 4px 8px;
   transform: rotate(3deg);
