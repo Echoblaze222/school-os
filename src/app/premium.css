@@ -1,0 +1,135 @@
+/* ============================================================
+   SchoolOS premium surface tokens
+   Used by: landing, select-school, register-school, onboarding, login.
+
+   Philosophy
+   - Black is not "dark blue" and not pure #000. It is a neutral near-black
+     so the page reads as a deliberate canvas.
+   - Depth comes from stepped surface lightness and 1px hairlines.
+     No gradients, no glow, no blur.
+   - One accent (brand maroon) lives on primary fills only. Links and
+     focus use cyan. Everything else is the text ramp (100 / 65 / 40).
+   - Light mode is the same system inverted, not a different design.
+
+   Theme is driven by the existing [data-theme] attribute on <html>.
+   Dark is the default, matching globals.css.
+   ============================================================ */
+
+:root,
+[data-theme="dark"] {
+  --pm-bg:            #0A0A0B;
+  --pm-surface:       #111113;
+  --pm-surface-2:     #18181B;
+  --pm-line:          rgba(255, 255, 255, 0.09);
+  --pm-line-strong:   rgba(255, 255, 255, 0.18);
+
+  --pm-text:          #FAFAFA;
+  --pm-text-2:        rgba(250, 250, 250, 0.65);
+  --pm-text-3:        rgba(250, 250, 250, 0.40);
+
+  --pm-accent:        #800020;
+  --pm-accent-hover:  #A0002A;
+  --pm-accent-text:   #FFFFFF;
+
+  --pm-link:          #1C93AC;
+  --pm-link-hover:    #FFFFFF;
+  --pm-focus:         rgba(28, 147, 172, 0.55);
+
+  --pm-invert-bg:     #FAFAFA;
+  --pm-invert-text:   #0A0A0B;
+
+  --pm-warn-bg:       rgba(245, 158, 11, 0.08);
+  --pm-warn-line:     rgba(245, 158, 11, 0.28);
+  --pm-warn-text:     #F5BE6E;
+  --pm-danger:        #F87171;
+  --pm-success:       #34D399;
+
+  --pm-radius-pill:   9999px;
+  --pm-radius-card:   16px;
+  --pm-radius-field:  14px;
+}
+
+[data-theme="light"] {
+  --pm-bg:            #FAFAF9;
+  --pm-surface:       #FFFFFF;
+  --pm-surface-2:     #F4F4F2;
+  --pm-line:          rgba(10, 10, 11, 0.10);
+  --pm-line-strong:   rgba(10, 10, 11, 0.22);
+
+  --pm-text:          #0A0A0B;
+  --pm-text-2:        rgba(10, 10, 11, 0.66);
+  --pm-text-3:        rgba(10, 10, 11, 0.42);
+
+  --pm-accent:        #800020;
+  --pm-accent-hover:  #660019;
+  --pm-accent-text:   #FFFFFF;
+
+  --pm-link:          #006B85;
+  --pm-link-hover:    #0A0A0B;
+  --pm-focus:         rgba(0, 107, 133, 0.45);
+
+  --pm-invert-bg:     #0A0A0B;
+  --pm-invert-text:   #FAFAFA;
+
+  --pm-warn-bg:       rgba(180, 100, 0, 0.08);
+  --pm-warn-line:     rgba(180, 100, 0, 0.30);
+  --pm-warn-text:     #8A5300;
+  --pm-danger:        #B91C1C;
+  --pm-success:       #047857;
+}
+
+/* Shared page canvas for premium surfaces. */
+.pm-canvas {
+  background: var(--pm-bg);
+  color: var(--pm-text);
+}
+
+/* ------------------------------------------------------------
+   .pm-scope
+   Re-points the app-wide design tokens at the premium palette for
+   everything inside it. The landing page wraps itself in this so the
+   many components that already read --bg-*, --glass-*, --text-* flip to
+   black / light without being edited one by one. Dashboards never use
+   this class, so they are untouched.
+   ------------------------------------------------------------ */
+.pm-scope {
+  --bg-base:            var(--pm-bg);
+  --bg-surface:         var(--pm-surface);
+  --bg-elevated:        var(--pm-surface);
+  --bg-raised:          var(--pm-surface-2);
+  --bg-overlay:         var(--pm-bg);
+
+  --glass-bg:           var(--pm-surface);
+  --glass-bg-hover:     var(--pm-surface-2);
+  --glass-border:       var(--pm-line);
+  --glass-border-hover: var(--pm-line-strong);
+  --glass-shadow:       none;
+  --glass-shadow-hover: none;
+
+  --text-primary:       var(--pm-text);
+  --text-secondary:     var(--pm-text-2);
+  --text-muted:         var(--pm-text-3);
+  --text-faint:         var(--pm-text-3);
+
+  --brand-glow:         transparent;
+  --brand-border:       var(--pm-line-strong);
+
+  background: var(--pm-bg);
+  color: var(--pm-text);
+}
+
+/* Flat buttons and cards inside the scope: no gradient, no blur, no glow. */
+.pm-scope .btn-primary {
+  background: var(--pm-accent);
+  color: var(--pm-accent-text);
+  box-shadow: none;
+}
+.pm-scope .btn-primary:hover {
+  background: var(--pm-accent-hover);
+  box-shadow: none;
+}
+.pm-scope .glass-card,
+.pm-scope .glass-card-flat {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

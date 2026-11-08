@@ -21,6 +21,10 @@
 // FIX 4: Mobile polish
 //   Imports ./mobile-polish.css (dock clearance, scrollable chip rows,
 //   touch-hover reset, automatic text colour on brand fills).
+//
+// FIX 5: Premium surface tokens
+//   Imports ./premium.css (--pm-* black/light tokens) used by the public
+//   pages: landing, select-school, register-school, onboarding, login.
 // -----------------------------------------------------------------------------
 
 import type { Metadata, Viewport } from 'next'
@@ -28,6 +32,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import './legacy-tokens.css'
 import './mobile-polish.css'
+import './premium.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'

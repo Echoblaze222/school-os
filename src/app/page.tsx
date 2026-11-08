@@ -52,8 +52,12 @@ export default async function RootPage() {
   // they keep sitting flush against each other (no gap), which was the
   // original, presumably intentional layout - the outer gap still
   // applies normally around that pair as a single unit.
+  //
+  // `pm-scope` (src/app/premium.css) re-points the app tokens at the
+  // premium black / light palette for everything on this page, so the
+  // landing flips theme without touching the dashboards.
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="pm-scope" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PublicNav />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
         <Hero />

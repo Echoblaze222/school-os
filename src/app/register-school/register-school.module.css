@@ -1,6 +1,7 @@
 /* src/app/register-school/register-school.module.css */
-/* Dark, pill-based aesthetic matching select-school. Fully self-contained
-   (hardcoded colors) so it always renders dark.
+/* Premium black / light, pill-based. Flat surfaces, hairline borders, no
+   gradients or glow. Colour comes from --pm-* tokens (src/app/premium.css),
+   so dark and light mode both work.
 
    SPACING: 8px base scale (4, 8, 12, 16, 24, 32, 48). Controls are 48px tall
    (Material's 48dp / Apple's 44pt minimum touch target). Related items sit
@@ -8,7 +9,8 @@
 
 .page {
   min-height: 100dvh;
-  background: #060608;
+  background: var(--pm-bg);
+  color: var(--pm-text);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,28 +19,13 @@
   overflow-x: hidden;
 }
 
-.bgGlow {
-  position: fixed;
-  width: 600px;
-  height: 600px;
-  top: -160px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.14) 0%, transparent 70%);
-  pointer-events: none;
-}
-
+/* Decorative layers retired. Classes kept so markup is untouched. */
+.bgGlow,
 .bgGrid {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 180, 216, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 180, 216, 0.025) 1px, transparent 1px);
-  background-size: 36px 36px;
-  pointer-events: none;
+  display: none;
 }
 
-/* Content column - fades/rises in on mount, like select-school */
+/* Content column */
 .content {
   width: 100%;
   max-width: 560px;
@@ -57,7 +44,7 @@
   transform: translateY(0);
 }
 
-/* Top back link - returns to select-school */
+/* Top back link */
 .topBackBtn {
   display: flex;
   align-items: center;
@@ -67,9 +54,9 @@
   padding: 0 16px;
   margin-bottom: 16px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--pm-line-strong);
+  border-radius: var(--pm-radius-pill);
+  color: var(--pm-text-2);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -77,13 +64,12 @@
 }
 
 .topBackBtn:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--pm-text-3);
+  color: var(--pm-text);
+  background: var(--pm-surface);
 }
 
-/* Brand block: logo, wordmark and tagline are one unit (tight, 8px);
-   32px separates the whole block from the progress track below. */
+/* Brand block */
 .brandBlock {
   display: flex;
   flex-direction: column;
@@ -96,26 +82,25 @@
   width: 52px;
   height: 52px;
   border-radius: 15px;
-  filter: drop-shadow(0 0 16px rgba(28, 147, 172, 0.35));
 }
 
 .brandName {
   font-family: 'Orbitron', sans-serif;
   font-size: 1.35rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--pm-text);
   letter-spacing: -0.01em;
   margin: 0;
 }
 
 .brandAccent {
-  color: #A0002A;
+  color: var(--pm-text-2);
 }
 
 .headerSubtitle {
   font-size: 0.68rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--pm-text-3);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   margin: 0;
@@ -147,14 +132,14 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-line-strong);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.72rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-3);
   transition: all 0.2s ease;
 }
 
@@ -162,39 +147,37 @@
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--pm-text-3);
   white-space: nowrap;
 }
 
 .stepActive .stepDot {
-  background: rgba(128, 0, 32, 0.22);
-  border-color: #A0002A;
-  color: #fff;
-  box-shadow: 0 0 0 4px rgba(128, 0, 32, 0.12);
+  background: var(--pm-invert-bg);
+  border-color: var(--pm-invert-bg);
+  color: var(--pm-invert-text);
 }
 
-.stepActive .stepLabel { color: #fff; }
+.stepActive .stepLabel { color: var(--pm-text); }
 
 .stepDone .stepDot {
-  background: rgba(0, 180, 216, 0.14);
-  border-color: #1C93AC;
-  color: #1C93AC;
+  background: transparent;
+  border-color: var(--pm-link);
+  color: var(--pm-link);
 }
 
-.stepDone .stepLabel { color: rgba(28, 147, 172, 0.9); }
+.stepDone .stepLabel { color: var(--pm-link); }
 
-/* Main card: 24px padding on every side, 24px between blocks. */
+/* Main card: flat surface, hairline border, no shadow. */
 .card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-line);
   border-radius: 24px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .stepContent {
@@ -207,14 +190,14 @@
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.25;
-  color: #fff;
+  color: var(--pm-text);
   margin: 0;
   letter-spacing: -0.01em;
 }
 
 .stepSubtitle {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--pm-text-2);
   line-height: 1.55;
   margin: -16px 0 0;
 }
@@ -226,8 +209,6 @@
   gap: 16px;
 }
 
-/* label -> input is 8px: much tighter than the 24px between fields, so each
-   label visibly belongs to the input under it. */
 .field {
   display: flex;
   flex-direction: column;
@@ -243,12 +224,12 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--pm-text-3);
 }
 
 .hint {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-3);
   line-height: 1.4;
 }
 
@@ -256,37 +237,37 @@
 .formInput {
   width: 100%;
   height: 48px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
+  background: var(--pm-bg);
+  border: 1px solid var(--pm-line-strong);
+  border-radius: var(--pm-radius-pill);
   padding: 0 24px;
-  color: #fff;
+  color: var(--pm-text);
   font-size: 0.9rem;
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.formInput::placeholder { color: rgba(255, 255, 255, 0.25); }
+.formInput::placeholder { color: var(--pm-text-3); }
 
 .formInput:focus {
-  border-color: rgba(0, 180, 216, 0.5);
-  background: rgba(0, 180, 216, 0.05);
+  border-color: var(--pm-text-3);
+  box-shadow: 0 0 0 3px var(--pm-focus);
 }
 
 .formSelect {
   appearance: none;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='0.4' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 24px center;
   padding-right: 48px;
 }
 
 .formSelect option {
-  background: #0a0a0d;
-  color: #fff;
+  background: var(--pm-surface-2);
+  color: var(--pm-text);
 }
 
 /* Color picker */
@@ -310,14 +291,14 @@
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid var(--pm-line-strong);
 }
 
 .colorHex {
   font-family: monospace;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--pm-text);
   letter-spacing: 0.04em;
 }
 
@@ -341,7 +322,7 @@
 .colorPreset:hover { transform: scale(1.08); }
 
 .colorPresetActive {
-  border-color: #fff;
+  border-color: var(--pm-text);
   transform: scale(1.1);
 }
 
@@ -351,16 +332,16 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1.5px dashed rgba(255, 255, 255, 0.14);
+  background: var(--pm-bg);
+  border: 1.5px dashed var(--pm-line-strong);
   border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .logoUpload:hover {
-  border-color: #A0002A;
-  background: rgba(128, 0, 32, 0.06);
+  border-color: var(--pm-text-3);
+  background: var(--pm-surface-2);
 }
 
 .logoPreview {
@@ -397,13 +378,13 @@
 .logoUploadText p:first-child {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--pm-text);
 }
 
 /* Background photo upload */
 .bgUpload {
   height: 128px;
-  border: 1.5px dashed rgba(255, 255, 255, 0.14);
+  border: 1.5px dashed var(--pm-line-strong);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -416,7 +397,7 @@
   transition: border-color 0.2s ease;
 }
 
-.bgUpload:hover { border-color: #A0002A; }
+.bgUpload:hover { border-color: var(--pm-text-3); }
 
 .bgPlaceholder {
   display: flex;
@@ -430,19 +411,19 @@
 .bgPlaceholder p {
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--pm-text-2);
   margin: 0;
 }
 
 .bgUploaded {
   border-style: solid;
-  border-color: #1C93AC;
+  border-color: var(--pm-link);
 }
 
 .bgOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -454,8 +435,8 @@
 /* Live preview */
 .previewBox {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--pm-bg);
+  border: 1px solid var(--pm-line);
   border-radius: 16px;
 }
 
@@ -464,14 +445,14 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--pm-text-3);
   margin: 0 0 12px;
 }
 
 .previewCard {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--pm-line-strong);
 }
 
 .previewHeader {
@@ -483,7 +464,7 @@
 
 .previewBody {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--pm-surface);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -497,7 +478,7 @@
 
 .previewText {
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--pm-line-strong);
   border-radius: 9999px;
   width: 80%;
 }
@@ -511,8 +492,8 @@
 
 .planCard {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: var(--pm-bg);
+  border: 1.5px solid var(--pm-line);
   border-radius: 16px;
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.15s ease;
@@ -522,7 +503,7 @@
   gap: 8px;
 }
 
-.planCard:hover { border-color: rgba(255, 255, 255, 0.22); }
+.planCard:hover { border-color: var(--pm-line-strong); }
 .planSelected { transform: translateY(-2px); }
 
 .popularBadge {
@@ -530,8 +511,8 @@
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: #A0002A;
-  color: #fff;
+  background: var(--pm-accent);
+  color: var(--pm-accent-text);
   font-size: 0.58rem;
   font-weight: 700;
   padding: 2px 8px;
@@ -555,22 +536,22 @@
 .planAmount {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--pm-text);
 }
 
 .planPeriod {
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-3);
 }
 
 .planStudents {
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-3);
   font-weight: 600;
   margin: 0;
 }
 
-/* Feature checklist (welcome card): 12px rows so each line scans on its own. */
+/* Feature checklist */
 .planFeatures {
   list-style: none;
   display: flex;
@@ -585,14 +566,14 @@
   align-items: center;
   gap: 8px;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--pm-text-2);
   line-height: 1.4;
 }
 
 /* Total box (legacy) */
 .totalBox {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--pm-bg);
+  border: 1px solid var(--pm-line);
   border-radius: 16px;
   padding: 16px;
   display: flex;
@@ -605,21 +586,21 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--pm-text-2);
 }
 
 .totalFinal {
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--pm-line);
   font-weight: 700;
   font-size: 0.98rem;
-  color: #fff;
+  color: var(--pm-text);
 }
 
 /* Summary (legacy) */
 .summaryBox {
-  background: rgba(128, 0, 32, 0.08);
-  border: 1px solid rgba(128, 0, 32, 0.25);
+  background: var(--pm-bg);
+  border: 1px solid var(--pm-line-strong);
   border-radius: 16px;
   padding: 16px;
   display: flex;
@@ -629,7 +610,7 @@
 
 .summaryTitle {
   font-size: 0.95rem;
-  color: #fff;
+  color: var(--pm-text);
   margin: 0;
   font-weight: 700;
 }
@@ -639,37 +620,35 @@
   justify-content: space-between;
   gap: 16px;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--pm-text-2);
 }
 
-.summaryRow strong { color: #fff; }
+.summaryRow strong { color: var(--pm-text); }
 
 .summaryNote {
   font-size: 0.74rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-3);
   line-height: 1.5;
   padding-top: 12px;
-  border-top: 1px solid rgba(128, 0, 32, 0.2);
+  border-top: 1px solid var(--pm-line);
   margin: 0;
 }
 
-/* Error: sits with the form it belongs to. The card's 24px gap minus 8px
-   puts it 16px under the fields; the buttons below it still get 32px. */
+/* Error */
 .error {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: -8px;
   font-size: 0.82rem;
-  color: #FCA5A5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--pm-danger);
+  background: var(--pm-bg);
+  border: 1px solid var(--pm-danger);
   border-radius: 16px;
   padding: 12px 16px;
 }
 
-/* Buttons: 48px tall, 12px apart. margin-top 8 + the 24px block gap = 32px
-   of clear space between the content and the actions. */
+/* Buttons: 48px tall, 12px apart. */
 .btnRow {
   display: flex;
   gap: 12px;
@@ -685,9 +664,9 @@
   height: 48px;
   padding: 0 24px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--pm-line-strong);
+  border-radius: var(--pm-radius-pill);
+  color: var(--pm-text-2);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -695,11 +674,12 @@
 }
 
 .backBtn:hover {
-  border-color: rgba(255, 255, 255, 0.32);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--pm-text-3);
+  color: var(--pm-text);
+  background: var(--pm-surface-2);
 }
 
+/* Primary action: flat accent fill */
 .nextBtn {
   flex: 1;
   display: flex;
@@ -707,28 +687,26 @@
   justify-content: center;
   gap: 8px;
   height: 48px;
-  background: linear-gradient(135deg, #800020, #A0002A);
+  background: var(--pm-accent);
   border: none;
-  border-radius: 9999px;
-  color: #fff;
+  border-radius: var(--pm-radius-pill);
+  color: var(--pm-accent-text);
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
   font-family: inherit;
-  transition: opacity 0.2s, transform 0.15s;
-  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.3);
+  transition: background 0.2s, transform 0.15s;
 }
 
 .nextBtn:hover:not(:disabled) {
-  opacity: 0.92;
+  background: var(--pm-accent-hover);
   transform: translateY(-1px);
 }
 
 .nextBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .hiddenInput { display: none; }
@@ -737,19 +715,18 @@
   position: relative;
   z-index: 1;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--pm-text-3);
   letter-spacing: 0.04em;
   text-align: center;
   margin-top: 0;
 }
 
-.poweredBy strong { color: rgba(255, 255, 255, 0.4); }
+.poweredBy strong { color: var(--pm-text-2); }
 
 @media (max-width: 560px) {
   .planGrid { grid-template-columns: 1fr; }
   .formGrid { grid-template-columns: 1fr; }
   .fieldFull { grid-column: span 1; }
-  /* 20px side padding on phones keeps inputs wide; still on the 4px grid. */
   .card { padding: 24px 20px; border-radius: 24px; }
   .stepIndicator { gap: 16px; }
 }
@@ -760,8 +737,7 @@
   .brandBlock { margin-bottom: 24px; }
 }
 
-/* Terms acceptance. Own padding/gap on the scale; no outer margin (the
-   parent's 24px field gap handles separation). */
+/* Terms acceptance */
 .termsCheck {
   display: flex;
   align-items: flex-start;
@@ -769,8 +745,8 @@
   margin-top: 0;
   padding: 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--pm-bg);
+  border: 1px solid var(--pm-line);
   cursor: pointer;
 }
 
@@ -779,22 +755,22 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  accent-color: #800020;
+  accent-color: var(--pm-accent);
   cursor: pointer;
 }
 
 .termsCheck span {
   font-size: 0.82rem;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--pm-text-2);
 }
 
 .termsCheck a {
-  color: #d4a5b0;
+  color: var(--pm-link);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .termsCheck a:hover {
-  color: #fff;
+  color: var(--pm-link-hover);
 }
