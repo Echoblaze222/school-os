@@ -49,7 +49,7 @@ function fmtDate(iso: string) {
 
 function isPast(iso: string) { return new Date(iso) < new Date() }
 
-/* ── Main Component ─────────────────────────────────────── */
+/* ── Main Component ─────────────────────────────────────────────── */
 export default function PrincipalMeetingsClient({
   principalId, schoolId, principalName, meetings: initialMeetings, classes,
   profile, school, userId,
@@ -380,7 +380,7 @@ export default function PrincipalMeetingsClient({
   )
 }
 
-/* ── Meeting list card ──────────────────────────────────── */
+/* ── Meeting list card ─────────────────────────────────────────────── */
 function MeetingListCard({
   meeting, index, isPast = false, userId, schoolId,
 }: {
@@ -401,8 +401,8 @@ function MeetingListCard({
           background: isPast
             ? 'var(--text-muted)'
             : meeting.meeting_url
-              ? 'linear-gradient(180deg,#7B2FBE,#9B59B6)'
-              : 'linear-gradient(180deg,var(--burgundy),var(--burgundy-light,#a0002a))',
+              ? '#7B2FBE'
+              : 'var(--burgundy)',
         }}
       />
       <div className={styles.listCardBody}>
