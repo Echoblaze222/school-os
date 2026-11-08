@@ -1,4 +1,5 @@
 /* src/components/public/PublicNav.module.css */
+/* Flat: solid canvas colour once scrolled, hairline border, no blur. */
 
 .nav {
   position: sticky;
@@ -6,14 +7,12 @@
   z-index: var(--z-nav, 40);
   background: transparent;
   border-bottom: 1px solid transparent;
-  transition: background 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
 .navScrolled {
-  background: var(--glass-bg);
+  background: var(--bg-base);
   border-bottom-color: var(--glass-border);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
 .inner {
@@ -64,7 +63,7 @@
 }
 
 .navLinkActive {
-  color: var(--brand);
+  color: var(--text-primary);
 }
 
 .navLinkActive::after {
@@ -75,7 +74,7 @@
   bottom: -1px;
   height: 2px;
   border-radius: 2px;
-  background: var(--brand);
+  background: var(--text-primary);
 }
 
 .actions {
