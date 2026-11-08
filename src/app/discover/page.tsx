@@ -3,11 +3,21 @@
 // and so search engines can index it; reads directly via the admin client
 // rather than round-tripping through /api/public/promotions from the
 // server (that API route exists for client-side use, e.g. "load more").
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { pageMetadata } from '@/lib/seo'
 import PublicHeader from './PublicHeader'
 import styles from './public.module.css'
 import PromotionCard from './PromotionCard'
+
+// The canonical stays /discover for every ?type= filter so the filtered
+// views are not indexed as separate duplicate pages.
+export const metadata: Metadata = pageMetadata({
+  title: 'Discover Schools | SchoolOS',
+  description: 'Admissions, open days, scholarships and events shared directly by Nigerian schools on SchoolOS.',
+  path: '/discover',
+})
 
 export const revalidate = 60 // public feed, safe to cache briefly
 

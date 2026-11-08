@@ -39,6 +39,7 @@ import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import AndroidBackHandler from '@/components/AndroidBackHandler'
+import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 const inter = Inter({
   subsets:  ['latin'],
@@ -46,9 +47,18 @@ const inter = Inter({
   display:  'swap',
 })
 
+// SEO defaults for every page. metadataBase lets relative image/canonical
+// URLs resolve to the real site instead of localhost. There is deliberately
+// no site-wide canonical here (it would point every page at the home page);
+// each public page sets its own through pageMetadata() in src/lib/seo.ts.
 export const metadata: Metadata = {
-  title:       'SchoolOS | Nigeria\'s Smartest School Portal',
-  description: 'Complete school management system for Nigerian schools',
+  metadataBase: new URL(SITE_URL),
+  title:       DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    'school management system Nigeria', 'school portal Nigeria', 'school fees software',
+    'student management system', 'school admissions Nigeria', 'find schools in Nigeria',
+  ],
   manifest:    '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SchoolOS' },
   icons: {
@@ -58,6 +68,20 @@ export const metadata: Metadata = {
       { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [{ url: '/icons/apple-touch-icon.png' }],
+  },
+  openGraph: {
+    title:       DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    siteName:    SITE_NAME,
+    images:      [{ url: DEFAULT_OG_IMAGE, alt: SITE_NAME }],
+    locale:      'en_NG',
+    type:        'website',
+  },
+  twitter: {
+    card:        'summary_large_image',
+    title:       DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images:      [DEFAULT_OG_IMAGE],
   },
 }
 
