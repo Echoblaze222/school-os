@@ -94,7 +94,7 @@
   top: 0;
   bottom: 0;
   width: 24px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent);
+  background: transparent;
   z-index: 3;
   pointer-events: none;
 }
@@ -102,9 +102,7 @@
 .pageArea {
   position: relative;
   min-height: 380px;
-  background:
-    radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.05), transparent 60%),
-    linear-gradient(155deg, #1c1730 0%, #120f22 55%, #0c0a18 100%);
+  background: #1c1730;
 }
 
 .page {
@@ -144,7 +142,7 @@
   bottom: 0;
   width: 46px;
   height: 46px;
-  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.07) 51%, transparent 75%);
+  background: transparent;
   pointer-events: none;
 }
 

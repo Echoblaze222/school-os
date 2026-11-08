@@ -326,7 +326,7 @@ ul, ol { list-style: none; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   color: #fff;
   box-shadow: 0 4px 16px var(--brand-glow);
 }
@@ -340,7 +340,7 @@ ul, ol { list-style: none; }
 .btn-secondary:hover { border-color: var(--brand-border); background: var(--glass-bg-hover); }
 
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold) 0%, #D97706 100%);
+  background: var(--gold);
   color: #fff;
   box-shadow: 0 4px 16px rgba(245,158,11,0.3);
 }
@@ -492,7 +492,7 @@ textarea.input {
   width: 50px;
   height: 50px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   color: #fff;
   box-shadow: 0 4px 20px var(--brand-glow);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -631,7 +631,7 @@ textarea.input {
   100% { background-position: 400px 0;  }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--glass-bg) 25%, var(--glass-bg-hover) 50%, var(--glass-bg) 75%);
+  background: var(--glass-bg);
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
   border-radius: var(--radius-md);
@@ -667,7 +667,7 @@ textarea.input {
 
 /* ── CHAT BUBBLE ───────────────────────────────────────────── */
 .bubble-user {
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--brand);
   color: #fff;
   border-radius: var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);
   padding: var(--space-3) var(--space-4);
