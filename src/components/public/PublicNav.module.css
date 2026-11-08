@@ -1,7 +1,9 @@
 /* src/components/public/PublicNav.module.css */
 
+/* On phones and tablets the bar scrolls away with the page so it does not
+   keep covering the photos; it only sticks to the top on desktop. */
 .nav {
-  position: sticky;
+  position: relative;
   top: 0;
   z-index: var(--z-nav, 40);
   background: transparent;
@@ -160,6 +162,7 @@
 }
 
 @media (min-width: 1024px) {
+  .nav { position: sticky; }
   .linkRow { display: flex; }
   .loginLink { display: inline-flex; }
   .registerCta { display: inline-flex; }

@@ -5,6 +5,15 @@ import Image from 'next/image'
 import { ArrowRightIcon } from '@/components/Icons'
 import styles from './FinalCta.module.css'
 
+// Inline sizing so the blob can never be stretched into an oval (see
+// FeatureBand for the reason). 140px on phones, up to 240px on desktop.
+const BLOB_STYLE = {
+  width: 'clamp(140px, 30vw, 240px)',
+  height: 'auto',
+  aspectRatio: '1 / 1',
+  objectFit: 'contain',
+} as const
+
 export default function FinalCta() {
   return (
     <section className="page-content">
@@ -16,8 +25,9 @@ export default function FinalCta() {
             alt="A schoolgirl in a blazer speaking confidently into a microphone"
             width={900}
             height={900}
-            sizes="(min-width: 900px) 240px, 160px"
+            sizes="(min-width: 900px) 240px, 140px"
             className={styles.blob}
+            style={BLOB_STYLE}
             loading="lazy"
           />
         </figure>

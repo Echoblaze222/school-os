@@ -66,6 +66,16 @@ const AUDIENCES = [
   },
 ]
 
+// Inline sizing so the blob can never be stretched into an oval (see
+// FeatureBand for the reason).
+const BLOB_STYLE = {
+  width: '100%',
+  maxWidth: 240,
+  height: 'auto',
+  aspectRatio: '1 / 1',
+  objectFit: 'contain',
+} as const
+
 export default function AudienceSection() {
   const [active, setActive] = useState(AUDIENCES[0].key)
   const current = AUDIENCES.find(a => a.key === active)!
@@ -106,8 +116,9 @@ export default function AudienceSection() {
             alt={current.alt}
             width={900}
             height={900}
-            sizes="(min-width: 760px) 260px, 60vw"
+            sizes="(min-width: 760px) 240px, 60vw"
             className={styles.blob}
+            style={BLOB_STYLE}
           />
           <figcaption className={styles.caption}>{current.caption}</figcaption>
         </figure>

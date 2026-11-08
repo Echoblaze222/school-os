@@ -14,6 +14,16 @@ const FEATURE_CHIPS = [
   { icon: ClipboardIcon, label: 'Results & report cards' },
 ]
 
+// Inline sizing so the blob can never be stretched into an oval (see
+// FeatureBand for the reason).
+const BLOB_STYLE = {
+  width: '100%',
+  maxWidth: 380,
+  height: 'auto',
+  aspectRatio: '1 / 1',
+  objectFit: 'contain',
+} as const
+
 export default function Hero() {
   return (
     <section className={styles.hero}>
@@ -51,8 +61,9 @@ export default function Hero() {
               alt="Pupils in uniform walking toward a modern school building at sunrise"
               width={900}
               height={900}
-              sizes="(min-width: 900px) 420px, 70vw"
+              sizes="(min-width: 900px) 380px, 70vw"
               className={styles.heroBlob}
+              style={BLOB_STYLE}
               priority
             />
             <figcaption className={styles.figCaption}>
