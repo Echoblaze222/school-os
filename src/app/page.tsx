@@ -56,6 +56,7 @@ export default async function RootPage() {
   //
   // Photos are spread through the page (Hero, FeatureBand x3, the role
   // tabs and the final CTA) instead of sitting together in one gallery.
+  // They live in public/branding.
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PublicNav />
@@ -67,7 +68,7 @@ export default async function RootPage() {
         </div>
         <ValueProps />
         <FeatureBand
-          image="focused-pupil"
+          image="/branding/focused-pupil.png"
           alt="A young pupil writing in her exercise book at her desk"
           caption="Pay from home, term by term"
           label="For parents and bursars"
@@ -77,7 +78,7 @@ export default async function RootPage() {
         <AudienceSection />
         <FeatureBand
           reverse
-          image="library-reading"
+          image="/branding/library-reading.webp"
           alt="Four pupils reading books together in the school library"
           caption="Books, notes and live classes in one place"
           label="For teachers and students"
@@ -86,7 +87,7 @@ export default async function RootPage() {
         />
         <FeaturedSchools />
         <FeatureBand
-          image="pupil-portrait"
+          image="/branding/pupil-portrait.png"
           alt="A smiling pupil in school uniform seated in a classroom"
           caption="Private records, kept separate for every school"
           label="For every school"
