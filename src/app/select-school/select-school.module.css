@@ -1,9 +1,11 @@
 /* src/app/select-school/select-school.module.css */
-/* ── ChatGPT-style layout: centered logo, pill continue button, search below ── */
+/* Premium black / light. Flat surfaces, hairline borders, no gradients or glow.
+   All colour comes from --pm-* tokens in src/app/premium.css. */
 
 .page {
   min-height: 100dvh;
-  background: #060608;
+  background: var(--pm-bg);
+  color: var(--pm-text);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -13,25 +15,10 @@
   overflow-x: hidden;
 }
 
-.bgGlow {
-  position: fixed;
-  width: 600px;
-  height: 600px;
-  top: -160px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.14) 0%, transparent 70%);
-  pointer-events: none;
-}
-
+/* Decorative layers retired. Kept as classes so existing markup is untouched. */
+.bgGlow,
 .bgGrid {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 180, 216, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 180, 216, 0.025) 1px, transparent 1px);
-  background-size: 36px 36px;
-  pointer-events: none;
+  display: none;
 }
 
 /* ── Center column ── */
@@ -53,7 +40,7 @@
   transform: translateY(0);
 }
 
-/* ── Brand block - logo + wordmark, centered like ChatGPT's mark ── */
+/* ── Brand block ── */
 .backHomeLink {
   display: flex;
   align-items: center;
@@ -61,7 +48,7 @@
   gap: 6px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.5);
+  color: var(--pm-text-3);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -69,8 +56,9 @@
   min-height: 44px;
   margin-bottom: 24px;
   font-family: 'Inter', sans-serif;
+  transition: color 0.15s;
 }
-.backHomeLink:hover { color: #fff; }
+.backHomeLink:hover { color: var(--pm-text); }
 
 .brandBlock {
   display: flex;
@@ -85,20 +73,19 @@
   height: 88px;
   border-radius: 22px;
   object-fit: contain;
-  filter: drop-shadow(0 0 22px rgba(28, 147, 172, 0.4));
 }
 
 .brandName {
   font-family: 'Orbitron', sans-serif;
   font-size: 1.7rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--pm-text);
   letter-spacing: -0.01em;
   margin: 0;
 }
 
 .brandAccent {
-  color: #A0002A;
+  color: var(--pm-text-2);
 }
 
 /* ── Signed-out-due-to-inactivity banner ── */
@@ -106,16 +93,16 @@
   width: 100%;
   padding: 12px 16px;
   margin: -24px 0 24px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: var(--pm-warn-bg);
+  border: 1px solid var(--pm-warn-line);
   border-radius: 12px;
-  color: rgba(245, 190, 110, 0.95);
+  color: var(--pm-warn-text);
   font-size: 0.78rem;
   line-height: 1.4;
   text-align: center;
 }
 
-/* ── Action stack - holds continue pill, search, register ── */
+/* ── Action stack ── */
 .actionStack {
   width: 100%;
   display: flex;
@@ -123,23 +110,23 @@
   gap: 12px;
 }
 
-/* ── Continue with recent school - ChatGPT "Continue with this account" style ── */
+/* ── Continue with recent school: the one inverted pill on the page ── */
 .continuePill {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.94);
-  border: none;
-  border-radius: 9999px;
+  background: var(--pm-invert-bg);
+  border: 1px solid var(--pm-invert-bg);
+  border-radius: var(--pm-radius-pill);
   cursor: pointer;
   text-align: left;
-  transition: transform 0.15s, background 0.15s;
+  transition: transform 0.15s, opacity 0.15s;
 }
 
 .continuePill:hover {
-  background: #fff;
+  opacity: 0.92;
   transform: translateY(-1px);
 }
 
@@ -174,7 +161,7 @@
 .continueTitle {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #0a0a0c;
+  color: var(--pm-invert-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -182,24 +169,26 @@
 
 .continueSub {
   font-size: 0.72rem;
-  color: rgba(10, 10, 12, 0.55);
+  color: var(--pm-invert-text);
+  opacity: 0.6;
 }
 
 .continueArrow {
   font-size: 1rem;
-  color: rgba(10, 10, 12, 0.4);
+  color: var(--pm-invert-text);
+  opacity: 0.5;
   flex-shrink: 0;
 }
 
-/* ── Ghost pill - "use a different school" ── */
+/* ── Ghost pill: "use a different school" ── */
 .ghostPill {
   width: 100%;
   padding: 12px 16px;
   min-height: 48px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--pm-line-strong);
+  border-radius: var(--pm-radius-pill);
+  color: var(--pm-text-2);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -207,9 +196,9 @@
 }
 
 .ghostPill:hover {
-  border-color: rgba(255, 255, 255, 0.32);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--pm-text-3);
+  color: var(--pm-text);
+  background: var(--pm-surface);
 }
 
 /* ── Search block ── */
@@ -228,7 +217,7 @@
 .searchLabel {
   font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--pm-text-3);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin: 4px 0 8px;
@@ -242,18 +231,18 @@
   gap: 12px;
   width: 100%;
   height: 48px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-line);
+  border-radius: var(--pm-radius-pill);
   padding: 0 16px;
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s;
 }
 
 .searchBox:focus-within,
 .searchBoxSelected {
-  border-color: rgba(0, 180, 216, 0.5);
-  background: rgba(0, 180, 216, 0.05);
+  border-color: var(--pm-text-3);
+  box-shadow: 0 0 0 3px var(--pm-focus);
 }
 
 .searchIcon {
@@ -267,20 +256,20 @@
   background: none;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--pm-text);
   font-size: 0.9rem;
   font-family: 'Inter', sans-serif;
   min-width: 0;
 }
 
 .searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--pm-text-3);
 }
 
 .clearBtn {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--pm-surface-2);
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--pm-text-2);
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -290,11 +279,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: color 0.15s;
 }
 
 .clearBtn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  color: var(--pm-text);
 }
 
 /* ── Dropdown results ── */
@@ -302,7 +291,7 @@
   margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .schoolResult {
@@ -310,8 +299,8 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-line);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
@@ -321,8 +310,8 @@
 }
 
 .schoolResult:hover {
-  background: rgba(0, 180, 216, 0.08);
-  border-color: rgba(0, 180, 216, 0.25);
+  background: var(--pm-surface-2);
+  border-color: var(--pm-line-strong);
 }
 
 @keyframes fadeSlide {
@@ -358,7 +347,7 @@
 .schoolName {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--pm-text);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -367,7 +356,7 @@
 
 .schoolLocation {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-3);
   margin: 4px 0 0;
 }
 
@@ -375,21 +364,21 @@
 .noResults {
   margin-top: 8px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-line);
   border-radius: 12px;
   text-align: center;
 }
 
 .noResults p {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--pm-text-2);
   margin: 0 0 4px;
 }
 
 .noResultsHint {
   font-size: 0.73rem;
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: var(--pm-text-3) !important;
 }
 
 /* ── Selected school preview ── */
@@ -397,6 +386,7 @@
   margin-top: 8px;
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid var(--pm-line);
   animation: scaleIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) both;
 }
 
@@ -449,50 +439,48 @@
 
 .selectedTagline {
   font-size: 0.73rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 2px;
   font-style: italic;
 }
 
 .selectedLocation {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
 }
 
-/* ── Submit button - pill style to match ── */
+/* ── Submit button: flat accent fill ── */
 .submitBtn {
   width: 100%;
   height: 48px;
-  background: linear-gradient(135deg, #800020, #A0002A);
+  background: var(--pm-accent);
   border: none;
-  border-radius: 9999px;
-  color: #fff;
+  border-radius: var(--pm-radius-pill);
+  color: var(--pm-accent-text);
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
   margin-top: 16px;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: background 0.2s, transform 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Inter', sans-serif;
-  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.3);
 }
 
 .submitBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--pm-accent-hover);
   transform: translateY(-1px);
 }
 
 .submitBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* ── Register row - bottom, like a secondary link under the pills ── */
+/* ── Register row ── */
 .registerRow {
   display: flex;
   align-items: center;
@@ -502,14 +490,14 @@
   padding-top: 16px;
   padding-bottom: 8px;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--pm-text-3);
 }
 
 .registerLink {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #1C93AC;
+  color: var(--pm-link);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.78rem;
@@ -521,7 +509,7 @@
 }
 
 .registerLink:hover {
-  color: #fff;
+  color: var(--pm-link-hover);
 }
 
 /* ── Powered by footer ── */
@@ -532,11 +520,11 @@
   right: 0;
   text-align: center;
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--pm-text-3);
 }
 
 .poweredBy strong {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--pm-text-2);
 }
 
 /* ── Mobile tweaks ── */
