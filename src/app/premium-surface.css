@@ -31,6 +31,8 @@
 
    --ink is the foreground color as an RGB triplet (white on black, black on
    white), so a rule written once as rgb(var(--ink) / 0.5) works in both modes.
+   --logo-primary / --logo-accent recolor the SchoolOS mark (AnimatedLogo): the
+   standard burgundy is too dark to read on pure black, so it is lifted here.
    ----------------------------------------------------------------------------- */
 
 /* ── Premium black (dark mode) ── */
@@ -68,6 +70,9 @@
   /* Brand burgundy is too dark to read as text on black (about 2:1), so text
      and thin accents use a lighter tint of it. Fills (buttons) keep --brand. */
   --accent-text: #B97384;
+
+  --logo-primary: #B8123F;
+  --logo-accent:  #1C93AC;
 }
 
 @supports (color: color-mix(in srgb, red 50%, white)) {
@@ -109,6 +114,9 @@
   --input-border:  rgba(0, 0, 0, 0.14);
 
   --accent-text: var(--brand);
+
+  --logo-primary: #4A0012;
+  --logo-accent:  #006B85;
 }
 
 /* The page root fills the whole viewport in the premium canvas color. */

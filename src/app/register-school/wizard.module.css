@@ -1,6 +1,7 @@
 /* src/app/register-school/wizard.module.css
    Step-by-step registration: connected-dot progress track + page slide
-   transitions. Complements register-school.module.css (same dark palette).
+   transitions. Complements register-school.module.css (same premium palette:
+   tokens and --ink only, no gradients, no glows).
 
    SPACING SYSTEM (8px base scale; every value below is 4, 8, 12, 16, 24, 32):
      label -> input            8   (set in register-school.module.css)
@@ -35,13 +36,13 @@
 
 .line {
   right: 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(var(--ink) / 0.14);
 }
 
+/* Solid fill, same teal as the completed dots it connects. */
 .fill {
   width: calc((100% - 32px) * var(--p, 0));
-  background: linear-gradient(90deg, #1C93AC, #A0002A);
-  box-shadow: 0 0 10px rgba(28, 147, 172, 0.45);
+  background: #1C93AC;
   transition: width 0.55s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
@@ -51,29 +52,29 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #0b0b10;
-  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: var(--bg-base);
+  border: 2px solid var(--glass-border-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
-  transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  color: var(--text-muted);
+  transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
 }
 
 .nodeDone {
   border-color: #1C93AC;
-  background: rgba(28, 147, 172, 0.16);
+  background: var(--bg-base);
   color: #1C93AC;
   animation: pop 0.35s ease;
 }
 
+/* The current step is the one filled, brand-colored dot. */
 .nodeActive {
-  border-color: #A0002A;
-  background: rgba(128, 0, 32, 0.35);
+  border-color: var(--brand);
+  background: var(--brand);
   color: #fff;
-  animation: pulseRing 1.8s ease-in-out infinite;
 }
 
 .caption {
@@ -83,12 +84,12 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   margin: 0 0 24px;
 }
 
 .caption strong {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* -- One short page at a time -- */
@@ -130,14 +131,14 @@
   gap: 12px;
   padding: 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-secondary);
 }
 
 .recap div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
-.recap strong { color: #fff; text-align: right; overflow-wrap: anywhere; }
+.recap strong { color: var(--text-primary); text-align: right; overflow-wrap: anywhere; }
 
 /* Getting-started list reuses .fields (24px gaps). Steps belong together,
    so pull them to 16px apart; the first step keeps the full 24px under the subtitle. */
@@ -155,7 +156,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(28, 147, 172, 0.16);
+  background: transparent;
   border: 1px solid #1C93AC;
   color: #1C93AC;
   font-size: 0.72rem;
@@ -165,8 +166,8 @@
   justify-content: center;
 }
 
-.guideText { display: flex; flex-direction: column; gap: 4px; font-size: 0.86rem; font-weight: 600; color: #fff; }
-.guideText span { font-size: 0.76rem; font-weight: 400; color: rgba(255, 255, 255, 0.5); line-height: 1.5; }
+.guideText { display: flex; flex-direction: column; gap: 4px; font-size: 0.86rem; font-weight: 600; color: var(--text-primary); }
+.guideText span { font-size: 0.76rem; font-weight: 400; color: var(--text-muted); line-height: 1.5; }
 
 .codeBox {
   display: flex;
@@ -176,8 +177,8 @@
   text-align: center;
   padding: 24px;
   border-radius: 16px;
-  background: rgba(128, 0, 32, 0.08);
-  border: 1px solid rgba(128, 0, 32, 0.25);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-hover);
 }
 
 .codeBox p { margin: 0; }
@@ -187,7 +188,7 @@
   font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 @keyframes slideFromRight {
@@ -206,11 +207,6 @@
   100% { transform: scale(1); }
 }
 
-@keyframes pulseRing {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 0, 42, 0.45); }
-  50%      { box-shadow: 0 0 0 6px rgba(160, 0, 42, 0); }
-}
-
 @media (max-width: 560px) {
   /* Stacked fields use the same 24px as every other field gap. */
   .row2 { grid-template-columns: 1fr; gap: 24px; }
@@ -218,5 +214,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fill, .node { transition: none; }
-  .fwd, .back, .nodeDone, .nodeActive { animation: none; }
+  .fwd, .back, .nodeDone { animation: none; }
 }
