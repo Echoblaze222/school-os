@@ -66,7 +66,7 @@ export default function SavedHome({ role, groups }: Props) {
         <div
           style={{
             padding: '52px var(--space-5) 28px',
-            background: `linear-gradient(135deg, color-mix(in srgb, ${snap.schoolColor} 70%, #000), var(--brand-dark))`,
+            background: `color-mix(in srgb, ${snap.schoolColor} 70%, #000)`,
             color: '#F6F1E4',
           }}
         >

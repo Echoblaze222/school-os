@@ -83,12 +83,7 @@
 
 /* ── Shimmer for loading stat values ("…" states) ─────────────────────── */
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0.08) 25%,
-    rgba(255,255,255,0.18) 50%,
-    rgba(255,255,255,0.08) 75%
-  );
+  background: rgba(255,255,255,0.08);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: 4px;

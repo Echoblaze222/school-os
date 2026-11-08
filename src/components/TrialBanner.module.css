@@ -17,15 +17,15 @@
 
 /* ── Urgency colors ──────────────────────────────────────── */
 .info {
-  background: linear-gradient(135deg, rgba(128,0,32,0.15), rgba(128,0,32,0.08));
+  background: rgba(128,0,32,0.15);
   border-bottom: 1px solid rgba(128,0,32,0.25);
 }
 .warning {
-  background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.08));
+  background: rgba(245,158,11,0.18);
   border-bottom: 1px solid rgba(245,158,11,0.3);
 }
 .critical {
-  background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.08));
+  background: rgba(239,68,68,0.18);
   border-bottom: 1px solid rgba(239,68,68,0.3);
 }
 
@@ -113,7 +113,7 @@
   display: inline-flex;
   align-items: center;
   padding: 8px 18px;
-  background: linear-gradient(135deg, #10B981, #059669);
+  background: #10B981;
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;

@@ -402,7 +402,7 @@
 .sendBroadcast {
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   border: none;
   color: #fff;
   font-size: 0.82rem;
