@@ -83,3 +83,53 @@
   background: var(--pm-bg);
   color: var(--pm-text);
 }
+
+/* ------------------------------------------------------------
+   .pm-scope
+   Re-points the app-wide design tokens at the premium palette for
+   everything inside it. The landing page wraps itself in this so the
+   many components that already read --bg-*, --glass-*, --text-* flip to
+   black / light without being edited one by one. Dashboards never use
+   this class, so they are untouched.
+   ------------------------------------------------------------ */
+.pm-scope {
+  --bg-base:            var(--pm-bg);
+  --bg-surface:         var(--pm-surface);
+  --bg-elevated:        var(--pm-surface);
+  --bg-raised:          var(--pm-surface-2);
+  --bg-overlay:         var(--pm-bg);
+
+  --glass-bg:           var(--pm-surface);
+  --glass-bg-hover:     var(--pm-surface-2);
+  --glass-border:       var(--pm-line);
+  --glass-border-hover: var(--pm-line-strong);
+  --glass-shadow:       none;
+  --glass-shadow-hover: none;
+
+  --text-primary:       var(--pm-text);
+  --text-secondary:     var(--pm-text-2);
+  --text-muted:         var(--pm-text-3);
+  --text-faint:         var(--pm-text-3);
+
+  --brand-glow:         transparent;
+  --brand-border:       var(--pm-line-strong);
+
+  background: var(--pm-bg);
+  color: var(--pm-text);
+}
+
+/* Flat buttons and cards inside the scope: no gradient, no blur, no glow. */
+.pm-scope .btn-primary {
+  background: var(--pm-accent);
+  color: var(--pm-accent-text);
+  box-shadow: none;
+}
+.pm-scope .btn-primary:hover {
+  background: var(--pm-accent-hover);
+  box-shadow: none;
+}
+.pm-scope .glass-card,
+.pm-scope .glass-card-flat {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
