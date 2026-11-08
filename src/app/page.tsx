@@ -5,6 +5,7 @@ import PublicNav from '@/components/public/PublicNav'
 import PublicFooter from '@/components/public/PublicFooter'
 import Hero from '@/components/public/landing/Hero'
 import ValueProps from '@/components/public/landing/ValueProps'
+import SchoolLife from '@/components/public/landing/SchoolLife'
 import AudienceSection from '@/components/public/landing/AudienceSection'
 import StatsStrip from '@/components/public/landing/StatsStrip'
 import FeaturedSchools from '@/components/public/landing/FeaturedSchools'
@@ -62,6 +63,7 @@ export default async function RootPage() {
           <StatsStrip />
         </div>
         <ValueProps />
+        <SchoolLife />
         <AudienceSection />
         <FeaturedSchools />
         <FaqSection />
