@@ -25,6 +25,14 @@
 // chip that slides down from the top edge over the page while you pull, then
 // spins while the reload happens. (It used to push the whole page down with
 // your finger, leaving a big empty gap above the content.)
+//
+// Scrolling areas are left alone: the chat and AI screens lock the page to the
+// viewport and scroll a message list *inside* it, so window.scrollY is always 0
+// there. Without the check below, every downward drag in a chat was treated as
+// a pull - it blocked the message list from scrolling and reloaded the page.
+// A touch that starts in one of those screens, in a text field, or inside any
+// element that scrolls on its own is now never a pull-to-refresh. Add
+// data-no-ptr to any other element that should opt out.
 
 import { useEffect, useRef, useState } from 'react'
 import { RefreshIcon } from './Icons'
@@ -35,6 +43,24 @@ const MAX_PULL        = 120  // px - visual cap so the indicator doesn't fly off
 const RESISTANCE      = 0.5  // pull distance grows slower than the finger for a natural feel
 const CHIP_SIZE       = 40   // px - must match .indicator width/height in the CSS module
 const CHIP_REST_GAP   = 28   // px - how far below the top edge the chip rests while loading
+
+// Screens that lock to the viewport and scroll internally (RoleSubHeader /
+// RolePageWrapper fullHeight variants: pageFullHeight, shellFullHeight,
+// mainFull), plus an explicit opt-out attribute.
+const NO_PULL_SELECTOR = '[class*="FullHeight"], [class*="mainFull"], [data-no-ptr]'
+
+function startsInsideOwnScroller(target: EventTarget | null): boolean {
+  let el: Element | null = target instanceof Element ? target : null
+  if (el?.closest(NO_PULL_SELECTOR)) return true
+  while (el && el !== document.body && el !== document.documentElement) {
+    const tag = el.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable) return true
+    const oy = getComputedStyle(el).overflowY
+    if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && el.scrollHeight > el.clientHeight + 1) return true
+    el = el.parentElement
+  }
+  return false
+}
 
 export default function PullToRefresh({ children, disabled = false }: { children: React.ReactNode; disabled?: boolean }) {
   const [pullDistance, setPullDistance] = useState(0)
@@ -50,6 +76,9 @@ export default function PullToRefresh({ children, disabled = false }: { children
       // Only start tracking a possible pull if the page is already scrolled
       // to the very top - otherwise this is just a normal scroll gesture.
       if (window.scrollY > 0) { tracking.current = false; return }
+      // A drag that begins in a chat/AI screen, a text field or any element
+      // with its own scrolling belongs to that element, not to us.
+      if (startsInsideOwnScroller(e.target)) { tracking.current = false; return }
       touchStartY.current = e.touches[0].clientY
       tracking.current = true
     }
