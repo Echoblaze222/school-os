@@ -136,10 +136,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Skip Next.js internals and static files
+  // /branding/ holds the public logo and landing-page photos. Without this
+  // skip, a signed-out visitor's request for an image (including the
+  // /_next/image optimizer's own fetch of it) was redirected to /login and
+  // came back as HTML, so the photo never rendered.
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/fonts/') ||
+    pathname.startsWith('/branding/') ||
     pathname === '/favicon.ico' ||
     pathname === '/manifest.json' ||
     pathname === '/sw.js'
