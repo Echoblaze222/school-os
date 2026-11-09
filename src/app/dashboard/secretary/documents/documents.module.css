@@ -13,7 +13,7 @@
 .searchInput{background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-family:var(--font-body);font-size:.86rem;color:var(--input-text);outline:none;min-width:220px;transition:border-color var(--transition-fast)}
 .searchInput:focus{border-color:var(--input-border-focus)}
 .filterBtn{padding:var(--space-2) var(--space-4);border-radius:var(--radius-full);border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-muted);font-family:var(--font-body);font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all var(--transition-fast);white-space:nowrap}
-.filterBtnActive{background:linear-gradient(135deg,var(--burgundy),var(--burgundy-light));border-color:transparent;color:#fff;box-shadow:0 3px 12px var(--burgundy-glow)}
+.filterBtnActive{background:var(--burgundy);border-color:transparent;color:#fff;box-shadow:0 3px 12px var(--burgundy-glow)}
 .tableWrap{overflow-x:auto;border-radius:var(--radius-xl);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 .table{width:100%;border-collapse:collapse;min-width:600px}
 .tableHead th{padding:var(--space-3) var(--space-5);text-align:left;font-size:.63rem;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--glass-border);white-space:nowrap}
