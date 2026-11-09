@@ -110,7 +110,7 @@
 .stepDone .stepDot { background: var(--brand-subtle); border-color: var(--brand-border); color: var(--brand-light); }
 .stepLine { flex: 1; height: 1px; background: var(--glass-border); min-width: 16px; max-width: 32px; }
 
-/* ── Main ───────────────────────────────────────────────────────── */
+/* ── Main ───────────────────────────────────────────────── */
 .main { flex: 1; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
 
 .card {
