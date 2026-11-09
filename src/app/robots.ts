@@ -29,6 +29,7 @@ export default function robots(): MetadataRoute.Robots {
           '/verify',
           '/splash',
           '/offline',
+          '/service-unavailable',
           '/school-locked',
           '/join',
           '/register-school/pending',

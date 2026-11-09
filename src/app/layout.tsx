@@ -39,6 +39,7 @@ import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import AndroidBackHandler from '@/components/AndroidBackHandler'
+import ServiceStatusBanner from '@/components/ServiceStatusBanner'
 import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 const inter = Inter({
@@ -106,6 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             {children}
             <AndroidBackHandler />
+            <ServiceStatusBanner />
           </ToastProvider>
           <script
             dangerouslySetInnerHTML={{
