@@ -42,7 +42,7 @@ export default function RoleHeroHeader({
 
   return (
     <>
-    <DesktopShell role={role} profile={profile} school={school} featureGroups={featureGroups} />
+    <DesktopShell home role={role} profile={profile} school={school} featureGroups={featureGroups} />
     <header className={styles.hero}>
       <div className={styles.frame}>
         <div className={styles.topRow}>

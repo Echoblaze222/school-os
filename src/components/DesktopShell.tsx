@@ -3,33 +3,43 @@
 // Desktop navigation rail for every role. Hidden below 1024px by CSS, so the
 // mobile experience (hero header + BottomDock) is untouched.
 //
-// It is mounted by RoleSubHeader and RoleHeroHeader, which already receive
-// the role's featureGroups, so every role gets the same sidebar from the one
-// data source that already drives the mobile menu. No per-role wiring.
+// Mounted by RoleSubHeader and RoleHeroHeader (which pass their own
+// featureGroups), by the legacy RoleNav and StudentNav (legacy), and by the
+// server wrapper on the few pages that have a bespoke header. When
+// featureGroups is omitted it is resolved from the role registry.
 //
 // Provides: grouped navigation with a real active state, a collapsible rail
 // (remembered per browser), a Cmd/Ctrl+K command palette, theme toggle,
-// AI Insights shortcut and an account row.
+// AI Insights shortcut, account row and sign out.
 
 import './desktop-shell.css'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import type { FeatureGroup } from './AllFeaturesSheet'
 import CommandPalette from './CommandPalette'
-import { GridIcon, SearchIcon, SparklesIcon, SunIcon, MoonIcon, UserIcon } from './Icons'
+import { GridIcon, SearchIcon, SparklesIcon, SunIcon, MoonIcon, UserIcon, LogOutIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
+import { createClient } from '@/lib/supabase/client'
+import { signOutFlow } from '@/lib/signOutFlow'
+import { getFeatureGroups } from '@/lib/roleFeatureGroups'
 import motion from './dashboard-motion.module.css'
 import styles from './DesktopShell.module.css'
 
 interface Props {
-  role:          string
-  profile:       any
-  school:        any
-  featureGroups: FeatureGroup[]
-  homeHref?:     string
-  aiHref?:       string
+  role:           string
+  profile:        any
+  school:         any
+  featureGroups?: FeatureGroup[]
+  homeHref?:      string
+  aiHref?:        string
+  /** Page already offsets its content by --sidebar-width (RoleNav, StudentNav
+   *  and their consumers). The shell then feeds that variable instead of
+   *  padding the body, so nothing is offset twice. */
+  legacy?:        boolean
+  /** Dashboard home screen. Lets desktop-shell.css flow the cards in columns. */
+  home?:          boolean
 }
 
 const COLLAPSE_KEY = 'schoolos.shell.collapsed'
@@ -41,12 +51,17 @@ function roleLabelOf(role: string) {
     .join(' ')
 }
 
-export default function DesktopShell({ role, profile, school, featureGroups, homeHref, aiHref }: Props) {
+export default function DesktopShell({
+  role, profile, school, featureGroups, homeHref, aiHref, legacy = false, home = false,
+}: Props) {
   const pathname = usePathname() ?? ''
+  const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [isMac, setIsMac] = useState(false)
+
+  const groups: FeatureGroup[] = featureGroups ?? getFeatureGroups(role) ?? []
 
   const resolvedHome    = homeHref ?? `/dashboard/${role}`
   const resolvedAi      = aiHref ?? `/dashboard/${role}/ai`
@@ -70,6 +85,11 @@ export default function DesktopShell({ role, profile, school, featureGroups, hom
     })
   }
 
+  async function handleSignOut() {
+    const supabase = createClient()
+    await signOutFlow(supabase, router)
+  }
+
   // Cmd/Ctrl + K opens the palette from anywhere on the page.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -85,14 +105,14 @@ export default function DesktopShell({ role, profile, school, featureGroups, hom
   // Longest matching href wins, so a parent route never lights up next to its child.
   const activeHref = useMemo(() => {
     let best = ''
-    for (const g of featureGroups) {
+    for (const g of groups) {
       for (const item of g.items) {
         const h = item.href
         if ((pathname === h || pathname.startsWith(h + '/')) && h.length > best.length) best = h
       }
     }
     return best
-  }, [featureGroups, pathname])
+  }, [groups, pathname])
 
   const onHome = pathname === resolvedHome
   const onAi   = pathname === resolvedAi || pathname.startsWith(resolvedAi + '/')
@@ -102,8 +122,9 @@ export default function DesktopShell({ role, profile, school, featureGroups, hom
 
   return (
     <>
+      {home && <span className="sos-home-marker" hidden />}
       <aside
-        className={`sos-shell ${styles.shell} ${collapsed ? styles.collapsed : ''}`}
+        className={`sos-shell ${legacy ? 'sos-shell-legacy' : ''} ${styles.shell} ${collapsed ? styles.collapsed : ''}`}
         data-collapsed={collapsed ? 'true' : 'false'}
         aria-label="Main navigation"
       >
@@ -148,7 +169,7 @@ export default function DesktopShell({ role, profile, school, featureGroups, hom
             {!collapsed && <span className={styles.label}>Overview</span>}
           </Link>
 
-          {featureGroups.map(group => (
+          {groups.map(group => (
             <div key={group.name} className={styles.group}>
               {collapsed
                 ? <div className={styles.groupRule} />
@@ -230,12 +251,23 @@ export default function DesktopShell({ role, profile, school, featureGroups, hom
               </span>
             )}
           </Link>
+
+          <button
+            type="button"
+            className={`${itemClass(false)} ${styles.signOut}`}
+            onClick={handleSignOut}
+            title={collapsed ? 'Sign out' : undefined}
+            aria-label="Sign out"
+          >
+            <span className={styles.icon}><LogOutIcon size={16} color="var(--danger)" /></span>
+            {!collapsed && <span className={styles.label}>Sign out</span>}
+          </button>
         </div>
       </aside>
 
       {paletteOpen && (
         <CommandPalette
-          groups={featureGroups}
+          groups={groups}
           homeHref={resolvedHome}
           aiHref={resolvedAi}
           profileHref={resolvedProfile}

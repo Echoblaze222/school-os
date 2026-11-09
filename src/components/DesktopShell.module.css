@@ -166,12 +166,13 @@
   gap: 2px;
 }
 .aiItem .icon { color: var(--brand); }
+.signOut:hover { background: var(--danger-subtle); color: var(--danger); }
 
 .account {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-top: var(--space-2);
+  margin: var(--space-2) 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
