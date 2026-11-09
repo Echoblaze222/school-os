@@ -54,7 +54,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px; height: 40px;
+  width: 44px; height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -275,7 +275,7 @@
   background: var(--burgundy-subtle);
   border: 1px solid rgba(128,0,32,0.3);
   border-radius: 4px;
-  padding: 1px 5px;
+  padding: 1px 4px;
 }
 .bloodGroupLabel {
   font-family: var(--font-body);
@@ -432,6 +432,7 @@
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
+  min-height: 48px;
   border-radius: var(--radius-xl);
   font-family: var(--font-body);
   font-size: 0.88rem;
