@@ -1,7 +1,7 @@
 /* src/app/dashboard/principal/codes/codes.module.css */
 /* Principal - Generate / View Access Codes */
 
-/* ─── Tab switcher ───────────────────────────────────────────────── */
+/* ─── Tab switcher ──────────────────────────────────────── */
 .tabRow {
   display: flex;
   gap: var(--space-2);
@@ -33,7 +33,7 @@
   background: rgba(128, 0, 32, 0.06);
 }
 
-/* ─── Info banner ───────────────────────────────────────────────── */
+/* ─── Info banner ───────────────────────────────────────── */
 .infoBanner {
   display: flex;
   align-items: flex-start;
@@ -48,7 +48,7 @@
 .infoBannerTitle { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
 .infoBannerSub { font-size: 0.72rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
 
-/* ─── Search ────────────────────────────────────────────────────── */
+/* ─── Search ────────────────────────────────────────────────── */
 .searchWrap {
   display: flex;
   align-items: center;
@@ -75,7 +75,7 @@
 }
 .searchInput::placeholder { color: var(--text-muted); }
 
-/* ─── Role tabs ───────────────────────────────────────────────────── */
+/* ─── Role tabs ───────────────────────────────────────────── */
 .roleTabs {
   display: flex;
   gap: var(--space-2);
@@ -96,7 +96,7 @@
   transition: all var(--transition-fast);
 }
 
-/* ─── Code list (existing) ────────────────────────────────────── */
+/* ─── Code list (existing) ──────────────────────────────── */
 .codeList { display: flex; flex-direction: column; gap: var(--space-3); }
 .codeRow {
   display: flex;
@@ -173,7 +173,7 @@
 .actionBtn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text-primary); }
 .actionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ─── Form card ────────────────────────────────────────────────── */
+/* ─── Form card ─────────────────────────────────────────── */
 .twoCol {
   display: grid;
   grid-template-columns: 1fr;
@@ -294,7 +294,7 @@
 }
 .previewBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ─── Single result card ─────────────────────────────────────── */
+/* ─── Single result card ────────────────────────────── */
 .resultCard {
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -380,7 +380,7 @@
   padding: var(--space-3) var(--space-5) var(--space-5);
 }
 
-/* ─── Bulk section ─────────────────────────────────────────────── */
+/* ─── Bulk section ──────────────────────────────────────── */
 .bulkRoleHints { display: flex; flex-direction: column; gap: var(--space-2); }
 .roleTags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .roleTag {
@@ -468,7 +468,7 @@
 }
 .statusDot { font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
 
-/* ─── Empty state ─────────────────────────────────────────────── */
+/* ─── Empty state ───────────────────────────────────────── */
 .empty {
   text-align: center;
   padding: var(--space-10) var(--space-6);
@@ -477,7 +477,7 @@
 .emptyTitle { font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
 .emptySub { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
 
-/* ─── Responsive ─────────────────────────────────────────────── */
+/* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .codeRow { flex-wrap: wrap; }
   .codeRowActions { width: 100%; justify-content: flex-end; }
@@ -489,7 +489,7 @@
   .bulkRow > *:nth-child(4) { display: none; }
 }
 
-/* ─── Enrol form ────────────────────────────────────────────────── */
+/* ─── Enrol form ──────────────────────────────────────────── */
 .enrolForm {
   max-width: 680px;
 }
@@ -544,7 +544,7 @@
   text-align: center;
 }
 
-/* ─── Code success screen ──────────────────────────────────────── */
+/* ─── Code success screen ──────────────────────────────── */
 .successScreen {
   max-width: 480px;
   display: flex;
