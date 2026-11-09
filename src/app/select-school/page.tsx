@@ -270,7 +270,7 @@ export default function SelectSchoolPage() {
                         <p className={styles.schoolName}>{school.name}</p>
                         <p className={styles.schoolLocation}>
                           {[school.city, school.state].filter(Boolean).join(', ') || 'Nigeria'}
-                          {' \u00b7 '}
+                          {' · '}
                           <span style={{ textTransform: 'capitalize' }}>{school.school_type}</span>
                         </p>
                       </div>
@@ -346,7 +346,7 @@ export default function SelectSchoolPage() {
       </div>
 
       <div className={styles.poweredBy}>
-        Powered by <strong>SchoolOS</strong> \u00b7 Premium School Management
+        Powered by <strong>SchoolOS</strong> &middot; Premium School Management
       </div>
     </div>
   )
