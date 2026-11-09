@@ -48,7 +48,7 @@
 .infoBannerTitle { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
 .infoBannerSub { font-size: 0.72rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
 
-/* ─── Search ────────────────────────────────────────────────── */
+/* ─── Search ────────────────────────────────────────────── */
 .searchWrap {
   display: flex;
   align-items: center;
@@ -75,7 +75,7 @@
 }
 .searchInput::placeholder { color: var(--text-muted); }
 
-/* ─── Role tabs ───────────────────────────────────────────── */
+/* ─── Role tabs ────────────────────────────────────────────── */
 .roleTabs {
   display: flex;
   gap: var(--space-2);
@@ -294,7 +294,7 @@
 }
 .previewBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ─── Single result card ────────────────────────────── */
+/* ─── Single result card ────────────────────────────────── */
 .resultCard {
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -544,7 +544,7 @@
   text-align: center;
 }
 
-/* ─── Code success screen ──────────────────────────────── */
+/* ─── Code success screen ────────────────────────────────── */
 .successScreen {
   max-width: 480px;
   display: flex;
