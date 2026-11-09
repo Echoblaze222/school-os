@@ -65,3 +65,37 @@
 @media (max-width: 480px) {
   .pageTitle { max-width: 140px; }
 }
+
+/* Desktop top bar. The sidebar (DesktopShell) carries the school badge and
+   the account, so this shrinks to a quiet sticky bar on the page surface.
+   Solid colours only. Nothing here applies below 1024px. */
+@media (min-width: 1024px) {
+  .header {
+    background: var(--nav-bg);
+    color: var(--text-primary);
+    border-top: 3px solid var(--brand);
+    border-bottom: 1px solid var(--glass-border);
+    padding: var(--space-3) var(--space-8);
+    min-height: 60px;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+  .schoolBadge { display: none; }
+  .avatar { display: none; }
+
+  .pageTitle {
+    font-size: 1.2rem;
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
+    max-width: none;
+  }
+  .pageSubtitle { color: var(--text-muted); }
+
+  .iconBtn {
+    width: 38px; height: 38px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+  }
+  .iconBtn:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
+}

@@ -3,11 +3,15 @@
 // Generic chalkboard-ledger header for any role's dashboard home screen.
 // Reuses the app's real NotificationsBell and useTheme rather than
 // re-implementing either. Principal's page now uses this too (see below).
+//
+// On desktop (1024px and up) the band becomes a quiet greeting area on the
+// page surface and DesktopShell supplies the sidebar. Mobile is unchanged.
 
 import Link from 'next/link'
 import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
+import DesktopShell from './DesktopShell'
 import GlobalSearchOverlay from './GlobalSearchOverlay'
 import RoleHomeCharts from './analytics/RoleHomeCharts'
 import { SunIcon, MoonIcon, UserIcon, TagIcon } from './Icons'
@@ -38,6 +42,7 @@ export default function RoleHeroHeader({
 
   return (
     <>
+    <DesktopShell home role={role} profile={profile} school={school} featureGroups={featureGroups} />
     <header className={styles.hero}>
       <div className={styles.frame}>
         <div className={styles.topRow}>
@@ -66,10 +71,10 @@ export default function RoleHeroHeader({
               </Link>
             )}
 
-            <GlobalSearchOverlay triggerClassName={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`} />
+            <GlobalSearchOverlay triggerClassName={`${styles.iconBtn} ${styles.mobileOnly} ${motion.rippleHost} ${motion.focusable}`} />
 
             <button
-              className={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`}
+              className={`${styles.iconBtn} ${styles.mobileOnly} ${motion.rippleHost} ${motion.focusable}`}
               onClick={toggleTheme}
               title="Toggle dark mode"
               aria-label="Toggle dark mode"
@@ -82,7 +87,7 @@ export default function RoleHeroHeader({
 
             <Link
               href={`/dashboard/${role}/profile`}
-              className={`${styles.avatarBtn} ${motion.focusable}`}
+              className={`${styles.avatarBtn} ${styles.mobileOnly} ${motion.focusable}`}
               title="Account"
               aria-label="Account"
             >
@@ -91,7 +96,9 @@ export default function RoleHeroHeader({
                 : <UserIcon size={18} />}
             </Link>
 
-            <AllFeaturesSheet groups={featureGroups} role={role} />
+            <span className={styles.mobileOnly}>
+              <AllFeaturesSheet groups={featureGroups} role={role} />
+            </span>
           </div>
         </div>
 

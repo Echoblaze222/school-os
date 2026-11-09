@@ -1,23 +1,16 @@
 'use client'
+// components/StudentNav.tsx
+// Student pages that predate RoleSubHeader. The desktop sidebar is now the
+// shared DesktopShell (same data as every other role); the mobile bottom nav
+// is unchanged.
+
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import {
-  HomeIcon, BookIcon, BarChartIcon, MessageIcon,
-  AiIcon, BellIcon, UserIcon,
-  ClipboardIcon, TrophyIcon, CalendarIcon,
-  VideoIcon, ClockIcon, LogOutIcon,
-  AwardIcon, MegaphoneIcon, IdCardIcon, GlobeIcon,
-  FileTextIcon, BookOpenIcon,
-  SunIcon, MoonIcon,
-} from './Icons'
-import { useTheme } from '@/hooks/useTheme'
-import { createClient } from '@/lib/supabase/client'
-import { signOutFlow } from '@/lib/signOutFlow'
-import { useRouter } from 'next/navigation'
-import styles from './StudentNav.module.css'
 import React from 'react'
-// ✅ Define a type for icon components
+import { HomeIcon, BookIcon, BarChartIcon, MessageIcon, AiIcon } from './Icons'
+import DesktopShell from './DesktopShell'
+import styles from './StudentNav.module.css'
+
 type IconComponent = (props: { size?: number; color?: string; strokeWidth?: number }) => React.ReactElement
 
 interface Props {
@@ -27,7 +20,6 @@ interface Props {
   schoolColor?: string
 }
 
-// ✅ Type the nav item arrays
 interface NavItem {
   href:   string
   Icon:   IconComponent
@@ -50,57 +42,8 @@ const BOTTOM_NAV: BottomNavItem[] = [
   { href: '/dashboard/student/ai',      Icon: AiIcon,        label: 'AI'      },
 ]
 
-interface SidebarItem {
-  href:  string
-  Icon:  IconComponent
-  label: string
-}
-interface SidebarSection {
-  label: string
-  items: SidebarItem[]
-}
-
-const SIDEBAR_SECTIONS: SidebarSection[] = [
-  {
-    label: 'Main',
-    items: [
-      { href: '/dashboard/student',               Icon: HomeIcon,      label: 'Dashboard'     },
-      { href: '/dashboard/student/ai',            Icon: AiIcon,        label: 'AI Tutor'      },
-      { href: '/dashboard/student/chat',          Icon: MessageIcon,   label: 'Messages'      },
-      { href: '/dashboard/student/notifications', Icon: BellIcon,      label: 'Notifications' },
-    ],
-  },
-  {
-    label: 'Academics',
-    items: [
-      { href: '/dashboard/student/assignments', Icon: ClipboardIcon, label: 'Assignments'  },
-      { href: '/dashboard/student/results',     Icon: BarChartIcon,  label: 'Results'      },
-      { href: '/dashboard/student/quizzes',     Icon: AwardIcon,     label: 'Quizzes'      },
-      { href: '/dashboard/student/notes',       Icon: BookIcon,      label: 'Notes'        },
-      { href: '/dashboard/student/library',     Icon: BookIcon,      label: 'Library'      },
-      { href: '/dashboard/student/syllabus',    Icon: BookOpenIcon,  label: 'Syllabus'     },
-      { href: '/dashboard/student/timetable',   Icon: ClockIcon,     label: 'Timetable'    },
-      { href: '/dashboard/student/live',        Icon: VideoIcon,     label: 'Live Classes' },
-      { href: '/dashboard/student/schedule',    Icon: CalendarIcon,  label: 'Study Plan'   },
-    ],
-  },
-  {
-    label: 'Personal',
-    items: [
-      { href: '/dashboard/student/profile',       Icon: UserIcon,      label: 'My Profile'  },
-      { href: '/dashboard/student/records',       Icon: FileTextIcon,  label: 'Records'     },
-      { href: '/dashboard/student/id-card',       Icon: IdCardIcon,    label: 'ID Card'     },
-      { href: '/dashboard/student/leaderboard',   Icon: TrophyIcon,    label: 'Leaderboard' },
-      { href: '/dashboard/student/announcements', Icon: MegaphoneIcon, label: 'Notices'     },
-      { href: '/dashboard/student/alumni',        Icon: GlobeIcon,     label: 'Alumni'      },
-    ],
-  },
-]
-
-export default function StudentNav({ userId, profile, school, schoolColor = '#7C3AED' }: Props) {
+export default function StudentNav({ profile, school, schoolColor = '#7C3AED' }: Props) {
   const pathname = usePathname()
-  const router   = useRouter()
-  const { theme, toggleTheme } = useTheme()
 
   function isActive(href: string, isHome?: boolean) {
     if (isHome) return pathname === '/dashboard/student'
@@ -108,75 +51,9 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
     return pathname.startsWith(href)
   }
 
-  async function handleLogout() {
-    const supabase = createClient()
-    await signOutFlow(supabase, router)
-  }
-
-  const firstName = profile?.full_name?.split(' ')[0] ?? 'Student'
-
   return (
     <>
-      {/* -- DESKTOP SIDEBAR -------------------------------- */}
-      <aside className={styles.sidebar}>
-
-        {/* School branding */}
-        <div className={styles.sidebarHeader}>
-          <div
-            className={styles.schoolBadge}
-            style={{ background: schoolColor }}
-          >
-            {school?.logo_url
-              ? <Image src={school.logo_url} alt="" width={40} height={40} className={styles.schoolLogo} />
-              : <span>{school?.name?.[0] ?? 'S'}</span>
-            }
-          </div>
-          <div className={styles.schoolInfo}>
-            <p className={styles.schoolName}>{school?.name ?? 'SchoolOS'}</p>
-            <p className={styles.schoolRole}>Student Portal</p>
-          </div>
-        </div>
-
-        <div className={styles.divider} />
-
-        {/* Nav sections */}
-        <nav className={styles.sidebarNav}>
-          {SIDEBAR_SECTIONS.map(section => (
-            <div key={section.label} className={styles.navSection}>
-              <p className={styles.navSectionLabel}>{section.label}</p>
-              {section.items.map(item => {
-                const Icon   = item.Icon
-                const active = isActive(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
-                    style={active ? { color: schoolColor } as React.CSSProperties : undefined}
-                  >
-                    <Icon size={17} color={active ? schoolColor : undefined} />
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          ))}
-        </nav>
-
-        <div className={styles.divider} />
-
-        {/* Sidebar footer */}
-        <div className={styles.sidebarFooter}>
-          <button className={styles.themeBtn} onClick={toggleTheme}>
-            {theme === 'dark' ? <SunIcon size={15} /> : <MoonIcon size={15} />}
-            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          </button>
-          <button className={styles.logoutBtn} onClick={handleLogout}>
-            <LogOutIcon size={15} color="var(--danger)" />
-            <span>Sign out</span>
-          </button>
-        </div>
-      </aside>
+      <DesktopShell legacy role="student" profile={profile} school={school} />
 
       {/* -- MOBILE BOTTOM NAV ------------------------------ */}
       <nav className={styles.bottomNav}>
@@ -194,12 +71,9 @@ export default function StudentNav({ userId, profile, school, schoolColor = '#7C
               </Link>
             )
           }
-          // Explicit narrowing: `if (item.home)` above already proves this
-          // is the NavItem branch of the union at runtime, but the
-          // installed TS/React type versions weren't resolving that
-          // discriminant automatically, which surfaced as "Icon does not
-          // have any construct or call signatures." Assert instead of
-          // silently loosening the type.
+          // Explicit narrowing: the installed TS/React types did not resolve the
+          // discriminant automatically, which surfaced as "Icon does not have any
+          // construct or call signatures". Assert instead of loosening the type.
           const navItem = item as unknown as NavItem
           const Icon   = navItem.Icon
           const active = isActive(navItem.href)

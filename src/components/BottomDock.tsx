@@ -4,6 +4,9 @@
 // (RoleHeroHeader) and every sub-page (RoleSubHeader): Menu (opens the
 // same "all features" sheet used in the header) and AI (the role's AI
 // Insights page). Menu replaces the old Home button.
+//
+// On desktop (1024px and up) the DesktopShell sidebar takes over this job;
+// the data-mobile-dock attribute is the hook desktop-shell.css uses to hide it.
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -28,7 +31,7 @@ export default function BottomDock({ aiHref, groups, role }: Props) {
 
   return (
     <>
-      <div className={styles.dock}>
+      <div className={styles.dock} data-mobile-dock>
         <button
           className={`${styles.btn} ${motion.rippleHost} ${motion.focusable}`}
           onClick={() => setMenuOpen(true)}

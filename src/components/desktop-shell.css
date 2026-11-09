@@ -1,0 +1,64 @@
+/* components/desktop-shell.css
+   Global rules for the desktop shell. These have to be global (not a CSS
+   module) because they act on <body>, <main> and the mobile dock, which live
+   outside the shell's own markup.
+
+   Everything here sits behind the 1024px breakpoint, so phones and
+   tablets render exactly as before.
+
+   The :has() selectors mean the page only reserves room for the sidebar
+   when a sidebar is actually mounted. */
+
+:root {
+  --shell-w: 264px;
+}
+
+@media (min-width: 1024px) {
+  :root:has(.sos-shell[data-collapsed="true"]) {
+    --shell-w: 76px;
+  }
+
+  /* Pages built on RoleSubHeader, RoleHeroHeader or the server wrapper:
+     the body reserves room for the fixed sidebar. */
+  body:has(.sos-shell):not(:has(.sos-shell-legacy)) {
+    padding-left: var(--shell-w);
+    transition: padding-left var(--transition-normal);
+  }
+
+  /* Legacy pages (RoleNav, StudentNav and everything wrapped by them) already
+     push their content right with margin-left: var(--sidebar-width), and some
+     pin fixed bars to left: var(--sidebar-width). Pointing that variable at
+     the live shell width keeps all of them aligned, including when the rail
+     is collapsed, without editing a single page stylesheet. */
+  body:has(.sos-shell-legacy) {
+    --sidebar-width: var(--shell-w);
+  }
+
+  /* The floating Menu / AI pill has no job once the sidebar exists. */
+  body:has(.sos-shell) [data-mobile-dock] {
+    display: none !important;
+  }
+
+  /* Content area: use the room desktop gives us instead of a phone column. */
+  body:has(.sos-shell) main {
+    max-width: 1240px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Dashboard home screens: flow the stacked cards into two columns.
+     The first block (usually the KPI strip) spans both. If a page's <main>
+     is a flex or grid container, column-count simply has no effect there,
+     so this degrades to the single wide column. */
+  body:has(.sos-home-marker) main {
+    column-count: 2;
+    column-gap: var(--space-6);
+  }
+  body:has(.sos-home-marker) main > * {
+    break-inside: avoid;
+  }
+  body:has(.sos-home-marker) main > :first-child {
+    column-span: all;
+  }
+}
