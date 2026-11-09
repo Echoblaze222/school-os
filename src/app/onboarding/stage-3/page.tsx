@@ -14,6 +14,10 @@
 //
 // Once you add DOJAH_APP_ID + DOJAH_API_KEY to Vercel env vars,
 // the full live verification flow resumes automatically - no code change needed.
+//
+// Premium black / white: flat canvas, hairline card, and ONE accent. The header
+// tile, the progress dot and the main action are solid brand color (no green
+// gradient, no glow). Green stays only where it means "verified".
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -174,7 +178,7 @@ export default function OnboardingStage3() {
   const ninIndicator = () => {
     if (ninStatus === 'verifying') return (
       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-        <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#800020', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+        <span style={{ width: 12, height: 12, border: '2px solid var(--glass-border-hover)', borderTopColor: 'var(--brand)', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
         Verifying with NIMC...
       </span>
     )
@@ -198,29 +202,30 @@ export default function OnboardingStage3() {
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: 20 }}>
-      <div style={{ width: '100%', maxWidth: 440, background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: 24, padding: 40, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+      <div style={{ width: '100%', maxWidth: 440, background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: 24, padding: 40, boxShadow: 'var(--glass-shadow, none)' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg,#10B981,#059669)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}><CameraIcon size={28} color="#fff" strokeWidth={2} /></div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
+          <div style={{ width: 56, height: 56, background: 'var(--brand)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><CameraIcon size={28} color="#fff" strokeWidth={2} /></div>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>Final Step</h1>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Step 3 of 3: Passport photo &amp; NIN verification</p>
         </div>
 
         {/* Progress dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
           {[1, 2, 3].map(n => (
-            <div key={n} style={{ width: n === 3 ? 24 : 8, height: 8, borderRadius: 99, background: n === 3 ? '#10B981' : 'var(--glass-border)', transition: 'all 0.3s' }} />
+            <div key={n} style={{ width: n === 3 ? 24 : 8, height: 8, borderRadius: 99, background: n === 3 ? 'var(--brand)' : 'var(--glass-border-hover)', transition: 'all 0.3s' }} />
           ))}
         </div>
 
         {/* Bypass info banner - only shown when API keys not set */}
         {ninBypassed && (
           <div style={{
-            background: 'rgba(245,158,11,0.08)',
-            border: '1px solid rgba(245,158,11,0.3)',
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderLeft: '2px solid #F59E0B',
             borderRadius: 12, padding: '12px 16px', marginBottom: 20,
-            fontSize: '0.78rem', color: '#F59E0B', lineHeight: 1.5,
+            fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5,
           }}>
             ℹ️ Live NIN verification is not yet active on this platform. Your NIN will be recorded and verified by your school admin. You can still complete setup now.
           </div>
@@ -231,12 +236,12 @@ export default function OnboardingStage3() {
           {/* Photo upload */}
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Passport Photo</label>
-            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 24, background: 'var(--glass-bg)', border: `2px dashed ${preview ? '#10B981' : 'var(--glass-border)'}`, borderRadius: 16, cursor: 'pointer', transition: 'border-color 0.2s' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 24, background: 'var(--glass-bg)', border: `2px dashed ${preview ? '#10B981' : 'var(--glass-border-hover)'}`, borderRadius: 16, cursor: 'pointer', transition: 'border-color 0.2s' }}>
               {preview
                 ? <img src={preview} alt="Preview" style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '3px solid #10B981' }} />
                 : <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--glass-bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>👤</div>
               }
-              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: preview ? '#10B981' : 'var(--brand-light)' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: preview ? '#10B981' : 'var(--accent-text)' }}>
                 {preview ? '✓ Photo uploaded, tap to change' : 'Tap to upload'}
               </span>
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhoto} />
@@ -343,22 +348,19 @@ export default function OnboardingStage3() {
             disabled={loading || !canSubmit}
             style={{
               width: '100%', height: 50,
-              background: canSubmit
-                ? 'linear-gradient(135deg,#10B981,#059669)'
-                : 'var(--glass-bg)',
+              background: canSubmit ? 'var(--brand)' : 'var(--glass-bg)',
               color:  canSubmit ? '#fff' : 'var(--text-muted)',
               border: canSubmit ? 'none' : '1px solid var(--glass-border)',
               borderRadius: 12, fontSize: '0.9rem', fontWeight: 700,
               cursor: canSubmit ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: canSubmit ? '0 4px 16px rgba(16,185,129,0.3)' : 'none',
-              transition: 'all 0.25s',
+              transition: 'background 0.25s',
               opacity: loading ? 0.7 : 1,
             }}
           >
             {loading
               ? <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
-              : canSubmit ? '🚀 Complete Setup' : 'Upload photo to continue'
+              : canSubmit ? 'Complete Setup' : 'Upload photo to continue'
             }
           </button>
 
@@ -367,5 +369,4 @@ export default function OnboardingStage3() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
-                       }
-      
+}

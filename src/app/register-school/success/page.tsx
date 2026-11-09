@@ -74,13 +74,12 @@ function RegistrationSuccessContent() {
           </ol>
         </div>
 
+        {/* Solid school color (no gradient); falls back to the brand color. */}
         <button
           className="btn btn-primary"
           onClick={() => router.push('/select-school')}
           style={{
-            background: school?.primary_color
-              ? `linear-gradient(135deg, ${school.primary_color}, ${school.primary_color}CC)`
-              : undefined,
+            background: school?.primary_color || undefined,
             width: '100%',
           }}
         >
