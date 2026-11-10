@@ -3,7 +3,9 @@
 // Covers the app-launch path through src/middleware.ts: what happens when a
 // signed-in user opens '/' or '/dashboard' (which is exactly what the Android
 // shell does on every cold start), and that the checks that must NOT be
-// skipped - onboarding, role boundary, school lock - still win.
+// skipped - onboarding, role boundary, school lock - still win. Also covers the
+// outage handling: when Supabase cannot be reached the person is sent to
+// /service-unavailable, not treated as signed out or as having the wrong role.
 //
 // Supabase isn't reachable from the sandbox/CI, so @supabase/ssr is mocked
 // with just enough of the chainable query builder for the middleware's real
@@ -22,6 +24,10 @@ let apptRow: Row
 let fromCalls: string[]
 let authCalls: string[]
 let refreshCookie: boolean
+// Outage simulation: the auth service is unreachable, and/or the profile
+// query comes back with an error + status (0 = network failure, 5xx = backend).
+let authOutage: boolean
+let profileResult: { error: { message: string } | null; status: number }
 
 vi.mock('@supabase/ssr', () => ({
   createServerClient: (
@@ -34,6 +40,9 @@ vi.mock('@supabase/ssr', () => ({
       // verification) - never getUser(), which is a network call each time.
       getClaims: async () => {
         authCalls.push('getClaims')
+        if (authOutage) {
+          return { data: null, error: { name: 'AuthRetryableFetchError', status: 0, message: 'fetch failed' } }
+        }
         // Simulate Supabase refreshing the session: it writes a new cookie
         // through the cookies adapter while resolving the claims.
         if (refreshCookie) opts.cookies.setAll([{ name: 'sb-test-auth-token', value: 'refreshed', options: { path: '/' } }])
@@ -50,8 +59,12 @@ vi.mock('@supabase/ssr', () => ({
     from: (table: string) => {
       fromCalls.push(table)
       const builder: Record<string, unknown> = {}
-      for (const m of ['select', 'eq', 'in', 'limit']) builder[m] = () => builder
-      builder.single = async () => ({ data: table === 'profiles' ? profileRow : null })
+      // abortSignal: the middleware gives the profile query a timeout.
+      for (const m of ['select', 'eq', 'in', 'limit', 'abortSignal']) builder[m] = () => builder
+      builder.single = async () => ({
+        data: table === 'profiles' ? profileRow : null,
+        ...(table === 'profiles' ? profileResult : {}),
+      })
       builder.maybeSingle = async () => ({ data: table === 'appointments' ? apptRow : null })
       return builder
     },
@@ -79,6 +92,8 @@ beforeEach(() => {
   fromCalls = []
   authCalls = []
   refreshCookie = false
+  authOutage = false
+  profileResult = { error: null, status: 200 }
 })
 
 describe('dashboardDestination (pure)', () => {
@@ -219,5 +234,48 @@ describe('session cookies survive the launch redirects', () => {
     refreshCookie = true
     const res = await middleware(req('/dashboard'))
     expect(res.headers.getSetCookie().join(';')).toContain('sb-test-auth-token=refreshed')
+  })
+})
+
+describe('a Supabase outage is not mistaken for being signed out or having the wrong role', () => {
+  it('auth service unreachable on a private page goes to /service-unavailable, not /login', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/service-unavailable?next=%2Fdashboard%2Fstudent')
+    expect(fromCalls).toEqual([])
+  })
+  it('auth outage keeps the query string so the person returns to the same page', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/dashboard/student?tab=fees')))).toBe(
+      '/service-unavailable?next=%2Fdashboard%2Fstudent%3Ftab%3Dfees',
+    )
+  })
+  it('auth outage does not block public pages', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/find-schools')))).toBeNull()
+    expect(location(await middleware(req('/')))).toBeNull()
+    expect(location(await middleware(req('/login')))).toBeNull()
+  })
+  it('the holding page and the health probe stay reachable during an outage (no redirect loop)', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/service-unavailable')))).toBeNull()
+    expect(location(await middleware(req('/api/health')))).toBeNull()
+  })
+  it('database unreachable (status 0) on a dashboard goes to /service-unavailable, not /login', async () => {
+    profileRow = null
+    profileResult = { error: { message: 'TypeError: fetch failed' }, status: 0 }
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/service-unavailable?next=%2Fdashboard%2Fstudent')
+  })
+  it('database 5xx on a dashboard goes to /service-unavailable', async () => {
+    profileRow = null
+    profileResult = { error: { message: 'Bad gateway' }, status: 502 }
+    expect(location(await middleware(req('/dashboard')))).toBe('/service-unavailable?next=%2Fdashboard')
+  })
+  it('a normal "no row" answer (406) is not an outage and is handled as before', async () => {
+    profileRow = null
+    profileResult = { error: { message: 'JSON object requested, multiple (or no) rows returned' }, status: 406 }
+    expect(location(await middleware(req('/dashboard')))).toBeNull()
+  })
+  it('a healthy backend is unaffected', async () => {
+    expect(location(await middleware(req('/dashboard')))).toBe('/dashboard/student')
   })
 })
