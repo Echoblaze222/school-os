@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: 'Who can use SchoolOS?',
-    a: 'Principals and proprietors, teachers, bursars, secretaries, students and parents. Each role gets its own dashboard that shows only what that person needs, so nobody has to dig through screens that are not meant for them.',
+    a: 'Principals and proprietors, teachers, bursars, secretaries, students and parents each get their own dashboard. Staff can also be appointed to additional roles: vice principal, examination officers and invigilators, counselors, ICT officers, hostel wardens and house parents, nurses, librarians and coaches. Every person sees only the tools their role needs.',
   },
   {
     q: 'Do parents and students need to install an app?',
