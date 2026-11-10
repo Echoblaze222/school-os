@@ -6,8 +6,8 @@
 // here describes behaviour that already exists in the product.
 //
 // Pricing figures come from src/lib/billing.ts (per-student term rates,
-// yearly discount, grace period, platform fee). If those constants change,
-// update the first and fifth answers below to match.
+// yearly discount, grace period, platform fee and its cap). If those
+// constants change, update the first and fifth answers below to match.
 
 import { useState } from 'react'
 import { ChevronDownIcon, CheckIcon } from '@/components/Icons'
@@ -23,17 +23,17 @@ type Faq = {
 const FAQS: Faq[] = [
   {
     q: 'How much does SchoolOS cost?',
-    lead: 'Registering your school is free. After that, you pay a subscription each term, based on how many active students your school has.',
+    lead: 'SchoolOS is free to join, with simple pricing that grows with your school: one rate per student each term, and every feature included.',
     points: [
-      'There is no setup fee, and your first four months (one term) start at no charge.',
-      'After that, the subscription is per active student, per four-month term: \u20a61,000 for schools up to 250 students, \u20a62,000 for 251 to 500, and \u20a63,000 for 501 and above.',
-      'The rate for your school\u2019s size applies to all your students. For example, a school with 200 students pays \u20a6200,000 a term.',
-      'Pay for a full year (three terms) at once and take 20% off.',
-      'Billing uses the highest number of active students during the period, so the figure stays fair and predictable.',
-      'Every school gets the same full set of features, whatever its size.',
-      'Your principal renews online with Paystack under Subscriptions in the dashboard, and gets a 7-day grace period after a term ends before access is restricted.',
+      'Free to join: there is no setup fee, and your first four months (one term) are included so you can see the results for yourself.',
+      'One clear rate per active student, per four-month term: \u20a61,000 for schools up to 250 students, \u20a62,000 for 251 to 500, and \u20a63,000 for 501 and above.',
+      'The rate for your school\u2019s size covers all your students. A school with 200 students, for example, pays \u20a6200,000 a term, which is \u20a61,000 per pupil for results, fees, attendance and live classes in one place.',
+      'The same full set of features at every size, so a small school gets the same tools as a large one.',
+      'Save 20% when you pay for the full year (three terms) at once.',
+      'Your subscription reflects the highest number of active students enrolled during the term.',
+      'Your principal renews online with Paystack under Subscriptions in the dashboard, with a 7-day grace period after a term ends so a late renewal never interrupts teaching.',
     ],
-    note: 'Online school-fee payments from parents carry a separate platform fee of 3%, capped at \u20a610,000 per payment.',
+    note: 'Online school-fee payments from parents carry a platform fee of 3%, and it never exceeds \u20a610,000 per payment, however large the payment.',
   },
   {
     q: 'How do we get started?',
@@ -70,12 +70,12 @@ const FAQS: Faq[] = [
   },
   {
     q: 'How are school fees collected?',
-    lead: 'Through Paystack, with the money paid out to your school\u2019s own account.',
+    lead: 'Through Paystack, with payments paid out to your school\u2019s own account.',
     points: [
       'Parents pay in the app, from their phone, without a trip to the school office.',
       'Each payment produces an instant digital receipt.',
-      'Your bursar sees payments reflected in the dashboard in real time.',
-      'A platform fee of 3%, capped at \u20a610,000 per payment, is taken from each online payment before the rest reaches your school.',
+      'Your bursar sees payments reflected in the dashboard in real time, so the school\u2019s records and the parent\u2019s receipt always agree.',
+      'A platform fee of 3% applies to each online payment, and it never exceeds \u20a610,000 per payment, however large the payment.',
     ],
   },
   {
