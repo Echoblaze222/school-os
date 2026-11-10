@@ -146,7 +146,7 @@
 .scoreValue { font-size: 1rem; font-weight: 800; color: var(--text-primary); }
 .scorePts   { font-size: 0.65rem; color: var(--text-faint); }
 
-/* ── Expanded detail rows ──────────────────────────────── */
+/* ── Expanded detail rows ────────────────────────────────── */
 .expandedDetail {
   display: flex; flex-direction: column; gap: 6px;
   margin-top: 12px; padding-top: 12px;
