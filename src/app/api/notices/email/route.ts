@@ -2,7 +2,9 @@
 // Emails important school notices (and adds an in-app notification).
 //
 //   Meeting notice:
-//     { kind: 'meeting', title, date, time, venue, note?, audience: 'parents' | 'teachers' | 'all' }
+//     { kind: 'meeting', title, date, time, venue, note?,
+//       audience: 'parents' | 'teachers' | 'staff' | 'all' | 'class_parents',
+//       class_id? }                      (class_id required for 'class_parents')
 //   Results published:
 //     { kind: 'results', term, session, class_id? }   (emails parents of active students)
 //
@@ -21,6 +23,10 @@ export const maxDuration = 60
 
 const ALLOWED_ROLES = [
   'principal', 'vice_principal', 'vice-principal', 'secretary', 'examination', 'super_admin',
+]
+const STAFF_ROLES = [
+  'teacher', 'vice_principal', 'vice-principal', 'bursar', 'secretary', 'counselor',
+  'nurse', 'librarian', 'ict', 'examination', 'hostel', 'coach',
 ]
 const MAX_RECIPIENTS = 500
 const CONCURRENCY = 5
@@ -87,28 +93,63 @@ export async function POST(req: NextRequest) {
     const title = clean(body.title, 120)
     const date = clean(body.date, 60)
     const time = clean(body.time, 40)
-    const venue = clean(body.venue, 120)
+    const venue = clean(body.venue, 300)
     const note = clean(body.note, 500) || undefined
     const audience = body.audience
 
     if (!title || !date || !time || !venue) {
       return NextResponse.json({ error: 'title, date, time and venue are required' }, { status: 400 })
     }
-    if (!['parents', 'teachers', 'all'].includes(audience)) {
-      return NextResponse.json({ error: "audience must be 'parents', 'teachers' or 'all'" }, { status: 400 })
+    if (!['parents', 'teachers', 'staff', 'all', 'class_parents'].includes(audience)) {
+      return NextResponse.json({ error: 'Invalid audience' }, { status: 400 })
     }
 
-    const roles = audience === 'parents' ? ['parent'] : audience === 'teachers' ? ['teacher'] : ['parent', 'teacher']
-    const { data: people, error } = await admin
-      .from('profiles')
-      .select('id, email, full_name, role')
-      .eq('school_id', profile.school_id)
-      .in('role', roles)
-      .not('email', 'is', null)
-      .limit(MAX_RECIPIENTS)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    let people: any[] = []
 
-    recipients = (people ?? []).map((p: any) => ({
+    if (audience === 'class_parents') {
+      const classId = clean(body.class_id, 64)
+      if (!classId) {
+        return NextResponse.json({ error: "class_id is required for audience 'class_parents'" }, { status: 400 })
+      }
+      const { data: studs, error: studErr } = await admin
+        .from('profiles')
+        .select('parent_id')
+        .eq('school_id', profile.school_id)
+        .eq('role', 'student')
+        .eq('is_active', true)
+        .eq('class_id', classId)
+        .not('parent_id', 'is', null)
+        .limit(MAX_RECIPIENTS * 3)
+      if (studErr) return NextResponse.json({ error: studErr.message }, { status: 500 })
+
+      const pids = Array.from(new Set((studs ?? []).map((s: any) => s.parent_id))).slice(0, MAX_RECIPIENTS)
+      if (pids.length) {
+        const { data, error } = await admin
+          .from('profiles')
+          .select('id, email, full_name, role')
+          .in('id', pids)
+          .not('email', 'is', null)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        people = data ?? []
+      }
+    } else {
+      const roles =
+        audience === 'parents' ? ['parent']
+        : audience === 'teachers' ? ['teacher']
+        : audience === 'staff' ? STAFF_ROLES
+        : ['parent', 'teacher']
+      const { data, error } = await admin
+        .from('profiles')
+        .select('id, email, full_name, role')
+        .eq('school_id', profile.school_id)
+        .in('role', roles)
+        .not('email', 'is', null)
+        .limit(MAX_RECIPIENTS)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      people = data ?? []
+    }
+
+    recipients = people.map((p: any) => ({
       id: p.id, email: p.email, name: p.full_name ?? 'there', role: p.role,
     }))
 
