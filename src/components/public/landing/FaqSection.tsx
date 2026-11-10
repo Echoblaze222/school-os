@@ -8,19 +8,31 @@ import styles from './FaqSection.module.css'
 const FAQS = [
   {
     q: 'How much does SchoolOS cost?',
-    a: 'Registration is a one-time setup fee of \u20a6150,000, or \u20a650,000 across three monthly installments. This covers your school\u2019s portal setup and onboarding. You can review the full breakdown during registration before you pay anything.',
+    a: 'Registering your school is free, and your portal goes live as soon as you finish setup. Every school gets the same full set of features. Your principal can review subscription and billing details under Subscriptions in the dashboard.',
+  },
+  {
+    q: 'How do we get started?',
+    a: 'Register your school, which takes a few minutes, and follow the step-by-step setup. Your principal then adds staff, classes and students. Each person receives an access code from the school, which they use to activate their account and choose a password.',
+  },
+  {
+    q: 'Who can use SchoolOS?',
+    a: 'Principals and proprietors, teachers, bursars, secretaries, students and parents. Each role gets its own dashboard that shows only what that person needs, so nobody has to dig through screens that are not meant for them.',
   },
   {
     q: 'Do parents and students need to install an app?',
     a: 'No installation required. SchoolOS runs in the browser and can be added to a phone\u2019s home screen like an app, so it works on the devices your school community already has.',
   },
   {
-    q: 'Can we control what shows on our public school profile?',
-    a: 'Yes. Public listing is opt-in and off by default. Once enabled from your school\u2019s Settings, you choose what appears: description, facilities, programs, admission status, and photos. Internal records, staff information, and financial data are never shown publicly.',
-  },
-  {
     q: 'How are school fees collected?',
     a: 'Through Paystack, directly into your school\u2019s own account. Parents pay in-app and receive an instant digital receipt; your bursar sees payments reflected in the dashboard in real time.',
+  },
+  {
+    q: 'Is our school\u2019s data private?',
+    a: 'Each school\u2019s records are kept separate from every other school\u2019s, and people only see what their role allows. A teacher cannot open the principal\u2019s pages, and students and parents see only their own or their child\u2019s records.',
+  },
+  {
+    q: 'Can we control what shows on our public school profile?',
+    a: 'Yes. Public listing is opt-in and off by default. Once enabled from your school\u2019s Settings, you choose what appears: description, facilities, programs, admission status, and photos. Internal records, staff information, and financial data are never shown publicly.',
   },
   {
     q: 'What happens to our data if we stop using SchoolOS?',
