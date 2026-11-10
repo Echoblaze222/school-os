@@ -7,7 +7,7 @@ import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { MessageIcon, SendIcon, PaperclipIcon, XIcon } from './Icons'
 import styles from './ChatWidget.module.css'
 
-// ── Types ─────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────
 interface Message {
   id:         string
   content:    string   // correct field - NOT 'body'
@@ -29,7 +29,7 @@ interface Props {
   schoolColor?: string
 }
 
-// ── Component ──────────────────────────────────────────────
+// ── Component ──────────────────────────────────────────────────────────
 export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Props) {
   const [open,       setOpen]       = useState(false)
   const toggleOpen = useSingleFireClick(() => setOpen(p => !p))
@@ -76,12 +76,20 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     return () => { supabase.removeChannel(ch) }
   }, [activeRoom])
 
-  // Track unread when widget is closed
+  // Track unread when widget is closed.
+  // Listens only to the rooms this user belongs to. It used to listen to every
+  // new chat message in the table, so each message anywhere made the realtime
+  // server check access for every signed-in user's widget. With the room filter
+  // that work is limited to the members of the room the message was sent to.
+  // (Realtime filters accept at most 100 values, hence the slice.)
+  const roomIdsKey = rooms.map(r => r.id).join(',')
   useEffect(() => {
     if (open) { setUnread(0); return }
+    if (rooms.length === 0) return
     const ch = supabase.channel(`widget-unread:${userId}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'chat_messages',
+        filter: `room_id=in.(${rooms.slice(0, 100).map(r => r.id).join(',')})`,
       }, payload => {
         if ((payload.new as any).sender_id !== userId) {
           setUnread(prev => prev + 1)
@@ -89,14 +97,14 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [open, userId])
+  }, [open, userId, roomIdsKey])
 
   // Scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Load rooms (flat queries - no nested joins) ──────────
+  // ── Load rooms (flat queries - no nested joins) ────────────
   async function loadRooms() {
     const { data: memberships } = await supabase
       .from('chat_room_members')
@@ -145,7 +153,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     setRooms(unique)
   }
 
-  // ── Load messages ────────────────────────────────────────
+  // ── Load messages ────────────────────────────────────────────────────
   async function loadMessages(roomId: string) {
     const { data } = await supabase
       .from('chat_messages')                        // ✅ correct table
@@ -156,7 +164,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     if (data) setMessages(data as Message[])
   }
 
-  // ── Send text ────────────────────────────────────────────
+  // ── Send text ────────────────────────────────────────────────────
   async function sendText() {
     if (!text.trim() || !activeRoom || sending) return
     setSending(true)
@@ -185,7 +193,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     setSending(false)
   }
 
-  // ── Send file ────────────────────────────────────────────
+  // ── Send file ────────────────────────────────────────────────────
   async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !activeRoom || sending) return
@@ -226,7 +234,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  // ── Render ───────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.container}>
 
