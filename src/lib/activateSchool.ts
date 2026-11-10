@@ -151,14 +151,14 @@ export async function activateSchool(
       schoolId,
       recipientId: principal.id,
       to: principal.email,
-      subject: `🎉 Welcome to SchoolOS, ${school?.name} is Now Active!`,
+      subject: `Welcome to SchoolOS, ${school?.name} is Now Active`,
       referenceTable: 'schools',
       referenceId: schoolId,
       dedupeKey: `school-activation-principal-${reference}`,
       html: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
           <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
-            <h1 style="margin:0;font-size:28px;color:#fff;">Welcome to SchoolOS 🎉</h1>
+            <h1 style="margin:0;font-size:28px;color:#fff;">Welcome to SchoolOS</h1>
             <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">Your school portal is ready</p>
           </div>
           <div style="padding:32px;">
@@ -183,7 +183,7 @@ export async function activateSchool(
               </table>
             </div>
             <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
-              ⚠️ Use your email and the password you set during registration to log in. Keep your Access Code safe.
+              <strong>Important:</strong> Use your email and the password you set during registration to log in. Keep your Access Code safe.
             </p>
             <div style="text-align:center;margin:28px 0;">
               <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
@@ -206,14 +206,14 @@ export async function activateSchool(
     emailSends.push(queueEmail({
       schoolId,
       to: process.env.SUPER_ADMIN_EMAIL,
-      subject: `💰 New School Payment: ${school?.name ?? schoolId}`,
+      subject: `New School Payment: ${school?.name ?? schoolId}`,
       referenceTable: 'schools',
       referenceId: schoolId,
       dedupeKey: `school-activation-admin-${reference}`,
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0f0f0f;color:#fff;border-radius:12px;overflow:hidden;">
           <div style="background:linear-gradient(135deg,#10B981,#059669);padding:28px;text-align:center;">
-            <h1 style="margin:0;font-size:24px;">💰 New Payment Received</h1>
+            <h1 style="margin:0;font-size:24px;">New Payment Received</h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${now} (Lagos time)</p>
           </div>
           <div style="padding:28px;">
@@ -232,7 +232,7 @@ export async function activateSchool(
                   <td style="color:#fff;font-family:monospace;font-size:14px;">${principal?.default_code ?? 'N/A'}</td></tr>
             </table>
             <div style="margin-top:20px;background:#1a2e1a;border:1px solid #10B981;border-radius:8px;padding:12px;text-align:center;">
-              <p style="margin:0;color:#10B981;font-size:13px;">✅ School has been automatically activated in SchoolOS</p>
+              <p style="margin:0;color:#10B981;font-size:13px;">School has been automatically activated in SchoolOS</p>
             </div>
           </div>
           <div style="background:#111;padding:14px;text-align:center;">

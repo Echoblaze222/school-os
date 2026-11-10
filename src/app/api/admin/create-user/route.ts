@@ -185,7 +185,7 @@ export async function POST(req: Request) {
     schoolId: school.id,
     recipientId: authUser.user.id,
     to: principalEmail,
-    subject: `🎉 Welcome to SchoolOS, Your School is Ready`,
+    subject: `Welcome to SchoolOS, Your School is Ready`,
     referenceTable: 'schools',
     referenceId: school.id,
     dedupeKey: `admin-create-user-${school.id}`,
@@ -214,7 +214,7 @@ export async function POST(req: Request) {
             </table>
           </div>
           <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
-            ⚠️ You will be asked to set a new PIN and password on first login. Keep this email safe until then.
+            <strong>Important:</strong> You will be asked to set a new PIN and password on first login. Keep this email safe until then.
           </p>
           <div style="text-align:center;margin:28px 0;">
             <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
