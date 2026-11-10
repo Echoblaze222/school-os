@@ -52,6 +52,7 @@
   text-transform: uppercase;
   text-decoration: none;
   padding: var(--space-2) var(--space-3);
+  min-height: 44px;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -66,7 +67,7 @@
 .backBtn svg { width: 14px; height: 14px; }
 .themeBtn {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -99,6 +100,7 @@
 .termBtn {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-4);
+  min-height: 44px;
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -266,7 +268,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
   transition: all var(--transition-fast);
   pointer-events: none; /* read-only */
 }
@@ -282,7 +284,7 @@
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.4;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 .topicTitleCovered { color: var(--text-secondary); text-decoration: line-through; text-decoration-color: var(--text-muted); }
 .topicDesc {
@@ -296,7 +298,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   background: var(--success-bg);
   color: var(--success);
@@ -391,6 +393,7 @@
   transition: color var(--transition-fast), transform var(--transition-fast);
   cursor: pointer;
   padding: var(--space-1) var(--space-3);
+  min-width: 44px; min-height: 44px;
   border-radius: var(--radius-md);
   text-decoration: none;
 }
@@ -399,7 +402,7 @@
 .navLabel { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 .navHome {
   display: flex; align-items: center; justify-content: center;
-  width: 52px; height: 52px;
+  width: 48px; height: 48px;
   border-radius: var(--radius-full);
   background: var(--nav-home-bg);
   box-shadow: 0 4px 16px var(--burgundy-glow);
