@@ -1,6 +1,6 @@
 /* src/app/dashboard/student/records/records.module.css */
 
-/* ── Page Shell ─────────────────────────────────────────── */
+/* ── Page Shell ─────────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   background: var(--bg-base);
@@ -11,7 +11,7 @@
   padding-bottom: 120px;
 }
 
-/* ── Background Orbs ────────────────────────────────────── */
+/* ── Background Orbs ────────────────────────────────────────── */
 .orb1 {
   width: 380px;
   height: 380px;
@@ -28,7 +28,7 @@
   opacity: 0.35;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -47,8 +47,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -91,8 +91,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -107,7 +107,7 @@
   border-color: var(--glass-border-hover);
 }
 
-/* ── Summary Banner ─────────────────────────────────────── */
+/* ── Summary Banner ───────────────────────────────────────── */
 .summaryBanner {
   display: flex;
   align-items: center;
@@ -150,7 +150,7 @@
   flex-shrink: 0;
 }
 
-/* ── Tab Bar ────────────────────────────────────────────── */
+/* ── Tab Bar ────────────────────────────────────────────────── */
 .tabBarWrapper {
   padding: var(--space-4) var(--space-5) 0;
   background: var(--bg-base);
@@ -171,6 +171,7 @@
   align-items: center;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4) var(--space-3);
+  min-height: 44px;
   font-family: var(--font-body);
   font-size: 0.82rem;
   font-weight: 600;
@@ -200,7 +201,7 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   color: var(--text-muted);
-  padding: 1px 6px;
+  padding: 2px 6px;
   border-radius: var(--radius-full);
   min-width: 18px;
   text-align: center;
@@ -212,7 +213,7 @@
   color: var(--text-accent);
 }
 
-/* ── Main Content ───────────────────────────────────────── */
+/* ── Main Content ─────────────────────────────────────────── */
 .main {
   flex: 1;
 }
@@ -224,7 +225,7 @@
   gap: var(--space-5);
 }
 
-/* ── Filter Row ─────────────────────────────────────────── */
+/* ── Filter Row ────────────────────────────────────────────── */
 .filterRow {
   overflow: hidden;
 }
@@ -242,6 +243,7 @@
 .filterChip {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-4);
+  min-height: 44px;
   border-radius: var(--radius-full);
   font-family: var(--font-body);
   font-size: 0.75rem;
@@ -265,7 +267,7 @@
   color: var(--text-accent);
 }
 
-/* ── Year Group ─────────────────────────────────────────── */
+/* ── Year Group ────────────────────────────────────────────── */
 .groupedList {
   display: flex;
   flex-direction: column;
@@ -305,7 +307,7 @@
   white-space: nowrap;
 }
 
-/* ── Term Section ───────────────────────────────────────── */
+/* ── Term Section ───────────────────────────────────────────── */
 .termSection {
   display: flex;
   flex-direction: column;
@@ -350,7 +352,7 @@
   white-space: nowrap;
 }
 
-/* ── Result Cards ───────────────────────────────────────── */
+/* ── Result Cards ───────────────────────────────────────────── */
 .resultCards {
   display: flex;
   flex-direction: column;
@@ -385,7 +387,7 @@
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.05em;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
@@ -398,7 +400,7 @@
 
 .scoreBar {
   flex: 1;
-  height: 5px;
+  height: 4px;
   background: var(--glass-border);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -419,7 +421,7 @@
   text-align: right;
 }
 
-/* ── Timeline ───────────────────────────────────────────── */
+/* ── Timeline ──────────────────────────────────────────────── */
 .timeline {
   display: flex;
   flex-direction: column;
@@ -438,7 +440,7 @@
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
-  padding-top: 18px;
+  padding-top: 16px;
 }
 
 .timelineDot {
@@ -482,7 +484,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
 }
 
@@ -542,7 +544,7 @@
   border-top: 1px solid var(--glass-border);
 }
 
-/* ── Certificates / Documents ───────────────────────────── */
+/* ── Certificates / Documents ─────────────────────────── */
 .docGroup {
   display: flex;
   flex-direction: column;
@@ -607,7 +609,7 @@
   font-weight: 600;
   color: var(--text-accent);
   background: var(--burgundy-subtle);
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   width: fit-content;
 }
@@ -621,6 +623,7 @@
 .downloadBtn {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-4) !important;
+  min-height: 44px;
   border-radius: var(--radius-md) !important;
   font-size: 0.75rem !important;
   gap: var(--space-1) !important;
@@ -637,7 +640,7 @@
   letter-spacing: 0.03em;
 }
 
-/* ── Empty States ───────────────────────────────────────── */
+/* ── Empty States ───────────────────────────────────────────── */
 .emptyState {
   margin: var(--space-4) 0;
   display: flex;
@@ -669,7 +672,7 @@
   max-width: 260px;
 }
 
-/* ── Spinner ────────────────────────────────────────────── */
+/* ── Spinner ────────────────────────────────────────────────── */
 .spinner {
   display: inline-block;
   width: 14px;
