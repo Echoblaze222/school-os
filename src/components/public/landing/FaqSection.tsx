@@ -1,42 +1,102 @@
 'use client'
 // src/components/public/landing/FaqSection.tsx
+// Each answer has a short lead sentence plus a list of specifics, so a
+// parent skimming gets the point and a principal evaluating the product
+// can open the same answer and see exactly what is covered. Everything
+// here describes behaviour that already exists in the product.
 
 import { useState } from 'react'
-import { ChevronDownIcon } from '@/components/Icons'
+import { ChevronDownIcon, CheckIcon } from '@/components/Icons'
 import styles from './FaqSection.module.css'
 
-const FAQS = [
+type Faq = {
+  q: string
+  lead: string
+  points: string[]
+  note?: string
+}
+
+const FAQS: Faq[] = [
   {
     q: 'How much does SchoolOS cost?',
-    a: 'Registering your school is free, and your portal goes live as soon as you finish setup. Every school gets the same full set of features. Your principal can review subscription and billing details under Subscriptions in the dashboard.',
+    lead: 'Registering your school is free, and your portal goes live as soon as you finish setup.',
+    points: [
+      'There is no setup fee to register your school.',
+      'Every school gets the same full set of features, with no locked-away tiers.',
+      'School fees paid by parents go through Paystack straight into your school\u2019s own account.',
+      'Your principal can review subscription and billing details at any time under Subscriptions in the dashboard.',
+    ],
   },
   {
     q: 'How do we get started?',
-    a: 'Register your school, which takes a few minutes, and follow the step-by-step setup. Your principal then adds staff, classes and students. Each person receives an access code from the school, which they use to activate their account and choose a password.',
+    lead: 'Most schools can register in a few minutes and start adding people the same day.',
+    points: [
+      'Register your school online and follow the step-by-step setup.',
+      'Sign in as principal and add your classes, staff and students.',
+      'Each person receives an access code from the school.',
+      'They choose \u201cNew user\u201d on the login page, enter their code and set their own password.',
+      'A short first-time setup follows, which includes accepting the Terms and Privacy Policy.',
+    ],
+    note: 'You only need a phone or computer with a web browser. Nothing has to be installed.',
   },
   {
     q: 'Who can use SchoolOS?',
-    a: 'Principals and proprietors, teachers, bursars, secretaries, students and parents each get their own dashboard. Staff can also be appointed to additional roles: vice principal, examination officers and invigilators, counselors, ICT officers, hostel wardens and house parents, nurses, librarians and coaches. Every person sees only the tools their role needs.',
+    lead: 'Everyone in the school community gets a dashboard built for what they do, and only what they do.',
+    points: [
+      'Principals and proprietors: a School Health Score, staff, student and class management, and subscription oversight.',
+      'Teachers: assignments, grading, result entry, attendance, syllabus tracking, live classes and a class chat room.',
+      'Bursars and secretaries: their own dashboards, with fee payments reaching the bursar as they happen.',
+      'Students: assignments, timetable, results, live classes, the school library and study plans.',
+      'Parents: pay fees, see results, attendance and report cards, message teachers and join parent-teacher meetings.',
+      'Appointed roles: vice principal, examination officers and invigilators, counselors, ICT officers, hostel wardens and house parents, nurses, librarians and coaches.',
+    ],
   },
   {
     q: 'Do parents and students need to install an app?',
-    a: 'No installation required. SchoolOS runs in the browser and can be added to a phone\u2019s home screen like an app, so it works on the devices your school community already has.',
+    lead: 'No. SchoolOS runs in the browser, so it works on the devices your school community already has.',
+    points: [
+      'Open it in any modern browser on a phone, tablet or computer.',
+      'On a phone, add it to the home screen and it opens like an app, with its own icon.',
+      'No app store, no large download, and no separate version for each device.',
+    ],
   },
   {
     q: 'How are school fees collected?',
-    a: 'Through Paystack, directly into your school\u2019s own account. Parents pay in-app and receive an instant digital receipt; your bursar sees payments reflected in the dashboard in real time.',
+    lead: 'Through Paystack, directly into your school\u2019s own account.',
+    points: [
+      'Parents pay in the app, from their phone, without a trip to the school office.',
+      'Each payment produces an instant digital receipt.',
+      'Your bursar sees payments reflected in the dashboard in real time.',
+      'Because the money goes to your school\u2019s account, SchoolOS never holds your fees.',
+    ],
   },
   {
     q: 'Is our school\u2019s data private?',
-    a: 'Each school\u2019s records are kept separate from every other school\u2019s, and people only see what their role allows. A teacher cannot open the principal\u2019s pages, and students and parents see only their own or their child\u2019s records.',
+    lead: 'Yes. Each school\u2019s records are kept separate from every other school\u2019s, and people only see what their role allows.',
+    points: [
+      'Role dashboards are locked to their role: a teacher cannot open the principal\u2019s pages.',
+      'Students and parents see only their own or their child\u2019s records.',
+      'Signed-in sessions end automatically after 30 minutes of inactivity, which helps on shared phones and computers.',
+      'Acceptance of the Terms and Privacy Policy is recorded when each person first signs in.',
+    ],
   },
   {
     q: 'Can we control what shows on our public school profile?',
-    a: 'Yes. Public listing is opt-in and off by default. Once enabled from your school\u2019s Settings, you choose what appears: description, facilities, programs, admission status, and photos. Internal records, staff information, and financial data are never shown publicly.',
+    lead: 'Yes. Public listing is opt-in and off by default.',
+    points: [
+      'Turn it on from your school\u2019s Settings when you are ready.',
+      'You choose what appears: description, facilities, programs, admission status and photos.',
+      'Once listed, parents can find your school through Find a school.',
+      'Internal records, staff information and financial data are never shown publicly.',
+    ],
   },
   {
     q: 'What happens to our data if we stop using SchoolOS?',
-    a: 'Your school\u2019s data belongs to your school. Reach out to support for an export of your records before closing an account.',
+    lead: 'Your school\u2019s data belongs to your school.',
+    points: [
+      'Contact SchoolOS support before closing your account and ask for an export of your records.',
+      'Doing this first means you keep your results, attendance and other records for your own files.',
+    ],
   },
 ]
 
@@ -64,7 +124,18 @@ export default function FaqSection() {
                 <ChevronDownIcon size={16} className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`} />
               </button>
               {isOpen && (
-                <p className={`${styles.answer} animate-fade-up`}>{item.a}</p>
+                <div className={`${styles.answer} animate-fade-up`}>
+                  <p className={styles.lead}>{item.lead}</p>
+                  <ul className={styles.points}>
+                    {item.points.map(point => (
+                      <li key={point} className={styles.point}>
+                        <CheckIcon size={15} className={styles.check} />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {item.note && <p className={styles.note}>{item.note}</p>}
+                </div>
               )}
             </div>
           )
