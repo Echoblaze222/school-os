@@ -142,7 +142,7 @@ const SECTIONS: LegalSection[] = [
           'Audit log entries recording what action was taken, on which record, with the IP address and browser details',
           'Counters tied to an IP address or email address that limit repeated requests, used to block abuse',
           'Push notification subscriptions for each device on which you enable notifications',
-          'A session cookie and an inactivity timer cookie (see Section 16)',
+          'A session cookie and an inactivity timer cookie (see Section 17)',
         ],
       },
       {
@@ -313,8 +313,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Contact',
     paragraphs: [
-      'For privacy questions, to exercise a right, or to raise a concern, contact:',
-      'Echoblaze, SchoolOS Data Protection\nEmail: piussimon717@gmail.com',
+      'For privacy questions, to exercise a right, or to raise a concern, contact Echoblaze, SchoolOS Data Protection, at piussimon717@gmail.com.',
     ],
   },
 ]

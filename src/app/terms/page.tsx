@@ -217,7 +217,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Limitation of liability',
     paragraphs: [
       'To the fullest extent the law allows, Echoblaze is not liable for indirect, incidental or consequential loss arising from the use of the Platform, including loss of data, revenue or disruption to school operations. This limit does not apply to liability for gross negligence, wilful misconduct, fraud, death or personal injury caused by negligence, or anything that cannot be limited or excluded under the Nigeria Data Protection Act 2023 or other applicable law.',
-      'Subject to that, Echoblaze\u2019s total liability arising from or relating to the Service is limited to the fees the School paid in the three months before the event that gave rise to the claim. Where a School has paid no fees in that period, the limit is NGN 100,000.',
+      'Subject to that, Echoblaze\u2019s total liability arising from or relating to the Service is limited to the fees the School paid in the three months before the event that gave rise to the claim.',
     ],
   },
   {
