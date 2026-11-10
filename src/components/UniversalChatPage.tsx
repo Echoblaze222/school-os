@@ -87,27 +87,50 @@ export default function UniversalChatPage({
   const [creatingGroup,     setCreatingGroup]     = useState(false)
   const [groupError,        setGroupError]        = useState('')
 
+  // Ids of the rooms this user belongs to; the live subscription below is
+  // limited to these so a message in somebody else's room never reaches us.
+  const [memberRoomIds, setMemberRoomIds] = useState<string[]>([])
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const supabase = createClient()
   const router   = useRouter()
   const codeRef  = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadRooms()
+  }, [userId])
 
-    // Refresh room list on any new message
+  // Refresh the room list when a new message lands in one of THIS user's rooms.
+  // It used to listen to every new chat message in the table and rebuild the
+  // whole list (3+ queries per room) on each one, for every user with this page
+  // open. Now it is filtered to the user's rooms (Realtime accepts at most 100
+  // values in an `in` filter) and bursts of messages cause a single refresh.
+  const roomIdsKey = memberRoomIds.join(',')
+  useEffect(() => {
+    if (memberRoomIds.length === 0) return
+
     const ch = supabase
       .channel(`user-rooms:${userId}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'chat_messages',
-      }, () => loadRooms())
+        filter: `room_id=in.(${memberRoomIds.slice(0, 100).join(',')})`,
+      }, () => {
+        if (reloadTimer.current) clearTimeout(reloadTimer.current)
+        reloadTimer.current = setTimeout(() => loadRooms(true), 1500)
+      })
       .subscribe()
 
-    return () => { supabase.removeChannel(ch) }
-  }, [userId])
+    return () => {
+      if (reloadTimer.current) clearTimeout(reloadTimer.current)
+      supabase.removeChannel(ch)
+    }
+  }, [userId, roomIdsKey])
 
   // ── Load rooms - flat queries, no nested joins ────────────
-  async function loadRooms() {
-    setLoading(true)
+  // `silent` is used by the live refresh so the list updates in place instead of
+  // flashing the loading skeleton on every incoming message.
+  async function loadRooms(silent = false) {
+    if (!silent) setLoading(true)
 
     // 1. Get all room IDs this user belongs to
     const { data: memberships } = await supabase
@@ -116,12 +139,14 @@ export default function UniversalChatPage({
       .eq('user_id', userId)
 
     if (!memberships?.length) {
+      setMemberRoomIds(prev => (prev.length === 0 ? prev : []))
       setRooms([])
       setLoading(false)
       return
     }
 
     const roomIds = [...new Set(memberships.map((m: any) => m.room_id))]
+    setMemberRoomIds(prev => (prev.join(',') === roomIds.join(',') ? prev : roomIds))
 
     // 2. Get room details
     const { data: roomsData } = await supabase
@@ -371,7 +396,7 @@ export default function UniversalChatPage({
     setFinding(false)
   }
 
-  // ── Start or reuse DM ─────────────────────────────────────
+  // ── Start or reuse DM ─────────────────────────────────────────────
   async function startDM() {
     if (!foundUser || finding) return
     setFinding(true)
@@ -441,7 +466,7 @@ export default function UniversalChatPage({
     setFinding(false)
   }
 
-  // ── Helpers ───────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────
   function timeAgo(d: string) {
     if (!d) return ''
     const diff = Date.now() - new Date(d).getTime()
@@ -457,7 +482,7 @@ export default function UniversalChatPage({
     !searchQuery || r.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // ── Render ────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
       <DashboardHeader
