@@ -1,431 +1,335 @@
-'use client'
 // src/app/privacy/page.tsx
+// Privacy Policy. Content lives in this file as data; the layout (white page,
+// black text, contents list, print styles) is src/components/legal/LegalDocument.tsx.
+//
+// Keep this in step with what the platform really does. When a feature that
+// touches personal data changes (a new provider, a new kind of record, a new
+// cookie), update the matching section here and bump the version and date.
 
-import { useRouter } from 'next/navigation'
-import styles from './privacy.module.css'
+import type { Metadata } from 'next'
+import LegalDocument, { type LegalSection } from '@/components/legal/LegalDocument'
 
-const DATA_TABLE = [
-  { service: 'Supabase',  purpose: 'Database hosting, authentication, file storage', data: 'All platform data (this is the primary database)', link: 'supabase.com/privacy' },
-  { service: 'Vercel',    purpose: 'Application hosting and content delivery', data: 'All data in transit through the platform', link: 'vercel.com/legal/privacy-policy' },
-  { service: 'Paystack',  purpose: 'Payment processing for subscriptions and fee payments', data: 'Payer name, email, phone, and payment amount. We never receive or store card or bank details.', link: 'paystack.com/privacy' },
-  { service: 'Resend',    purpose: 'Transactional email (onboarding, receipts, reminders)', data: 'Recipient name, email address, and email content', link: 'resend.com/privacy' },
-  { service: 'Anthropic (Claude)', purpose: 'Primary AI assistant features', data: 'Chat prompts and a role-relevant data summary (see Section 15)', link: 'anthropic.com/privacy' },
-  { service: 'Google (Gemini)', purpose: 'Backup AI provider, used automatically if Claude is unavailable', data: 'The same data sent to Anthropic, on a fallback basis', link: 'policies.google.com/privacy' },
-  { service: 'LiveKit',   purpose: 'Live video classes and video call infrastructure', data: 'Audio, video, and participant metadata for live sessions', link: 'livekit.io/legal/privacy-policy' },
+export const metadata: Metadata = {
+  title: 'Privacy Policy | SchoolOS',
+  description: 'How SchoolOS collects, uses, shares and protects personal data.',
+}
+
+const SUMMARY = [
+  'Each school decides what student, staff and parent data is entered into SchoolOS. For that data the school is the controller and Echoblaze is its processor.',
+  'We never sell personal data and we never show advertising.',
+  'Health and counseling records are restricted to the staff and family members who need them.',
+  'Some of our service providers operate outside Nigeria. We use safeguards for those transfers.',
+  'You can ask to access, correct or delete your data, and you can complain to the Nigeria Data Protection Commission.',
 ]
 
-const SECTIONS = [
+const SECTIONS: LegalSection[] = [
   {
-    number: '01',
     title: 'Introduction',
-    body: `Echoblaze ("we", "us", "our") operates SchoolOS, a school management platform built for Nigerian schools. This Privacy Policy explains what personal data we collect, how we use it, how we protect it, and your rights regarding it.
-
-By using SchoolOS, your school agrees to the practices described in this policy. This policy applies to everyone whose data is processed through SchoolOS, whether or not they hold their own login, including students whose records are entered by school staff.`,
-  },
-  {
-    number: '02',
-    title: 'Who This Policy Covers',
-    intro: 'SchoolOS is used by many different types of school staff and community members. This policy covers the personal data of:',
-    items: [
-      'Principal: full administrative access to their school',
-      'Vice Principal: school-wide operational access, plus authority over assigned departments',
-      'Teacher: access to their assigned classes, subjects, and students',
-      'Bursar: financial records, fee management, payment processing',
-      'Secretary: administrative records, admissions, staff/student records',
-      'Librarian: library catalogue and loan records',
-      'Nurse: student health and medical records, clinic visits, medication administration',
-      'Counselor: confidential counseling cases, notes, sessions, and referrals',
-      'Coach: sports team rosters and records',
-      'Examination Officer: exam scheduling, invigilation, incident records, results oversight',
-      'Hostel/Boarding Staff: room assignments, leave requests, roll call, incident records',
-      'ICT Officer: technical support tickets, device/account administration',
-      'Student: their own academic, attendance, and personal records',
-      'Parent/Guardian: records for their own linked children only',
+    paragraphs: [
+      'This Privacy Policy explains how Echoblaze ("Echoblaze", "we", "us") collects, uses, shares and protects personal data through SchoolOS (the "Platform"), a school management platform for Nigerian schools. The Platform includes our website, web application and Android app.',
+      'It applies to everyone whose personal data is processed through the Platform: school staff, students, parents and guardians, applicants for admission and visitors, whether or not they hold their own login. Student records are usually entered by school staff, so this policy also covers data you may never have typed in yourself.',
+      'We process personal data in line with the Nigeria Data Protection Act 2023 ("NDPA") and the General Application and Implementation Directive 2025 issued by the Nigeria Data Protection Commission ("NDPC").',
     ],
   },
   {
-    number: '03',
-    title: 'Data We Collect: Identity, Account & School Data',
+    title: 'Our role: controller and processor',
+    paragraphs: [
+      'Each school that uses SchoolOS decides what personal data about its students, staff, parents and applicants is entered into the Platform, and why. For that school data, the school is the data controller and Echoblaze acts as the school\u2019s data processor, handling the data on the school\u2019s instructions in order to provide the Platform.',
+      'Echoblaze is a data controller in its own right for the limited data it needs to run the Platform itself: sign-in and account security, audit and abuse-prevention records, billing records, accounts created directly with us on the public sign-up page, and support requests.',
+      'If you are a student, parent or staff member and want to use a right over data that your school holds, please contact your school first (see Section 15).',
+    ],
+  },
+  {
+    title: 'Who this policy covers',
+    intro: 'This policy covers the personal data of:',
+    items: [
+      'School leaders and staff: Principal, Vice Principal, Teachers, Bursar, Secretary, Librarian, Nurse, Counselor, Coach, Examination Officer, Hostel and Boarding Staff, and ICT Officer',
+      'Students',
+      'Parents and guardians, including the records of the children linked to their account',
+      'Applicants for admission, and visitors who create an account on the public sign-up page',
+      'Visitors who browse the public pages of the Platform',
+    ],
+  },
+  {
+    title: 'Personal data we collect',
     groups: [
       {
-        label: 'Identity and account data',
+        label: 'Account and identity data',
         items: [
-          'Full name, email address, phone number',
-          'Role and, where applicable, appointment (e.g. Vice Principal, Head of Department, class teacher)',
-          'Profile photo / avatar, where uploaded',
-          'Login credentials (passwords are never stored in plain text; see Section 10)',
-          'Access codes issued to staff, students, and parents for account setup',
+          'Full name, email address and phone number',
+          'Role and appointment (for example Vice Principal, Head of Department or class teacher)',
+          'Profile photograph, where uploaded',
+          'Sign-in credentials. Passwords are stored only in hashed form, never in plain text',
+          'Access codes issued by a school for account setup',
+          'The date and time you accepted the Terms and this policy, and your onboarding progress',
         ],
       },
       {
-        label: 'School data',
+        label: 'Identity verification data (onboarding)',
         items: [
-          'School name, type, address, city, state, contact details',
+          'During onboarding you may be asked to upload a passport photograph and to enter your National Identification Number (NIN)',
+          'We send the NIN to our identity verification provider, Dojah, which checks it against the National Identity Management Commission (NIMC) database and returns the registered name, date of birth, gender, phone number and photograph so that you can confirm them',
+          'We store your NIN, whether it was verified and when, a verification log entry, and the passport photograph you uploaded. We do not store the photograph returned by NIMC',
+          'If live verification is not available, your NIN is recorded and may be reviewed later by your school administrator',
+        ],
+      },
+      {
+        label: 'School registration data',
+        items: [
+          'School name, type, address, city, state and contact details',
           'School logo and brand colour',
-          'Principal\u2019s full name, email, and phone number',
+          'The Principal\u2019s full name, email address and phone number',
           'Subscription and billing history',
         ],
       },
       {
-        label: 'Technical data, collected automatically',
-        items: [
-          'Login timestamps and session activity',
-          'IP address and browser/device type (for security and fraud prevention)',
-          'Push notification device tokens, where notifications are enabled',
-        ],
-      },
-    ],
-  },
-  {
-    number: '04',
-    title: 'Data We Collect: Academic & Financial Data',
-    groups: [
-      {
         label: 'Academic data',
         items: [
-          'Class, subject, and timetable assignments',
+          'Classes, subjects and timetables',
           'Attendance records',
-          'Assignments, submissions, and grades',
-          'Quiz and exam results, and (for CBT quizzes) individual question responses',
-          'Report cards, transcripts, and academic history',
-          'Syllabus and academic notes',
-          'Certificates issued (e.g. graduation certificates); see Section 8 on public verification',
+          'Assignments, submissions and grades',
+          'Quiz and exam results, including individual answers to computer-based tests',
+          'Report cards, transcripts, academic history, notes and syllabus content',
+          'Certificates issued by a school (see Section 8)',
         ],
       },
       {
         label: 'Financial data',
         items: [
-          'Fee structures, invoices, and payment records (amounts, dates, methods, receipt numbers)',
-          'Payment claims submitted for bank-transfer payments, including any proof-of-payment file uploaded',
-          'School expense records (bursar-facing only)',
-        ],
-      },
-    ],
-    footer: 'We do not collect or store card numbers or bank account details. All card/bank payment processing is handled entirely by Paystack, under their own privacy policy.',
-  },
-  {
-    number: '05',
-    title: 'Special Category Data: Health, Counseling & Discipline',
-    groups: [
-      {
-        label: 'Health data (where a school uses the nurse/clinic feature)',
-        items: [
-          'Student health profiles, including known conditions and allergies',
-          'Medical records and clinic visit history',
-          'Medication administration records',
+          'Fee structures, invoices and payment records (amounts, dates, methods, references and receipt numbers)',
+          'Bank-transfer payment claims, including any proof-of-payment file uploaded',
+          'School expense records, visible to bursar roles only',
+          'We do not receive or store card numbers or bank login details. These are handled by Paystack',
         ],
       },
       {
-        label: 'Counseling data (where a school uses the counseling feature)',
+        label: 'Health, counseling and discipline data (special category)',
         items: [
-          'Counseling cases, session notes, and referrals for students referred to or seen by a school counselor',
+          'Health profiles, medical records, clinic visits and medication records, where a school uses the nurse feature',
+          'Counseling cases, session notes and referrals, where a school uses the counseling feature',
+          'Disciplinary and behaviour records: the type of record, a description, the date and the staff member who logged it',
+          'Parental consent records kept by a school: the type of consent, whether it was granted, the method, the guardian\u2019s name and who recorded it',
         ],
       },
-      {
-        label: 'Disciplinary / behaviour records',
-        items: [
-          'Type of record, description, date, and the staff member who logged it',
-        ],
-      },
-    ],
-    footer: 'Health and counseling data are sensitive "special category" data. Health data access is restricted to staff with an active nurse appointment, the student themselves, their linked parent/guardian, and (for narrow safety-relevant knowledge such as an allergy) the student\u2019s class teachers. Counseling data is restricted to the specific counselor assigned to the case, verified by an active counseling appointment, and is not visible to other staff, other counselors, or (unless a school\u2019s own policy provides otherwise) parents by default. Neither is ever used for marketing, profiling, or shared outside the school.',
-  },
-  {
-    number: '06',
-    title: 'Communications, Live Classes & Recordings',
-    groups: [
       {
         label: 'Communications data',
         items: [
-          'Messages sent through the platform\u2019s chat feature, including group chats, direct messages, and file attachments',
-          'Announcements and notices posted by staff',
-          'Push and in-app notifications, and whether they have been read',
-          'Meeting records and scheduling',
+          'Chat messages, group chats and attachments',
+          'Announcements, notifications (including whether they were read), reminders you create, and meeting records',
+          'Delivery records for email, SMS and WhatsApp messages: the recipient address or number, the message content and the delivery status',
         ],
       },
       {
-        label: 'Live video classes (where a school uses this feature, powered by LiveKit)',
+        label: 'Live classes',
         items: [
-          'Audio and video during the live session',
-          'A list of who joined a session and when',
-          'Recordings of sessions, where a teacher chooses to record',
+          'Audio and video during a live session, carried by our video provider, LiveKit',
+          'Who joined, when they joined and left, and for how long',
+          'Recordings, where a teacher chooses to record',
+        ],
+      },
+      {
+        label: 'Hostel, library, sports and admissions data',
+        items: [
+          'Room and bed assignments, leave requests, roll calls, incident and maintenance reports',
+          'Library loan history, team rosters, positions and match records',
+          'For admissions: the applicant\u2019s name, email address and phone number, the class applied for, form responses, uploaded documents, messages with the school and the status history of the application',
+        ],
+      },
+      {
+        label: 'Technical and security data',
+        items: [
+          'IP address, browser and device type, and sign-in times',
+          'Audit log entries recording what action was taken, on which record, with the IP address and browser details',
+          'Counters tied to an IP address or email address that limit repeated requests, used to block abuse',
+          'Push notification subscriptions for each device on which you enable notifications',
+          'A session cookie and an inactivity timer cookie (see Section 16)',
+        ],
+      },
+      {
+        label: 'Public pages',
+        items: [
+          'Accounts created on the public sign-up page: name, email address and the role chosen (parent or student)',
+          'Anonymous counts of views and clicks on school promotions: an event type, a time and a session reference',
+          'Reports made about public content: the reason, any details and optional contact information',
         ],
       },
     ],
-    footer: 'Live classes may include minors. Recordings are stored and made available only within the class\u2019s own school. Schools should ensure students and parents are aware that classes may be recorded, consistent with the school\u2019s own policies.',
   },
   {
-    number: '07',
-    title: 'Hostel, Library & Admissions Data',
-    groups: [
-      {
-        label: 'Hostel / boarding data',
-        items: ['Room and bed assignments, leave requests and approval status, roll call records, incident and maintenance reports'],
-      },
-      {
-        label: 'Library and extracurricular data',
-        items: ['Library loan and checkout history; sports team rosters, positions, and match records'],
-      },
-      {
-        label: 'Admissions data',
-        items: ['Application form responses, uploaded admission documents, and communication during the application process'],
-      },
+    title: 'How we use personal data and why',
+    paragraphs: [
+      'We use personal data only for the purposes below, and only where we have a lawful basis under the NDPA.',
+    ],
+    table: {
+      head: ['Purpose', 'Examples', 'Lawful basis'],
+      rows: [
+        ['Providing the Platform', 'Accounts and roles, school records, dashboards, report cards, timetables, attendance', 'Performance of a contract with the school; the school\u2019s own lawful basis for its records'],
+        ['Identity verification and account security', 'NIN checks, sign-in security, session management, rate limiting, audit logs, abuse prevention', 'Legitimate interests in protecting users and the Platform; legal obligation where one applies'],
+        ['Payments and billing', 'Fee payments, subscriptions, receipts, reconciliation', 'Performance of a contract; legal obligation for accounting and tax records'],
+        ['Notifications and messages', 'In-app, push, email, SMS and WhatsApp messages about your account and your school', 'Performance of a contract for service messages; your consent or preference for optional channels'],
+        ['AI-assisted features', 'Answers from the assistant when you ask for them', 'Performance of a contract: you request the feature'],
+        ['Health and counseling records', 'Clinic visits, medication records, counseling cases', 'The explicit consent of the person, or of the parent or guardian for a child, recorded by the school; or another ground the NDPA permits for health care and safety. The school is responsible for establishing the ground'],
+        ['Improving and securing the Platform', 'Aggregated, de-identified usage patterns, fixing faults', 'Legitimate interests'],
+        ['Legal compliance and disputes', 'Responding to lawful requests, protecting legal rights', 'Legal obligation; legitimate interests'],
+      ],
+    },
+    footer: 'We do not use personal data for advertising. We do not sell personal data. We do not use children\u2019s data for behavioural profiling.',
+  },
+  {
+    title: 'Notifications and messaging',
+    paragraphs: [
+      'Notifications appear inside the app and, if you enable them, as push notifications. Web push uses your browser\u2019s push service. On Android, where enabled, push notifications are delivered through Firebase Cloud Messaging, a Google service. We store one push subscription for each device you enable.',
+      'If push cannot reach you, important notifications may be sent as WhatsApp or SMS messages through our messaging provider, Termii, to the phone number on your profile. These messages contain the text of the notification. You can switch WhatsApp and SMS on or off for each category in your notification settings. Security and account notices, and certain critical school alerts, are sent regardless of those settings.',
+      'Emails, such as onboarding messages, receipts and reminders, are sent through our email provider (Brevo or Resend). We keep a record of each email, including the recipient, subject and content, so that failed messages can be retried and delivery problems can be investigated.',
+      'You can turn push notifications off at any time in your browser or device settings.',
     ],
   },
   {
-    number: '08',
-    title: 'Public Certificate Verification',
-    body: `If a school issues a digital certificate (e.g. a graduation certificate) through SchoolOS, a verification link or QR code is generated. Anyone with that link can look up the certificate holder's full name, the school name, certificate type, graduation year, issue date, and current status (valid/revoked). No other information, such as contact details, grades, or other academic data, is exposed through this feature.
-
-This is intentional and works like verifying the authenticity of a paper certificate, but it does mean a certificate holder's name becomes accessible to anyone who has or discovers the link.`,
-  },
-  {
-    number: '09',
-    title: 'How We Use Your Data',
-    intro: 'We use the data collected solely to:',
+    title: 'AI-assisted features',
+    intro: 'SchoolOS includes an AI assistant that is available to most staff roles and, in some cases, to students and parents. When you use it:',
     items: [
-      'Operate and deliver the SchoolOS platform to your school',
-      'Create and manage user accounts, roles, and access codes',
-      'Send onboarding messages, credentials, receipts, and reminders',
-      'Process and confirm subscription and fee payments',
-      'Provide AI-assisted features as decision-support tools',
-      'Enable communication features (chat, announcements, live classes)',
-      'Investigate security incidents, fraud, or policy violations',
-      'Improve the platform based on aggregated, de-identified usage patterns',
+      'The message you type is sent to Anthropic (Claude). If Claude is unavailable, it is sent to Google (Gemini) as a fallback',
+      'A summary of data relevant to your role and school is included as context. For example, a bursar\u2019s assistant may receive a summary of outstanding fees, a nurse\u2019s assistant receives aggregate counts rather than named individual health details, and a counselor\u2019s assistant is limited to that counselor\u2019s own cases',
+      'The conversation is stored so the assistant keeps context across a session',
     ],
-    footer: 'We do not use your data to serve advertisements. We do not sell your data to any third party.',
+    footer: 'AI features are decision-support tools only. They do not make final decisions about a student\u2019s grades, discipline, admission, health or care, and a qualified member of staff must review any output before acting on it.',
   },
   {
-    number: '10',
-    title: 'AI Assistant Interactions',
-    intro: 'SchoolOS includes an AI assistant available to most staff roles and, in some cases, students and parents. When it is used:',
+    title: 'Public certificate verification',
+    paragraphs: [
+      'When a school issues a digital certificate through SchoolOS, a verification link or QR code is created. Anyone who has that link can see the certificate holder\u2019s full name, the school name, the certificate type, the graduation year, the issue date and the current status (valid or revoked). No contact details, grades or other academic data are shown.',
+      'This works like checking the authenticity of a paper certificate. It also means that a certificate holder\u2019s name is visible to anyone who has or finds the link.',
+    ],
+  },
+  {
+    title: 'Sharing and service providers',
+    paragraphs: [
+      'We share personal data only with the service providers below, and only as far as needed to operate the Platform. Each provider acts as our sub-processor and is bound by its own terms. We do not give personal data to anyone else except as described at the end of this section.',
+    ],
+    table: {
+      head: ['Provider', 'What it does for us', 'Personal data involved'],
+      rows: [
+        ['Supabase', 'Database, sign-in and file storage', 'All Platform data'],
+        ['Vercel', 'Application hosting and delivery', 'Data in transit and server logs'],
+        ['Paystack', 'Payment processing for subscriptions and fee payments', 'Payer name, email address, phone number and amount. We never receive card or bank details'],
+        ['Brevo or Resend', 'Transactional email', 'Recipient name, email address and email content'],
+        ['Termii', 'SMS and WhatsApp delivery', 'Recipient phone number and message text'],
+        ['Dojah, with NIMC', 'NIN verification during onboarding', 'The NIN you enter, and the identity details returned for you to confirm'],
+        ['Anthropic', 'AI assistant (primary)', 'Your prompts and a role-relevant summary'],
+        ['Google', 'AI assistant (fallback, Gemini) and Android push notifications (Firebase Cloud Messaging)', 'The same data as Anthropic when used as fallback; a device token and the notification text'],
+        ['LiveKit', 'Live video classes', 'Audio, video and participant details for live sessions'],
+        ['Browser push services (Google, Apple, Mozilla)', 'Deliver web push notifications to your browser', 'Your push subscription and the notification, transmitted in encrypted form'],
+      ],
+    },
+    footer: 'We may also disclose personal data where the law, a court order or a request from the NDPC requires it, to protect people\u2019s safety or our legal rights, or to a successor if Echoblaze is acquired or merges, in which case you will be told and this policy will continue to apply.',
+  },
+  {
+    title: 'International transfers',
+    paragraphs: [
+      'Several of the providers in Section 9, including Supabase, Vercel, Anthropic, Google, LiveKit, Brevo and Dojah, operate infrastructure outside Nigeria. Personal data, including children\u2019s data, may therefore be processed outside Nigeria while the Platform runs.',
+      'The NDPA allows such transfers where the destination provides an adequate level of protection, or where other safeguards or permitted grounds apply. We choose providers that maintain recognised data protection standards and we use contractual terms and, where the law allows, other approved transfer mechanisms. We are continuing to put formal data processing agreements in place with each provider.',
+    ],
+  },
+  {
+    title: 'Separation between schools',
+    paragraphs: [
+      'Every school\u2019s data is kept separate from every other school\u2019s. This is enforced in the database itself through Row Level Security policies, and not only in the user interface. Under normal operation a user from one school cannot read another school\u2019s data, including through direct API access.',
+    ],
+  },
+  {
+    title: 'Retention',
     items: [
-      'The message you type is sent to Anthropic (Claude), and, as an automatic fallback if Claude is unavailable, to Google (Gemini)',
-      'A summary of data relevant to your role and school is included as context: for example, a bursar\u2019s assistant may be given a summary of outstanding fees, a nurse\u2019s assistant may be given aggregate counts rather than named individual health details, and a counselor\u2019s assistant is scoped only to that counselor\u2019s own cases',
-      'Conversation history with the assistant is stored so it has context across a session',
-    ],
-    footer: 'AI providers process this data to generate a response. AI features are decision-support tools only: they do not make final decisions about a student\u2019s grades, discipline, admission, health, or counseling care, and outputs should always be reviewed by a qualified staff member before being acted on.',
-  },
-  {
-    number: '11',
-    title: 'Data Sharing & Third-Party Processors',
-    body: 'We share data only with the service providers below, strictly to operate the platform. No other third party receives your data.',
-    table: true,
-  },
-  {
-    number: '12',
-    title: 'International Data Transfers',
-    body: `Some of the service providers listed in Section 11 (including Supabase, Vercel, Anthropic, Google, and LiveKit) operate infrastructure outside Nigeria. This means personal data, including children's data, may be transferred and processed outside Nigeria in the course of operating the platform.
-
-The Nigeria Data Protection Act 2023 requires appropriate safeguards for such transfers. We take steps to work only with providers who maintain appropriate data protection standards, and we are working toward formal data processing agreements with each provider as part of our ongoing compliance program.`,
-  },
-  {
-    number: '13',
-    title: 'Data Isolation Between Schools',
-    body: `Every school's data on SchoolOS is isolated from every other school. This is enforced at the database level using Row Level Security policies, not just at the interface level. A user from one school cannot access another school's data under normal operation, including via direct API access.`,
-  },
-  {
-    number: '14',
-    title: 'Data Retention',
-    items: [
-      'Active school data is retained for as long as the school maintains an account on SchoolOS',
-      'If a school\u2019s subscription lapses, the school enters a read-only state. Data is not deleted automatically',
-      'On a verified request to close an account, school data is deleted within 30 days, subject to the exceptions below',
-      'Payment records may be retained for longer where required for accounting, tax, or legal compliance purposes',
-      'Certificate verification records may be retained indefinitely, to preserve the ability to verify a certificate\u2019s authenticity in future',
+      'Active school data is kept for as long as the school has an account on SchoolOS',
+      'If a school\u2019s service period ends without renewal, the school moves to a read-only state. Data is not deleted automatically',
+      'On a verified request to close an account, school data is deleted within 30 days, subject to the exceptions in this section',
+      'Payment records may be kept longer where accounting, tax or other law requires it',
+      'Certificate verification records may be kept indefinitely so that a certificate can still be verified in future',
+      'Delivery records (email, SMS and WhatsApp), audit logs and identity verification logs are kept while the account is active, because they are needed for security, troubleshooting and accountability, and are removed with the school\u2019s data when an account is closed, unless the law requires us to keep them',
     ],
   },
   {
-    number: '15',
     title: 'Security',
-    intro: 'We implement the following measures to protect your data:',
+    intro: 'We protect personal data with technical and organisational measures that include:',
     items: [
-      'Passwords are hashed, never stored in plain text',
-      'Sessions are managed via secure, expiring cookies',
-      'All data in transit is encrypted (HTTPS/TLS)',
-      'Database-level access controls restrict data by school and role, independent of the application code',
-      'Payment webhook events are cryptographically verified',
-      'Sensitive administrative actions require additional verification',
-      'The platform undergoes periodic security review',
+      'Hashed passwords and secure, expiring sessions. A session ends automatically after 30 minutes of inactivity',
+      'Encryption of data in transit (HTTPS and TLS)',
+      'Database-level access controls that restrict data by school and by role, independent of the application code',
+      'Rate limiting on sign-in, sign-up and other public endpoints',
+      'Verification of signed payment webhook events and of internal service calls',
+      'Audit logging of sensitive actions',
+      'Periodic security review',
     ],
-    footer: 'No system is perfectly secure. In the event of a data breach affecting your school, we will notify you without undue delay and, where required, within the timeframe set by the Nigeria Data Protection Act 2023.',
+    footer: 'Uploaded files, such as profile photographs and chat attachments, are stored with our storage provider and opened through links. Anyone who has an exact link may be able to open the file, so please do not share links to files you want to keep private. No system is perfectly secure.',
   },
   {
-    number: '16',
-    title: 'Your Rights',
-    intro: 'Subject to the Nigeria Data Protection Act 2023, you have the right to:',
-    items: [
-      'Access: request a copy of the personal data we hold about you or your school',
-      'Correction: request that inaccurate data be corrected',
-      'Deletion: request that your data be deleted, subject to legal retention requirements',
-      'Portability: request an export of your data in a portable format',
-      'Objection: object to how we process your data in specific circumstances',
-      'Restriction: request that processing of your data be limited in certain circumstances',
-    ],
-    footer: 'For students and other users whose accounts are managed by a school, these requests are ordinarily made through the school. You also have the right to lodge a complaint with the Nigeria Data Protection Commission (NDPC). To exercise any of these rights directly with us, contact piussimon717@gmail.com. We will respond within 14 business days.',
-  },
-  {
-    number: '17',
-    title: 'Nigeria Data Protection Act 2023 Compliance',
-    intro: 'SchoolOS is committed to compliance with the Nigeria Data Protection Act 2023 and the Nigeria Data Protection Commission (NDPC)\u2019s regulations. This includes:',
-    items: [
-      'Processing personal data only on lawful grounds',
-      'Collecting only data that is necessary for the stated purpose',
-      'Taking appropriate steps for any transfer of personal data outside Nigeria (see Section 12)',
-      'Respecting the rights of data subjects as outlined above',
-      'Maintaining appropriate technical and organisational security measures',
+    title: 'Personal data breaches',
+    paragraphs: [
+      'If a personal data breach occurs, we will notify the affected school without undue delay so that it can meet its own duties as controller. Where a breach is likely to put people\u2019s rights and freedoms at risk, we will notify the NDPC within 72 hours of becoming aware of it, as the NDPA requires. Where the risk to individuals is high, we will tell the people affected without delay and explain what happened, what data was involved and what they can do.',
     ],
   },
   {
-    number: '18',
-    title: 'Cookies',
-    body: `SchoolOS uses essential cookies only: specifically, a secure session cookie required to keep you logged in. We do not use advertising cookies, tracking cookies, or third-party analytics cookies.`,
+    title: 'Your rights',
+    intro: 'Under the NDPA you have the right to:',
+    items: [
+      'Be informed about how your data is used, which this policy is intended to do',
+      'Access the personal data held about you',
+      'Have inaccurate or incomplete data corrected',
+      'Have your data erased, subject to legal retention requirements',
+      'Restrict or object to certain processing',
+      'Receive your data in a portable format',
+      'Withdraw consent at any time, where processing is based on consent, without affecting what was done before',
+      'Not be subject to a decision based solely on automated processing that has legal or similarly significant effects',
+    ],
+    paragraphs: [
+      'For students and other users whose accounts are managed by a school, requests are normally made through the school, because the school is the controller. We will help the school to respond. You may also contact us directly at piussimon717@gmail.com. We will reply within 14 business days, and we may ask you to confirm your identity first.',
+      'You have the right to lodge a complaint with the Nigeria Data Protection Commission (NDPC) if you believe your data has been handled unlawfully.',
+    ],
   },
   {
-    number: '19',
-    title: 'Push Notifications',
-    body: `If you enable notifications, we store a device token used solely to deliver notifications from SchoolOS to your device. Browser (web) push notifications are active; Android push notifications via Firebase Cloud Messaging are a planned feature not yet active in production.`,
+    title: 'Children',
+    paragraphs: [
+      'SchoolOS serves schools that enrol minors. We do not collect children\u2019s data through a public sign-up page for children. Student records are entered and managed by the school, which acts as controller and is responsible for having the consent of a parent or legal guardian before a student under 18 is added to the Platform, including for health, counseling and live-class recording features. The Platform includes a record of parental consents that schools can use for this purpose.',
+      'A person under 18 should create an account on the public sign-up page only with the knowledge and permission of a parent or guardian. We do not use children\u2019s data for advertising or behavioural profiling. If you believe a child\u2019s data has been provided without proper consent, contact us and the school so that it can be reviewed and removed.',
+    ],
   },
   {
-    number: '20',
-    title: "Children's Data",
-    body: `SchoolOS serves schools that enrol students of all ages, including minors. We do not directly collect data from children through a public sign-up flow. All student data is entered and managed by the school (acting as data controller for its own records), typically after the school has obtained appropriate consent from a parent or guardian under its own enrollment process.
-
-Schools are responsible for ensuring they have appropriate parental or guardian consent before adding a student's data to the platform, including for health, counseling, and live-class-recording features. We do not use children's data for advertising or behavioural profiling.`,
+    title: 'Cookies and local storage',
+    paragraphs: [
+      'SchoolOS uses only what is needed to run the service. We do not use advertising cookies, tracking cookies or third-party analytics cookies.',
+    ],
+    items: [
+      'Session cookies keep you signed in',
+      'An inactivity timer cookie records your last activity so that we can sign you out after 30 minutes of inactivity. It expires after the same period',
+      'Browser storage keeps your choices on your device: your light or dark theme, the school you last selected, and notification and app preferences',
+      'A service worker lets the app receive push notifications and work with a weaker connection',
+    ],
   },
   {
-    number: '21',
-    title: 'Changes to This Policy',
-    body: `We may update this Privacy Policy from time to time. When we do, we will update the date at the top of this page and notify schools via platform notification or email if the changes are material. Continued use of SchoolOS after changes take effect means you accept the updated policy.`,
+    title: 'Changes to this policy',
+    paragraphs: [
+      'We may update this policy from time to time. The effective date and version at the top of this page show when it last changed. If a change is material, we will notify schools through a Platform notification or by email before it takes effect. Continued use of the Platform after a change takes effect means you accept the updated policy.',
+    ],
   },
   {
-    number: '22',
-    title: 'Contact Us',
-    body: `For any privacy-related questions, data requests, or concerns:\n\nEchoblaze, SchoolOS Privacy\nEmail: piussimon717@gmail.com`,
+    title: 'Contact',
+    paragraphs: [
+      'For privacy questions, to exercise a right, or to raise a concern, contact:',
+      'Echoblaze, SchoolOS Data Protection\nEmail: piussimon717@gmail.com',
+    ],
   },
 ]
 
 export default function PrivacyPage() {
-  const router = useRouter()
-
   return (
-    <div className={styles.page}>
-      <div className={styles.bgGlow} />
-      <div className={styles.bgGrid} />
-
-      <div className={styles.container}>
-
-        {/* Header */}
-        <div className={styles.header}>
-          <button className={styles.backBtn} onClick={() => router.back()}>
-            \u2190 Back
-          </button>
-          <div className={styles.badge}>Legal</div>
-          <h1 className={styles.title}>Privacy Policy</h1>
-          <p className={styles.subtitle}>
-            We take the privacy of your school, staff, and students seriously. Here is exactly what we collect, why, and how we protect it.
-          </p>
-          <p className={styles.lastUpdated}>Last updated: September 2026 \u00b7 Echoblaze</p>
-        </div>
-
-        {/* Sections */}
-        <div className={styles.sections}>
-          {SECTIONS.map((s) => (
-            <div key={s.number} className={styles.section}>
-              <div className={styles.sectionNumber}>{s.number}</div>
-              <div className={styles.sectionBody}>
-                <h2 className={styles.sectionTitle}>{s.title}</h2>
-
-                {'intro' in s && s.intro && <p className={styles.sectionIntro}>{s.intro}</p>}
-
-                {'body' in s && s.body && s.body.split('\n\n').map((para, i) => (
-                  <p key={i} className={styles.sectionText}>{para}</p>
-                ))}
-
-                {/* Grouped lists */}
-                {'groups' in s && s.groups && (
-                  <div className={styles.groups}>
-                    {s.groups.map((g, gi) => (
-                      <div key={gi} className={styles.group}>
-                        <p className={styles.groupLabel}>{g.label}</p>
-                        <ul className={styles.list}>
-                          {g.items.map((item, ii) => (
-                            <li key={ii} className={styles.listItem}>
-                              <span className={styles.listDot} />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Regular list */}
-                {'items' in s && s.items && !('groups' in s) && (
-                  <ul className={styles.list}>
-                    {s.items.map((item, i) => (
-                      <li key={i} className={styles.listItem}>
-                        <span className={styles.listDot} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {/* Third-party table */}
-                {'table' in s && s.table && (
-                  <div className={styles.tableWrap}>
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th className={styles.th}>Service</th>
-                          <th className={styles.th}>Purpose</th>
-                          <th className={styles.th}>What Data</th>
-                          <th className={styles.th}>Their Policy</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {DATA_TABLE.map((row, i) => (
-                          <tr key={i} className={styles.tr}>
-                            <td className={styles.td}><strong>{row.service}</strong></td>
-                            <td className={styles.td}>{row.purpose}</td>
-                            <td className={styles.td}>{row.data}</td>
-                            <td className={styles.td}>
-                              <span className={styles.tableLink}>{row.link}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {'footer' in s && s.footer && (
-                  <p className={styles.sectionFooter}>{s.footer}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className={styles.footer}>
-          <p className={styles.footerText}>
-            Your data belongs to you. SchoolOS processes it only to run your school's platform, nothing more.
-          </p>
-          <div className={styles.footerLinks}>
-            <button className={styles.footerLink} onClick={() => router.push('/terms')}>
-              Terms &amp; Conditions \u2192
-            </button>
-            <button className={styles.footerLink} onClick={() => router.push('/login')}>
-              Back to Login \u2192
-            </button>
-          </div>
-          <p className={styles.copyright}>\u00a9 2026 Echoblaze \u00b7 SchoolOS \u00b7 Built in Nigeria</p>
-        </div>
-
-      </div>
-    </div>
+    <LegalDocument
+      title="Privacy Policy"
+      subtitle="How SchoolOS collects, uses, shares and protects the personal data of schools, staff, students and families."
+      effective="10 November 2026"
+      version="3.0"
+      summary={SUMMARY}
+      sections={SECTIONS}
+      relatedHref="/terms"
+      relatedLabel="Terms and Conditions"
+    />
   )
 }
