@@ -1,6 +1,6 @@
 /* src/app/dashboard/student/records/records.module.css */
 
-/* ── Page Shell ─────────────────────────────────────────────── */
+/* ── Page Shell ─────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   background: var(--bg-base);
@@ -11,7 +11,7 @@
   padding-bottom: 120px;
 }
 
-/* ── Background Orbs ────────────────────────────────────────── */
+/* ── Background Orbs ────────────────────────────────────── */
 .orb1 {
   width: 380px;
   height: 380px;
@@ -28,7 +28,7 @@
   opacity: 0.35;
 }
 
-/* ── Header ──────────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -107,7 +107,7 @@
   border-color: var(--glass-border-hover);
 }
 
-/* ── Summary Banner ───────────────────────────────────────── */
+/* ── Summary Banner ─────────────────────────────────────── */
 .summaryBanner {
   display: flex;
   align-items: center;
@@ -150,7 +150,7 @@
   flex-shrink: 0;
 }
 
-/* ── Tab Bar ────────────────────────────────────────────────── */
+/* ── Tab Bar ────────────────────────────────────────────── */
 .tabBarWrapper {
   padding: var(--space-4) var(--space-5) 0;
   background: var(--bg-base);
@@ -213,7 +213,7 @@
   color: var(--text-accent);
 }
 
-/* ── Main Content ─────────────────────────────────────────── */
+/* ── Main Content ───────────────────────────────────────── */
 .main {
   flex: 1;
 }
@@ -225,7 +225,7 @@
   gap: var(--space-5);
 }
 
-/* ── Filter Row ────────────────────────────────────────────── */
+/* ── Filter Row ─────────────────────────────────────────── */
 .filterRow {
   overflow: hidden;
 }
@@ -267,7 +267,7 @@
   color: var(--text-accent);
 }
 
-/* ── Year Group ────────────────────────────────────────────── */
+/* ── Year Group ─────────────────────────────────────────── */
 .groupedList {
   display: flex;
   flex-direction: column;
@@ -307,7 +307,7 @@
   white-space: nowrap;
 }
 
-/* ── Term Section ───────────────────────────────────────────── */
+/* ── Term Section ───────────────────────────────────────── */
 .termSection {
   display: flex;
   flex-direction: column;
@@ -352,7 +352,7 @@
   white-space: nowrap;
 }
 
-/* ── Result Cards ───────────────────────────────────────────── */
+/* ── Result Cards ───────────────────────────────────────── */
 .resultCards {
   display: flex;
   flex-direction: column;
@@ -421,7 +421,7 @@
   text-align: right;
 }
 
-/* ── Timeline ──────────────────────────────────────────────── */
+/* ── Timeline ───────────────────────────────────────────── */
 .timeline {
   display: flex;
   flex-direction: column;
@@ -544,7 +544,7 @@
   border-top: 1px solid var(--glass-border);
 }
 
-/* ── Certificates / Documents ─────────────────────────── */
+/* ── Certificates / Documents ───────────────────────────── */
 .docGroup {
   display: flex;
   flex-direction: column;
@@ -640,7 +640,7 @@
   letter-spacing: 0.03em;
 }
 
-/* ── Empty States ───────────────────────────────────────────── */
+/* ── Empty States ───────────────────────────────────────── */
 .emptyState {
   margin: var(--space-4) 0;
   display: flex;
@@ -672,7 +672,7 @@
   max-width: 260px;
 }
 
-/* ── Spinner ────────────────────────────────────────────────── */
+/* ── Spinner ────────────────────────────────────────────── */
 .spinner {
   display: inline-block;
   width: 14px;
