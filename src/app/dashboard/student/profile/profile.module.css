@@ -57,12 +57,14 @@
   font-size: 1.3rem;
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
 }
 
 .iconBtn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,6 +159,7 @@
 
 .nameInput {
   text-align: center;
+  min-height: 48px;
   font-family: var(--font-display) !important;
   font-size: 1.3rem !important;
 }
@@ -264,7 +267,7 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   background: var(--burgundy-subtle);
-  padding: 2px 10px;
+  padding: 2px 12px;
   border-radius: var(--radius-full);
   color: var(--text-accent);
 }
@@ -275,6 +278,7 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
+  min-height: 44px;
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 600;
@@ -301,6 +305,7 @@
 .signOutBtn {
   width: 100%;
   padding: var(--space-4);
+  min-height: 48px;
   background: var(--error-bg);
   border: 1px solid rgba(192, 57, 43, 0.2);
   border-radius: var(--radius-md);
