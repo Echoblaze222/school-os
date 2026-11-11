@@ -7,9 +7,10 @@
 //
 // Table-based layout with inline styles only (email clients strip <style>
 // and block inline SVG, so no icon graphics here). brandColor should be
-// the school's primary_color; it falls back to the SchoolOS purple.
+// the school's primary_color; it falls back to the SchoolOS burgundy
+// (the --brand token in globals.css).
 
-const DEFAULT_BRAND = '#7C3AED'
+const DEFAULT_BRAND = '#800020'
 
 const esc = (s: unknown) =>
   String(s ?? '')
