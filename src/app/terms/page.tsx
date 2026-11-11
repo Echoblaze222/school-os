@@ -121,7 +121,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Notifications and communications',
     paragraphs: [
-      'By using the Platform you agree to receive service communications about your account and your School: in the app, by push notification, by email, and by SMS or WhatsApp where a phone number is on your profile. These communications are delivered through third-party providers described in the Privacy Policy. Message and data charges from your network may apply.',
+      'By using the Platform you agree to receive service communications about your account and your School: in the app, by push notification and by email. These communications are delivered through third-party providers described in the Privacy Policy.',
       'You can manage optional channels in your notification settings. Security and account notices, and certain critical school alerts, cannot be switched off.',
     ],
   },
@@ -172,7 +172,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Third-party services',
     paragraphs: [
-      'The Service depends on third-party infrastructure and providers, including Supabase, Vercel, Paystack, Brevo, Resend, Termii, Dojah, Anthropic, Google and LiveKit, as described in the Privacy Policy. Echoblaze is not responsible for outages, errors or data handling by those providers beyond what it can reasonably control through its own agreements with them. Your use of a provider\u2019s own service, such as making a payment through Paystack, is also subject to that provider\u2019s terms.',
+      'The Service depends on third-party infrastructure and providers, including Supabase, Vercel, Paystack, Brevo, Resend, Dojah, Anthropic, Google and LiveKit, as described in the Privacy Policy. Echoblaze is not responsible for outages, errors or data handling by those providers beyond what it can reasonably control through its own agreements with them. Your use of a provider\u2019s own service, such as making a payment through Paystack, is also subject to that provider\u2019s terms.',
     ],
   },
   {
@@ -251,7 +251,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Contact',
     paragraphs: [
-      'For questions about these Terms, contact Echoblaze at piussimon717@gmail.com.',
+      'For questions about these Terms, contact Echoblaze by email at schoolosweb@gmail.com or by phone on +2348086883144.',
     ],
   },
 ]

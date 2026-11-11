@@ -116,7 +116,7 @@ const SECTIONS: LegalSection[] = [
         items: [
           'Chat messages, group chats and attachments',
           'Announcements, notifications (including whether they were read), reminders you create, and meeting records',
-          'Delivery records for email, SMS and WhatsApp messages: the recipient address or number, the message content and the delivery status',
+          'Delivery records for email messages: the recipient address, the message content and the delivery status',
         ],
       },
       {
@@ -166,7 +166,7 @@ const SECTIONS: LegalSection[] = [
         ['Providing the Platform', 'Accounts and roles, school records, dashboards, report cards, timetables, attendance', 'Performance of a contract with the school; the school\u2019s own lawful basis for its records'],
         ['Identity verification and account security', 'NIN checks, sign-in security, session management, rate limiting, audit logs, abuse prevention', 'Legitimate interests in protecting users and the Platform; legal obligation where one applies'],
         ['Payments and billing', 'Fee payments, subscriptions, receipts, reconciliation', 'Performance of a contract; legal obligation for accounting and tax records'],
-        ['Notifications and messages', 'In-app, push, email, SMS and WhatsApp messages about your account and your school', 'Performance of a contract for service messages; your consent or preference for optional channels'],
+        ['Notifications and messages', 'In-app, push and email messages about your account and your school', 'Performance of a contract for service messages; your consent or preference for optional channels'],
         ['AI-assisted features', 'Answers from the assistant when you ask for them', 'Performance of a contract: you request the feature'],
         ['Health and counseling records', 'Clinic visits, medication records, counseling cases', 'The explicit consent of the person, or of the parent or guardian for a child, recorded by the school; or another ground the NDPA permits for health care and safety. The school is responsible for establishing the ground'],
         ['Improving and securing the Platform', 'Aggregated, de-identified usage patterns, fixing faults', 'Legitimate interests'],
@@ -179,8 +179,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Notifications and messaging',
     paragraphs: [
       'Notifications appear inside the app and, if you enable them, as push notifications. Web push uses your browser\u2019s push service. On Android, where enabled, push notifications are delivered through Firebase Cloud Messaging, a Google service. We store one push subscription for each device you enable.',
-      'If push cannot reach you, important notifications may be sent as WhatsApp or SMS messages through our messaging provider, Termii, to the phone number on your profile. These messages contain the text of the notification. You can switch WhatsApp and SMS on or off for each category in your notification settings. Security and account notices, and certain critical school alerts, are sent regardless of those settings.',
-      'Emails, such as onboarding messages, receipts and reminders, are sent through our email provider (Brevo or Resend). We keep a record of each email, including the recipient, subject and content, so that failed messages can be retried and delivery problems can be investigated.',
+      'Emails, such as onboarding messages, receipts and reminders, are sent through our email provider (Brevo or Resend). We keep a record of each email, including the recipient, subject and content, so that failed messages can be retried and delivery problems can be investigated. Security and account notices, and certain critical school alerts, are sent regardless of your notification settings.',
       'You can turn push notifications off at any time in your browser or device settings.',
     ],
   },
@@ -213,7 +212,6 @@ const SECTIONS: LegalSection[] = [
         ['Vercel', 'Application hosting and delivery', 'Data in transit and server logs'],
         ['Paystack', 'Payment processing for subscriptions and fee payments', 'Payer name, email address, phone number and amount. We never receive card or bank details'],
         ['Brevo or Resend', 'Transactional email', 'Recipient name, email address and email content'],
-        ['Termii', 'SMS and WhatsApp delivery', 'Recipient phone number and message text'],
         ['Dojah, with NIMC', 'NIN verification during onboarding', 'The NIN you enter, and the identity details returned for you to confirm'],
         ['Anthropic', 'AI assistant (primary)', 'Your prompts and a role-relevant summary'],
         ['Google', 'AI assistant (fallback, Gemini) and Android push notifications (Firebase Cloud Messaging)', 'The same data as Anthropic when used as fallback; a device token and the notification text'],
@@ -244,7 +242,7 @@ const SECTIONS: LegalSection[] = [
       'On a verified request to close an account, school data is deleted within 30 days, subject to the exceptions in this section',
       'Payment records may be kept longer where accounting, tax or other law requires it',
       'Certificate verification records may be kept indefinitely so that a certificate can still be verified in future',
-      'Delivery records (email, SMS and WhatsApp), audit logs and identity verification logs are kept while the account is active, because they are needed for security, troubleshooting and accountability, and are removed with the school\u2019s data when an account is closed, unless the law requires us to keep them',
+      'Email delivery records, audit logs and identity verification logs are kept while the account is active, because they are needed for security, troubleshooting and accountability, and are removed with the school\u2019s data when an account is closed, unless the law requires us to keep them',
     ],
   },
   {
@@ -281,7 +279,7 @@ const SECTIONS: LegalSection[] = [
       'Not be subject to a decision based solely on automated processing that has legal or similarly significant effects',
     ],
     after: [
-      'For students and other users whose accounts are managed by a school, requests are normally made through the school, because the school is the controller. We will help the school to respond. You may also contact us directly at piussimon717@gmail.com. We will reply within 14 business days, and we may ask you to confirm your identity first.',
+      'For students and other users whose accounts are managed by a school, requests are normally made through the school, because the school is the controller. We will help the school to respond. You may also contact us directly at schoolosweb@gmail.com or on +2348086883144. We will reply within 14 business days, and we may ask you to confirm your identity first.',
       'You have the right to lodge a complaint with the Nigeria Data Protection Commission (NDPC) if you believe your data has been handled unlawfully.',
     ],
   },
@@ -313,7 +311,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: 'Contact',
     paragraphs: [
-      'For privacy questions, to exercise a right, or to raise a concern, contact Echoblaze, SchoolOS Data Protection, at piussimon717@gmail.com.',
+      'For privacy questions, to exercise a right, or to raise a concern, contact Echoblaze, SchoolOS Data Protection, by email at schoolosweb@gmail.com or by phone on +2348086883144.',
     ],
   },
 ]
