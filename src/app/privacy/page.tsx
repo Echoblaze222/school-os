@@ -280,7 +280,7 @@ const SECTIONS: LegalSection[] = [
       'Withdraw consent at any time, where processing is based on consent, without affecting what was done before',
       'Not be subject to a decision based solely on automated processing that has legal or similarly significant effects',
     ],
-    paragraphs: [
+    after: [
       'For students and other users whose accounts are managed by a school, requests are normally made through the school, because the school is the controller. We will help the school to respond. You may also contact us directly at piussimon717@gmail.com. We will reply within 14 business days, and we may ask you to confirm your identity first.',
       'You have the right to lodge a complaint with the Nigeria Data Protection Commission (NDPC) if you believe your data has been handled unlawfully.',
     ],

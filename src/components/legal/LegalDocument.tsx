@@ -3,6 +3,10 @@
 // white page with black text, numbered sections, a table of contents and
 // print-friendly styling. It is deliberately independent of the app's dark
 // theme: legal text is always shown black on white.
+//
+// Order inside a section: intro, paragraphs, items, groups, table, after, footer.
+// `after` is for paragraphs that must come after a list or table (for example
+// how to exercise the rights that were just listed).
 
 import Link from 'next/link'
 import LegalBackLink from './LegalBackLink'
@@ -25,6 +29,7 @@ export interface LegalSection {
   items?: string[]
   groups?: LegalGroup[]
   table?: LegalTable
+  after?: string[]
   footer?: string
 }
 
@@ -131,6 +136,8 @@ export default function LegalDocument({
                   </table>
                 </div>
               )}
+
+              {s.after?.map((p, pi) => <p key={pi} className={styles.text}>{p}</p>)}
 
               {s.footer && <p className={styles.note}>{s.footer}</p>}
             </section>
