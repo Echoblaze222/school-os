@@ -1,9 +1,13 @@
 // src/app/api/cron/process-queue/route.ts
-// Vercel Cron Job — drains pending rows from job_queue (see
+// Drains pending rows from job_queue (see
 // docs/lane1-production-foundation/02-job-queue-schema.sql).
-// Configure in vercel.json:
-// { "crons": [{ "path": "/api/cron/process-queue", "schedule": "* * * * *" }] }
-// Protected by CRON_SECRET env var, same pattern as every other /api/cron/* route.
+//
+// Two ways in, same drain logic:
+//   GET  with `Authorization: Bearer $CRON_SECRET`   (Vercel Cron; needs a plan
+//        that allows per-minute crons, so it is NOT usable on Hobby)
+//   POST with `x-internal-secret: $INTERNAL_SECRET`  (pg_cron via net.http_post,
+//        the same pattern as api/internal/email-retry). See
+//        docs/ops/sql/2026-11-process-queue-cron.sql for the schedule.
 //
 // Add a case to `processJob` for each JobType as routes migrate from
 // synchronous fan-out to enqueueJob(). Keep each handler idempotent —
@@ -71,18 +75,13 @@ async function processJob(admin: ReturnType<typeof adminClient>, job: QueuedJob,
   }
 }
 
-export async function GET(req: Request) {
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+async function drainQueue() {
   const traceId = newTraceId()
   const admin = adminClient()
   const results = { completed: 0, failed: 0 }
 
-  // One job_type per invocation keeps this simple; cron calls this
-  // route once a minute so each type gets drained within a minute of
+  // One job_type per invocation keeps this simple; the scheduler calls this
+  // route every minute or two so each type gets drained shortly after
   // being enqueued. If job_type variety grows, switch to fetching all
   // due types in one query instead of hardcoding this list.
   const jobTypes = ['bulk_notification', 'report_generate', 'reconciliation', 'bulk_import']
@@ -113,4 +112,22 @@ export async function GET(req: Request) {
 
   logger.info('process-queue run complete', { traceId, ...results })
   return NextResponse.json({ ok: true, traceId, ...results })
+}
+
+export async function GET(req: Request) {
+  // Refuse when CRON_SECRET is unset; otherwise the header "Bearer undefined"
+  // would match the template string below.
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || req.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return drainQueue()
+}
+
+export async function POST(req: Request) {
+  const secret = req.headers.get('x-internal-secret')
+  if (!secret || secret !== process.env.INTERNAL_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return drainQueue()
 }
