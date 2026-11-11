@@ -13,6 +13,10 @@
 // official document" action in this app (report cards, results
 // publish). Idempotent: calling approve twice on an already-issued
 // certificate is a no-op, not a duplicate issuance.
+//
+// `pdf_url` now stores the private storage PATH, not a signed URL. Links
+// returned to clients are minted on demand and expire after an hour
+// (see src/lib/certificates/pdfUrl.ts).
 // -------------------------------------------------------
 
 import { NextResponse } from 'next/server'
@@ -21,6 +25,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rateLimit'
 import { allocateCertificateNumber, computeCertificateHash } from '@/lib/certificates/numbering'
 import { CertificateDocument, type CertificateSnapshot } from '@/lib/certificates/pdf'
+import { certificatePdfPath, signCertificatePdf } from '@/lib/certificates/pdfUrl'
 import { renderToBuffer } from '@react-pdf/renderer'
 import QRCode from 'qrcode'
 import React from 'react'
@@ -47,7 +52,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!cert) return NextResponse.json({ ok: false, error: 'Certificate not found.' }, { status: 404 })
 
   if (cert.status === 'issued') {
-    return NextResponse.json({ ok: true, alreadyIssued: true, certificate: { id: cert.id, certificateNumber: cert.certificate_number, pdfUrl: cert.pdf_url } })
+    const existingUrl = await signCertificatePdf(admin, cert.school_id, cert.certificate_number, cert.pdf_url)
+    return NextResponse.json({ ok: true, alreadyIssued: true, certificate: { id: cert.id, certificateNumber: cert.certificate_number, pdfUrl: existingUrl } })
   }
   if (cert.status === 'revoked') {
     return NextResponse.json({ ok: false, error: 'This certificate was revoked and cannot be issued. Create a new one instead.' }, { status: 409 })
@@ -123,16 +129,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ ok: false, error: `PDF generation failed: ${err.message}` }, { status: 500 })
   }
 
-  const fileName = `certificates/${cert.school_id}/${certificateNumber.replace(/\//g, '-')}.pdf`
+  const fileName = certificatePdfPath(cert.school_id, certificateNumber)
   const { error: uploadErr } = await admin.storage.from('pdf-exports').upload(fileName, pdfBuffer, { upsert: true, contentType: 'application/pdf' })
   if (uploadErr) return NextResponse.json({ ok: false, error: `Storage upload failed: ${uploadErr.message}` }, { status: 500 })
 
-  const { data: signed } = await admin.storage.from('pdf-exports').createSignedUrl(fileName, 60 * 60 * 24 * 365)
-  const pdfUrl = signed?.signedUrl ?? fileName
-
   const { error: updateErr } = await admin.from('certificates').update({
     status: 'issued', certificate_number: certificateNumber, certificate_hash: certificateHash,
-    snapshot: snapshot as any, pdf_url: pdfUrl, issue_date: issueDate.toISOString().slice(0, 10),
+    snapshot: snapshot as any, pdf_url: fileName, issue_date: issueDate.toISOString().slice(0, 10),
     issued_by: user.id, approved_by: user.id, updated_at: new Date().toISOString(),
   }).eq('id', cert.id)
 
@@ -142,6 +145,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     certificate_id: cert.id, event_type: 'issued', actor_id: user.id,
     metadata: { certificate_number: certificateNumber },
   }).then(() => {}, () => {})
+
+  const pdfUrl = await signCertificatePdf(admin, cert.school_id, certificateNumber)
 
   return NextResponse.json({ ok: true, certificate: { id: cert.id, certificateNumber, pdfUrl, verificationUrl } })
 }
