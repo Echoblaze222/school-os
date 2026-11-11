@@ -13,13 +13,20 @@
 // own, but it does: (a) batch-limit the write itself so one request
 // can't touch an unbounded set of rows, (b) reuse the existing rate
 // limiter so the endpoint itself can't be hammered.
+//
+// After a successful publish, parents are emailed (and get an in-app
+// notification) via after(), so the examiner's response is not held up
+// while hundreds of emails go out.
 // -------------------------------------------------------
 
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasExamCapability } from '@/lib/supabase/examPermissions'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { emailParentsResultsPublished } from '@/lib/email/notifyResultsPublished'
+
+export const maxDuration = 60
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -57,7 +64,7 @@ export async function POST(req: Request) {
 
   const { data: eligible } = await admin
     .from('results')
-    .select('id')
+    .select('id, student_id, term, academic_year')
     .in('id', resultIds)
     .eq('school_id', profile?.school_id)
     .eq('approved', true)
@@ -82,6 +89,14 @@ export async function POST(req: Request) {
     actor_id: user.id, action: 'results_published', target_table: 'results',
     metadata: { count: eligibleIds.length, result_ids: eligibleIds, school_id: profile?.school_id },
   }).then(() => {}, () => {})
+
+  // Email parents after the response is sent. Failures are swallowed inside
+  // the helper: the results are already published and must stay that way.
+  const schoolId = profile?.school_id as string
+  const publishedRows = (eligible ?? []) as { student_id: string | null; term: string | null; academic_year: string | null }[]
+  after(async () => {
+    await emailParentsResultsPublished(admin, schoolId, publishedRows)
+  })
 
   return NextResponse.json({ ok: true, publishedCount: eligibleIds.length })
 }
