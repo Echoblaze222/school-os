@@ -2,9 +2,11 @@
 // src/components/public/landing/AudienceSection.tsx
 // Tabbed "who it's for" section. Content is grounded in features that
 // actually exist in the product (role dashboards already shipped), not
-// aspirational marketing copy.
+// aspirational marketing copy. Each role also shows a blob-shaped photo
+// with a caption (pre-masked files in public/branding).
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { CrownIcon, BookOpenIcon, UsersIcon, GraduationCapIcon, CheckIcon } from '@/components/Icons'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './AudienceSection.module.css'
@@ -14,6 +16,9 @@ const AUDIENCES = [
     key: 'schools',
     label: 'Principals & Proprietors',
     icon: CrownIcon,
+    image: '/branding/classroom-maths.webp',
+    alt: 'A teacher at a blackboard teaching a full classroom of students',
+    caption: 'Results and report cards that are accurate and ready on time',
     points: [
       'A School Health Score that surfaces attendance, fee, and performance trends at a glance',
       'Staff, student, and class management from one dashboard',
@@ -24,6 +29,9 @@ const AUDIENCES = [
     key: 'teachers',
     label: 'Teachers',
     icon: BookOpenIcon,
+    image: '/branding/raised-hand.webp',
+    alt: 'A pupil raising her hand to answer a teacher\u2019s question',
+    caption: 'More time for the pupils who need you, less for registers',
     points: [
       'Assignments, grading, and result entry without paper registers',
       'Attendance and syllabus tracking per class',
@@ -34,6 +42,9 @@ const AUDIENCES = [
     key: 'parents',
     label: 'Parents',
     icon: UsersIcon,
+    image: '/branding/smiling-class.webp',
+    alt: 'A smiling pupil sitting at her desk in a full classroom',
+    caption: 'Know how your child is doing, without a trip to the office',
     points: [
       'Pay school fees directly, with an instant digital receipt',
       'See results, attendance, and report cards as they\u2019re published',
@@ -44,6 +55,9 @@ const AUDIENCES = [
     key: 'students',
     label: 'Students',
     icon: GraduationCapIcon,
+    image: '/branding/happy-student.webp',
+    alt: 'A smiling girl in a yellow jacket celebrating in class',
+    caption: 'Learning they look forward to, with everything in one place',
     points: [
       'Assignments, timetable, and results in one place',
       'Join live classes and access the school library',
@@ -51,6 +65,16 @@ const AUDIENCES = [
     ],
   },
 ]
+
+// Inline sizing so the blob can never be stretched into an oval (see
+// FeatureBand for the reason).
+const BLOB_STYLE = {
+  width: '100%',
+  maxWidth: 240,
+  height: 'auto',
+  aspectRatio: '1 / 1',
+  objectFit: 'contain',
+} as const
 
 export default function AudienceSection() {
   const [active, setActive] = useState(AUDIENCES[0].key)
@@ -86,6 +110,18 @@ export default function AudienceSection() {
             </li>
           ))}
         </ul>
+        <figure className={styles.figure}>
+          <Image
+            src={current.image}
+            alt={current.alt}
+            width={900}
+            height={900}
+            sizes="(min-width: 760px) 240px, 60vw"
+            className={styles.blob}
+            style={BLOB_STYLE}
+          />
+          <figcaption className={styles.caption}>{current.caption}</figcaption>
+        </figure>
       </div>
     </section>
   )

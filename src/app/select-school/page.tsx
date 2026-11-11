@@ -8,6 +8,8 @@ import { SearchIcon, CheckCircleIcon, ClockIcon, XIcon, MapPinIcon, ArrowRightIc
 import { ripple } from '@/lib/ripple'
 import motion from '@/components/dashboard-motion.module.css'
 import AnimatedLogo from '@/components/AnimatedLogo'
+import ThemeToggleFab from '@/components/public/ThemeToggleFab'
+import { useTheme } from '@/hooks/useTheme'
 import styles from './select-school.module.css'
 
 interface School {
@@ -36,6 +38,7 @@ const RETURN_TO_KEY = 'schoolos_return_to'
 
 export default function SelectSchoolPage() {
   const router   = useRouter()
+  const { theme } = useTheme()
 
   const [query,    setQuery]    = useState('')
   const [results,  setResults]  = useState<School[]>([])
@@ -170,9 +173,8 @@ export default function SelectSchoolPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.bgGlow} />
-      <div className={styles.bgGrid} />
+    <div className={styles.page} data-surface="premium">
+      <ThemeToggleFab />
 
       <div className={`${styles.centerCol} ${mounted ? styles.visible : ''}`}>
 
@@ -180,9 +182,9 @@ export default function SelectSchoolPage() {
           <ArrowLeftIcon size={13} /> Back to home
         </button>
 
-        {/* SchoolOS logo - top, centered, ChatGPT-style */}
+        {/* SchoolOS logo - top, centered */}
         <div className={styles.brandBlock}>
-          <AnimatedLogo size={64} variant="dark-bg" className={styles.brandLogo} />
+          <AnimatedLogo size={64} variant={theme === 'light' ? 'color' : 'dark-bg'} className={styles.brandLogo} />
           <h1 className={styles.brandName}>School<span className={styles.brandAccent}>OS</span></h1>
         </div>
 
@@ -240,7 +242,7 @@ export default function SelectSchoolPage() {
                   autoComplete="off"
                 />
                 {query && (
-                  <button className={styles.clearBtn} onClick={clearSelection} type="button"><XIcon size={13} /></button>
+                  <button className={styles.clearBtn} onClick={clearSelection} type="button" aria-label="Clear search"><XIcon size={13} /></button>
                 )}
               </div>
 
@@ -268,7 +270,7 @@ export default function SelectSchoolPage() {
                         <p className={styles.schoolName}>{school.name}</p>
                         <p className={styles.schoolLocation}>
                           {[school.city, school.state].filter(Boolean).join(', ') || 'Nigeria'}
-                          {' · '}
+                          {' \u00b7 '}
                           <span style={{ textTransform: 'capitalize' }}>{school.school_type}</span>
                         </p>
                       </div>
@@ -294,12 +296,13 @@ export default function SelectSchoolPage() {
                 </div>
               )}
 
-              {/* Selected school preview */}
+              {/* Selected school preview: flat block in the school's color, darkened
+                  a little so the white text always reads (no gradient). */}
               {selected && (
                 <div className={styles.selectedPreview}>
                   <div
                     className={styles.selectedBanner}
-                    style={{ background: `linear-gradient(135deg, ${selected.primary_color}CC, ${selected.primary_color}66)` }}
+                    style={{ background: `color-mix(in srgb, ${selected.primary_color} 78%, #000)` }}
                   >
                     <div className={styles.selectedLogo}>
                       {selected.logo_url
@@ -343,7 +346,7 @@ export default function SelectSchoolPage() {
       </div>
 
       <div className={styles.poweredBy}>
-        Powered by <strong>SchoolOS</strong> · Premium School Management
+        Powered by <strong>SchoolOS</strong> \u00b7 Premium School Management
       </div>
     </div>
   )

@@ -11,6 +11,7 @@
 import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import SchoolBrandInjector from '@/components/SchoolBrandInjector'
+import ClosureBanner from '@/components/ClosureBanner'
 
 // Force fully dynamic, per-request rendering with no caching of any kind.
 // This layout reads the signed-in user's school (brand colours, role data)
@@ -69,7 +70,10 @@ export default async function StudentLayout({
           status={setupStatus}
         />
       ) : (
-        children
+        <>
+          <ClosureBanner role="student" />
+          {children}
+        </>
       )}
     </>
   )

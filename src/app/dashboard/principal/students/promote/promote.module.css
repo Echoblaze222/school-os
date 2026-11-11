@@ -26,7 +26,7 @@
   opacity: 0.5;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -45,8 +45,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -59,14 +59,14 @@
 
 .headerText { flex: 1; text-align: center; }
 .headerTitle { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.1; }
-.headerSub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em; }
+.headerSub { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.02em; }
 
 .themeBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -77,7 +77,7 @@
 }
 .themeBtn:hover { background: var(--glass-bg-hover); }
 
-/* ── Steps indicator ────────────────────────────────────── */
+/* ── Steps indicator ──────────────────────────────────────────────────── */
 .steps {
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@
   letter-spacing: 0.04em;
 }
 .stepDot {
-  width: 22px; height: 22px;
+  width: 24px; height: 24px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: var(--glass-bg);
@@ -110,7 +110,7 @@
 .stepDone .stepDot { background: var(--brand-subtle); border-color: var(--brand-border); color: var(--brand-light); }
 .stepLine { flex: 1; height: 1px; background: var(--glass-border); min-width: 16px; max-width: 32px; }
 
-/* ── Main ───────────────────────────────────────────────── */
+/* ── Main ───────────────────────────────────────────────────────────────────── */
 .main { flex: 1; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
 
 .card {
@@ -130,7 +130,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: var(--space-3) var(--space-2);
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
@@ -152,12 +152,12 @@
 .destSub { font-size: 0.65rem; color: var(--text-muted); }
 
 .classRow { display: flex; align-items: flex-end; gap: var(--space-3); }
-.formField { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.formField { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .label { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
 .select {
-  height: 44px;
-  padding: 0 var(--space-3);
+  height: 48px;
+  padding: 0 var(--space-4);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
@@ -171,19 +171,19 @@
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238B93A7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 34px;
+  background-position: right 16px center;
+  padding-right: 40px;
 }
 .select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--input-focus); }
 .select:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.arrow { font-size: 1.2rem; color: var(--brand); font-weight: 700; padding-bottom: 11px; flex-shrink: 0; }
+.arrow { font-size: 1.2rem; color: var(--brand); font-weight: 700; padding-bottom: 12px; flex-shrink: 0; }
 
 .graduateBadge {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  height: 44px;
+  height: 48px;
   padding: 0 var(--space-4);
   background: var(--gold-subtle);
   border: 1px solid var(--gold-border);
@@ -197,15 +197,16 @@
 .loadingText { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: var(--space-6); }
 
 .studentHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); gap: var(--space-3); }
-.selectAll { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+.selectAll { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; min-height: 44px; }
 .selectAllLabel { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
-.checkbox { width: 17px; height: 17px; accent-color: var(--brand); cursor: pointer; }
+.checkbox { width: 20px; height: 20px; accent-color: var(--brand); cursor: pointer; }
 
 .studentList { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); max-height: 420px; overflow-y: auto; }
 .studentRow {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: 48px;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -217,7 +218,7 @@
 .studentRowSelected { background: var(--brand-subtle); border-color: var(--brand-border); }
 .studentInfo { flex: 1; min-width: 0; }
 .studentName { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.studentAdm { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.studentAdm { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
 .selectedCheck { color: var(--brand-light); font-weight: 800; font-size: 1rem; flex-shrink: 0; }
 
 .emptyText { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: var(--space-8) var(--space-4); }
@@ -249,7 +250,7 @@
 
 .actionBtn {
   width: 100%;
-  height: 50px;
+  height: 48px;
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
   color: #fff;
   border-radius: var(--radius-lg);
@@ -281,7 +282,7 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Success state ──────────────────────────────────────── */
+/* ── Success state ────────────────────────────────────────────────────── */
 .successBox {
   text-align: center;
   padding: var(--space-12) var(--space-6);
@@ -303,7 +304,7 @@
 .successSub { font-size: 0.85rem; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
 .successActions { display: flex; gap: var(--space-3); margin-top: var(--space-2); }
 .resetBtn {
-  height: 44px;
+  height: 48px;
   padding: 0 var(--space-5);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -315,7 +316,7 @@
 }
 .resetBtn:hover { background: var(--glass-bg-hover); }
 .viewAlumniBtn {
-  height: 44px;
+  height: 48px;
   padding: 0 var(--space-5);
   background: var(--brand);
   color: #fff;

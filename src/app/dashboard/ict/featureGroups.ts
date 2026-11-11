@@ -1,14 +1,10 @@
 // src/app/dashboard/ict/featureGroups.ts
-// Shared across every ict sub-page that uses RoleSubHeader, so the
-// bottom dock / "all features" sheet is identical everywhere an ict
-// staff member navigates - not just on the dashboard home screen.
-// Extracted from IctClient.tsx, which now imports this instead of
-// defining its own local copy.
+// Shared across every ict sub-page that uses RoleSubHeader.
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   ClipboardIcon, ActivityIcon, UserIcon, CheckCircleIcon,
-  MessageIcon, BellIcon, AiIcon, CalendarIcon,
+  MessageIcon, BellIcon, AiIcon, CalendarIcon, BarChartIcon,
 } from '@/components/Icons'
 
 export const ICT_FEATURE_GROUPS: FeatureGroup[] = [
@@ -20,6 +16,7 @@ export const ICT_FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Support', items: [
     { id: 'tickets',  label: 'Tickets',           href: '/dashboard/ict/tickets',          Icon: ClipboardIcon },
     { id: 'accounts', label: 'Account Requests',  href: '/dashboard/ict/account-requests',  Icon: UserIcon },
+    { id: 'analytics', label: 'Analytics',        href: '/dashboard/ict/analytics',         Icon: BarChartIcon },
     { id: 'meetings', label: 'Meetings',           href: '/dashboard/ict/meetings',          Icon: CalendarIcon },
   ]},
   { name: 'Infrastructure', items: [

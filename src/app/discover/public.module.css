@@ -7,7 +7,7 @@
   background: var(--bg-surface);
 }
 
-.logoLink { display: flex; align-items: center; }
+.logoLink { display: flex; align-items: center; min-height: 44px; }
 
 .headerNav {
   display: flex;
@@ -16,6 +16,9 @@
 }
 
 .navLink, .navActive {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -53,11 +56,14 @@
 }
 
 .filterChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   border: 1px solid var(--nav-border);
   background: var(--bg-elevated);
   color: var(--text-secondary);
   border-radius: var(--radius-full);
-  padding: var(--space-1) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
@@ -157,7 +163,7 @@
   overflow: hidden;
 }
 
-/* ── Read-more modal ──────────────────────────────────────────────────── */
+/* ── Read-more modal ────────────────────────────────────────────────────────────────────────── */
 
 .modalOverlay {
   position: fixed;
@@ -188,8 +194,8 @@
   background: rgba(0, 0, 0, 0.5);
   border: none;
   border-radius: var(--radius-full);
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,12 +236,15 @@
 
 .modalVisitBtn {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   margin-top: var(--space-3);
   background: var(--brand);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  padding: var(--space-2) var(--space-5);
+  padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-full);
   text-decoration: none;
 }

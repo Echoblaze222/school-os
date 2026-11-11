@@ -7,6 +7,9 @@
 // automatically once they're wrapped here, so the old sidebar/RoleNav is
 // no longer needed on any page using this).
 //
+// On desktop (1024px and up) this becomes a sticky top bar and DesktopShell
+// supplies the sidebar. Mobile markup and styling are unchanged.
+//
 // Usage:
 //   <RoleSubHeader userId={userId} role="parent" profile={profile} school={school}
 //     title="Fees" featureGroups={FEATURE_GROUPS} homeHref="/dashboard/parent" aiHref="/dashboard/parent/ai">
@@ -18,6 +21,7 @@ import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
 import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
 import BottomDock from './BottomDock'
+import DesktopShell from './DesktopShell'
 import { SunIcon, MoonIcon, UserIcon, ArrowLeftIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
 import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
@@ -63,6 +67,15 @@ export default function RoleSubHeader({
 
   return (
     <div className={fullHeight ? `${styles.page} ${styles.pageFullHeight}` : styles.page}>
+      <DesktopShell
+        role={role}
+        profile={profile}
+        school={school}
+        featureGroups={featureGroups}
+        homeHref={resolvedHome}
+        aiHref={resolvedAi}
+      />
+
       <header className={styles.hero}>
         <div className={styles.frame}>
           <div className={styles.topRow}>
@@ -102,7 +115,7 @@ export default function RoleSubHeader({
 
             <div className={styles.controls}>
               <button
-                className={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`}
+                className={`${styles.iconBtn} ${styles.mobileOnly} ${motion.rippleHost} ${motion.focusable}`}
                 onClick={toggleTheme}
                 title="Toggle dark mode"
                 aria-label="Toggle dark mode"
@@ -115,7 +128,7 @@ export default function RoleSubHeader({
 
               <Link
                 href={`/dashboard/${role}/profile`}
-                className={`${styles.avatarBtn} ${motion.focusable}`}
+                className={`${styles.avatarBtn} ${styles.mobileOnly} ${motion.focusable}`}
                 title="Account"
                 aria-label="Account"
               >
@@ -124,7 +137,9 @@ export default function RoleSubHeader({
                   : <UserIcon size={18} />}
               </Link>
 
-              <AllFeaturesSheet groups={featureGroups} role={role} />
+              <span className={styles.mobileOnly}>
+                <AllFeaturesSheet groups={featureGroups} role={role} />
+              </span>
             </div>
           </div>
         </div>

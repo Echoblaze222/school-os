@@ -43,6 +43,7 @@
   color: var(--text-secondary); font-size: 0.82rem; font-weight: 500;
   letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none;
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  min-height: 44px;
   border: 1px solid var(--glass-border); background: var(--glass-bg);
   transition: all var(--transition-fast);
 }
@@ -50,7 +51,7 @@
 .backBtn svg { width: 14px; height: 14px; }
 .themeBtn {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: var(--radius-full);
+  width: 44px; height: 44px; border-radius: var(--radius-full);
   border: 1px solid var(--glass-border); background: var(--glass-bg);
   color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast);
 }
@@ -81,9 +82,10 @@
 }
 .searchInput {
   width: 100%;
+  min-height: 48px;
   background: var(--input-bg); border: 1px solid var(--input-border);
   border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-3) var(--space-3) 36px;
+  padding: var(--space-3) var(--space-3) var(--space-3) 40px;
   font-family: var(--font-body); font-size: 0.88rem; color: var(--input-text);
   outline: none;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -99,6 +101,7 @@
 .termFilter::-webkit-scrollbar { display: none; }
 .termBtn {
   flex-shrink: 0; padding: var(--space-2) var(--space-3);
+  min-height: 44px;
   border-radius: var(--radius-full); border: 1px solid var(--glass-border);
   background: var(--glass-bg); color: var(--text-muted);
   font-family: var(--font-body); font-size: 0.74rem; font-weight: 600;
@@ -181,14 +184,14 @@
 .noteInfo { flex: 1; min-width: 0; }
 .noteTitle {
   font-size: 0.90rem; font-weight: 700; color: var(--text-primary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
 }
 .noteMeta {
   font-size: 0.68rem; color: var(--text-muted); display: flex;
   align-items: center; gap: var(--space-2); flex-wrap: wrap;
 }
 .noteDescription {
-  font-size: 0.72rem; color: var(--text-secondary); margin-top: 3px;
+  font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px;
   line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 1;
   -webkit-box-orient: vertical; overflow: hidden;
 }
@@ -199,8 +202,9 @@
 }
 /* VIEW - opens in new tab (PDF inline view) */
 .viewBtn {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 4px;
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
+  min-height: 44px;
   border: 1px solid var(--glass-border); background: var(--glass-bg);
   color: var(--text-secondary); font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none;
@@ -211,8 +215,9 @@
 
 /* DOWNLOAD - direct anchor download */
 .downloadBtn {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 4px;
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
+  min-height: 44px;
   background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
   color: #fff; font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none;
@@ -259,6 +264,7 @@
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   color: var(--nav-icon); transition: color var(--transition-fast), transform var(--transition-fast);
   cursor: pointer; padding: var(--space-1) var(--space-3); border-radius: var(--radius-md); text-decoration: none;
+  min-height: 44px; min-width: 44px; justify-content: center;
 }
 .navItem:hover { transform: translateY(-2px); }
 .navItemActive { color: var(--nav-icon-active); }

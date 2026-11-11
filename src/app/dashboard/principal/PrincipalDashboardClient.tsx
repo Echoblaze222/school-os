@@ -7,6 +7,7 @@ import RoleHeroHeader from '@/components/RoleHeroHeader'
 import AiInsightBanner from '@/components/AiInsightBanner'
 import BottomDock from '@/components/BottomDock'
 import ContextSwitcher from '@/components/ContextSwitcher'
+import PrincipalHomeCharts from '@/components/analytics/PrincipalHomeCharts'
 import { PRINCIPAL_FEATURE_GROUPS } from './featureGroups'
 import styles from './principal.module.css'
 import motion from '@/components/dashboard-motion.module.css'
@@ -133,6 +134,9 @@ export default function PrincipalDashboardClient({
             actionHref="/dashboard/principal/ai"
           />
         </div>
+
+        {/* Live charts: collections, attendance, billed vs collected */}
+        <PrincipalHomeCharts />
 
         {/* Pending notifications preview */}
         {pendingNotifications.length > 0 && (

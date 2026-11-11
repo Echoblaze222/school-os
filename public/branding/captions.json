@@ -1,0 +1,56 @@
+[
+  {
+    "file": "hero-school-entrance.webp",
+    "headline": "A school day that starts well",
+    "caption": "Safe, organised and ready from the first bell. Everything your school needs runs quietly in the background.",
+    "audience": "Schools"
+  },
+  {
+    "file": "student-speaker.webp",
+    "headline": "Confident voices, bold futures",
+    "caption": "Every child deserves a stage. When admin work is handled, teachers have more time to build confidence in their pupils.",
+    "audience": "Children"
+  },
+  {
+    "file": "classroom-maths.webp",
+    "headline": "Results you can trust",
+    "caption": "Scores, report cards and broadsheets stay accurate and arrive on time, every term.",
+    "audience": "Schools"
+  },
+  {
+    "file": "raised-hand.webp",
+    "headline": "Every hand counts",
+    "caption": "Teachers see attendance, assignments and progress in one place, so no child is overlooked.",
+    "audience": "Parents"
+  },
+  {
+    "file": "happy-student.webp",
+    "headline": "Learning they look forward to",
+    "caption": "Assignments, notes and live classes sit in one app, so your child always knows what is next.",
+    "audience": "Children"
+  },
+  {
+    "file": "library-reading.webp",
+    "headline": "Curious minds, shared stories",
+    "caption": "Library loans and records are tracked, so books keep moving from shelf to student.",
+    "audience": "Schools"
+  },
+  {
+    "file": "smiling-class.webp",
+    "headline": "Your child, in good hands",
+    "caption": "Parents see attendance, results and school notices as they happen, without a trip to the office.",
+    "audience": "Parents"
+  },
+  {
+    "file": "focused-pupil.webp",
+    "headline": "Fees made simple",
+    "caption": "Pay school fees by Paystack, upload proof when needed, and get a confirmation straight away.",
+    "audience": "Parents"
+  },
+  {
+    "file": "pupil-portrait.webp",
+    "headline": "Proud to belong",
+    "caption": "Each pupil has their own login and profile, with their records kept private and safe.",
+    "audience": "Children"
+  }
+]

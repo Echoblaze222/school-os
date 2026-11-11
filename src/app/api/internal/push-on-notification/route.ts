@@ -1,7 +1,7 @@
 // src/app/api/internal/push-on-notification/route.ts
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Internal route - called automatically by a Postgres trigger (see
-// lib/supabase/notifications_push_trigger.sql) the instant a row is
+// docs/lane3-notifications/02-push-trigger.sql) the instant a row is
 // inserted into `notifications`, from ANYWHERE: server API routes, client
 // components, admin tooling, everything. This guarantees every notification
 // fires an instant push, without relying on every call site remembering to
@@ -15,18 +15,54 @@
 // This is the instant-push counterpart to /api/cron/unread-digest (the
 // hourly "you still haven't read this" re-engagement nudge) and to
 // /api/cron/reminders (user-set one-off reminders). Three distinct jobs:
-//   - THIS route      → instant, the moment a notification is created
-//   - unread-digest    → hourly, re-engagement for stuff sitting unread
-//   - cron/reminders   → one-off, user-scheduled ("remind me at 6pm")
-// ─────────────────────────────────────────────────────────────────────────────
+//   - THIS route      -> instant, the moment a notification is created
+//   - unread-digest   -> hourly, re-engagement for stuff sitting unread
+//   - cron/reminders  -> one-off, user-scheduled ("remind me at 6pm")
+//
+// Hardening added here:
+//   1. The secret is compared in constant time, so response timing can't be
+//      used to guess it one character at a time.
+//   2. The push link is only ever an in-app path. If a notification row
+//      carries an outside URL, the push opens the dashboard instead.
+//   3. A category the user has explicitly muted for push in
+//      notification_preferences is honoured here, at the one place every
+//      push passes through. No preference row means push stays on (the same
+//      default notifyUser.ts uses). Security and account alerts can never be
+//      muted (same list as notifyUser.ts's mandatory categories).
+//   4. Pushes stack instead of replacing each other. The database trigger
+//      sends the notification TYPE as `tag` (for example "fee_reminder").
+//      Used as the display tag, every push of the same type would take over
+//      the previous one's slot in the tray, so a second fee reminder silently
+//      wiped the first. The type is now used only as the preference category;
+//      the display tag is left unset so webpush.ts generates a unique one per
+//      push (the behaviour public/sw.js already documents).
+// -----------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { sendPushToUsers } from '@/lib/webpush'
+
+// Keep in sync with MANDATORY_CATEGORIES in src/lib/notify/notifyUser.ts
+const MANDATORY_CATEGORIES = new Set(['security_alert', 'account_security', 'subscription_suspended'])
+
+function secretsMatch(provided: string | null, expected: string | undefined): boolean {
+  if (!provided || !expected) return false
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
+}
+
+function safeInternalUrl(url: unknown): string {
+  if (typeof url !== 'string') return '/dashboard'
+  if (!url.startsWith('/') || url.startsWith('//') || url.includes('\\')) return '/dashboard'
+  return url
+}
 
 export async function POST(req: Request) {
   // Verify internal secret - same convention as api/push/send/route.ts
-  const secret = req.headers.get('x-internal-secret')
-  if (secret !== process.env.INTERNAL_SECRET) {
+  if (!secretsMatch(req.headers.get('x-internal-secret'), process.env.INTERNAL_SECRET)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -36,12 +72,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing user_id or title' }, { status: 400 })
   }
 
+  // `tag` from the trigger is the notification type, used as the category.
+  const category = typeof tag === 'string' && tag ? tag : null
+
   try {
+    // Honour an explicit per-category push mute.
+    if (category && !MANDATORY_CATEGORIES.has(category)) {
+      const admin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      const { data: pref } = await admin
+        .from('notification_preferences')
+        .select('push_enabled')
+        .eq('user_id', user_id)
+        .eq('category', category)
+        .maybeSingle()
+
+      if (pref && pref.push_enabled === false) {
+        return NextResponse.json({ ok: true, skipped: 'push muted for this category' })
+      }
+    }
+
+    // No `tag` on purpose: webpush.ts then gives every push its own unique tag
+    // so notifications stack in the tray instead of replacing each other.
     await sendPushToUsers([user_id], {
       title,
       body: body ?? '',
-      url:  url  ?? '/dashboard',
-      tag:  tag  ?? 'schoolos',
+      url:  safeInternalUrl(url),
     })
     return NextResponse.json({ ok: true })
   } catch (err: any) {

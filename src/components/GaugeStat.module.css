@@ -2,7 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 14px;
+  gap: 8px 16px;
   max-width: 100%;
 }
 .ring {
@@ -26,12 +26,12 @@
 .label {
   font-size: 0.72rem;
   color: var(--text-secondary);
-  margin: 2px 0 0;
+  margin: 4px 0 0;
 }
 .caption {
   font-size: 0.68rem;
   color: var(--text-faint);
-  margin: 2px 0 0;
+  margin: 4px 0 0;
 }
 
 /* On narrow cards (small phones, 3-up grids) the ring plus text no longer
@@ -40,7 +40,7 @@
    card doesn't need to grow tall to compensate. */
 @media (max-width: 420px) {
   .wrap {
-    gap: 6px 10px;
+    gap: 8px 12px;
   }
   .wrap svg {
     width: 48px;

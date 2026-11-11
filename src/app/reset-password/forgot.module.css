@@ -57,7 +57,7 @@
 .logoRow {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: 4px;
   justify-content: center;
 }
 
@@ -205,6 +205,7 @@
   transition: color var(--transition-fast);
   text-align: center;
   width: 100%;
+  min-height: 44px;
   padding: var(--space-2);
 }
 

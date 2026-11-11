@@ -1,9 +1,12 @@
 /* src/app/select-school/select-school.module.css */
-/* ── ChatGPT-style layout: centered logo, pill continue button, search below ── */
+/* Premium black / premium white. Every color is a token (or --ink, the
+   foreground as an RGB triplet), so one rule works in both modes. No
+   gradients, no glows, no tinted focus states: depth is tone and hairlines.
+   See src/app/premium-surface.css for the reasoning. */
 
 .page {
   min-height: 100dvh;
-  background: #060608;
+  background: var(--bg-base);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11,27 +14,6 @@
   padding: 24px 20px 48px;
   position: relative;
   overflow-x: hidden;
-}
-
-.bgGlow {
-  position: fixed;
-  width: 600px;
-  height: 600px;
-  top: -160px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse, rgba(128, 0, 32, 0.14) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.bgGrid {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 180, 216, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 180, 216, 0.025) 1px, transparent 1px);
-  background-size: 36px 36px;
-  pointer-events: none;
 }
 
 /* ── Center column ── */
@@ -53,7 +35,7 @@
   transform: translateY(0);
 }
 
-/* ── Brand block - logo + wordmark, centered like ChatGPT's mark ── */
+/* ── Brand block: logo + wordmark, centered ── */
 .backHomeLink {
   display: flex;
   align-items: center;
@@ -61,22 +43,23 @@
   gap: 6px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.5);
+  color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 10px;
+  padding: 8px 12px;
+  min-height: 44px;
   margin-bottom: 24px;
-  font-family: 'Inter', sans-serif;
+  font-family: inherit;
 }
-.backHomeLink:hover { color: #fff; }
+.backHomeLink:hover { color: var(--text-primary); }
 
 .brandBlock {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  margin-bottom: 56px;
+  margin-bottom: 48px;
 }
 
 .brandLogo {
@@ -84,37 +67,37 @@
   height: 88px;
   border-radius: 22px;
   object-fit: contain;
-  filter: drop-shadow(0 0 22px rgba(28, 147, 172, 0.4));
 }
 
 .brandName {
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.7rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
 .brandAccent {
-  color: #A0002A;
+  color: var(--accent-text);
 }
 
 /* ── Signed-out-due-to-inactivity banner ── */
 .signoutBanner {
   width: 100%;
-  padding: 11px 16px;
-  margin: -32px 0 24px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 12px 16px;
+  margin: -24px 0 24px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 2px solid var(--warning);
   border-radius: 12px;
-  color: rgba(245, 190, 110, 0.95);
+  color: var(--text-secondary);
   font-size: 0.78rem;
   line-height: 1.4;
   text-align: center;
 }
 
-/* ── Action stack - holds continue pill, search, register ── */
+/* ── Action stack ── */
 .actionStack {
   width: 100%;
   display: flex;
@@ -122,23 +105,24 @@
   gap: 12px;
 }
 
-/* ── Continue with recent school - ChatGPT "Continue with this account" style ── */
+/* ── Continue with recent school: an inverted pill (soft white on black,
+   near-black on white). It is the one high-contrast element on the screen. ── */
 .continuePill {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.94);
+  padding: 12px 16px;
+  background: var(--text-primary);
   border: none;
   border-radius: 9999px;
   cursor: pointer;
   text-align: left;
-  transition: transform 0.15s, background 0.15s;
+  transition: opacity 0.15s, transform 0.15s;
 }
 
 .continuePill:hover {
-  background: #fff;
+  opacity: 0.92;
   transform: translateY(-1px);
 }
 
@@ -173,7 +157,7 @@
 .continueTitle {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #0a0a0c;
+  color: var(--bg-base);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -181,23 +165,24 @@
 
 .continueSub {
   font-size: 0.72rem;
-  color: rgba(10, 10, 12, 0.55);
+  color: color-mix(in srgb, var(--bg-base) 62%, transparent);
 }
 
 .continueArrow {
   font-size: 1rem;
-  color: rgba(10, 10, 12, 0.4);
+  color: color-mix(in srgb, var(--bg-base) 50%, transparent);
   flex-shrink: 0;
 }
 
-/* ── Ghost pill - "use a different school" ── */
+/* ── Ghost pill: use a different school ── */
 .ghostPill {
   width: 100%;
-  padding: 13px 18px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--glass-border-hover);
   border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -205,9 +190,9 @@
 }
 
 .ghostPill:hover {
-  border-color: rgba(255, 255, 255, 0.32);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgb(var(--ink) / 0.4);
+  color: var(--text-primary);
+  background: var(--glass-bg);
 }
 
 /* ── Search block ── */
@@ -226,7 +211,7 @@
 .searchLabel {
   font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin: 4px 0 8px;
@@ -237,21 +222,21 @@
 .searchBox {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 48px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 9999px;
-  padding: 0 18px;
+  padding: 0 16px;
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s;
+  color: var(--text-muted);
+  transition: border-color 0.2s;
 }
 
 .searchBox:focus-within,
 .searchBoxSelected {
-  border-color: rgba(0, 180, 216, 0.5);
-  background: rgba(0, 180, 216, 0.05);
+  border-color: rgb(var(--ink) / 0.5);
 }
 
 .searchIcon {
@@ -265,22 +250,22 @@
   background: none;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.9rem;
-  font-family: 'Inter', sans-serif;
+  font-family: inherit;
   min-width: 0;
 }
 
 .searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
 }
 
 .clearBtn {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg-hover);
   border: none;
-  color: rgba(255, 255, 255, 0.5);
-  width: 22px;
-  height: 22px;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   cursor: pointer;
   font-size: 0.65rem;
@@ -292,7 +277,7 @@
 }
 
 .clearBtn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgb(var(--ink) / 0.14);
 }
 
 /* ── Dropdown results ── */
@@ -300,16 +285,16 @@
   margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .schoolResult {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
@@ -319,8 +304,8 @@
 }
 
 .schoolResult:hover {
-  background: rgba(0, 180, 216, 0.08);
-  border-color: rgba(0, 180, 216, 0.25);
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
 }
 
 @keyframes fadeSlide {
@@ -356,7 +341,7 @@
 .schoolName {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -365,34 +350,35 @@
 
 .schoolLocation {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 2px 0 0;
+  color: var(--text-muted);
+  margin: 4px 0 0;
 }
 
 /* ── No results ── */
 .noResults {
-  margin-top: 10px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  margin-top: 8px;
+  padding: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   text-align: center;
 }
 
 .noResults p {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   margin: 0 0 4px;
 }
 
 .noResultsHint {
   font-size: 0.73rem;
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: var(--text-muted) !important;
 }
 
-/* ── Selected school preview ── */
+/* ── Selected school preview: a flat block in the school's own color, darkened
+   so white text always reads (set inline in page.tsx). ── */
 .selectedPreview {
-  margin-top: 10px;
+  margin-top: 8px;
   border-radius: 12px;
   overflow: hidden;
   animation: scaleIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) both;
@@ -406,8 +392,8 @@
 .selectedBanner {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 16px;
+  padding: 16px;
 }
 
 .selectedLogo {
@@ -447,99 +433,96 @@
 
 .selectedTagline {
   font-size: 0.73rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.8);
   margin: 0 0 2px;
   font-style: italic;
 }
 
 .selectedLocation {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.72);
   margin: 0;
 }
 
-/* ── Submit button - pill style to match ── */
+/* ── Submit button: solid brand, the one accent on the screen ── */
 .submitBtn {
   width: 100%;
-  height: 50px;
-  background: linear-gradient(135deg, #800020, #A0002A);
+  height: 48px;
+  background: var(--brand);
   border: none;
   border-radius: 9999px;
   color: #fff;
   font-size: 0.92rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   cursor: pointer;
   margin-top: 16px;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: background 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', sans-serif;
-  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.3);
+  font-family: inherit;
 }
 
 .submitBtn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background: var(--brand-light);
 }
 
 .submitBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* ── Register row - bottom, like a secondary link under the pills ── */
+/* ── Register row ── */
 .registerRow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   margin-top: 8px;
-  padding-top: 18px;
+  padding-top: 16px;
   padding-bottom: 8px;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
 }
 
 .registerLink {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #1C93AC;
+  color: var(--accent-text);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.78rem;
   transition: color 0.15s;
-  padding: 10px 6px;
-  margin: -10px -6px;
+  padding: 12px 8px;
+  margin: -12px -8px;
   min-height: 44px;
   border-radius: 8px;
 }
 
 .registerLink:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* ── Powered by footer ── */
 .poweredBy {
   position: fixed;
-  bottom: 18px;
+  bottom: 16px;
   left: 0;
   right: 0;
   text-align: center;
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
 }
 
 .poweredBy strong {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-secondary);
 }
 
 /* ── Mobile tweaks ── */
 @media (max-width: 390px) {
   .brandLogo  { width: 76px; height: 76px; }
   .brandName  { font-size: 1.5rem; }
-  .brandBlock { margin-bottom: 44px; }
+  .brandBlock { margin-bottom: 40px; }
 }

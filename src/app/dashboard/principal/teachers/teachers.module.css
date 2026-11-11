@@ -6,15 +6,15 @@
 
 /* Header */
 .header{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-6) var(--space-5) var(--space-4);position:sticky;top:0;z-index:var(--z-card,10);background:var(--bg-overlay);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);}
-.backBtn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:var(--radius-md);background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-primary);cursor:pointer;transition:all var(--transition-fast);flex-shrink:0;}
+.backBtn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--radius-md);background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-primary);cursor:pointer;transition:all var(--transition-fast);flex-shrink:0;}
 .backBtn:hover{transform:translateX(-2px);background:var(--glass-bg-hover);border-color:var(--glass-border-hover);}
 .headerText{flex:1;text-align:center;}
 .headerTitle{font-family:var(--font-display,inherit);font-size:1.5rem;font-weight:600;color:var(--text-primary);line-height:1.1;}
-.headerSub{font-size:0.68rem;color:var(--text-muted);letter-spacing:0.04em;margin-top:2px;}
+.headerSub{font-size:0.68rem;color:var(--text-muted);letter-spacing:0.04em;margin-top:4px;}
 
 /* Filter pills */
-.filterBar{display:flex;gap:6px;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--glass-border);flex-wrap:wrap;position:sticky;top:75px;background:var(--bg-base);z-index:calc(var(--z-card,10) - 1);}
-.pill{padding:5px 12px;border-radius:999px;border:1px solid var(--glass-border);background:transparent;color:var(--text-muted);font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--transition-fast);}
+.filterBar{display:flex;gap:8px;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--glass-border);flex-wrap:wrap;position:sticky;top:84px;background:var(--bg-base);z-index:calc(var(--z-card,10) - 1);}
+.pill{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--glass-border);background:transparent;color:var(--text-muted);font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--transition-fast);}
 .pill:hover{border-color:var(--glass-border-hover);color:var(--text-secondary);}
 .pillActive{/* colors injected inline */}
 
@@ -38,12 +38,12 @@
 .cardInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
 .cardTop{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;}
 .cardName{font-size:0.95rem;font-weight:600;color:var(--text-primary);}
-.roleBadge{padding:3px 8px;border-radius:999px;font-size:0.65rem;font-weight:700;flex-shrink:0;}
+.roleBadge{padding:4px 8px;border-radius:999px;font-size:0.65rem;font-weight:700;flex-shrink:0;}
 .cardEmail{font-size:0.75rem;color:var(--text-muted);}
 .cardMeta{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;}
 .metaItem{display:flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-muted);}
 
-.statusBadge{padding:3px 10px;border-radius:999px;font-size:0.65rem;font-weight:700;flex-shrink:0;}
+.statusBadge{padding:4px 8px;border-radius:999px;font-size:0.65rem;font-weight:700;flex-shrink:0;}
 .statusActive{background:rgba(16,185,129,0.12);color:#10B981;}
 .statusInactive{background:rgba(239,68,68,0.12);color:#EF4444;}
 
@@ -63,12 +63,12 @@
 .drawerAvatar{width:52px;height:52px;border-radius:50%;background:var(--brand-subtle);border:2px solid var(--brand-border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--brand-light,#C9748A);flex-shrink:0;}
 .drawerMeta{flex:1;min-width:0;}
 .drawerName{font-size:1.05rem;font-weight:600;color:var(--text-primary);}
-.drawerEmail{font-size:0.78rem;color:var(--text-muted);margin-top:2px;}
-.drawerClose{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast);}
+.drawerEmail{font-size:0.78rem;color:var(--text-muted);margin-top:4px;}
+.drawerClose{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast);flex-shrink:0;}
 .drawerClose:hover{background:var(--glass-bg-hover);color:var(--text-primary);}
 
 .drawerBody{padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-5);}
-.drawerRoleBadge{display:inline-flex;padding:5px 14px;border-radius:999px;font-size:0.75rem;font-weight:700;}
+.drawerRoleBadge{display:inline-flex;padding:8px 16px;border-radius:999px;font-size:0.75rem;font-weight:700;}
 
 .drawerSection{display:flex;flex-direction:column;gap:var(--space-3);}
 .drawerSectionTitle{font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);padding-bottom:var(--space-1);border-bottom:1px solid var(--glass-border);}
@@ -78,8 +78,8 @@
 .emptyHint{font-size:0.8rem;color:var(--text-muted);}
 
 /* Assignment list in drawer */
-.assignmentList{display:flex;flex-direction:column;gap:6px;}
-.assignmentItem{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-sm);}
+.assignmentList{display:flex;flex-direction:column;gap:8px;}
+.assignmentItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-sm);}
 .assignmentClass{font-size:0.82rem;font-weight:600;color:var(--text-primary);}
-.assignmentSubject{font-size:0.7rem;color:var(--text-muted);margin-top:2px;}
-.assignmentRole{padding:3px 8px;border-radius:999px;font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0;}
+.assignmentSubject{font-size:0.7rem;color:var(--text-muted);margin-top:4px;}
+.assignmentRole{padding:4px 8px;border-radius:999px;font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0;}

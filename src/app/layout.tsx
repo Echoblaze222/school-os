@@ -1,26 +1,46 @@
 // src/app/layout.tsx
-// ─────────────────────────────────────────────────────────────────────────────
-// FIX 1 — Icon path mismatch:
+// -----------------------------------------------------------------------------
+// FIX 1: Icon path mismatch
 //   metadata.icons referenced '/icons/icon-192.png' and '/icons/icon-512.png'
 //   but the actual files in public/icons/ are named 'icon-192x192.png' and
 //   'icon-512x512.png' (matching manifest.json). Wrong paths cause the PWA
 //   install prompt to fail and the home screen icon to be blank.
 //
-// FIX 2 — SW registration timing:
+// FIX 2: SW registration timing
 //   The inline <script> waited for the 'load' event before registering sw.js.
 //   On Android Chrome, 'load' fires late relative to when the user might tap
 //   "Enable Alerts". If the tap happens before 'load', navigator.serviceWorker
 //   .ready stalls. Changed to register immediately (the browser queues it
 //   safely) so the SW is ready well before any user interaction.
-// ─────────────────────────────────────────────────────────────────────────────
+//
+// FIX 3: Legacy token aliases
+//   Imports ./legacy-tokens.css so the old --burgundy / --text-accent / --error
+//   style names used by 34 CSS modules resolve to the live design tokens
+//   instead of being undefined on every page except register-school.
+//
+// FIX 4: Mobile polish
+//   Imports ./mobile-polish.css (dock clearance, scrollable chip rows,
+//   touch-hover reset, automatic text colour on brand fills).
+//
+// FIX 5: Premium black / white surface
+//   Imports ./premium-surface.css, which retokens the document to a neutral
+//   black (dark) or white (light) canvas on any page whose root carries
+//   data-surface="premium" (landing, select-school, register-school,
+//   onboarding). Pages without the attribute are unaffected.
+// -----------------------------------------------------------------------------
 
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import './legacy-tokens.css'
+import './mobile-polish.css'
+import './premium-surface.css'
 import ThemeScript   from './ThemeScript'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import AndroidBackHandler from '@/components/AndroidBackHandler'
+import ServiceStatusBanner from '@/components/ServiceStatusBanner'
+import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 const inter = Inter({
   subsets:  ['latin'],
@@ -28,18 +48,41 @@ const inter = Inter({
   display:  'swap',
 })
 
+// SEO defaults for every page. metadataBase lets relative image/canonical
+// URLs resolve to the real site instead of localhost. There is deliberately
+// no site-wide canonical here (it would point every page at the home page);
+// each public page sets its own through pageMetadata() in src/lib/seo.ts.
 export const metadata: Metadata = {
-  title:       'SchoolOS | Nigeria\'s Smartest School Portal',
-  description: 'Complete school management system for Nigerian schools',
+  metadataBase: new URL(SITE_URL),
+  title:       DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    'school management system Nigeria', 'school portal Nigeria', 'school fees software',
+    'student management system', 'school admissions Nigeria', 'find schools in Nigeria',
+  ],
   manifest:    '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SchoolOS' },
   icons: {
-    // FIX: was 'icon-192.png' and 'icon-512.png' — actual filenames are icon-192x192.png / icon-512x512.png
+    // FIX: was 'icon-192.png' and 'icon-512.png'. Actual filenames are icon-192x192.png / icon-512x512.png
     icon: [
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [{ url: '/icons/apple-touch-icon.png' }],
+  },
+  openGraph: {
+    title:       DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    siteName:    SITE_NAME,
+    images:      [{ url: DEFAULT_OG_IMAGE, alt: SITE_NAME }],
+    locale:      'en_NG',
+    type:        'website',
+  },
+  twitter: {
+    card:        'summary_large_image',
+    title:       DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images:      [DEFAULT_OG_IMAGE],
   },
 }
 
@@ -64,6 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             {children}
             <AndroidBackHandler />
+            <ServiceStatusBanner />
           </ToastProvider>
           <script
             dangerouslySetInnerHTML={{

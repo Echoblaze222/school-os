@@ -2,10 +2,11 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { PhoneIcon } from '@/components/Icons'
+import { getStoredSchoolBrand, hexToRgba, type StoredSchoolBrand } from '@/lib/schoolBrand'
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string; icon: string }> = {
   locked: {
@@ -23,13 +24,36 @@ const STATUS_MESSAGES: Record<string, { title: string; body: string; icon: strin
     title: 'Account Suspended',
     body:  'Your school account has been suspended. Please contact SchoolOS support for assistance.',
   },
+  // Was previously missing entirely, so a cancelled school fell through to
+  // the generic 'locked' copy above ("usually due to an outstanding
+  // payment") - actively wrong for a school that explicitly chose not to
+  // renew. setup_status can be 'cancelled' per checkSubscription() /
+  // middleware.ts's billingLocked set
+  // (docs/lane2-subscription-billing-payment-enforcement/00-README.md
+  // documents this distinct copy as intended - it just was never actually
+  // added here). SubscriptionGate.tsx had the same gap; fixed there too.
+  cancelled: {
+    icon:  '🚫',
+    title: 'Subscription Cancelled',
+    body:  'Your school chose not to renew its SchoolOS subscription. Please contact your school principal if you believe this is a mistake, or to arrange renewal.',
+  },
 }
+
+// SchoolOS's own maroon - used only until/unless the school's own color is
+// available.
+const DEFAULT_ACCENT = '#800020'
 
 function LockedContent() {
   const params   = useSearchParams()
   const status   = params.get('status') ?? 'locked'
   const info     = STATUS_MESSAGES[status] ?? STATUS_MESSAGES.locked
   const supabase = createClient()
+
+  // Lazy initializer runs once, synchronously, on mount - no fetch, no
+  // flash of the wrong color before the real one loads. See
+  // src/lib/schoolBrand.ts.
+  const [brand] = useState<StoredSchoolBrand>(getStoredSchoolBrand)
+  const accent = brand.primaryColor || DEFAULT_ACCENT
 
   async function handleSignOut() {
     await signOutFlow(supabase, {
@@ -40,7 +64,7 @@ function LockedContent() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'radial-gradient(ellipse at 50% 20%, rgba(128,0,32,0.16) 0%, #080C14 55%, #060608 100%)',
+      background: `radial-gradient(ellipse at 50% 20%, ${hexToRgba(accent, 0.16)} 0%, #080C14 55%, #060608 100%)`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -60,7 +84,10 @@ function LockedContent() {
         {/* Status emoji */}
         <div style={{ fontSize: 64, marginBottom: 24 }}>{info.icon}</div>
 
-        {/* SchoolOS brand */}
+        {/* School name - falls back to the SchoolOS wordmark only if
+            nothing was ever stored (shouldn't happen given the trace
+            in PR #4, but this page must never crash for a locked-out
+            user) */}
         <p style={{
           fontSize: '0.7rem',
           fontWeight: 800,
@@ -69,14 +96,16 @@ function LockedContent() {
           color: 'rgba(255,255,255,0.3)',
           margin: '0 0 12px',
         }}>
-          SchoolOS
+          {brand.name || 'SchoolOS'}
         </p>
 
-        {/* Title */}
+        {/* Title - now colored with the school's own brand color, matching
+            the same treatment SubscriptionGate.tsx and LockScreen.tsx
+            already give their own headings */}
         <h1 style={{
           fontSize: '1.5rem',
           fontWeight: 800,
-          color: '#fff',
+          color: accent,
           margin: '0 0 16px',
           lineHeight: 1.3,
         }}>
@@ -93,7 +122,12 @@ function LockedContent() {
           {info.body}
         </p>
 
-        {/* WhatsApp CTA - uses PhoneIcon from Icons.tsx */}
+        {/* Accent divider */}
+        <div style={{ height: 2, width: 48, background: accent, margin: '0 auto 32px', borderRadius: 2 }} />
+
+        {/* WhatsApp CTA - kept WhatsApp's own green regardless of school
+            color. This is a recognizable third-party action button, not
+            part of the school's own branding. */}
         <a
           href="https://wa.me/2348086883144?text=Hello%2C%20my%20school%20portal%20has%20been%20locked.%20Please%20help%20me%20restore%20access."
           target="_blank"

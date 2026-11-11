@@ -24,10 +24,10 @@
 
 .closeBtn {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
-  width: 32px;
-  height: 32px;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
@@ -40,14 +40,14 @@
 .subtitle {
   font-size: 0.85rem;
   color: var(--text-muted);
-  margin-top: 4px;
-  margin-bottom: var(--space-4);
+  margin-top: 8px;
+  margin-bottom: var(--space-6);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-6);
 }
 
 .honeypot {

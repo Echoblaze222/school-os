@@ -7,6 +7,8 @@ import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { hasActiveAppointment } from '@/lib/permissions'
 import CoachDashboardClient  from './CoachDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function CoachDashboardPage() {
   const supabase = await createClient()
@@ -68,16 +70,28 @@ export default async function CoachDashboardPage() {
     upcomingMatches: upcomingMatches ?? 0,
   }
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${stats.teamCount} team${stats.teamCount === 1 ? '' : 's'} · ${stats.totalPlayers} players`, [
+    { label: 'Teams', value: String(stats.teamCount) },
+    { label: 'Players', value: String(stats.totalPlayers) },
+    { label: 'Upcoming matches', value: String(stats.upcomingMatches) },
+  ])
+
   return (
-    <CoachDashboardClient
-      userId={user.id}
-      coachName={profile.full_name}
-      profile={profile}
-      school={school}
-      stats={stats}
-      teams={teams ?? []}
-      nextSession={nextSession?.[0] ?? null}
-      recentMatches={recentMatches ?? []}
-    />
+    <>
+      <CoachDashboardClient
+        userId={user.id}
+        coachName={profile.full_name}
+        profile={profile}
+        school={school}
+        stats={stats}
+        teams={teams ?? []}
+        nextSession={nextSession?.[0] ?? null}
+        recentMatches={recentMatches ?? []}
+      />
+      <SaveSnapshot userId={user.id} routeKey={homeKey('coach')} data={homeSnapshot} />
+    </>
   )
 }

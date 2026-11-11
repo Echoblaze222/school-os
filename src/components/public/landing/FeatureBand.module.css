@@ -1,0 +1,52 @@
+/* src/components/public/landing/FeatureBand.module.css */
+
+.band {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.blob {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  display: block;
+}
+
+.caption {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 300px;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 520px;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-light);
+}
+
+@media (min-width: 900px) {
+  .band { grid-template-columns: 0.8fr 1.2fr; gap: var(--space-10); }
+  .reverse { grid-template-columns: 1.2fr 0.8fr; }
+  .reverse .figure { order: 2; }
+  .reverse .copy { order: 1; justify-self: end; }
+}
