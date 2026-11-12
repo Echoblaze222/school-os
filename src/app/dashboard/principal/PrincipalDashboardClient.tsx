@@ -42,6 +42,20 @@ function buildInsight(counts: any): string {
   return `Fee collection is at ${counts.feeCollectionRate ?? 0}% and average score is ${counts.avgScore ?? 0}% this term, both tracking normally. ${counts.pendingActions ?? 0} items are waiting on your review.`
 }
 
+/** One KPI: muted label, one big number, optional quiet note. No per-tile colour. */
+function Kpi({ label, value, note }: { label: string; value: string | number; note?: string }) {
+  return (
+    <div style={{
+      background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)',
+      padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', minWidth: 0,
+    }}>
+      <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>{label}</span>
+      <span style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+      {note && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{note}</span>}
+    </div>
+  )
+}
+
 export default function PrincipalDashboardClient({
   profile, school, userId, counts = {}, activities,
   pendingNotifications = [], unreadNotifCount = 0,
@@ -57,10 +71,7 @@ export default function PrincipalDashboardClient({
   }
 
   return (
-    <div
-      className={styles.page}
-      style={{ background: 'color-mix(in srgb, var(--brand) 6%, var(--bg-base))' }}
-    >
+    <div className={styles.page} style={{ background: 'var(--bg-base)' }}>
       <RoleHeroHeader
         userId={userId}
         role="principal"
@@ -69,76 +80,31 @@ export default function PrincipalDashboardClient({
         school={school}
         greeting={`Good day, ${firstName}`}
         headline={`${counts.feesCollectedDisplay ?? '—'} collected · ${counts.feeCollectionRate ?? 0}% of fees`}
-        sub={`${counts.studentCount ?? 0} students on roll · ${counts.teacherCount ?? 0} staff`}
+        sub={`${counts.studentCount ?? 0} students on roll · ${counts.teacherCount ?? 0} staff · ${counts.classCount ?? 0} classes`}
         featureGroups={FEATURE_GROUPS}
         showBranding
       />
 
       <ContextSwitcher />
 
-      <main className={styles.main} style={{ maxWidth: 880 }}>
+      {/* One vertical rhythm: 24px between sections, 16px inside them. */}
+      <main className={styles.main} style={{ maxWidth: 880, display: 'grid', gap: 'var(--space-6)', alignContent: 'start', paddingTop: 'var(--space-6)' }}>
 
-        {/* Top-level school metrics - one primary hero (the money number,
-            the thing the whole school picture hangs off) plus three
-            smaller secondary tiles, instead of 8 equal-weight cards.
-            No trend shown on the secondary tiles since there's no real
-            prior-period comparison queried yet - a fabricated trend
-            would violate §6's "do not fabricate numbers" rule more than
-            an absent one costs us. */}
-        <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12, marginTop: 'var(--space-6)', marginBottom: 'var(--space-4)' }}>
-          <div className="glass-card-flat" style={{ padding: 18, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>Fees Collected</p>
-            <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
-              {counts.feesCollectedDisplay ?? '—'}
-            </p>
-            <p style={{ margin: 0, fontSize: '0.74rem', fontWeight: 600, color: 'var(--status-ok, #3FA66B)' }}>
-              {counts.feeCollectionRate ?? 0}% of fees this term
-            </p>
-            <div style={{ display: 'flex', gap: 16, paddingTop: 10, marginTop: 2, borderTop: '1px solid var(--glass-border)' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Students</p>
-                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.studentCount ?? 0}</p>
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Teachers</p>
-                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.teacherCount ?? 0}</p>
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Classes</p>
-                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{counts.classCount ?? 0}</p>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Average score</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.avgScore ?? 0) < 50 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.avgScore ?? 0}%</p>
-            </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Outstanding fees</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--status-warn, #E4572E)' }}>{counts.outstandingFeesDisplay ?? '—'}</p>
-            </div>
-            <div className="glass-card-flat" style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-              <p style={{ margin: 0, fontSize: '0.66rem', color: 'var(--text-muted)' }}>Waiting on you</p>
-              <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: (counts.pendingActions ?? 0) > 0 ? 'var(--status-warn, #E4572E)' : 'var(--text-primary)' }}>{counts.pendingActions ?? 0}</p>
-            </div>
-          </div>
+        <div className={motion.riseIn} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>
+          <Kpi label="Fees collected" value={counts.feesCollectedDisplay ?? '—'} note={`${counts.feeCollectionRate ?? 0}% of fees this term`} />
+          <Kpi label="Outstanding fees" value={counts.outstandingFeesDisplay ?? '—'} />
+          <Kpi label="Average score" value={`${counts.avgScore ?? 0}%`} />
+          <Kpi label="Waiting on you" value={counts.pendingActions ?? 0} note={(counts.pendingActions ?? 0) > 0 ? 'items to review' : 'all clear'} />
         </div>
 
-        {/* AI Insight - one concrete, current observation, not a static blurb */}
-        <div style={{ marginBottom: 'var(--space-4)' }}>
-          <AiInsightBanner
-            insight={buildInsight(counts)}
-            actionLabel="Open AI Insights →"
-            actionHref="/dashboard/principal/ai"
-          />
-        </div>
+        <AiInsightBanner
+          insight={buildInsight(counts)}
+          actionLabel="Open AI Insights →"
+          actionHref="/dashboard/principal/ai"
+        />
 
-        {/* Live charts: collections, attendance, billed vs collected */}
         <PrincipalHomeCharts />
 
-        {/* Pending notifications preview */}
         {pendingNotifications.length > 0 && (
           <div className={`${styles.notifCard} ${motion.riseIn}`} style={{ animationDelay: '160ms' }}>
             <div className={styles.notifCardHeader}>

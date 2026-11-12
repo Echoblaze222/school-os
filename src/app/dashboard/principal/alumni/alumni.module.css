@@ -10,7 +10,7 @@
    spacing/radius/text tokens used across the rest of the app. */
 
 .page { min-height: 100dvh; background: var(--bg-base); display: flex; flex-direction: column; position: relative; overflow-x: hidden; padding-bottom: 120px; }
-.orb1 { position: absolute; width: 340px; height: 340px; top: -80px; right: -80px; border-radius: 50%; background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); filter: blur(48px); pointer-events: none; opacity: 0.5; }
+.orb1 { position: absolute; width: 340px; height: 340px; top: -80px; right: -80px; border-radius: 50%; background: transparent; filter: blur(48px); pointer-events: none; opacity: 0.5; }
 
 /* Header */
 .header { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-6) var(--space-5) var(--space-4); position: sticky; top: 0; z-index: var(--z-raised); background: var(--bg-overlay); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); }
