@@ -12,7 +12,7 @@
 .glowOrb {
   position: fixed;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--burgundy-glow) 0%, transparent 70%);
+  background: transparent;
   pointer-events: none;
   filter: blur(80px);
   z-index: 0;

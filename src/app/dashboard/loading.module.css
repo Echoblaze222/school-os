@@ -9,7 +9,7 @@
 }
 
 .hero {
-  background: linear-gradient(180deg, var(--brand), var(--brand-dark));
+  background: var(--brand);
   border-bottom: 5px solid var(--brand-2);
   padding: 16px 20px;
 }
