@@ -165,7 +165,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,7 +377,7 @@
 }
 
 .myBubble {
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   border-bottom-right-radius: var(--space-1);
 }
 
@@ -457,7 +457,7 @@
 }
 
 .sendBtnActive {
-  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-light));
+  background: var(--burgundy);
   border-color: transparent;
   color: white;
   box-shadow: 0 4px 12px var(--burgundy-glow);
