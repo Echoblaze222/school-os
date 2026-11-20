@@ -138,7 +138,7 @@ server.tool(
   {
     table: z.string().regex(/^[a-z_][a-z0-9_]*$/),
     select: z.string().regex(/^[a-zA-Z0-9_,*:()!. ]+$/).default('*'),
-    eq: z.record(z.string()).optional(),
+    eq: z.record(z.string(), z.string()).optional(),
     limit: z.number().int().min(1).max(50).default(20),
   },
   async ({ table, select, eq, limit }) => {
@@ -210,7 +210,7 @@ server.tool(
   {
     method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).default('GET'),
     path: z.string().regex(/^\/api\/[A-Za-z0-9_\-\/\[\]?=&.%]*$/),
-    body: z.record(z.any()).optional(),
+    body: z.record(z.string(), z.any()).optional(),
   },
   async ({ method, path: p, body }) => {
     try {
