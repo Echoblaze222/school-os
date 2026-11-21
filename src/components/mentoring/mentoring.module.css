@@ -1,0 +1,136 @@
+/* src/components/mentoring/mentoring.module.css
+   Shared by the student and teacher mentoring pages.
+   Brand colour comes in through --mc (set inline from school.primary_color). */
+
+.root { --mc: #800020; }
+
+.main {
+  flex: 1; width: 100%; max-width: 640px; margin: 0 auto;
+  padding: 16px 16px 110px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* ── Tabs ─────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+.tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 6px; border: 0; border-radius: 9px; background: transparent;
+  color: var(--text-muted); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tabActive { background: var(--mc); color: #fff; }
+.count {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: rgba(255,255,255,0.22); font-size: 0.68rem;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.tab:not(.tabActive) .count { background: var(--glass-border); color: var(--text-primary); }
+
+/* ── Notice ───────────────────────────────────────────── */
+.notice {
+  padding: 10px 12px; border-radius: 10px; font-size: 0.8rem; line-height: 1.4;
+  border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-primary);
+}
+.noticeOk  { border-color: rgba(16,185,129,0.45); }
+.noticeErr { border-color: rgba(239,68,68,0.5); }
+
+/* ── Cards ────────────────────────────────────────────── */
+.card {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.cardHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cardTitle { margin: 0; font-size: 0.92rem; font-weight: 700; color: var(--text-primary); }
+.cardSub   { margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted); }
+.sectionTitle {
+  margin: 6px 2px 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.body  { margin: 0; font-size: 0.82rem; color: var(--text-primary); line-height: 1.45; }
+.muted { color: var(--text-muted); font-size: 0.78rem; }
+.row   { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin-top: 36px; text-align: center; color: var(--text-faint);
+  font-size: 0.88rem; line-height: 1.5;
+}
+
+/* ── Status badges (semantic colours only) ────────────── */
+.badge {
+  flex-shrink: 0; padding: 3px 9px; border-radius: 999px;
+  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.02em;
+  background: var(--glass-border); color: var(--text-muted);
+}
+.badgeWait   { background: rgba(245,158,11,0.16); color: #B45309; }
+.badgeOk     { background: rgba(16,185,129,0.16); color: #047857; }
+.badgeDanger { background: rgba(239,68,68,0.14);  color: #B91C1C; }
+
+/* ── Chips ────────────────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 6px 11px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: transparent; color: var(--text-muted);
+  font-size: 0.76rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chipOn { background: var(--mc); border-color: var(--mc); color: #fff; }
+.chipStatic {
+  padding: 3px 9px; border-radius: 999px; background: var(--glass-border);
+  color: var(--text-muted); font-size: 0.68rem; font-weight: 600;
+}
+
+/* ── Forms ────────────────────────────────────────────── */
+.form  { display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 0.74rem; font-weight: 700; color: var(--text-muted); }
+.input, .select, .textarea {
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--glass-border); background: var(--bg-primary);
+  color: var(--text-primary); font-size: 0.86rem; font-family: inherit;
+}
+.textarea { min-height: 72px; resize: vertical; line-height: 1.4; }
+.input:focus, .select:focus, .textarea:focus { outline: 2px solid var(--mc); outline-offset: 1px; }
+
+/* ── Buttons ──────────────────────────────────────────── */
+.btn {
+  padding: 10px 14px; border-radius: 10px; border: 1px solid var(--glass-border);
+  background: transparent; color: var(--text-primary);
+  font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btnPrimary { background: var(--mc); border-color: var(--mc); color: #fff; }
+.btnDanger  { border-color: rgba(239,68,68,0.5); color: #B91C1C; }
+.btnSmall   { padding: 7px 11px; font-size: 0.74rem; }
+.btnRow     { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Sessions ─────────────────────────────────────────── */
+.sessionList { display: flex; flex-direction: column; gap: 8px; }
+.session {
+  border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.progress {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px;
+  background: var(--glass-border); font-size: 0.78rem; color: var(--text-primary); font-weight: 700;
+}
+.progressArrow { color: var(--text-muted); }
+
+.stars { display: inline-flex; gap: 2px; color: #F59E0B; }
+.starBtn { border: 0; background: transparent; padding: 2px; cursor: pointer; color: #F59E0B; line-height: 0; }
+
+.quote {
+  margin: 0; padding: 8px 10px; border-left: 3px solid var(--mc);
+  background: var(--glass-border); border-radius: 0 8px 8px 0;
+  font-size: 0.8rem; color: var(--text-primary);
+}
