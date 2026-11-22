@@ -1,7 +1,7 @@
 /* DesktopShell.module.css
-   Glass sidebar: translucent surface, backdrop blur, hairline borders. No
-   gradients. The width change uses a spring curve; labels fade instead of
-   unmounting, so collapse and expand animate. */
+   Glass sidebar: lifted translucent fill, bright hairline edge, backdrop blur,
+   deep side shadow. No gradients. The width change uses a spring curve;
+   labels fade instead of unmounting, so collapse and expand animate. */
 
 .shell { display: none; }
 
@@ -14,10 +14,11 @@
     left: 0;
     height: 100dvh;
     width: var(--shell-w, 264px);
-    background: color-mix(in srgb, var(--sidebar-bg) 74%, transparent);
+    background: color-mix(in srgb, color-mix(in srgb, var(--text-primary) 9%, var(--sidebar-bg)) 80%, transparent);
     backdrop-filter: blur(24px) saturate(1.5);
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
-    border-right: 1px solid var(--sidebar-border);
+    border-right: 1px solid color-mix(in srgb, var(--text-primary) 20%, transparent);
+    box-shadow: 10px 0 40px rgba(0,0,0,0.25);
     z-index: 90;
     overflow: visible;
     transition: width 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
