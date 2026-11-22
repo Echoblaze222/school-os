@@ -3,10 +3,12 @@
 // 1. Protects all dashboard/private routes, redirects to /login if no session
 // 2. Redirects authenticated users away from auth pages
 // 3. Sets session timeout: user is logged out after INACTIVITY_MINUTES of no activity
-// 4. Enforces school lock:
-//    - Hard lock (super-admin suspended) → everyone, incl. principal, to /school-locked
-//    - Billing lock (expired/suspended)  → non-principals to /school-locked;
-//      principal confined to /dashboard/principal/subscriptions to renew
+// 4. Enforces locks:
+//    - Hard lock (super-admin suspended, or unpaid-setup trial expired)
+//      → everyone, incl. principal, to /school-locked
+//    - Student lock (this student's term subscription is unpaid, past the
+//      term's grace window) → ONLY that student, confined to
+//      /dashboard/student/subscribe. The school itself never locks for billing.
 // 5. Gates /api/cron/* with CRON_SECRET (fail-closed) before anything else runs
 // 6. Outage handling: if Supabase (auth or database) cannot be reached, send the
 //    person to /service-unavailable instead of treating it as "signed out" or
@@ -23,6 +25,10 @@ import { isCronAuthorized } from '@/lib/cronAuth'
 // ── Config ──────────────────────────────────────────────────────────────
 const INACTIVITY_MINUTES = 30          // Auto-logout after 30 min idle
 const INACTIVITY_MS = INACTIVITY_MINUTES * 60 * 1000
+
+// A locked (unpaid) student may only reach this page, where they or their
+// parent can pay. Everything else under /dashboard redirects here.
+const STUDENT_SUBSCRIBE_PATH = '/dashboard/student/subscribe'
 
 // ── Outage handling ──────────────────────────────────────────────────────
 // Without these, a Supabase outage looked like a logged-out user (the session
@@ -331,22 +337,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(dest, request.url))
   }
 
-  // ── School lock enforcement ──────────────────────────────────────────────────
+  // ── Lock enforcement ─────────────────────────────────────────────────────────
   // Only runs for authenticated users hitting /dashboard routes.
   //
-  // Two lock tiers:
-  //  - HARD lock ('locked' status or is_platform_active=false): a super
-  //    admin manually suspended the school. Blocks EVERYONE, including
-  //    the principal, straight to /school-locked.
-  //  - BILLING lock ('expired' trial or 'suspended' subscription): all
-  //    non-principal roles go to /school-locked as before. The principal
-  //    is allowed to stay logged in, but is confined to
-  //    /dashboard/principal/subscriptions so they can renew, any other
-  //    /dashboard/principal/* route redirects them there instead.
-  //
-  // Previously principals were exempted from this check entirely, so an
-  // expired/suspended school kept working in full through the principal
-  // account with no way to force renewal.
+  //  - HARD lock ('locked' status, 'expired' unpaid-setup trial, or
+  //    is_platform_active=false): a super admin manually suspended the school
+  //    or setup was never paid. Blocks EVERYONE, including the principal,
+  //    straight to /school-locked.
+  //  - STUDENT lock: billing is per student now. A school never locks because
+  //    of money; only a student whose term subscription is unpaid (past the
+  //    term's grace window) is confined to STUDENT_SUBSCRIBE_PATH. Staff,
+  //    principals and parents are never billing-locked. The check is the
+  //    my_subscription_lock() RPC, which fails open when no term is configured
+  //    or when the migration has not been applied yet.
   if (user && pathname.startsWith('/dashboard')) {
     // The school's lock fields are fetched in the SAME query as the profile
     // (PostgREST embedded select over profiles_school_id_fkey) instead of a
@@ -443,16 +446,13 @@ export async function middleware(request: NextRequest) {
         | null
         | undefined
       if (school) {
+        // 'expired' is the unpaid-SETUP trial lapse (not a billing lapse), so
+        // it stays a whole-school lock. The old 'suspended' / 'grace_period' /
+        // 'cancelled' school billing states no longer lock anyone.
         const isHardLocked =
           !school.is_platform_active ||
-          school.setup_status === 'locked'
-
-        const isBillingLocked =
-          school.setup_status === 'expired' ||
-          school.setup_status === 'suspended'
-
-        const isPrincipal = profile.role === 'principal'
-        const renewalPath = '/dashboard/principal/subscriptions'
+          school.setup_status === 'locked' ||
+          school.setup_status === 'expired'
 
         if (isHardLocked) {
           const lockedUrl = new URL('/school-locked', request.url)
@@ -461,20 +461,21 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(lockedUrl)
         }
 
-        if (isBillingLocked) {
-          if (!isPrincipal) {
-            const lockedUrl = new URL('/school-locked', request.url)
-            lockedUrl.searchParams.set('status', school.setup_status)
-            lockedUrl.searchParams.set('role',   profile.role)
-            return NextResponse.redirect(lockedUrl)
-          }
-
-          // Principal: allow only the renewal page itself; every other
-          // principal route bounces there.
-          if (pathname !== renewalPath && !pathname.startsWith(renewalPath + '/')) {
-            const renewUrl = new URL(renewalPath, request.url)
-            renewUrl.searchParams.set('status', school.setup_status)
-            return NextResponse.redirect(renewUrl)
+        // ── Per-student lock ─────────────────────────────────────────────
+        // Only students are checked; staff, principals and parents skip this
+        // query entirely. The subscribe page itself is always reachable so a
+        // locked student (or their parent, via the shared pay flow) can pay.
+        if (profile.role === 'student') {
+          const onSubscribePage =
+            pathname === STUDENT_SUBSCRIBE_PATH ||
+            pathname.startsWith(STUDENT_SUBSCRIBE_PATH + '/')
+          if (!onSubscribePage) {
+            const { data: lock } = await supabase
+              .rpc('my_subscription_lock')
+              .abortSignal(AbortSignal.timeout(PROFILE_TIMEOUT_MS))
+            if ((lock as { locked?: boolean } | null)?.locked) {
+              return NextResponse.redirect(new URL(STUDENT_SUBSCRIBE_PATH, request.url))
+            }
           }
         }
       }

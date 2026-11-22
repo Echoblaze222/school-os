@@ -33,8 +33,11 @@
 // authoritatively check, so routing on the same signal keeps this file
 // and those functions from being able to drift out of sync about what
 // counts as "a registration payment":
-//   SCH-REG-*  → school registration   (activateSchool)
-//   SCOS-*     → subscription renewal  (activateSubscription)
+//   SCH-REG-*  → school registration        (activateSchool)
+//   SCSUB-*    → per-student subscription   (activateStudentSubscription)
+//   SCOS-*     → legacy school renewal      (activateSubscription; the
+//                principal no longer starts these, kept so any in-flight
+//                payment from before the per-student change still settles)
 //   anything else with metadata.invoice_id → fee/invoice payment (handled inline)
 
 import { NextResponse } from 'next/server'
@@ -45,6 +48,8 @@ import { logger, newTraceId } from '@/lib/logger'
 import { logActivityWithClient } from '@/lib/logActivity'
 import { activateSchool } from '@/lib/activateSchool'
 import { activateSubscription } from '@/app/api/subscription/callback/route'
+import { activateStudentSubscription } from '@/lib/activateStudentSubscription'
+import { STUDENT_REFERENCE_PREFIX } from '@/lib/studentBilling'
 import { queueEmail } from '@/lib/email/queueEmail'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
@@ -243,7 +248,24 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
   return { handled: 'invoice_payment', invoiceId }
 }
 
-// ─── Subscription renewal ───────────────────────────────────────────────
+// ─── Per-student subscription ───────────────────────────────────────────
+// activateStudentSubscription() does its own SCSUB- prefix check and
+// cross-checks the pre-logged student_subscriptions row (amount, status)
+// before marking anything paid, so this wrapper only surfaces refusal as
+// a thrown error for logs / paystack_webhook_events.
+async function handleStudentSubscription(admin: ReturnType<typeof createAdminClient>, data: any, traceId: string) {
+  const { reference, amount } = data
+  const result = await activateStudentSubscription(admin, reference, amount / 100)
+
+  if (!result.activated) {
+    throw new Error(`activateStudentSubscription refused: ${result.reason}`)
+  }
+
+  logger.info('student subscription webhook processed', { traceId, studentId: result.studentId })
+  return { handled: 'student_subscription', studentId: result.studentId }
+}
+
+// ─── Legacy school renewal ──────────────────────────────────────────────
 // activateSubscription() does its own SCOS- prefix check and
 // subscription_payments cross-check internally — this wrapper just
 // surfaces its {activated, reason} result as a thrown error on refusal,
@@ -354,6 +376,9 @@ export async function POST(req: Request) {
   if (reference.startsWith(REGISTRATION_REFERENCE_PREFIX)) {
     scope = 'paystack_school_registration'
     handler = () => handleSchoolRegistration(admin, event.data, traceId)
+  } else if (reference.startsWith(STUDENT_REFERENCE_PREFIX)) {
+    scope = 'paystack_student_subscription'
+    handler = () => handleStudentSubscription(admin, event.data, traceId)
   } else if (reference.startsWith(SUBSCRIPTION_REFERENCE_PREFIX)) {
     scope = 'paystack_subscription_renewal'
     handler = () => handleSubscriptionRenewal(admin, event.data, traceId)

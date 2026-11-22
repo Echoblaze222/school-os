@@ -1,36 +1,36 @@
 'use client'
 
 // SubscriptionGate.tsx
-// Shown to students (and optionally other roles) when the school's
-// subscription has lapsed. Replaces the dashboard content entirely.
-// The principal must renew - then setup_status goes back to 'active'
-// and this gate disappears automatically on next page load.
+// Shown when a role is blocked by a lock. Replaces the dashboard content.
 //
-// NOTE (found during the school-locked branding fix): middleware.ts
-// currently redirects any non-principal billing-locked or hard-locked
-// user to /school-locked BEFORE the dashboard page.tsx that renders this
-// component ever runs - so as of this commit, the `if (sub.locked)`
-// branches in every role's page.tsx that render <SubscriptionGate> are
-// unreachable in practice. Left in place deliberately (defense-in-depth
-// matches this codebase's own stated pattern of not relying on a single
-// enforcement layer - see middleware.ts's own comments), and fixed for
-// correctness anyway rather than left to drift further. Worth a decision
-// at some point on whether to keep both layers or simplify to one.
+// Billing is per student now: the 'student_unpaid' status is the only billing
+// state, and it is shown to that one student, pointing at the pay page. The
+// other statuses are whole-school locks set by a super admin or by an unpaid
+// setup, which only SchoolOS support can resolve.
+//
+// NOTE: middleware.ts redirects locked users before the dashboard page.tsx
+// that renders this component runs, so these branches are defence in depth.
 
+import Link from 'next/link'
 import { PhoneIcon } from '@/components/Icons'
 import styles from './SubscriptionGate.module.css'
 
 interface Props {
   schoolName:   string
   schoolColor?: string
-  status:       'expired' | 'suspended' | 'locked' | 'cancelled' | string
+  status:       'expired' | 'suspended' | 'locked' | 'cancelled' | 'student_unpaid' | string
 }
 
 const STATUS_COPY: Record<string, { emoji: string; heading: string; sub: string }> = {
+  student_unpaid: {
+    emoji:   '🔒',
+    heading: 'Subscription unpaid',
+    sub:     'Your SchoolOS subscription for this term has not been paid yet. You or your parent can pay it now, and your dashboard unlocks as soon as payment is confirmed.',
+  },
   expired: {
     emoji:   '🔒',
-    heading: 'Subscription Expired',
-    sub:     "Your school's subscription for this term has ended. Please contact your school admin or principal to renew so you can continue using your dashboard.",
+    heading: 'Portal Not Yet Active',
+    sub:     "Your school's setup has not been completed yet. Please contact your school admin or principal.",
   },
   suspended: {
     emoji:   '⚠️',
@@ -42,20 +42,16 @@ const STATUS_COPY: Record<string, { emoji: string; heading: string; sub: string 
     heading: 'Account Locked',
     sub:     'Access to this dashboard has been locked. Please contact your school admin or principal for assistance.',
   },
-  // Was missing entirely, so a cancelled school fell through to the
-  // 'expired' copy ('...has ended', implying a renewal is simply overdue)
-  // rather than reflecting that the school explicitly chose not to renew.
-  // docs/lane2-subscription-billing-payment-enforcement/00-README.md
-  // documents this distinct copy as the intended behavior.
   cancelled: {
     emoji:   '🚫',
-    heading: 'Subscription Cancelled',
-    sub:     'Your school chose not to renew its SchoolOS subscription. Please contact your school admin or principal if you believe this is a mistake, or to arrange renewal.',
+    heading: 'Account Inactive',
+    sub:     'Access to this school account is currently inactive. Please contact your school admin or principal.',
   },
 }
 
 export default function SubscriptionGate({ schoolName, schoolColor = '#7C3AED', status }: Props) {
   const copy = STATUS_COPY[status] ?? STATUS_COPY.expired
+  const isStudentUnpaid = status === 'student_unpaid'
 
   return (
     <div className={styles.overlay}>
@@ -72,29 +68,39 @@ export default function SubscriptionGate({ schoolName, schoolColor = '#7C3AED', 
 
         <div className={styles.divider} style={{ background: schoolColor }} />
 
-        <div className={styles.infoBox}>
-          <p className={styles.infoTitle}>What you need to do:</p>
-          <ol className={styles.steps}>
-            <li>Speak to your <strong>school admin or principal</strong></li>
-            <li>Ask them to renew the SchoolOS subscription for this term</li>
-            <li>Once payment is confirmed, your dashboard will unlock automatically</li>
-          </ol>
-        </div>
+        {isStudentUnpaid ? (
+          <Link
+            href="/dashboard/student/subscribe"
+            className={styles.contactBtn}
+            style={{ background: schoolColor }}
+          >
+            Pay my subscription
+          </Link>
+        ) : (
+          <>
+            <div className={styles.infoBox}>
+              <p className={styles.infoTitle}>What you need to do:</p>
+              <ol className={styles.steps}>
+                <li>Speak to your <strong>school admin or principal</strong></li>
+                <li>Ask them to contact SchoolOS support</li>
+                <li>Once resolved, your dashboard will unlock automatically</li>
+              </ol>
+            </div>
 
-        {/* WhatsApp support button - uses PhoneIcon from Icons.tsx */}
-        <a
-          href={`https://wa.me/2348086883144?text=Hello%2C%20my%20school%20(${encodeURIComponent(schoolName)})%20subscription%20has%20expired.%20Please%20help%20me%20renew.`}
-          target="_blank"
-          rel="noreferrer"
-          className={styles.contactBtn}
-          style={{ background: schoolColor }}
-        >
-          <PhoneIcon size={16} color="#fff" strokeWidth={2.2} />
-          Contact SchoolOS Support
-        </a>
+            <a
+              href={`https://wa.me/2348086883144?text=Hello%2C%20my%20school%20(${encodeURIComponent(schoolName)})%20portal%20is%20locked.%20Please%20help.`}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.contactBtn}
+              style={{ background: schoolColor }}
+            >
+              <PhoneIcon size={16} color="#fff" strokeWidth={2.2} />
+              Contact SchoolOS Support
+            </a>
 
-        {/* Phone number */}
-        <p className={styles.phone}>+234 808 688 3144</p>
+            <p className={styles.phone}>+234 808 688 3144</p>
+          </>
+        )}
 
         <p className={styles.footer}>
           If you believe this is a mistake, please contact your school admin.
