@@ -1,8 +1,10 @@
 // src/lib/__tests__/authUserAndSubscription.test.ts
 //
 // getAuthUser(): verifies via getClaims() (local JWT check), never getUser().
-// checkSubscription(): ONE database query (profile + school embed) instead of
-// two sequential ones, with identical lock semantics to before.
+// checkSubscription(): ONE table query (profile + school embed). Billing is per
+// student: a school never locks for billing, only an unpaid student does (via
+// the my_subscription_lock RPC). Whole-school locks are only super-admin
+// 'locked', is_platform_active=false, or an unpaid-setup 'expired' trial.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -10,6 +12,8 @@ type Claims = { sub?: string; email?: unknown } | null
 let claims: Claims
 let authCalls: string[]
 let tables: string[]
+let rpcCalls: string[]
+let lockResult: { locked?: boolean } | null
 let profileRow: Record<string, unknown> | null
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -28,13 +32,19 @@ vi.mock('@/lib/supabase/server', () => ({
       b.single = async () => ({ data: table === 'profiles' ? profileRow : null })
       return b
     },
+    rpc: async (name: string) => {
+      rpcCalls.push(name)
+      return { data: lockResult }
+    },
   }),
 }))
 
 const { getAuthUser } = await import('@/lib/supabase/authUser')
 const { checkSubscription } = await import('@/lib/subscription')
 
-beforeEach(() => { claims = { sub: 'u1', email: 'a@b.c' }; authCalls = []; tables = []; profileRow = null })
+beforeEach(() => {
+  claims = { sub: 'u1', email: 'a@b.c' }; authCalls = []; tables = []; rpcCalls = []; lockResult = { locked: false }; profileRow = null
+})
 
 describe('getAuthUser', () => {
   it('returns id and email from verified claims, using getClaims and never getUser', async () => {
@@ -69,18 +79,48 @@ describe('checkSubscription (single query)', () => {
   it('active school is not locked and carries name and colour', async () => {
     profileRow = row('student', school('active'))
     expect(await checkSubscription('active')).toEqual({
-      locked: false, hardLocked: false, status: 'active', schoolName: 'Greenfield', schoolColor: '#123456',
+      locked: false, hardLocked: false, studentLocked: false, status: 'active', schoolName: 'Greenfield', schoolColor: '#123456',
     })
   })
-  it('billing lock (expired/suspended/cancelled) locks non-principals but not the principal', async () => {
-    for (const status of ['expired', 'suspended', 'cancelled']) {
-      profileRow = row('student', school(status))
-      expect((await checkSubscription(`stu-${status}`)).locked).toBe(true)
-      profileRow = row('principal', school(status))
-      const p = await checkSubscription(`pri-${status}`)
-      expect(p.locked).toBe(false)
-      expect(p.hardLocked).toBe(false)
+  it('an unpaid-setup expired school is a whole-school lock, principal included', async () => {
+    for (const role of ['student', 'teacher', 'principal']) {
+      profileRow = row(role, school('expired'))
+      expect(await checkSubscription(`expired-${role}`)).toMatchObject({ locked: true, hardLocked: true })
     }
+  })
+  it('the old school billing states (grace_period/suspended/cancelled) no longer lock anyone', async () => {
+    for (const status of ['grace_period', 'suspended', 'cancelled']) {
+      for (const role of ['student', 'teacher', 'principal', 'parent']) {
+        profileRow = row(role, school(status))
+        expect(await checkSubscription(`${status}-${role}`)).toMatchObject({ locked: false, hardLocked: false })
+      }
+    }
+  })
+  it('an unpaid student is locked on their own, while the school stays open', async () => {
+    profileRow = row('student', school('active'))
+    lockResult = { locked: true }
+    expect(await checkSubscription('unpaid-student')).toMatchObject({
+      locked: true, hardLocked: false, studentLocked: true, status: 'student_unpaid',
+    })
+    expect(rpcCalls).toEqual(['my_subscription_lock'])
+  })
+  it('a paid student is not locked', async () => {
+    profileRow = row('student', school('active'))
+    lockResult = { locked: false }
+    expect((await checkSubscription('paid-student')).locked).toBe(false)
+  })
+  it('a missing or failed lock answer fails open (no term, or migration not applied)', async () => {
+    profileRow = row('student', school('active'))
+    lockResult = null
+    expect((await checkSubscription('failopen-student')).locked).toBe(false)
+  })
+  it('staff, principals and parents are never student-locked and skip the lock query', async () => {
+    lockResult = { locked: true }
+    for (const role of ['teacher', 'principal', 'parent', 'bursar']) {
+      profileRow = row(role, school('active'))
+      expect((await checkSubscription(`never-${role}`)).locked).toBe(false)
+    }
+    expect(rpcCalls).toEqual([])
   })
   it('hard lock blocks everyone including the principal', async () => {
     profileRow = row('principal', school('locked'))
