@@ -9,6 +9,10 @@
 //   2. Added visible error display on save failure - previously errors were
 //      silently swallowed (only logged to console), so a failed save looked
 //      identical to nothing happening at all.
+//   3. Notes pasted from ChatGPT showed raw symbols (**, ##, |---|, $...$).
+//      The expanded note and the new Preview toggle now render real formatting
+//      through NoteMarkdown (headings, bold, lists, tables, equations). The
+//      stored text is unchanged, so existing notes are fixed too.
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -16,6 +20,7 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { BookIcon, PlusIcon, DownloadIcon, AlertIcon, XIcon, EditIcon, FileTextIcon, BookOpenIcon, PaperclipIcon } from '@/components/Icons'
 import NoteBook from '@/components/NoteBook'
+import NoteMarkdown from '@/components/NoteMarkdown'
 import DocumentViewer from '@/components/DocumentViewer'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -52,7 +57,8 @@ export default function NotesClient({ profile, school, userId }: Props) {
   const [uploadMode, setUploadMode] = useState<'type' | 'upload'>('type')
   const [error, setError] = useState<string | null>(null) // FIX: visible error state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [previewBook, setPreviewBook] = useState<any>(null) // typed note preview → 3D flip-book
+  const [showPreview, setShowPreview] = useState(false)     // formatted preview of the note being typed
+  const [previewBook, setPreviewBook] = useState<any>(null) // typed note preview → book viewer
   const [previewDoc, setPreviewDoc] = useState<any>(null)   // uploaded file preview → in-portal viewer
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
@@ -185,6 +191,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
     setForm(f => ({ ...f, title: '', content: '' }))
     setUploadedFile(null)
+    setShowPreview(false)
     setShowForm(false)
     loadNotes()
     setSaving(false)
@@ -266,10 +273,27 @@ export default function NotesClient({ profile, school, userId }: Props) {
 
           {uploadMode === 'type' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--space-3)' }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Note Content *</label>
-              <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                placeholder="Write your note here..." rows={6}
-                style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Note Content *</label>
+                {/* Formatted preview so the teacher sees how a pasted ChatGPT note will look before saving */}
+                <button type="button" className="pressable" onClick={() => setShowPreview(v => !v)}
+                  disabled={!form.content}
+                  style={{ padding: '3px 10px', borderRadius: 999, border: `1px solid ${showPreview ? sc : 'var(--glass-border)'}`, background: showPreview ? sc + '20' : 'transparent', color: showPreview ? sc : 'var(--text-muted)', fontWeight: 700, fontSize: '0.7rem', cursor: 'pointer', opacity: form.content ? 1 : 0.5 }}>
+                  {showPreview ? 'Edit' : 'Preview'}
+                </button>
+              </div>
+              {showPreview ? (
+                <div style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', minHeight: 140, maxHeight: 320, overflowY: 'auto' }}>
+                  <NoteMarkdown content={form.content} variant="inline" accentColor={sc} />
+                </div>
+              ) : (
+                <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                  placeholder="Write your note here, or paste it straight from ChatGPT..." rows={8}
+                  style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }} />
+              )}
+              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                Pasting from ChatGPT? Headings, bold, lists, tables and equations are formatted automatically.
+              </p>
             </div>
           ) : (
             <div style={{ marginBottom: 'var(--space-3)' }}>
@@ -290,7 +314,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
               style={{ flex: 1, height: 40, background: sc, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Save Note'}
             </button>
-            <button className="pressable" onClick={() => { setShowForm(false); setUploadedFile(null) }}
+            <button className="pressable" onClick={() => { setShowForm(false); setUploadedFile(null); setShowPreview(false) }}
               style={{ flex: 1, height: 40, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
@@ -324,13 +348,15 @@ export default function NotesClient({ profile, school, userId }: Props) {
                 {expanded === item.id && (
                   <div style={{ paddingLeft: 56, paddingRight: 8 }}>
                     {item.description && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 'var(--space-3)' }}>{item.description}</p>
+                      <div style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', maxHeight: 360, overflowY: 'auto' }}>
+                        <NoteMarkdown content={item.description} variant="inline" accentColor={sc} />
+                      </div>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 'var(--space-2)' }}>
                       {item.description && (
                         <button className="pressable" onClick={() => setPreviewBook(item)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                          <BookOpenIcon size={13} color="#fff" /> Preview as Flip-Book
+                          <BookOpenIcon size={13} color="#fff" /> Open as Book
                         </button>
                       )}
                       {item.file_url && (
