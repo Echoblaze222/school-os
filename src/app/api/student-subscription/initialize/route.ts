@@ -1,8 +1,10 @@
 // src/app/api/student-subscription/initialize/route.ts
 //
 // A parent (for their child) or a student (for themselves) starts paying the
-// per-student term subscription. Money goes to the PLATFORM Paystack account:
-// there is deliberately no school subaccount/split here, unlike school fees.
+// per-student term subscription. The charge is a plain Paystack transaction on
+// YOUR Paystack account (PAYSTACK_SECRET_KEY): there is deliberately no
+// `subaccount` and no split here, unlike school-fee payments, so the full
+// amount settles to the platform owner.
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -52,14 +54,13 @@ export async function POST(req: Request) {
 
     if (!payer.email) return NextResponse.json({ error: 'No email on file for your account' }, { status: 400 })
 
-    const today = new Date().toISOString().slice(0, 10)
-    const { data: term } = await admin
-      .from('school_terms')
-      .select('id, term_name, academic_year')
-      .eq('school_id', student.school_id)
-      .lte('starts_on', today).gte('ends_on', today)
-      .order('starts_on', { ascending: false }).limit(1).maybeSingle()
-    if (!term) return NextResponse.json({ error: 'No active term is set for this school yet. Please ask the school to set the term dates.' }, { status: 400 })
+    // Current term: the principal's dates if set, otherwise the default Nigerian
+    // calendar (created on demand by the database). Null = school holiday gap.
+    const { data: termJson } = await admin.rpc('current_term_json', { p_school: student.school_id })
+    const term = termJson as { id: string; term_name: string; academic_year: string } | null
+    if (!term) {
+      return NextResponse.json({ error: 'It is currently the school holiday, so no subscription is due right now.' }, { status: 400 })
+    }
 
     const { data: alreadyPaid } = await admin
       .from('student_subscriptions').select('id')
@@ -91,6 +92,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Could not start payment. Please try again.' }, { status: 500 })
     }
 
+    // No `subaccount`, no `split`: the whole amount settles to your Paystack account.
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}`, 'Content-Type': 'application/json' },

@@ -38,19 +38,15 @@ export default async function ParentSubscriptionPage() {
         .eq('role', 'student')
     : { data: [] as any[] }
 
-  const today = new Date().toISOString().slice(0, 10)
   const items: PayItem[] = []
 
   for (const k of kids ?? []) {
     const schoolId = (k as any).school_id as string | null
     if (!schoolId) continue
 
-    const { data: term } = await admin
-      .from('school_terms')
-      .select('id, term_name, starts_on, grace_days')
-      .eq('school_id', schoolId)
-      .lte('starts_on', today).gte('ends_on', today)
-      .order('starts_on', { ascending: false }).limit(1).maybeSingle()
+    // Principal's dates if set, otherwise the default Nigerian calendar.
+    const { data: termJson } = await admin.rpc('current_term_json', { p_school: schoolId })
+    const term = termJson as { id: string; term_name: string; grace_ends_on: string } | null
 
     const { data: paidRow } = term
       ? await admin
@@ -64,13 +60,6 @@ export default async function ParentSubscriptionPage() {
       .eq('school_id', schoolId).eq('role', 'student').eq('is_active', true)
     const { amount, tierLabel } = priceForStudent(count ?? 0)
 
-    let graceEndsOn: string | null = null
-    if (term) {
-      const d = new Date(term.starts_on)
-      d.setDate(d.getDate() + term.grace_days)
-      graceEndsOn = d.toISOString().slice(0, 10)
-    }
-
     const cls = (k as any).class
     items.push({
       studentId: (k as any).id,
@@ -78,7 +67,7 @@ export default async function ParentSubscriptionPage() {
       className: Array.isArray(cls) ? cls[0]?.name : cls?.name,
       paid: !!paidRow,
       termName: term?.term_name ?? null,
-      graceEndsOn,
+      graceEndsOn: term?.grace_ends_on ?? null,
       amount,
       tierLabel,
     })
