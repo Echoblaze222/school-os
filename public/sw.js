@@ -53,7 +53,7 @@ try {
 
 const PRECACHE_URLS = [...STATIC_PRECACHE_URLS, ...(self.__PRECACHE_URLS || [])]
 
-// ── Install & Activate ────────────────────────────────────
+// ── Install & Activate ────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_SHELL_CACHE).then((cache) =>
@@ -87,7 +87,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// ── Fetch - offline support ───────────────────────────────
+// ── Fetch - offline support ─────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event
 
@@ -153,7 +153,7 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
-// ── Sign-out: drop anything cached at runtime ─────────────
+// ── Sign-out: drop anything cached at runtime ─────────────────────────────────────────────────────────
 // Posted by the app when a user logs out. After the change above the runtime
 // cache only holds fonts/images, but clearing it on logout keeps that true
 // even if caching rules are loosened later.
@@ -163,7 +163,7 @@ self.addEventListener('message', (event) => {
   }
 })
 
-// ── Push received ─────────────────────────────────────────
+// ── Push received ─────────────────────────────────────────────────────────────
 self.addEventListener('push', (event) => {
   if (!event.data) return
 
@@ -174,7 +174,7 @@ self.addEventListener('push', (event) => {
     payload = { title: 'SchoolOS', body: event.data.text() }
   }
 
-  const { title, body, icon, badge, url, tag } = payload
+  const { title, body, icon, badge, url, tag, userId, sentAt } = payload
 
   const options = {
     body:    body   || '',
@@ -195,11 +195,76 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(title || 'SchoolOS', options)
+    Promise.all([
+      self.registration.showNotification(title || 'SchoolOS', options),
+      // Keep a copy on the phone so the bell can show it with no network.
+      saveToInbox({
+        id:         options.tag,
+        userId:     userId || null,
+        title:      title || 'SchoolOS',
+        body:       body || '',
+        url:        url || '/',
+        receivedAt: typeof sentAt === 'number' ? sentAt : Date.now(),
+      }),
+    ])
   )
 })
 
-// ── Notification click ────────────────────────────────────
+// ── Offline inbox ─────────────────────────────────────────────────────────────
+// Mirrors src/lib/offlineInbox.ts (same DB/store names and limits) - keep the
+// two in step. Only pushes stamped with a userId are kept, so a copy can only
+// ever be shown back to the person it was sent to. Saving as one user deletes
+// every other user's copies, and the app wipes the lot on sign-out.
+const INBOX_DB_NAME   = 'schoolos-inbox'
+const INBOX_STORE     = 'items'
+const INBOX_MAX_ITEMS = 50
+const INBOX_MAX_AGE   = 7 * 24 * 60 * 60 * 1000
+
+function saveToInbox(item) {
+  if (!item.userId || !item.id) return Promise.resolve()
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(INBOX_DB_NAME, 1)
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(INBOX_STORE)) {
+          req.result.createObjectStore(INBOX_STORE, { keyPath: 'id' })
+        }
+      }
+      req.onerror   = () => resolve()
+      req.onblocked = () => resolve()
+      req.onsuccess = () => {
+        const db = req.result
+        try {
+          const tx    = db.transaction(INBOX_STORE, 'readwrite')
+          const store = tx.objectStore(INBOX_STORE)
+          const all   = store.getAll()
+          all.onsuccess = () => {
+            const cutoff = Date.now() - INBOX_MAX_AGE
+            const keep = []
+            for (const rec of all.result || []) {
+              if (rec.userId !== item.userId || rec.receivedAt < cutoff) store.delete(rec.id)
+              else keep.push(rec)
+            }
+            store.put(item)
+            // Cap the list: keep the newest INBOX_MAX_ITEMS including this one.
+            keep.sort((a, b) => b.receivedAt - a.receivedAt)
+            for (const rec of keep.slice(INBOX_MAX_ITEMS - 1)) store.delete(rec.id)
+          }
+          tx.oncomplete = () => { db.close(); resolve() }
+          tx.onerror    = () => { db.close(); resolve() }
+          tx.onabort    = () => { db.close(); resolve() }
+        } catch {
+          try { db.close() } catch {}
+          resolve()
+        }
+      }
+    } catch {
+      resolve()
+    }
+  })
+}
+
+// ── Notification click ──────────────────────────────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
@@ -221,7 +286,7 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// ── Push subscription change ──────────────────────────────
+// ── Push subscription change ───────────────────────────────────────────────────────────
 self.addEventListener('pushsubscriptionchange', (event) => {
   event.waitUntil(
     event.newSubscription
