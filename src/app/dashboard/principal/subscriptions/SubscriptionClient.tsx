@@ -13,6 +13,7 @@ export interface SubscriptionStats {
     starts_on: string
     ends_on: string
     grace_ends_on: string
+    is_default?: boolean
   }
   total_students?: number
   paid_students?: number
@@ -71,17 +72,21 @@ export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
     }
     setBusy(true)
     const supabase = createClient()
-    const { error: err } = await supabase.from('school_terms').insert({
+    // Upsert so the principal's own dates replace the automatic default term
+    // for the same year and term name instead of clashing with it. Existing
+    // payments stay attached because the row id does not change.
+    const { error: err } = await supabase.from('school_terms').upsert({
       school_id: schoolId,
       academic_year: form.academic_year.trim(),
       term_name: form.term_name,
       starts_on: form.starts_on,
       ends_on: form.ends_on,
       grace_days: Number(form.grace_days),
-    })
+      is_default: false,
+    }, { onConflict: 'school_id,academic_year,term_name' })
     setBusy(false)
     if (err) {
-      setError(err.code === '23505' ? 'That term already exists for this academic year.' : 'Could not save the term. Please try again.')
+      setError('Could not save the term. Please try again.')
       return
     }
     setForm({ ...form, starts_on: '', ends_on: '' })
@@ -115,6 +120,11 @@ export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
           <p style={{ margin: '2px 0 14px', fontSize: '0.8rem', opacity: 0.65 }}>
             {fmtDate(term.starts_on)} to {fmtDate(term.ends_on)} &middot; unpaid students lock after {fmtDate(term.grace_ends_on)}
           </p>
+          {term.is_default && (
+            <p style={{ margin: '0 0 14px', fontSize: '0.8rem', padding: '8px 10px', borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              Using the standard Nigerian school calendar because no term dates were set. Add your school&apos;s own dates below to replace it.
+            </p>
+          )}
 
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 12 }}>
             <div>
@@ -148,16 +158,19 @@ export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
         </section>
       ) : (
         <section style={card}>
-          <p style={{ margin: 0, fontWeight: 700 }}>No active term</p>
+          <p style={{ margin: 0, fontWeight: 700 }}>School holiday</p>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.75 }}>
-            Set this term&apos;s dates below. Until a term is active nobody is locked and nothing is due.
+            No term is running today, so nothing is due and nobody is locked. The next term starts automatically on the standard calendar unless you set your own dates below.
           </p>
         </section>
       )}
 
       {/* ── Term dates ── */}
       <section style={card} aria-label="Term dates">
-        <p style={{ margin: '0 0 12px', fontWeight: 700 }}>School term dates</p>
+        <p style={{ margin: '0 0 4px', fontWeight: 700 }}>School term dates</p>
+        <p style={{ margin: '0 0 12px', fontSize: '0.78rem', opacity: 0.65 }}>
+          Optional. If you skip this, the standard calendar applies: First Term 8 Sep to 19 Dec, Second Term 5 Jan to 3 Apr, Third Term 20 Apr to 24 Jul, each with 14 days of grace.
+        </p>
 
         {terms.length > 0 && (
           <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -184,14 +197,14 @@ export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
           <label style={{ fontSize: '0.78rem', opacity: 0.7 }}>Term ends
             <input style={input} type="date" value={form.ends_on} onChange={e => setForm({ ...form, ends_on: e.target.value })} />
           </label>
-          <label style={{ fontSize: '0.78rem', opacity: 0.7 }}>Grace period after term starts (days, 0 to 60)
+          <label style={{ fontSize: '0.78rem', opacity: 0.7 }}>Grace period after the term is set up (days, 0 to 60)
             <input style={input} type="number" min={0} max={60} value={form.grace_days}
               onChange={e => setForm({ ...form, grace_days: Number(e.target.value) })} />
           </label>
           {error && <p role="alert" style={{ margin: 0, color: 'var(--error, #ef4444)', fontSize: '0.82rem' }}>{error}</p>}
           <button type="submit" disabled={busy} className="pressable"
             style={{ height: 46, borderRadius: 12, border: 'none', fontWeight: 700, cursor: 'pointer', background: 'var(--primary, #800020)', color: '#fff' }}>
-            {busy ? 'Saving…' : 'Add term'}
+            {busy ? 'Saving…' : 'Save term'}
           </button>
         </form>
       </section>
