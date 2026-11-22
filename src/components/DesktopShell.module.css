@@ -1,6 +1,7 @@
 /* DesktopShell.module.css
-   Solid surfaces only: no gradients, no decorative shadows. Depth comes from
-   borders and the surface tokens, so it holds up in both themes. */
+   Glass sidebar: translucent surface, backdrop blur, hairline borders. No
+   gradients. The width change uses a spring curve; labels fade instead of
+   unmounting, so collapse and expand animate. */
 
 .shell { display: none; }
 
@@ -13,11 +14,13 @@
     left: 0;
     height: 100dvh;
     width: var(--shell-w, 264px);
-    background: var(--sidebar-bg);
+    background: color-mix(in srgb, var(--sidebar-bg) 74%, transparent);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
     border-right: 1px solid var(--sidebar-border);
     z-index: 90;
-    overflow: hidden;
-    transition: width var(--transition-normal);
+    overflow: visible;
+    transition: width 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
   }
 }
 
@@ -109,6 +112,9 @@
 
 .group { display: flex; flex-direction: column; gap: 2px; margin-top: var(--space-4); }
 .groupLabel {
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 0.25s ease, height 0.4s ease, padding 0.4s ease;
   padding: 0 var(--space-3) var(--space-2);
   font-size: 0.64rem;
   font-weight: 800;
@@ -138,6 +144,7 @@
 
 .itemActive {
   background: var(--brand-subtle);
+  box-shadow: inset 0 0 0 1px var(--brand-border);
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -151,7 +158,6 @@
   border-radius: 0 3px 3px 0;
   background: var(--brand);
 }
-.collapsed .itemActive::before { left: calc(var(--space-3) * -1); }
 
 .icon { width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .label { overflow: hidden; text-overflow: ellipsis; }
@@ -207,3 +213,67 @@
   white-space: nowrap;
 }
 .accountRole { font-size: 0.68rem; color: var(--text-muted); }
+
+/* Edge chevron, half outside the rail like the reference */
+.edgeToggle {
+  position: absolute;
+  top: 30px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 3;
+  transition: transform 0.5s cubic-bezier(0.32, 1.16, 0.42, 1), color var(--transition-fast);
+}
+.edgeToggle:hover { color: var(--text-primary); }
+
+/* Theme pill */
+.themePill {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  margin: var(--space-1) 0 var(--space-1) var(--space-2);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+}
+.themeOpt {
+  width: 34px;
+  height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+.themeOn { background: var(--bg-raised); color: var(--text-primary); }
+
+/* Collapsed rail: labels fade, then stop taking space */
+.label, .brandText, .searchText, .kbd, .accountText {
+  transition: opacity 0.2s ease, max-width 0.4s ease;
+  max-width: 220px;
+}
+.collapsed .label,
+.collapsed .brandText,
+.collapsed .searchText,
+.collapsed .kbd,
+.collapsed .accountText { opacity: 0; max-width: 0; padding: 0; border-width: 0; pointer-events: none; }
+.collapsed .groupLabel { opacity: 0; height: 0; padding: 0; margin: 0; }
+.collapsed .group { margin-top: var(--space-3); }
+.collapsed .themePill { align-self: center; margin-left: 0; }
+.collapsed .themeOpt:not(.themeOn) { display: none; }
+.collapsed .item, .collapsed .searchBtn { gap: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shell, .edgeToggle, .label, .brandText, .searchText, .kbd, .accountText { transition: none; }
+}

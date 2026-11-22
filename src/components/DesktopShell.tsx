@@ -8,9 +8,10 @@
 // server wrapper on the few pages that have a bespoke header. When
 // featureGroups is omitted it is resolved from the role registry.
 //
-// Provides: grouped navigation with a real active state, a collapsible rail
-// (remembered per browser), a Cmd/Ctrl+K command palette, theme toggle,
-// AI Insights shortcut, account row and sign out.
+// Provides: glass sidebar with grouped navigation and a real active state, an
+// edge chevron that collapses it to an icon rail (remembered per browser), a
+// Cmd/Ctrl+K command palette, theme pill, AI Insights shortcut, account row
+// and sign out.
 
 import './desktop-shell.css'
 import Link from 'next/link'
@@ -22,6 +23,7 @@ import CommandPalette from './CommandPalette'
 import { GridIcon, SearchIcon, SparklesIcon, SunIcon, MoonIcon, UserIcon, LogOutIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
 import { createClient } from '@/lib/supabase/client'
+import { publishShellIdentity } from '@/lib/shellIdentity'
 import { signOutFlow } from '@/lib/signOutFlow'
 import { getFeatureGroups } from '@/lib/roleFeatureGroups'
 import motion from './dashboard-motion.module.css'
@@ -68,6 +70,10 @@ export default function DesktopShell({
   const resolvedProfile = `/dashboard/${role}/profile`
   const roleLabel       = roleLabelOf(role)
   const initials        = (school?.name ?? 'S').slice(0, 2).toUpperCase()
+
+  // Share who is signed in with the mobile drawer (BottomDock is mounted by
+  // many pages that do not pass profile/school).
+  useEffect(() => { publishShellIdentity({ profile, school }) }, [profile, school])
 
   // Remembered collapse state. Read after mount so server and client markup match.
   useEffect(() => {
@@ -134,13 +140,24 @@ export default function DesktopShell({
               ? <Image src={school.logo_url} alt="" width={36} height={36} className={styles.crestImg} />
               : initials}
           </div>
-          {!collapsed && (
-            <div className={styles.brandText}>
-              <div className={styles.schoolName}>{school?.name ?? 'Your school'}</div>
-              <div className={styles.roleTag}>{roleLabel}</div>
-            </div>
-          )}
+          <div className={styles.brandText}>
+            <div className={styles.schoolName}>{school?.name ?? 'Your school'}</div>
+            <div className={styles.roleTag}>{roleLabel}</div>
+          </div>
         </div>
+
+        <button
+          type="button"
+          className={`${styles.edgeToggle} ${collapsed ? styles.flip : ''} ${motion.focusable}`}
+          onClick={toggleCollapsed}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
 
         <button
           type="button"
@@ -150,12 +167,8 @@ export default function DesktopShell({
           aria-label="Search or jump to"
         >
           <SearchIcon size={15} />
-          {!collapsed && (
-            <>
-              <span className={styles.searchText}>Search or jump to</span>
-              <kbd className={styles.kbd}>{isMac ? '\u2318K' : 'Ctrl K'}</kbd>
-            </>
-          )}
+          <span className={styles.searchText}>Search or jump to</span>
+          <kbd className={styles.kbd}>{isMac ? '\u2318K' : 'Ctrl K'}</kbd>
         </button>
 
         <nav className={styles.nav}>
@@ -166,14 +179,12 @@ export default function DesktopShell({
             aria-current={onHome ? 'page' : undefined}
           >
             <span className={styles.icon}><GridIcon size={18} /></span>
-            {!collapsed && <span className={styles.label}>Overview</span>}
+            <span className={styles.label}>Overview</span>
           </Link>
 
           {groups.map(group => (
             <div key={group.name} className={styles.group}>
-              {collapsed
-                ? <div className={styles.groupRule} />
-                : <div className={styles.groupLabel}>{group.name}</div>}
+              <div className={styles.groupLabel}>{group.name}</div>
               {group.items.map(item => {
                 const active = item.href === activeHref
                 return (
@@ -185,7 +196,7 @@ export default function DesktopShell({
                     aria-current={active ? 'page' : undefined}
                   >
                     <span className={styles.icon}><item.Icon size={18} /></span>
-                    {!collapsed && <span className={styles.label}>{item.label}</span>}
+                    <span className={styles.label}>{item.label}</span>
                   </Link>
                 )
               })}
@@ -201,37 +212,18 @@ export default function DesktopShell({
             aria-current={onAi ? 'page' : undefined}
           >
             <span className={styles.icon}><SparklesIcon size={18} /></span>
-            {!collapsed && <span className={styles.label}>AI Insights</span>}
+            <span className={styles.label}>AI Insights</span>
           </Link>
 
           <button
             type="button"
-            className={itemClass(false)}
+            className={`${styles.themePill} ${motion.focusable}`}
             onClick={toggleTheme}
-            title={collapsed ? 'Toggle theme' : undefined}
+            title="Toggle theme"
             aria-label="Toggle theme"
           >
-            <span className={styles.icon}>
-              {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
-            </span>
-            {!collapsed && <span className={styles.label}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>}
-          </button>
-
-          <button
-            type="button"
-            className={itemClass(false)}
-            onClick={toggleCollapsed}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-expanded={!collapsed}
-          >
-            <span className={`${styles.icon} ${collapsed ? styles.flip : ''}`}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M11 17l-5-5 5-5" />
-                <path d="M18 17l-5-5 5-5" />
-              </svg>
-            </span>
-            {!collapsed && <span className={styles.label}>Collapse</span>}
+            <span className={`${styles.themeOpt} ${theme === 'dark' ? styles.themeOn : ''}`}><MoonIcon size={15} /></span>
+            <span className={`${styles.themeOpt} ${theme !== 'dark' ? styles.themeOn : ''}`}><SunIcon size={15} /></span>
           </button>
 
           <Link
@@ -244,12 +236,10 @@ export default function DesktopShell({
                 ? <Image src={profile.avatar_url} alt="" width={34} height={34} className={styles.avatarImg} />
                 : <UserIcon size={16} />}
             </span>
-            {!collapsed && (
-              <span className={styles.accountText}>
-                <span className={styles.accountName}>{profile?.full_name ?? 'Account'}</span>
-                <span className={styles.accountRole}>{roleLabel}</span>
-              </span>
-            )}
+            <span className={styles.accountText}>
+              <span className={styles.accountName}>{profile?.full_name ?? 'Account'}</span>
+              <span className={styles.accountRole}>{roleLabel}</span>
+            </span>
           </Link>
 
           <button
@@ -260,7 +250,7 @@ export default function DesktopShell({
             aria-label="Sign out"
           >
             <span className={styles.icon}><LogOutIcon size={16} color="var(--danger)" /></span>
-            {!collapsed && <span className={styles.label}>Sign out</span>}
+            <span className={styles.label}>Sign out</span>
           </button>
         </div>
       </aside>

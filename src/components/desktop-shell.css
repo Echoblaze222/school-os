@@ -22,7 +22,7 @@
      the body reserves room for the fixed sidebar. */
   body:has(.sos-shell):not(:has(.sos-shell-legacy)) {
     padding-left: var(--shell-w);
-    transition: padding-left var(--transition-normal);
+    transition: padding-left 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
   }
 
   /* Legacy pages (RoleNav, StudentNav and everything wrapped by them) already
