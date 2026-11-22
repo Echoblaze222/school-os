@@ -67,6 +67,8 @@ export interface FcmPayload {
   body:  string
   url?:  string
   tag?:  string
+  /** Seconds FCM should hold the message for a device that is offline. */
+  ttlSeconds?: number
 }
 
 /**
@@ -93,7 +95,13 @@ export async function sendFcmToTokens(tokens: string[], payload: FcmPayload): Pr
       url: payload.url ?? '/dashboard',
       tag: payload.tag ?? `schoolos-${Date.now()}`,
     },
-    android: { priority: 'high' as const },
+    android: {
+      priority: 'high' as const,
+      // firebase-admin takes the time-to-live in milliseconds.
+      ...(payload.ttlSeconds !== undefined
+        ? { ttl: Math.max(0, Math.floor(payload.ttlSeconds)) * 1000 }
+        : {}),
+    },
     tokens,
   }
 
