@@ -3,29 +3,33 @@
 Branch: `feature/offline-mode`. One PR per phase. Nothing merges without its gate.
 
 ## Vision
-Read from cache, write to an outbox, sync when the backend is healthy.
+Read from the device, write to an outbox, sync when the backend is healthy.
 
-- **Local DB:** Dexie (IndexedDB). Works in the website and in the Android WebView (the APK loads the live site).
-- **Writes:** `src/lib/offline/outbox.ts` - allowlisted tables only, idempotent upserts on a natural key.
+- **Writes:** `src/lib/offline/outbox.ts` (Dexie/IndexedDB) - allowlisted tables only, idempotent upserts on a natural key.
 - **Sync:** `syncEngine.ts` (ordered, single-flight, classified errors) triggered by `autoSync.ts` using the existing `serviceStatus.ts` connectivity signal.
-- **Reads:** `cache.ts` stale-while-revalidate, scoped per user + school.
+- **Reads:** the existing `src/lib/savedView/store.ts` (user-scoped, one user per phone, wiped on sign-out). Offline-capable screens pass a longer `maxAgeMs` to `loadView`. No second cache.
+- Works in the website and in the Android WebView (the APK loads the live site).
 
 ## Never offline
 Payments, billing, invoices, subscriptions, AI, live class, account or role changes. They need server-side idempotency (`src/lib/idempotency.ts`) and must fail loudly offline.
 
 ## Phases and gates
-1. **Foundation** (this PR): db, outbox, cache, sync engine, auto-sync, banner, tests.
-   Gate: `npm install` (regenerates the lockfile), `npm test`, `npm run lint`, `npm run build` all green.
-2. **Pilot: teacher attendance.** Queue on failed save; read-through for classes and students.
-   Gate before starting: wire `clearCache(userId)` into the sign-out flow and warn when pending items exist; update the offline copy in `ServiceStatusBanner` (it currently says changes cannot be saved).
+1. **Foundation:** outbox, sync engine, auto-sync, banner, tests. (done on branch)
+2. **Pilot: teacher attendance.** (on branch)
+   - Classes and students saved on the device for 7 days; a save that fails because the network, backend or session is down is queued; reopening shows queued changes.
+   - Sign-out tries one capped upload first (`flushBeforeSignOut`); leftovers stay scoped to that user.
+   - Offline wording in `ServiceStatusBanner` updated.
+   - Gate: `npm install` (regenerates lockfile), `npm test`, `npm run lint`, `npm run build` green, then the manual matrix below on a real phone.
 3. **Offline shell.** Open already-visited pages with no network without breaking the shared-phone rule in `public/sw.js`.
-4. **Expand** to notes, clinic logs; grades only with a compare-and-flag conflict step.
+4. **Expand** to notes, clinic logs; grades only with a compare-and-flag conflict step. Attendance History tab offline.
 5. **Harden:** review screen for failed items, conflict UI, metrics.
 
 ## Manual test matrix (every phase)
 Airplane mode; throttled 3G; token expired while offline; two devices editing the same record; two tabs open; sign out with pending items; switch accounts on one phone; storage cleared.
 
-## Known limits (Phase 1)
+## Known limits
 - Last write wins on conflict.
-- No screen queues anything yet; the banner stays hidden until Phase 2.
-- Failed items have a count only; the review screen is Phase 5.
+- A page can only open offline if it was opened with a connection first (Phase 3 removes this for visited pages).
+- Items still pending at sign-out stay on the phone, scoped to that user, until that user signs in again.
+- Failed items show a count only; the review screen is Phase 5.
+- Attendance History tab still needs a connection.

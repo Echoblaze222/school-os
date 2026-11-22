@@ -1,10 +1,13 @@
 // src/lib/offline/db.ts
 // CLIENT ONLY. The local database (IndexedDB via Dexie) behind SchoolOS offline
-// mode. Two tables:
+// mode. One table:
 //   outbox - writes made while offline (or while the backend is down), waiting
 //            to be replayed against Supabase in order.
-//   cache  - last-known copies of data a user has already seen, so a screen can
-//            render instantly and still work with no network.
+//
+// Reads are NOT stored here. "Last thing the user saw" copies already live in
+// src/lib/savedView/store.ts, which has the privacy rules for a shared phone
+// (one user at a time, expiry, wiped on sign-out). Offline reads reuse it
+// instead of keeping a second, weaker cache.
 //
 // Opened lazily: importing this file on the server (SSR) must never touch
 // IndexedDB, which does not exist there.
@@ -34,19 +37,8 @@ export interface OutboxItem {
   lastError: string | null
 }
 
-export interface CacheEntry {
-  /** `${userId}:${schoolId}:${name}` */
-  key: string
-  userId: string
-  schoolId: string
-  name: string
-  value: unknown
-  savedAt: number
-}
-
 export type OfflineDB = Dexie & {
   outbox: Table<OutboxItem, number>
-  cache: Table<CacheEntry, string>
 }
 
 export const DB_NAME = 'schoolos-offline'
@@ -65,7 +57,6 @@ export function getDb(): OfflineDB {
   db.version(1).stores({
     // &id = unique; [userId+status] serves both "my pending items" and counts.
     outbox: '++seq, &id, userId, [userId+status]',
-    cache: 'key, userId',
   })
   instance = db
   return db

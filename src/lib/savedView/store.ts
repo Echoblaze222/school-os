@@ -10,7 +10,9 @@
 //  - Saving as one user deletes every other user's records first, so a
 //    shared phone never holds two people's data at once.
 //  - clearSavedViews() wipes everything; the sign-out flow calls it.
-//  - Records expire after 24 hours.
+//  - Records expire after 24 hours by default. Screens that must keep working
+//    offline for longer (e.g. teacher attendance over a weekend) pass a longer
+//    maxAgeMs to loadView; the other rules still apply.
 //  - Nothing here throws: if IndexedDB is missing, blocked (private mode) or
 //    broken, every function quietly does nothing and the app simply behaves
 //    as it did before.
@@ -87,8 +89,15 @@ export async function saveView(userId: string, routeKey: string, data: unknown):
   }
 }
 
-/** The saved copy for this user and screen, or null if none / expired / someone else's. */
-export async function loadView<T>(userId: string, routeKey: string): Promise<SavedView<T> | null> {
+/**
+ * The saved copy for this user and screen, or null if none / expired / someone
+ * else's. `maxAgeMs` defaults to 24 hours; offline-capable screens pass longer.
+ */
+export async function loadView<T>(
+  userId: string,
+  routeKey: string,
+  maxAgeMs: number = MAX_AGE_MS,
+): Promise<SavedView<T> | null> {
   try {
     const db = await openDb()
     if (!db) return null
@@ -96,7 +105,7 @@ export async function loadView<T>(userId: string, routeKey: string): Promise<Sav
     db.close()
     if (!rec) return null
     if (rec.userId !== userId) return null
-    if (Date.now() - rec.savedAt > MAX_AGE_MS) return null
+    if (Date.now() - rec.savedAt > maxAgeMs) return null
     return { data: rec.data as T, savedAt: rec.savedAt }
   } catch {
     return null

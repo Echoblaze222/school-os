@@ -18,7 +18,7 @@ const MANUAL_COOLDOWN_MS = 5000
 const COPY = {
   offline: {
     title: "You're offline",
-    detail: "Changes can't be saved right now. We'll reconnect automatically when your connection is back.",
+    detail: "Attendance still saves on this device and uploads when you're back online. Other changes can't be saved right now. We'll reconnect automatically.",
   },
   down: {
     title: "We can't reach SchoolOS right now",
