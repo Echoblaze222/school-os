@@ -15,6 +15,8 @@ import motion from '@/components/dashboard-motion.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
 import styles from '@/components/mentoring/mentoring.module.css'
 import StarRating from '@/components/mentoring/StarRating'
+import LeaderboardCard from '@/components/mentoring/LeaderboardCard'
+import { useMentoringRealtime } from '@/components/mentoring/useMentoringRealtime'
 import {
   DAYS, FALLBACK_LEVELS, MAX_MENTEES, dayLabel, defaultSessionInput, fmtDateTime,
   type MentorRow, type PairingRow, type RequestRow, type SessionRow,
@@ -46,6 +48,7 @@ export default function MentoringClient({ profile, school, userId }: Props) {
   const [requests, setRequests] = useState<RequestRow[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [levels, setLevels] = useState<string[]>(FALLBACK_LEVELS)
+  const [tick, setTick] = useState(0)
   const [flash, setFlash] = useState<Flash>(null)
 
   const say = useCallback((kind: 'ok' | 'err', text: string) => {
@@ -70,6 +73,7 @@ export default function MentoringClient({ profile, school, userId }: Props) {
     setMentors((m.data ?? []) as MentorRow[])
     setSessions((s.data ?? []) as SessionRow[])
     setRequests((r.data ?? []) as RequestRow[])
+    setTick(t => t + 1)
     setLoading(false)
   }, [supabase, userId, say])
 
@@ -86,6 +90,9 @@ export default function MentoringClient({ profile, school, userId }: Props) {
       if (found.length) setLevels(found.sort(levelOrder))
     })()
   }, [load, school?.id, supabase])
+
+  // a teacher approving a match, a new session or a rating shows up without a refresh
+  useMentoringRealtime(supabase, load)
 
   async function act(fn: () => Result, ok: string): Promise<boolean> {
     const { error } = await fn()
@@ -215,13 +222,16 @@ export default function MentoringClient({ profile, school, userId }: Props) {
           )}
 
           {tab === 'mentor' && (
-            <MentorTab
-              subjects={subjects}
-              levels={levels}
-              applications={myApplications}
-              onApply={applyMentor}
-              onWithdraw={(id) => act(() => supabase.from('mentors').delete().eq('id', id), 'Application withdrawn.')}
-            />
+            <>
+              <LeaderboardCard supabase={supabase} title="Star mentors" myStudentId={userId} refreshKey={tick} />
+              <MentorTab
+                subjects={subjects}
+                levels={levels}
+                applications={myApplications}
+                onApply={applyMentor}
+                onWithdraw={(id) => act(() => supabase.from('mentors').delete().eq('id', id), 'Application withdrawn.')}
+              />
+            </>
           )}
         </div>
       </div>
