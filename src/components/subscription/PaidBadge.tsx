@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function PaidBadge({ paid, size = 'md' }: Props) {
-  const color = paid ? 'var(--success, #10B981)' : 'var(--error, #ef4444)'
+  const color = paid ? 'var(--success, #10B981)' : 'var(--danger, #ef4444)'
   return (
     <span
       role="status"
