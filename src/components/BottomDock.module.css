@@ -8,9 +8,11 @@
   max-width: calc(100vw - 24px);
   display: flex;
   align-items: center;
-  background: var(--brand-dark);
+  background: color-mix(in srgb, var(--sidebar-bg) 66%, transparent);
+  backdrop-filter: blur(22px) saturate(1.6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
   border-radius: 999px;
-  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28);
   border: 1px solid var(--glass-border);
   z-index: 150;
   overflow: hidden;
@@ -22,7 +24,7 @@
   min-height: 48px;
   background: none;
   border: none;
-  color: #F6F1E4;
+  color: var(--text-primary);
   padding: 12px 24px;
   white-space: nowrap;
   font-weight: 600;
@@ -32,9 +34,9 @@
   transition: background 0.15s;
 }
 .btn:active { transform: scale(0.97); }
-.divider { width: 1px; height: 24px; background: rgba(246,241,228,0.2); flex-shrink: 0; }
-.active { background: var(--brand-2-subtle); color: var(--brand-2-light); }
-.active svg { color: var(--brand-2); }
+.divider { width: 1px; height: 24px; background: var(--glass-border); flex-shrink: 0; }
+.active { background: var(--brand-subtle); color: var(--text-primary); }
+.active svg { color: var(--brand-light); }
 
 @media (max-width: 640px) {
   .dock { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }

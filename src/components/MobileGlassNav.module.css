@@ -1,0 +1,241 @@
+/* MobileGlassNav.module.css
+   Glass drawer. Blur and translucency only, no gradients. The width change
+   uses the same spring curve as the reference collapse animation. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: scrimIn 0.25s ease both;
+}
+
+.panel {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  left: 10px;
+  width: min(86vw, 320px);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--sidebar-bg) 72%, transparent);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  transition: width 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
+  animation: panelIn 0.4s cubic-bezier(0.32, 1.16, 0.42, 1) both;
+}
+.rail { width: 72px; }
+
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes panelIn {
+  from { transform: translateX(-24px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.edgeToggle {
+  position: absolute;
+  top: 34px;
+  right: -11px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
+}
+.flip { transform: rotate(180deg); }
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px 14px;
+  min-height: 76px;
+}
+.crest {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.crestImg { width: 100%; height: 100%; object-fit: cover; }
+.brandText { min-width: 0; }
+.schoolName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.roleTag {
+  margin-top: 2px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.group { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
+.groupLabel {
+  padding: 0 12px 6px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.25s ease, height 0.4s ease, padding 0.4s ease;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.item:active { background: var(--glass-bg-hover); }
+.itemActive {
+  background: var(--brand-subtle);
+  border-color: var(--brand-border);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.icon { width: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s ease, max-width 0.4s ease;
+  max-width: 220px;
+}
+.aiItem .icon { color: var(--brand-light); }
+
+.footer {
+  border-top: 1px solid var(--glass-border);
+  padding: 12px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.themePill {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+}
+.themeOpt {
+  width: 34px;
+  height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+.themeOn { background: var(--bg-raised); color: var(--text-primary); }
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  min-width: 0;
+  text-decoration: none;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+}
+.avatarImg { width: 100%; height: 100%; object-fit: cover; }
+.accountText { display: flex; flex-direction: column; min-width: 0; transition: opacity 0.2s ease, max-width 0.4s ease; max-width: 200px; }
+.accountName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.accountRole { font-size: 0.68rem; color: var(--text-muted); }
+.signOut:active { background: var(--danger-subtle); color: var(--danger); }
+
+/* Collapsed: icon rail. Labels fade, then stop taking space. */
+.rail .label,
+.rail .brandText,
+.rail .accountText { opacity: 0; max-width: 0; pointer-events: none; }
+.rail .groupLabel { opacity: 0; height: 0; padding: 0; }
+.rail .brandRow { justify-content: center; padding-left: 0; padding-right: 0; }
+.rail .item { justify-content: center; padding: 0; gap: 0; }
+.rail .account { justify-content: center; padding: 8px 0; gap: 0; }
+.rail .themePill { align-self: center; margin-left: 0; }
+.rail .themeOpt:not(.themeOn) { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .scrim { animation: none; }
+  .panel, .label, .edgeToggle { transition: none; }
+}
