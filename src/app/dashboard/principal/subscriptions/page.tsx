@@ -20,11 +20,12 @@ export default async function SubscriptionPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('school_id, role')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'principal' || !profile.school_id) redirect('/dashboard/principal')
+  const school = (profile as any).schools ?? null
 
   const { data: stats } = await supabase.rpc('subscription_stats_for_principal')
 
@@ -37,6 +38,9 @@ export default async function SubscriptionPage() {
 
   return (
     <SubscriptionClient
+      userId={user.id}
+      profile={profile}
+      school={school}
       schoolId={profile.school_id}
       stats={(stats ?? { term: null }) as SubscriptionStats}
       terms={(terms ?? []) as TermRow[]}

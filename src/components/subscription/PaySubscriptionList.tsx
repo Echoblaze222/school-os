@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PaidBadge from './PaidBadge'
+import styles from './subscription.module.css'
 
 export interface PayItem {
   studentId: string
@@ -67,10 +68,10 @@ export default function PaySubscriptionList({ items, selfMode = false }: Props) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {toast && (
-        <p style={{ color: 'var(--success, #10B981)', fontSize: '0.85rem', fontWeight: 600, margin: 0 }}>{toast}</p>
+        <p className={styles.success}>{toast}</p>
       )}
       {error && (
-        <p role="alert" style={{ color: 'var(--error, #ef4444)', fontSize: '0.85rem', margin: 0 }}>{error}</p>
+        <p role="alert" className={styles.error}>{error}</p>
       )}
 
       {items.length === 0 && (
@@ -80,17 +81,7 @@ export default function PaySubscriptionList({ items, selfMode = false }: Props) 
       )}
 
       {items.map(it => (
-        <div
-          key={it.studentId}
-          style={{
-            border: '1px solid rgba(128,128,128,0.25)',
-            borderRadius: 14,
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}
-        >
+        <div key={it.studentId} className={styles.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
             <div>
               <p style={{ margin: 0, fontWeight: 700 }}>{selfMode ? 'Your subscription' : it.name}</p>
@@ -102,11 +93,11 @@ export default function PaySubscriptionList({ items, selfMode = false }: Props) 
           {it.termName ? (
             <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
               {it.termName}
-              {!it.paid && it.graceEndsOn && ` · pay by ${fmtDate(it.graceEndsOn)} to keep access`}
+              {!it.paid && it.graceEndsOn && ` · pay by ${fmtDate(it.graceEndsOn)}`}
             </p>
           ) : (
             <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
-              Your school has not set this term&apos;s dates yet, so nothing is due.
+              Nothing is due right now.
             </p>
           )}
 
@@ -114,19 +105,12 @@ export default function PaySubscriptionList({ items, selfMode = false }: Props) 
             <button
               onClick={() => pay(it.studentId)}
               disabled={busyId !== null}
-              className="pressable"
-              style={{
-                height: 46,
-                borderRadius: 12,
-                border: 'none',
-                fontWeight: 700,
-                cursor: busyId ? 'default' : 'pointer',
-                opacity: busyId && busyId !== it.studentId ? 0.5 : 1,
-                background: 'var(--primary, #800020)',
-                color: '#fff',
-              }}
+              className={styles.btn}
+              aria-busy={busyId === it.studentId}
             >
-              {busyId === it.studentId ? 'Redirecting to Paystack…' : `Pay ₦${it.amount.toLocaleString()} for this term`}
+              {busyId === it.studentId
+                ? <><span className={styles.spinner} aria-hidden="true" />Opening Paystack</>
+                : `Pay ₦${it.amount.toLocaleString()}`}
             </button>
           )}
         </div>

@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeftIcon } from '@/components/Icons'
+import RoleSubHeader from '@/components/RoleSubHeader'
+import styles from '@/components/subscription/subscription.module.css'
+import { PRINCIPAL_FEATURE_GROUPS } from '../featureGroups'
 
 export interface SubscriptionStats {
   term: null | {
@@ -32,28 +34,22 @@ export interface TermRow {
 }
 
 interface Props {
+  userId: string
+  profile: any
+  school: any
   schoolId: string
   stats: SubscriptionStats
   terms: TermRow[]
-}
-
-const card: React.CSSProperties = {
-  border: '1px solid rgba(128,128,128,0.25)',
-  borderRadius: 14,
-  padding: 16,
-}
-const input: React.CSSProperties = {
-  height: 42, borderRadius: 10, border: '1px solid rgba(128,128,128,0.35)',
-  padding: '0 10px', background: 'transparent', color: 'inherit', width: '100%', boxSizing: 'border-box',
 }
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
+export default function SubscriptionClient({ userId, profile, school, schoolId, stats }: Props) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
     academic_year: '', term_name: 'First Term', starts_on: '', ends_on: '', grace_days: 14,
@@ -62,12 +58,13 @@ export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
   async function addTerm(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSaved(false)
     if (!form.academic_year || !form.starts_on || !form.ends_on) {
-      setError('Fill in the academic year and both dates.')
+      setError('Fill in every field.')
       return
     }
     if (form.ends_on <= form.starts_on) {
-      setError('The end date must be after the start date.')
+      setError('End date must be after the start date.')
       return
     }
     setBusy(true)
@@ -86,128 +83,94 @@ export default function SubscriptionClient({ schoolId, stats, terms }: Props) {
     }, { onConflict: 'school_id,academic_year,term_name' })
     setBusy(false)
     if (err) {
-      setError('Could not save the term. Please try again.')
+      setError('Could not save. Try again.')
       return
     }
     setForm({ ...form, starts_on: '', ends_on: '' })
+    setSaved(true)
     router.refresh()
   }
 
   const term = stats.term
+  const percent = stats.paid_percent ?? 0
 
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px 96px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={() => router.push('/dashboard/principal')}
-          className="pressable"
-          aria-label="Back"
-          style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
-        >
-          <ArrowLeftIcon size={18} />
-        </button>
-        <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Subscriptions</h1>
-      </header>
+    <RoleSubHeader
+      userId={userId} role="principal" profile={profile} school={school}
+      title="Subscriptions" featureGroups={PRINCIPAL_FEATURE_GROUPS}
+    >
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-5, 20px)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {term ? (
+          <section className={styles.card} aria-label="Payment statistics">
+            <p className={styles.title}>{term.name} &middot; {term.academic_year}</p>
+            <p className={styles.muted}>Unpaid students lock after {fmtDate(term.grace_ends_on)}</p>
+            {term.is_default && <p className={styles.notice}>Standard school calendar in use.</p>}
 
-      <p style={{ margin: 0, fontSize: '0.88rem', opacity: 0.75 }}>
-        Parents and students pay their own term subscription. Your school keeps running either way. Only students who have not paid are locked, after the grace period.
-      </p>
-
-      {/* ── Statistics ── */}
-      {term ? (
-        <section style={card} aria-label="Payment statistics">
-          <p style={{ margin: 0, fontWeight: 700 }}>{term.name} &middot; {term.academic_year}</p>
-          <p style={{ margin: '2px 0 14px', fontSize: '0.8rem', opacity: 0.65 }}>
-            {fmtDate(term.starts_on)} to {fmtDate(term.ends_on)} &middot; unpaid students lock after {fmtDate(term.grace_ends_on)}
-          </p>
-          {term.is_default && (
-            <p style={{ margin: '0 0 14px', fontSize: '0.8rem', padding: '8px 10px', borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
-              Using the standard Nigerian school calendar because no term dates were set. Add your school&apos;s own dates below to replace it.
-            </p>
-          )}
-
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 12 }}>
-            <div>
-              <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800 }}>{stats.paid_percent ?? 0}%</p>
-              <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.65 }}>of students paid</p>
+            <div className={styles.stats}>
+              <div><p className={styles.statNum}>{percent}%</p><p className={styles.statLabel}>paid</p></div>
+              <div><p className={styles.statNum}>{stats.paid_students ?? 0}</p><p className={styles.statLabel}>students paid</p></div>
+              <div><p className={styles.statNum}>{stats.unpaid_students ?? 0}</p><p className={styles.statLabel}>unpaid</p></div>
             </div>
-            <div>
-              <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: 'var(--success, #10B981)' }}>{stats.paid_students ?? 0}</p>
-              <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.65 }}>paid</p>
+
+            <div className={styles.bar} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+              <div className={styles.barFill} style={{ width: `${percent}%` }} />
             </div>
-            <div>
-              <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: 'var(--error, #ef4444)' }}>{stats.unpaid_students ?? 0}</p>
-              <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.65 }}>unpaid</p>
-            </div>
-          </div>
 
-          <div style={{ height: 8, borderRadius: 999, background: 'rgba(128,128,128,0.2)', overflow: 'hidden' }}>
-            <div style={{ width: `${stats.paid_percent ?? 0}%`, height: '100%', background: 'var(--success, #10B981)' }} />
-          </div>
-
-          {(stats.by_class ?? []).length > 0 && (
-            <ul style={{ listStyle: 'none', margin: '16px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {(stats.by_class ?? []).map(c => (
-                <li key={c.class} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                  <span>{c.class}</span>
-                  <span style={{ opacity: 0.8 }}>{c.paid}/{c.total} paid ({c.paid_percent ?? 0}%)</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : (
-        <section style={card}>
-          <p style={{ margin: 0, fontWeight: 700 }}>School holiday</p>
-          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.75 }}>
-            No term is running today, so nothing is due and nobody is locked. The next term starts automatically on the standard calendar unless you set your own dates below.
-          </p>
-        </section>
-      )}
-
-      {/* ── Term dates ── */}
-      <section style={card} aria-label="Term dates">
-        <p style={{ margin: '0 0 4px', fontWeight: 700 }}>School term dates</p>
-        <p style={{ margin: '0 0 12px', fontSize: '0.78rem', opacity: 0.65 }}>
-          Optional. If you skip this, the standard calendar applies: First Term 8 Sep to 19 Dec, Second Term 5 Jan to 3 Apr, Third Term 20 Apr to 24 Jul, each with 14 days of grace.
-        </p>
-
-        {terms.length > 0 && (
-          <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {terms.map(t => (
-              <li key={t.id} style={{ fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                <span>{t.term_name} &middot; {t.academic_year}</span>
-                <span style={{ opacity: 0.7 }}>{fmtDate(t.starts_on)} to {fmtDate(t.ends_on)} &middot; {t.grace_days}d grace</span>
-              </li>
-            ))}
-          </ul>
+            {(stats.by_class ?? []).length > 0 && (
+              <ul className={styles.rows}>
+                {(stats.by_class ?? []).map(c => (
+                  <li key={c.class} className={styles.row}>
+                    <span>{c.class}</span>
+                    <span>{c.paid}/{c.total} &middot; {c.paid_percent ?? 0}%</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : (
+          <section className={styles.card}>
+            <p className={styles.title}>No term running</p>
+            <p className={styles.muted}>Nothing is due and nobody is locked.</p>
+          </section>
         )}
 
-        <form onSubmit={addTerm} style={{ display: 'grid', gap: 10 }}>
-          <input style={input} placeholder="Academic year, e.g. 2026/2027" value={form.academic_year}
-            onChange={e => setForm({ ...form, academic_year: e.target.value })} />
-          <select style={input} value={form.term_name} onChange={e => setForm({ ...form, term_name: e.target.value })}>
-            <option>First Term</option>
-            <option>Second Term</option>
-            <option>Third Term</option>
-          </select>
-          <label style={{ fontSize: '0.78rem', opacity: 0.7 }}>Term starts
-            <input style={input} type="date" value={form.starts_on} onChange={e => setForm({ ...form, starts_on: e.target.value })} />
-          </label>
-          <label style={{ fontSize: '0.78rem', opacity: 0.7 }}>Term ends
-            <input style={input} type="date" value={form.ends_on} onChange={e => setForm({ ...form, ends_on: e.target.value })} />
-          </label>
-          <label style={{ fontSize: '0.78rem', opacity: 0.7 }}>Grace period after the term is set up (days, 0 to 60)
-            <input style={input} type="number" min={0} max={60} value={form.grace_days}
-              onChange={e => setForm({ ...form, grace_days: Number(e.target.value) })} />
-          </label>
-          {error && <p role="alert" style={{ margin: 0, color: 'var(--error, #ef4444)', fontSize: '0.82rem' }}>{error}</p>}
-          <button type="submit" disabled={busy} className="pressable"
-            style={{ height: 46, borderRadius: 12, border: 'none', fontWeight: 700, cursor: 'pointer', background: 'var(--primary, #800020)', color: '#fff' }}>
-            {busy ? 'Saving…' : 'Save term'}
-          </button>
-        </form>
-      </section>
-    </main>
+        <section className={styles.card} aria-label="Term dates">
+          <p className={styles.title}>Set term dates</p>
+          <form onSubmit={addTerm} className={styles.form}>
+            <div className={styles.two}>
+              <label className={styles.field}>Year
+                <input className="input" placeholder="2026/2027" value={form.academic_year}
+                  onChange={e => setForm({ ...form, academic_year: e.target.value })} />
+              </label>
+              <label className={styles.field}>Term
+                <select className="input" value={form.term_name} onChange={e => setForm({ ...form, term_name: e.target.value })}>
+                  <option>First Term</option>
+                  <option>Second Term</option>
+                  <option>Third Term</option>
+                </select>
+              </label>
+            </div>
+            <div className={styles.two}>
+              <label className={styles.field}>Starts
+                <input className="input" type="date" value={form.starts_on} onChange={e => setForm({ ...form, starts_on: e.target.value })} />
+              </label>
+              <label className={styles.field}>Ends
+                <input className="input" type="date" value={form.ends_on} onChange={e => setForm({ ...form, ends_on: e.target.value })} />
+              </label>
+            </div>
+            <label className={styles.field}>Grace days
+              <input className="input" type="number" min={0} max={60} value={form.grace_days}
+                onChange={e => setForm({ ...form, grace_days: Number(e.target.value) })} />
+            </label>
+            {error && <p role="alert" className={styles.error}>{error}</p>}
+            {saved && !error && <p className={styles.success}>Saved</p>}
+            <button type="submit" disabled={busy} className={styles.btn} aria-busy={busy}>
+              {busy ? <><span className={styles.spinner} aria-hidden="true" />Saving</> : 'Save'}
+            </button>
+          </form>
+        </section>
+        <div style={{ height: 100 }} />
+      </div>
+    </RoleSubHeader>
   )
 }
