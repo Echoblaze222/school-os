@@ -1,0 +1,43 @@
+.banner {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 12px;
+  right: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+  z-index: 340; /* just under ServiceStatusBanner (350) */
+  padding: 10px 14px;
+  background: var(--bg-elevated, #131a26);
+  color: var(--text-primary, #f6f1e4);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  border-left-width: 4px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: slideIn 0.25s ease both;
+}
+
+.warn { border-left-color: var(--warning, #d98e04); }
+.bad  { border-left-color: var(--error, #e5484d); }
+
+.title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.detail {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--text-secondary, rgba(246, 241, 228, 0.8));
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner { animation: none; }
+}
