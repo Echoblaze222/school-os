@@ -1,14 +1,15 @@
 'use client'
 // components/RoleSubHeader.tsx
 // The RoleHeroHeader's sibling for every page that ISN'T the dashboard
-// home screen. Same gradient band, crest, and icon-button language, just
+// home screen. Same glass band, crest, and icon-button language, just
 // compact: a back button + page title instead of the big greeting/headline
 // block. Pairs with BottomDock for nav (all sub-pages already get that
 // automatically once they're wrapped here, so the old sidebar/RoleNav is
 // no longer needed on any page using this).
 //
 // On desktop (1024px and up) this becomes a sticky top bar and DesktopShell
-// supplies the sidebar. Mobile markup and styling are unchanged.
+// supplies the sidebar. On mobile the bar is a sticky glass strip and the
+// BottomDock Menu opens the glass sidebar drawer.
 //
 // Usage:
 //   <RoleSubHeader userId={userId} role="parent" profile={profile} school={school}
@@ -149,7 +150,7 @@ export default function RoleSubHeader({
         {children}
       </main>
 
-      {!hideDock && <BottomDock aiHref={resolvedAi} groups={featureGroups} role={role} />}
+      {!hideDock && <BottomDock aiHref={resolvedAi} groups={featureGroups} role={role} profile={profile} school={school} homeHref={resolvedHome} />}
     </div>
   )
 }
