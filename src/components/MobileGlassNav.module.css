@@ -1,12 +1,14 @@
 /* MobileGlassNav.module.css
-   Glass drawer. Blur and translucency only, no gradients. The width change
-   uses the same spring curve as the reference collapse animation. */
+   Glass drawer. Blur and translucency only, no gradients. The fill is lifted
+   off the page colour, with a bright edge and a deep shadow, so the panel
+   reads clearly even over a flat background. The width change uses the same
+   spring curve as the reference collapse animation. */
 
 .scrim {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   animation: scrimIn 0.25s ease both;
@@ -22,11 +24,11 @@
   display: flex;
   flex-direction: column;
   border-radius: 28px;
-  background: color-mix(in srgb, var(--sidebar-bg) 72%, transparent);
+  background: color-mix(in srgb, color-mix(in srgb, var(--text-primary) 9%, var(--sidebar-bg)) 80%, transparent);
   backdrop-filter: blur(24px) saturate(1.5);
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 20%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 16%, transparent), 0 24px 60px rgba(0, 0, 0, 0.5);
   transition: width 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
   animation: panelIn 0.4s cubic-bezier(0.32, 1.16, 0.42, 1) both;
 }
