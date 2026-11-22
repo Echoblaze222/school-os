@@ -14,15 +14,20 @@
 
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .crest {
-  width: 42px; height: 42px; border-radius: 50%;
+  width: 46px; height: 46px; border-radius: 50%;
   background: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-subtle);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; color: #fff; font-size: 1rem;
   flex-shrink: 0; overflow: hidden;
 }
 .crestImg { width: 100%; height: 100%; object-fit: cover; }
-.name { font-weight: 600; font-size: 1.02rem; color: var(--text-primary); }
-.sub { font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+.name { font-weight: 700; font-size: 1.05rem; line-height: 1.2; color: var(--text-primary); letter-spacing: -0.01em; }
+.sub {
+  display: inline-block; margin-top: 4px; padding: 2px 9px; border-radius: 999px;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-secondary); background: var(--glass-bg); border: 1px solid var(--glass-border);
+}
 
 .controls { display: flex; align-items: center; gap: 8px; }
 .iconBtn {
@@ -34,6 +39,14 @@
 }
 .iconBtn:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
 
+.menuBtn {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  background: var(--brand-subtle); border: 1px solid var(--brand-border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-primary); transition: background 0.15s;
+}
+.menuBtn:active { background: var(--glass-bg-hover); }
+
 .avatarBtn {
   width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
   border: 2px solid var(--brand-border); flex-shrink: 0; background: var(--glass-bg);
@@ -42,7 +55,7 @@
 }
 .avatarImg { width: 100%; height: 100%; object-fit: cover; }
 
-.headline { margin-top: 24px; max-width: 560px; }
+.headline { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--glass-border); max-width: 560px; }
 .eyebrow { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand-light); font-weight: 600; }
 .headline h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin: 8px 0 4px; font-weight: 600; line-height: 1.15; color: var(--text-primary); }
 .headline p { color: var(--text-secondary); font-size: 0.88rem; margin: 0; }
@@ -74,6 +87,7 @@
   .frame { max-width: 1240px; }
 
   .brand { display: none; }
+  .headline { border-top: 0; padding-top: 0; }
   .topRow { justify-content: flex-end; }
 
   .iconBtn {

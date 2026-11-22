@@ -1,15 +1,12 @@
 'use client'
 // components/RoleSubHeader.tsx
 // The RoleHeroHeader's sibling for every page that ISN'T the dashboard
-// home screen. Same glass band, crest, and icon-button language, just
-// compact: a back button + page title instead of the big greeting/headline
-// block. Pairs with BottomDock for nav (all sub-pages already get that
-// automatically once they're wrapped here, so the old sidebar/RoleNav is
-// no longer needed on any page using this).
+// home screen. Same glass language, just compact: a back button, crest and
+// page title, then notifications and a three-line menu button that opens the
+// same glass drawer as the bottom dock. Pairs with BottomDock for nav.
 //
 // On desktop (1024px and up) this becomes a sticky top bar and DesktopShell
-// supplies the sidebar. On mobile the bar is a sticky glass strip and the
-// BottomDock Menu opens the glass sidebar drawer.
+// supplies the sidebar.
 //
 // Usage:
 //   <RoleSubHeader userId={userId} role="parent" profile={profile} school={school}
@@ -20,11 +17,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
-import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
+import type { FeatureGroup } from './AllFeaturesSheet'
+import GlassMenuButton from './GlassMenuButton'
 import BottomDock from './BottomDock'
 import DesktopShell from './DesktopShell'
-import { SunIcon, MoonIcon, UserIcon, ArrowLeftIcon } from './Icons'
-import { useTheme } from '@/hooks/useTheme'
+import { ArrowLeftIcon } from './Icons'
 import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import { ripple } from '@/lib/ripple'
 import motion from './dashboard-motion.module.css'
@@ -53,8 +50,6 @@ export default function RoleSubHeader({
   userId, role, profile, school, title, backHref, onBack, featureGroups,
   homeHref, aiHref, hideDock = false, fullHeight = false, children,
 }: Props) {
-  const { theme, toggleTheme } = useTheme()
-
   // Keeps the shell height honest when a mobile keyboard opens, so a
   // sticky/floating input bar (used by fullHeight pages like AI & Chat)
   // stays pinned above the keyboard instead of scrolling off with the
@@ -115,31 +110,18 @@ export default function RoleSubHeader({
             </div>
 
             <div className={styles.controls}>
-              <button
-                className={`${styles.iconBtn} ${styles.mobileOnly} ${motion.rippleHost} ${motion.focusable}`}
-                onClick={toggleTheme}
-                title="Toggle dark mode"
-                aria-label="Toggle dark mode"
-                onMouseDown={ripple(motion)}
-              >
-                {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-              </button>
-
               <NotificationsBell userId={userId} role={role} />
 
-              <Link
-                href={`/dashboard/${role}/profile`}
-                className={`${styles.avatarBtn} ${styles.mobileOnly} ${motion.focusable}`}
-                title="Account"
-                aria-label="Account"
-              >
-                {profile?.avatar_url
-                  ? <Image src={profile.avatar_url} alt="" width={38} height={38} className={styles.avatarImg} />
-                  : <UserIcon size={18} />}
-              </Link>
-
               <span className={styles.mobileOnly}>
-                <AllFeaturesSheet groups={featureGroups} role={role} />
+                <GlassMenuButton
+                  className={styles.menuBtn}
+                  role={role}
+                  groups={featureGroups}
+                  aiHref={resolvedAi}
+                  homeHref={resolvedHome}
+                  profile={profile}
+                  school={school}
+                />
               </span>
             </div>
           </div>
