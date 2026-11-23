@@ -23,6 +23,10 @@ let profileRow: Row
 let apptRow: Row
 let fromCalls: string[]
 let authCalls: string[]
+// Per-student billing: the middleware asks the my_subscription_lock RPC whether
+// a signed-in STUDENT is locked. `lockResult` is what that RPC returns.
+let rpcCalls: string[]
+let lockResult: { locked?: boolean } | null
 let refreshCookie: boolean
 // Outage simulation: the auth service is unreachable, and/or the profile
 // query comes back with an error + status (0 = network failure, 5xx = backend).
@@ -68,6 +72,14 @@ vi.mock('@supabase/ssr', () => ({
       builder.maybeSingle = async () => ({ data: table === 'appointments' ? apptRow : null })
       return builder
     },
+    // The middleware awaits `.rpc(name).abortSignal(...)`, so this returns a
+    // promise that also carries abortSignal().
+    rpc: (name: string) => {
+      rpcCalls.push(name)
+      const p: Promise<{ data: unknown }> & { abortSignal?: () => unknown } = Promise.resolve({ data: lockResult })
+      p.abortSignal = () => p
+      return p
+    },
   }),
 }))
 
@@ -91,6 +103,8 @@ beforeEach(() => {
   apptRow = null
   fromCalls = []
   authCalls = []
+  rpcCalls = []
+  lockResult = { locked: false }
   refreshCookie = false
   authOutage = false
   profileResult = { error: null, status: 200 }
@@ -178,15 +192,21 @@ describe('checks that must still win over dispatch', () => {
     profileRow = student({ role: 'principal', school: { setup_status: 'locked', is_platform_active: false } })
     expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=locked&role=principal')
   })
-  it('billing-locked school blocks a non-principal', async () => {
+  it('an unpaid-setup (expired) school blocks a non-principal', async () => {
     profileRow = student({ school: { setup_status: 'expired', is_platform_active: true } })
     expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=expired&role=student')
   })
-  it('billing-locked principal is confined to the renewal page, not their dashboard', async () => {
+  it('an unpaid-setup (expired) school blocks the principal too: it is a whole-school lock, not a billing one', async () => {
     profileRow = student({ role: 'principal', school: { setup_status: 'expired', is_platform_active: true } })
-    expect(location(await middleware(req('/dashboard')))).toBe('/dashboard/principal/subscriptions?status=expired')
-    expect(location(await middleware(req('/dashboard/principal/staff')))).toBe('/dashboard/principal/subscriptions?status=expired')
-    expect(location(await middleware(req('/dashboard/principal/subscriptions')))).toBeNull()
+    expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=expired&role=principal')
+  })
+  it('the old school billing states no longer lock the school for anyone', async () => {
+    for (const status of ['grace_period', 'suspended', 'cancelled']) {
+      profileRow = student({ role: 'principal', school: { setup_status: status, is_platform_active: true } })
+      expect(location(await middleware(req('/dashboard/principal/staff')))).toBeNull()
+      profileRow = student({ role: 'teacher', school: { setup_status: status, is_platform_active: true } })
+      expect(location(await middleware(req('/dashboard/teacher')))).toBeNull()
+    }
   })
   it('role boundary still redirects someone on another role\'s dashboard', async () => {
     expect(location(await middleware(req('/dashboard/teacher')))).toBe('/dashboard/student')
@@ -201,6 +221,43 @@ describe('checks that must still win over dispatch', () => {
   it("the user's own dashboard just renders (no dispatch, one query)", async () => {
     const res = await middleware(req('/dashboard/student'))
     expect(location(res)).toBeNull()
+    expect(fromCalls).toEqual(['profiles'])
+  })
+})
+
+describe('per-student subscription lock', () => {
+  const SUBSCRIBE = '/dashboard/student/subscribe'
+
+  it('an unpaid student is sent to the subscribe page', async () => {
+    lockResult = { locked: true }
+    expect(location(await middleware(req('/dashboard/student')))).toBe(SUBSCRIBE)
+    expect(location(await middleware(req('/dashboard/student/results')))).toBe(SUBSCRIBE)
+    expect(rpcCalls).toEqual(['my_subscription_lock', 'my_subscription_lock'])
+  })
+  it('the subscribe page itself stays reachable for a locked student, with no lock query', async () => {
+    lockResult = { locked: true }
+    expect(location(await middleware(req(SUBSCRIBE)))).toBeNull()
+    expect(rpcCalls).toEqual([])
+  })
+  it('a paid student is not redirected', async () => {
+    lockResult = { locked: false }
+    expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+  })
+  it('fails open when the lock answer is missing (no active term, or migration not applied)', async () => {
+    lockResult = null
+    expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+  })
+  it('principals, teachers and parents are never student-locked and never trigger the lock query', async () => {
+    lockResult = { locked: true }
+    for (const role of ['principal', 'teacher', 'parent', 'bursar']) {
+      profileRow = student({ role })
+      expect(location(await middleware(req(`/dashboard/${role}`)))).toBeNull()
+    }
+    expect(rpcCalls).toEqual([])
+  })
+  it('the lock does not add a table query: still ONE from() call per request', async () => {
+    lockResult = { locked: false }
+    await middleware(req('/dashboard/student'))
     expect(fromCalls).toEqual(['profiles'])
   })
 })

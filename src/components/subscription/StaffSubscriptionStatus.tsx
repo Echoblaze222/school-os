@@ -41,7 +41,7 @@ export default function StaffSubscriptionStatus({ termName, graceEndsOn, student
   }, [students, filter])
 
   if (!termName) {
-    return <p style={{ opacity: 0.7 }}>No active term is set yet. Ask the principal to set the term dates.</p>
+    return <p style={{ opacity: 0.7 }}>No term running right now.</p>
   }
 
   const chip = (f: Filter, label: string) => (
@@ -56,9 +56,9 @@ export default function StaffSubscriptionStatus({ termName, graceEndsOn, student
         fontSize: '0.8rem',
         fontWeight: 600,
         cursor: 'pointer',
-        border: '1px solid rgba(128,128,128,0.3)',
-        background: filter === f ? 'rgba(128,128,128,0.2)' : 'transparent',
-        color: 'inherit',
+        border: filter === f ? '1px solid var(--brand-border)' : '1px solid var(--glass-border)',
+        background: filter === f ? 'var(--brand-subtle)' : 'var(--glass-bg)',
+        color: filter === f ? 'var(--brand-light)' : 'var(--text-secondary)',
       }}
     >
       {label}
@@ -89,7 +89,7 @@ export default function StaffSubscriptionStatus({ termName, graceEndsOn, student
                 key={s.student_id}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(128,128,128,0.2)',
+                  padding: '10px 12px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)',
                 }}
               >
                 <span style={{ fontWeight: 600 }}>{s.name}</span>

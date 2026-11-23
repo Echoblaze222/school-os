@@ -6,6 +6,7 @@
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
+import SubscriptionShell from '@/components/subscription/SubscriptionShell'
 import StaffSubscriptionStatus, { type StaffStatusStudent } from '@/components/subscription/StaffSubscriptionStatus'
 
 export default async function BursarSubscriptionsPage() {
@@ -13,6 +14,7 @@ export default async function BursarSubscriptionsPage() {
   if (!user) redirect('/login')
 
   const supabase = await createClient()
+  const { data: profile } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
   const { data } = await supabase.rpc('subscription_status_for_staff')
   const result = (data ?? {}) as {
     term?: { name: string; grace_ends_on: string } | null
@@ -20,16 +22,12 @@ export default async function BursarSubscriptionsPage() {
   }
 
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: '1.4rem', margin: '0 0 6px' }}>Student subscription status</h1>
-      <p style={{ opacity: 0.7, fontSize: '0.9rem', margin: '0 0 20px' }}>
-        Who has paid the term subscription, by class.
-      </p>
+    <SubscriptionShell role="bursar" userId={user.id} profile={profile} school={(profile as any)?.schools ?? null} title="Subscriptions">
       <StaffSubscriptionStatus
         termName={result.term?.name ?? null}
         graceEndsOn={result.term?.grace_ends_on ?? null}
         students={result.students ?? []}
       />
-    </main>
+    </SubscriptionShell>
   )
 }

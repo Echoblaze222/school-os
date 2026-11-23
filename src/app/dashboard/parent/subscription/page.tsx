@@ -9,6 +9,7 @@ import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { priceForStudent } from '@/lib/studentBilling'
+import SubscriptionShell from '@/components/subscription/SubscriptionShell'
 import PaySubscriptionList, { type PayItem } from '@/components/subscription/PaySubscriptionList'
 
 export default async function ParentSubscriptionPage() {
@@ -16,7 +17,7 @@ export default async function ParentSubscriptionPage() {
   if (!user) redirect('/login')
 
   const supabase = await createClient()
-  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const { data: me } = await supabase.from('profiles').select('*, schools(*)').eq('id', user.id).single()
   if (!me || me.role !== 'parent') redirect('/dashboard')
 
   // Only this parent's own children: direct parent_id plus explicit links.
@@ -74,14 +75,10 @@ export default async function ParentSubscriptionPage() {
   }
 
   return (
-    <main style={{ maxWidth: 560, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: '1.4rem', margin: '0 0 6px' }}>Term subscription</h1>
-      <p style={{ opacity: 0.7, fontSize: '0.9rem', margin: '0 0 20px' }}>
-        Each child&apos;s SchoolOS access is paid per term. Pay for each child below. Their access stays active as soon as payment is confirmed.
-      </p>
+    <SubscriptionShell role="parent" userId={user.id} profile={me} school={(me as any).schools ?? null} title="Subscription">
       <Suspense>
         <PaySubscriptionList items={items} />
       </Suspense>
-    </main>
+    </SubscriptionShell>
   )
 }

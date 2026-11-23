@@ -10,6 +10,7 @@ import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { priceForStudent } from '@/lib/studentBilling'
+import SubscriptionShell from '@/components/subscription/SubscriptionShell'
 import PaySubscriptionList from '@/components/subscription/PaySubscriptionList'
 
 export default async function StudentSubscribePage() {
@@ -19,7 +20,7 @@ export default async function StudentSubscribePage() {
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, school_id, full_name')
+    .select('*, schools(*)')
     .eq('id', user.id)
     .single()
   if (!profile || profile.role !== 'student' || !profile.school_id) redirect('/dashboard')
@@ -37,11 +38,7 @@ export default async function StudentSubscribePage() {
   const { amount, tierLabel } = priceForStudent(count ?? 0)
 
   return (
-    <main style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: '1.4rem', margin: '0 0 6px' }}>Your term subscription</h1>
-      <p style={{ opacity: 0.7, fontSize: '0.9rem', margin: '0 0 20px' }}>
-        Pay here, or ask your parent to pay from their SchoolOS account. Your access unlocks as soon as payment is confirmed.
-      </p>
+    <SubscriptionShell role="student" userId={user.id} profile={profile} school={(profile as any).schools ?? null} title="Subscription">
       <Suspense>
         <PaySubscriptionList
           selfMode
@@ -56,6 +53,6 @@ export default async function StudentSubscribePage() {
           }]}
         />
       </Suspense>
-    </main>
+    </SubscriptionShell>
   )
 }
