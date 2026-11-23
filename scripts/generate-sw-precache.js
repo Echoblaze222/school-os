@@ -14,6 +14,11 @@
 //
 // Usage: node scripts/generate-sw-precache.js
 // (Runs automatically via the "postbuild" npm script - see below.)
+//
+// NOTE: this relies on .next/app-build-manifest.json (or build-manifest.json).
+// If a Next.js upgrade stops producing them, the lookups below warn and the
+// list comes out empty; that is why offline twin pages are ALSO warmed from the
+// app itself (src/hooks/useOfflineReady.ts) rather than relying on this alone.
 
 const fs = require('fs')
 const path = require('path')
@@ -25,7 +30,10 @@ const path = require('path')
 // Deliberately NOT including role dashboards - those are large, per-role,
 // and only matter after login (by which point the runtime cache has
 // already picked them up from normal navigation).
-const CRITICAL_ROUTES = ['/', '/splash', '/login', '/select-school', '/offline']
+// '/offline/teacher/attendance' is an offline twin page: it holds no user data
+// and is what the service worker shows for the teacher attendance screen when
+// there is no network.
+const CRITICAL_ROUTES = ['/', '/splash', '/login', '/select-school', '/offline', '/offline/teacher/attendance']
 
 const NEXT_DIR = path.join(process.cwd(), '.next')
 const OUTPUT_PATH = path.join(process.cwd(), 'public', 'sw-precache-manifest.js')

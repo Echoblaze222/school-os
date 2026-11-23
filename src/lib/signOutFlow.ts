@@ -64,6 +64,22 @@ export async function signOutFlow(
 ) {
   showSigningOutCover()
 
+  // Offline mode, two steps, both capped so they can never hold up logout:
+  //  1. If this user has changes saved on the phone that have not uploaded yet,
+  //     try once to send them now, while the session is still valid. Anything that
+  //     still cannot be sent stays in the outbox, scoped to this user, and uploads
+  //     the next time the same user signs in. (Only does work when something is
+  //     pending.)
+  //  2. Forget who the phone belonged to and delete the offline unlock verifier,
+  //     so the next person cannot use either.
+  try {
+    const { flushBeforeSignOut, clearOfflineIdentity } = await import('@/lib/offline/signOut')
+    await Promise.race([flushBeforeSignOut(supabase), new Promise<void>((r) => setTimeout(r, 2500))])
+    await Promise.race([clearOfflineIdentity(), new Promise<void>((r) => setTimeout(r, 800))])
+  } catch {
+    // Never block signing out.
+  }
+
   // Wipe the on-phone saved copies of screens BEFORE the network sign-out, so
   // the next person to use this phone can never see this user's data, even
   // if the sign-out request is slow or fails. Capped so it can't hold up
