@@ -31,6 +31,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'report-cards',label: 'Report cards',href: '/dashboard/principal/report-cards',Icon: FileTextIcon },
     { id: 'analytics',   label: 'Analytics',   href: '/dashboard/principal/analytics',   Icon: BarChartIcon },
     { id: 'assignments', label: 'Assignments', href: '/dashboard/principal/assignments', Icon: ClipboardIcon },
+    { id: 'mentoring',   label: 'Peer mentoring', href: '/dashboard/principal/mentoring', Icon: PeopleIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/principal/codes',       Icon: KeyIcon },
   ]},
   { name: 'Finance', items: [
