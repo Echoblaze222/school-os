@@ -23,6 +23,7 @@ export type InlineNode =
   | { t: 'code'; v: string }
   | { t: 'link'; href: string; c: InlineNode[] }
   | { t: 'math'; v: string; display: boolean }
+  | { t: 'image'; src: string; alt: string }
   | { t: 'br' }
 
 export interface ListItemNode {
@@ -424,6 +425,16 @@ export function safeUrl(url: string): string | null {
   }
 }
 
+/** Images must be https (http would be blocked as mixed content and can leak). */
+export function safeImageUrl(url: string): string | null {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' ? u.href : null
+  } catch {
+    return null
+  }
+}
+
 function isWordChar(ch: string | undefined): boolean {
   return !!ch && /[A-Za-z0-9]/.test(ch)
 }
@@ -595,6 +606,18 @@ export function parseInline(src: string): InlineNode[] {
       }
     }
 
+    if (ch === '!' && src[i + 1] === '[') {
+      const m = /^!\[([^\]\n]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/.exec(src.slice(i))
+      if (m) {
+        flush()
+        const url = safeImageUrl(m[2])
+        if (url) out.push({ t: 'image', src: url, alt: m[1] })
+        else if (m[1]) out.push({ t: 'text', v: m[1] })
+        i += m[0].length
+        continue
+      }
+    }
+
     if (ch === '[') {
       const m = /^\[([^\]\n]+)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/.exec(src.slice(i))
       if (m) {
@@ -633,6 +656,7 @@ export function parseInline(src: string): InlineNode[] {
 /** Plain text of an inline source string (markers stripped). Used for titles and size estimates. */
 export function plainText(src: string): string {
   return src
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\\([\\`*_{}[\]()#+\-.!|~$<>])/g, '$1')
     .replace(/[*_`~]/g, '')
