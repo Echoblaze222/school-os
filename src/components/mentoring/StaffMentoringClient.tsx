@@ -1,11 +1,11 @@
 'use client'
 // src/components/mentoring/StaffMentoringClient.tsx
-// Staff side of Peer Mentoring, shared by the teacher and principal pages:
+// Staff side of Peer Mentoring, shared by the teacher, principal and vice-principal pages:
 // Approvals / Active pairs / Reports / Star mentors.
 // Every action is a SECURITY DEFINER RPC that re-checks the caller. Approving is limited to the
-// principal or a teacher assigned to the student's class (mentoring_review_scope tells the UI which
-// rows are actionable); reading, closing a pairing and resolving reports stay open to every
-// teacher in the school so nobody is blind to a mentoring chat.
+// principal / vice-principal or a teacher assigned to the student's class (mentoring_review_scope
+// tells the UI which rows are actionable); reading, closing a pairing and resolving reports stay
+// open to every teacher in the school so nobody is blind to a mentoring chat.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -35,9 +35,10 @@ interface Props {
   profile: any
   school: any
   userId: string
-  role: 'teacher' | 'principal'
+  role: 'teacher' | 'principal' | 'vice-principal'
   featureGroups: FeatureGroup[]
-  chatBase: string   // e.g. /dashboard/teacher/chat
+  /** where "Read chat" goes for a room (not every role has a /chat/[roomId] page) */
+  roomHref: (roomId: string) => string
 }
 
 const BADGES: Record<string, [string, string]> = {
@@ -53,7 +54,7 @@ const BADGES: Record<string, [string, string]> = {
   resolved: ['Resolved', ''],
 }
 
-export default function StaffMentoringClient({ profile, school, userId, role, featureGroups, chatBase }: Props) {
+export default function StaffMentoringClient({ profile, school, userId, role, featureGroups, roomHref }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const schoolColor = school?.primary_color ?? '#800020'
 
@@ -223,7 +224,7 @@ export default function StaffMentoringClient({ profile, school, userId, role, fe
                 <>
                   {active.length === 0 && <Empty text="No active pairs yet." />}
                   {active.map(p => (
-                    <PairCard key={p.pairing_id} p={p} chatBase={chatBase}
+                    <PairCard key={p.pairing_id} p={p} roomHref={roomHref}
                       onClose={(completed, reason) => closePairing(p.pairing_id, completed, reason)} />
                   ))}
 
@@ -274,13 +275,13 @@ export default function StaffMentoringClient({ profile, school, userId, role, fe
                 <>
                   {openReports.length === 0 && <Empty text="No open reports. Messages with phone numbers, outside apps or bad language are flagged here automatically." />}
                   {openReports.map(r => (
-                    <ReportCard key={r.report_id} r={r} chatBase={chatBase}
+                    <ReportCard key={r.report_id} r={r} roomHref={roomHref}
                       pairing={pairings.find(p => p.pairing_id === r.pairing_id)}
                       onResolve={() => resolveReport(r.report_id)}
                       onClose={(reason) => closePairing(r.pairing_id, false, reason)} />
                   ))}
                   {resolvedReports.length > 0 && <h3 className={styles.sectionTitle}>Resolved</h3>}
-                  {resolvedReports.map(r => <ReportCard key={r.report_id} r={r} chatBase={chatBase} />)}
+                  {resolvedReports.map(r => <ReportCard key={r.report_id} r={r} roomHref={roomHref} />)}
                 </>
               )}
 
@@ -379,8 +380,8 @@ function ReviewButtons({ approveLabel, rejectLabel, onApprove, onReject }: {
   )
 }
 
-function PairCard({ p, chatBase, onClose }: {
-  p: PairingRow; chatBase: string; onClose: (completed: boolean, reason: string) => Promise<boolean>
+function PairCard({ p, roomHref, onClose }: {
+  p: PairingRow; roomHref: (roomId: string) => string; onClose: (completed: boolean, reason: string) => Promise<boolean>
 }) {
   const [busy, setBusy] = useState(false)
   async function run(fn: () => Promise<boolean>) {
@@ -407,7 +408,7 @@ function PairCard({ p, chatBase, onClose }: {
       {(p.grade_before != null || p.grade_after != null) && <Progress p={p} />}
       <div className={styles.btnRow}>
         {p.chat_room_id && (
-          <Link href={`${chatBase}/${p.chat_room_id}`} className={`${styles.btn} ${styles.btnSmall}`}>
+          <Link href={roomHref(p.chat_room_id)} className={`${styles.btn} ${styles.btnSmall}`}>
             <MessageIcon size={14} color="currentColor" /> Read chat
           </Link>
         )}
@@ -424,9 +425,9 @@ function PairCard({ p, chatBase, onClose }: {
   )
 }
 
-function ReportCard({ r, chatBase, pairing, onResolve, onClose }: {
+function ReportCard({ r, roomHref, pairing, onResolve, onClose }: {
   r: ReportRow
-  chatBase: string
+  roomHref: (roomId: string) => string
   pairing?: PairingRow
   onResolve?: () => Promise<boolean>
   onClose?: (reason: string) => Promise<boolean>
@@ -458,7 +459,7 @@ function ReportCard({ r, chatBase, pairing, onResolve, onClose }: {
       {onResolve && (
         <div className={styles.btnRow}>
           {pairing?.chat_room_id && pairing.status === 'active' && (
-            <Link href={`${chatBase}/${pairing.chat_room_id}`} className={`${styles.btn} ${styles.btnSmall}`}>
+            <Link href={roomHref(pairing.chat_room_id)} className={`${styles.btn} ${styles.btnSmall}`}>
               <MessageIcon size={14} color="currentColor" /> Read chat
             </Link>
           )}
