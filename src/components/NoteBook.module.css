@@ -1,17 +1,18 @@
 /* src/components/NoteBook.module.css
-   3D flip-book reader. Pure CSS transforms - perspective + rotateY.
-   Kept GPU-cheap: only `transform` and `opacity` are animated. */
+   Real-book reader. Only transform/opacity are animated (GPU-cheap).
+   The turning page is driven from JS (rAF writes inline transform). */
 
 .overlay {
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgba(10, 8, 20, 0.82);
+  background: rgba(10, 8, 20, 0.88);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-4, 16px);
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  overflow: hidden;
   animation: overlayIn 0.25s ease;
 }
 
@@ -22,19 +23,18 @@
 
 .stage {
   width: 100%;
-  max-width: 480px;
-  perspective: 1600px;
+  max-width: 460px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   opacity: 0;
-  transform: scale(0.9) translateY(24px) rotateX(8deg);
-  transition: opacity 0.5s var(--ease-overshoot), transform 0.5s var(--ease-overshoot);
+  transform: scale(0.94) translateY(20px);
+  transition: opacity 0.45s ease, transform 0.5s var(--ease-overshoot, cubic-bezier(0.34, 1.56, 0.64, 1));
 }
 
 .stageOpen {
   opacity: 1;
-  transform: scale(1) translateY(0) rotateX(0deg);
+  transform: none;
 }
 
 .header {
@@ -45,18 +45,21 @@
   padding: 0 4px;
 }
 
+.headerText { min-width: 0; }
+
 .bookTitle {
   font-size: 1rem;
   font-weight: 800;
   color: #fff;
   margin: 0 0 4px;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .pageCount {
   font-size: 0.7rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
   letter-spacing: 0.02em;
 }
@@ -76,126 +79,278 @@
   justify-content: center;
 }
 
-.book {
+/* ------------------------------ the book ------------------------------ */
+
+.bookWrap {
   position: relative;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow:
-    0 30px 60px -15px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transform-style: preserve-3d;
+  perspective: 1900px;
+  perspective-origin: 30% 50%;
   touch-action: pan-y;
+  padding: 0 10px 10px 0; /* room for the stacked page edges */
 }
 
-.spineShadow {
+.dragging {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grabbing;
+}
+
+.book {
+  position: relative;
+  height: min(66vh, 580px);
+  height: min(66dvh, 580px);
+  min-height: 400px;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 26px 30px rgba(0, 0, 0, 0.55));
+}
+
+/* Stacked page edges peeking out on the right and bottom */
+.stackRight {
   position: absolute;
-  left: 0;
+  top: 8px;
+  bottom: -8px;
+  right: -8px;
+  width: 9px;
+  background: repeating-linear-gradient(to right, #efe7d6 0 1px, #cdc3ac 1px 2px);
+  border-radius: 0 6px 6px 0;
+}
+.stackBottom {
+  position: absolute;
+  left: 10px;
+  right: -8px;
+  bottom: -8px;
+  height: 9px;
+  background: repeating-linear-gradient(to bottom, #efe7d6 0 1px, #cdc3ac 1px 2px);
+  border-radius: 0 0 8px 8px;
+}
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px 14px 14px 4px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.leaf {
+  z-index: 3;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+  transform: rotateY(0deg);
+}
+
+/* Shadow the lifting page throws on the page underneath */
+.castShadow {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.2) 35%, transparent 72%);
+}
+
+/* The turning page darkens as it swings away from the light */
+.shine {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.42) 100%);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+}
+
+/* ------------------------------- paper -------------------------------- */
+
+.paper {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0, rgba(0, 0, 0, 0.04) 10px, transparent 36px),
+    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.75), transparent 60%),
+    #fbf6ea;
+  color: #2a2520;
+}
+
+.gutter {
+  position: absolute;
   top: 0;
   bottom: 0;
-  width: 24px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent);
-  z-index: 3;
+  left: 0;
+  width: 3px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent);
   pointer-events: none;
 }
 
-.pageArea {
-  position: relative;
-  min-height: 380px;
+.runningHead {
+  position: absolute;
+  top: 14px;
+  left: 32px;
+  right: 24px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(42, 37, 32, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.pageScroll {
+  position: absolute;
+  top: 38px;
+  bottom: 40px;
+  left: 32px;
+  right: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42, 37, 32, 0.25) transparent;
+}
+
+.folio {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.72rem;
+  color: rgba(42, 37, 32, 0.55);
+}
+
+/* ------------------------------- covers ------------------------------- */
+
+.cover {
   background:
-    radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.05), transparent 60%),
-    linear-gradient(155deg, #1c1730 0%, #120f22 55%, #0c0a18 100%);
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px),
+    linear-gradient(150deg, color-mix(in srgb, var(--accent) 82%, #000) 0%, color-mix(in srgb, var(--accent) 50%, #000) 100%);
+  color: rgba(255, 255, 255, 0.96);
+  cursor: pointer;
 }
 
-.page {
-  position: relative;
-  min-height: 380px;
-  padding: 32px 24px 24px;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  animation: pageIn 0.42s var(--ease-overshoot);
-  backface-visibility: hidden;
+.backCover { cursor: default; }
+
+.coverFrame {
+  position: absolute;
+  inset: 18px 18px 18px 34px;
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 22px;
+  text-align: center;
 }
 
-@keyframes pageIn {
-  from { opacity: 0; transform: rotateY(-8deg) translateX(10px); }
-  to   { opacity: 1; transform: rotateY(0deg) translateX(0); }
+.coverKicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  font-weight: 700;
 }
 
-.flipOutNext {
-  animation: flipOutNext 0.38s cubic-bezier(0.55, 0, 0.85, 0.4) forwards;
-}
-@keyframes flipOutNext {
-  from { opacity: 1; transform: rotateY(0deg); }
-  to   { opacity: 0; transform: rotateY(-100deg); }
-}
-
-.flipOutPrev {
-  animation: flipOutPrev 0.38s cubic-bezier(0.55, 0, 0.85, 0.4) forwards;
-}
-@keyframes flipOutPrev {
-  from { opacity: 1; transform: rotateY(0deg); }
-  to   { opacity: 0; transform: rotateY(100deg); }
+.coverTitle {
+  margin: 0;
+  font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+  font-size: 1.55rem;
+  line-height: 1.25;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25), 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 
-.pageCurl {
+.coverRule {
+  width: 52px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 2px;
+}
+
+.coverHint {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  animation: hintPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
+.ribbon {
+  position: absolute;
+  top: -2px;
+  right: 40px;
+  width: 16px;
+  height: 74px;
+  background: color-mix(in srgb, var(--accent) 35%, #fff);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+
+.spineEdge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 22px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent);
+  border-right: 1px dashed rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+.closeBook {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* ----------------------------- folded corner ----------------------------- */
+
+.dogEar {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 46px;
-  height: 46px;
-  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.07) 51%, transparent 75%);
-  pointer-events: none;
-}
-
-.pageInner {
-  position: relative;
-  z-index: 2;
-}
-
-.slideTitle {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--accent, #b794f6);
-  margin: 0 0 16px;
-  line-height: 1.35;
-}
-
-.slideBody {
-  font-size: 0.88rem;
-  line-height: 1.75;
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.slideBody p {
-  margin: 0 0 12px;
-}
-
-.progressDots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding: 0 8px;
-  max-height: 40px;
-  overflow: hidden;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.22);
-  cursor: pointer;
+  width: 54px;
+  height: 54px;
+  z-index: 8;
+  border: 0;
   padding: 0;
-  transition: all 0.25s ease;
+  cursor: pointer;
+  background: linear-gradient(135deg, transparent 50%, #e4d9c0 50%);
+  border-bottom-right-radius: 14px;
+  filter: drop-shadow(-2px -2px 3px rgba(0, 0, 0, 0.22));
+  transition: transform 0.15s ease;
 }
+.dogEar:active { transform: scale(0.92); transform-origin: 100% 100%; }
 
-.dotActive {
-  width: 18px;
-  border-radius: 4px;
-  background: var(--accent, #b794f6);
+/* ------------------------------- controls ------------------------------- */
+
+.scrubRow { padding: 0 6px; }
+
+.scrub {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .controls {
@@ -215,16 +370,12 @@
   cursor: pointer;
   transition: background 0.2s ease, transform 0.15s ease;
 }
+.navBtn:active:not(:disabled) { transform: scale(0.97); }
+.navBtn:disabled { opacity: 0.35; cursor: default; }
+.navBtn:not(:disabled):hover { background: rgba(255, 255, 255, 0.12); }
 
-.navBtn:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.navBtn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.navBtn:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.12);
+@media (prefers-reduced-motion: reduce) {
+  .overlay { animation: none; }
+  .stage { transition: none; }
+  .coverHint { animation: none; }
 }
