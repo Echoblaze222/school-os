@@ -20,19 +20,31 @@
 // straight to the DOM (no React re-render per frame), so it stays smooth on
 // low-end Android. Honors prefers-reduced-motion.
 //
-// Usage (unchanged):
-//   <NoteBook title={note.title} content={note.description} accentColor={schoolColor} onClose={...} />
+// Usage:
+//   Single note (unchanged):
+//     <NoteBook title={note.title} content={note.description} accentColor={schoolColor} onClose={...} />
+//   A whole book of topics (adds a contents page, PDF topics shown as real pages):
+//     <NoteBook title={book.title} subtitle="Chemistry" entries={entries} onDownload={...} onClose={...} />
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { slideify, type BookPage } from '@/lib/utils/slideify'
+import { buildSheets, isPdfUrl, type BookEntry, type Sheet } from '@/lib/notebooks/sheets'
+import { getPdfPageCount, renderPdfPage } from '@/lib/notebooks/pdfPages'
 import NoteMarkdown from './NoteMarkdown'
 import styles from './NoteBook.module.css'
 
 interface Props {
   title: string
-  content: string
+  /** A single note's text. Ignored when `entries` is given. */
+  content?: string
+  /** The topics of a book. Adds a contents page. */
+  entries?: BookEntry[]
+  /** Small line on the cover, e.g. the subject. */
+  subtitle?: string
   accentColor?: string
   onClose?: () => void
+  /** When set, a Download PDF button is shown. */
+  onDownload?: () => void
+  downloading?: boolean
 }
 
 interface Flip { dir: 'next' | 'prev'; from: number; to: number }
@@ -56,20 +68,46 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 /* ---------------------------- faces ---------------------------- */
 
 interface FaceProps {
-  index: number // 0 = front cover, 1..N = pages, N+1 = back cover
-  lastIndex: number
+  sheet: Sheet
   title: string
-  pages: BookPage[]
+  subtitle?: string
   onOpen: () => void
+  onJump: (sheetIndex: number) => void
   onCloseBook?: () => void
 }
 
-const Face = memo(function Face({ index, lastIndex, title, pages, onOpen, onCloseBook }: FaceProps) {
-  if (index === 0) {
+function PdfPageImage({ url, pageNo }: { url: string; pageNo: number }) {
+  const [src, setSrc] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    setSrc(null)
+    setFailed(false)
+    renderPdfPage(url, pageNo, 420)
+      .then(img => { if (!cancelled) setSrc(img) })
+      .catch(() => { if (!cancelled) setFailed(true) })
+    return () => { cancelled = true }
+  }, [url, pageNo])
+
+  if (failed) {
+    return (
+      <div className={styles.docCard}>
+        <p>This page could not be shown here.</p>
+        <a href={url} target="_blank" rel="noopener noreferrer" className={styles.docBtn}>Open the file</a>
+      </div>
+    )
+  }
+  if (!src) return <div className={styles.pdfLoading}>Loading page {pageNo}...</div>
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={`Page ${pageNo}`} className={styles.pdfImg} draggable={false} />
+}
+
+const Face = memo(function Face({ sheet, title, subtitle, onOpen, onJump, onCloseBook }: FaceProps) {
+  if (sheet.kind === 'cover') {
     return (
       <div className={`${styles.face} ${styles.cover}`} onClick={onOpen}>
         <div className={styles.coverFrame}>
-          <span className={styles.coverKicker}>Study Notes</span>
+          <span className={styles.coverKicker}>{subtitle || 'Study Notes'}</span>
           <h2 className={styles.coverTitle}>{title}</h2>
           <span className={styles.coverRule} />
           <span className={styles.coverHint}>Swipe or tap to open</span>
@@ -80,7 +118,7 @@ const Face = memo(function Face({ index, lastIndex, title, pages, onOpen, onClos
     )
   }
 
-  if (index === lastIndex) {
+  if (sheet.kind === 'end') {
     return (
       <div className={`${styles.face} ${styles.cover} ${styles.backCover}`}>
         <div className={styles.coverFrame}>
@@ -95,14 +133,64 @@ const Face = memo(function Face({ index, lastIndex, title, pages, onOpen, onClos
     )
   }
 
-  const page = pages[index - 1]
+  if (sheet.kind === 'contents') {
+    return (
+      <div className={`${styles.face} ${styles.paper}`}>
+        <div className={styles.runningHead}>{title}</div>
+        <div className={styles.pageScroll}>
+          <h3 className={styles.tocTitle}>Contents</h3>
+          <ol className={styles.tocList}>
+            {sheet.items.map((it, i) => (
+              <li key={i}>
+                <button type="button" className={styles.tocItem} onClick={() => onJump(it.sheet)}>
+                  <span className={styles.tocNum}>{i + 1}</span>
+                  <span className={styles.tocText}>{it.title}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className={styles.gutter} />
+      </div>
+    )
+  }
+
+  if (sheet.kind === 'empty') {
+    return (
+      <div className={`${styles.face} ${styles.paper}`}>
+        <div className={styles.runningHead}>{title}</div>
+        <div className={styles.pageScroll}>
+          <div className={styles.docCard}><p>No topics in this book yet.</p></div>
+        </div>
+        <div className={styles.gutter} />
+      </div>
+    )
+  }
+
+  const chapter = sheet.chapter || title
   return (
     <div className={`${styles.face} ${styles.paper}`}>
-      <div className={styles.runningHead}>{title}</div>
-      <div className={styles.pageScroll}>
-        <NoteMarkdown blocks={page.blocks} variant="book" />
-      </div>
-      <div className={styles.folio}>{index}</div>
+      <div className={styles.runningHead}>{chapter}</div>
+      {sheet.kind === 'page' && (
+        <div className={styles.pageScroll}>
+          <NoteMarkdown blocks={sheet.blocks} variant="book" />
+        </div>
+      )}
+      {sheet.kind === 'pdf' && (
+        <div className={`${styles.pageScroll} ${styles.pdfScroll}`}>
+          <PdfPageImage url={sheet.url} pageNo={sheet.pageNo} />
+        </div>
+      )}
+      {sheet.kind === 'doc' && (
+        <div className={styles.pageScroll}>
+          <div className={styles.docCard}>
+            <p className={styles.docName}>{sheet.name}</p>
+            <p>Word and PowerPoint files cannot be turned into pages here. Open it to read.</p>
+            <a href={sheet.url} target="_blank" rel="noopener noreferrer" className={styles.docBtn}>Open the file</a>
+          </div>
+        </div>
+      )}
+      <div className={styles.folio}>{sheet.folio}</div>
       <div className={styles.gutter} />
     </div>
   )
@@ -110,10 +198,36 @@ const Face = memo(function Face({ index, lastIndex, title, pages, onOpen, onClos
 
 /* --------------------------- the book --------------------------- */
 
-export default function NoteBook({ title, content, accentColor = '#7C3AED', onClose }: Props) {
-  const pages = useMemo(() => slideify(content), [content])
-  const total = pages.length
-  const lastIndex = total + 1
+export default function NoteBook({
+  title, content = '', entries, subtitle, accentColor = '#7C3AED', onClose, onDownload, downloading,
+}: Props) {
+  const isBook = !!entries
+  const topics = useMemo<BookEntry[]>(
+    () => entries ?? (content.trim() ? [{ title, content }] : []),
+    [entries, content, title],
+  )
+
+  // Page counts of uploaded PDFs arrive after the book opens; until then a PDF shows one placeholder page.
+  const [pdfCounts, setPdfCounts] = useState<Record<string, number | undefined>>({})
+  useEffect(() => {
+    let cancelled = false
+    for (const e of topics) {
+      const url = e.file_url
+      if (url && isPdfUrl(url)) {
+        getPdfPageCount(url)
+          .then(n => { if (!cancelled) setPdfCounts(prev => (prev[url] === n ? prev : { ...prev, [url]: n })) })
+          .catch(() => { if (!cancelled) setPdfCounts(prev => (prev[url] === 1 ? prev : { ...prev, [url]: 1 })) })
+      }
+    }
+    return () => { cancelled = true }
+  }, [topics])
+
+  const sheets = useMemo(
+    () => buildSheets(topics, pdfCounts, { contents: isBook && topics.length > 1 }),
+    [topics, pdfCounts, isBook],
+  )
+  const lastIndex = sheets.length - 1
+  const lastContent = sheets.reduce((n, sh) => ('folio' in sh ? Math.max(n, sh.folio) : n), 0)
 
   const [current, setCurrent] = useState(0)
   const [flip, setFlip] = useState<Flip | null>(null)
@@ -306,12 +420,18 @@ export default function NoteBook({ title, content, accentColor = '#7C3AED', onCl
 
   /* --------------------------- render --------------------------- */
 
-  if (total === 0) return null
+  if (topics.length === 0 && !isBook) return null
 
   const underIndex = flip ? (flip.dir === 'next' ? flip.to : flip.from) : current
   const leafIndex = flip ? (flip.dir === 'next' ? flip.from : flip.to) : null
   const shown = flip ? flip.to : current
-  const label = shown === 0 ? 'Cover' : shown === lastIndex ? 'The End' : `Page ${shown} of ${total}`
+  const shownSheet = sheets[Math.min(shown, lastIndex)]
+  const label =
+    shownSheet.kind === 'cover' ? 'Cover'
+    : shownSheet.kind === 'end' ? 'The End'
+    : shownSheet.kind === 'contents' ? 'Contents'
+    : shownSheet.kind === 'empty' ? 'Empty'
+    : `Page ${shownSheet.folio} of ${lastContent}`
 
   return (
     <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-label={`${title}, notes book`}>
@@ -325,9 +445,16 @@ export default function NoteBook({ title, content, accentColor = '#7C3AED', onCl
             <p className={styles.bookTitle}>{title}</p>
             <p className={styles.pageCount}>{label}</p>
           </div>
-          {onClose && (
-            <button className={styles.closeBtn} onClick={onClose} aria-label="Close">{'\u2715'}</button>
-          )}
+          <div className={styles.headerActions}>
+            {onDownload && (
+              <button className={styles.downloadBtn} onClick={onDownload} disabled={downloading} aria-label="Download as PDF">
+                {downloading ? 'Preparing...' : 'PDF'}
+              </button>
+            )}
+            {onClose && (
+              <button className={styles.closeBtn} onClick={onClose} aria-label="Close">{'\u2715'}</button>
+            )}
+          </div>
         </div>
 
         <div
@@ -343,13 +470,13 @@ export default function NoteBook({ title, content, accentColor = '#7C3AED', onCl
             <div className={styles.stackBottom} />
 
             <div className={styles.sheet}>
-              <Face index={underIndex} lastIndex={lastIndex} title={title} pages={pages} onOpen={openBook} onCloseBook={onClose} />
+              <Face sheet={sheets[Math.min(underIndex, lastIndex)]} title={title} subtitle={subtitle} onOpen={openBook} onJump={goTo} onCloseBook={onClose} />
               <div ref={shadowRef} className={styles.castShadow} />
             </div>
 
             {leafIndex !== null && (
               <div ref={leafRef} className={`${styles.sheet} ${styles.leaf}`}>
-                <Face index={leafIndex} lastIndex={lastIndex} title={title} pages={pages} onOpen={openBook} onCloseBook={onClose} />
+                <Face sheet={sheets[Math.min(leafIndex, lastIndex)]} title={title} subtitle={subtitle} onOpen={openBook} onJump={goTo} onCloseBook={onClose} />
                 <div ref={shineRef} className={styles.shine} />
               </div>
             )}
