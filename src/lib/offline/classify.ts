@@ -34,6 +34,15 @@ const NETWORK_MESSAGE =
 const AUTH_CODE = /^PGRST30[1-3]$/
 const JWT_MESSAGE = /jwt (expired|invalid)|invalid jwt/i
 
+/**
+ * True when a request never reached a server (no connection), as opposed to the
+ * server answering "no". Works for PostgREST results and for Supabase Auth
+ * errors alike: supabase-js reports a failed fetch as status 0.
+ */
+export function isNetworkFailure(message?: string, status?: number): boolean {
+  return status === 0 || NETWORK_MESSAGE.test(message ?? '')
+}
+
 export function classifyResult(res: UpsertResult): Outcome {
   const err = res.error
   if (!err) return 'ok'
@@ -41,7 +50,7 @@ export function classifyResult(res: UpsertResult): Outcome {
   const message = err.message ?? ''
   const code = err.code ?? ''
 
-  if (status === 0 || NETWORK_MESSAGE.test(message)) return 'network'
+  if (isNetworkFailure(message, status)) return 'network'
   if (status === 401 || AUTH_CODE.test(code) || JWT_MESSAGE.test(message)) return 'auth'
   if (status !== undefined && (status === 408 || status === 429 || status >= 500)) return 'server'
   return 'fatal'

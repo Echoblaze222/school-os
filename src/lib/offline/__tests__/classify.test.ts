@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyResult, backoffMs, MAX_DELAY_MS } from '../classify'
+import { classifyResult, backoffMs, isNetworkFailure, MAX_DELAY_MS } from '../classify'
 
 describe('classifyResult', () => {
   const cases: Array<[string, Parameters<typeof classifyResult>[0], string]> = [
@@ -17,6 +17,21 @@ describe('classifyResult', () => {
   ]
   it.each(cases)('%s', (_name, input, expected) => {
     expect(classifyResult(input)).toBe(expected)
+  })
+})
+
+describe('isNetworkFailure', () => {
+  it('recognises a request that never reached a server', () => {
+    expect(isNetworkFailure('Failed to fetch', 0)).toBe(true) // supabase-js auth: AuthRetryableFetchError
+    expect(isNetworkFailure('TypeError: Failed to fetch')).toBe(true)
+    expect(isNetworkFailure('Load failed')).toBe(true)
+    expect(isNetworkFailure(undefined, 0)).toBe(true)
+  })
+  it('does not mistake a server answer for a lost connection', () => {
+    expect(isNetworkFailure('Invalid login credentials', 400)).toBe(false)
+    expect(isNetworkFailure('Invalid login credentials')).toBe(false)
+    expect(isNetworkFailure('bad gateway', 503)).toBe(false)
+    expect(isNetworkFailure()).toBe(false)
   })
 })
 
