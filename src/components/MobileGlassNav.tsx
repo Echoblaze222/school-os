@@ -10,6 +10,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -103,7 +104,9 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
   let order = 0
   const stagger = (): CSSProperties => ({ ['--i' as string]: order++ } as CSSProperties)
 
-  return (
+  // Rendered at the document root: the headers use transform/backdrop-filter,
+  // which would otherwise become the containing block for position: fixed.
+  return createPortal(
     <>
       <div className={`${styles.scrim} ${leaving ? styles.scrimOut : ''}`} onClick={requestClose} aria-hidden="true" />
       <aside
@@ -211,6 +214,7 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
           </button>
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   )
 }
