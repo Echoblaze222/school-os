@@ -18,7 +18,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { clearSavedViews } from '@/lib/savedView/store'
 import { clearInbox } from '@/lib/offlineInbox'
-import { clearOutbox } from '@/lib/offlineOutbox'
+import { clearOutbox, countUnsent, flushOutbox } from '@/lib/offlineOutbox'
 
 const SCHOOL_KEY         = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY  = 'schoolos_recent_school'
@@ -64,6 +64,35 @@ export async function signOutFlow(
   reason?: string,
   returnTo?: string
 ) {
+  // Unsent messages and attendance registers are wiped below with everything
+  // else saved on the phone (so a shared phone never leaks them). On a
+  // deliberate sign-out, first try to send them, and if some still can't go
+  // (no connection), say so and let the person choose. An automatic sign-out
+  // after inactivity never stops to ask.
+  if (!reason) {
+    try {
+      const { data } = await supabase.auth.getSession()
+      const uid = data.session?.user?.id
+      if (uid && (await countUnsent()) > 0) {
+        await Promise.race([flushOutbox(supabase, uid), new Promise<void>((r) => setTimeout(r, 4000))])
+        const left = await countUnsent()
+        if (
+          left > 0 &&
+          typeof window !== 'undefined' &&
+          typeof window.confirm === 'function' &&
+          !window.confirm(
+            `${left} ${left === 1 ? 'item' : 'items'} (messages or attendance) could not be sent yet. ` +
+            `Signing out will delete ${left === 1 ? 'it' : 'them'}. Sign out anyway?`
+          )
+        ) {
+          return
+        }
+      }
+    } catch {
+      // Never let this check stop someone from signing out.
+    }
+  }
+
   showSigningOutCover()
 
   // Offline mode, two steps, both capped so they can never hold up logout:
