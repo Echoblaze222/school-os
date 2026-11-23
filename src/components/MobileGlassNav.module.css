@@ -1,63 +1,80 @@
 /* MobileGlassNav.module.css
-   Glass drawer. Blur and translucency only, no gradients. The fill is lifted
-   off the page colour, with a bright edge and a deep shadow, so the panel
-   reads clearly even over a flat background. The width change uses the same
-   spring curve as the reference collapse animation. */
+   Glass drawer. The panel grows out of the control that opened it: from the
+   bottom dock it rises up, from the header three-line button it slides in
+   from the right. Items stagger in from the same direction. Only transform
+   and opacity are animated, so it stays smooth on phones. */
 
 .scrim {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  animation: scrimIn 0.25s ease both;
+  background: rgba(0, 0, 0, 0.62);
+  animation: scrimIn 0.3s ease both;
 }
+.scrimOut { animation: scrimOut 0.26s ease both; }
 
 .panel {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top, 0px));
   bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-  left: 10px;
-  width: min(86vw, 320px);
+  width: min(86vw, 330px);
   z-index: 201;
   display: flex;
   flex-direction: column;
   border-radius: 28px;
-  background: color-mix(in srgb, color-mix(in srgb, var(--text-primary) 9%, var(--sidebar-bg)) 80%, transparent);
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 20%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 16%, transparent), 0 24px 60px rgba(0, 0, 0, 0.5);
-  transition: width 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
-  animation: panelIn 0.4s cubic-bezier(0.32, 1.16, 0.42, 1) both;
+  background: color-mix(in srgb, color-mix(in srgb, var(--text-primary) 8%, var(--sidebar-bg)) 95%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 16%, transparent), 0 24px 60px rgba(0, 0, 0, 0.55);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
 }
+.fromBottom { left: 10px; transform-origin: 18% 100%; animation: riseIn 0.46s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fromRight  { right: 10px; transform-origin: 100% 0%; animation: slideInRight 0.46s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fromBottom.leaving { animation: riseOut 0.26s cubic-bezier(0.4, 0, 1, 1) both; }
+.fromRight.leaving  { animation: slideOutRight 0.26s cubic-bezier(0.4, 0, 1, 1) both; }
 .rail { width: 72px; }
 
-@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes panelIn {
-  from { transform: translateX(-24px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
+@keyframes scrimIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scrimOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(64px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes riseOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(64px) scale(0.92); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(72px) scale(0.94); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(72px) scale(0.94); }
 }
 
 .edgeToggle {
   position: absolute;
   top: 34px;
-  right: -11px;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-raised);
-  border: 1px solid var(--glass-border);
-  color: var(--text-secondary);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
+  color: var(--text-primary);
   cursor: pointer;
   z-index: 2;
-  transition: transform 0.5s cubic-bezier(0.32, 1.16, 0.42, 1);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.flip { transform: rotate(180deg); }
+.fromBottom .edgeToggle { right: -12px; }
+.fromRight  .edgeToggle { left: -12px; transform: rotate(180deg); }
+.fromBottom .flip { transform: rotate(180deg); }
+.fromRight  .flip { transform: rotate(0deg); }
 
 .brandRow {
   display: flex;
@@ -67,10 +84,11 @@
   min-height: 76px;
 }
 .crest {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-subtle);
   color: #fff;
   display: flex;
   align-items: center;
@@ -83,7 +101,7 @@
 .crestImg { width: 100%; height: 100%; object-fit: cover; }
 .brandText { min-width: 0; }
 .schoolName {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -97,7 +115,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .nav {
@@ -108,59 +126,77 @@
   padding: 4px 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  -webkit-overflow-scrolling: touch;
 }
-.group { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
+.group { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
 .groupLabel {
-  padding: 0 12px 6px;
-  font-size: 0.64rem;
+  padding: 0 6px 2px;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   transition: opacity 0.25s ease, height 0.4s ease, padding 0.4s ease;
 }
 
+/* Each entry is its own readable tile and staggers in from the trigger side */
 .item {
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 14px;
-  border: 1px solid transparent;
-  background: none;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
+  min-height: 48px;
+  padding: 0 10px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  color: var(--text-primary);
+  font-size: 0.93rem;
+  font-weight: 600;
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s;
+  animation: itemInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 28ms + 60ms);
 }
+.fromRight .item { animation-name: itemInRight; }
+.leaving .item { animation: none; }
+@keyframes itemInUp    { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes itemInRight { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: translateX(0); } }
+
 .item:active { background: var(--glass-bg-hover); }
 .itemActive {
   background: var(--brand-subtle);
   border-color: var(--brand-border);
-  color: var(--text-primary);
-  font-weight: 600;
 }
-.icon { width: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  color: var(--text-primary);
+}
+.itemActive .icon { background: var(--brand); color: #fff; }
+.aiItem .icon { color: var(--brand-light); }
 .label {
   overflow: hidden;
   text-overflow: ellipsis;
   transition: opacity 0.2s ease, max-width 0.4s ease;
   max-width: 220px;
 }
-.aiItem .icon { color: var(--brand-light); }
 
 .footer {
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
   padding: 12px 10px 12px;
   display: flex;
   flex-direction: column;
@@ -175,20 +211,20 @@
   padding: 3px;
   margin-left: 4px;
   border-radius: 999px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
   cursor: pointer;
 }
 .themeOpt {
-  width: 34px;
-  height: 28px;
+  width: 36px;
+  height: 30px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
-.themeOn { background: var(--bg-raised); color: var(--text-primary); }
+.themeOn { background: var(--brand); color: #fff; }
 
 .account {
   display: flex;
@@ -196,11 +232,15 @@
   gap: 12px;
   padding: 8px 10px;
   border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
   min-width: 0;
   text-decoration: none;
+  animation: itemInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 28ms + 60ms);
 }
+.fromRight .account { animation-name: itemInRight; }
+.leaving .account { animation: none; }
 .avatar {
   width: 36px;
   height: 36px;
@@ -211,20 +251,22 @@
   align-items: center;
   justify-content: center;
   background: var(--bg-raised);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 .avatarImg { width: 100%; height: 100%; object-fit: cover; }
 .accountText { display: flex; flex-direction: column; min-width: 0; transition: opacity 0.2s ease, max-width 0.4s ease; max-width: 200px; }
 .accountName {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.accountRole { font-size: 0.68rem; color: var(--text-muted); }
-.signOut:active { background: var(--danger-subtle); color: var(--danger); }
+.accountRole { font-size: 0.7rem; color: var(--text-secondary); }
+.signOut { color: var(--danger); }
+.signOut .icon { background: var(--danger-subtle); }
+.signOut:active { background: var(--danger-subtle); }
 
 /* Collapsed: icon rail. Labels fade, then stop taking space. */
 .rail .label,
@@ -238,6 +280,6 @@
 .rail .themeOpt:not(.themeOn) { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel, .scrim { animation: none; }
+  .panel, .scrim, .item, .account { animation: none; }
   .panel, .label, .edgeToggle { transition: none; }
 }

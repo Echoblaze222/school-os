@@ -1,8 +1,8 @@
 'use client'
 // components/GlassMenuButton.tsx
 // Three-line menu button for the dashboard headers. Opens the same glass
-// sidebar drawer as the bottom dock Menu button, so both entry points look
-// and behave identically.
+// sidebar drawer as the bottom dock Menu button, sliding in from the right
+// (the side the button sits on).
 
 import { useState } from 'react'
 import type { FeatureGroup } from './AllFeaturesSheet'
@@ -48,6 +48,7 @@ export default function GlassMenuButton({ role, groups, aiHref, homeHref, profil
           homeHref={homeHref}
           profile={profile}
           school={school}
+          origin="right"
           onClose={() => setOpen(false)}
         />
       )}

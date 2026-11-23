@@ -10,7 +10,7 @@
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 16%, transparent), 0 14px 34px rgba(0,0,0,0.3);
 }
 .frame { max-width: 1180px; margin: 0 auto; }
-.topRow { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.topRow { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .crest {
@@ -29,7 +29,7 @@
   color: var(--text-secondary); background: var(--glass-bg); border: 1px solid var(--glass-border);
 }
 
-.controls { display: flex; align-items: center; gap: 8px; }
+.controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .iconBtn {
   width: 44px; height: 44px; border-radius: var(--radius-md);
   background: var(--glass-bg); border: 1px solid var(--glass-border);
@@ -55,7 +55,11 @@
 }
 .avatarImg { width: 100%; height: 100%; object-fit: cover; }
 
-.headline { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--glass-border); max-width: 560px; }
+.headRow {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--glass-border);
+}
+.headline { flex: 1; min-width: 0; max-width: 560px; }
 .eyebrow { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand-light); font-weight: 600; }
 .headline h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin: 8px 0 4px; font-weight: 600; line-height: 1.15; color: var(--text-primary); }
 .headline p { color: var(--text-secondary); font-size: 0.88rem; margin: 0; }
@@ -86,9 +90,8 @@
   }
   .frame { max-width: 1240px; }
 
-  .brand { display: none; }
-  .headline { border-top: 0; padding-top: 0; }
-  .topRow { justify-content: flex-end; }
+  .topRow { display: none; }
+  .headRow { margin-top: 0; padding-top: 0; border-top: 0; }
 
   .iconBtn {
     width: 40px; height: 40px;
@@ -98,7 +101,7 @@
   }
   .iconBtn:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
 
-  .headline { margin-top: var(--space-2); max-width: 760px; }
+  .headline { max-width: 760px; }
   .eyebrow { color: var(--brand); letter-spacing: 0.16em; }
   .headline h1 {
     font-size: clamp(1.9rem, 2.6vw, 2.5rem);

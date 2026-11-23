@@ -1,15 +1,18 @@
 'use client'
 // components/MobileGlassNav.tsx
 // Glass sidebar drawer for phones and tablets. Opened by the BottomDock Menu
-// button. Same anatomy as the desktop rail: brand block, grouped navigation
-// with a real active state, theme pill, account row and sign out. The edge
-// chevron collapses the panel to an icon rail with a springy width change and
-// labels that fade out; tapping the scrim or pressing Escape closes it.
+// button (rises up from the bottom) or by the three-line button in the
+// dashboard headers (slides in from the right). Same anatomy as the desktop
+// rail: brand block, grouped navigation with a real active state, theme
+// pill, account row and sign out. The edge chevron collapses the panel to an
+// icon rail; tapping the scrim, a link, or pressing Escape plays the exit
+// animation and closes it.
 
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { FeatureGroup } from './AllFeaturesSheet'
 import { GridIcon, SparklesIcon, SunIcon, MoonIcon, UserIcon, LogOutIcon } from './Icons'
 import { useTheme } from '@/hooks/useTheme'
@@ -25,6 +28,8 @@ interface Props {
   homeHref?: string
   profile?: any
   school?:  any
+  /** Where the panel grows from: the bottom dock (rises up) or a header button on the right (slides in from the right). */
+  origin?:  'bottom' | 'right'
   onClose:  () => void
 }
 
@@ -35,12 +40,25 @@ function roleLabelOf(role: string) {
     .join(' ')
 }
 
-export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile, school, onClose }: Props) {
+export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile, school, origin = 'bottom', onClose }: Props) {
   const pathname = usePathname() ?? ''
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const shared = useShellIdentity()
   const [rail, setRail] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const leavingRef = useRef(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Play the exit animation, then unmount.
+  const requestClose = useCallback(() => {
+    if (leavingRef.current) return
+    leavingRef.current = true
+    setLeaving(true)
+    timerRef.current = setTimeout(onClose, 260)
+  }, [onClose])
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const prof = profile ?? shared.profile
   const sch  = school ?? shared.school
@@ -51,7 +69,7 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') requestClose()
     }
     window.addEventListener('keydown', onKey)
     const prevOverflow = document.body.style.overflow
@@ -60,7 +78,7 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
     }
-  }, [onClose])
+  }, [requestClose])
 
   const activeHref = useMemo(() => {
     let best = ''
@@ -82,12 +100,14 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
   }
 
   const itemClass = (active: boolean) => `${styles.item} ${active ? styles.itemActive : ''}`
+  let order = 0
+  const stagger = (): CSSProperties => ({ ['--i' as string]: order++ } as CSSProperties)
 
   return (
     <>
-      <div className={styles.scrim} onClick={onClose} aria-hidden="true" />
+      <div className={`${styles.scrim} ${leaving ? styles.scrimOut : ''}`} onClick={requestClose} aria-hidden="true" />
       <aside
-        className={`${styles.panel} ${rail ? styles.rail : ''}`}
+        className={`${styles.panel} ${origin === 'right' ? styles.fromRight : styles.fromBottom} ${leaving ? styles.leaving : ''} ${rail ? styles.rail : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="Main navigation"
@@ -120,7 +140,8 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
           <Link
             href={resolvedHome}
             className={itemClass(onHome)}
-            onClick={onClose}
+            style={stagger()}
+            onClick={requestClose}
             aria-current={onHome ? 'page' : undefined}
           >
             <span className={styles.icon}><GridIcon size={19} /></span>
@@ -130,7 +151,8 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
           <Link
             href={aiHref}
             className={`${itemClass(onAi)} ${styles.aiItem}`}
-            onClick={onClose}
+            style={stagger()}
+            onClick={requestClose}
             aria-current={onAi ? 'page' : undefined}
           >
             <span className={styles.icon}><SparklesIcon size={19} /></span>
@@ -147,7 +169,8 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
                     key={item.id}
                     href={item.href}
                     className={itemClass(active)}
-                    onClick={onClose}
+                    style={stagger()}
+                    onClick={requestClose}
                     aria-current={active ? 'page' : undefined}
                   >
                     <span className={styles.icon}><item.Icon size={19} /></span>
@@ -170,7 +193,7 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
             <span className={`${styles.themeOpt} ${theme !== 'dark' ? styles.themeOn : ''}`}><SunIcon size={15} /></span>
           </button>
 
-          <Link href={resolvedProfile} className={styles.account} onClick={onClose}>
+          <Link href={resolvedProfile} className={styles.account} style={stagger()} onClick={requestClose}>
             <span className={styles.avatar}>
               {prof?.avatar_url
                 ? <Image src={prof.avatar_url} alt="" width={36} height={36} className={styles.avatarImg} />
@@ -182,7 +205,7 @@ export default function MobileGlassNav({ role, groups, aiHref, homeHref, profile
             </span>
           </Link>
 
-          <button type="button" className={`${styles.item} ${styles.signOut}`} onClick={handleSignOut} aria-label="Sign out">
+          <button type="button" className={`${styles.item} ${styles.signOut}`} style={stagger()} onClick={handleSignOut} aria-label="Sign out">
             <span className={styles.icon}><LogOutIcon size={17} color="var(--danger)" /></span>
             <span className={styles.label}>Sign out</span>
           </button>

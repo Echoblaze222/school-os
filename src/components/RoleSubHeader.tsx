@@ -1,11 +1,12 @@
 'use client'
 // components/RoleSubHeader.tsx
 // The RoleHeroHeader's sibling for every page that ISN'T the dashboard
-// home screen. Same glass language, just compact: a back button, crest and
-// page title, then notifications and a three-line menu button that opens the
-// same glass drawer as the bottom dock. Pairs with BottomDock for nav.
+// home screen. Compact solid bar: back button, crest and page title, then
+// notifications and a three-line menu button that opens the glass drawer.
+// On phones the bar hides when you scroll down and returns when you scroll
+// up. Pairs with BottomDock for nav.
 //
-// On desktop (1024px and up) this becomes a sticky top bar and DesktopShell
+// On desktop (1024px and up) this is a pinned top bar and DesktopShell
 // supplies the sidebar.
 //
 // Usage:
@@ -14,6 +15,7 @@
 //     {page content}
 //   </RoleSubHeader>
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
@@ -56,6 +58,21 @@ export default function RoleSubHeader({
   // page. Harmless no-op for pages that don't reference --app-vh.
   useVisualViewportHeight()
 
+  // Hide on scroll down, reveal on scroll up (phones; desktop keeps it pinned).
+  const [hidden, setHidden] = useState(false)
+  useEffect(() => {
+    let lastY = window.scrollY
+    function onScroll() {
+      const y = window.scrollY
+      const delta = y - lastY
+      if (Math.abs(delta) < 8) return
+      setHidden(delta > 0 && y > 80)
+      lastY = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   const initials = (school?.name ?? 'S').slice(0, 2).toUpperCase()
   const resolvedHome = homeHref ?? `/dashboard/${role}`
   const resolvedBack = backHref ?? resolvedHome
@@ -72,7 +89,7 @@ export default function RoleSubHeader({
         aiHref={resolvedAi}
       />
 
-      <header className={styles.hero}>
+      <header className={`${styles.hero} ${hidden ? styles.heroHidden : ''}`}>
         <div className={styles.frame}>
           <div className={styles.topRow}>
             <div className={styles.brand}>

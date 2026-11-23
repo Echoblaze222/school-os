@@ -4,9 +4,10 @@
 // app's real NotificationsBell rather than re-implementing it. Principal's
 // page now uses this too (see below).
 //
-// Mobile: rounded glass card with school + role, search, notifications and a
-// three-line menu button that opens the same glass drawer as the bottom dock.
-// Theme and account live in that drawer.
+// Mobile: rounded glass card. Top line has the school crest and role on the
+// left and the three-line menu button on the right (opens the same glass
+// drawer as the bottom dock). Search and notifications sit beside the
+// greeting. Theme and account live in the drawer.
 // On desktop (1024px and up) the card becomes a quiet greeting area on the
 // page surface and DesktopShell supplies the sidebar.
 
@@ -60,6 +61,26 @@ export default function RoleHeroHeader({
             </div>
           </div>
 
+          <span className={styles.mobileOnly}>
+            <GlassMenuButton
+              className={styles.menuBtn}
+              role={role}
+              groups={featureGroups}
+              aiHref={`/dashboard/${role}/ai`}
+              homeHref={`/dashboard/${role}`}
+              profile={profile}
+              school={school}
+            />
+          </span>
+        </div>
+
+        <div className={styles.headRow}>
+          <div className={`${styles.headline} ${motion.riseIn}`}>
+            <div className={styles.eyebrow}>{greeting}</div>
+            <h1>{headline}</h1>
+            <p>{sub}</p>
+          </div>
+
           <div className={styles.controls}>
             {showBranding && (
               <Link
@@ -76,25 +97,7 @@ export default function RoleHeroHeader({
             <GlobalSearchOverlay triggerClassName={`${styles.iconBtn} ${styles.mobileOnly} ${motion.rippleHost} ${motion.focusable}`} />
 
             <NotificationsBell userId={userId} role={role} />
-
-            <span className={styles.mobileOnly}>
-              <GlassMenuButton
-                className={styles.menuBtn}
-                role={role}
-                groups={featureGroups}
-                aiHref={`/dashboard/${role}/ai`}
-                homeHref={`/dashboard/${role}`}
-                profile={profile}
-                school={school}
-              />
-            </span>
           </div>
-        </div>
-
-        <div className={`${styles.headline} ${motion.riseIn}`}>
-          <div className={styles.eyebrow}>{greeting}</div>
-          <h1>{headline}</h1>
-          <p>{sub}</p>
         </div>
       </div>
     </header>
