@@ -59,11 +59,22 @@ function adminClient() {
   )
 }
 
+// How long the push service (FCM / Mozilla / Apple) holds a message for a
+// device that is switched off or has no data. Previously 24 hours, which meant
+// a parent whose phone had no data over a weekend never got Friday's notice.
+// Three days covers a weekend plus a day; callers can raise it for notices that
+// stay relevant longer (push services cap this at about 4 weeks).
+export const DEFAULT_PUSH_TTL_SECONDS = 60 * 60 * 24 * 3
+
 export interface PushPayload {
   title: string
   body:  string
   url?:  string
   tag?:  string
+  /** Seconds the push service should keep the message while the device is offline. */
+  ttlSeconds?: number
+  /** 'high' wakes the device straight away; 'normal' may wait for battery/network. */
+  urgency?: 'very-low' | 'low' | 'normal' | 'high'
 }
 
 /**
@@ -107,23 +118,33 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload): 
     try {
       ensureVapidConfigured()
 
-      const message = JSON.stringify({
-        title:    payload.title,
-        body:     payload.body,
-        url:      payload.url ?? '/',
-        tag,
-        renotify: true, // re-alert (vibrate/sound) even if this tag is reused
-        icon:     '/icons/icon-192x192.png',
-        badge:    '/icons/icon-192x192.png',
-      })
+      // Per-device message: `userId` lets the service worker file the
+      // notification in the on-phone inbox under the right person, so a shared
+      // phone never shows one user's notifications to another (see
+      // src/lib/offlineInbox.ts). `sentAt` keeps the real send time even when
+      // the push is delivered hours later, after the device comes back online.
+      const sentAt  = Date.now()
+      const ttl     = Math.max(0, Math.floor(payload.ttlSeconds ?? DEFAULT_PUSH_TTL_SECONDS))
+      const urgency = payload.urgency ?? 'high'
 
       await Promise.allSettled(
         webSubs.map(async (sub) => {
           try {
+            const message = JSON.stringify({
+              title:    payload.title,
+              body:     payload.body,
+              url:      payload.url ?? '/',
+              tag,
+              renotify: true, // re-alert (vibrate/sound) even if this tag is reused
+              icon:     '/icons/icon-192x192.png',
+              badge:    '/icons/icon-192x192.png',
+              userId:   sub.user_id,
+              sentAt,
+            })
             await webpush.sendNotification(
               { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh!, auth: sub.auth! } },
               message,
-              { TTL: 60 * 60 * 24 } // 24 hours
+              { TTL: ttl, urgency }
             )
             await admin.from('push_subscriptions')
               .update({ last_used_at: new Date().toISOString() })
@@ -151,6 +172,7 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload): 
         body:  payload.body,
         url:   payload.url ?? '/',
         tag,
+        ttlSeconds: payload.ttlSeconds ?? DEFAULT_PUSH_TTL_SECONDS,
       })
       const staleSet = new Set(staleTokens)
       const freshEndpoints: string[] = []

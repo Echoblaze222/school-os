@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
+import { loadInbox } from '@/lib/offlineInbox'
+import { enqueue, flushOutbox, isNetworkFailure } from '@/lib/offlineOutbox'
 import { BellIcon, CheckCircleIcon } from './Icons'
 import styles from './NotificationsBell.module.css'
 
@@ -87,6 +89,9 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
   // loading dots over a list the person is reading.
   const [loading,     setLoading]     = useState(true)
   const [loadError,   setLoadError]   = useState(false)
+  // True when the live list couldn't be loaded and the list shown is the copy
+  // of pushes this phone received (see src/lib/offlineInbox.ts).
+  const [showingOffline, setShowingOffline] = useState(false)
   // Track button position so the fixed panel renders in the right spot
   const [panelPos,    setPanelPos]    = useState({ top: 0, right: 0 })
   const panelRef = useRef<HTMLDivElement>(null)
@@ -110,9 +115,28 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
     ])
 
     if (listRes.error || !listRes.data) {
-      setLoadError(true)
+      // Couldn't reach the server. Fall back to the pushes this phone has
+      // received, but only if there is nothing already on screen to keep.
+      const saved = notificationsRef.current.length === 0 ? await loadInbox(userId) : []
+      if (saved.length) {
+        setNotifications(saved.map((i): NotificationItem => ({
+          id:         `push:${i.id}`,
+          title:      i.title,
+          body:       i.body,
+          type:       'default',
+          is_read:    false,
+          created_at: new Date(i.receivedAt).toISOString(),
+          action_url: i.url,
+        })))
+        setUnreadCount(saved.length)
+        setShowingOffline(true)
+        setLoadError(false)
+      } else {
+        setLoadError(true)
+      }
     } else {
       setNotifications(listRes.data as NotificationItem[])
+      setShowingOffline(false)
       setLoadError(false)
     }
     if (!countRes.error && typeof countRes.count === 'number') {
@@ -135,6 +159,23 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
     setLoading(true)
     loadNotifications()
   }, [loadNotifications])
+
+  // Send any "mark as read" taps made while offline, as soon as the app opens
+  // with a connection or the connection comes back, then refresh the list.
+  useEffect(() => {
+    let cancelled = false
+    async function flush(refresh: boolean) {
+      const sent = await flushOutbox(supabase, userId)
+      if (!cancelled && (sent > 0 || refresh)) loadNotifications()
+    }
+    const onOnline = () => { flush(true) }
+    flush(false)
+    window.addEventListener('online', onOnline)
+    return () => {
+      cancelled = true
+      window.removeEventListener('online', onOnline)
+    }
+  }, [supabase, userId, loadNotifications])
 
   // Real-time. New rows are added straight to the top of the list (no
   // refetch, no flicker). Row updates keep read state in sync across
@@ -212,6 +253,8 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
       .eq('is_read', false)
 
     if (error) {
+      // No connection: keep the optimistic state and send it once back online.
+      if (isNetworkFailure(error) && (await enqueue(userId, { kind: 'mark_all_read' }))) return
       setNotifications(previousList)
       setUnreadCount(previousCount)
       return
@@ -226,6 +269,9 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
     setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x))
     setUnreadCount(c => Math.max(0, c - 1))
 
+    // Items from the on-phone copy have no database row to update.
+    if (n.id.startsWith('push:')) return
+
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -233,6 +279,8 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
       .eq('user_id', userId)
 
     if (error) {
+      // No connection: keep it marked read and send it once back online.
+      if (isNetworkFailure(error) && (await enqueue(userId, { kind: 'mark_read', ids: [n.id] }))) return
       setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: false } : x))
       setUnreadCount(c => c + 1)
       return
@@ -323,6 +371,12 @@ export default function NotificationsBell({ userId, role = 'student' }: Props) {
               </button>
             )}
           </div>
+
+          {showingOffline && (
+            <p className="section-label" style={{ margin: 0, padding: '8px 14px 0' }}>
+              Offline - showing notifications received on this phone
+            </p>
+          )}
 
           {/* List */}
           <div className={styles.list}>

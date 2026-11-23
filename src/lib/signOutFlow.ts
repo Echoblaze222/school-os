@@ -17,6 +17,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { clearSavedViews } from '@/lib/savedView/store'
+import { clearInbox } from '@/lib/offlineInbox'
+import { clearOutbox } from '@/lib/offlineOutbox'
 
 const SCHOOL_KEY         = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY  = 'schoolos_recent_school'
@@ -84,7 +86,12 @@ export async function signOutFlow(
   // the next person to use this phone can never see this user's data, even
   // if the sign-out request is slow or fails. Capped so it can't hold up
   // logout.
-  await Promise.race([clearSavedViews(), new Promise<void>((r) => setTimeout(r, 800))])
+  // The offline notification inbox and queued offline actions are wiped here
+  // too, for the same shared-phone reason.
+  await Promise.race([
+    Promise.all([clearSavedViews(), clearInbox(), clearOutbox()]),
+    new Promise<void>((r) => setTimeout(r, 800)),
+  ])
 
   try {
     const stored = localStorage.getItem(SCHOOL_KEY)
