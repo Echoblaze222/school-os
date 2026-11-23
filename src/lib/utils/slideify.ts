@@ -32,6 +32,8 @@ export type Slide = BookPage
 export const CPL = 38
 /** Estimated lines that fit on one page. */
 export const LINES_PER_PAGE = 13
+/** Estimated lines an inline image takes (it is capped at ~200px tall). */
+const IMAGE_LINES = 7
 
 type Piece = NoteBlock | null
 
@@ -70,7 +72,11 @@ export function blockCost(b: NoteBlock, depth = 0): number {
       return base + (wrap(plainText(b.text).length, CPL - 8) - 1) * 1.3
     }
     case 'paragraph':
-      return b.text.split('\n').reduce((s, l) => s + wrap(plainText(l).length, CPL), 0) + 0.5
+      return (
+        b.text.split('\n').reduce((s, l) => s + wrap(plainText(l).length, CPL), 0) +
+        0.5 +
+        (b.text.match(/!\[[^\]]*\]\(/g)?.length ?? 0) * IMAGE_LINES
+      )
     case 'list':
       return b.items.reduce((s, it) => s + itemCost(it, depth), 0) + 0.5
     case 'table':

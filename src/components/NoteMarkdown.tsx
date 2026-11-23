@@ -55,6 +55,9 @@ function renderInline(nodes: InlineNode[], keyPrefix: string): ReactNode[] {
           </a>
         )
       case 'math': return <KatexMath key={key} expr={n.v} display={n.display} />
+      case 'image':
+        // eslint-disable-next-line @next/next/no-img-element
+        return <img key={key} src={n.src} alt={n.alt} loading="lazy" referrerPolicy="no-referrer" className={styles.img} />
     }
   })
 }

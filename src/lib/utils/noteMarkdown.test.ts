@@ -92,6 +92,7 @@ function flat(nodes: ReturnType<typeof parseInline>): string {
       case 'code': return n.v
       case 'math': return `[M:${n.v}]`
       case 'link': return flat(n.c)
+      case 'image': return n.alt
       default: return flat(n.c)
     }
   }).join('')
@@ -124,6 +125,16 @@ describe('parseInline', () => {
     expect(safeUrl('javascript:alert(1)')).toBeNull()
     expect(safeUrl('data:text/html,<script>')).toBeNull()
     expect(safeUrl('/relative')).toBeNull()
+  })
+  it('images: https becomes an image node, other schemes become alt text', () => {
+    const ok = parseInline('![A river](https://example.com/a.jpg)')
+    expect(ok).toEqual([{ t: 'image', src: 'https://example.com/a.jpg', alt: 'A river' }])
+    const bad = parseInline('![x](javascript:alert(1))')
+    expect(bad.some(n => n.t === 'image')).toBe(false)
+    expect(flat(parseInline('![alt](http://insecure.example/x.png)'))).toBe('alt')
+  })
+  it('a long image url does not leak into plain text sizes', () => {
+    expect(plainText('![A river](https://example.com/' + 'x'.repeat(300) + ')')).toBe('A river')
   })
   it('raw html is just text', () => {
     const n = parseInline('<img src=x onerror=alert(1)>')
