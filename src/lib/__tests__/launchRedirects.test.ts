@@ -3,14 +3,22 @@
 // Covers the app-launch path through src/middleware.ts: what happens when a
 // signed-in user opens '/' or '/dashboard' (which is exactly what the Android
 // shell does on every cold start), and that the checks that must NOT be
-// skipped - onboarding, role boundary, school lock - still win. Also covers the
-// outage handling: when Supabase cannot be reached the person is sent to
-// /service-unavailable, not treated as signed out or as having the wrong role.
+// skipped - onboarding, role boundary, school lock, per-student lock - still win.
+// Also covers the outage handling: when Supabase cannot be reached the person is
+// sent to /service-unavailable, not treated as signed out or as having the wrong
+// role.
 //
 // Supabase isn't reachable from the sandbox/CI, so @supabase/ssr is mocked
 // with just enough of the chainable query builder for the middleware's real
 // control flow to run. `fromCalls` records every table queried so the tests
-// can assert how many database round-trips a request costs.
+// can assert how many database round-trips a request costs; `rpcCalls` records
+// RPC calls (the per-student lock check).
+//
+// Billing is per student now (sql/migrations/2026-11-21-per-student-
+// subscriptions.sql): a school never locks because of money. 'expired' (unpaid
+// setup trial) and 'locked'/inactive are HARD locks for everyone; an unpaid
+// STUDENT is confined to /dashboard/student/subscribe. The earlier tests here
+// described the old school-level billing lock and had gone stale.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -22,8 +30,11 @@ let user: { id: string } | null
 let profileRow: Row
 let apptRow: Row
 let fromCalls: string[]
+let rpcCalls: string[]
 let authCalls: string[]
 let refreshCookie: boolean
+// The per-student lock answer. null = the RPC is missing / returned nothing (fails open).
+let lockResult: { locked?: boolean } | null
 // Outage simulation: the auth service is unreachable, and/or the profile
 // query comes back with an error + status (0 = network failure, 5xx = backend).
 let authOutage: boolean
@@ -68,6 +79,11 @@ vi.mock('@supabase/ssr', () => ({
       builder.maybeSingle = async () => ({ data: table === 'appointments' ? apptRow : null })
       return builder
     },
+    // Per-student lock check: the middleware calls .rpc(name).abortSignal(...).
+    rpc: (name: string) => {
+      rpcCalls.push(name)
+      return { abortSignal: async () => ({ data: lockResult }) }
+    },
   }),
 }))
 
@@ -90,8 +106,10 @@ beforeEach(() => {
   profileRow = student()
   apptRow = null
   fromCalls = []
+  rpcCalls = []
   authCalls = []
   refreshCookie = false
+  lockResult = { locked: false }
   authOutage = false
   profileResult = { error: null, status: 200 }
 })
@@ -178,15 +196,20 @@ describe('checks that must still win over dispatch', () => {
     profileRow = student({ role: 'principal', school: { setup_status: 'locked', is_platform_active: false } })
     expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=locked&role=principal')
   })
-  it('billing-locked school blocks a non-principal', async () => {
+  it('an expired (unpaid setup) school is a hard lock for a non-principal', async () => {
     profileRow = student({ school: { setup_status: 'expired', is_platform_active: true } })
     expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=expired&role=student')
   })
-  it('billing-locked principal is confined to the renewal page, not their dashboard', async () => {
+  it('an expired (unpaid setup) school is a hard lock for the principal too - no renewal-page exception any more', async () => {
     profileRow = student({ role: 'principal', school: { setup_status: 'expired', is_platform_active: true } })
-    expect(location(await middleware(req('/dashboard')))).toBe('/dashboard/principal/subscriptions?status=expired')
-    expect(location(await middleware(req('/dashboard/principal/staff')))).toBe('/dashboard/principal/subscriptions?status=expired')
-    expect(location(await middleware(req('/dashboard/principal/subscriptions')))).toBeNull()
+    expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=expired&role=principal')
+    expect(location(await middleware(req('/dashboard/principal/staff')))).toBe('/school-locked?status=expired&role=principal')
+  })
+  it('the old school billing states no longer lock anyone', async () => {
+    for (const status of ['suspended', 'grace_period', 'cancelled']) {
+      profileRow = student({ school: { setup_status: status, is_platform_active: true } })
+      expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+    }
   })
   it('role boundary still redirects someone on another role\'s dashboard', async () => {
     expect(location(await middleware(req('/dashboard/teacher')))).toBe('/dashboard/student')
@@ -202,6 +225,42 @@ describe('checks that must still win over dispatch', () => {
     const res = await middleware(req('/dashboard/student'))
     expect(location(res)).toBeNull()
     expect(fromCalls).toEqual(['profiles'])
+  })
+})
+
+describe('per-student subscription lock', () => {
+  it('a student with a paid subscription renders normally (one profile query, one lock check)', async () => {
+    expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+    expect(fromCalls).toEqual(['profiles'])
+    expect(rpcCalls).toEqual(['my_subscription_lock'])
+  })
+  it('an unpaid student is confined to the subscribe page', async () => {
+    lockResult = { locked: true }
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/dashboard/student/subscribe')
+    expect(location(await middleware(req('/dashboard')))).toBe('/dashboard/student/subscribe')
+  })
+  it('the subscribe page itself stays reachable for an unpaid student (and skips the lock check)', async () => {
+    lockResult = { locked: true }
+    expect(location(await middleware(req('/dashboard/student/subscribe')))).toBeNull()
+    expect(rpcCalls).toEqual([])
+  })
+  it('fails open when the lock function is missing or returns nothing', async () => {
+    lockResult = null
+    expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+  })
+  it('principals, teachers and parents are never billing-locked and skip the lock check', async () => {
+    lockResult = { locked: true }
+    for (const role of ['principal', 'teacher', 'parent']) {
+      profileRow = student({ role })
+      expect(location(await middleware(req(`/dashboard/${role}`)))).toBeNull()
+    }
+    expect(rpcCalls).toEqual([])
+  })
+  it('a hard lock wins over the per-student check (no lock query is made)', async () => {
+    lockResult = { locked: true }
+    profileRow = student({ school: { setup_status: 'locked', is_platform_active: false } })
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/school-locked?status=locked&role=student')
+    expect(rpcCalls).toEqual([])
   })
 })
 
