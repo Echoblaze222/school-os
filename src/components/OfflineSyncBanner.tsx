@@ -1,8 +1,9 @@
 'use client'
 // src/components/OfflineSyncBanner.tsx
-// Mounted once in the dashboard layout. Starts the background sync for the
-// signed-in user and shows a small notice while changes are saved on this device
-// waiting to upload, or when the server refused some of them.
+// Mounted once in the dashboard layout (and inside OfflineShell on offline twin
+// pages, which pass the user id they already know). Starts the background sync
+// for the signed-in user and shows a small notice while changes are saved on this
+// device waiting to upload, or when the server refused some of them.
 //
 // It stays hidden whenever ServiceStatusBanner is showing (same screen slot), so
 // the two never overlap.
@@ -15,25 +16,29 @@ import type { SyncClient } from '@/lib/offline/syncEngine'
 import { useOutboxCounts } from '@/hooks/useOutboxCounts'
 import styles from './OfflineSyncBanner.module.css'
 
-export default function OfflineSyncBanner() {
-  const [userId, setUserId] = useState<string | null>(null)
+export default function OfflineSyncBanner({ userId: knownUserId }: { userId?: string | null }) {
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
+  // An offline page already knows the user and cannot rely on getSession(), which
+  // returns nothing once the access token has expired and cannot be refreshed.
+  const userId = knownUserId ?? sessionUserId
   const service = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const { pending, failed } = useOutboxCounts(userId)
 
   useEffect(() => {
+    if (knownUserId) return
     const supabase = createClient()
     let active = true
     supabase.auth.getSession().then(({ data }) => {
-      if (active) setUserId(data.session?.user?.id ?? null)
+      if (active) setSessionUserId(data.session?.user?.id ?? null)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null)
+      setSessionUserId(session?.user?.id ?? null)
     })
     return () => {
       active = false
       listener.subscription.unsubscribe()
     }
-  }, [])
+  }, [knownUserId])
 
   useEffect(() => {
     if (!userId) return

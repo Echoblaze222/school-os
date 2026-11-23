@@ -1,8 +1,10 @@
 // src/lib/offline/db.ts
 // CLIENT ONLY. The local database (IndexedDB via Dexie) behind SchoolOS offline
-// mode. One table:
+// mode. Tables:
 //   outbox - writes made while offline (or while the backend is down), waiting
 //            to be replayed against Supabase in order.
+//   unlock - Android app only: a salted, slow hash of the user's password so the
+//            lock screen can be opened with no connection (see unlockVerifier.ts).
 //
 // Reads are NOT stored here. "Last thing the user saw" copies already live in
 // src/lib/savedView/store.ts, which has the privacy rules for a shared phone
@@ -37,8 +39,21 @@ export interface OutboxItem {
   lastError: string | null
 }
 
+export interface UnlockRecord {
+  userId: string
+  /** base64 random salt */
+  salt: string
+  /** base64 PBKDF2 output; never the password itself */
+  hash: string
+  iterations: number
+  /** Persisted so restarting the app cannot reset the attempt limit. */
+  failedAttempts: number
+  createdAt: number
+}
+
 export type OfflineDB = Dexie & {
   outbox: Table<OutboxItem, number>
+  unlock: Table<UnlockRecord, string>
 }
 
 export const DB_NAME = 'schoolos-offline'
@@ -57,6 +72,10 @@ export function getDb(): OfflineDB {
   db.version(1).stores({
     // &id = unique; [userId+status] serves both "my pending items" and counts.
     outbox: '++seq, &id, userId, [userId+status]',
+  })
+  db.version(2).stores({
+    outbox: '++seq, &id, userId, [userId+status]',
+    unlock: 'userId',
   })
   instance = db
   return db
