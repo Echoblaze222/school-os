@@ -6,6 +6,9 @@
 // OFFLINE (Phase 2 pilot): classes and students are saved on the device and shown
 //   instantly / when offline; a save that fails because the network or server is
 //   down is queued in the offline outbox and uploaded automatically later.
+// OFFLINE (Phase 3): useOfflineReady saves who the user is and warms the offline
+//   twin page, so this same component can be opened with no network at all
+//   (/offline/teacher/attendance).
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
@@ -20,6 +23,7 @@ import { loadView, saveView } from '@/lib/savedView/store'
 import { classifyResult } from '@/lib/offline/classify'
 import { enqueueUpsert, listOutbox } from '@/lib/offline/outbox'
 import { pendingAttendanceStatuses } from '@/lib/offline/attendance'
+import { useOfflineReady } from '@/hooks/useOfflineReady'
 import styles from './attendance.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -67,6 +71,9 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const [expandedLoading, setExpandedLoading] = useState(false)
   const supabase = createClient()
   const sc = school?.primary_color ?? '#800020'
+
+  // Offline: remember who this is and make sure the offline twin page is cached.
+  useOfflineReady({ userId, profile, school, twinPath: '/offline/teacher/attendance' })
 
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => { if (selectedClass) loadStudents(selectedClass.class_id) }, [selectedClass])
