@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import { useTheme } from '@/hooks/useTheme'
+import { rememberLogin } from '@/lib/offline/offlineUnlock'
 import styles from './login.module.css'
 import {
   MailIcon, EyeIcon, EyeOffIcon,
@@ -67,7 +68,7 @@ export default function LoginPage() {
 
   const [checkingSchool, setCheckingSchool] = useState(true)
 
-  // ── Login form state ──────────────────────────────────────────────────────
+  // ── Login form state ─────────────────────────────────────────────────────────────────────────────
   const [mounted,   setMounted]   = useState(false)
   const [school,    setSchool]    = useState<SelectedSchool | null>(null)
   const [secondaryColor, setSecondaryColor] = useState<string | null>(null)
@@ -224,6 +225,10 @@ export default function LoginPage() {
         const { mismatch, stage } = await checkSchoolMatchesAndGetStage(signInData.user.id)
         if (mismatch) return
 
+        // Offline mode: remember who this phone belongs to and, in the Android
+        // app only, the offline-unlock verifier. Never throws, never blocks sign-in.
+        await rememberLogin(signInData.user.id, password)
+
         logLoginEvent()
 
         // Hard navigation, not router.replace: this is a fresh sign-in, and
@@ -238,6 +243,8 @@ export default function LoginPage() {
 
         const { mismatch, stage } = await checkSchoolMatchesAndGetStage(signInData.user.id)
         if (mismatch) return
+
+        await rememberLogin(signInData.user.id, password)
 
         logLoginEvent()
         window.location.href = destinationForStage(stage)
@@ -269,7 +276,7 @@ export default function LoginPage() {
         return
       }
       if (data.success) {
-        const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password: newPassword })
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password: newPassword })
         if (signInErr) { setNewUserError('Activation done but sign-in failed. Try signing in now.'); return }
 
         // Sync localStorage school to the actual school this user belongs to
@@ -281,6 +288,9 @@ export default function LoginPage() {
         // Without this, server-side routes on the next page (e.g. set-pin)
         // call auth.getUser() before the cookie exists and return 401.
         await supabase.auth.getSession()
+
+        // Offline mode: see handleExistingLogin.
+        if (signInData.user) await rememberLogin(signInData.user.id, newPassword)
 
         logLoginEvent()
         const stage = data.onboarding_stage

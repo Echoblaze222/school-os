@@ -1,0 +1,49 @@
+name: Offline mode checks
+on:
+  push:
+    branches: [feature/offline-mode]
+  workflow_dispatch:
+    inputs:
+      update_lockfile:
+        description: 'Also regenerate package-lock.json (only commits if the change is small)'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+      - name: Lint (informational)
+        run: npm run lint
+        continue-on-error: true
+  lockfile:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_lockfile }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --package-lock-only --no-audit --no-fund
+      - name: Commit only if the change is small
+        run: |
+          CHANGED=$(git diff --numstat -- package-lock.json | awk '{print $1+$2}')
+          CHANGED=${CHANGED:-0}
+          echo "Lines changed: $CHANGED"
+          if [ "$CHANGED" -eq 0 ]; then exit 0; fi
+          if [ "$CHANGED" -gt 3000 ]; then echo "::error::Too many lines changed, not committing"; exit 1; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: lockfile for dexie and fake-indexeddb"
+          git push
