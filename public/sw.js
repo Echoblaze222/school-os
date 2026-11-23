@@ -17,6 +17,13 @@
 //       (names, grades, fees) and the Cache API outlives logout, so on a
 //       shared phone the next person could be served the previous user's
 //       page while offline.
+//     - EXCEPTION, OFFLINE_TWINS below: a few screens have an "offline twin"
+//       page under /offline/ that contains NO user data (it is identical for
+//       everyone and rebuilds the screen in the browser from what is saved on
+//       the phone for the signed-in user). If opening the real screen fails
+//       because there is no network, the twin is shown instead of /offline.
+//       The twin is precached like /offline; the per-user HTML rule above is
+//       unchanged.
 //     - Hashed Next.js build assets (/_next/static/, /icons/): cache-first
 // - safe, since a given hashed URL's content never changes
 //     - /api/* requests: NEVER cached or intercepted - fee balances,
@@ -31,9 +38,17 @@ const CACHE_VERSION      = 'v4' // bumped: v3 runtime cache held logged-in page 
 const APP_SHELL_CACHE    = `schoolos-shell-${CACHE_VERSION}`
 const RUNTIME_CACHE      = `schoolos-runtime-${CACHE_VERSION}`
 
+// Real screen -> its offline twin. Only exact paths listed here ever fall back to
+// a twin; everything else still falls back to /offline. Keep every twin also in
+// STATIC_PRECACHE_URLS below, and in CRITICAL_ROUTES in scripts/generate-sw-precache.js.
+const OFFLINE_TWINS = {
+  '/dashboard/teacher/attendance': '/offline/teacher/attendance',
+}
+
 // Static fallback - always cached, regardless of build output.
 const STATIC_PRECACHE_URLS = [
   '/offline',
+  '/offline/teacher/attendance',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -53,7 +68,7 @@ try {
 
 const PRECACHE_URLS = [...STATIC_PRECACHE_URLS, ...(self.__PRECACHE_URLS || [])]
 
-// ── Install & Activate ────────────────────────────────────────────────────────
+// ── Install & Activate ────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_SHELL_CACHE).then((cache) =>
@@ -87,7 +102,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// ── Fetch - offline support ─────────────────────────────────────────────────────────
+// ── Fetch - offline support ────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event
 
@@ -105,12 +120,22 @@ self.addEventListener('fetch', (event) => {
   // Never cache API responses - always live data.
   if (url.pathname.startsWith('/api/')) return
 
-  // Full page navigations - network only, /offline as the last resort.
-  // The response is deliberately NOT cached (see the header comment): these
-  // are per-user pages and must not outlive the session that fetched them.
+  // Full page navigations - network only, /offline (or the screen's offline
+  // twin) as the last resort. The response is deliberately NOT cached (see the
+  // header comment): these are per-user pages and must not outlive the session
+  // that fetched them.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/offline'))
+      fetch(request).catch(async () => {
+        const twin = Object.prototype.hasOwnProperty.call(OFFLINE_TWINS, url.pathname)
+          ? OFFLINE_TWINS[url.pathname]
+          : null
+        if (twin) {
+          const cachedTwin = await caches.match(twin)
+          if (cachedTwin) return cachedTwin
+        }
+        return caches.match('/offline')
+      })
     )
     return
   }
@@ -153,17 +178,17 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
-// ── Sign-out: drop anything cached at runtime ─────────────────────────────────────────────────────────
-// Posted by the app when a user logs out. After the change above the runtime
-// cache only holds fonts/images, but clearing it on logout keeps that true
-// even if caching rules are loosened later.
+// ── Sign-out: drop anything cached at runtime ─────────────────────────────
 self.addEventListener('message', (event) => {
+  // Posted by the app when a user logs out. The runtime cache only holds
+  // fonts/images, but clearing it on logout keeps that true even if caching
+  // rules are loosened later.
   if (event.data && event.data.type === 'CLEAR_RUNTIME_CACHE') {
     event.waitUntil(caches.delete(RUNTIME_CACHE))
   }
 })
 
-// ── Push received ─────────────────────────────────────────────────────────────
+// ── Push received ─────────────────────────────────────────────────────────
 self.addEventListener('push', (event) => {
   if (!event.data) return
 
@@ -207,6 +232,44 @@ self.addEventListener('push', (event) => {
         receivedAt: typeof sentAt === 'number' ? sentAt : Date.now(),
       }),
     ])
+  )
+})
+
+// ── Notification click ─────────────────────────────────────────────────────────────────────────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  const targetUrl = event.notification.data?.url || '/'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus()
+          client.navigate(targetUrl)
+          return
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl)
+      }
+    })
+  )
+})
+
+// ── Push subscription change ───────────────────────────────────────────────────
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    event.newSubscription
+      ? fetch('/api/push/subscribe', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            subscription: event.newSubscription.toJSON(),
+            oldEndpoint:  event.oldSubscription?.endpoint,
+          }),
+        })
+      : Promise.resolve()
   )
 })
 
@@ -263,41 +326,3 @@ function saveToInbox(item) {
     }
   })
 }
-
-// ── Notification click ──────────────────────────────────────────────────────────────
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-
-  const targetUrl = event.notification.data?.url || '/'
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus()
-          client.navigate(targetUrl)
-          return
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl)
-      }
-    })
-  )
-})
-
-// ── Push subscription change ───────────────────────────────────────────────────────────
-self.addEventListener('pushsubscriptionchange', (event) => {
-  event.waitUntil(
-    event.newSubscription
-      ? fetch('/api/push/subscribe', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            subscription: event.newSubscription.toJSON(),
-            oldEndpoint:  event.oldSubscription?.endpoint,
-          }),
-        })
-      : Promise.resolve()
-  )
-})
