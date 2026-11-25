@@ -7,9 +7,9 @@
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon,
+  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon, PeopleIcon,
   BookIcon, MessageIcon, CalendarIcon, FileTextIcon, BookOpenIcon,
-  GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon, PeopleIcon,
+  GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon, CreditCardIcon,
 } from '@/components/Icons'
 
 export const STUDENT_FEATURE_GROUPS: FeatureGroup[] = [
@@ -36,5 +36,8 @@ export const STUDENT_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'chat',     label: 'Messages', href: '/dashboard/student/chat',     Icon: MessageIcon },
     { id: 'meetings', label: 'Meetings', href: '/dashboard/student/meetings', Icon: CalendarIcon },
     { id: 'schedule', label: 'Study plan',href: '/dashboard/student/schedule',Icon: CalendarIcon },
+  ]},
+  { name: 'Account', items: [
+    { id: 'subscribe', label: 'Subscription', href: '/dashboard/student/subscribe', Icon: CreditCardIcon },
   ]},
 ]
