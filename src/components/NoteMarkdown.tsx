@@ -140,9 +140,12 @@ function BlockView({ block, k }: { block: NoteBlock; k: string }) {
         </blockquote>
       )
     case 'math':
-      return <KatexMath expr={block.text} display />
+      return <div className={styles.mathBox}><KatexMath expr={block.text} display /></div>
     case 'hr':
       return <hr className={styles.hr} />
+    case 'pagebreak':
+      // The book turns the page here; in the plain (inline) view it shows as a dashed divider.
+      return <div className={styles.pagebreak} role="separator" aria-label="Page break" />
   }
 }
 
