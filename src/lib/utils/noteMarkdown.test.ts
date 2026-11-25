@@ -149,9 +149,21 @@ describe('slideify (pagination)', () => {
   it('returns nothing for empty notes', () => {
     expect(slideify('')).toEqual([])
   })
-  it('chapter headings start new pages and are used as titles', () => {
+  // Pages are filled completely (see fill.ts): a heading does NOT force a new
+  // page, only a full page or a manual \pagebreak does.
+  it('headings do not force a new page: a short note is one page titled by its first heading', () => {
     const pages = slideify('# One\ntext a\n\n# Two\ntext b')
+    expect(pages.map(p => p.title)).toEqual(['One'])
+    expect(pages[0].blocks.filter(b => b.type === 'heading')).toHaveLength(2)
+  })
+  it('a manual page break starts a new page, titled by the heading on it', () => {
+    const pages = slideify('# One\ntext a\n\n\\pagebreak\n\n# Two\ntext b')
     expect(pages.map(p => p.title)).toEqual(['One', 'Two'])
+  })
+  it('a page that starts after a page break without a heading keeps the section title', () => {
+    const pages = slideify('# One\ntext a\n\n\\pagebreak\n\nmore text')
+    expect(pages.map(p => p.title)).toEqual(['One', 'One'])
+    expect(pages.flatMap(p => p.blocks).some(b => b.type === 'pagebreak')).toBe(false)
   })
   it('keeps a small table whole on one page', () => {
     const pages = slideify(CHATGPT_NOTE)
