@@ -13,8 +13,11 @@
 //     use the Prev/Next buttons, the corner, the slider, or arrow keys.
 //   - Notes are formatted (headings, bold, tables, lists, equations) by
 //     NoteMarkdown. Nothing is shown as raw symbols.
+//   - Pages are filled completely before the next one starts: after the book
+//     opens, real block heights are measured (measureBlocks.tsx) and the pages
+//     are re-filled to fit exactly.
 //   - Each page scrolls inside itself if a very long cell or code line is
-//     taller than the estimate, so text can never fall out of the page.
+//     taller than expected, so text can never fall out of the page.
 //
 // Animation is pure CSS 3D transforms driven by requestAnimationFrame writing
 // straight to the DOM (no React re-render per frame), so it stays smooth on
@@ -29,6 +32,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { buildSheets, isPdfUrl, type BookEntry, type Sheet } from '@/lib/notebooks/sheets'
 import { getPdfPageCount, renderPdfPage } from '@/lib/notebooks/pdfPages'
+import { createPageMeasurer } from './measureBlocks'
 import NoteMarkdown from './NoteMarkdown'
 import styles from './NoteBook.module.css'
 
@@ -222,10 +226,56 @@ export default function NoteBook({
     return () => { cancelled = true }
   }, [topics])
 
-  const sheets = useMemo(
-    () => buildSheets(topics, pdfCounts, { contents: isBook && topics.length > 1 }),
-    [topics, pdfCounts, isBook],
+  const withContents = isBook && topics.length > 1
+
+  // 1) Instant estimate so the book opens immediately.
+  const estimatedSheets = useMemo(
+    () => buildSheets(topics, pdfCounts, { contents: withContents }),
+    [topics, pdfCounts, withContents],
   )
+
+  // 2) Once the real page size is known, re-fill the pages from MEASURED heights so every page is full.
+  const probeRef = useRef<HTMLDivElement>(null)
+  const [layout, setLayout] = useState<{ w: number; h: number } | null>(null)
+  const [measuredSheets, setMeasuredSheets] = useState<Sheet[] | null>(null)
+
+  useEffect(() => {
+    const read = () => {
+      const el = probeRef.current
+      if (!el || el.clientWidth < 80 || el.clientHeight < 80) return
+      const w = el.clientWidth
+      const h = el.clientHeight
+      setLayout(prev => (prev && prev.w === w && prev.h === h ? prev : { w, h }))
+    }
+    read()
+    let t: ReturnType<typeof setTimeout> | undefined
+    const onResize = () => { clearTimeout(t); t = setTimeout(read, 150) }
+    window.addEventListener('resize', onResize)
+    return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
+  }, [])
+
+  useEffect(() => {
+    if (!layout) return
+    let cancelled = false
+    // flushSync (used for measuring) must run outside React's own render/effect phase.
+    const timer = setTimeout(() => {
+      if (cancelled) return
+      let measurer: ReturnType<typeof createPageMeasurer> | null = null
+      try {
+        measurer = createPageMeasurer(layout.w, layout.h)
+        const m = measurer
+        const out = buildSheets(topics, pdfCounts, { contents: withContents }, blocks => m.paginate(blocks))
+        if (!cancelled) setMeasuredSheets(out)
+      } catch {
+        if (!cancelled) setMeasuredSheets(null) // fall back to the estimate
+      } finally {
+        measurer?.destroy()
+      }
+    }, 0)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [layout, topics, pdfCounts, withContents])
+
+  const sheets = measuredSheets ?? estimatedSheets
   const lastIndex = sheets.length - 1
   const lastContent = sheets.reduce((n, sh) => ('folio' in sh ? Math.max(n, sh.folio) : n), 0)
 
@@ -466,6 +516,8 @@ export default function NoteBook({
           onPointerCancel={endDrag}
         >
           <div className={styles.book}>
+            {/* Invisible page-sized box: lets us read the real text area size for measuring. */}
+            <div ref={probeRef} className={styles.pageScroll} aria-hidden="true" style={{ visibility: 'hidden', pointerEvents: 'none' }} />
             <div className={styles.stackRight} />
             <div className={styles.stackBottom} />
 
