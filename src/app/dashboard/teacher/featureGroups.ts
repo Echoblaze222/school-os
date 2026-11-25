@@ -24,6 +24,7 @@ export const TEACHER_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/teacher/quizzes',     Icon: AwardIcon },
     { id: 'results',     label: 'Results',     href: '/dashboard/teacher/results',     Icon: BarChartIcon },
     { id: 'analytics',   label: 'Analytics',   href: '/dashboard/teacher/analytics',   Icon: BarChartIcon },
+    { id: 'mentoring',   label: 'Peer mentoring', href: '/dashboard/teacher/mentoring', Icon: PeopleIcon },
   ]},
   { name: 'Around school', items: [
     { id: 'live',      label: 'Live class', href: '/dashboard/teacher/live',      Icon: VideoIcon },

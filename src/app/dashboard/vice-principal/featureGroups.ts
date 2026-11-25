@@ -19,6 +19,7 @@ export const VP_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'analytics',      label: 'Analytics',      href: '/dashboard/vice-principal/analytics',      Icon: BarChartIcon },
     { id: 'departments',    label: 'Departments',    href: '/dashboard/vice-principal/departments',    Icon: LayersIcon },
     { id: 'staff',          label: 'Staff',          href: '/dashboard/vice-principal/staff',          Icon: UsersIcon },
+    { id: 'mentoring',      label: 'Peer mentoring', href: '/dashboard/vice-principal/mentoring',      Icon: UsersIcon },
     { id: 'announcements',  label: 'Announcements',  href: '/dashboard/vice-principal/announcements',  Icon: MegaphoneIcon },
     { id: 'meetings',       label: 'Meetings',       href: '/dashboard/vice-principal/meetings',       Icon: CalendarIcon },
   ]},

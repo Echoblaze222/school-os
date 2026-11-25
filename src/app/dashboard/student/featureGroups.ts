@@ -7,7 +7,7 @@
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon,
+  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon, PeopleIcon,
   BookIcon, MessageIcon, CalendarIcon, FileTextIcon, BookOpenIcon,
   GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon, CreditCardIcon,
 } from '@/components/Icons'
@@ -21,6 +21,7 @@ export const STUDENT_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'classes',     label: 'Live classes',href: '/dashboard/student/classes',     Icon: VideoIcon },
     { id: 'notes',       label: 'Notes',       href: '/dashboard/student/notes',       Icon: BookIcon },
     { id: 'syllabus',    label: 'Syllabus',    href: '/dashboard/student/syllabus',    Icon: BookOpenIcon },
+    { id: 'mentoring',   label: 'Peer mentoring', href: '/dashboard/student/mentoring', Icon: PeopleIcon },
   ]},
   { name: 'Around school', items: [
     { id: 'timetable',   label: 'Timetable',   href: '/dashboard/student/timetable',   Icon: ClockIcon },
