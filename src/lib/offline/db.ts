@@ -1,15 +1,16 @@
 // src/lib/offline/db.ts
 // CLIENT ONLY. The local database (IndexedDB via Dexie) behind SchoolOS offline
 // mode. Tables:
-//   outbox - writes made while offline (or while the backend is down), waiting
-//            to be replayed against Supabase in order.
-//   unlock - Android app only: a salted, slow hash of the user's password so the
-//            lock screen can be opened with no connection (see unlockVerifier.ts).
+//   outbox    - writes made while offline (or while the backend is down), waiting
+//               to be replayed against Supabase in order.
+//   unlock    - Android app only: a salted, slow hash of the user's password so the
+//               lock screen can be opened with no connection (see unlockVerifier.ts).
+//   rows      - read-side copy of the rows this user may see (see pullSync.ts).
+//   syncState - per user and table: where the last pull got to.
 //
-// Reads are NOT stored here. "Last thing the user saw" copies already live in
-// src/lib/savedView/store.ts, which has the privacy rules for a shared phone
-// (one user at a time, expiry, wiped on sign-out). Offline reads reuse it
-// instead of keeping a second, weaker cache.
+// "Last thing the user saw" copies live in src/lib/savedView/store.ts, which has the
+// privacy rules for a shared phone (one user at a time, expiry, wiped on sign-out).
+// rows/syncState follow the same rules: one user at a time and cleared on sign-out.
 //
 // Opened lazily: importing this file on the server (SSR) must never touch
 // IndexedDB, which does not exist there.
@@ -51,9 +52,39 @@ export interface UnlockRecord {
   createdAt: number
 }
 
+export interface CachedRow {
+  /** userId - rows are only ever read back for this user */
+  u: string
+  /** table name */
+  t: string
+  /** row id (uuid) */
+  id: string
+  /** generation; a full re-pull bumps it and then removes older generations */
+  g: number
+  data: Record<string, unknown>
+}
+
+export interface SyncStateRow {
+  u: string
+  /** table name, or '__tombstones__' */
+  t: string
+  /** server updated_at string of the last row received */
+  cursorAt: string | null
+  cursorId: string | null
+  /** last sync_deletions.id applied (only used by the '__tombstones__' row) */
+  tombId: number
+  gen: number
+  /** epoch ms of the last completed full pull */
+  lastFullAt: number
+  /** epoch ms of the last completed pull of any kind */
+  lastSyncAt: number
+}
+
 export type OfflineDB = Dexie & {
   outbox: Table<OutboxItem, number>
   unlock: Table<UnlockRecord, string>
+  rows: Table<CachedRow, [string, string, string]>
+  syncState: Table<SyncStateRow, [string, string]>
 }
 
 export const DB_NAME = 'schoolos-offline'
@@ -76,6 +107,12 @@ export function getDb(): OfflineDB {
   db.version(2).stores({
     outbox: '++seq, &id, userId, [userId+status]',
     unlock: 'userId',
+  })
+  db.version(3).stores({
+    outbox: '++seq, &id, userId, [userId+status]',
+    unlock: 'userId',
+    rows: '[u+t+id], [u+t]',
+    syncState: '[u+t]',
   })
   instance = db
   return db
