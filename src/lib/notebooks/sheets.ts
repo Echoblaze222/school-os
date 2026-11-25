@@ -7,7 +7,7 @@
 // PowerPoint files become a single "document" sheet (they cannot be paginated
 // in the browser).
 
-import { slideify } from '@/lib/utils/slideify'
+import { slideify, type Paginator } from '@/lib/utils/slideify'
 import type { NoteBlock } from '@/lib/utils/noteMarkdown'
 
 export interface BookEntry {
@@ -40,6 +40,8 @@ export function buildSheets(
   entries: BookEntry[],
   pdfCounts: Record<string, number | undefined> = {},
   opts: { contents: boolean } = { contents: false },
+  /** Measured pagination from the browser. Defaults to the estimate. */
+  paginate?: Paginator,
 ): Sheet[] {
   const sheets: Sheet[] = [{ kind: 'cover' }]
   const contentsIndex = opts.contents ? sheets.push({ kind: 'contents', items: [] }) - 1 : -1
@@ -51,7 +53,7 @@ export function buildSheets(
     const hasText = !!e.content && e.content.trim().length > 0
 
     if (hasText) {
-      for (const p of slideify(e.content as string)) {
+      for (const p of slideify(e.content as string, paginate)) {
         sheets.push({ kind: 'page', blocks: p.blocks, chapter: e.title, folio: ++folio })
       }
     }

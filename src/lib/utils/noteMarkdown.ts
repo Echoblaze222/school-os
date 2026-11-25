@@ -55,6 +55,7 @@ export type NoteBlock =
   | { type: 'quote'; blocks: NoteBlock[] }
   | { type: 'math'; text: string }
   | { type: 'hr' }
+  | { type: 'pagebreak' }
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -79,6 +80,7 @@ const HEADING_RE = /^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*$/
 const FENCE_OPEN_RE = /^[ ]{0,3}(`{3,}|~{3,})[ \t]*([^\s`]*)/
 const QUOTE_RE = /^[ ]{0,3}>/
 const SEP_CELL_RE = /^:?-+:?$/
+const PAGEBREAK_RE = /^[ \t]*\\(?:pagebreak|newpage)[ \t]*$/i
 
 function isHr(line: string): boolean {
   return HR_RE.test(line)
@@ -295,6 +297,9 @@ function parseLines(lines: string[]): NoteBlock[] {
     const line = lines[i]
 
     if (!line.trim()) { flushPara(); i++; continue }
+
+    // Manual page break (inserted by the editor toolbar)
+    if (PAGEBREAK_RE.test(line)) { flushPara(); blocks.push({ type: 'pagebreak' }); i++; continue }
 
     // Fenced code block
     const fence = FENCE_OPEN_RE.exec(line)
