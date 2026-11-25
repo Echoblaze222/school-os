@@ -149,28 +149,44 @@ describe('slideify (pagination)', () => {
   it('returns nothing for empty notes', () => {
     expect(slideify('')).toEqual([])
   })
-  // Pages are filled completely (see fill.ts): a heading does NOT force a new
-  // page, only a full page or a manual \pagebreak does.
-  it('headings do not force a new page: a short note is one page titled by its first heading', () => {
+  it('headings do not force a new page: short sections share a page', () => {
     const pages = slideify('# One\ntext a\n\n# Two\ntext b')
-    expect(pages.map(p => p.title)).toEqual(['One'])
-    expect(pages[0].blocks.filter(b => b.type === 'heading')).toHaveLength(2)
+    expect(pages).toHaveLength(1)
+    expect(pages[0].title).toBe('One')
   })
-  it('a manual page break starts a new page, titled by the heading on it', () => {
+  it('a manual \\pagebreak starts a new page and titles come from the headings', () => {
     const pages = slideify('# One\ntext a\n\n\\pagebreak\n\n# Two\ntext b')
     expect(pages.map(p => p.title)).toEqual(['One', 'Two'])
   })
-  it('a page that starts after a page break without a heading keeps the section title', () => {
-    const pages = slideify('# One\ntext a\n\n\\pagebreak\n\nmore text')
-    expect(pages.map(p => p.title)).toEqual(['One', 'One'])
-    expect(pages.flatMap(p => p.blocks).some(b => b.type === 'pagebreak')).toBe(false)
+  it('does not create empty pages for repeated or leading page breaks', () => {
+    const pages = slideify('\\pagebreak\n\\pagebreak\n\ntext\n\n\\pagebreak\n\\pagebreak')
+    expect(pages).toHaveLength(1)
   })
-  it('keeps a small table whole on one page', () => {
-    const pages = slideify(CHATGPT_NOTE)
-    const withTable = pages.filter(p => p.blocks.some(b => b.type === 'table'))
-    expect(withTable).toHaveLength(1)
-    const t = withTable[0].blocks.find(b => b.type === 'table') as any
-    expect(t.rows).toHaveLength(2)
+  it('fills every page (except the last) nearly full instead of leaving gaps', () => {
+    const para = (n: number) => `Paragraph ${n}. ` + 'Plants convert light into chemical energy. '.repeat(3)
+    const text = Array.from({ length: 40 }, (_, i) => para(i)).join('\n\n')
+    const pages = slideify(text)
+    expect(pages.length).toBeGreaterThan(2)
+    for (const p of pages.slice(0, -1)) {
+      const cost = p.blocks.reduce((s, b) => s + blockCost(b), 0)
+      expect(cost).toBeGreaterThan(LINES_PER_PAGE * 0.75)
+    }
+  })
+  it('splits a table that straddles a page so the page is filled, header repeated', () => {
+    const intro = Array.from({ length: 4 }, (_, i) => `Intro paragraph ${i} with some words to take space on the page.`).join('\n\n')
+    const rows = Array.from({ length: 8 }, (_, i) => `| Item ${i} | Value ${i} |`).join('\n')
+    const pages = slideify(`${intro}\n\n| A | B |\n|---|---|\n${rows}`)
+    const tables = pages.flatMap(p => p.blocks.filter(b => b.type === 'table')) as any[]
+    expect(tables.length).toBeGreaterThan(1)
+    expect(tables.every(t => t.header.join() === 'A,B')).toBe(true)
+    expect(tables.reduce((s, t) => s + t.rows.length, 0)).toBe(8)
+  })
+  it('keeps a short table (under 4 rows) whole instead of splitting it', () => {
+    const intro = Array.from({ length: 6 }, (_, i) => `Intro paragraph ${i} with some words to take space on the page.`).join('\n\n')
+    const pages = slideify(`${intro}\n\n| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |`)
+    const tables = pages.flatMap(p => p.blocks.filter(b => b.type === 'table')) as any[]
+    expect(tables).toHaveLength(1)
+    expect(tables[0].rows).toHaveLength(3)
   })
   it('splits a long table by rows and repeats the header', () => {
     const rows = Array.from({ length: 40 }, (_, i) => `| Item ${i} | Value ${i} |`).join('\n')

@@ -31,7 +31,7 @@ export function hadMath() { return sawMath }
 function math(expr: string, display: boolean): string {
   sawMath = true
   try {
-    return katex.renderToString(expr, { throwOnError: false, displayMode: display, strict: 'ignore', trust: false, maxExpand: 500 })
+    return katex.renderToString(expr, { throwOnError: false, displayMode: display, output: 'html', strict: 'ignore', trust: false, maxExpand: 500 })
   } catch {
     return `<code>${esc(expr)}</code>`
   }
@@ -74,6 +74,7 @@ function block(b: NoteBlock): string {
     case 'quote': return `<blockquote>${b.blocks.map(block).join('')}</blockquote>`
     case 'math': return `<div class="math">${math(b.text, true)}</div>`
     case 'hr': return '<hr>'
+    case 'pagebreak': return '<div style="break-after:page"></div>'
   }
 }
 

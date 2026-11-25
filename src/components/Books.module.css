@@ -1,0 +1,75 @@
+/* src/components/Books.module.css - shared by TeacherBooks and StudentBooks */
+
+.tabs { display: flex; gap: 8px; margin-bottom: var(--space-4, 16px); }
+.tab {
+  flex: 1; height: 38px; border-radius: 999px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+  border: 1px solid var(--glass-border, rgba(128,128,128,.25)); background: transparent; color: var(--text-muted, #888);
+}
+.tabActive { color: #fff; border-color: transparent; }
+
+.list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.sectionLabel { font-size: 0.72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted, #888); margin: 18px 0 8px; }
+
+.bookCard {
+  display: flex; align-items: stretch; gap: 12px; width: 100%; text-align: left; cursor: pointer; padding: 0;
+  background: var(--glass-bg, rgba(255,255,255,.05)); border: 1px solid var(--glass-border, rgba(128,128,128,.25));
+  border-radius: 14px; overflow: hidden; color: inherit;
+}
+.bookCard:disabled { opacity: .6; }
+.spine { width: 10px; flex-shrink: 0; }
+.bookBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 12px 0; }
+.bookTitle { font-weight: 800; font-size: 0.92rem; color: var(--text-primary, inherit); overflow-wrap: anywhere; }
+.bookMeta { font-size: 0.72rem; color: var(--text-muted, #888); overflow-wrap: anywhere; }
+.bookDesc { font-size: 0.76rem; color: var(--text-secondary, #aaa); overflow-wrap: anywhere; }
+.openTag { align-self: center; padding: 0 14px; font-weight: 800; font-size: 0.78rem; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chip { padding: 2px 9px; border-radius: 999px; font-size: 0.66rem; font-weight: 700; background: var(--brand-subtle, rgba(128,128,128,.15)); }
+.badgeLive { background: color-mix(in srgb, var(--success, #16a34a) 15%, transparent); color: var(--success, #16a34a); }
+.badgeDraft { background: color-mix(in srgb, var(--warning, #d97706) 15%, transparent); color: var(--warning, #d97706); }
+
+.empty { text-align: center; padding: 40px 16px; color: var(--text-muted, #888); font-size: 0.85rem; }
+
+.error {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-bottom: 14px; border-radius: 10px;
+  background: var(--danger-subtle, rgba(239,68,68,.12)); border: 1px solid rgba(239,68,68,.25); color: var(--danger, #ef4444); font-size: 0.8rem;
+}
+.error span { flex: 1; }
+.error button { background: none; border: 0; color: inherit; cursor: pointer; }
+
+/* teacher panels */
+.panel { background: var(--glass-bg, rgba(255,255,255,.05)); border: 1px solid var(--glass-border, rgba(128,128,128,.25)); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.panelTitle { font-weight: 800; font-size: 0.9rem; margin: 0 0 12px; color: var(--text-primary, inherit); }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary, #aaa); }
+.input, .textarea, .select {
+  padding: 0 12px; height: 40px; border-radius: 8px; font-size: 0.85rem; outline: none;
+  background: var(--input-bg, rgba(255,255,255,.06)); border: 1px solid var(--input-border, rgba(128,128,128,.3)); color: var(--text-primary, inherit);
+}
+.textarea { height: auto; padding: 10px 12px; resize: vertical; }
+.checkRow { display: flex; flex-wrap: wrap; gap: 8px; }
+.checkItem {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+  border: 1px solid var(--glass-border, rgba(128,128,128,.3)); color: var(--text-muted, #888); background: transparent;
+}
+.checkItemOn { color: #fff; border-color: transparent; }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; padding: 0; }
+.swatchOn { border-color: var(--text-primary, #fff); }
+
+.btnRow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { height: 40px; padding: 0 16px; border-radius: 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer; border: 1px solid var(--glass-border, rgba(128,128,128,.3)); background: transparent; color: var(--text-primary, inherit); }
+.btnPrimary { color: #fff; border-color: transparent; }
+.btnDanger { color: var(--danger, #ef4444); border-color: rgba(239,68,68,.3); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btnSmall { height: 32px; padding: 0 12px; font-size: 0.74rem; border-radius: 999px; }
+
+.entry { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--glass-border, rgba(128,128,128,.2)); }
+.entry:last-child { border-bottom: 0; }
+.entryText { flex: 1; min-width: 0; }
+.entryTitle { font-weight: 700; font-size: 0.85rem; overflow-wrap: anywhere; }
+.entryMeta { font-size: 0.7rem; color: var(--text-muted, #888); }
+.iconBtn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--glass-border, rgba(128,128,128,.3)); background: transparent; color: var(--text-primary, inherit); cursor: pointer; font-size: 0.8rem; }
+.iconBtn:disabled { opacity: .35; cursor: default; }
+.hint { font-size: 0.7rem; color: var(--text-muted, #888); margin: 4px 0 0; }
+.previewBox { padding: 10px 12px; border-radius: 8px; background: var(--input-bg, rgba(255,255,255,.06)); border: 1px solid var(--input-border, rgba(128,128,128,.3)); min-height: 140px; max-height: 320px; overflow-y: auto; }
