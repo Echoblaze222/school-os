@@ -379,3 +379,81 @@
   .stage { transition: none; }
   .coverHint { animation: none; }
 }
+
+/* ------------------------- header actions ------------------------- */
+
+.headerActions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.downloadBtn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.downloadBtn:disabled { opacity: 0.6; cursor: default; }
+
+/* ------------------------- contents page ------------------------- */
+
+.tocTitle {
+  margin: 0 0 12px;
+  font-family: Georgia, 'Iowan Old Style', serif;
+  font-size: 1.25rem;
+  color: color-mix(in srgb, var(--accent) 78%, #1b140c);
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(42, 37, 32, 0.2);
+}
+.tocList { list-style: none; margin: 0; padding: 0; }
+.tocItem {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 2px;
+  background: none;
+  border: 0;
+  border-bottom: 1px dotted rgba(42, 37, 32, 0.28);
+  text-align: left;
+  font-family: Georgia, 'Iowan Old Style', serif;
+  font-size: 0.95rem;
+  color: #2a2520;
+  cursor: pointer;
+}
+.tocItem:active { background: rgba(42, 37, 32, 0.06); }
+.tocNum { font-weight: 700; color: color-mix(in srgb, var(--accent) 78%, #1b140c); min-width: 22px; }
+.tocText { overflow-wrap: anywhere; }
+
+/* ------------------- uploaded files shown as pages ------------------- */
+
+.pdfScroll { left: 14px; right: 14px; top: 34px; bottom: 36px; display: flex; justify-content: center; align-items: flex-start; }
+.pdfImg { display: block; width: 100%; height: auto; border-radius: 4px; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18); -webkit-user-drag: none; }
+.pdfLoading { margin-top: 40%; font-size: 0.8rem; color: rgba(42, 37, 32, 0.55); font-family: Georgia, serif; }
+
+.docCard {
+  margin-top: 18%;
+  padding: 18px;
+  border: 1px dashed rgba(42, 37, 32, 0.35);
+  border-radius: 10px;
+  text-align: center;
+  font-family: Georgia, 'Iowan Old Style', serif;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #2a2520;
+}
+.docName { font-weight: 800; overflow-wrap: anywhere; margin: 0 0 8px; }
+.docBtn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 80%, #000);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: none;
+}

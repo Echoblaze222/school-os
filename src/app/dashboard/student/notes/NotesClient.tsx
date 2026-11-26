@@ -27,6 +27,8 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { STUDENT_FEATURE_GROUPS } from '../featureGroups'
 import { BookIcon, AlertIcon, XIcon, FileTextIcon, BookOpenIcon } from '@/components/Icons'
 import NoteBook from '@/components/NoteBook'
+import StudentBooks from '@/components/StudentBooks'
+import bookStyles from '@/components/Books.module.css'
 import DocumentViewer from '@/components/DocumentViewer'
 import motion from '@/components/dashboard-motion.module.css'
 import styles from './page.module.css'
@@ -40,6 +42,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
   const [error,    setError]    = useState<string | null>(null)
   const [openBook, setOpenBook] = useState<any>(null)   // typed note → 3D flip-book
   const [openDoc,  setOpenDoc]  = useState<any>(null)   // uploaded file → in-portal viewer
+  const [tab, setTab] = useState<'books' | 'notes'>('books') // subject books | single notes
   const supabase    = createClient()
   const schoolColor = school?.primary_color ?? '#800020'
 
@@ -96,6 +99,19 @@ export default function NotesClient({ profile, school, userId }: Props) {
     <RoleSubHeader userId={userId} role="student" profile={profile} school={school} title="School Notes" featureGroups={STUDENT_FEATURE_GROUPS}>
         <>
 
+          <div className={bookStyles.tabs}>
+            {([['books', 'Books'], ['notes', 'Single notes']] as const).map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setTab(key)}
+                className={`${bookStyles.tab} ${tab === key ? bookStyles.tabActive : ''}`}
+                style={tab === key ? { background: schoolColor } : undefined}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'books' && <StudentBooks accent={schoolColor} />}
+
+          {tab === 'notes' && (<>
           {error && (
             <div className={`glass-card ${motion.riseIn}`} style={{ display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 14px', background: 'var(--danger-subtle)', borderColor: 'rgba(239,68,68,0.3)',
@@ -139,6 +155,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
                     </div>
                   )
                 })}</div>}
+          </>)}
           <div className={styles.spacer} />
         </>
 
