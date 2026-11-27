@@ -1,0 +1,12 @@
+/* Copy / Edit actions under each AI-page message, and the "editing" bar.
+   Kept in its own module so the shared ai.module.css stays untouched. */
+.footer{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-top:4px;}
+.actions{display:flex;align-items:center;gap:2px;margin-right:-6px;}
+.actionBtn{position:relative;display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:2px 8px;border-radius:var(--radius-full);border:none;background:transparent;font-size:0.68rem;font-weight:600;cursor:pointer;color:var(--text-muted);transition:background var(--transition-fast),color var(--transition-fast);}
+.actionBtn::after{content:'';position:absolute;inset:-8px -2px;}
+.actionBtn:hover{background:var(--glass-bg-hover);color:var(--text-primary);}
+.actionBtn:active{transform:scale(0.94);}
+.actionBtnOnUser{color:rgba(255,255,255,0.75);}
+.actionBtnOnUser:hover{background:rgba(255,255,255,0.18);color:#fff;}
+.editBanner{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);background:var(--glass-bg);border-top:1px solid var(--glass-border);flex-shrink:0;}
+.editBannerLabel{font-size:0.75rem;color:var(--text-muted);flex:1;}

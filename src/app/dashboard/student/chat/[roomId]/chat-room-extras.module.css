@@ -1,0 +1,28 @@
+/* Copy confirmation toast + touch text-selection handling for chat bubbles.
+   Separate module so chat-room.module.css stays untouched. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* On touch screens a long-press should open our menu (which has Copy), not
+   the browser's own text-selection handles layered on top of it. */
+@media (pointer: coarse) {
+  .noSelect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
