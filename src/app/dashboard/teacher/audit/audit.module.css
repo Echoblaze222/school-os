@@ -1,6 +1,6 @@
 /* src/app/dashboard/secretary/audit/audit.module.css */
 
-/* ── Page shell ──────────────────────────────────────────── */
+/* ── Page shell ─────────────────────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   background: var(--bg-base);
@@ -24,7 +24,7 @@
   opacity: 0.45;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Header ────────────────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -43,8 +43,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -76,7 +76,7 @@
   font-size: 0.68rem;
   color: var(--text-muted);
   letter-spacing: 0.04em;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .headerActions {
@@ -90,8 +90,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   background: var(--success-bg);
   border: 1px solid rgba(45, 139, 85, 0.25);
@@ -120,7 +120,7 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
-  height: 40px;
+  height: 44px;
 }
 .exportBtn:hover:not(:disabled) {
   background: rgba(45, 139, 85, 0.2);
@@ -132,10 +132,10 @@
   cursor: not-allowed;
 }
 
-/* ── Filter section ──────────────────────────────────────── */
+/* ── Filter section ────────────────────────────────────────────────── */
 .filterWrap {
   position: sticky;
-  top: 75px;
+  top: 84px;
   z-index: calc(var(--z-card) - 1);
   background: var(--bg-base);
   border-bottom: 1px solid var(--glass-border);
@@ -152,7 +152,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -180,14 +181,15 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--brand);
   border: 1.5px solid var(--bg-base);
 }
 
 .filterClearBtn {
+  min-height: 44px;
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 600;
@@ -195,7 +197,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 0 var(--space-2);
   opacity: 0.85;
   transition: opacity var(--transition-fast);
 }
@@ -235,6 +237,7 @@
 }
 .filterInput {
   font-size: 0.85rem !important;
+  min-height: 48px;
   padding: var(--space-3) var(--space-3) !important;
   border-radius: var(--radius-md) !important;
   cursor: pointer;
@@ -245,11 +248,12 @@
   gap: var(--space-3);
 }
 .filterActions .btn {
+  min-height: 48px;
   padding-top: var(--space-3) !important;
   padding-bottom: var(--space-3) !important;
 }
 
-/* ── Stats strip ─────────────────────────────────────────── */
+/* ── Stats strip ───────────────────────────────────────────────────────────── */
 .statsStrip {
   display: flex;
   align-items: center;
@@ -270,24 +274,24 @@
   color: var(--text-secondary);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  padding: 2px 10px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
 }
 
-/* ── Main content ────────────────────────────────────────── */
+/* ── Main content ─────────────────────────────────────────────────────────── */
 .main {
   flex: 1;
   padding: var(--space-4) var(--space-5);
 }
 
-/* ── Entry list (mobile-card layout) ────────────────────── */
+/* ── Entry list (mobile-card layout) ─────────────────────────────────── */
 .entryList {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-/* ── Audit entry card ────────────────────────────────────── */
+/* ── Audit entry card ─────────────────────────────────────────────── */
 .entryCard {
   display: flex;
   align-items: stretch;
@@ -308,7 +312,7 @@
 
 /* Coloured left stripe by action type */
 .entryStripe {
-  width: 3px;
+  width: 4px;
   flex-shrink: 0;
   opacity: 0.75;
 }
@@ -337,7 +341,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   white-space: nowrap;
   flex-shrink: 0;
@@ -360,7 +364,7 @@
   font-size: 0.65rem;
   color: var(--text-muted);
   background: var(--glass-bg);
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
 }
@@ -373,8 +377,8 @@
 }
 
 .userAvatar {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--brand-subtle);
   border: 1px solid rgba(128, 0, 32, 0.2);
@@ -410,7 +414,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 2px 7px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
@@ -428,7 +432,7 @@
   word-break: break-word;
 }
 
-/* ── Pagination ──────────────────────────────────────────── */
+/* ── Pagination ─────────────────────────────────────────────────────────── */
 .pagination {
   display: flex;
   align-items: center;
@@ -443,7 +447,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-4);
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -454,7 +458,7 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
-  min-height: 38px;
+  min-height: 44px;
 }
 .pageBtn:hover:not(:disabled) {
   background: var(--glass-bg-hover);
@@ -473,9 +477,11 @@
   align-items: center;
   gap: var(--space-1);
 }
+/* 40px visual, 44px effective hit area (fits 5 numbers on narrow phones) */
 .pageNum {
-  width: 36px;
-  height: 36px;
+  position: relative;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -489,6 +495,11 @@
   align-items: center;
   justify-content: center;
 }
+.pageNum::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+}
 .pageNum:hover {
   background: var(--glass-bg-hover);
   border-color: var(--glass-border-hover);
@@ -500,7 +511,7 @@
   color: var(--text-accent) !important;
 }
 
-/* ── Empty state ─────────────────────────────────────────── */
+/* ── Empty state ─────────────────────────────────────────────────────────── */
 .emptyState {
   display: flex;
   flex-direction: column;

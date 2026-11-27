@@ -34,6 +34,9 @@
 
 .main {
   padding: var(--space-6) var(--space-5);
+  /* Mobile: clear the floating Menu/AI dock so the last card is never
+     hidden behind it (RoleSubHeader's main already does this). */
+  padding-bottom: calc(var(--dock-clearance, 104px) + env(safe-area-inset-bottom, 0px));
   max-width: 900px;
   margin: 0 auto;
   width: 100%;

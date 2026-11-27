@@ -40,6 +40,9 @@ export default async function RootPage() {
   // visitor actually chooses to log in, rather than gating everyone
   // before they have seen anything about the product.
   //
+  // data-surface="premium" switches the whole document to the premium
+  // black (or premium white) canvas defined in src/app/premium-surface.css.
+  //
   // Section rhythm is controlled by `gap` on this flex container instead
   // of a manual spacer <div> between every section. Several sections
   // (StatsStrip, PromotionsSection) already conditionally render null
@@ -53,7 +56,7 @@ export default async function RootPage() {
   // original, presumably intentional layout - the outer gap still
   // applies normally around that pair as a single unit.
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div data-surface="premium" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <PublicNav />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
         <Hero />

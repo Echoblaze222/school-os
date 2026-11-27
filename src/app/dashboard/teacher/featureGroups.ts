@@ -11,16 +11,20 @@ import {
   VideoIcon, BookIcon, BellIcon, CalendarIcon,
   AwardIcon, MessageIcon, BookOpenIcon, ClockIcon,
   MegaphoneIcon, ShieldIcon, UserIcon, ActivityIcon,
+  CheckCircleIcon,
 } from '@/components/Icons'
 
 export const TEACHER_FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Teaching', items: [
     { id: 'classes',     label: 'My classes',  href: '/dashboard/teacher/classes',     Icon: PeopleIcon },
+    { id: 'subscriptions', label: 'Class payments', href: '/dashboard/teacher/subscriptions', Icon: CheckCircleIcon },
     { id: 'attendance',  label: 'Attendance',  href: '/dashboard/teacher/attendance',  Icon: CalendarIcon },
     { id: 'assignments', label: 'Assignments', href: '/dashboard/teacher/assignments', Icon: ClipboardIcon },
     { id: 'grades',      label: 'Grades',      href: '/dashboard/teacher/grades',      Icon: BarChartIcon },
     { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/teacher/quizzes',     Icon: AwardIcon },
     { id: 'results',     label: 'Results',     href: '/dashboard/teacher/results',     Icon: BarChartIcon },
+    { id: 'analytics',   label: 'Analytics',   href: '/dashboard/teacher/analytics',   Icon: BarChartIcon },
+    { id: 'mentoring',   label: 'Peer mentoring', href: '/dashboard/teacher/mentoring', Icon: PeopleIcon },
   ]},
   { name: 'Around school', items: [
     { id: 'live',      label: 'Live class', href: '/dashboard/teacher/live',      Icon: VideoIcon },

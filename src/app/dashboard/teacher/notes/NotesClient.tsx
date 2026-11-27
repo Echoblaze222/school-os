@@ -9,6 +9,11 @@
 //   2. Added visible error display on save failure - previously errors were
 //      silently swallowed (only logged to console), so a failed save looked
 //      identical to nothing happening at all.
+//   3. Notes pasted from other sources showed raw symbols (**, ##, |---|, $...$).
+//      The expanded note now renders real formatting through NoteMarkdown
+//      (headings, bold, lists, tables, equations), and the note box has a
+//      formatting toolbar (NoteEditor) with Preview. The stored text is
+//      unchanged, so existing notes are fixed too.
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -16,6 +21,10 @@ import RoleSubHeader from '@/components/RoleSubHeader'
 import { TEACHER_FEATURE_GROUPS } from '../featureGroups'
 import { BookIcon, PlusIcon, DownloadIcon, AlertIcon, XIcon, EditIcon, FileTextIcon, BookOpenIcon, PaperclipIcon } from '@/components/Icons'
 import NoteBook from '@/components/NoteBook'
+import NoteEditor from '@/components/NoteEditor'
+import NoteMarkdown from '@/components/NoteMarkdown'
+import TeacherBooks from '@/components/TeacherBooks'
+import bookStyles from '@/components/Books.module.css'
 import DocumentViewer from '@/components/DocumentViewer'
 import styles from '@/app/dashboard/student/records/page.module.css'
 import { SkeletonList } from '@/components/motion/Skeleton'
@@ -52,7 +61,8 @@ export default function NotesClient({ profile, school, userId }: Props) {
   const [uploadMode, setUploadMode] = useState<'type' | 'upload'>('type')
   const [error, setError] = useState<string | null>(null) // FIX: visible error state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [previewBook, setPreviewBook] = useState<any>(null) // typed note preview → 3D flip-book
+  const [tab, setTab] = useState<'books' | 'notes'>('books') // Books (subject books with topics) | single notes
+  const [previewBook, setPreviewBook] = useState<any>(null) // typed note preview → book viewer
   const [previewDoc, setPreviewDoc] = useState<any>(null)   // uploaded file preview → in-portal viewer
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
@@ -200,6 +210,19 @@ export default function NotesClient({ profile, school, userId }: Props) {
   return (
     <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Study Notes" featureGroups={TEACHER_FEATURE_GROUPS}>
 
+      <div className={bookStyles.tabs}>
+        {([['books', 'Books'], ['notes', 'Single notes']] as const).map(([key, label]) => (
+          <button key={key} type="button" onClick={() => setTab(key)}
+            className={`${bookStyles.tab} ${tab === key ? bookStyles.tabActive : ''}`}
+            style={tab === key ? { background: sc } : undefined}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'books' && <TeacherBooks school={school} userId={userId} accent={sc} />}
+
+      {tab === 'notes' && (<>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
         <button className="pressable" onClick={() => setShowForm(true)}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
@@ -267,9 +290,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
           {uploadMode === 'type' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--space-3)' }}>
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Note Content *</label>
-              <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                placeholder="Write your note here..." rows={6}
-                style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }} />
+              <NoteEditor value={form.content} onChange={v => setForm(f => ({ ...f, content: v }))} accentColor={sc} />
             </div>
           ) : (
             <div style={{ marginBottom: 'var(--space-3)' }}>
@@ -324,13 +345,15 @@ export default function NotesClient({ profile, school, userId }: Props) {
                 {expanded === item.id && (
                   <div style={{ paddingLeft: 56, paddingRight: 8 }}>
                     {item.description && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 'var(--space-3)' }}>{item.description}</p>
+                      <div style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', maxHeight: 360, overflowY: 'auto' }}>
+                        <NoteMarkdown content={item.description} variant="inline" accentColor={sc} />
+                      </div>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 'var(--space-2)' }}>
                       {item.description && (
                         <button className="pressable" onClick={() => setPreviewBook(item)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                          <BookOpenIcon size={13} color="#fff" /> Preview as Flip-Book
+                          <BookOpenIcon size={13} color="#fff" /> Open as Book
                         </button>
                       )}
                       {item.file_url && (
@@ -358,6 +381,7 @@ export default function NotesClient({ profile, school, userId }: Props) {
           </div>
       }
       <div className={styles.spacer} />
+      </>)}
 
       {previewBook && (
         <NoteBook

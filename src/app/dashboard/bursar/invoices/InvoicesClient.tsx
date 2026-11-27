@@ -8,8 +8,9 @@ import { unwrapEmbed } from '@/lib/utils/unwrapEmbed'
 import {
   ZapIcon, SunIcon, MoonIcon, ClipboardIcon, CheckCircleIcon,
   AlertCircleIcon, WalletIcon, SearchIcon, CreditCardIcon,
-  ReceiptIcon, ClockIcon, AlertIcon, CheckIcon, ArrowLeftIcon,
+  ReceiptIcon, ClockIcon, AlertIcon, CheckIcon, ArrowLeftIcon, BellIcon,
 } from '@/components/Icons'
+import SendRemindersPanel from './SendRemindersPanel'
 import styles from './invoices.module.css'
 
 const TERMS = ['First Term', 'Second Term', 'Third Term']
@@ -99,6 +100,7 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
   const [generating,    setGenerating]    = useState(false)
   const [genResult,     setGenResult]     = useState<{ ok: boolean; msg: string } | null>(null)
   const [showGenPanel,  setShowGenPanel]  = useState(false)
+  const [showRemindPanel, setShowRemindPanel] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolos_theme') as any
@@ -132,6 +134,14 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
     totalBalance: filtered.reduce((s: number, i: any) => s + (i.balance_ngn || 0), 0),
     overdue:      filtered.filter((i: any) => i.status === 'overdue').length,
   }), [filtered])
+
+  // Unpaid invoices in the current filter - what "Send reminders" targets.
+  const unpaidIds = useMemo(
+    () => filtered
+      .filter((i: any) => (i.balance_ngn || 0) > 0 && i.status !== 'completed')
+      .map((i: any) => i.id as string),
+    [filtered],
+  )
 
   function fmt(n: number) { return `₦${(n || 0).toLocaleString()}` }
   function fmtDate(d: string) {
@@ -271,7 +281,13 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             className={styles.iconBtn}
-            onClick={() => { setShowGenPanel(p => !p); setGenResult(null) }}
+            onClick={() => { setShowRemindPanel(p => !p); setShowGenPanel(false) }}
+            title="Send fee reminders to parents">
+            <BellIcon size={18} color="var(--text-primary)" />
+          </button>
+          <button
+            className={styles.iconBtn}
+            onClick={() => { setShowGenPanel(p => !p); setShowRemindPanel(false); setGenResult(null) }}
             title="Generate invoices from fee structures">
             <ZapIcon size={18} color="var(--text-primary)" />
           </button>
@@ -287,6 +303,9 @@ export default function InvoicesClient({ invoices: initialInvoices, schoolId }: 
           </button>
         </div>
       </header>
+
+      {/* ── Send Fee Reminders Panel ── */}
+      {showRemindPanel && <SendRemindersPanel invoiceIds={unpaidIds} />}
 
       {/* ── Generate Invoices Panel ── */}
       {showGenPanel && (

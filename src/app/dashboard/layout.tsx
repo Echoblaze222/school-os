@@ -11,8 +11,10 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoLock } from '@/lib/useAutoLock'
+import OfflineOutboxStatus from '@/components/OfflineOutboxStatus'
 import LockScreen from '@/components/auth/LockScreen'
 import PullToRefresh from '@/components/PullToRefresh'
+import OfflineSyncBanner from '@/components/OfflineSyncBanner'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefs] = useState({ enabled: true, minutes: 10 })
@@ -46,7 +48,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <PullToRefresh disabled={locked}>{children}</PullToRefresh>
+      {/* Offline mode: background sync for queued changes + status notice. */}
+      <OfflineSyncBanner />
       {locked && <LockScreen onUnlock={unlock} />}
+      <OfflineOutboxStatus />
     </>
   )
 }

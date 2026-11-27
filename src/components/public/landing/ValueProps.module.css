@@ -22,15 +22,15 @@
 }
 
 .iconWrap {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--brand-subtle);
   color: var(--brand-light);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
 }
 
 @media (min-width: 640px) {

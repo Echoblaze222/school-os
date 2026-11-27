@@ -7,19 +7,21 @@
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
-  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon,
+  ClipboardIcon, ClockIcon, VideoIcon, BarChartIcon, AwardIcon, PeopleIcon,
   BookIcon, MessageIcon, CalendarIcon, FileTextIcon, BookOpenIcon,
-  GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon,
+  GlobeIcon, TrophyIcon, IdCardIcon, GraduationCapIcon, CreditCardIcon,
 } from '@/components/Icons'
 
 export const STUDENT_FEATURE_GROUPS: FeatureGroup[] = [
   { name: 'Learning', items: [
     { id: 'assignments', label: 'Assignments', href: '/dashboard/student/assignments', Icon: ClipboardIcon },
     { id: 'results',     label: 'Results',     href: '/dashboard/student/results',     Icon: BarChartIcon },
+    { id: 'analytics',   label: 'My progress', href: '/dashboard/student/analytics',   Icon: BarChartIcon },
     { id: 'quizzes',     label: 'Quizzes',     href: '/dashboard/student/quizzes',     Icon: AwardIcon },
     { id: 'classes',     label: 'Live classes',href: '/dashboard/student/classes',     Icon: VideoIcon },
     { id: 'notes',       label: 'Notes',       href: '/dashboard/student/notes',       Icon: BookIcon },
     { id: 'syllabus',    label: 'Syllabus',    href: '/dashboard/student/syllabus',    Icon: BookOpenIcon },
+    { id: 'mentoring',   label: 'Peer mentoring', href: '/dashboard/student/mentoring', Icon: PeopleIcon },
   ]},
   { name: 'Around school', items: [
     { id: 'timetable',   label: 'Timetable',   href: '/dashboard/student/timetable',   Icon: ClockIcon },
@@ -34,5 +36,8 @@ export const STUDENT_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'chat',     label: 'Messages', href: '/dashboard/student/chat',     Icon: MessageIcon },
     { id: 'meetings', label: 'Meetings', href: '/dashboard/student/meetings', Icon: CalendarIcon },
     { id: 'schedule', label: 'Study plan',href: '/dashboard/student/schedule',Icon: CalendarIcon },
+  ]},
+  { name: 'Account', items: [
+    { id: 'subscribe', label: 'Subscription', href: '/dashboard/student/subscribe', Icon: CreditCardIcon },
   ]},
 ]

@@ -12,7 +12,7 @@
 
 .orb1 { position: absolute; width: 300px; height: 300px; top: -60px; right: -60px; opacity: 0.45; border-radius: 50%; background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); pointer-events: none; filter: blur(40px); }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px; height: 38px;
+  width: 44px; height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -44,9 +44,9 @@
 
 .headerCenter { flex: 1; text-align: center; padding: 0 var(--space-3); }
 .title    { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: var(--text-primary); line-height: 1.1; }
-.subtitle { font-family: var(--font-body); font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.05em; margin-top: 2px; }
+.subtitle { font-family: var(--font-body); font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.05em; margin-top: 4px; }
 
-/* ── Form ────────────────────────────────────────────────── */
+/* ── Form ───────────────────────────────────────────────────────────────────── */
 .formMain {
   flex: 1;
   padding: var(--space-5);
@@ -84,7 +84,7 @@
   transition: color var(--transition-fast);
 }
 
-/* ── Class Selector ──────────────────────────────────────── */
+/* ── Class Selector ─────────────────────────────────────────────────────── */
 .classGrid {
   display: flex;
   flex-wrap: wrap;
@@ -95,7 +95,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
+  min-height: 48px;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--glass-bg);
@@ -137,19 +139,19 @@
   text-align: center;
 }
 
-/* ── Inputs ──────────────────────────────────────────────── */
-.input { border-radius: var(--radius-md) !important; }
+/* ── Inputs ──────────────────────────────────────────────────────────────────── */
+.input { border-radius: var(--radius-md) !important; min-height: 48px; }
 .inputError { border-color: rgba(192,57,43,0.5) !important; }
 .errorMsg {
   font-family: var(--font-body);
   font-size: 0.75rem;
   color: var(--error);
-  margin-top: -2px;
+  margin-top: 0;
 }
 
 .textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 96px;
   font-family: var(--font-body);
   font-size: 0.9rem;
   line-height: 1.6;
@@ -165,7 +167,8 @@
 .scoreInputWrap { display: flex; flex-direction: column; gap: var(--space-2); }
 .scorePresets   { display: flex; gap: var(--space-2); }
 .presetBtn {
-  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -179,7 +182,7 @@
 .presetBtn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text-secondary); }
 .presetBtnActive { background: var(--brand-subtle); border-color: rgba(128,0,32,0.35); color: var(--text-accent); }
 
-/* ── File Upload ─────────────────────────────────────────── */
+/* ── File Upload ───────────────────────────────────────────────────────── */
 .dropZone {
   display: flex;
   flex-direction: column;
@@ -231,11 +234,13 @@
 .filePreviewName { font-family: var(--font-body); font-size: 0.85rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .filePreviewSize { font-family: var(--font-body); font-size: 0.7rem; color: var(--text-muted); }
 
+/* 32px visual, 44px invisible hit area */
 .fileRemoveBtn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border-radius: var(--radius-full);
   background: var(--error-bg);
   border: 1px solid rgba(192,57,43,0.2);
@@ -244,11 +249,16 @@
   flex-shrink: 0;
   transition: all var(--transition-fast);
 }
+.fileRemoveBtn::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
 .fileRemoveBtn:hover { background: rgba(192,57,43,0.2); }
 
 .hiddenInput { display: none; }
 
-/* ── Upload Progress ─────────────────────────────────────── */
+/* ── Upload Progress ────────────────────────────────────────────────────── */
 .uploadProgressWrap {
   display: flex;
   align-items: center;
@@ -256,7 +266,7 @@
 }
 .uploadProgressTrack {
   flex: 1;
-  height: 6px;
+  height: 8px;
   background: var(--glass-border);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -275,7 +285,7 @@
   min-width: 60px;
 }
 
-/* ── Form Error ──────────────────────────────────────────── */
+/* ── Form Error ────────────────────────────────────────────────────────────── */
 .formError {
   display: flex;
   align-items: center;
@@ -290,7 +300,7 @@
   animation: scale-in 0.3s ease;
 }
 
-/* ── Actions ─────────────────────────────────────────────── */
+/* ── Actions ───────────────────────────────────────────────────────────────── */
 .formActions {
   display: flex;
   gap: var(--space-3);
@@ -301,7 +311,7 @@
 
 .spinner {
   display: inline-block;
-  width: 15px; height: 15px;
+  width: 16px; height: 16px;
   border: 2px solid rgba(255,255,255,0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -310,7 +320,7 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Success Screen ──────────────────────────────────────── */
+/* ── Success Screen ──────────────────────────────────────────────────────── */
 .successPage {
   min-height: 100dvh;
   background: var(--bg-base);

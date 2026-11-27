@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 16px 20px;
   background: var(--bg-overlay);
   backdrop-filter: blur(24px);
   border-bottom: 1px solid var(--glass-border);
@@ -30,8 +30,8 @@
 }
 
 .backBtn, .iconBtn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,7 +53,7 @@
 .urgentBanner {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 20px;
   border-bottom: 1px solid;
   font-size: 0.82rem;
@@ -68,7 +68,8 @@
 
 .tab {
   flex: 1;
-  padding: 12px 8px;
+  min-height: 48px;
+  padding: 0 8px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -112,6 +113,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
 }
 
 .planStatusLabel {
@@ -172,27 +174,27 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .countdownInfo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
 }
 
 .infoRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.78rem;
   color: var(--text-secondary);
 }
 
 /* Days bar */
 .daysBar {
-  height: 5px;
+  height: 4px;
   background: var(--glass-border);
   border-radius: 999px;
   overflow: hidden;
@@ -223,7 +225,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .pricingNoteToggle {
@@ -232,6 +234,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  min-height: 44px;
   text-align: left;
   font-size: 0.75rem;
   color: var(--text-primary);
@@ -261,7 +264,7 @@
   font-size: 0.78rem;
   color: var(--text-secondary);
   line-height: 1.6;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .pricingNoteBody strong { color: var(--text-primary); }
@@ -300,7 +303,8 @@
 /* Renew CTA */
 .renewCta {
   width: 100%;
-  padding: 14px;
+  min-height: 48px;
+  padding: 0 16px;
   border: none;
   border-radius: 14px;
   font-family: var(--font-body);
@@ -326,7 +330,7 @@
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .renewSubtitle {
@@ -341,12 +345,12 @@
 .planCards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .planCard {
   width: 100%;
-  padding: 18px;
+  padding: 16px;
   background: var(--glass-bg);
   border: 2px solid var(--glass-border);
   border-radius: 16px;
@@ -356,7 +360,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .planCard:hover { background: var(--glass-bg-hover); }
@@ -370,7 +374,7 @@
   font-size: 0.62rem;
   font-weight: 700;
   color: white;
-  padding: 3px 12px;
+  padding: 4px 12px;
   border-radius: 999px;
   white-space: nowrap;
   letter-spacing: 0.05em;
@@ -409,7 +413,7 @@
 .planTotal {
   background: var(--bg-base);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -434,13 +438,13 @@
 .planFeatures {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .planFeatureItem {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
@@ -448,8 +452,8 @@
 .planMoreFeatures {
   font-size: 0.7rem;
   color: var(--text-muted);
-  margin-top: 2px;
-  margin-left: 18px;
+  margin-top: 4px;
+  margin-left: 20px;
 }
 
 /* Order summary */
@@ -457,10 +461,10 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
-  padding: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .summaryTitle {
@@ -475,6 +479,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   font-size: 0.83rem;
   color: var(--text-secondary);
 }
@@ -484,7 +489,7 @@
 .summaryDivider {
   height: 1px;
   background: var(--glass-border);
-  margin: 2px 0;
+  margin: 4px 0;
 }
 
 .summaryTotal {
@@ -497,7 +502,7 @@
   font-size: 0.72rem;
   color: var(--text-muted);
   line-height: 1.5;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px solid var(--glass-border);
 }
 
@@ -511,13 +516,14 @@
   background: var(--error-bg);
   border: 1px solid rgba(192,57,43,0.2);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 12px 16px;
 }
 
 /* Pay button */
 .payBtn {
   width: 100%;
-  padding: 15px;
+  min-height: 48px;
+  padding: 0 16px;
   border: none;
   border-radius: 14px;
   font-family: var(--font-body);
@@ -558,7 +564,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 16px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 14px;
@@ -571,8 +577,8 @@
 }
 
 .historyIcon {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: var(--burgundy-subtle);
   display: flex;
@@ -591,7 +597,7 @@
 .historyDate, .historyReceipt {
   font-size: 0.68rem;
   color: var(--text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .historyAmount {

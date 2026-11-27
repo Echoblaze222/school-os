@@ -16,6 +16,9 @@
 // user re-picks their school.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { clearSavedViews } from '@/lib/savedView/store'
+import { clearInbox } from '@/lib/offlineInbox'
+import { clearOutbox, countUnsent, flushOutbox } from '@/lib/offlineOutbox'
 
 const SCHOOL_KEY         = 'schoolos_selected_school'
 const RECENT_SCHOOL_KEY  = 'schoolos_recent_school'
@@ -29,12 +32,96 @@ interface StoredSchool {
   logoUrl?: string | null
 }
 
+// Shown the instant a sign-out starts. The real sign-out needs a network round
+// trip (it revokes the session on the server), which on a slow connection can
+// take seconds - without this the tap appears to do nothing. Pure DOM so every
+// caller (about 20 buttons) gets it from this one place, and so it cannot
+// affect the auth logic below. The page is hard-navigated away right after, so
+// it never needs removing.
+function showSigningOutCover() {
+  if (typeof document === 'undefined') return
+  if (document.getElementById('schoolos-signing-out')) return
+  try {
+    const cover = document.createElement('div')
+    cover.id = 'schoolos-signing-out'
+    cover.setAttribute('role', 'status')
+    cover.setAttribute('aria-live', 'polite')
+    cover.textContent = 'Signing out…'
+    cover.style.cssText =
+      'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;' +
+      'justify-content:center;background:var(--bg-base,#080C14);' +
+      'color:var(--text-primary,#F6F1E4);font:600 15px/1.4 system-ui,sans-serif;' +
+      'letter-spacing:.2px;'
+    document.body.appendChild(cover)
+  } catch {
+    // Cosmetic only - never block signing out.
+  }
+}
+
 export async function signOutFlow(
   supabase: SupabaseClient,
   router: { push: (href: string) => void; replace?: (href: string) => void; refresh?: () => void },
   reason?: string,
   returnTo?: string
 ) {
+  // Unsent messages and attendance registers are wiped below with everything
+  // else saved on the phone (so a shared phone never leaks them). On a
+  // deliberate sign-out, first try to send them, and if some still can't go
+  // (no connection), say so and let the person choose. An automatic sign-out
+  // after inactivity never stops to ask.
+  if (!reason) {
+    try {
+      const { data } = await supabase.auth.getSession()
+      const uid = data.session?.user?.id
+      if (uid && (await countUnsent()) > 0) {
+        await Promise.race([flushOutbox(supabase, uid), new Promise<void>((r) => setTimeout(r, 4000))])
+        const left = await countUnsent()
+        if (
+          left > 0 &&
+          typeof window !== 'undefined' &&
+          typeof window.confirm === 'function' &&
+          !window.confirm(
+            `${left} ${left === 1 ? 'item' : 'items'} (messages or attendance) could not be sent yet. ` +
+            `Signing out will delete ${left === 1 ? 'it' : 'them'}. Sign out anyway?`
+          )
+        ) {
+          return
+        }
+      }
+    } catch {
+      // Never let this check stop someone from signing out.
+    }
+  }
+
+  showSigningOutCover()
+
+  // Offline mode, two steps, both capped so they can never hold up logout:
+  //  1. If this user has changes saved on the phone that have not uploaded yet,
+  //     try once to send them now, while the session is still valid. Anything that
+  //     still cannot be sent stays in the outbox, scoped to this user, and uploads
+  //     the next time the same user signs in. (Only does work when something is
+  //     pending.)
+  //  2. Forget who the phone belonged to and delete the offline unlock verifier,
+  //     so the next person cannot use either.
+  try {
+    const { flushBeforeSignOut, clearOfflineIdentity } = await import('@/lib/offline/signOut')
+    await Promise.race([flushBeforeSignOut(supabase), new Promise<void>((r) => setTimeout(r, 2500))])
+    await Promise.race([clearOfflineIdentity(), new Promise<void>((r) => setTimeout(r, 800))])
+  } catch {
+    // Never block signing out.
+  }
+
+  // Wipe the on-phone saved copies of screens BEFORE the network sign-out, so
+  // the next person to use this phone can never see this user's data, even
+  // if the sign-out request is slow or fails. Capped so it can't hold up
+  // logout.
+  // The offline notification inbox and queued offline actions are wiped here
+  // too, for the same shared-phone reason.
+  await Promise.race([
+    Promise.all([clearSavedViews(), clearInbox(), clearOutbox()]),
+    new Promise<void>((r) => setTimeout(r, 800)),
+  ])
+
   try {
     const stored = localStorage.getItem(SCHOOL_KEY)
     if (stored) {

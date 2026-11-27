@@ -1,9 +1,5 @@
 // src/app/dashboard/counselor/featureGroups.ts
-// Shared across every counselor sub-page that uses RoleSubHeader, so the
-// bottom dock / "all features" sheet is identical everywhere a counselor
-// navigates - not just on the dashboard home screen. Extracted from
-// CounselorDashboardClient.tsx, which now imports this instead of
-// defining its own local copy.
+// Shared across every counselor sub-page that uses RoleSubHeader.
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
@@ -17,6 +13,7 @@ export const COUNSELOR_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'appointments', label: 'Appointments',  href: '/dashboard/counselor/appointments',  Icon: CalendarIcon },
     { id: 'referrals',    label: 'Referrals',     href: '/dashboard/counselor/referrals',     Icon: ShieldIcon },
     { id: 'reports',      label: 'Reports',       href: '/dashboard/counselor/reports',       Icon: BarChartIcon },
+    { id: 'analytics',    label: 'Analytics',     href: '/dashboard/counselor/analytics',     Icon: BarChartIcon },
     { id: 'meetings',     label: 'Meetings',      href: '/dashboard/counselor/meetings',      Icon: CalendarIcon },
   ]},
   { name: 'Communication', items: [

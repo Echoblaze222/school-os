@@ -31,6 +31,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'report-cards',label: 'Report cards',href: '/dashboard/principal/report-cards',Icon: FileTextIcon },
     { id: 'analytics',   label: 'Analytics',   href: '/dashboard/principal/analytics',   Icon: BarChartIcon },
     { id: 'assignments', label: 'Assignments', href: '/dashboard/principal/assignments', Icon: ClipboardIcon },
+    { id: 'mentoring',   label: 'Peer mentoring', href: '/dashboard/principal/mentoring', Icon: PeopleIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/principal/codes',       Icon: KeyIcon },
   ]},
   { name: 'Finance', items: [
@@ -42,6 +43,7 @@ export const PRINCIPAL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'chat',          label: 'Messages',      href: '/dashboard/principal/chat',          Icon: MessageIcon },
     { id: 'notices',       label: 'Notices',       href: '/dashboard/principal/notices',       Icon: BellIcon },
     { id: 'announcements', label: 'Announcements', href: '/dashboard/principal/announcements', Icon: MegaphoneIcon },
+    { id: 'closure',       label: 'Closure mode',  href: '/dashboard/principal/closure',       Icon: ShieldIcon },
     { id: 'promotions',    label: 'Promotions',    href: '/dashboard/principal/promotions',    Icon: StarIcon },
     { id: 'meetings',      label: 'Meetings',      href: '/dashboard/principal/meetings',      Icon: CalendarIcon },
     { id: 'live',          label: 'Live classes',  href: '/dashboard/principal/live',          Icon: VideoIcon },

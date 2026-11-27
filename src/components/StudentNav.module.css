@@ -1,6 +1,6 @@
 /* StudentNav.module.css */
 
-/* ── DESKTOP SIDEBAR ─────────────────────────────────────── */
+/* ── DESKTOP SIDEBAR ───────────────────────────────────────────────────── */
 .sidebar {
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
@@ -65,7 +65,7 @@
   color: var(--text-muted);
   font-weight: 500;
   letter-spacing: 0.04em;
-  margin: 1px 0 0;
+  margin: 2px 0 0;
 }
 
 .divider {
@@ -86,7 +86,7 @@
 .navSection {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .navSectionLabel {
@@ -103,6 +103,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   color: var(--text-muted);
@@ -148,6 +149,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   font-size: 0.82rem;
@@ -165,7 +167,7 @@
 .logoutBtn:hover { background: var(--danger-subtle); color: var(--danger); }
 .logoutBtn       { color: var(--text-muted); }
 
-/* ── MOBILE BOTTOM NAV ───────────────────────────────────── */
+/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────────── */
 .bottomNav {
   position: fixed;
   bottom: var(--space-4);
@@ -194,7 +196,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   color: var(--nav-icon);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);

@@ -1,0 +1,23 @@
+.card { padding: var(--space-5, 20px); margin-bottom: var(--space-5, 20px); }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4, 16px); }
+.headerLeft { display: flex; align-items: flex-start; gap: var(--space-3, 12px); }
+.title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 3px; }
+.sub { font-size: 0.78rem; color: var(--text-muted); margin: 0; line-height: 1.4; max-width: 380px; }
+
+.pushRow { margin-top: var(--space-4, 16px); padding-top: var(--space-4, 16px); border-top: 1px solid var(--glass-border); }
+
+.categoryList { margin-top: var(--space-4, 16px); padding-top: var(--space-4, 16px); border-top: 1px solid var(--glass-border); }
+.sectionLabel { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 var(--space-3, 12px); }
+
+.categoryRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); padding: 8px 0; }
+.categoryLabel { font-size: 0.82rem; color: var(--text-primary); }
+.categoryToggles { display: flex; gap: 6px; flex-shrink: 0; }
+
+.chip {
+  padding: 5px 11px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-muted); cursor: pointer;
+}
+.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.chipOn { background: var(--brand-subtle, rgba(124,58,237,0.12)); border-color: var(--brand, #7C3AED); color: var(--brand, #7C3AED); }
+
+.savedNote { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--success); margin: var(--space-3, 12px) 0 0; }

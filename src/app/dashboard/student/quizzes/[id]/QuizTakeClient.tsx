@@ -1,26 +1,22 @@
 'use client'
 // src/app/dashboard/student/quizzes/[id]/QuizTakeClient.tsx
 //
-// FIX: loadQuiz() never checked or surfaced errors - if the quiz_questions
-// query failed for any reason, it failed silently and the page just showed
-// "No questions yet", indistinguishable from a genuinely empty quiz. Added
-// visible error banners on every query so failures are diagnosable instead
-// of looking identical to "teacher hasn't added questions."
+// SERVER-GRADED: this page no longer downloads the answer key or decides its
+// own score. It calls /api/student/quizzes/[id] to start an attempt (questions
+// arrive WITHOUT answers, with the seconds left on the server's clock) and to
+// submit (the server marks the answers, enforces the deadline and attempt
+// limit, and records the result).
 //
-// REDESIGN: mobile-first visual pass - glass-card question surface, school-color
-// themed progress ring instead of a flat bar, larger touch targets on options,
-// softer haptic-feeling transitions between questions, refined results screen
-// with a radial score ring instead of a flat bar.
-//
-// REDESIGN PASS (Lane 3 - Student): emoji → Icons, hardcoded status hex →
-// design tokens, glass-card + motion touches. This page is intentionally a
-// standalone full-screen experience (own sticky header/timer, no
-// RolePageWrapper) - same pattern as the AI/Chat pages - so chrome is
-// untouched, only content styling changed.
+// Earlier history of this file:
+// - visible error banners instead of silent "No questions yet" on a failed load
+// - mobile-first redesign: glass-card question surface, school-color progress,
+//   radial score ring, larger touch targets
+// - emoji -> Icons, design tokens. Intentionally a standalone full-screen
+//   experience (own sticky header/timer, no RolePageWrapper), same pattern as
+//   the AI/Chat pages.
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { ClockIcon, ArrowLeftIcon, AlertIcon, XIcon, PartyPopperIcon, CheckCircleIcon, BookOpenIcon, AwardIcon } from '@/components/Icons'
 import { logActivity } from '@/lib/logActivity'
 import motion from '@/components/dashboard-motion.module.css'
@@ -30,7 +26,6 @@ interface DbQuestion {
   text: string       // NOT NULL column - primary source
   question: string   // nullable column - fallback
   options: { label: string; text: string }[]
-  answer: string
   marks: number
   position: number
 }
@@ -49,21 +44,15 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   const [alreadyDone, setAlreadyDone] = useState(false)
   const [priorScore,  setPriorScore]  = useState<{ score: number; max: number } | null>(null)
   const [score,       setScore]       = useState(0)
+  const [serverMax,   setServerMax]   = useState<number | null>(null)
   const [loading,     setLoading]     = useState(true)
   const [submitting,  setSubmitting]  = useState(false)
-  const [error,       setError]       = useState<string | null>(null) // FIX: visible error state
+  const [error,       setError]       = useState<string | null>(null)
   const router      = useRouter()
-  const supabase    = createClient()
   const timerRef    = useRef<NodeJS.Timeout | null>(null)
   const sc          = school?.primary_color ?? '#800020'
 
   useEffect(() => { loadQuiz() }, [quizId])
-
-  useEffect(() => {
-    if (!quiz || submitted || alreadyDone) return
-    const mins = quiz.duration_mins ?? 30
-    setTimeLeft(mins * 60)
-  }, [quiz, alreadyDone])
 
   useEffect(() => {
     if (timeLeft <= 0 || submitted || alreadyDone) return
@@ -79,37 +68,32 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   async function loadQuiz() {
     setLoading(true)
     setError(null)
+    try {
+      const res = await fetch(`/api/student/quizzes/${quizId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' }),
+      })
+      const data = await res.json().catch(() => ({}))
 
-    const [
-      { data: q, error: qErr },
-      { data: qs, error: qsErr },
-      { data: existing, error: exErr },
-    ] = await Promise.all([
-      supabase.from('quizzes').select('*').eq('id', quizId).single(),
-      supabase.from('quiz_questions')
-        // FIX: select both `text` (NOT NULL) and `question` (nullable) - // older rows may only have `text`, newer rows have both.
-        .select('id, text, question, options, answer, marks, position')
-        .eq('quiz_id', quizId)
-        .order('position', { ascending: true }),
-      supabase.from('quiz_attempts')
-        .select('score, max_score')
-        .eq('quiz_id', quizId)
-        .eq('student_id', userId)
-        .maybeSingle(),
-    ])
+      if (!res.ok) {
+        if (data.attemptsExhausted) {
+          setAlreadyDone(true)
+          if (data.lastAttempt) setPriorScore({ score: data.lastAttempt.score ?? 0, max: data.lastAttempt.max ?? 0 })
+        } else {
+          console.error('[quiz take] start error:', data.error)
+          setError(data.error ?? "We couldn't load this quiz.")
+        }
+        setLoading(false)
+        return
+      }
 
-    // FIX: surface any query error instead of failing silently
-    const firstError = qErr?.message || qsErr?.message || exErr?.message
-    if (firstError) {
-      console.error('[quiz take] load error:', firstError)
-      setError(firstError)
-    }
-
-    if (q)  setQuiz(q)
-    if (qs) setQuestions(qs as DbQuestion[])
-    if (existing) {
-      setAlreadyDone(true)
-      setPriorScore({ score: existing.score ?? 0, max: existing.max_score ?? 0 })
+      setQuiz(data.quiz)
+      setQuestions((data.questions ?? []) as DbQuestion[])
+      setTimeLeft(data.secondsLeft ?? 0)
+    } catch (e: any) {
+      console.error('[quiz take] load error:', e?.message)
+      setError('Network error. Check your connection and try again.')
     }
     setLoading(false)
   }
@@ -119,44 +103,41 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     setSubmitting(true)
     clearInterval(timerRef.current!)
 
-    let total = 0
-    questions.forEach(q => {
-      if (answers[q.id] === q.answer) total += (q.marks ?? 1)
-    })
-    setScore(total)
-
-    const maxScore = questions.reduce((s, q) => s + (q.marks ?? 1), 0)
-
-    const { error: err } = await supabase.from('quiz_attempts').insert({
-      quiz_id:      quizId,
-      student_id:   userId,
-      school_id:    school?.id,
-      answers,
-      score:        total,
-      max_score:    maxScore,
-      submitted_at: new Date().toISOString(),
-    })
-
-    if (err) {
-      console.error('[quiz take] submit error:', err.message)
-      setError("We couldn't submit your quiz. Try again before leaving this page.")
-      setSubmitting(false)
-      return
-    }
-
-    setSubmitted(true)
-    setSubmitting(false)
-
-    if (school?.id) {
-      logActivity({
-        userId, schoolId: school.id,
-        type:  'quiz_completed',
-        title: `Completed "${quiz?.title ?? 'a quiz'}"`,
-        subtitle: `${total}/${maxScore}`,
-        href:  '/dashboard/student/quizzes',
+    try {
+      const res = await fetch(`/api/student/quizzes/${quizId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit', answers }),
       })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        console.error('[quiz take] submit error:', data.error)
+        setError(data.error ?? "We couldn't submit your quiz. Try again before leaving this page.")
+        setSubmitting(false)
+        return
+      }
+
+      setScore(data.score ?? 0)
+      setServerMax(data.max ?? null)
+      setSubmitted(true)
+      setSubmitting(false)
+
+      if (school?.id) {
+        logActivity({
+          userId, schoolId: school.id,
+          type:  'quiz_completed',
+          title: `Completed "${quiz?.title ?? 'a quiz'}"`,
+          subtitle: `${data.score ?? 0}/${data.max ?? ''}`,
+          href:  '/dashboard/student/quizzes',
+        })
+      }
+    } catch (e: any) {
+      console.error('[quiz take] submit network error:', e?.message)
+      setError("We couldn't submit your quiz. Check your connection and try again.")
+      setSubmitting(false)
     }
-  }, [answers, questions, submitted, submitting])
+  }, [answers, quizId, submitted, submitting, quiz, school, userId])
 
   function formatTime(s: number) {
     const m   = Math.floor(s / 60).toString().padStart(2, '0')
@@ -164,13 +145,13 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     return `${m}:${sec}`
   }
 
-  const maxScore = questions.reduce((s, q) => s + (q.marks ?? 1), 0)
+  const maxScore = serverMax ?? questions.reduce((s, q) => s + (q.marks ?? 1), 0)
   const answered = Object.keys(answers).length
   const pct      = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
   const q        = questions[current]
   const resultColor = pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)'
 
-  // ── Loading ──────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', background: 'var(--bg-base)' }}>
       <div style={{ display: 'flex', gap: 6 }}>
@@ -185,7 +166,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
   if (error && questions.length === 0) return (
     <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
       <AlertIcon size={40} color="var(--danger)" strokeWidth={1.5} />
-      <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem' }}>Couldn't load this quiz</p>
+      <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem' }}>Couldn't open this quiz</p>
       <p style={{ color: 'var(--danger)', fontSize: '0.82rem', textAlign: 'center', maxWidth: 320 }}>{error}</p>
       <button onClick={() => router.push('/dashboard/student/quizzes')} className={motion.pressable}
         style={{ padding: '10px 24px', background: sc, color: '#fff', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
@@ -194,7 +175,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     </div>
   )
 
-  // ── Already attempted ────────────────────────────────────
+  // ── Already attempted ──────────────────────────────────────────────────────
   if (alreadyDone && !submitted) return (
     <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 18, background: 'var(--bg-base)', padding: 24 }}>
       <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--success-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -219,7 +200,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     </div>
   )
 
-  // ── No questions yet (no error - genuinely empty) ────────
+  // ── No questions yet (no error - genuinely empty) ────────────────────────────
   if (questions.length === 0) return (
     <div className={motion.riseIn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-base)', padding: 24 }}>
       <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--glass-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -236,7 +217,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     </div>
   )
 
-  // ── Results screen ────────────────────────────────────────
+  // ── Results screen ────────────────────────────────────────────────────────
   if (submitted) {
     const circumference = 2 * Math.PI * 54
     const dashoffset = circumference * (1 - pct / 100)
@@ -270,12 +251,6 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
             {answered} of {questions.length} questions answered
           </p>
 
-          {error && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--warning)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-              <AlertIcon size={13} color="var(--warning)" /> Your answers were scored locally. Saving may have had an issue: {error}
-            </p>
-          )}
-
           <button onClick={() => router.push('/dashboard/student/quizzes')} className={`btn btn-primary ${motion.pressable}`}
             style={{ width: '100%', height: 48, borderRadius: 14, fontSize: '0.92rem' }}>
             Back to Quizzes
@@ -285,7 +260,7 @@ export default function QuizTakeClient({ quizId, userId, profile, school }: Prop
     )
   }
 
-  // ── Quiz-taking screen ────────────────────────────────────
+  // ── Quiz-taking screen ──────────────────────────────────────────────────────
   const timerColor = timeLeft < 60 ? 'var(--danger)' : timeLeft < 180 ? 'var(--warning)' : sc
 
   return (

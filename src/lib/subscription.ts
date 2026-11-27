@@ -1,37 +1,34 @@
 // lib/subscription.ts
-// Call this at the top of every dashboard page.tsx server component,
-// including the principal's.
+// Call this at the top of every dashboard page.tsx server component.
 //
-// Two different kinds of lock, handled differently:
-//  - HARD lock ('locked' status, or is_platform_active=false): a super admin
-//    has manually suspended the school (e.g. abuse, non-payment escalation).
-//    Nobody gets in, including the principal.
-//  - BILLING lock ('expired' trial or 'suspended' subscription): the school
-//    just needs to pay. Non-principal roles are fully gated with
-//    <SubscriptionGate>. The principal is allowed to keep logging in, but
-//    ONLY to reach /dashboard/principal/subscriptions to renew — see
-//    middleware.ts, which redirects any other principal route there.
+// Billing is now PER STUDENT (see sql/migrations/2026-11-21-per-student-
+// subscriptions.sql). A school never locks because of money; only an
+// individual student whose term subscription is unpaid (after the term's
+// grace window) is locked. Staff, principals and parents are never
+// billing-locked.
 //
-// Previously principals were exempted from ALL lock states everywhere
-// (this file, middleware.ts, and the principal page.tsx never called this
-// check at all) — meaning an expired/suspended school kept working in full
-// through the principal account indefinitely. That's the bug this fixes.
+// Two kinds of lock remain:
+//  - HARD lock ('locked' status, 'expired' unpaid-setup trial, or
+//    is_platform_active=false): a super admin suspended the school or the
+//    initial setup was never paid. Nobody gets in, including the principal.
+//  - STUDENT lock: a student with no paid subscription for the current term
+//    once the grace window has passed. Only that student is gated.
+//
+// middleware.ts enforces both on navigation; this is the defence-in-depth
+// copy each page calls, matching the codebase's two-layer pattern.
 
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 export interface SubscriptionCheck {
   locked:      boolean
-  hardLocked:  boolean   // true = super-admin suspended, blocks EVERYONE incl. principal
+  hardLocked:  boolean   // true = super-admin suspended / unpaid setup, blocks EVERYONE
   status:      string
   schoolName:  string
   schoolColor: string
+  studentLocked?: boolean // true = this student's own term subscription is unpaid
 }
 
-// One query (profile + the school's lock fields via the profiles_school_id_fkey
-// embed) instead of two sequential ones, and cached for the request so a
-// layout and its page - or several components - share a single lookup.
-// Same RLS as before: both tables are read as the signed-in user.
 export const checkSubscription = cache(async function checkSubscription(userId: string): Promise<SubscriptionCheck> {
   const supabase = await createClient()
 
@@ -56,24 +53,25 @@ export const checkSubscription = cache(async function checkSubscription(userId: 
     return { locked: false, hardLocked: false, status: 'active', schoolName: '', schoolColor: '#7C3AED' }
   }
 
-  const hardLocked = !school.is_platform_active || school.setup_status === 'locked'
-  // grace_period is deliberately NOT here - full access continues through
-  // the configured grace window (see lib/subscriptionExpiry.ts). 'expired'
-  // (trial), 'suspended' (grace period exhausted), and 'cancelled' (the
-  // school explicitly chose not to renew, and that period has now ended)
-  // all restrict the same way.
-  const billingLocked = ['expired', 'suspended', 'cancelled'].includes(school.setup_status)
+  const hardLocked =
+    !school.is_platform_active ||
+    school.setup_status === 'locked' ||
+    school.setup_status === 'expired'
 
-  // Principals bypass the BILLING lock (they need to reach the renewal
-  // page) but never the HARD lock — a manual super-admin suspension blocks
-  // everyone, principal included.
-  const isPrincipal = profile.role === 'principal'
-  const locked = hardLocked || (billingLocked && !isPrincipal)
+  // Per-student lock. The RPC fails open (returns locked:false) when no term
+  // is configured, and a missing RPC (migration not applied yet) yields no
+  // data, which is also treated as not locked.
+  let studentLocked = false
+  if (!hardLocked && profile.role === 'student') {
+    const { data: lock } = await supabase.rpc('my_subscription_lock')
+    studentLocked = !!(lock as { locked?: boolean } | null)?.locked
+  }
 
   return {
-    locked,
+    locked:      hardLocked || studentLocked,
     hardLocked,
-    status:      school.setup_status,
+    studentLocked,
+    status:      studentLocked ? 'student_unpaid' : school.setup_status,
     schoolName:  school.name,
     schoolColor: school.primary_color ?? '#7C3AED',
   }

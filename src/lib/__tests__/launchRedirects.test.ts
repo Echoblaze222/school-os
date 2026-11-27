@@ -3,7 +3,9 @@
 // Covers the app-launch path through src/middleware.ts: what happens when a
 // signed-in user opens '/' or '/dashboard' (which is exactly what the Android
 // shell does on every cold start), and that the checks that must NOT be
-// skipped - onboarding, role boundary, school lock - still win.
+// skipped - onboarding, role boundary, school lock - still win. Also covers the
+// outage handling: when Supabase cannot be reached the person is sent to
+// /service-unavailable, not treated as signed out or as having the wrong role.
 //
 // Supabase isn't reachable from the sandbox/CI, so @supabase/ssr is mocked
 // with just enough of the chainable query builder for the middleware's real
@@ -21,7 +23,15 @@ let profileRow: Row
 let apptRow: Row
 let fromCalls: string[]
 let authCalls: string[]
+// Per-student billing: the middleware asks the my_subscription_lock RPC whether
+// a signed-in STUDENT is locked. `lockResult` is what that RPC returns.
+let rpcCalls: string[]
+let lockResult: { locked?: boolean } | null
 let refreshCookie: boolean
+// Outage simulation: the auth service is unreachable, and/or the profile
+// query comes back with an error + status (0 = network failure, 5xx = backend).
+let authOutage: boolean
+let profileResult: { error: { message: string } | null; status: number }
 
 vi.mock('@supabase/ssr', () => ({
   createServerClient: (
@@ -34,6 +44,9 @@ vi.mock('@supabase/ssr', () => ({
       // verification) - never getUser(), which is a network call each time.
       getClaims: async () => {
         authCalls.push('getClaims')
+        if (authOutage) {
+          return { data: null, error: { name: 'AuthRetryableFetchError', status: 0, message: 'fetch failed' } }
+        }
         // Simulate Supabase refreshing the session: it writes a new cookie
         // through the cookies adapter while resolving the claims.
         if (refreshCookie) opts.cookies.setAll([{ name: 'sb-test-auth-token', value: 'refreshed', options: { path: '/' } }])
@@ -50,10 +63,22 @@ vi.mock('@supabase/ssr', () => ({
     from: (table: string) => {
       fromCalls.push(table)
       const builder: Record<string, unknown> = {}
-      for (const m of ['select', 'eq', 'in', 'limit']) builder[m] = () => builder
-      builder.single = async () => ({ data: table === 'profiles' ? profileRow : null })
+      // abortSignal: the middleware gives the profile query a timeout.
+      for (const m of ['select', 'eq', 'in', 'limit', 'abortSignal']) builder[m] = () => builder
+      builder.single = async () => ({
+        data: table === 'profiles' ? profileRow : null,
+        ...(table === 'profiles' ? profileResult : {}),
+      })
       builder.maybeSingle = async () => ({ data: table === 'appointments' ? apptRow : null })
       return builder
+    },
+    // The middleware awaits `.rpc(name).abortSignal(...)`, so this returns a
+    // promise that also carries abortSignal().
+    rpc: (name: string) => {
+      rpcCalls.push(name)
+      const p: Promise<{ data: unknown }> & { abortSignal?: () => unknown } = Promise.resolve({ data: lockResult })
+      p.abortSignal = () => p
+      return p
     },
   }),
 }))
@@ -78,7 +103,11 @@ beforeEach(() => {
   apptRow = null
   fromCalls = []
   authCalls = []
+  rpcCalls = []
+  lockResult = { locked: false }
   refreshCookie = false
+  authOutage = false
+  profileResult = { error: null, status: 200 }
 })
 
 describe('dashboardDestination (pure)', () => {
@@ -163,15 +192,21 @@ describe('checks that must still win over dispatch', () => {
     profileRow = student({ role: 'principal', school: { setup_status: 'locked', is_platform_active: false } })
     expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=locked&role=principal')
   })
-  it('billing-locked school blocks a non-principal', async () => {
+  it('an unpaid-setup (expired) school blocks a non-principal', async () => {
     profileRow = student({ school: { setup_status: 'expired', is_platform_active: true } })
     expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=expired&role=student')
   })
-  it('billing-locked principal is confined to the renewal page, not their dashboard', async () => {
+  it('an unpaid-setup (expired) school blocks the principal too: it is a whole-school lock, not a billing one', async () => {
     profileRow = student({ role: 'principal', school: { setup_status: 'expired', is_platform_active: true } })
-    expect(location(await middleware(req('/dashboard')))).toBe('/dashboard/principal/subscriptions?status=expired')
-    expect(location(await middleware(req('/dashboard/principal/staff')))).toBe('/dashboard/principal/subscriptions?status=expired')
-    expect(location(await middleware(req('/dashboard/principal/subscriptions')))).toBeNull()
+    expect(location(await middleware(req('/dashboard')))).toBe('/school-locked?status=expired&role=principal')
+  })
+  it('the old school billing states no longer lock the school for anyone', async () => {
+    for (const status of ['grace_period', 'suspended', 'cancelled']) {
+      profileRow = student({ role: 'principal', school: { setup_status: status, is_platform_active: true } })
+      expect(location(await middleware(req('/dashboard/principal/staff')))).toBeNull()
+      profileRow = student({ role: 'teacher', school: { setup_status: status, is_platform_active: true } })
+      expect(location(await middleware(req('/dashboard/teacher')))).toBeNull()
+    }
   })
   it('role boundary still redirects someone on another role\'s dashboard', async () => {
     expect(location(await middleware(req('/dashboard/teacher')))).toBe('/dashboard/student')
@@ -186,6 +221,43 @@ describe('checks that must still win over dispatch', () => {
   it("the user's own dashboard just renders (no dispatch, one query)", async () => {
     const res = await middleware(req('/dashboard/student'))
     expect(location(res)).toBeNull()
+    expect(fromCalls).toEqual(['profiles'])
+  })
+})
+
+describe('per-student subscription lock', () => {
+  const SUBSCRIBE = '/dashboard/student/subscribe'
+
+  it('an unpaid student is sent to the subscribe page', async () => {
+    lockResult = { locked: true }
+    expect(location(await middleware(req('/dashboard/student')))).toBe(SUBSCRIBE)
+    expect(location(await middleware(req('/dashboard/student/results')))).toBe(SUBSCRIBE)
+    expect(rpcCalls).toEqual(['my_subscription_lock', 'my_subscription_lock'])
+  })
+  it('the subscribe page itself stays reachable for a locked student, with no lock query', async () => {
+    lockResult = { locked: true }
+    expect(location(await middleware(req(SUBSCRIBE)))).toBeNull()
+    expect(rpcCalls).toEqual([])
+  })
+  it('a paid student is not redirected', async () => {
+    lockResult = { locked: false }
+    expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+  })
+  it('fails open when the lock answer is missing (no active term, or migration not applied)', async () => {
+    lockResult = null
+    expect(location(await middleware(req('/dashboard/student')))).toBeNull()
+  })
+  it('principals, teachers and parents are never student-locked and never trigger the lock query', async () => {
+    lockResult = { locked: true }
+    for (const role of ['principal', 'teacher', 'parent', 'bursar']) {
+      profileRow = student({ role })
+      expect(location(await middleware(req(`/dashboard/${role}`)))).toBeNull()
+    }
+    expect(rpcCalls).toEqual([])
+  })
+  it('the lock does not add a table query: still ONE from() call per request', async () => {
+    lockResult = { locked: false }
+    await middleware(req('/dashboard/student'))
     expect(fromCalls).toEqual(['profiles'])
   })
 })
@@ -219,5 +291,48 @@ describe('session cookies survive the launch redirects', () => {
     refreshCookie = true
     const res = await middleware(req('/dashboard'))
     expect(res.headers.getSetCookie().join(';')).toContain('sb-test-auth-token=refreshed')
+  })
+})
+
+describe('a Supabase outage is not mistaken for being signed out or having the wrong role', () => {
+  it('auth service unreachable on a private page goes to /service-unavailable, not /login', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/service-unavailable?next=%2Fdashboard%2Fstudent')
+    expect(fromCalls).toEqual([])
+  })
+  it('auth outage keeps the query string so the person returns to the same page', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/dashboard/student?tab=fees')))).toBe(
+      '/service-unavailable?next=%2Fdashboard%2Fstudent%3Ftab%3Dfees',
+    )
+  })
+  it('auth outage does not block public pages', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/find-schools')))).toBeNull()
+    expect(location(await middleware(req('/')))).toBeNull()
+    expect(location(await middleware(req('/login')))).toBeNull()
+  })
+  it('the holding page and the health probe stay reachable during an outage (no redirect loop)', async () => {
+    authOutage = true
+    expect(location(await middleware(req('/service-unavailable')))).toBeNull()
+    expect(location(await middleware(req('/api/health')))).toBeNull()
+  })
+  it('database unreachable (status 0) on a dashboard goes to /service-unavailable, not /login', async () => {
+    profileRow = null
+    profileResult = { error: { message: 'TypeError: fetch failed' }, status: 0 }
+    expect(location(await middleware(req('/dashboard/student')))).toBe('/service-unavailable?next=%2Fdashboard%2Fstudent')
+  })
+  it('database 5xx on a dashboard goes to /service-unavailable', async () => {
+    profileRow = null
+    profileResult = { error: { message: 'Bad gateway' }, status: 502 }
+    expect(location(await middleware(req('/dashboard')))).toBe('/service-unavailable?next=%2Fdashboard')
+  })
+  it('a normal "no row" answer (406) is not an outage and is handled as before', async () => {
+    profileRow = null
+    profileResult = { error: { message: 'JSON object requested, multiple (or no) rows returned' }, status: 406 }
+    expect(location(await middleware(req('/dashboard')))).toBeNull()
+  })
+  it('a healthy backend is unaffected', async () => {
+    expect(location(await middleware(req('/dashboard')))).toBe('/dashboard/student')
   })
 })

@@ -8,6 +8,7 @@ import { signOutFlow } from '@/lib/signOutFlow'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import AutoLockSettings from '@/components/settings/AutoLockSettings'
+import NotificationPreferencesSettings from '@/components/settings/NotificationPreferencesSettings'
 import { EXAMINATION_FEATURE_GROUPS } from '../featureGroups'
 
 import {
@@ -473,6 +474,8 @@ export default function ProfileClient({
       </div>
 
       <AutoLockSettings userId={userId} />
+
+      <NotificationPreferencesSettings userId={userId} />
 
       <div
         style={{

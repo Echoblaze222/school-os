@@ -3,12 +3,15 @@
 // (layout.tsx) that Lane C established, rather than building a second
 // public header.
 
+import type { Metadata } from 'next'
 import BlogListClient from './BlogListClient'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Blog | SchoolOS',
-  description: 'Education articles, product updates, guides, and news from SchoolOS.',
-}
+  description: 'Education articles, product updates, guides and news from SchoolOS.',
+  path: '/blog',
+})
 
 export default function BlogPage() {
   return <BlogListClient />

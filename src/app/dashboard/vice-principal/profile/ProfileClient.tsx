@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import AutoLockSettings from '@/components/settings/AutoLockSettings'
+import NotificationPreferencesSettings from '@/components/settings/NotificationPreferencesSettings'
 import { UserIcon, CameraIcon } from '@/components/Icons'
 import { VP_FEATURE_GROUPS } from '../featureGroups'
 import styles from './profile.module.css'
@@ -100,6 +101,8 @@ export default function ProfileClient({ profile, school, userId }: Props) {
       </button>
 
       <AutoLockSettings userId={userId} />
+
+      <NotificationPreferencesSettings userId={userId} />
 
       <button className={styles.signOutBtn} onClick={handleSignOut}>Sign out</button>
 

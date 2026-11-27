@@ -1,22 +1,63 @@
 // src/middleware.ts
-// ─────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────
 // 1. Protects all dashboard/private routes, redirects to /login if no session
 // 2. Redirects authenticated users away from auth pages
 // 3. Sets session timeout: user is logged out after INACTIVITY_MINUTES of no activity
-// 4. Enforces school lock:
-//    - Hard lock (super-admin suspended) → everyone, incl. principal, to /school-locked
-//    - Billing lock (expired/suspended)  → non-principals to /school-locked;
-//      principal confined to /dashboard/principal/subscriptions to renew
-// ─────────────────────────────────────────────────────────────
+// 4. Enforces locks:
+//    - Hard lock (super-admin suspended, or unpaid-setup trial expired)
+//      → everyone, incl. principal, to /school-locked
+//    - Student lock (this student's term subscription is unpaid, past the
+//      term's grace window) → ONLY that student, confined to
+//      /dashboard/student/subscribe. The school itself never locks for billing.
+// 5. Gates /api/cron/* with CRON_SECRET (fail-closed) before anything else runs
+// 6. Outage handling: if Supabase (auth or database) cannot be reached, send the
+//    person to /service-unavailable instead of treating it as "signed out" or
+//    "wrong role" and bouncing them to /login, where they would retry a sign-in
+//    that cannot work
+// ───────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { dashboardDestination } from '@/lib/dashboardDispatch'
+import { isCronAuthorized } from '@/lib/cronAuth'
 
-// ── Config ──────────────────────────────────────────────────
+// ── Config ──────────────────────────────────────────────────────────────
 const INACTIVITY_MINUTES = 30          // Auto-logout after 30 min idle
 const INACTIVITY_MS = INACTIVITY_MINUTES * 60 * 1000
+
+// A locked (unpaid) student may only reach this page, where they or their
+// parent can pay. Everything else under /dashboard redirects here.
+const STUDENT_SUBSCRIBE_PATH = '/dashboard/student/subscribe'
+
+// ── Outage handling ──────────────────────────────────────────────────────
+// Without these, a Supabase outage looked like a logged-out user (the session
+// check failed) or a user with the wrong role (the profile query failed), and
+// both paths ended at /login. The timeouts keep a hung backend from hanging
+// every page request with it.
+const AUTH_TIMEOUT_MS = 5000
+const PROFILE_TIMEOUT_MS = 5000
+
+// supabase-js reports a network failure or timeout as status 0, and a backend
+// or gateway failure as a 5xx. Anything else (401, 403, 406 for "no row"...) is
+// a real answer from a working backend.
+function isOutageStatus(status: number): boolean {
+  return status === 0 || status >= 500
+}
+
+function isAuthUnreachable(error: { name?: string; status?: number } | null): boolean {
+  if (!error) return false
+  return (
+    error.name === 'AuthRetryableFetchError' ||
+    (typeof error.status === 'number' && isOutageStatus(error.status))
+  )
+}
+
+function serviceUnavailableRedirect(request: NextRequest) {
+  const url = new URL('/service-unavailable', request.url)
+  url.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+  return NextResponse.redirect(url)
+}
 
 // Routes that do NOT require authentication
 const PUBLIC_PATHS = [
@@ -33,18 +74,21 @@ const PUBLIC_PATHS = [
   '/terms',
   '/privacy',
   '/offline',
+  '/service-unavailable',               // outage holding page (see the outage handling in middleware() below); must be reachable without a session or the redirect to it would loop
+  '/api/health',                        // uptime probe used by the status banner; reads nothing private
   '/api/auth',                          // code-signin, first-login, must be public
   '/api/schools/register',
   '/api/schools/payment-callback',
   '/api/schools/paystack-webhook',
   '/api/webhooks/paystack',            // Paystack payment webhook
   '/api/internal/push-on-notification', // pg_net → push trigger, no session cookie; gated by its own x-internal-secret check below, not this middleware
+  '/api/internal/email-retry',          // pg_net → email-retry cron (every 5 min), no session cookie; gated by its own x-internal-secret check in the route. Without this entry the cron POST was redirected to /login and never reached the route (405 every time).
   '/api/push/send',                     // pg_net → fire_pending_reminders, same reasoning
-  '/api/cron', 
+  '/api/cron',                          // no session cookie; gated by the CRON_SECRET check at the top of middleware() (fail-closed) AND by each route's own check
   '/super-admin/login',                 // super admin login must be publicly reachable
   '/school-locked',                     // lock page itself must be reachable
 
-  // ── Public platform (Phase 4, Lane C) ──────────────────────
+  // ── Public platform (Phase 4, Lane C) ──────────────────────────────
   // Self-service signup - the one path that creates a SchoolOS
   // identity WITHOUT an admin-issued access code. Distinct from
   // /login (existing code-based staff/student/parent onboarding),
@@ -60,15 +104,15 @@ const PUBLIC_PATHS = [
   '/api/admission/schools',
   '/api/schools/search',                // "Find Your School" live search - public, unauthenticated (route already scopes columns + rate-limits internally)
 
-  // ── Public platform (Phase 4, Lane E/F) ────────────────────
+  // ── Public platform (Phase 4, Lane E/F) ───────────────────────────────
   '/api/public',                        // Lane E/F/G/H public discovery, promotions, rankings, reports, content - read/track endpoints only
   '/discover',                          // public promotions feed (Lane E)
   '/rankings',                          // public rankings (Lane F)
 
-  // ── Public platform (Phase 4, Lane H) ───────────────────────
+  // ── Public platform (Phase 4, Lane H) ───────────────────────────────
   '/blog',                              // public SchoolOS editorial content
 
-  // ── Public platform (Phase 4, Lane A/B) ─────────────────────
+  // ── Public platform (Phase 4, Lane A/B) ─────────────────────────────
   '/find-schools',                      // Lane A - general public discovery (distinct from Lane C's /find-school, the admission-flow entry point)
   '/schools',                           // Lane B - public school profile pages (/schools/[slug])
 ]
@@ -84,7 +128,7 @@ const AUTH_ONLY_PATHS = [
   '/join',                              // logged-in users don't need self-signup, go to dashboard
 ]
 
-// ── Role-based dashboard access ────────────────────────────────
+// ── Role-based dashboard access ───────────────────────────────────────────────────────
 // Each dashboard route is scoped to exactly one role. Without this,
 // any authenticated user who knows/guesses another role's URL (e.g.
 // a secretary typing /dashboard/principal/staff) can open that role's
@@ -101,7 +145,7 @@ const ROLE_HOME: Record<string, string> = {
   super_admin: '/admin',
 }
 
-// ── Appointment-gated dashboards (Phase 2) ─────────────────────
+// ── Appointment-gated dashboards (Phase 2) ───────────────────────────────────────
 // New top-level dashboards that aren't keyed to a base profiles.role at
 // all, access depends on holding an ACTIVE row in `appointments`, not on
 // a role string. Kept separate from DASHBOARD_ROLE_SEGMENTS above since
@@ -135,14 +179,35 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Skip Next.js internals and static files
+  // /branding/ holds the public logo and landing-page photos. Without this
+  // skip, a signed-out visitor's request for an image (including the
+  // /_next/image optimizer's own fetch of it) was redirected to /login and
+  // came back as HTML, so the photo never rendered.
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/fonts/') ||
+    pathname.startsWith('/branding/') ||
     pathname === '/favicon.ico' ||
     pathname === '/manifest.json' ||
     pathname === '/sw.js'
   ) {
+    return NextResponse.next()
+  }
+
+  // ── Cron gate (fail-closed) ────────────────────────────────────────────────────────
+  // /api/cron is listed in PUBLIC_PATHS because cron callers (Vercel Cron,
+  // GitHub Actions) have no session cookie. That made each route's own
+  // `Bearer ${process.env.CRON_SECRET}` check the ONLY gate, and that check
+  // silently degrades to "Bearer undefined" if the env var is ever unset.
+  // Enforcing it here, once, fails closed: no CRON_SECRET configured means
+  // every cron request is rejected, and the route-level checks stay in place
+  // as a second layer. Runs before the Supabase client is built, so cron
+  // calls also skip the auth round trip.
+  if (pathname === '/api/cron' || pathname.startsWith('/api/cron/')) {
+    if (!isCronAuthorized(request.headers.get('authorization'), process.env.CRON_SECRET)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     return NextResponse.next()
   }
 
@@ -177,7 +242,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ── Get user ────────────────────────────────────────────────────────
+  // ── Get user ─────────────────────────────────────────────────────────────────────
   // getClaims() verifies the session's JWT instead of asking the Supabase
   // Auth server about it on every request:
   //   - project uses asymmetric JWT signing keys: the signature is checked
@@ -196,14 +261,34 @@ export async function middleware(request: NextRequest) {
   // the very next request. Everything that must take effect immediately in
   // this file - school lock, onboarding, role and appointment checks - is
   // read from the database below on every request and is unaffected.
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const subject = claimsData?.claims?.sub
+  //
+  // Outage handling: if the auth service cannot be reached (network error,
+  // 5xx, or no answer within AUTH_TIMEOUT_MS) that is NOT the same as "no
+  // session". It is remembered in authUnreachable so a private page sends the
+  // person to /service-unavailable below instead of /login. This never grants
+  // access: `user` stays null, exactly as before.
+  let subject: string | undefined
+  let authUnreachable = false
+  try {
+    const claimsResult = await Promise.race([
+      supabase.auth.getClaims(),
+      new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), AUTH_TIMEOUT_MS)),
+    ])
+    if (claimsResult === 'timeout') {
+      authUnreachable = true
+    } else {
+      subject = claimsResult.data?.claims?.sub
+      authUnreachable = isAuthUnreachable(claimsResult.error)
+    }
+  } catch {
+    authUnreachable = true
+  }
   const user = subject ? { id: subject } : null
 
   const isPublicPath   = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthOnlyPath = AUTH_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 
-  // ── Inactivity check ────────────────────────────────────────
+  // ── Inactivity check ────────────────────────────────────────────────────────────
   if (user) {
     const lastActivity = request.cookies.get('schoolos_last_activity')?.value
     const now = Date.now()
@@ -234,8 +319,12 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  // ── Route protection ────────────────────────────────────────
+  // ── Route protection ───────────────────────────────────────────────────────────────
   if (!user && !isPublicPath) {
+    // The auth service is down: we cannot tell whether this person has a
+    // session, so do not send them to a login page that cannot work.
+    if (authUnreachable) return serviceUnavailableRedirect(request)
+
     // Not logged in and trying to access a private page
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
@@ -248,22 +337,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(dest, request.url))
   }
 
-  // ── School lock enforcement ──────────────────────────────────
+  // ── Lock enforcement ─────────────────────────────────────────────────────────
   // Only runs for authenticated users hitting /dashboard routes.
   //
-  // Two lock tiers:
-  //  - HARD lock ('locked' status or is_platform_active=false): a super
-  //    admin manually suspended the school. Blocks EVERYONE, including
-  //    the principal, straight to /school-locked.
-  //  - BILLING lock ('expired' trial or 'suspended' subscription): all
-  //    non-principal roles go to /school-locked as before. The principal
-  //    is allowed to stay logged in, but is confined to
-  //    /dashboard/principal/subscriptions so they can renew, any other
-  //    /dashboard/principal/* route redirects them there instead.
-  //
-  // Previously principals were exempted from this check entirely, so an
-  // expired/suspended school kept working in full through the principal
-  // account with no way to force renewal.
+  //  - HARD lock ('locked' status, 'expired' unpaid-setup trial, or
+  //    is_platform_active=false): a super admin manually suspended the school
+  //    or setup was never paid. Blocks EVERYONE, including the principal,
+  //    straight to /school-locked.
+  //  - STUDENT lock: billing is per student now. A school never locks because
+  //    of money; only a student whose term subscription is unpaid (past the
+  //    term's grace window) is confined to STUDENT_SUBSCRIBE_PATH. Staff,
+  //    principals and parents are never billing-locked. The check is the
+  //    my_subscription_lock() RPC, which fails open when no term is configured
+  //    or when the migration has not been applied yet.
   if (user && pathname.startsWith('/dashboard')) {
     // The school's lock fields are fetched in the SAME query as the profile
     // (PostgREST embedded select over profiles_school_id_fkey) instead of a
@@ -271,13 +357,24 @@ export async function middleware(request: NextRequest) {
     // round-trip from every /dashboard navigation. RLS still applies to both
     // tables exactly as before - same user, same policies. The explicit FK
     // name avoids ambiguity if profiles ever gains another FK to schools.
-    const { data: profile } = await supabase
+    //
+    // Outage handling: when the database cannot be reached this query fails
+    // with status 0 (network/timeout) or a 5xx. `profile` is then null, which
+    // the checks below would read as "wrong role" and bounce to /login. A
+    // "no row" result (406) or an RLS denial is a real answer and is handled
+    // exactly as before.
+    const { data: profile, error: profileError, status: profileStatus } = await supabase
       .from('profiles')
       .select('role, school_id, onboarding_stage, school:schools!profiles_school_id_fkey(setup_status, is_platform_active)')
       .eq('id', user.id)
+      .abortSignal(AbortSignal.timeout(PROFILE_TIMEOUT_MS))
       .single()
 
-    // ── Enforce onboarding completion ───────────────────────────
+    if (profileError && isOutageStatus(profileStatus)) {
+      return serviceUnavailableRedirect(request)
+    }
+
+    // ── Enforce onboarding completion ─────────────────────────────────────────
     // A user with a valid session but an incomplete onboarding stage
     // (e.g. activated their account, then closed the browser before
     // finishing stage-1) must not be able to reach a dashboard by
@@ -293,7 +390,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/onboarding/stage-2', request.url))
     }
 
-    // ── Enforce role boundary ────────────────────────────────
+    // ── Enforce role boundary ─────────────────────────────────────────────────
     // '/dashboard/principal/...' -> 'principal'. If the segment is a
     // known role dashboard and doesn't match this user's own role,
     // redirect them to wherever they actually belong instead of
@@ -307,7 +404,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // ── Enforce appointment boundary (Phase 2) ─────────────────
+    // ── Enforce appointment boundary (Phase 2) ───────────────────────────────
     // Principal always passes (school-wide default scope, same as every
     // other lane's assumption), everyone else needs a live, active row
     // in `appointments` for one of the types this segment permits.
@@ -349,16 +446,13 @@ export async function middleware(request: NextRequest) {
         | null
         | undefined
       if (school) {
+        // 'expired' is the unpaid-SETUP trial lapse (not a billing lapse), so
+        // it stays a whole-school lock. The old 'suspended' / 'grace_period' /
+        // 'cancelled' school billing states no longer lock anyone.
         const isHardLocked =
           !school.is_platform_active ||
-          school.setup_status === 'locked'
-
-        const isBillingLocked =
-          school.setup_status === 'expired' ||
-          school.setup_status === 'suspended'
-
-        const isPrincipal = profile.role === 'principal'
-        const renewalPath = '/dashboard/principal/subscriptions'
+          school.setup_status === 'locked' ||
+          school.setup_status === 'expired'
 
         if (isHardLocked) {
           const lockedUrl = new URL('/school-locked', request.url)
@@ -367,26 +461,27 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(lockedUrl)
         }
 
-        if (isBillingLocked) {
-          if (!isPrincipal) {
-            const lockedUrl = new URL('/school-locked', request.url)
-            lockedUrl.searchParams.set('status', school.setup_status)
-            lockedUrl.searchParams.set('role',   profile.role)
-            return NextResponse.redirect(lockedUrl)
-          }
-
-          // Principal: allow only the renewal page itself; every other
-          // principal route bounces there.
-          if (pathname !== renewalPath && !pathname.startsWith(renewalPath + '/')) {
-            const renewUrl = new URL(renewalPath, request.url)
-            renewUrl.searchParams.set('status', school.setup_status)
-            return NextResponse.redirect(renewUrl)
+        // ── Per-student lock ─────────────────────────────────────────────
+        // Only students are checked; staff, principals and parents skip this
+        // query entirely. The subscribe page itself is always reachable so a
+        // locked student (or their parent, via the shared pay flow) can pay.
+        if (profile.role === 'student') {
+          const onSubscribePage =
+            pathname === STUDENT_SUBSCRIBE_PATH ||
+            pathname.startsWith(STUDENT_SUBSCRIBE_PATH + '/')
+          if (!onSubscribePage) {
+            const { data: lock } = await supabase
+              .rpc('my_subscription_lock')
+              .abortSignal(AbortSignal.timeout(PROFILE_TIMEOUT_MS))
+            if ((lock as { locked?: boolean } | null)?.locked) {
+              return NextResponse.redirect(new URL(STUDENT_SUBSCRIBE_PATH, request.url))
+            }
           }
         }
       }
     }
 
-    // ── Role dispatch for the bare /dashboard URL ──────────────
+    // ── Role dispatch for the bare /dashboard URL ────────────────────────────────────
     // Every check above has passed, and the profile is already in hand, so
     // send the user straight to their own dashboard from here instead of
     // rendering src/app/dashboard/page.tsx just to redirect (that page
@@ -401,7 +496,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Root redirect ────────────────────────────────────────────
+  // ── Root redirect ─────────────────────────────────────────────────────────────
   if (pathname === '/') {
     if (user) {
       // Signed-in visitors never see the landing page. Previously this hopped

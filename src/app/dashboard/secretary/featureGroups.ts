@@ -1,16 +1,14 @@
 // src/app/dashboard/secretary/featureGroups.ts
 // Shared across every secretary sub-page that uses RoleSubHeader, so the
 // bottom dock / "all features" sheet is identical everywhere a secretary
-// navigates - not just on the dashboard home screen. Extracted from
-// SecretaryClient.tsx, which now imports this instead of defining its
-// own local copy.
+// navigates - not just on the dashboard home screen.
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   UserIcon, UsersIcon, CalendarIcon,
   MessageIcon, BellIcon, SettingsIcon, FolderIcon,
   ClipboardIcon, CheckCircleIcon, BookOpenIcon,
-  RefreshIcon, GraduationCapIcon, FileTextIcon, BookIcon, ActivityIcon,
+  RefreshIcon, GraduationCapIcon, FileTextIcon, BookIcon, ActivityIcon, BarChartIcon,
 } from '@/components/Icons'
 
 export const SECRETARY_FEATURE_GROUPS: FeatureGroup[] = [
@@ -19,6 +17,7 @@ export const SECRETARY_FEATURE_GROUPS: FeatureGroup[] = [
     // 'Applications' was a duplicate of 'Admissions' pointed at a
     // separate, disconnected table - consolidated (Phase 4, Lane D).
     { id: 'admissions',  label: 'Admissions',  href: '/dashboard/secretary/admissions',  Icon: GraduationCapIcon },
+    { id: 'analytics',   label: 'Analytics',   href: '/dashboard/secretary/analytics',   Icon: BarChartIcon },
     { id: 'transfers',   label: 'Transfers',   href: '/dashboard/secretary/transfers',   Icon: RefreshIcon },
     { id: 'clinic',      label: 'Clinic',      href: '/dashboard/secretary/clinic',      Icon: ActivityIcon },
     { id: 'codes',       label: 'Access codes',href: '/dashboard/secretary/codes',       Icon: CheckCircleIcon },

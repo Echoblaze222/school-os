@@ -3,12 +3,17 @@
 // Lists certificates for the school's certificate management UI (§38).
 // Read-only; issuance/revocation stay in their own dedicated routes so
 // there's exactly one code path that ever changes a certificate's status.
+//
+// `pdf_url` in the response is minted fresh on every request and expires
+// after an hour (see src/lib/certificates/pdfUrl.ts). It is no longer the
+// stored value.
 // -------------------------------------------------------
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasExamCapability } from '@/lib/supabase/examPermissions'
+import { signCertificatePdfs } from '@/lib/certificates/pdfUrl'
 
 export async function GET(req: Request) {
   const supabase = await createClient()
@@ -41,5 +46,14 @@ export async function GET(req: Request) {
   const { data, error } = await query
   if (error) return NextResponse.json({ ok: false, error: `Could not load certificates: ${error.message}` }, { status: 500 })
 
-  return NextResponse.json({ ok: true, certificates: data ?? [] })
+  const rows = data ?? []
+  const pdfUrls = await signCertificatePdfs(admin, rows.map(c => ({
+    schoolId: profile.school_id as string,
+    // Only issued certificates have a PDF worth linking to.
+    certificateNumber: c.status === 'issued' ? c.certificate_number : null,
+    fallback: c.pdf_url,
+  })))
+  const certificates = rows.map((c, i) => ({ ...c, pdf_url: pdfUrls[i] }))
+
+  return NextResponse.json({ ok: true, certificates })
 }

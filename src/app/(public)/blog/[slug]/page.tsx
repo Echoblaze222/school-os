@@ -4,10 +4,12 @@
 // from seo_title/seo_description before the page ever reaches the
 // client - a client-fetched page can't do that.
 
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ReportContentButton from '@/components/ReportContentButton'
 import { CalendarIcon } from '@/components/Icons'
+import { pageMetadata, blogPostJsonLd, jsonLdString, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 async function getPost(slug: string) {
   const supabase = await createClient()
@@ -19,14 +21,18 @@ async function getPost(slug: string) {
   return data
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const post = await getPost(slug)
-  if (!post) return { title: 'Not Found | SchoolOS' }
-  return {
+  if (!post) return { title: 'Not Found | SchoolOS', robots: { index: false, follow: false } }
+
+  return pageMetadata({
     title: `${post.seo_title || post.title} | SchoolOS`,
-    description: post.seo_description || undefined,
-  }
+    description: post.seo_description || `${post.title} - from the SchoolOS blog.`,
+    path: `/blog/${post.slug}`,
+    image: post.cover_image_url || DEFAULT_OG_IMAGE,
+    type: 'article',
+  })
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -36,6 +42,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <article>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(blogPostJsonLd(post)) }}
+      />
       {post.cover_image_url && (
         <img src={post.cover_image_url} alt="" style={{ width: '100%', borderRadius: 14, marginBottom: 20, display: 'block' }} />
       )}

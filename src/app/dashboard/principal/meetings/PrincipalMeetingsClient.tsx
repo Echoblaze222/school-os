@@ -134,8 +134,40 @@ export default function PrincipalMeetingsClient({
 
     if (error) { setFormError(error.message); setSubmitting(false); return }
 
+    // Email the invited group. Fire-and-forget on purpose: a slow or
+    // failed email must never block or undo a meeting that is already
+    // scheduled. The server dedupes, so a retry cannot double-send.
+    const when = new Date(scheduledAt)
+    const emailAudience =
+      audience === 'all_parents'  ? 'parents'
+      : audience === 'all_teachers' ? 'teachers'
+      : audience === 'all_staff'    ? 'staff'
+      : 'class_parents'
+    const venue =
+      meetingMode === 'in_person'     ? location.trim()
+      : meetingMode === 'external_link' ? meetingUrl.trim()
+      : 'Online (live meeting inside SchoolOS)'
+    const agendaNote = agenda.trim()
+      ? 'Agenda: ' + agenda.trim().split('\n').map(l => l.trim()).filter(Boolean).join(' / ')
+      : ''
+
+    fetch('/api/notices/email', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind:     'meeting',
+        title:    title.trim(),
+        date:     when.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+        time:     when.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }),
+        venue,
+        note:     agendaNote || undefined,
+        audience: emailAudience,
+        class_id: audience === 'specific_class' ? classId : undefined,
+      }),
+    }).catch(() => { /* email is best-effort; the meeting itself is saved */ })
+
     setMeetings(prev => [inserted as MeetingRow, ...prev])
-    setSuccess(`"${title}" scheduled. Notifications sent to ${AUDIENCE_LABELS[audience]}.`)
+    setSuccess(`"${title}" scheduled. Notifications and emails are being sent to ${AUDIENCE_LABELS[audience]}.`)
     resetForm()
     setSubmitting(false)
     setTimeout(() => { setSuccess(''); setMode('list') }, 2500)
@@ -448,6 +480,4 @@ function MeetingListCard({
       </div>
     </div>
   )
-      }
-
-  
+}

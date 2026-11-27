@@ -13,7 +13,7 @@
 .orb1 { position: absolute; width: 320px; height: 320px; top: -80px; right: -80px; opacity: 0.45; border-radius: 50%; background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); pointer-events: none; filter: blur(40px); }
 .orb2 { position: absolute; width: 240px; height: 240px; bottom: 200px; left: -60px; opacity: 0.3; border-radius: 50%; background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); pointer-events: none; filter: blur(40px); }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px; height: 38px;
+  width: 44px; height: 44px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -48,9 +48,9 @@
 
 .headerCenter { flex: 1; text-align: center; padding: 0 var(--space-3); }
 .title        { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: var(--text-primary); line-height: 1.1; }
-.subtitle     { font-family: var(--font-body); font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.04em; margin-top: 2px; }
+.subtitle     { font-family: var(--font-body); font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.04em; margin-top: 4px; }
 
-/* ── Class Tabs ──────────────────────────────────────────── */
+/* ── Class Tabs ───────────────────────────────────────────────────────────── */
 .classTabs { padding: var(--space-3) var(--space-4) 0; background: var(--bg-base); }
 .classTabsScroll {
   display: flex;
@@ -65,7 +65,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
+  min-height: 48px;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--glass-bg);
@@ -82,7 +84,7 @@
 .classTabName { font-family: var(--font-display); font-size: 0.95rem; font-weight: 600; }
 .classTabSub  { font-family: var(--font-body); font-size: 0.62rem; letter-spacing: 0.05em; }
 
-/* ── Saved Banner ────────────────────────────────────────── */
+/* ── Saved Banner ──────────────────────────────────────────────────────── */
 .savedBanner {
   display: flex;
   align-items: center;
@@ -96,7 +98,7 @@
   color: var(--success);
 }
 
-/* ── Stats Strip ─────────────────────────────────────────── */
+/* ── Stats Strip ───────────────────────────────────────────────────────── */
 .statsStrip {
   display: flex;
   gap: var(--space-2);
@@ -111,9 +113,11 @@
 .statPill {
   flex: 1;
   min-width: 68px;
+  min-height: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   padding: var(--space-2) var(--space-1);
   border-radius: var(--radius-md);
@@ -125,7 +129,7 @@
 .statPillNum { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; line-height: 1; }
 .statPillLbl { font-family: var(--font-body); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 
-/* ── Main ────────────────────────────────────────────────── */
+/* ── Main ──────────────────────────────────────────────────────────────────── */
 .main {
   flex: 1;
   padding: var(--space-4) var(--space-5);
@@ -134,7 +138,7 @@
   gap: var(--space-4);
 }
 
-/* ── Search ──────────────────────────────────────────────── */
+/* ── Search ────────────────────────────────────────────────────────────────── */
 .searchWrap {
   position: relative;
   display: flex;
@@ -148,17 +152,19 @@
   display: flex;
 }
 .searchInput {
+  min-height: 48px;
   padding-left: 40px !important;
-  padding-right: 40px !important;
+  padding-right: 48px !important;
   border-radius: var(--radius-full) !important;
 }
+/* 32px visual, 48px effective hit area */
 .searchClear {
   position: absolute;
-  right: var(--space-3);
+  right: var(--space-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px; height: 24px;
+  width: 32px; height: 32px;
   border-radius: 50%;
   background: var(--glass-bg);
   border: none;
@@ -166,9 +172,14 @@
   cursor: pointer;
   transition: all var(--transition-fast);
 }
+.searchClear::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
 .searchClear:hover { color: var(--text-primary); background: var(--glass-bg-hover); }
 
-/* ── Bulk row ────────────────────────────────────────────── */
+/* ── Bulk row ──────────────────────────────────────────────────────────────── */
 .bulkRow {
   display: flex;
   align-items: center;
@@ -187,7 +198,8 @@
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 3px 10px;
+  min-height: 44px;
+  padding: 0 12px;
   border-radius: var(--radius-full);
   border: 1px solid;
   cursor: pointer;
@@ -195,7 +207,7 @@
 }
 .bulkBtn:hover { transform: translateY(-1px); filter: brightness(1.1); }
 
-/* ── Student List ────────────────────────────────────────── */
+/* ── Student List ───────────────────────────────────────────────────────── */
 .studentList { display: flex; flex-direction: column; gap: var(--space-2); }
 
 .studentRow {
@@ -212,7 +224,7 @@
 .studentRow:hover { background: var(--glass-bg-hover); }
 
 .studentAvatar {
-  width: 38px; height: 38px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-full);
   background: var(--brand-subtle);
   border: 1px solid rgba(128,0,32,0.2);
@@ -229,15 +241,17 @@
 .studentName   { font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .studentNum    { font-family: var(--font-body); font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.04em; }
 
-/* ── Status buttons ──────────────────────────────────────── */
+/* ── Status buttons ────────────────────────────────────────────────────── */
 .statusBtns {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
 }
 
+/* 36px visual + 2px hit-area bleed = 40px effective, sized to fit 4 buttons on 360px phones */
 .statusBtn {
-  width: 30px; height: 30px;
+  position: relative;
+  width: 36px; height: 36px;
   border-radius: var(--radius-sm);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -250,6 +264,11 @@
   align-items: center;
   justify-content: center;
 }
+.statusBtn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+}
 .statusBtn:hover {
   background: var(--glass-bg-hover);
   border-color: var(--glass-border-hover);
@@ -261,7 +280,7 @@
   font-weight: 800;
 }
 
-/* ── Loading ─────────────────────────────────────────────── */
+/* ── Loading ─────────────────────────────────────────────────────────────────── */
 .loadingWrap {
   display: flex;
   flex-direction: column;
@@ -270,7 +289,7 @@
   padding: var(--space-12) 0;
 }
 .loadingSpinner {
-  width: 36px; height: 36px;
+  width: 40px; height: 40px;
   border: 3px solid var(--glass-border);
   border-top-color: var(--brand);
   border-radius: 50%;
@@ -288,7 +307,7 @@
   padding: var(--space-6);
 }
 
-/* ── Submit Bar ──────────────────────────────────────────── */
+/* ── Submit Bar ───────────────────────────────────────────────────────── */
 .submitBar {
   position: sticky;
   bottom: var(--space-5);
@@ -309,6 +328,7 @@
 
 .submitBtn {
   width: 100%;
+  min-height: 48px;
   padding-top: var(--space-4) !important;
   padding-bottom: var(--space-4) !important;
   font-size: 0.95rem !important;
@@ -323,7 +343,7 @@
 
 .spinner {
   display: inline-block;
-  width: 15px; height: 15px;
+  width: 16px; height: 16px;
   border: 2px solid rgba(255,255,255,0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -346,7 +366,7 @@
   justify-content: center;
 }
 
-/* ── Empty States ────────────────────────────────────────── */
+/* ── Empty States ──────────────────────────────────────────────────────── */
 .emptyState {
   display: flex;
   flex-direction: column;

@@ -1,0 +1,63 @@
+/* src/app/legacy-tokens.css
+   -----------------------------------------------------------------------------
+   Bridges the OLD token names to the CURRENT design system.
+
+   Why this exists: 34 CSS modules (the full notifications page, student
+   records/profile/results/chat/timetable/notes/announcements, principal
+   fees/classes/codes/meetings/profile, bursar payments/reports/reminders,
+   secretary users/codes, forgot-password, and more) still use the old names
+   --burgundy, --burgundy-light, --burgundy-subtle, --burgundy-glow,
+   --text-accent, --error, --error-bg, --success-bg, --input-text,
+   --input-border-focus, --font-display, --font-body and --z-card.
+   Those names were only ever defined in src/app/register-school/globals.css,
+   which is imported by the register-school route alone. Everywhere else they
+   were undefined, so for example an unread notification row had no highlight,
+   no accent bar, no dot and no badge colour.
+
+   Each alias points at the live token, so it follows dark/light mode and the
+   school's brand colour. :where() keeps the specificity at zero, so the
+   register-school stylesheet (which defines its own values) still wins on its
+   own pages no matter which file loads first.
+   ----------------------------------------------------------------------------- */
+
+:where(:root) {
+  --burgundy:          var(--brand);
+  --burgundy-light:    var(--brand-light);
+  --burgundy-glow:     var(--brand-glow);
+  --burgundy-subtle:   var(--brand-subtle);
+  --silver:            var(--gold);
+  --silver-light:      var(--gold-light);
+
+  /* Accent text on the dark theme needs to be lighter than the raw brand
+     colour to stay readable. */
+  --text-accent:       var(--brand-light);
+
+  --input-text:        var(--text-primary);
+  --input-placeholder: var(--text-muted);
+  --input-border-focus: var(--brand);
+
+  --nav-home-bg:       linear-gradient(135deg, var(--brand), var(--brand-light));
+
+  --success-bg:        var(--success-subtle);
+  --warning-bg:        var(--warning-subtle);
+  --error:             var(--danger);
+  --error-bg:          var(--danger-subtle);
+  --info-bg:           var(--info-subtle);
+
+  --font-display:      var(--font-sans);
+  --font-body:         var(--font-sans);
+
+  --z-card:            var(--z-raised);
+}
+
+@supports (color: color-mix(in srgb, red 50%, white)) {
+  :where(:root) {
+    --text-accent: color-mix(in srgb, var(--brand) 55%, #ffffff);
+  }
+}
+
+/* Light theme: the raw brand colour already has strong contrast on light
+   backgrounds, so accent text uses it directly. */
+:where([data-theme="light"]) {
+  --text-accent: var(--brand);
+}

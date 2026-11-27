@@ -1,6 +1,6 @@
 /* RoleNav.module.css - identical nav look across ALL roles */
 
-/* ── Desktop Sidebar ─────────────────────────────────────── */
+/* ── Desktop Sidebar ───────────────────────────────────────────────────── */
 .sidebar {
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
@@ -34,14 +34,14 @@
   border: 2px solid rgba(0,0,0,0.15);
 }
 .logo     { width: 100%; height: 100%; object-fit: cover; }
-.schoolName { font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.schoolName { font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 .roleName   { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0; }
 
 .divider { height: 1px; background: var(--glass-border); margin: var(--space-1) var(--space-4); flex-shrink: 0; }
 
 .nav { flex: 1; overflow-y: auto; padding: var(--space-2) var(--space-3); display: flex; flex-direction: column; gap: var(--space-4); }
 
-.section { display: flex; flex-direction: column; gap: 2px; }
+.section { display: flex; flex-direction: column; gap: 4px; }
 .sectionLabel {
   font-size: 0.58rem; font-weight: 800;
   letter-spacing: 0.12em; text-transform: uppercase;
@@ -54,6 +54,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   color: var(--text-muted);
@@ -82,9 +83,10 @@
   background: var(--brand-2);
 }
 
-.footer { padding: 0 var(--space-3); display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.footer { padding: 0 var(--space-3); display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
 .footerBtn {
   display: flex; align-items: center; gap: var(--space-3);
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   font-size: 0.82rem; font-weight: 500;

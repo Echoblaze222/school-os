@@ -192,6 +192,25 @@ body {
 img, video { max-width: 100%; display: block; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; }
 a { color: inherit; text-decoration: none; }
+
+/* ── INSTANT TAP RESPONSE ─────────────────────────────────────
+   On a touch screen, links and buttons gave no visual sign they had
+   been pressed until the next screen arrived, so every tap felt like
+   it was "thinking" first. Now they dim the moment the finger lands
+   (opacity only, so it never fights an element's own transform, e.g.
+   the centred dock). touch-action: manipulation keeps taps from being
+   held back by double-tap-zoom detection. Touch devices only. */
+a, button, [role='button'], summary, select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: none) {
+  a:active,
+  button:not(:disabled):active,
+  [role='button']:not([aria-disabled='true']):active {
+    opacity: 0.7;
+  }
+}
 input, textarea, select { font-family: inherit; }
 ul, ol { list-style: none; }
 

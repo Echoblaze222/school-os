@@ -33,8 +33,11 @@
 // authoritatively check, so routing on the same signal keeps this file
 // and those functions from being able to drift out of sync about what
 // counts as "a registration payment":
-//   SCH-REG-*  → school registration   (activateSchool)
-//   SCOS-*     → subscription renewal  (activateSubscription)
+//   SCH-REG-*  → school registration        (activateSchool)
+//   SCSUB-*    → per-student subscription   (activateStudentSubscription)
+//   SCOS-*     → legacy school renewal      (activateSubscription; the
+//                principal no longer starts these, kept so any in-flight
+//                payment from before the per-student change still settles)
 //   anything else with metadata.invoice_id → fee/invoice payment (handled inline)
 
 import { NextResponse } from 'next/server'
@@ -45,6 +48,9 @@ import { logger, newTraceId } from '@/lib/logger'
 import { logActivityWithClient } from '@/lib/logActivity'
 import { activateSchool } from '@/lib/activateSchool'
 import { activateSubscription } from '@/app/api/subscription/callback/route'
+import { activateStudentSubscription } from '@/lib/activateStudentSubscription'
+import { STUDENT_REFERENCE_PREFIX } from '@/lib/studentBilling'
+import { queueEmail } from '@/lib/email/queueEmail'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
 
@@ -96,6 +102,14 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
     .single()
   if (invErr || !invoice) throw new Error('Invoice not found for webhook')
 
+  // Captured once so the SAME number is used in the payments row and in
+  // the receipt email below - previously nothing referenced this value
+  // outside the insert, but adding a second call here would generate a
+  // DIFFERENT random receipt number than what's actually stored,
+  // producing a receipt email whose number doesn't match its own
+  // database record.
+  const receiptNumber = generateReceiptNumber()
+
   const { error: payErr } = await admin
     .from('payments')
     .insert({
@@ -105,7 +119,7 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
       paid_by_parent_id: paidByParentId,
       amount_paid_ngn: amountNgn,
       currency_used: 'NGN',
-      receipt_number: generateReceiptNumber(),
+      receipt_number: receiptNumber,
       payment_method: 'paystack',
       payment_reference: reference,
       notes: 'Paid online via Paystack',
@@ -118,7 +132,12 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
 
   const newAmountPaid = (invoice.amount_paid_ngn ?? 0) + amountNgn
   const newBalance = Math.max(0, invoice.amount_due_ngn - newAmountPaid)
-  const newStatus = newBalance <= 0 ? 'paid' : 'partial'
+  // 'completed', not 'paid': the payment_status enum is
+  // pending | partial | completed | overdue | refunded - it has no 'paid'
+  // value, so writing 'paid' made this update fail AFTER the payment row
+  // was already inserted, leaving the invoice unpaid despite the money
+  // having arrived. Matches RecordPaymentClient and confirm-claim.
+  const newStatus = newBalance <= 0 ? 'completed' : 'partial'
 
   const { error: updateErr } = await admin
     .from('payment_invoices')
@@ -150,6 +169,59 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
       subtitle: 'via Paystack',
       href: '/dashboard/parent/fees',
     })
+
+    // Email receipt — was previously not sent at all (push/in-app above
+    // was the only notification a parent ever got for a fee payment).
+    // Fetches the parent's email + school name/address for the receipt
+    // header; skips silently (no email, push/in-app above still stands)
+    // if the parent has no email on file rather than failing the whole
+    // webhook over a missing optional field.
+    const [{ data: parentProfile }, { data: school }] = await Promise.all([
+      admin.from('profiles').select('email, full_name').eq('id', studentProfile.parent_id).single(),
+      admin.from('schools').select('name, address, phone, email, logo_url').eq('id', schoolId).single(),
+    ])
+
+    if (parentProfile?.email) {
+      const paidAtLagos = new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'long', timeStyle: 'short' })
+
+      await queueEmail({
+        schoolId,
+        recipientId: studentProfile.parent_id,
+        to: parentProfile.email,
+        subject: `Receipt: ₦${amountNgn.toLocaleString('en-NG')} payment for ${studentProfile.full_name}`,
+        referenceTable: 'payments',
+        referenceId: invoiceId,
+        // Reference (not receiptNumber) as the dedupe key - it's the one
+        // value guaranteed unique per Paystack charge; a retried webhook
+        // delivery for the same charge.success event must not re-queue
+        // this receipt a second time.
+        dedupeKey: `fee-receipt-${reference}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#fff;color:#111;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+            <div style="background:#111;padding:28px;text-align:center;">
+              ${school?.logo_url ? `<img src="${school.logo_url}" alt="${school?.name ?? ''}" style="height:40px;margin-bottom:10px;" />` : ''}
+              <h1 style="margin:0;font-size:20px;color:#fff;">${school?.name ?? 'SchoolOS'}</h1>
+              <p style="margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:13px;">Payment Receipt</p>
+            </div>
+            <div style="padding:28px;">
+              <p style="font-size:14px;color:#374151;">Hi <strong>${parentProfile.full_name ?? 'there'}</strong>,</p>
+              <p style="font-size:14px;color:#374151;">Your payment was successful. Details below.</p>
+              <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Receipt No.</td><td style="padding:8px 0;text-align:right;font-family:monospace;border-bottom:1px solid #f3f4f6;">${receiptNumber}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Student</td><td style="padding:8px 0;text-align:right;font-weight:600;border-bottom:1px solid #f3f4f6;">${studentProfile.full_name}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Amount Paid</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#059669;border-bottom:1px solid #f3f4f6;">₦${amountNgn.toLocaleString('en-NG')}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">New Balance</td><td style="padding:8px 0;text-align:right;border-bottom:1px solid #f3f4f6;">₦${newBalance.toLocaleString('en-NG')}</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #f3f4f6;">Payment Method</td><td style="padding:8px 0;text-align:right;border-bottom:1px solid #f3f4f6;">Paystack</td></tr>
+                <tr><td style="padding:8px 0;color:#6b7280;">Date</td><td style="padding:8px 0;text-align:right;">${paidAtLagos}</td></tr>
+              </table>
+              <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:24px;">
+                ${school?.name ?? 'Your school'}${school?.address ? ` · ${school.address}` : ''}${school?.phone ? ` · ${school.phone}` : ''}
+              </p>
+            </div>
+          </div>
+        `,
+      })
+    }
   }
 
   const { data: staff } = await admin
@@ -176,7 +248,24 @@ async function handleInvoicePayment(admin: ReturnType<typeof createAdminClient>,
   return { handled: 'invoice_payment', invoiceId }
 }
 
-// ─── Subscription renewal ───────────────────────────────────────────────
+// ─── Per-student subscription ───────────────────────────────────────────
+// activateStudentSubscription() does its own SCSUB- prefix check and
+// cross-checks the pre-logged student_subscriptions row (amount, status)
+// before marking anything paid, so this wrapper only surfaces refusal as
+// a thrown error for logs / paystack_webhook_events.
+async function handleStudentSubscription(admin: ReturnType<typeof createAdminClient>, data: any, traceId: string) {
+  const { reference, amount } = data
+  const result = await activateStudentSubscription(admin, reference, amount / 100)
+
+  if (!result.activated) {
+    throw new Error(`activateStudentSubscription refused: ${result.reason}`)
+  }
+
+  logger.info('student subscription webhook processed', { traceId, studentId: result.studentId })
+  return { handled: 'student_subscription', studentId: result.studentId }
+}
+
+// ─── Legacy school renewal ──────────────────────────────────────────────
 // activateSubscription() does its own SCOS- prefix check and
 // subscription_payments cross-check internally — this wrapper just
 // surfaces its {activated, reason} result as a thrown error on refusal,
@@ -287,6 +376,9 @@ export async function POST(req: Request) {
   if (reference.startsWith(REGISTRATION_REFERENCE_PREFIX)) {
     scope = 'paystack_school_registration'
     handler = () => handleSchoolRegistration(admin, event.data, traceId)
+  } else if (reference.startsWith(STUDENT_REFERENCE_PREFIX)) {
+    scope = 'paystack_student_subscription'
+    handler = () => handleStudentSubscription(admin, event.data, traceId)
   } else if (reference.startsWith(SUBSCRIPTION_REFERENCE_PREFIX)) {
     scope = 'paystack_subscription_renewal'
     handler = () => handleSubscriptionRenewal(admin, event.data, traceId)

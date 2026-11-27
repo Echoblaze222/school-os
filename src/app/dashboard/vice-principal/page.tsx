@@ -6,6 +6,8 @@
 import { requireAppointmentPage } from '@/lib/permissions'
 import { listDepartments, type DepartmentWithStats } from '@/lib/supabase/appointments'
 import VicePrincipalDashboardClient from './VicePrincipalDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function VicePrincipalDashboardPage() {
   const { supabase, ctx, appointment } = await requireAppointmentPage('vice_principal')
@@ -71,25 +73,39 @@ export default async function VicePrincipalDashboardPage() {
     preview: row.metadata ? { body: row.metadata.body, meta: row.metadata.meta } : undefined,
   }))
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${studentCount ?? 0} students · ${teacherCount ?? 0} teachers`, [
+    { label: 'Students', value: String(studentCount ?? 0) },
+    { label: 'Teachers', value: String(teacherCount ?? 0) },
+    { label: 'Classes', value: String(classCount ?? 0) },
+    { label: 'Unread alerts', value: String(unreadNotifCount ?? 0) },
+    { label: 'Departments', value: String(myDepartments.length) },
+  ])
+
   return (
-    <VicePrincipalDashboardClient
-      profile={profile}
-      school={school}
-      userId={ctx.userId}
-      portfolio={scope.portfolio ?? null}
-      counts={{
-        studentCount: studentCount ?? 0,
-        teacherCount: teacherCount ?? 0,
-        classCount: classCount ?? 0,
-        avgScore,
-        pendingActions: unreadNotifCount ?? 0,
-        myDepartmentCount: myDepartments.length,
-        departmentsMissingHod,
-      }}
-      myDepartments={myDepartments}
-      activities={activities}
-      pendingNotifications={pendingNotifications}
-      unreadNotifCount={unreadNotifCount ?? 0}
-    />
+    <>
+      <VicePrincipalDashboardClient
+        profile={profile}
+        school={school}
+        userId={ctx.userId}
+        portfolio={scope.portfolio ?? null}
+        counts={{
+          studentCount: studentCount ?? 0,
+          teacherCount: teacherCount ?? 0,
+          classCount: classCount ?? 0,
+          avgScore,
+          pendingActions: unreadNotifCount ?? 0,
+          myDepartmentCount: myDepartments.length,
+          departmentsMissingHod,
+        }}
+        myDepartments={myDepartments}
+        activities={activities}
+        pendingNotifications={pendingNotifications}
+        unreadNotifCount={unreadNotifCount ?? 0}
+      />
+      <SaveSnapshot userId={ctx.userId} routeKey={homeKey('vice-principal')} data={homeSnapshot} />
+    </>
   )
 }

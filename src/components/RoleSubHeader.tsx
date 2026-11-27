@@ -1,11 +1,13 @@
 'use client'
 // components/RoleSubHeader.tsx
 // The RoleHeroHeader's sibling for every page that ISN'T the dashboard
-// home screen. Same gradient band, crest, and icon-button language, just
-// compact: a back button + page title instead of the big greeting/headline
-// block. Pairs with BottomDock for nav (all sub-pages already get that
-// automatically once they're wrapped here, so the old sidebar/RoleNav is
-// no longer needed on any page using this).
+// home screen. Compact solid bar: back button, crest and page title, then
+// notifications and a three-line menu button that opens the glass drawer.
+// On phones the bar hides when you scroll down and returns when you scroll
+// up. Pairs with BottomDock for nav.
+//
+// On desktop (1024px and up) this is a pinned top bar and DesktopShell
+// supplies the sidebar.
 //
 // Usage:
 //   <RoleSubHeader userId={userId} role="parent" profile={profile} school={school}
@@ -13,13 +15,15 @@
 //     {page content}
 //   </RoleSubHeader>
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import NotificationsBell from './NotificationsBell'
-import AllFeaturesSheet, { FeatureGroup } from './AllFeaturesSheet'
+import type { FeatureGroup } from './AllFeaturesSheet'
+import GlassMenuButton from './GlassMenuButton'
 import BottomDock from './BottomDock'
-import { SunIcon, MoonIcon, UserIcon, ArrowLeftIcon } from './Icons'
-import { useTheme } from '@/hooks/useTheme'
+import DesktopShell from './DesktopShell'
+import { ArrowLeftIcon } from './Icons'
 import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import { ripple } from '@/lib/ripple'
 import motion from './dashboard-motion.module.css'
@@ -48,13 +52,26 @@ export default function RoleSubHeader({
   userId, role, profile, school, title, backHref, onBack, featureGroups,
   homeHref, aiHref, hideDock = false, fullHeight = false, children,
 }: Props) {
-  const { theme, toggleTheme } = useTheme()
-
   // Keeps the shell height honest when a mobile keyboard opens, so a
   // sticky/floating input bar (used by fullHeight pages like AI & Chat)
   // stays pinned above the keyboard instead of scrolling off with the
   // page. Harmless no-op for pages that don't reference --app-vh.
   useVisualViewportHeight()
+
+  // Hide on scroll down, reveal on scroll up (phones; desktop keeps it pinned).
+  const [hidden, setHidden] = useState(false)
+  useEffect(() => {
+    let lastY = window.scrollY
+    function onScroll() {
+      const y = window.scrollY
+      const delta = y - lastY
+      if (Math.abs(delta) < 8) return
+      setHidden(delta > 0 && y > 80)
+      lastY = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const initials = (school?.name ?? 'S').slice(0, 2).toUpperCase()
   const resolvedHome = homeHref ?? `/dashboard/${role}`
@@ -63,7 +80,16 @@ export default function RoleSubHeader({
 
   return (
     <div className={fullHeight ? `${styles.page} ${styles.pageFullHeight}` : styles.page}>
-      <header className={styles.hero}>
+      <DesktopShell
+        role={role}
+        profile={profile}
+        school={school}
+        featureGroups={featureGroups}
+        homeHref={resolvedHome}
+        aiHref={resolvedAi}
+      />
+
+      <header className={`${styles.hero} ${hidden ? styles.heroHidden : ''}`}>
         <div className={styles.frame}>
           <div className={styles.topRow}>
             <div className={styles.brand}>
@@ -101,30 +127,19 @@ export default function RoleSubHeader({
             </div>
 
             <div className={styles.controls}>
-              <button
-                className={`${styles.iconBtn} ${motion.rippleHost} ${motion.focusable}`}
-                onClick={toggleTheme}
-                title="Toggle dark mode"
-                aria-label="Toggle dark mode"
-                onMouseDown={ripple(motion)}
-              >
-                {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-              </button>
-
               <NotificationsBell userId={userId} role={role} />
 
-              <Link
-                href={`/dashboard/${role}/profile`}
-                className={`${styles.avatarBtn} ${motion.focusable}`}
-                title="Account"
-                aria-label="Account"
-              >
-                {profile?.avatar_url
-                  ? <Image src={profile.avatar_url} alt="" width={38} height={38} className={styles.avatarImg} />
-                  : <UserIcon size={18} />}
-              </Link>
-
-              <AllFeaturesSheet groups={featureGroups} role={role} />
+              <span className={styles.mobileOnly}>
+                <GlassMenuButton
+                  className={styles.menuBtn}
+                  role={role}
+                  groups={featureGroups}
+                  aiHref={resolvedAi}
+                  homeHref={resolvedHome}
+                  profile={profile}
+                  school={school}
+                />
+              </span>
             </div>
           </div>
         </div>
@@ -134,7 +149,7 @@ export default function RoleSubHeader({
         {children}
       </main>
 
-      {!hideDock && <BottomDock aiHref={resolvedAi} groups={featureGroups} role={role} />}
+      {!hideDock && <BottomDock aiHref={resolvedAi} groups={featureGroups} role={role} profile={profile} school={school} homeHref={resolvedHome} />}
     </div>
   )
 }

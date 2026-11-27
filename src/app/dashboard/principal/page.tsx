@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/supabase/authUser'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PrincipalDashboardClient from './PrincipalDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function PrincipalDashboardPage() {
   const supabase = await createClient()
@@ -21,12 +23,24 @@ export default async function PrincipalDashboardPage() {
   const schoolId = school?.id
 
   // BUG 7 FIX: fetch all counts in parallel
+  //
+  // FEES: previously read `school_fees`, a legacy table nothing writes to any
+  // more, so every school showed ₦0 collected. The live money flow is:
+  //   - `payments`          the ledger: every cash / bank transfer / POS /
+  //                         online (Paystack) / confirmed-claim payment
+  //   - `payment_invoices`  what each student is billed (amount_due_ngn) and
+  //                         the remaining balance (balance_ngn)
+  // "Collected" comes from the ledger so payments that are not linked to an
+  // invoice yet (e.g. a confirmed parent claim with no matching invoice) are
+  // still counted. Totals are school-wide across all terms for now - a
+  // term-scoped view lives on /dashboard/principal/fees.
   const [
     { count: studentCount },
     { count: teacherCount },
     { count: classCount },
     { data: results },
-    { data: feeRows },
+    { data: paymentRows },
+    { data: invoiceRows },
     { data: notifRows },
     { count: unreadNotifCount },
   ] = await Promise.all([
@@ -38,7 +52,9 @@ export default async function PrincipalDashboardPage() {
       .eq('school_id', schoolId),
     supabase.from('results').select('score')
       .eq('school_id', schoolId).limit(200),
-    supabase.from('school_fees').select('amount_ngn, paid_ngn')
+    supabase.from('payments').select('amount_paid_ngn')
+      .eq('school_id', schoolId),
+    supabase.from('payment_invoices').select('amount_due_ngn, balance_ngn')
       .eq('school_id', schoolId),
     supabase.from('notifications').select('id, title, body, type, created_at, action_url, link_url')
       .eq('user_id', user.id).eq('is_read', false)
@@ -52,17 +68,22 @@ export default async function PrincipalDashboardPage() {
     ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
     : 0
 
-  // Fee collection rate: sum(paid_ngn) / sum(amount_ngn) across the school
-  const feeTotals = (feeRows ?? []).reduce(
-    (acc: { due: number; paid: number }, r: any) => {
-      acc.due  += Number(r.amount_ngn) || 0
-      acc.paid += Number(r.paid_ngn)   || 0
-      return acc
-    },
-    { due: 0, paid: 0 }
+  // Fee totals: billed = sum(invoice amount due), collected = sum(ledger),
+  // outstanding = sum(invoice balances). Outstanding uses the invoice balance
+  // rather than billed - collected so an unlinked payment never makes a
+  // student's outstanding amount look smaller than it really is.
+  const billed = (invoiceRows ?? []).reduce(
+    (sum: number, r: any) => sum + (Number(r.amount_due_ngn) || 0), 0
   )
+  const collected = (paymentRows ?? []).reduce(
+    (sum: number, r: any) => sum + (Number(r.amount_paid_ngn) || 0), 0
+  )
+  const outstanding = (invoiceRows ?? []).reduce(
+    (sum: number, r: any) => sum + (Number(r.balance_ngn) || 0), 0
+  )
+  const feeTotals = { due: billed, paid: collected, outstanding }
   const feeCollectionRate = feeTotals.due > 0
-    ? Math.round((feeTotals.paid / feeTotals.due) * 100)
+    ? Math.min(100, Math.round((feeTotals.paid / feeTotals.due) * 100))
     : 0
 
   // Currency formatting, not just the rate - prompt §6 wants the actual
@@ -72,7 +93,7 @@ export default async function PrincipalDashboardPage() {
     style: 'currency', currency: 'NGN', notation: 'compact', maximumFractionDigits: 1,
   }).format(n)
   const feesCollectedDisplay = nairaCompact(feeTotals.paid)
-  const outstandingFeesDisplay = nairaCompact(Math.max(0, feeTotals.due - feeTotals.paid))
+  const outstandingFeesDisplay = nairaCompact(Math.max(0, feeTotals.outstanding))
 
   const pendingNotifications = (notifRows ?? []).map((n: any) => ({
     id:         n.id,
@@ -110,25 +131,38 @@ export default async function PrincipalDashboardPage() {
       : undefined,
   }))
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${studentCount ?? 0} students · ${teacherCount ?? 0} teachers`, [
+    { label: 'Students', value: String(studentCount ?? 0) },
+    { label: 'Teachers', value: String(teacherCount ?? 0) },
+    { label: 'Classes', value: String(classCount ?? 0) },
+    { label: 'Unread alerts', value: String(unreadNotifCount ?? 0) },
+  ])
+
   return (
-    <PrincipalDashboardClient
-      profile={profile}
-      school={school}
-      userId={user.id}
-      counts={{
-        studentCount:   studentCount  ?? 0,
-        teacherCount:   teacherCount  ?? 0,
-        classCount:     classCount    ?? 0,
-        avgScore,
-        healthScore,
-        feeCollectionRate,
-        feesCollectedDisplay,
-        outstandingFeesDisplay,
-        pendingActions: (unreadNotifCount ?? 0),
-      }}
-      activities={activities}
-      pendingNotifications={pendingNotifications}
-      unreadNotifCount={unreadNotifCount ?? 0}
-    />
+    <>
+      <PrincipalDashboardClient
+        profile={profile}
+        school={school}
+        userId={user.id}
+        counts={{
+          studentCount:   studentCount  ?? 0,
+          teacherCount:   teacherCount  ?? 0,
+          classCount:     classCount    ?? 0,
+          avgScore,
+          healthScore,
+          feeCollectionRate,
+          feesCollectedDisplay,
+          outstandingFeesDisplay,
+          pendingActions: (unreadNotifCount ?? 0),
+        }}
+        activities={activities}
+        pendingNotifications={pendingNotifications}
+        unreadNotifCount={unreadNotifCount ?? 0}
+      />
+      <SaveSnapshot userId={user.id} routeKey={homeKey('principal')} data={homeSnapshot} />
+    </>
   )
 }

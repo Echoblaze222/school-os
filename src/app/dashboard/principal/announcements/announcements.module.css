@@ -3,14 +3,14 @@
    Used by: principal, secretary, teacher dashboards
    ============================================================ */
 
-/* ── Wrapper ─────────────────────────────────────────────── */
+/* ── Wrapper ─────────────────────────────────────────────────────────────── */
 .wrapper {
   padding: var(--space-5) var(--space-5) 0;
   max-width: 720px;
   margin: 0 auto;
 }
 
-/* ── Stats row ──────────────────────────────────────────────  */
+/* ── Stats row ───────────────────────────────────────────────────────────────  */
 .statsRow {
   display: flex;
   gap: var(--space-3);
@@ -30,7 +30,7 @@
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1;
-  margin: 0 0 3px;
+  margin: 0 0 4px;
   font-family: var(--font-display);
 }
 
@@ -43,7 +43,7 @@
   margin: 0;
 }
 
-/* ── Compose Card ───────────────────────────────────────────  */
+/* ── Compose Card ───────────────────────────────────────────────────────────────  */
 .composeCard {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -66,7 +66,7 @@
   margin: 0;
 }
 
-/* ── Status feedback ────────────────────────────────────────  */
+/* ── Status feedback ────────────────────────────────────────────────────  */
 .feedback {
   display: flex;
   align-items: center;
@@ -90,11 +90,11 @@
   color: var(--error);
 }
 
-/* ── Form fields ─────────────────────────────────────────────  */
+/* ── Form fields ───────────────────────────────────────────────────────────────  */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .fieldLabel {
@@ -107,10 +107,11 @@
 
 .fieldInput {
   width: 100%;
+  min-height: 48px;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
   border-radius: var(--radius-md);
-  padding: 10px 13px;
+  padding: 12px 16px;
   font-family: var(--font-body);
   font-size: 0.9rem;
   color: var(--input-text);
@@ -143,8 +144,8 @@ select.fieldInput {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6065' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
+  background-position: right 16px center;
+  padding-right: 40px;
 }
 
 /* Side-by-side audience + priority */
@@ -162,12 +163,12 @@ select.fieldInput {
   font-size: 0.65rem;
   color: var(--text-muted);
   text-align: right;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .charWarn { color: var(--warning, #c27b2a); }
 
-/* ── Compose footer ─────────────────────────────────────────  */
+/* ── Compose footer ─────────────────────────────────────────────────────────────  */
 .composeFooter {
   display: flex;
   align-items: center;
@@ -177,7 +178,8 @@ select.fieldInput {
 }
 
 .clearBtn {
-  padding: 9px 18px;
+  min-height: 48px;
+  padding: 0 24px;
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -195,7 +197,8 @@ select.fieldInput {
 }
 
 .publishBtn {
-  padding: 9px 22px;
+  min-height: 48px;
+  padding: 0 24px;
   border-radius: var(--radius-full);
   color: #fff;
   font-family: var(--font-body);
@@ -220,10 +223,10 @@ select.fieldInput {
   transform: none;
 }
 
-/* ── Filter row ─────────────────────────────────────────────  */
+/* ── Filter row ───────────────────────────────────────────────────────────────  */
 .filterRow {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   margin-bottom: var(--space-4);
 }
@@ -231,8 +234,9 @@ select.fieldInput {
 .filterTab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -257,9 +261,9 @@ select.fieldInput {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 16px;
-  padding: 0 5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: 99px;
   background: var(--glass-bg-hover);
   font-size: 0.62rem;
@@ -267,7 +271,7 @@ select.fieldInput {
   color: var(--text-muted);
 }
 
-/* ── Announcement list ──────────────────────────────────────  */
+/* ── Announcement list ──────────────────────────────────────────────  */
 .list {
   display: flex;
   flex-direction: column;
@@ -304,7 +308,7 @@ select.fieldInput {
 .cardMeta {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -315,7 +319,7 @@ select.fieldInput {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 2px 9px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   border: 1px solid transparent;
   white-space: nowrap;
@@ -335,18 +339,20 @@ select.fieldInput {
 .timeMeta {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 0.68rem;
   color: var(--text-muted);
   font-weight: 500;
 }
 
+/* 32px visual, 44px invisible hit area */
 .deleteIconBtn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
   background: var(--error-bg);
   border: 1px solid rgba(192, 57, 43, 0.2);
@@ -355,6 +361,12 @@ select.fieldInput {
   opacity: 0.6;
   flex-shrink: 0;
   transition: opacity 0.18s;
+}
+
+.deleteIconBtn::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
 }
 
 .deleteIconBtn:hover { opacity: 1; }
@@ -388,19 +400,20 @@ select.fieldInput {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 44px;
   background: none;
   border: none;
   color: var(--text-accent, #800020);
   font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 5px 0 0;
+  padding: 0;
   transition: opacity 0.18s;
 }
 
 .expandBtn:hover { opacity: 0.75; }
 
-/* ── Empty state ────────────────────────────────────────────  */
+/* ── Empty state ────────────────────────────────────────────────────────────  */
 .empty {
   display: flex;
   flex-direction: column;
@@ -415,13 +428,13 @@ select.fieldInput {
   border-radius: var(--radius-xl);
 }
 
-/* ── Toast ──────────────────────────────────────────────────  */
+/* ── Toast ───────────────────────────────────────────────────────────────────  */
 .toast {
   position: fixed;
   bottom: 90px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: var(--radius-full);
   font-size: 0.82rem;
   font-weight: 600;
@@ -442,7 +455,7 @@ select.fieldInput {
   color: var(--error);
 }
 
-/* ── Confirm dialog ─────────────────────────────────────────  */
+/* ── Confirm dialog ─────────────────────────────────────────────────────  */
 .overlay {
   position: fixed;
   inset: 0;
@@ -471,7 +484,7 @@ select.fieldInput {
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 
 .dialogBody {
@@ -488,7 +501,8 @@ select.fieldInput {
 }
 
 .dlgCancel {
-  padding: 8px 20px;
+  min-height: 44px;
+  padding: 0 24px;
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -502,7 +516,8 @@ select.fieldInput {
 .dlgCancel:hover { background: var(--glass-bg-hover); }
 
 .dlgDelete {
-  padding: 8px 20px;
+  min-height: 44px;
+  padding: 0 24px;
   border-radius: var(--radius-full);
   background: var(--error-bg);
   border: 1px solid rgba(192, 57, 43, 0.3);
@@ -520,7 +535,7 @@ select.fieldInput {
 
 .dlgDelete:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Animations ─────────────────────────────────────────────  */
+/* ── Animations ─────────────────────────────────────────────────────────────  */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -540,7 +555,7 @@ select.fieldInput {
    MISSING CLASSES - Added to match AnnouncementsClient.tsx
    ============================================================ */
 
-/* ── Page shell ─────────────────────────────────────────── */
+/* ── Page shell ─────────────────────────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   background: var(--bg-base);
@@ -548,7 +563,7 @@ select.fieldInput {
   flex-direction: column;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header ────────────────────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -567,7 +582,7 @@ select.fieldInput {
 .headerLeft {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -578,16 +593,24 @@ select.fieldInput {
   flex-shrink: 0;
 }
 
+/* Text link: small visual, 44px invisible hit area */
 .backBtn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-muted);
   text-decoration: none;
   transition: color 0.18s;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.backBtn::after {
+  content: '';
+  position: absolute;
+  inset: -12px -8px;
 }
 
 .backBtn:hover { color: var(--text-primary); }
@@ -610,8 +633,8 @@ select.fieldInput {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -625,8 +648,9 @@ select.fieldInput {
 .newBtn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 8px 14px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
   border-radius: var(--radius-full);
   background: var(--text-accent, #800020);
   border: none;
@@ -639,7 +663,7 @@ select.fieldInput {
 .newBtn:hover { filter: brightness(1.12); }
 .newBtn svg { width: 14px; height: 14px; }
 
-/* ── Two-column layout body ─────────────────────────────── */
+/* ── Two-column layout body ─────────────────────────────────────────────── */
 .layoutBody {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -658,7 +682,7 @@ select.fieldInput {
   }
 }
 
-/* ── List section ───────────────────────────────────────── */
+/* ── List section ─────────────────────────────────────────────────────────────── */
 .listSection {
   display: flex;
   flex-direction: column;
@@ -687,7 +711,7 @@ select.fieldInput {
   border-radius: var(--radius-xl);
 }
 
-/* ── Announcement list + card ───────────────────────────── */
+/* ── Announcement list + card ─────────────────────────────────────── */
 .announcementList {
   display: flex;
   flex-direction: column;
@@ -750,7 +774,7 @@ select.fieldInput {
 
 .classTag {
   display: inline-flex;
-  padding: 2px 9px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   background: var(--glass-bg-hover);
   border: 1px solid var(--glass-border);
@@ -768,7 +792,7 @@ select.fieldInput {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 2px 9px;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   border: 1px solid transparent;
   white-space: nowrap;
@@ -780,7 +804,7 @@ select.fieldInput {
 .audienceParents  { background: rgba(236,72,153,0.12);  border-color: rgba(236,72,153,0.3);  color: #F472B6; }
 .audienceStaff    { background: rgba(245,158,11,0.12);  border-color: rgba(245,158,11,0.3);  color: #FBBF24; }
 
-/* ── Compose panel ──────────────────────────────────────── */
+/* ── Compose panel ──────────────────────────────────────────────────────────── */
 .composePanel {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -821,33 +845,34 @@ select.fieldInput {
   justify-content: flex-end;
 }
 
-/* ── Form fields inside compose ─────────────────────────── */
+/* ── Form fields inside compose ─────────────────────────────────────── */
 .fieldGroup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .fieldSelect {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6065' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
+  background-position: right 16px center;
+  padding-right: 40px;
 }
 
 .fieldTextarea {
   resize: vertical;
-  min-height: 90px;
+  min-height: 96px;
   line-height: 1.65;
   font-family: var(--font-body);
 }
 
 .charCountWarning { color: var(--warning, #c27b2a); }
 
-/* ── Submit button ──────────────────────────────────────── */
+/* ── Submit button ────────────────────────────────────────────────────────────── */
 .submitBtn {
-  padding: 9px 22px;
+  min-height: 48px;
+  padding: 0 24px;
   border-radius: var(--radius-full);
   color: #fff;
   background: var(--text-accent, #800020);
@@ -872,7 +897,7 @@ select.fieldInput {
   transform: none;
 }
 
-/* ── Feedback messages ──────────────────────────────────── */
+/* ── Feedback messages ─────────────────────────────────────────────────── */
 .successMsg {
   display: flex;
   align-items: center;

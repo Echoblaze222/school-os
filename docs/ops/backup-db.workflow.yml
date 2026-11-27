@@ -1,0 +1,114 @@
+name: Backup - Nightly DB dump to Backblaze B2
+
+# MOVE THIS FILE to .github/workflows/backup-db.yml to activate it.
+# (The GitHub connector used to prepare it cannot write to .github/workflows.)
+#
+# Setup, restore drill and secrets: docs/ops/db-backup-runbook.md
+#
+# Until all six secrets below exist, this workflow logs a warning and exits
+# successfully without doing anything, so activating it is safe.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_DB_URL     Session pooler connection string (IPv4). Do NOT use the
+#                       direct connection string: GitHub runners are IPv4 only.
+#   B2_KEY_ID           Backblaze application key ID (restricted to one bucket)
+#   B2_APP_KEY          Backblaze application key
+#   B2_BUCKET           Private B2 bucket name
+#   B2_ENDPOINT         e.g. https://s3.us-west-004.backblazeb2.com
+#   BACKUP_PASSPHRASE   Long random passphrase. Also store it offline. If it is
+#                       lost, every backup is unreadable.
+#
+# The dump covers the public and auth schemas. It does NOT include the files
+# in Supabase Storage (see the runbook).
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+      B2_APP_KEY: ${{ secrets.B2_APP_KEY }}
+      B2_BUCKET: ${{ secrets.B2_BUCKET }}
+      B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check secrets
+        id: gate
+        run: |
+          missing=""
+          for v in SUPABASE_DB_URL B2_KEY_ID B2_APP_KEY B2_BUCKET B2_ENDPOINT BACKUP_PASSPHRASE; do
+            if [ -z "${!v}" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::warning::Backup skipped. Missing secrets:$missing"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install PostgreSQL 17 client
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Dump database
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          pg_dump "$SUPABASE_DB_URL" \
+            --format=custom --no-owner --no-privileges \
+            --schema=public --schema=auth \
+            --file=db.dump
+          size=$(stat -c%s db.dump)
+          echo "dump bytes: $size"
+          if [ "$size" -lt 20000 ]; then
+            echo "::error::Dump is suspiciously small ($size bytes)"
+            exit 1
+          fi
+          pg_restore --list db.dump > /dev/null
+
+      - name: Encrypt dump
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in db.dump -out db.dump.enc -pass env:BACKUP_PASSPHRASE
+
+      - name: Upload to Backblaze B2
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          region=$(echo "$B2_ENDPOINT" | sed -E 's#^https://s3\.([^.]+)\.backblazeb2\.com/?$#\1#')
+          export AWS_ACCESS_KEY_ID="$B2_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$B2_APP_KEY"
+          export AWS_DEFAULT_REGION="$region"
+          export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
+          export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          key="db/$(date -u +%Y/%m)/schoolos-$stamp.dump.enc"
+          aws s3 cp db.dump.enc "s3://$B2_BUCKET/$key" --endpoint-url "$B2_ENDPOINT"
+          aws s3api head-object --bucket "$B2_BUCKET" --key "$key" --endpoint-url "$B2_ENDPOINT" > /dev/null
+          echo "Uploaded $key"
+
+      - name: Remove local files
+        if: always()
+        run: rm -f db.dump db.dump.enc

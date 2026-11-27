@@ -1,14 +1,10 @@
 // src/app/dashboard/hostel/featureGroups.ts
-// Shared across every hostel sub-page that uses RoleSubHeader, so the
-// bottom dock / "all features" sheet is identical everywhere a hostel
-// staff member navigates - not just on the dashboard home screen.
-// Extracted from HostelDashboardClient.tsx, which now imports this
-// instead of defining its own local copy.
+// Shared across every hostel sub-page that uses RoleSubHeader.
 
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
 import {
   LayersIcon, CheckCircleIcon, AlertCircleIcon, AlertIcon,
-  CalendarIcon, MessageIcon, AiIcon, BellIcon, UserIcon,
+  CalendarIcon, MessageIcon, AiIcon, BellIcon, UserIcon, BarChartIcon,
 } from '@/components/Icons'
 
 export const HOSTEL_FEATURE_GROUPS: FeatureGroup[] = [
@@ -23,6 +19,7 @@ export const HOSTEL_FEATURE_GROUPS: FeatureGroup[] = [
     { id: 'leave',       label: 'Leave requests', href: '/dashboard/hostel/leave',       Icon: CalendarIcon },
     { id: 'incidents',   label: 'Incidents',      href: '/dashboard/hostel/incidents',   Icon: AlertIcon },
     { id: 'maintenance', label: 'Maintenance',    href: '/dashboard/hostel/maintenance', Icon: AlertCircleIcon },
+    { id: 'analytics',   label: 'Analytics',      href: '/dashboard/hostel/analytics',   Icon: BarChartIcon },
     { id: 'meetings',    label: 'Meetings',       href: '/dashboard/hostel/meetings',    Icon: CalendarIcon },
   ]},
   { name: 'Account', items: [

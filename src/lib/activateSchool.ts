@@ -17,37 +17,13 @@
 // else metadata.school_id might say. Centralized here rather than at each
 // call site so no future caller can reintroduce the gap by forgetting it.
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Resend } from 'resend'
+import { queueEmail } from '@/lib/email/queueEmail'
 
 const REGISTRATION_REFERENCE_PREFIX = 'SCH-REG-'
 
 export interface ActivateSchoolResult {
   activated: boolean
   reason?: string
-}
-
-let _resend: Resend | null = null
-
-export function getResend(): Resend {
-  if (!_resend) {
-    const key = process.env.RESEND_API_KEY
-    if (!key) throw new Error('RESEND_API_KEY is not set')
-    _resend = new Resend(key)
-  }
-  return _resend
-}
-
-/**
- * Falls back to Resend's shared sandbox address, which only ever
- * delivers to the Resend account's own signup email - never to real
- * end users like school principals. Once a domain is verified in the
- * Resend dashboard (Settings -> Domains), set RESEND_FROM_EMAIL to an
- * address on that domain (e.g. "SchoolOS <noreply@yourdomain.com>")
- * and every email send switches over automatically, no further code
- * change needed.
- */
-export function getEmailFrom(): string {
-  return process.env.RESEND_FROM_EMAIL || 'SchoolOS <onboarding@resend.dev>'
 }
 
 export async function activateSchool(
@@ -72,7 +48,7 @@ export async function activateSchool(
 
   const { data: principal } = await supabase
     .from('profiles')
-    .select('full_name, email, default_code')
+    .select('id, full_name, email, default_code')
     .eq('school_id', schoolId)
     .eq('role', 'principal')
     .single()
@@ -155,16 +131,34 @@ export async function activateSchool(
     .eq('reference', reference)
     .eq('status', 'pending')
 
-  // 5. Email the PRINCIPAL with their login credentials
+  // 5 & 6. Email the principal and the super-admin - via queueEmail()
+  // now (src/lib/email/queueEmail.ts), not a direct, unlogged Resend
+  // call. Two consequences of that change:
+  //   - Each email gets its own row in email_deliveries and its own
+  //     retry schedule if Resend is down or misconfigured, instead of
+  //     silently vanishing.
+  //   - The two sends are independent (Promise.allSettled) rather than
+  //     sequential awaits - previously, if the principal's email threw
+  //     (unhandled, since there was no try/catch here), the whole
+  //     function threw and the super-admin notification below it never
+  //     even attempted to send. A dedupeKey keyed to (schoolId,
+  //     reference) means a retried webhook delivery for this exact
+  //     successful payment can't queue either email twice.
+  const emailSends: Promise<unknown>[] = []
+
   if (principal?.email) {
-    await getResend().emails.send({
-      from:    getEmailFrom(),
-      to:      principal.email,
-      subject: `🎉 Welcome to SchoolOS, ${school?.name} is Now Active!`,
+    emailSends.push(queueEmail({
+      schoolId,
+      recipientId: principal.id,
+      to: principal.email,
+      subject: `Welcome to SchoolOS, ${school?.name} is Now Active`,
+      referenceTable: 'schools',
+      referenceId: schoolId,
+      dedupeKey: `school-activation-principal-${reference}`,
       html: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0f0f0f;color:#ffffff;border-radius:12px;overflow:hidden;">
-          <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:32px;text-align:center;">
-            <h1 style="margin:0;font-size:28px;color:#fff;">Welcome to SchoolOS 🎉</h1>
+          <div style="background:linear-gradient(135deg,#800020,#5C0018);padding:32px;text-align:center;">
+            <h1 style="margin:0;font-size:28px;color:#fff;">Welcome to SchoolOS</h1>
             <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">Your school portal is ready</p>
           </div>
           <div style="padding:32px;">
@@ -173,13 +167,13 @@ export async function activateSchool(
               Your payment was successful and <strong style="color:#fff;">${school?.name}</strong> is now 
               <strong style="color:#10B981;">active</strong> on SchoolOS.
             </p>
-            <div style="background:#1a1a2e;border:1px solid #7C3AED;border-radius:10px;padding:24px;margin:24px 0;">
-              <h3 style="margin:0 0 16px;color:#a78bfa;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Your Login Details</h3>
+            <div style="background:#1f1216;border:1px solid #800020;border-radius:10px;padding:24px;margin:24px 0;">
+              <h3 style="margin:0 0 16px;color:#e8a0b4;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Your Login Details</h3>
               <table style="width:100%;border-collapse:collapse;">
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">School</td>
                     <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name}</td></tr>
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Setup Fee</td>
-                    <td style="color:#a78bfa;font-weight:600;font-size:14px;">${paymentModeLabel}</td></tr>
+                    <td style="color:#e8a0b4;font-weight:600;font-size:14px;">${paymentModeLabel}</td></tr>
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Email</td>
                     <td style="color:#fff;font-weight:600;font-size:14px;">${principal.email}</td></tr>
                 <tr><td style="color:#9ca3af;padding:6px 0;font-size:14px;">Access Code</td>
@@ -189,10 +183,10 @@ export async function activateSchool(
               </table>
             </div>
             <p style="color:#f59e0b;font-size:13px;background:#1c1400;border:1px solid #f59e0b;border-radius:8px;padding:12px;">
-              ⚠️ Use your email and the password you set during registration to log in. Keep your Access Code safe.
+              <strong>Important:</strong> Use your email and the password you set during registration to log in. Keep your Access Code safe.
             </p>
             <div style="text-align:center;margin:28px 0;">
-              <a href="${loginUrl}" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
+              <a href="${loginUrl}" style="background:linear-gradient(135deg,#800020,#5C0018);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">
                 Login to SchoolOS →
               </a>
             </div>
@@ -201,49 +195,55 @@ export async function activateSchool(
             </p>
           </div>
           <div style="background:#111;padding:16px;text-align:center;">
-            <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#7C3AED;">SchoolOS</strong></p>
+            <p style="color:#4b5563;font-size:12px;margin:0;">Powered by <strong style="color:#e8a0b4;">SchoolOS</strong></p>
           </div>
         </div>
       `,
-    })
+    }))
   }
 
-  // 6. Email YOU (super admin) about the new payment
-  await getResend().emails.send({
-    from:    getEmailFrom(),
-    to:      process.env.SUPER_ADMIN_EMAIL!,
-    subject: `💰 New School Payment: ${school?.name ?? schoolId}`,
-    html: `
-      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0f0f0f;color:#fff;border-radius:12px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#10B981,#059669);padding:28px;text-align:center;">
-          <h1 style="margin:0;font-size:24px;">💰 New Payment Received</h1>
-          <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${now} (Lagos time)</p>
-        </div>
-        <div style="padding:28px;">
-          <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">School</td>
-                <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name ?? 'N/A'}</td></tr>
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Setup Fee</td>
-                <td style="color:#a78bfa;font-weight:600;font-size:14px;">${paymentModeLabel}</td></tr>
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Amount</td>
-                <td style="color:#10B981;font-weight:700;font-size:18px;">${amountNaira}</td></tr>
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal</td>
-                <td style="color:#fff;font-weight:600;font-size:14px;">${principal?.full_name ?? 'N/A'}</td></tr>
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal Email</td>
-                <td style="color:#fff;font-size:14px;">${principal?.email ?? 'N/A'}</td></tr>
-            <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Access Code</td>
-                <td style="color:#fff;font-family:monospace;font-size:14px;">${principal?.default_code ?? 'N/A'}</td></tr>
-          </table>
-          <div style="margin-top:20px;background:#1a2e1a;border:1px solid #10B981;border-radius:8px;padding:12px;text-align:center;">
-            <p style="margin:0;color:#10B981;font-size:13px;">✅ School has been automatically activated in SchoolOS</p>
+  if (process.env.SUPER_ADMIN_EMAIL) {
+    emailSends.push(queueEmail({
+      schoolId,
+      to: process.env.SUPER_ADMIN_EMAIL,
+      subject: `New School Payment: ${school?.name ?? schoolId}`,
+      referenceTable: 'schools',
+      referenceId: schoolId,
+      dedupeKey: `school-activation-admin-${reference}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0f0f0f;color:#fff;border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#10B981,#059669);padding:28px;text-align:center;">
+            <h1 style="margin:0;font-size:24px;">New Payment Received</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${now} (Lagos time)</p>
+          </div>
+          <div style="padding:28px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">School</td>
+                  <td style="color:#fff;font-weight:600;font-size:14px;">${school?.name ?? 'N/A'}</td></tr>
+              <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Setup Fee</td>
+                  <td style="color:#e8a0b4;font-weight:600;font-size:14px;">${paymentModeLabel}</td></tr>
+              <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Amount</td>
+                  <td style="color:#10B981;font-weight:700;font-size:18px;">${amountNaira}</td></tr>
+              <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal</td>
+                  <td style="color:#fff;font-weight:600;font-size:14px;">${principal?.full_name ?? 'N/A'}</td></tr>
+              <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Principal Email</td>
+                  <td style="color:#fff;font-size:14px;">${principal?.email ?? 'N/A'}</td></tr>
+              <tr><td style="color:#9ca3af;padding:7px 0;font-size:14px;">Access Code</td>
+                  <td style="color:#fff;font-family:monospace;font-size:14px;">${principal?.default_code ?? 'N/A'}</td></tr>
+            </table>
+            <div style="margin-top:20px;background:#1a2e1a;border:1px solid #10B981;border-radius:8px;padding:12px;text-align:center;">
+              <p style="margin:0;color:#10B981;font-size:13px;">School has been automatically activated in SchoolOS</p>
+            </div>
+          </div>
+          <div style="background:#111;padding:14px;text-align:center;">
+            <p style="color:#4b5563;font-size:12px;margin:0;">SchoolOS Super Admin Notification</p>
           </div>
         </div>
-        <div style="background:#111;padding:14px;text-align:center;">
-          <p style="color:#4b5563;font-size:12px;margin:0;">SchoolOS Super Admin Notification</p>
-        </div>
-      </div>
-    `,
-  })
+      `,
+    }))
+  }
+
+  await Promise.allSettled(emailSends)
 
   return { activated: true }
 }

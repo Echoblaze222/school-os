@@ -11,12 +11,18 @@
 // though: a backgrounded WebView (this app's Android build is a Capacitor
 // WebView) has its JS timers throttled by the OS, which silently drops
 // supabase-js's internal auth-refresh timer for the realtime socket. The
-// channel can stay reported as "SUBSCRIBED" the whole time - it never
+// channel can stay reported as "SUBSCRIBED" the whole time (it never
 // hits CHANNEL_ERROR/TIMED_OUT/CLOSED, so the disconnect tracking below
-// never fires - while its JWT has actually expired and it quietly stops
+// never fires) while its JWT has actually expired and it quietly stops
 // receiving anything. useRealtimeReconnect covers that separate case: it
 // re-authenticates (and refetches) whenever the tab/WebView becomes
 // visible again, regardless of whether a "disconnect" was ever observed.
+//
+// UPDATE events: callers can now also pass `onUpdate` to hear about row
+// changes. This is what keeps read state in sync across devices and tabs:
+// mark something read on the phone and the open web tab reflects it without
+// a refresh. It is optional, so existing callers that only pass `onInsert`
+// behave exactly as before.
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
@@ -29,13 +35,16 @@ export type RealtimeConnectionStatus = 'connecting' | 'connected' | 'disconnecte
 interface UseRealtimeNotificationsOptions {
   userId: string
   onInsert: (row: any) => void
-  /** Called once after a dropped connection reconnects — use it to refetch. */
+  /** Called when one of this user's notification rows changes (e.g. marked read on another device). */
+  onUpdate?: (row: any) => void
+  /** Called once after a dropped connection reconnects. Use it to refetch. */
   onReconnect?: () => void
 }
 
 export function useRealtimeNotifications({
   userId,
   onInsert,
+  onUpdate,
   onReconnect,
 }: UseRealtimeNotificationsOptions) {
   const [status, setStatus] = useState<RealtimeConnectionStatus>('connecting')
@@ -44,8 +53,10 @@ export function useRealtimeNotifications({
 
   // Keep the latest callbacks without re-subscribing the channel every render.
   const onInsertRef = useRef(onInsert)
+  const onUpdateRef = useRef(onUpdate)
   const onReconnectRef = useRef(onReconnect)
   onInsertRef.current = onInsert
+  onUpdateRef.current = onUpdate
   onReconnectRef.current = onReconnect
 
   // Created once and shared with useRealtimeReconnect below, so the
@@ -64,6 +75,12 @@ export function useRealtimeNotifications({
         table: 'notifications',
         filter: `user_id=eq.${userId}`,
       }, (payload) => onInsertRef.current(payload.new))
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => onUpdateRef.current?.(payload.new))
       .subscribe((s) => {
         if (s === 'SUBSCRIBED') {
           setStatus('connected')

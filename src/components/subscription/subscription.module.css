@@ -1,0 +1,71 @@
+/* Shared look for the per-student subscription UI. Uses the school's brand
+   colour (--brand, injected by each dashboard layout), never a fixed colour. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: var(--radius-full, 999px);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  box-shadow: 0 4px 16px var(--brand-glow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: sub-spin 0.7s linear infinite;
+}
+@keyframes sub-spin { to { transform: rotate(360deg); } }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl, 16px);
+}
+
+.muted { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+.title { margin: 0; font-weight: 700; color: var(--text-primary); }
+
+.bar { height: 8px; border-radius: 999px; background: var(--glass-bg-hover, rgba(128,128,128,0.2)); overflow: hidden; }
+.barFill { height: 100%; background: var(--brand); border-radius: 999px; transition: width 0.4s ease; }
+
+.stats { display: flex; gap: 24px; flex-wrap: wrap; }
+.statNum { margin: 0; font-size: 1.8rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.statLabel { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
+
+.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); }
+
+.notice {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-md, 10px);
+}
+.error { margin: 0; font-size: 0.82rem; color: var(--danger, #ef4444); }
+.success { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--success, #10B981); }
+
+.form { display: grid; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

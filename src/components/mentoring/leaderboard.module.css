@@ -1,0 +1,19 @@
+/* src/components/mentoring/leaderboard.module.css  (brand colour comes from --mc on an ancestor) */
+.card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.title { margin: 0; font-size: 0.92rem; font-weight: 700; color: var(--text-primary); }
+.sub { margin: 2px 0 0; font-size: 0.74rem; color: var(--text-muted); line-height: 1.35; }
+.toggle { display: flex; gap: 4px; }
+.pill { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.pillOn { background: var(--mc, #800020); border-color: var(--mc, #800020); color: #fff; }
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--glass-border); }
+.mine { background: var(--glass-border); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
+.rank { width: 26px; height: 26px; border-radius: 50%; background: var(--glass-border); color: var(--text-primary); font-size: 0.78rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rankStar { background: #F59E0B; color: #fff; }
+.who { flex: 1; min-width: 0; }
+.name { margin: 0; font-size: 0.84rem; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { margin: 1px 0 0; font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.starTag { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; padding: 2px 8px; border-radius: 999px; background: rgba(245, 158, 11, 0.16); color: #B45309; font-size: 0.66rem; font-weight: 800; }
+.points { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); text-align: right; line-height: 1.1; }
+.pointsLabel { display: block; font-size: 0.6rem; font-weight: 600; color: var(--text-muted); }
+.empty { margin: 6px 0 2px; font-size: 0.8rem; color: var(--text-muted); }

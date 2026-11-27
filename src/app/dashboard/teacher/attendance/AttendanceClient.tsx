@@ -3,6 +3,12 @@
 // FIXED: status text column (present/absent/late) instead of boolean is_present
 // FIXED: upsert conflict key matches actual schema with UNIQUE constraint migration
 // FIXED: added History tab showing past attendance records per class
+// OFFLINE (Phase 2 pilot): classes and students are saved on the device and shown
+//   instantly / when offline; a save that fails because the network or server is
+//   down is queued in the offline outbox and uploaded automatically later.
+// OFFLINE (Phase 3): useOfflineReady saves who the user is and warms the offline
+//   twin page, so this same component can be opened with no network at all
+//   (/offline/teacher/attendance).
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
@@ -13,6 +19,14 @@ import { CalendarIcon, CheckCircleIcon, ClockIcon, CrownIcon } from '@/component
 import { logActivity } from '@/lib/logActivity'
 import GaugeStat from '@/components/GaugeStat'
 import { SkeletonList } from '@/components/motion/Skeleton'
+import { loadView, saveView } from '@/lib/savedView/store'
+import { classifyResult } from '@/lib/offline/classify'
+import { enqueueUpsert, listOutbox } from '@/lib/offline/outbox'
+import { pendingAttendanceStatuses } from '@/lib/offline/attendance'
+import { useOfflineReady } from '@/hooks/useOfflineReady'
+import { readSyncEnabled } from '@/lib/offline/flags'
+import { pullTable, readLocal } from '@/lib/offline/pullSync'
+import { SYNC_TABLES } from '@/lib/offline/syncTables'
 import styles from './attendance.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -33,6 +47,10 @@ interface HistoryRecord {
   late: number
 }
 
+// Class and student lists are kept on the device for a week so a teacher who
+// last opened the app on Friday can still take attendance on Monday with no data.
+const OFFLINE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
 export default function AttendanceClient({ profile, school, userId }: Props) {
   const [tab, setTab] = useState<'mark' | 'history'>('mark')
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
@@ -42,7 +60,11 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  // True when the save is stored on this device and still waiting to upload.
+  const [queued, setQueued] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [classesError, setClassesError] = useState(false)
+  const [studentsError, setStudentsError] = useState(false)
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   // History
   const [history, setHistory] = useState<HistoryRecord[]>([])
@@ -53,14 +75,50 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const supabase = createClient()
   const sc = school?.primary_color ?? '#800020'
 
+  // Offline: remember who this is and make sure the offline twin page is cached.
+  useOfflineReady({ userId, profile, school, twinPath: '/offline/teacher/attendance' })
+
+  // Local-first read of this school's attendance rows (only when the read sync is on and this
+  // phone has finished at least one pull). Returns null = "use the network like before".
+  // A background pull then refreshes the local copy and re-runs `again` once if anything changed.
+  async function localAttendance(
+    match: (r: any) => boolean,
+    again: () => void,
+  ): Promise<any[] | null> {
+    if (!readSyncEnabled()) return null
+    try {
+      const local = await readLocal<any>(userId, 'attendance', match)
+      if (local.syncedAt === null) return null
+      const cfg = SYNC_TABLES.find(c => c.table === 'attendance')
+      if (cfg) {
+        void pullTable(supabase, userId, cfg, { role: profile?.role })
+          .then(r => { if (r.upserted > 0) again() })
+          .catch(() => {})
+      }
+      return local.rows
+    } catch {
+      return null
+    }
+  }
+
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => { if (selectedClass) loadStudents(selectedClass.class_id) }, [selectedClass])
   useEffect(() => { if (students.length && selectedClass) loadExisting() }, [students, date])
   useEffect(() => { if (tab === 'history' && selectedClass) loadHistory(selectedClass.class_id) }, [tab, selectedClass])
 
   async function loadTeacherClasses() {
-    setLoading(true)
-    const { data } = await supabase
+    const cacheKey = `teacher-attendance-classes:${school?.id}`
+    // Instant paint from the copy saved on this device, then refresh below.
+    const cached = await loadView<TeacherClass[]>(userId, cacheKey, OFFLINE_MAX_AGE_MS)
+    if (cached?.data?.length) {
+      setTeacherClasses(cached.data)
+      setSelectedClass(prev => prev ?? cached.data[0])
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
+    const { data, error } = await supabase
       .from('class_teachers')
       .select('class_id, subject, is_primary, classes(id, name, class_level)')
       .eq('teacher_id', userId)
@@ -80,14 +138,42 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         return a.class_name.localeCompare(b.class_name)
       })
       setTeacherClasses(list)
-      setSelectedClass(list[0])
+      // Keep the current selection (same object) when it is still in the list, so
+      // the refresh does not trigger a second students fetch.
+      setSelectedClass(prev =>
+        prev && list.some(c => c.class_id === prev.class_id && c.subject === prev.subject) ? prev : list[0]
+      )
+      setClassesError(false)
+      void saveView(userId, cacheKey, list)
+    } else if (error && !cached?.data?.length) {
+      // Could not load and nothing saved on the device: say so instead of
+      // claiming the teacher has no classes.
+      setClassesError(true)
     }
     setLoading(false)
   }
 
   async function loadStudents(classId: string) {
-    setLoading(true)
-    const { data } = await supabase
+    const cacheKey = `teacher-attendance-students:${school?.id}:${classId}`
+    const cached = await loadView<any[]>(userId, cacheKey, OFFLINE_MAX_AGE_MS)
+    let shownCached = false
+    if (cached?.data?.length) {
+      shownCached = true
+      setStudents(cached.data)
+      const init: Record<string, string> = {}
+      cached.data.forEach((s: any) => { init[s.id] = 'present' })
+      setRecords(init)
+      setStudentsError(false)
+      setLoading(false)
+    } else {
+      // Never leave the previous class's students on screen under the new class:
+      // a save would then write the wrong students into this class.
+      setStudents([])
+      setRecords({})
+      setLoading(true)
+    }
+
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, default_code, avatar_url')
       .eq('class_id', classId)
@@ -98,28 +184,55 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       setStudents(data)
       const init: Record<string, string> = {}
       data.forEach((s: any) => { init[s.id] = 'present' })
-      setRecords(init)
+      // If the saved copy was already on screen, keep any taps the teacher made
+      // while the fresh list was loading.
+      setRecords(prev => (shownCached ? { ...init, ...prev } : init))
+      setStudentsError(false)
+      if (!error) void saveView(userId, cacheKey, data)
+    } else if (error && !shownCached) {
+      setStudentsError(true)
     }
     setLoading(false)
   }
 
-  async function loadExisting() {
+  async function loadExisting(refreshed = false) {
     if (!selectedClass) return
-    const { data } = await supabase
-      .from('attendance')
-      .select('student_id, status, is_present')
-      .eq('school_id', school?.id)
-      .eq('class_id', selectedClass.class_id)
-      .eq('date', date)
-      .in('student_id', students.map((s: any) => s.id))
+    setQueued(false)
+    const ids = new Set(students.map((s: any) => s.id))
+    let data: any[] | null = await localAttendance(
+      r => r.class_id === selectedClass.class_id && r.date === date && ids.has(r.student_id),
+      () => { if (!refreshed) loadExisting(true) },
+    )
+    if (data === null) {
+      const res = await supabase
+        .from('attendance')
+        .select('student_id, status, is_present')
+        .eq('school_id', school?.id)
+        .eq('class_id', selectedClass.class_id)
+        .eq('date', date)
+        .in('student_id', students.map((s: any) => s.id))
+      data = res.data
+    }
+    const map: Record<string, string> = {}
     if (data?.length) {
-      const map: Record<string, string> = {}
       data.forEach((r: any) => {
         // Support both status column and is_present boolean
         map[r.student_id] = r.status ?? (r.is_present ? 'present' : 'absent')
       })
+    }
+    // Changes saved on this device that have not uploaded yet are newer than
+    // whatever the server has, so they win.
+    let pending: Record<string, string> = {}
+    try {
+      pending = pendingAttendanceStatuses(await listOutbox(userId, 'pending'), selectedClass.class_id, date)
+    } catch {
+      // Offline storage unavailable: behave exactly as before.
+    }
+    Object.assign(map, pending)
+    if (Object.keys(map).length) {
       setRecords(prev => ({ ...prev, ...map }))
       setSaved(true)
+      setQueued(Object.keys(pending).length > 0)
     } else {
       setSaved(false)
     }
@@ -135,6 +248,7 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     if (!selectedClass) return
     setSaving(true)
     setSaveError(null)
+    setQueued(false)
     // teacher_id DOES exist on attendance - needed for RLS scoping on teacher reads (History tab, etc.)
     const rows = students.map((s: any) => ({
       school_id: school?.id,
@@ -146,10 +260,34 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
       marked_by: userId,
       teacher_id: userId,
     }))
-    const { error } = await supabase
+    const { error, status } = await supabase
       .from('attendance')
       .upsert(rows, { onConflict: 'student_id,date,class_id' })
     if (error) {
+      // Network down, backend down or session expired: the write never got a
+      // real answer from the database, so keep it safely on this device and let
+      // the offline outbox upload it later. Do NOT run the delete+insert fallback
+      // below for these: it could delete rows and then fail to re-insert them.
+      const outcome = classifyResult({ error: { code: error.code, message: error.message }, status })
+      if (outcome === 'network' || outcome === 'server' || outcome === 'auth') {
+        try {
+          await enqueueUpsert({
+            userId,
+            schoolId: school?.id,
+            table: 'attendance',
+            rows,
+            label: `Attendance - ${selectedClass.class_name} - ${date}`,
+          })
+          setQueued(true)
+          setSaved(true)
+        } catch (e) {
+          // Only claim success when the change is really stored somewhere.
+          setSaveError(`Could not save on this device: ${e instanceof Error ? e.message : 'storage unavailable'}`)
+          setSaved(false)
+        }
+        setSaving(false)
+        return
+      }
       // Fallback: delete + insert if upsert fails (no unique constraint yet)
       await supabase.from('attendance')
         .delete()
@@ -180,17 +318,24 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     })
   }
 
-  async function loadHistory(classId: string) {
+  async function loadHistory(classId: string, refreshed = false) {
     setHistoryLoading(true)
     setExpandedDate(null)
     const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-    const { data } = await supabase
-      .from("attendance")
-      .select("date, status, is_present, student_id")
-      .eq("school_id", school?.id)
-      .eq("class_id", classId)
-      .gte("date", since)
-      .order("date", { ascending: false })
+    let data: any[] | null = await localAttendance(
+      r => r.class_id === classId && typeof r.date === 'string' && r.date >= since,
+      () => { if (!refreshed) loadHistory(classId, true) },
+    )
+    if (data === null) {
+      const res = await supabase
+        .from("attendance")
+        .select("date, status, is_present, student_id")
+        .eq("school_id", school?.id)
+        .eq("class_id", classId)
+        .gte("date", since)
+        .order("date", { ascending: false })
+      data = res.data
+    }
     if (data?.length) {
       const grouped: Record<string, HistoryRecord> = {}
       data.forEach((r: any) => {
@@ -240,6 +385,8 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
   const presentCount = Object.values(records).filter(v => v === 'present').length
   const absentCount = Object.values(records).filter(v => v === 'absent').length
   const lateCount = Object.values(records).filter(v => v === 'late').length
+  // Green when uploaded, amber when only stored on this device so far.
+  const doneColor = queued ? 'var(--warning)' : 'var(--success)'
 
   if (loading && teacherClasses.length === 0) return (
     <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Attendance" featureGroups={TEACHER_FEATURE_GROUPS}>
@@ -251,7 +398,11 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     <RoleSubHeader userId={userId} role="teacher" profile={profile} school={school} title="Attendance" featureGroups={TEACHER_FEATURE_GROUPS}>
       <div style={{ textAlign: 'center', padding: '40px 0' }}>
         <CalendarIcon size={40} color="var(--text-faint)" strokeWidth={1} />
-        <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>No classes assigned yet. Contact your admin.</p>
+        <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>
+          {classesError
+            ? "Can't load your classes right now. Open this page once with a connection and it will work offline afterwards."
+            : 'No classes assigned yet. Contact your admin.'}
+        </p>
       </div>
     </RoleSubHeader>
   )
@@ -286,8 +437,8 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setSaved(false) }}
             className="input" style={{ width: 'auto' }} />
           {saved && (
-            <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--success)", fontSize: "0.8rem", fontWeight: 600 }}>
-              <CheckCircleIcon size={14} color="var(--success)" /> Saved
+            <span style={{ display: "flex", alignItems: "center", gap: 4, color: doneColor, fontSize: "0.8rem", fontWeight: 600 }}>
+              <CheckCircleIcon size={14} color={doneColor} /> {queued ? "Saved on this device" : "Saved"}
             </span>
           )}
         </div>
@@ -318,7 +469,11 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
         {loading ? (
           <SkeletonList count={5} variant="row" />
         ) : students.length === 0 ? (
-          <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 20 }}>No students in this class.</div>
+          <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 20 }}>
+            {studentsError
+              ? "Can't load this class's students right now. Open it once with a connection and it will work offline afterwards."
+              : "No students in this class."}
+          </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: "var(--space-4)" }}>
             {students.map((s: any) => {
@@ -348,9 +503,9 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
         {students.length > 0 && (
           <button className="pressable" onClick={submit} disabled={saving || saved}
-            style={{ width: "100%", height: 46, background: saved ? "color-mix(in srgb, var(--success) 13%, transparent)" : sc, border: "1px solid " + (saved ? "var(--success)" : "transparent"), borderRadius: 10, color: saved ? "var(--success)" : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            style={{ width: "100%", height: 46, background: saved ? `color-mix(in srgb, ${doneColor} 13%, transparent)` : sc, border: "1px solid " + (saved ? doneColor : "transparent"), borderRadius: 10, color: saved ? doneColor : "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saving || saved ? "default" : "pointer", opacity: saving ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {saved
-              ? <><CheckCircleIcon size={16} color="var(--success)" /> Attendance Saved</>
+              ? <><CheckCircleIcon size={16} color={doneColor} /> {queued ? "Saved on this device - uploads automatically" : "Attendance Saved"}</>
               : saving ? "Saving..."
               : "Submit Attendance for " + selectedClass?.class_name
             }

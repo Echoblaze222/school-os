@@ -1,14 +1,25 @@
 .indicator {
+  /* Floating chip over the page: it no longer takes up space in the layout,
+     so the dashboard stays put while you pull. */
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 50%;
+  z-index: var(--z-toast, 400);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   color: var(--brand);
-  transition: opacity 0.15s var(--ease-overshoot);
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }
 
 .icon {
-  transition: transform 0.15s ease;
+  display: flex;
 }
 
 .spinning {

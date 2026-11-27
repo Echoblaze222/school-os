@@ -7,6 +7,8 @@ import { checkSubscription } from '@/lib/subscription'
 import SubscriptionGate      from '@/components/SubscriptionGate'
 import { hasActiveAppointment } from '@/lib/permissions'
 import LibrarianDashboardClient from './LibrarianDashboardClient'
+import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function LibrarianDashboardPage() {
   const supabase = await createClient()
@@ -55,14 +57,26 @@ export default async function LibrarianDashboardPage() {
     overdueCheckouts: overdueCheckouts ?? 0,
   }
 
+  // A small summary kept on the phone so the next visit can appear instantly
+  // while fresh data loads (see components/savedView/SavedHome.tsx). Counts
+  // only: nothing sensitive is stored.
+  const homeSnapshot = buildHomeSnapshot(profile, school, `${stats.totalBooks} books · ${stats.overdueCheckouts} overdue`, [
+    { label: 'Books', value: String(stats.totalBooks) },
+    { label: 'Open loans', value: String(stats.openCheckouts) },
+    { label: 'Overdue', value: String(stats.overdueCheckouts) },
+  ])
+
   return (
-    <LibrarianDashboardClient
-      userId={user.id}
-      librarianName={profile.full_name}
-      profile={profile}
-      school={school}
-      stats={stats}
-      recentCheckouts={recentCheckouts ?? []}
-    />
+    <>
+      <LibrarianDashboardClient
+        userId={user.id}
+        librarianName={profile.full_name}
+        profile={profile}
+        school={school}
+        stats={stats}
+        recentCheckouts={recentCheckouts ?? []}
+      />
+      <SaveSnapshot userId={user.id} routeKey={homeKey('librarian')} data={homeSnapshot} />
+    </>
   )
 }
