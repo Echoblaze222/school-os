@@ -78,6 +78,10 @@ export interface SyncStateRow {
   lastFullAt: number
   /** epoch ms of the last completed pull of any kind */
   lastSyncAt: number
+  /** True while a full pull is unfinished, so an interrupted one RESUMES instead of restarting. */
+  partial: boolean
+  /** What this user was allowed to pull (role/classes). A change forces a full re-pull. */
+  scopeKey: string
 }
 
 export type OfflineDB = Dexie & {

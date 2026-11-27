@@ -12,6 +12,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getServerSnapshot, getSnapshot, subscribe } from '@/lib/serviceStatus'
 import { startAutoSync } from '@/lib/offline/autoSync'
+import { readSyncEnabled } from '@/lib/offline/flags'
 import type { SyncClient } from '@/lib/offline/syncEngine'
 import { useOutboxCounts } from '@/hooks/useOutboxCounts'
 import styles from './OfflineSyncBanner.module.css'
@@ -44,8 +45,10 @@ export default function OfflineSyncBanner({ userId: knownUserId }: { userId?: st
     if (!userId) return
     // The engine only needs from(table).upsert(rows, opts); cast because the
     // generated Supabase client types are far wider than that.
-    const client = createClient() as unknown as SyncClient
-    return startAutoSync({ client, userId })
+    const supabase = createClient()
+    const client = supabase as unknown as SyncClient
+    // Read side is off until NEXT_PUBLIC_OFFLINE_READ_SYNC=1 (see lib/offline/flags.ts).
+    return startAutoSync({ client, userId, pullClient: readSyncEnabled() ? supabase : undefined })
   }, [userId])
 
   if (pending === 0 && failed === 0) return null
