@@ -128,5 +128,17 @@ export function insertTable(v: string, s: number, e: number, cols = 3, rows = 2)
   return insertBlock(v, s, e, text, 2, 'Column 1'.length)
 }
 
+/**
+ * Inserts an image as markdown (![alt](url)) on its own paragraph.
+ * Brackets and parentheses are removed from the alt text and escaped in the link so
+ * they cannot break the markdown. The cursor lands right after the image.
+ */
+export function insertImage(v: string, s: number, e: number, url: string, alt = 'Image'): Edit {
+  const safeAlt = alt.replace(/[\[\]()\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Image'
+  const safeUrl = url.trim().replace(/\s/g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29')
+  const text = `![${safeAlt}](${safeUrl})`
+  return insertBlock(v, s, e, text, text.length, 0)
+}
+
 export const insertDivider = (v: string, s: number, e: number) => insertBlock(v, s, e, '---')
 export const insertPageBreak = (v: string, s: number, e: number) => insertBlock(v, s, e, '\\pagebreak')
