@@ -24,6 +24,9 @@ import { classifyResult } from '@/lib/offline/classify'
 import { enqueueUpsert, listOutbox } from '@/lib/offline/outbox'
 import { pendingAttendanceStatuses } from '@/lib/offline/attendance'
 import { useOfflineReady } from '@/hooks/useOfflineReady'
+import { readSyncEnabled } from '@/lib/offline/flags'
+import { pullTable, readLocal } from '@/lib/offline/pullSync'
+import { SYNC_TABLES } from '@/lib/offline/syncTables'
 import styles from './attendance.module.css'
 
 interface Props { profile: any; school: any; userId: string }
@@ -74,6 +77,29 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
 
   // Offline: remember who this is and make sure the offline twin page is cached.
   useOfflineReady({ userId, profile, school, twinPath: '/offline/teacher/attendance' })
+
+  // Local-first read of this school's attendance rows (only when the read sync is on and this
+  // phone has finished at least one pull). Returns null = "use the network like before".
+  // A background pull then refreshes the local copy and re-runs `again` once if anything changed.
+  async function localAttendance(
+    match: (r: any) => boolean,
+    again: () => void,
+  ): Promise<any[] | null> {
+    if (!readSyncEnabled()) return null
+    try {
+      const local = await readLocal<any>(userId, 'attendance', match)
+      if (local.syncedAt === null) return null
+      const cfg = SYNC_TABLES.find(c => c.table === 'attendance')
+      if (cfg) {
+        void pullTable(supabase, userId, cfg, { role: profile?.role })
+          .then(r => { if (r.upserted > 0) again() })
+          .catch(() => {})
+      }
+      return local.rows
+    } catch {
+      return null
+    }
+  }
 
   useEffect(() => { loadTeacherClasses() }, [])
   useEffect(() => { if (selectedClass) loadStudents(selectedClass.class_id) }, [selectedClass])
@@ -169,16 +195,24 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     setLoading(false)
   }
 
-  async function loadExisting() {
+  async function loadExisting(refreshed = false) {
     if (!selectedClass) return
     setQueued(false)
-    const { data } = await supabase
-      .from('attendance')
-      .select('student_id, status, is_present')
-      .eq('school_id', school?.id)
-      .eq('class_id', selectedClass.class_id)
-      .eq('date', date)
-      .in('student_id', students.map((s: any) => s.id))
+    const ids = new Set(students.map((s: any) => s.id))
+    let data: any[] | null = await localAttendance(
+      r => r.class_id === selectedClass.class_id && r.date === date && ids.has(r.student_id),
+      () => { if (!refreshed) loadExisting(true) },
+    )
+    if (data === null) {
+      const res = await supabase
+        .from('attendance')
+        .select('student_id, status, is_present')
+        .eq('school_id', school?.id)
+        .eq('class_id', selectedClass.class_id)
+        .eq('date', date)
+        .in('student_id', students.map((s: any) => s.id))
+      data = res.data
+    }
     const map: Record<string, string> = {}
     if (data?.length) {
       data.forEach((r: any) => {
@@ -284,17 +318,24 @@ export default function AttendanceClient({ profile, school, userId }: Props) {
     })
   }
 
-  async function loadHistory(classId: string) {
+  async function loadHistory(classId: string, refreshed = false) {
     setHistoryLoading(true)
     setExpandedDate(null)
     const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-    const { data } = await supabase
-      .from("attendance")
-      .select("date, status, is_present, student_id")
-      .eq("school_id", school?.id)
-      .eq("class_id", classId)
-      .gte("date", since)
-      .order("date", { ascending: false })
+    let data: any[] | null = await localAttendance(
+      r => r.class_id === classId && typeof r.date === 'string' && r.date >= since,
+      () => { if (!refreshed) loadHistory(classId, true) },
+    )
+    if (data === null) {
+      const res = await supabase
+        .from("attendance")
+        .select("date, status, is_present, student_id")
+        .eq("school_id", school?.id)
+        .eq("class_id", classId)
+        .gte("date", since)
+        .order("date", { ascending: false })
+      data = res.data
+    }
     if (data?.length) {
       const grouped: Record<string, HistoryRecord> = {}
       data.forEach((r: any) => {
