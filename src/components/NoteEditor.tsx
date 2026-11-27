@@ -3,21 +3,23 @@
 //
 // The note writing box with a formatting toolbar, like a word processor:
 // headings, bold / italic / strike, bullets, numbering, checklist, quote, table,
+// images (from the phone gallery/camera, a pasted screenshot, or a link),
 // divider, page break, undo / redo and a live Preview.
 //
 // The note is still stored as plain text (with markdown markers), so existing notes
 // and notes pasted from anywhere keep working. The toolbar just writes the markers
 // for you; the book and the preview turn them into real formatting.
 //
-// Mobile: the toolbar scrolls sideways and its buttons never steal focus from the
-// text box, so the keyboard stays open and the selection stays put.
+// Mobile: the toolbar wraps onto a few rows so every tool is visible, and its buttons
+// never steal focus from the text box, so the keyboard stays open and the selection stays put.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import NoteMarkdown from './NoteMarkdown'
 import {
   setHeading, toggleBullets, toggleNumbered, toggleChecklist, toggleQuote, toggleWrap,
-  insertTable, insertDivider, insertPageBreak, type Edit,
+  insertTable, insertDivider, insertPageBreak, insertImage, type Edit,
 } from '@/lib/notebooks/editorActions'
+import { uploadMyNoteImage, cleanImageLink, altFromFileName } from '@/lib/notebooks/imageUpload'
 import styles from './NoteEditor.module.css'
 
 interface Props {
@@ -26,15 +28,30 @@ interface Props {
   accentColor?: string
   rows?: number
   placeholder?: string
+  /** Set to false to hide the Image tool (for places that cannot show images). */
+  allowImages?: boolean
 }
 
 type Action = (v: string, s: number, e: number) => Edit
 
 const MAX_HISTORY = 100
 
-export default function NoteEditor({ value, onChange, accentColor, rows = 10, placeholder = 'Start typing your note...' }: Props) {
+export default function NoteEditor({ value, onChange, accentColor, rows = 10, placeholder = 'Start typing your note...', allowImages = true }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState(false)
+
+  // Image tool state
+  const [imgOpen, setImgOpen] = useState(false)
+  const [imgLink, setImgLink] = useState('')
+  const [imgBusy, setImgBusy] = useState(false)
+  const [imgError, setImgError] = useState<string | null>(null)
+  // The text box loses its cursor while the photo picker is open, so remember where it was.
+  const selRef = useRef({ s: 0, e: 0 })
+  const saveSel = () => {
+    const ta = ref.current
+    if (ta) selRef.current = { s: ta.selectionStart, e: ta.selectionEnd }
+  }
 
   // Undo / redo history (own stack, so toolbar edits and typing undo together).
   const hist = useRef<{ stack: string[]; i: number; lastTyped: number }>({ stack: [value], i: 0, lastTyped: 0 })
@@ -81,6 +98,55 @@ export default function NoteEditor({ value, onChange, accentColor, rows = 10, pl
       ta.focus()
       ta.setSelectionRange(edit.start, edit.end)
     })
+  }
+
+  function addImage(url: string, alt: string) {
+    const s0 = Math.min(selRef.current.s, value.length)
+    const e0 = Math.min(selRef.current.e, value.length)
+    const edit = insertImage(value, s0, e0, url, alt)
+    record(edit.value, false)
+    onChange(edit.value)
+    requestAnimationFrame(() => {
+      const ta = ref.current
+      if (!ta) return
+      ta.focus()
+      ta.setSelectionRange(edit.end, edit.end)
+      saveSel()
+    })
+  }
+
+  async function addImageFile(file: File) {
+    setImgBusy(true)
+    setImgError(null)
+    try {
+      const url = await uploadMyNoteImage(file)
+      addImage(url, altFromFileName(file.name))
+      setImgOpen(false)
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "We couldn't add that image. Try again.")
+    } finally {
+      setImgBusy(false)
+    }
+  }
+
+  function addImageLink() {
+    const url = cleanImageLink(imgLink)
+    if (!url) { setImgError('Paste a link that starts with https://'); return }
+    setImgError(null)
+    addImage(url, 'Image')
+    setImgLink('')
+    setImgOpen(false)
+  }
+
+  function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    if (!allowImages) return
+    const file = Array.from(e.clipboardData?.files ?? []).find(f => f.type.startsWith('image/'))
+    if (file) {
+      e.preventDefault() // a pasted screenshot becomes an image instead of nothing
+      saveSel()
+      setImgOpen(true)
+      void addImageFile(file)
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -131,9 +197,30 @@ export default function NoteEditor({ value, onChange, accentColor, rows = 10, pl
         {btn('\u275D Quote', 'Quote', () => apply(toggleQuote))}
         <span className={styles.sep} />
         {btn('Table', 'Insert table', () => apply((v, s, e) => insertTable(v, s, e, 3, 2)))}
+        {allowImages && btn('Image', 'Add an image', () => { saveSel(); setImgOpen(o => !o); setImgError(null) }, { cls: imgOpen ? styles.toolOn : '' })}
         {btn('Line', 'Divider line', () => apply(insertDivider))}
         {btn('Page break', 'Start a new page here', () => apply(insertPageBreak))}
       </div>
+
+      {allowImages && imgOpen && !preview && (
+        <div className={styles.imgPanel}>
+          <input
+            ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void addImageFile(f) }}
+          />
+          <button type="button" className={styles.imgPick} disabled={imgBusy} onClick={() => fileRef.current?.click()}>
+            {imgBusy ? 'Adding image...' : 'Choose a photo'}
+          </button>
+          <div className={styles.imgLinkRow}>
+            <input
+              className={styles.imgLink} value={imgLink} inputMode="url" placeholder="or paste an image link (https://...)"
+              onChange={e => setImgLink(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addImageLink() } }}
+            />
+            <button type="button" className={styles.imgAdd} disabled={imgBusy || !imgLink.trim()} onClick={addImageLink}>Add</button>
+          </div>
+          {imgError && <p className={styles.imgError} role="alert">{imgError}</p>}
+        </div>
+      )}
 
       {preview ? (
         <div className={styles.preview} style={{ minHeight: rows * 22 }}>
@@ -148,6 +235,10 @@ export default function NoteEditor({ value, onChange, accentColor, rows = 10, pl
           placeholder={placeholder}
           onChange={e => { record(e.target.value, true); onChange(e.target.value) }}
           onKeyDown={onKeyDown}
+          onPaste={onPaste}
+          onSelect={saveSel}
+          onBlur={saveSel}
+          onClick={saveSel}
         />
       )}
 

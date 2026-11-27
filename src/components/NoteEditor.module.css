@@ -10,20 +10,16 @@
   overflow: hidden;
 }
 
-/* Toolbar: one scrollable row, stays visible above the text */
+/* Toolbar: wraps onto several rows so EVERY tool is visible on a phone (no hidden scrolling) */
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
   padding: 6px;
-  overflow-x: auto;
-  white-space: nowrap;
   border-bottom: 1px solid var(--input-border, rgba(128, 128, 128, 0.3));
   background: color-mix(in srgb, var(--ed-accent) 7%, transparent);
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
-.toolbar::-webkit-scrollbar { display: none; }
 
 .tool {
   flex: 0 0 auto;
@@ -90,3 +86,53 @@
 }
 .previewBtn:disabled { opacity: 0.45; cursor: default; }
 .previewOn { background: var(--ed-accent); border-color: transparent; color: #fff; }
+
+.toolOn { background: color-mix(in srgb, var(--ed-accent) 22%, transparent); }
+
+/* Image tool panel */
+.imgPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-bottom: 1px solid var(--input-border, rgba(128, 128, 128, 0.3));
+  background: color-mix(in srgb, var(--ed-accent) 5%, transparent);
+}
+.imgPick {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px dashed var(--ed-accent);
+  background: transparent;
+  color: var(--ed-accent);
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.imgPick:disabled { opacity: 0.6; cursor: default; }
+.imgLinkRow { display: flex; gap: 8px; }
+.imgLink {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border, rgba(128, 128, 128, 0.35));
+  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, inherit);
+  font-size: 0.8rem;
+  outline: none;
+}
+.imgAdd {
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 0;
+  background: var(--ed-accent);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.imgAdd:disabled { opacity: 0.5; cursor: default; }
+.imgError { margin: 0; font-size: 0.72rem; color: var(--danger, #ef4444); }
