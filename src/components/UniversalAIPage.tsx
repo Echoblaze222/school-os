@@ -7,9 +7,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import RoleSubHeader from '@/components/RoleSubHeader'
 import { FeatureGroup } from '@/components/AllFeaturesSheet'
-import { AiIcon, SendIcon, RefreshIcon, PaperclipIcon, XIcon } from '@/components/Icons'
+import { AiIcon, SendIcon, RefreshIcon, PaperclipIcon, XIcon, CopyIcon, CheckIcon, EditIcon } from '@/components/Icons'
+import { copyToClipboard } from '@/lib/copyToClipboard'
 import { createClient } from '@/lib/supabase/client'
 import styles from '@/app/dashboard/student/ai/ai.module.css'
+import actions from './ai-message-actions.module.css'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { BURSAR_FEATURE_GROUPS } from '@/app/dashboard/bursar/featureGroups'
@@ -286,6 +288,12 @@ function StepWalkthrough({ content, accent }: { content: string; accent: string 
   )
 }
 
+// What gets copied: the message text as the person reads it, without the
+// [[Button label|/route]] deep-link markers the AI emits for walkthroughs.
+function plainTextForCopy(content: string): string {
+  return content.replace(/\s*\[\[[^\|\]]+\|[^\]]+\]\]/g, '').trim()
+}
+
 const ROLE_CONFIG: Record<string, { title: string; subtitle: string; context: string; starters: string[] }> = {
   principal: {
     title:    'AI School Insights',
@@ -429,6 +437,10 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [pendingImage, setPendingImage] = useState<{ data: string; mediaType: string; previewUrl: string } | null>(null)
   const [imageError, setImageError] = useState('')
+  const [copiedTs, setCopiedTs] = useState<number | null>(null)
+  const [editingTs, setEditingTs] = useState<number | null>(null)
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef  = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -498,6 +510,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
   async function sendMessage(text: string) {
     if ((!text.trim() && !pendingImage) || loading) return
     setError('')
+    setEditingTs(null)
     const userMsg: Message = {
       role: 'user',
       content: text.trim() || '📷 Sent an image',
@@ -554,7 +567,36 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
     }
   }
 
+  async function copyMessage(msg: Message) {
+    const ok = await copyToClipboard(plainTextForCopy(msg.content))
+    if (!ok) { setError('Could not copy. Select the text and copy it manually.'); return }
+    setCopiedTs(msg.ts)
+    if (copiedTimer.current) clearTimeout(copiedTimer.current)
+    copiedTimer.current = setTimeout(() => setCopiedTs(null), 1600)
+  }
+
+  // Edit = pull one of your earlier questions back into the box, tweak it, and
+  // send it as a new message. The conversation above stays as it was, because
+  // the server stores every exchange and replays them on reload.
+  function startEdit(msg: Message) {
+    setEditingTs(msg.ts)
+    setInput(msg.content === '📷 Sent an image' ? '' : msg.content)
+    setError('')
+    setTimeout(() => {
+      const el = textareaRef.current
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(el.value.length, el.value.length)
+    }, 50)
+  }
+
+  function cancelEdit() {
+    setEditingTs(null)
+    setInput('')
+  }
+
   function handleKey(e: React.KeyboardEvent) {
+    if (e.key === 'Escape' && editingTs !== null) { e.preventDefault(); cancelEdit(); return }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
   }
 
@@ -616,7 +658,25 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
                 <div className={styles.bubbleText}>
                   <StepWalkthrough content={msg.content} accent={schoolColor} />
                 </div>
-                <span className={styles.bubbleTime}>{formatTime(msg.ts)}</span>
+                <div className={actions.footer}>
+                  <span className={styles.bubbleTime} style={{ marginTop: 0, textAlign: 'left' }}>{formatTime(msg.ts)}</span>
+                  <div className={actions.actions}>
+                    <button type="button" className={`${actions.actionBtn} ${msg.role === 'user' ? actions.actionBtnOnUser : ''}`}
+                      onClick={() => copyMessage(msg)}
+                      aria-label="Copy message" title="Copy">
+                      {copiedTs === msg.ts ? <CheckIcon size={13}/> : <CopyIcon size={13}/>}
+                      <span>{copiedTs === msg.ts ? 'Copied' : 'Copy'}</span>
+                    </button>
+                    {msg.role === 'user' && !loading && (
+                      <button type="button" className={`${actions.actionBtn} ${msg.role === 'user' ? actions.actionBtnOnUser : ''}`}
+                        onClick={() => startEdit(msg)}
+                        aria-label="Edit message" title="Edit">
+                        <EditIcon size={13}/>
+                        <span>Edit</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -646,6 +706,16 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
         )}
         {imageError && <p className={styles.errorMsg}>{imageError}</p>}
 
+        {editingTs !== null && (
+          <div className={actions.editBanner}>
+            <EditIcon size={13} color="var(--text-muted)"/>
+            <span className={actions.editBannerLabel}>Editing an earlier message. It will be sent as a new message.</span>
+            <button type="button" className={styles.imagePreviewRemove} onClick={cancelEdit} aria-label="Cancel edit">
+              <XIcon size={13} color="var(--text-muted)"/>
+            </button>
+          </div>
+        )}
+
         <div className={`${styles.inputBar} ${styles.inputBarFloating}`}>
           {messages.length > 0 && (
             <button className={styles.clearBtn} onClick={clearChat} title="Clear chat">
@@ -657,7 +727,7 @@ export default function UniversalAIPage({ profile, school, userId, role }: Props
           <button className={styles.clearBtn} onClick={handleAttachClick} title="Attach an image">
             <PaperclipIcon size={16} color="var(--text-muted)"/>
           </button>
-          <textarea className={styles.textarea} value={input}
+          <textarea ref={textareaRef} className={styles.textarea} value={input}
             onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
             placeholder={pendingImage ? 'Ask something about this image…' : `Ask ${config.title.toLowerCase()}…`}
             rows={1}/>
