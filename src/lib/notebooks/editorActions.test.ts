@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { setHeading, toggleBullets, toggleNumbered, toggleChecklist, toggleQuote, toggleWrap, insertTable, insertPageBreak, insertDivider } from './editorActions'
+import { insertImage, setHeading, toggleBullets, toggleNumbered, toggleChecklist, toggleQuote, toggleWrap, insertTable, insertPageBreak, insertDivider } from './editorActions'
 import { parseBlocks } from '@/lib/utils/noteMarkdown'
+
+describe('image insert', () => {
+  it('puts the image on its own line and it parses as an image', () => {
+    const r = insertImage('Intro text', 10, 10, 'https://x.supabase.co/a.jpg', 'River [photo]')
+    const blocks = parseBlocks(r.value)
+    expect(blocks.map(b => b.type)).toEqual(['paragraph', 'paragraph'])
+    expect((blocks[1] as any).text).toBe('![River photo](https://x.supabase.co/a.jpg)')
+  })
+})
 
 describe('editor actions', () => {
   it('heading: applies to the line, replaces another heading, toggles off', () => {
