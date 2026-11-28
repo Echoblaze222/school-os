@@ -142,7 +142,3 @@ export function insertImage(v: string, s: number, e: number, url: string, alt = 
 
 export const insertDivider = (v: string, s: number, e: number) => insertBlock(v, s, e, '---')
 export const insertPageBreak = (v: string, s: number, e: number) => insertBlock(v, s, e, '\\pagebreak')
-
-/** Adds an image on its own line. Brackets in the caption are removed so the markdown stays valid. */
-export const insertImage = (v: string, s: number, e: number, url: string, alt: string) =>
-  insertBlock(v, s, e, `![${alt.replace(/[\[\]]/g, '').trim() || 'Image'}](${url})`)
