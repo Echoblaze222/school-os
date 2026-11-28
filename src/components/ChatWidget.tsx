@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSingleFireClick } from '@/hooks/useSingleFireClick'
+import { useOfflineMode } from '@/lib/offline/offlineMode'
 import { MessageIcon, SendIcon, PaperclipIcon, XIcon } from './Icons'
 import styles from './ChatWidget.module.css'
 
-// ── Types ─────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────
 interface Message {
   id:         string
   content:    string   // correct field - NOT 'body'
@@ -29,7 +30,7 @@ interface Props {
   schoolColor?: string
 }
 
-// ── Component ──────────────────────────────────────────────
+// ── Component ──────────────────────────────────────────────────
 export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Props) {
   const [open,       setOpen]       = useState(false)
   const toggleOpen = useSingleFireClick(() => setOpen(p => !p))
@@ -39,6 +40,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
   const [text,       setText]       = useState('')
   const [sending,    setSending]    = useState(false)
   const [unread,     setUnread]     = useState(0)
+  const offlineMode = useOfflineMode()
 
   const supabase  = createClient()
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -96,7 +98,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Load rooms (flat queries - no nested joins) ──────────
+  // ── Load rooms (flat queries - no nested joins) ──────────────
   async function loadRooms() {
     const { data: memberships } = await supabase
       .from('chat_room_members')
@@ -145,7 +147,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     setRooms(unique)
   }
 
-  // ── Load messages ────────────────────────────────────────
+  // ── Load messages ────────────────────────────────────────────────
   async function loadMessages(roomId: string) {
     const { data } = await supabase
       .from('chat_messages')                        // ✅ correct table
@@ -156,7 +158,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     if (data) setMessages(data as Message[])
   }
 
-  // ── Send text ────────────────────────────────────────────
+  // ── Send text ──────────────────────────────────────────────────
   async function sendText() {
     if (!text.trim() || !activeRoom || sending) return
     setSending(true)
@@ -185,7 +187,7 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     setSending(false)
   }
 
-  // ── Send file ────────────────────────────────────────────
+  // ── Send file ──────────────────────────────────────────────────
   async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !activeRoom || sending) return
@@ -226,7 +228,11 @@ export default function ChatWidget({ userId, role, schoolColor = '#7C3AED' }: Pr
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  // ── Render ───────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────
+  // Messages need a connection: on an offline twin page the button is left out
+  // instead of opening a panel that cannot load or send anything.
+  if (offlineMode) return null
+
   return (
     <div className={styles.container}>
 
