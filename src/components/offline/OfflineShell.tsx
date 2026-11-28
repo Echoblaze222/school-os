@@ -6,16 +6,19 @@
 //
 //  - who: the last-known user id + the profile/school saved while online
 //    (src/lib/offline/identity.ts), only for the right role;
+//  - brand: the school's colours and font, applied from the saved school row with
+//    the same palette code the online dashboards use (src/lib/brand);
 //  - lock: the same auto-lock as the dashboard, and while locked NOTHING of the
 //    user's data is rendered behind the lock screen;
 //  - sync: queued changes upload as soon as the connection returns.
 // If there is nothing saved for this phone it says so instead of guessing.
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { useAutoLock } from '@/lib/useAutoLock'
 import LockScreen from '@/components/auth/LockScreen'
 import OfflineSyncBanner from '@/components/OfflineSyncBanner'
 import { loadIdentity, readLastKnownUserId } from '@/lib/offline/identity'
+import { applyBrandVars } from '@/lib/brand/applyBrand'
 
 export interface ShellIdentity {
   userId: string
@@ -59,10 +62,19 @@ export default function OfflineShell({
   }, [role])
 
   const profile = state.kind === 'ready' ? state.identity.profile : null
+  const school = state.kind === 'ready' ? state.identity.school : null
   const { locked, unlock } = useAutoLock({
     enabled: profile?.auto_lock_enabled ?? true,
     minutes: profile?.auto_lock_minutes ?? 10,
   })
+
+  // Online, the dashboard layout injects the school's brand before first paint. Offline twins
+  // live outside that layout, so apply the same variables from the saved school here, before
+  // the first paint of the page (and for the lock screen too).
+  useLayoutEffect(() => {
+    if (!school) return
+    return applyBrandVars(school)
+  }, [school])
 
   if (state.kind === 'loading') return null
 
