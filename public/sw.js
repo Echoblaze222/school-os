@@ -43,12 +43,14 @@ const RUNTIME_CACHE      = `schoolos-runtime-${CACHE_VERSION}`
 // STATIC_PRECACHE_URLS below, and in CRITICAL_ROUTES in scripts/generate-sw-precache.js.
 const OFFLINE_TWINS = {
   '/dashboard/teacher/attendance': '/offline/teacher/attendance',
+  '/dashboard/teacher': '/offline/teacher',
 }
 
 // Static fallback - always cached, regardless of build output.
 const STATIC_PRECACHE_URLS = [
   '/offline',
   '/offline/teacher/attendance',
+  '/offline/teacher',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -68,7 +70,7 @@ try {
 
 const PRECACHE_URLS = [...STATIC_PRECACHE_URLS, ...(self.__PRECACHE_URLS || [])]
 
-// ── Install & Activate ────────────────────────────────────────────────
+// ── Install & Activate ────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_SHELL_CACHE).then((cache) =>
@@ -102,7 +104,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// ── Fetch - offline support ────────────────────────────────────────────────────────
+// ── Fetch - offline support ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event
 
@@ -178,7 +180,7 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
-// ── Sign-out: drop anything cached at runtime ─────────────────────────────
+// ── Sign-out: drop anything cached at runtime ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 self.addEventListener('message', (event) => {
   // Posted by the app when a user logs out. The runtime cache only holds
   // fonts/images, but clearing it on logout keeps that true even if caching
@@ -187,142 +189,3 @@ self.addEventListener('message', (event) => {
     event.waitUntil(caches.delete(RUNTIME_CACHE))
   }
 })
-
-// ── Push received ─────────────────────────────────────────────────────────
-self.addEventListener('push', (event) => {
-  if (!event.data) return
-
-  let payload
-  try {
-    payload = event.data.json()
-  } catch {
-    payload = { title: 'SchoolOS', body: event.data.text() }
-  }
-
-  const { title, body, icon, badge, url, tag, userId, sentAt } = payload
-
-  const options = {
-    body:    body   || '',
-    // FIX: was '/icons/icon-192.png' - file doesn't exist, correct name is icon-192x192.png
-    icon:    icon   || '/icons/icon-192x192.png',
-    badge:   badge  || '/icons/icon-192x192.png',
-    // WHATSAPP FIX: tags are now unique per push (from webpush.ts), so this
-    // fallback only matters for malformed/legacy payloads. renotify:true
-    // means even if a tag IS reused, the OS still alerts (vibrate/sound)
-    // instead of silently swapping the notification text - this is what
-    // was causing pushes to "not always drop".
-    tag:      tag || `schoolos-${Date.now()}`,
-    renotify: true,
-    data:     { url: url || '/' },
-    vibrate:  [200, 100, 200],
-    timestamp: Date.now(),
-    requireInteraction: false,
-  }
-
-  event.waitUntil(
-    Promise.all([
-      self.registration.showNotification(title || 'SchoolOS', options),
-      // Keep a copy on the phone so the bell can show it with no network.
-      saveToInbox({
-        id:         options.tag,
-        userId:     userId || null,
-        title:      title || 'SchoolOS',
-        body:       body || '',
-        url:        url || '/',
-        receivedAt: typeof sentAt === 'number' ? sentAt : Date.now(),
-      }),
-    ])
-  )
-})
-
-// ── Notification click ─────────────────────────────────────────────────────────────────────────────
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-
-  const targetUrl = event.notification.data?.url || '/'
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus()
-          client.navigate(targetUrl)
-          return
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl)
-      }
-    })
-  )
-})
-
-// ── Push subscription change ───────────────────────────────────────────────────
-self.addEventListener('pushsubscriptionchange', (event) => {
-  event.waitUntil(
-    event.newSubscription
-      ? fetch('/api/push/subscribe', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            subscription: event.newSubscription.toJSON(),
-            oldEndpoint:  event.oldSubscription?.endpoint,
-          }),
-        })
-      : Promise.resolve()
-  )
-})
-
-// ── Offline inbox ─────────────────────────────────────────────────────────────
-// Mirrors src/lib/offlineInbox.ts (same DB/store names and limits) - keep the
-// two in step. Only pushes stamped with a userId are kept, so a copy can only
-// ever be shown back to the person it was sent to. Saving as one user deletes
-// every other user's copies, and the app wipes the lot on sign-out.
-const INBOX_DB_NAME   = 'schoolos-inbox'
-const INBOX_STORE     = 'items'
-const INBOX_MAX_ITEMS = 50
-const INBOX_MAX_AGE   = 7 * 24 * 60 * 60 * 1000
-
-function saveToInbox(item) {
-  if (!item.userId || !item.id) return Promise.resolve()
-  return new Promise((resolve) => {
-    try {
-      const req = indexedDB.open(INBOX_DB_NAME, 1)
-      req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains(INBOX_STORE)) {
-          req.result.createObjectStore(INBOX_STORE, { keyPath: 'id' })
-        }
-      }
-      req.onerror   = () => resolve()
-      req.onblocked = () => resolve()
-      req.onsuccess = () => {
-        const db = req.result
-        try {
-          const tx    = db.transaction(INBOX_STORE, 'readwrite')
-          const store = tx.objectStore(INBOX_STORE)
-          const all   = store.getAll()
-          all.onsuccess = () => {
-            const cutoff = Date.now() - INBOX_MAX_AGE
-            const keep = []
-            for (const rec of all.result || []) {
-              if (rec.userId !== item.userId || rec.receivedAt < cutoff) store.delete(rec.id)
-              else keep.push(rec)
-            }
-            store.put(item)
-            // Cap the list: keep the newest INBOX_MAX_ITEMS including this one.
-            keep.sort((a, b) => b.receivedAt - a.receivedAt)
-            for (const rec of keep.slice(INBOX_MAX_ITEMS - 1)) store.delete(rec.id)
-          }
-          tx.oncomplete = () => { db.close(); resolve() }
-          tx.onerror    = () => { db.close(); resolve() }
-          tx.onabort    = () => { db.close(); resolve() }
-        } catch {
-          try { db.close() } catch {}
-          resolve()
-        }
-      }
-    } catch {
-      resolve()
-    }
-  })
-}
