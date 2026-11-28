@@ -6,6 +6,7 @@ import {
   CreditCardIcon, CheckCircleIcon, FolderIcon, MegaphoneIcon,
   ActivityIcon, EyeIcon, TrashIcon, ClockIcon,
 } from '@/components/Icons'
+import { useOfflineMode } from '@/lib/offline/offlineMode'
 import styles from './recent-activity.module.css'
 
 export interface ActivityItem {
@@ -64,6 +65,7 @@ function iconFor(type: string) {
 
 export default function RecentActivity({ items, accentColor = '#7C3AED', onDelete, emptyLabel = 'No recent activity yet' }: Props) {
   const router = useRouter()
+  const offlineMode = useOfflineMode()
   const [previewItem, setPreviewItem] = useState<ActivityItem | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [localItems, setLocalItems] = useState(items)
@@ -133,7 +135,7 @@ export default function RecentActivity({ items, accentColor = '#7C3AED', onDelet
       {localItems.length === 0 ? (
         <div className={styles.emptyState}>
           <span className={styles.emptyGlyph}><ClockIcon size={22} /></span>
-          <p>{emptyLabel}</p>
+          <p>{offlineMode ? 'Recent activity needs a connection' : emptyLabel}</p>
         </div>
       ) : (
         <ul className={styles.list}>
