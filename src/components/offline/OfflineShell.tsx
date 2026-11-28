@@ -19,6 +19,7 @@ import LockScreen from '@/components/auth/LockScreen'
 import OfflineSyncBanner from '@/components/OfflineSyncBanner'
 import { loadIdentity, readLastKnownUserId } from '@/lib/offline/identity'
 import { applyBrandVars } from '@/lib/brand/applyBrand'
+import { OfflineModeContext } from '@/lib/offline/offlineMode'
 
 export interface ShellIdentity {
   userId: string
@@ -98,9 +99,9 @@ export default function OfflineShell({
   if (locked) return <LockScreen onUnlock={unlock} />
 
   return (
-    <>
+    <OfflineModeContext.Provider value={true}>
       {children(state.identity)}
       <OfflineSyncBanner userId={state.identity.userId} />
-    </>
+    </OfflineModeContext.Provider>
   )
 }

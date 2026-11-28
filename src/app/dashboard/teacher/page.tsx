@@ -8,6 +8,8 @@ import { checkSubscription }  from '@/lib/subscription'
 import SubscriptionGate       from '@/components/SubscriptionGate'
 import TeacherDashboardClient from './TeacherDashboardClient'
 import SaveSnapshot from '@/components/savedView/SaveSnapshot'
+import OfflineHomeSaver from '@/components/offline/OfflineHomeSaver'
+import type { TeacherHomeProps } from './homeProps'
 import { buildHomeSnapshot, homeKey } from '@/components/savedView/homeSnapshot'
 
 export default async function TeacherDashboardPage() {
@@ -29,7 +31,7 @@ export default async function TeacherDashboardPage() {
     )
   }
 
-  // ── Profile + school (single query) ──────────────────────────────────────
+  // ── Profile + school (single query) ──────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, schools(*)')
@@ -120,7 +122,7 @@ export default async function TeacherDashboardPage() {
     quizCount:       quizCount       ?? 0,
   }
 
-  // ── Recent activities (last 15, most recent first) ─────────────────────────
+  // ── Recent activities (last 15, most recent first) ──────────────────────────────────────
   const { data: activityRows } = await supabase
     .from('recent_activities')
     .select('id, type, title, subtitle, href, metadata, created_at')
@@ -164,6 +166,13 @@ export default async function TeacherDashboardPage() {
         examAppointmentLabel={examAppointmentLabel}
       />
       <SaveSnapshot userId={userId} routeKey={homeKey('teacher')} data={homeSnapshot} />
+      <OfflineHomeSaver
+        role="teacher"
+        userId={userId}
+        profile={profile}
+        school={school}
+        data={{ counts, examAppointmentLabel } satisfies TeacherHomeProps}
+      />
     </>
   )
 }
